@@ -327,7 +327,7 @@
   font-family: inherit;
   font-size: 14px;
   font-weight: 700;
-  background: var(--gradient);
+  background: var(--btn-primary);
   color: #fff;
   height: 36px;
   padding: 0 1.1em 0 0.9em;
@@ -336,8 +336,7 @@
   border: none;
   border-radius: 18px;
   overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
-  box-shadow: 0 4px 14px rgba(76, 91, 245, 0.3);
+  transition: transform 0.2s, opacity 0.2s;
 }
 .uv-send span {
   display: block;

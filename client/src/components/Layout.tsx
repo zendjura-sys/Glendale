@@ -245,7 +245,9 @@ export function Layout() {
         <Sidebar />
         <main className="main">
           <Suspense fallback={<Spinner />}>
-            <Outlet />
+            <div className="route-view" key={pathname.startsWith('/im') ? '/im' : pathname}>
+              <Outlet />
+            </div>
           </Suspense>
         </main>
       </div>

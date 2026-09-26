@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { MessageCircle, Users, Zap } from 'lucide-react';
 import { ThemeSwitch } from '../components/uiverse';
-import { useTilt } from '../components/ui';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useTheme } from '../lib/theme';
@@ -14,7 +13,6 @@ export default function AuthPage() {
   const [fields, setFields] = useState({ firstName: '', lastName: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const tilt = useTilt<HTMLFormElement>(6);
   const set = (k: keyof typeof fields) => (e: React.ChangeEvent<HTMLInputElement>) => setFields({ ...fields, [k]: e.target.value });
 
   const submit = async (e: FormEvent) => {
@@ -59,10 +57,7 @@ export default function AuthPage() {
         </div>
       </div>
 
-      <span className="shape3d orb" />
-      <span className="shape3d ring" />
-      <span className="shape3d glass" />
-      <form className="card auth-card" onSubmit={submit} ref={tilt}>
+      <form className="card auth-card" onSubmit={submit}>
         <h2>{mode === 'login' ? 'Вход в Glendale' : 'Регистрация'}</h2>
         {mode === 'register' && (
           <>

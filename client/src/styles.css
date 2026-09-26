@@ -1,6 +1,6 @@
 /* ───────────── design tokens ─────────────
-   Glendale: VK-familiar layout, premium look — aurora backdrop, liquid-glass surfaces,
-   depth and 3D, Montserrat typography. Surfaces are translucent; `*-solid` tokens are
+   Glendale: VK-familiar layout, premium minimal look — calm aurora backdrop, light glass surfaces,
+   Montserrat typography. Minimal and flat: no 3D. Surfaces are translucent; `*-solid` tokens are
    for places that must stay opaque (rings around avatars, borders over images). */
 :root {
   color-scheme: light;
@@ -55,7 +55,7 @@
   --aurora-2: #c89bff;
   --aurora-3: #ff9fce;
   --aurora-4: #7fe3ff;
-  --aurora-opacity: 0.55;
+  --aurora-opacity: 0.35;
   --radius: 22px;
   --radius-sm: 14px;
   --header-h: 64px;
@@ -107,7 +107,7 @@
   --aurora-2: #8b3cf6;
   --aurora-3: #e0409a;
   --aurora-4: #0fb5d8;
-  --aurora-opacity: 0.6;
+  --aurora-opacity: 0.35;
 }
 
 /* ───────────── base ───────────── */
@@ -204,8 +204,7 @@ h3 {
   width: 32px;
   height: 32px;
   border-radius: 11px;
-  background: var(--gradient);
-  box-shadow: 0 4px 12px rgba(76, 91, 245, 0.35);
+  background: var(--btn-primary);
   display: grid;
   place-items: center;
   color: #fff;
@@ -969,9 +968,8 @@ textarea.field {
 }
 .profile-avatar {
   margin-top: -56px;
-  border: 4px solid var(--glass-border);
+  border: 4px solid var(--card-solid);
   border-radius: 50%;
-  box-shadow: 0 6px 20px rgba(20, 24, 45, 0.15);
   background: var(--card);
   position: relative;
 }
@@ -1122,7 +1120,7 @@ textarea.field {
   background: var(--accent);
 }
 .dialog .badge {
-  background: var(--gradient);
+  background: var(--btn-primary);
 }
 .im-chat {
   flex: 1;

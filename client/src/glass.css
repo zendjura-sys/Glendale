@@ -1,5 +1,5 @@
 /*
- * Premium surface layer: aurora backdrop, liquid-glass panels, depth and 3D.
+ * Surface layer: calm aurora backdrop and minimal liquid-glass panels. Flat, no 3D.
  * Loaded after styles.css and uiverse.css; relies on the tokens defined in styles.css.
  */
 
@@ -43,19 +43,19 @@ h3,
   background: radial-gradient(circle, var(--aurora-1) 0%, transparent 65%);
   top: -25vmax;
   left: -15vmax;
-  animation: aurora-a 26s ease-in-out infinite alternate;
+  animation: aurora-a 60s ease-in-out infinite alternate;
 }
 .aurora i:nth-child(2) {
   background: radial-gradient(circle, var(--aurora-2) 0%, transparent 65%);
   top: -10vmax;
   right: -25vmax;
-  animation: aurora-b 32s ease-in-out infinite alternate;
+  animation: aurora-b 70s ease-in-out infinite alternate;
 }
 .aurora i:nth-child(3) {
   background: radial-gradient(circle, var(--aurora-3) 0%, transparent 65%);
   bottom: -30vmax;
   left: 10vmax;
-  animation: aurora-c 38s ease-in-out infinite alternate;
+  animation: aurora-c 80s ease-in-out infinite alternate;
 }
 .aurora i:nth-child(4) {
   background: radial-gradient(circle, var(--aurora-4) 0%, transparent 65%);
@@ -63,7 +63,7 @@ h3,
   right: -10vmax;
   width: 45vmax;
   height: 45vmax;
-  animation: aurora-a 30s ease-in-out infinite alternate-reverse;
+  animation: aurora-a 66s ease-in-out infinite alternate-reverse;
 }
 /* Fine grain keeps the gradients from banding and gives the glass a tactile feel. */
 .aurora::after {
@@ -158,21 +158,55 @@ h3,
   background: var(--card-strong);
 }
 
-/* 3D lift on hover for feed items and tiles. */
-.card.post,
+/* ───────── Transitions (flat: fades and color changes, no 3D) ───────── */
+.card,
+.row-link,
+.dialog,
+.menu-item,
+.action,
+.icon-btn,
+.header-icon,
+.header-user,
 .photo-tile,
-.mini-grid a .avatar,
-.row-link {
-  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.35s, background 0.2s;
+.counters a,
+.field,
+.autogrow,
+.header-search input {
+  transition: background-color 0.2s ease, box-shadow 0.25s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
 }
 @media (hover: hover) {
   .card.post:hover {
-    transform: translateY(-3px);
     box-shadow: var(--lift);
   }
-  .mini-grid a:hover .avatar {
-    transform: translateY(-4px) scale(1.04);
+}
+/* Each page fades in when the route changes. */
+.route-view {
+  animation: route-in 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes route-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
   }
+}
+/* New posts and messages ease in instead of popping. */
+.card.post,
+.bubble-row,
+.toast {
+  animation: item-in 0.28s ease-out;
+}
+@keyframes item-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+/* Smooth cross-fade while switching light/dark theme (class set briefly by ThemeProvider). */
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition: background-color 0.45s ease, color 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease, fill 0.45s ease !important;
 }
 
 /* ───────── Floating header capsule ───────── */
@@ -199,73 +233,33 @@ h3,
   box-shadow: 0 0 0 4px var(--accent-soft);
 }
 
-/* Glossy 3D logo tile. */
-.logo-mark {
-  position: relative;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 50%), var(--gradient);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.6), inset 0 -3px 6px rgba(40, 20, 120, 0.35),
-    0 8px 18px -4px rgba(90, 80, 250, 0.55);
-  transform: perspective(200px) rotateX(8deg);
-}
-.logo span:last-child {
-  background: var(--gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
 /* ───────── Sidebar as a glass rail ───────── */
 .sidebar {
   padding: 10px;
   border-radius: var(--radius);
 }
-.sidebar a.active {
-  color: #fff;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 55%), var(--gradient);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5), 0 8px 18px -8px rgba(90, 80, 250, 0.7);
-}
-.sidebar a.active svg {
-  color: #fff;
-}
-.sidebar a.active .badge {
-  background: rgba(255, 255, 255, 0.25);
-  color: #fff;
-}
 .sidebar-foot {
   padding: 8px 12px 2px;
 }
 
-/* ───────── Liquid buttons & pills ───────── */
+/* ───────── Buttons & pills: flat ───────── */
 .btn,
 .tab.active,
 .uv-send {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0) 52%), var(--gradient);
+  background: var(--btn-primary);
   color: #fff;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.55), inset 0 -2px 4px rgba(40, 20, 120, 0.25),
-    0 10px 22px -10px rgba(90, 80, 250, 0.75);
+  box-shadow: none;
 }
 .btn:hover,
 .tab.active:hover {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 52%), var(--gradient);
-  filter: brightness(1.05);
-}
-.btn:active:not(:disabled) {
-  transform: translateY(1px) scale(0.98);
+  background: var(--btn-primary-hover);
 }
 .btn.secondary,
 .btn.tertiary,
 .btn.danger {
   background: var(--btn-secondary);
   color: var(--btn-secondary-text);
-  backdrop-filter: blur(12px) saturate(160%);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 0 0 1px var(--glass-edge), 0 6px 14px -8px rgba(30, 35, 90, 0.25);
-  filter: none;
-}
-:root[data-theme='dark'] .btn.secondary,
-:root[data-theme='dark'] .btn.tertiary,
-:root[data-theme='dark'] .btn.danger {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 0 0 1px var(--glass-edge);
+  box-shadow: 0 0 0 1px var(--glass-edge);
 }
 .btn.secondary:hover,
 .btn.tertiary:hover {
@@ -287,13 +281,9 @@ h3,
 }
 .action:hover {
   background: var(--btn-secondary);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 0 0 1px var(--glass-edge);
 }
 .icon-btn:hover {
   background: var(--btn-secondary);
-}
-.badge {
-  box-shadow: 0 4px 10px -2px rgba(244, 63, 112, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 /* ───────── Fields ───────── */
@@ -301,7 +291,6 @@ h3,
 .autogrow {
   background: var(--field);
   border-color: var(--field-border);
-  box-shadow: inset 0 1px 2px rgba(20, 24, 60, 0.05);
 }
 .field:focus,
 .autogrow:focus {
@@ -310,91 +299,25 @@ h3,
   box-shadow: 0 0 0 4px var(--accent-soft);
 }
 
-/* ───────── 3D avatars ───────── */
-.avatar .initials,
-.avatar img {
-  box-shadow: inset 0 -6px 12px rgba(20, 10, 60, 0.25), inset 0 4px 8px rgba(255, 255, 255, 0.35);
-}
-.avatar .initials {
-  position: relative;
-  text-shadow: 0 1px 2px rgba(20, 10, 60, 0.35);
-}
-/* Specular highlight — makes the initials tile read as a glossy sphere. */
-.avatar .initials::after {
-  content: '';
-  position: absolute;
-  inset: 6% 18% 52% 18%;
-  border-radius: 50%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0));
-  pointer-events: none;
-}
-.avatar.square .initials::after {
-  border-radius: 40%;
-}
-.avatar .online-dot {
-  box-shadow: 0 0 0 2px var(--card-solid), 0 0 8px rgba(34, 197, 94, 0.7);
-}
+/* ───────── Avatars ───────── */
 .profile-avatar {
   background: transparent;
-  box-shadow: 0 18px 40px -12px rgba(40, 30, 140, 0.55), 0 0 0 1px var(--glass-edge);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 0 0 1px var(--glass-edge);
 }
 
-/* ───────── Profile cover: living aurora with floating glass orbs ───────── */
+/* ───────── Profile cover: quiet gradient ───────── */
 .cover {
   overflow: hidden;
-  background: linear-gradient(120deg, #4c5bf5, #8b5cf6 45%, #ec4899 75%, #22d3ee);
-  background-size: 220% 220%;
-  animation: cover-flow 18s ease-in-out infinite alternate;
+  background: linear-gradient(120deg, #6f7cff, #a68bff 55%, #f0a6d4);
 }
 :root[data-theme='dark'] .cover {
-  background-image: linear-gradient(120deg, #2a33b8, #5b2cb0 45%, #9a2a78 75%, #0e7490);
+  background-image: linear-gradient(120deg, #2a33a0, #4a2e96 55%, #6e2a63);
 }
 .cover[style*='background-image'] {
-  animation: none;
   background-size: cover;
-}
-.cover:not([style*='background-image'])::before,
-.cover:not([style*='background-image'])::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.15) 35%, rgba(255, 255, 255, 0.05) 70%);
-  box-shadow: inset -8px -10px 24px rgba(40, 20, 120, 0.3), 0 20px 40px -10px rgba(20, 10, 60, 0.35);
-  backdrop-filter: blur(4px);
-  animation: orb-float 9s ease-in-out infinite alternate;
-}
-.cover:not([style*='background-image'])::before {
-  width: 120px;
-  height: 120px;
-  right: 14%;
-  top: 22px;
-}
-.cover:not([style*='background-image'])::after {
-  width: 64px;
-  height: 64px;
-  right: 34%;
-  top: 110px;
-  animation-delay: -4s;
-}
-@keyframes cover-flow {
-  to {
-    background-position: 100% 50%;
-  }
-}
-@keyframes orb-float {
-  to {
-    transform: translateY(-16px) rotate(8deg);
-  }
 }
 .counters a {
   background: var(--field);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 0 0 1px var(--glass-edge);
-  transition: transform 0.25s, box-shadow 0.25s;
-}
-.counters a:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--lift);
 }
 
 /* ───────── Messenger ───────── */
@@ -411,11 +334,11 @@ h3,
 .bubble {
   backdrop-filter: blur(14px) saturate(160%);
   -webkit-backdrop-filter: blur(14px) saturate(160%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 0 0 1px var(--glass-edge), 0 6px 16px -10px rgba(30, 35, 90, 0.3);
+  box-shadow: 0 0 0 1px var(--glass-edge);
 }
 .bubble-row.out .bubble {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 60%), var(--bubble-out);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.45), 0 10px 22px -12px rgba(90, 80, 250, 0.8);
+  background: var(--btn-primary);
+  box-shadow: none;
 }
 .day-sep {
   background: var(--card);
@@ -423,16 +346,12 @@ h3,
 }
 .dialog.active {
   background: var(--active);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 0 0 1px var(--glass-edge);
 }
 
 /* ───────── Posts ───────── */
 .repost {
   background: var(--field);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 0 0 1px var(--glass-edge);
-}
-.post-image {
-  box-shadow: 0 14px 30px -18px rgba(20, 20, 60, 0.6);
+  box-shadow: none;
 }
 
 /* ───────── Overlays ───────── */
@@ -443,88 +362,6 @@ h3,
 .viewer {
   background: rgba(5, 6, 14, 0.8);
   backdrop-filter: blur(18px);
-}
-
-/* ───────── Auth page: 3D glass objects ───────── */
-.auth {
-  position: relative;
-  perspective: 1200px;
-}
-.auth-promo h1 {
-  background: linear-gradient(120deg, var(--text) 30%, var(--accent) 60%, var(--accent-2));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  font-size: 38px;
-}
-.auth-card h2 {
-  font-weight: 700;
-}
-.auth-card {
-  transform-style: preserve-3d;
-  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transition: transform 0.2s ease-out;
-}
-.shape3d {
-  position: absolute;
-  pointer-events: none;
-  z-index: 0;
-}
-.shape3d.orb {
-  width: 180px;
-  height: 180px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 32% 28%, #fff 0%, #c7cbff 14%, #7c6cf6 45%, #3b2aa8 80%);
-  box-shadow: inset -18px -24px 40px rgba(20, 10, 80, 0.55), inset 10px 12px 30px rgba(255, 255, 255, 0.35),
-    0 40px 60px -20px rgba(60, 40, 180, 0.55);
-  top: 8%;
-  right: 8%;
-  animation: orb-float 7s ease-in-out infinite alternate;
-}
-.shape3d.ring {
-  width: 150px;
-  height: 150px;
-  border-radius: 50%;
-  background: conic-gradient(from 0deg, #ff9fce, #8b5cf6, #22d3ee, #ff9fce);
-  -webkit-mask: radial-gradient(circle, transparent 52%, #000 53%);
-  mask: radial-gradient(circle, transparent 52%, #000 53%);
-  box-shadow: 0 30px 50px -20px rgba(139, 92, 246, 0.6);
-  bottom: 10%;
-  left: 6%;
-  transform: rotateX(62deg) rotateZ(20deg);
-  animation: ring-spin 14s linear infinite;
-  opacity: 0.9;
-}
-.shape3d.glass {
-  width: 130px;
-  height: 130px;
-  border-radius: 34px;
-  background: rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(16px);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.35), 0 30px 50px -20px rgba(30, 20, 90, 0.5);
-  top: 14%;
-  left: 40%;
-  width: 90px;
-  height: 90px;
-  border-radius: 26px;
-  transform: rotate(18deg);
-  animation: orb-float 10s ease-in-out infinite alternate-reverse;
-}
-@keyframes ring-spin {
-  to {
-    transform: rotateX(62deg) rotateZ(380deg);
-  }
-}
-.auth-promo,
-.auth-card {
-  position: relative;
-  z-index: 1;
-}
-
-/* ───────── Photo tiles: 3D tilt driven by --rx/--ry from useTilt ───────── */
-.photo-tile {
-  transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  box-shadow: 0 10px 24px -14px rgba(20, 20, 60, 0.6);
 }
 
 /* ───────── Mobile: floating glass tab bar ───────── */
@@ -545,31 +382,18 @@ h3,
     border-radius: 31px;
     background: var(--header);
   }
-  .tabbar a.active svg {
-    background: var(--gradient);
-    color: #fff;
-    box-shadow: 0 6px 14px -6px rgba(90, 80, 250, 0.8);
-  }
+
   .page {
     padding-bottom: calc(90px + env(safe-area-inset-bottom));
-  }
-  .shape3d {
-    display: none;
-  }
-  .auth-promo h1 {
-    font-size: 28px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .aurora i,
-  .cover,
-  .cover::before,
-  .cover::after,
-  .shape3d {
+  .route-view,
+  .card.post,
+  .bubble-row,
+  .toast {
     animation: none !important;
-  }
-  .card.post:hover {
-    transform: none;
   }
 }

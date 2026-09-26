@@ -157,38 +157,9 @@ export function AutoTextarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>)
   return <textarea ref={ref} rows={1} {...props} />;
 }
 
-/** 3D tilt: writes --rx/--ry on the element as the pointer moves over it. */
-export function useTilt<T extends HTMLElement>(max = 8) {
-  const ref = useRef<T>(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || matchMedia('(hover: none), (prefers-reduced-motion: reduce)').matches) return;
-    const move = (e: PointerEvent) => {
-      const r = el.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width - 0.5;
-      const y = (e.clientY - r.top) / r.height - 0.5;
-      el.style.setProperty('--rx', `${(-y * max).toFixed(2)}deg`);
-      el.style.setProperty('--ry', `${(x * max).toFixed(2)}deg`);
-    };
-    const leave = () => {
-      el.style.setProperty('--rx', '0deg');
-      el.style.setProperty('--ry', '0deg');
-    };
-    el.addEventListener('pointermove', move);
-    el.addEventListener('pointerleave', leave);
-    return () => {
-      el.removeEventListener('pointermove', move);
-      el.removeEventListener('pointerleave', leave);
-    };
-  }, [max]);
-  return ref;
-}
-
-/** Photo tile with a 3D tilt on hover. */
 export function PhotoTile({ url, onClick, style }: { url: string; onClick: () => void; style?: CSSProperties }) {
-  const ref = useTilt<HTMLButtonElement>(14);
   return (
-    <button ref={ref} className="photo-tile" style={style} onClick={onClick}>
+    <button className="photo-tile" style={style} onClick={onClick}>
       <img src={url} alt="" loading="lazy" decoding="async" />
     </button>
   );
