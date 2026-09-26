@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type Text
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
-const COLORS = ['#e64646', '#ff9e2c', '#4bb34b', '#2688eb', '#792ec0', '#3cc2d9', '#ff5c93', '#5181b8'];
+const COLORS = ['#4c5bf5', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6', '#0ea5e9', '#22c55e', '#6366f1'];
 
 export function Avatar({
   src,

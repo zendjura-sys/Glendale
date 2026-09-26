@@ -75,7 +75,7 @@ export default function FeedPage() {
             </div>
             {groups.slice(0, 4).map((g) => (
               <Link to={`/club/${g.id}`} className="row row-link" key={g.id} style={{ padding: '8px 16px' }}>
-                <Avatar src={g.avatar} name={g.name} id={g.id + 100} size={40} />
+                <Avatar src={g.avatar} name={g.name} id={g.id + 100} square size={40} />
                 <div className="info">
                   <div className="name ellipsis">{g.name}</div>
                   <div className="meta">{countLabel(g.membersCount, 'участник', 'участника', 'участников')}</div>

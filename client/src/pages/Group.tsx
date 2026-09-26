@@ -172,8 +172,8 @@ export default function GroupPage() {
           )}
         </div>
         <div className="profile-info">
-          <div className="profile-avatar">
-            <Avatar src={group.avatar} name={group.name} id={group.id + 100} size={112} />
+          <div className="profile-avatar" style={{ borderRadius: '32%' }}>
+            <Avatar src={group.avatar} name={group.name} id={group.id + 100} square size={112} />
             {group.isAdmin && (
               <button className="avatar-edit" onClick={() => upload('avatar')} aria-label="Изменить фотографию">
                 <Camera size={26} />

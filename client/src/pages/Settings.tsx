@@ -25,8 +25,8 @@ function ThemePicker() {
   );
   return (
     <div className="theme-options">
-      {option('light', 'Светлая', '#edeef0', '#ffffff', '#0077ff')}
-      {option('dark', 'Тёмная', '#141414', '#222222', '#71aaeb')}
+      {option('light', 'Светлая', '#f3f4f8', '#ffffff', '#4c5bf5')}
+      {option('dark', 'Тёмная', '#0e1016', '#171a23', '#8b95ff')}
     </div>
   );
 }

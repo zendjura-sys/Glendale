@@ -51,7 +51,7 @@ export function GroupRow({ g }: { g: Group }) {
   return (
     <div className="row">
       <Link to={`/club/${g.id}`}>
-        <Avatar src={g.avatar} name={g.name} id={g.id + 100} size={64} />
+        <Avatar src={g.avatar} name={g.name} id={g.id + 100} square size={64} />
       </Link>
       <div className="info">
         <Link to={`/club/${g.id}`} className="name" style={{ fontSize: 14 }}>

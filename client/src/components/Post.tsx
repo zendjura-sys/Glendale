@@ -44,7 +44,7 @@ function PostHeader({ post }: { post: Post }) {
   return (
     <>
       <Link to={link}>
-        <Avatar src={asGroup ? post.group!.avatar : post.author.avatar} name={name} id={asGroup ? post.group!.id + 100 : post.author.id} size={40} />
+        <Avatar src={asGroup ? post.group!.avatar : post.author.avatar} name={name} id={asGroup ? post.group!.id + 100 : post.author.id} size={40} square={!!asGroup} />
       </Link>
       <div className="who">
         <div className="ellipsis">

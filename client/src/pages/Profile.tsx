@@ -294,7 +294,7 @@ export default function ProfilePage() {
               </div>
               {user.groupsSample.map((g) => (
                 <Link key={g.id} to={`/club/${g.id}`} className="row row-link" style={{ padding: '6px 16px', borderTop: 'none' }}>
-                  <Avatar src={g.avatar} name={g.name} id={g.id + 100} size={36} />
+                  <Avatar src={g.avatar} name={g.name} id={g.id + 100} square size={36} />
                   <div className="info">
                     <div className="name ellipsis">{g.name}</div>
                     <div className="meta">{countLabel(g.membersCount, 'участник', 'участника', 'участников')}</div>
