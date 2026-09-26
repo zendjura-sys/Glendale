@@ -1,0 +1,17 @@
+{
+  "name": "glendale",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Glendale — социальная сеть в стиле ВКонтакте",
+  "workspaces": ["server", "client"],
+  "scripts": {
+    "dev": "concurrently -k -n server,client -c blue,green \"npm run dev -w server\" \"npm run dev -w client\"",
+    "build": "npm run build -w client",
+    "start": "npm run start -w server",
+    "seed": "npm run seed -w server",
+    "typecheck": "npm run typecheck -w client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0"
+  }
+}
