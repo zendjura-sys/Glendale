@@ -1,5 +1,6 @@
 import { q, now } from './db.js';
 import { isOnline, send } from './realtime.js';
+import { levelOf, isStaff } from './auth.js';
 
 const ONLINE_WINDOW = 5 * 60 * 1000;
 
@@ -12,6 +13,7 @@ export function userShort(u) {
     avatar: u.avatar,
     online: isOnline(u.id) || now() - u.last_seen < ONLINE_WINDOW,
     lastSeen: u.last_seen,
+    verified: !!u.verified,
   };
 }
 
@@ -25,6 +27,34 @@ export function userFull(u) {
     birthday: u.birthday,
     createdAt: u.created_at,
   };
+}
+
+/** The signed-in user's own profile, with level and permissions for the UI. */
+export function meFull(u) {
+  const l = levelOf(u);
+  return {
+    ...userFull(u),
+    email: u.email,
+    level: { id: l.id, title: l.title, type: l.type },
+    permissions: {
+      post: !!l.can_post,
+      comment: !!l.can_comment,
+      message: !!l.can_message,
+      createGroups: !!l.can_create_groups,
+      upload: !!l.can_upload,
+    },
+  };
+}
+
+const staffCache = new Map();
+/** Whether a user is staff (moderator or admin). Cached briefly per request burst. */
+export function isStaffUser(id) {
+  const hit = staffCache.get(id);
+  if (hit && hit.at > Date.now() - 2000) return hit.value;
+  const u = getUser(id);
+  const value = !!u && isStaff(levelOf(u));
+  staffCache.set(id, { value, at: Date.now() });
+  return value;
 }
 
 export function groupShort(g, meId) {
@@ -85,6 +115,7 @@ export function hydratePosts(rows, meId, depth = 0) {
     let canDelete = p.author_id === meId;
     if (!canDelete && p.owner_type === 'user') canDelete = p.owner_id === meId;
     if (!canDelete && p.owner_type === 'group') canDelete = isGroupAdmin(p.owner_id, meId);
+    if (!canDelete) canDelete = isStaffUser(meId);
 
     return {
       id: p.id,

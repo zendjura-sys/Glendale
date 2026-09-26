@@ -9,6 +9,7 @@ import { countLabel, formatDate, fullName } from '../lib/utils';
 import { Composer } from '../components/Composer';
 import { PostList } from '../components/Post';
 import { Avatar, Empty, Modal, Spinner, pickFile } from '../components/ui';
+import { ReportButton } from '../components/Moderation';
 
 export function JoinButton({ group, compact }: { group: Group; compact?: boolean }) {
   const qc = useQueryClient();
@@ -189,6 +190,7 @@ export default function GroupPage() {
           </div>
           <div className="profile-buttons">
             <JoinButton group={group} />
+            {!group.isAdmin && <ReportButton target={{ type: 'group', id: group.id }} className="icon-btn" />}
             {group.isAdmin && (
               <button className="btn secondary" onClick={() => setEditing(true)}>
                 <Pencil size={16} /> Управление

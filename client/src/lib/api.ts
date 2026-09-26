@@ -18,7 +18,7 @@ export const setToken = (token: string | null) => {
 };
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  constructor(public status: number, message: string, public code?: string) {
     super(message);
   }
 }
@@ -46,7 +46,8 @@ export async function api<T = unknown>(path: string, options: { method?: string;
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     if (res.status === 401 && token) onUnauthorized();
-    throw new ApiError(res.status, data.error || 'Что-то пошло не так');
+    if (data.code === 'maintenance') window.dispatchEvent(new Event('maintenance'));
+    throw new ApiError(res.status, data.error || 'Что-то пошло не так', data.code);
   }
   return data as T;
 }

@@ -59,7 +59,7 @@ const DIALOG = [
 
 export function seed({ reset = false } = {}) {
   if (reset) {
-    for (const t of ['notifications', 'photos', 'messages', 'comments', 'likes', 'posts', 'group_members', 'groups', 'friend_requests', 'friends', 'sessions', 'users']) {
+    for (const t of ['admin_log', 'reports', 'announcements', 'notifications', 'photos', 'messages', 'comments', 'likes', 'posts', 'group_members', 'groups', 'friend_requests', 'friends', 'sessions', 'users']) {
       db.exec(`DELETE FROM ${t}`);
     }
     db.exec('DELETE FROM sqlite_sequence');
@@ -152,11 +152,39 @@ export function seed({ reset = false } = {}) {
       insNotif.run(demo, others[4], 'comment', demoPost.id, 'Привет! Добро пожаловать 🙂', Date.now() - 2 * 60 * 60 * 1000);
     }
     insNotif.run(demo, others[8], 'friend_request', null, '', Date.now() - DAY);
+
+    // Staff accounts and admin-panel sample data.
+    const levelId = (type) => q('SELECT id FROM levels WHERE type = ? ORDER BY id LIMIT 1').get(type).id;
+    db.exec(`UPDATE users SET level_id = ${levelId('user')} WHERE level_id IS NULL OR level_id NOT IN (SELECT id FROM levels)`);
+    const adminId = Number(
+      insUser.run('Админ', 'Glendale', 'admin@glendale.app', hashPassword('admin123'), 'Администратор сети', 'Москва', '', '', start, Date.now()).lastInsertRowid,
+    );
+    const modId = Number(
+      insUser.run('Модератор', 'Glendale', 'moderator@glendale.app', hash, 'Слежу за порядком', 'Казань', '', '', start, Date.now() - DAY).lastInsertRowid,
+    );
+    q('UPDATE users SET level_id = ?, verified = 1 WHERE id = ?').run(levelId('superadmin'), adminId);
+    q('UPDATE users SET level_id = ?, verified = 1 WHERE id = ?').run(levelId('moderator'), modId);
+    q('UPDATE users SET verified = 1 WHERE id = ?').run(others[1]);
+    // One member waiting for approval, one banned.
+    const pendingId = Number(insUser.run('Новый', 'Участник', 'pending@glendale.app', hash, '', 'Тверь', '', '', Date.now() - 3600_000, Date.now() - 3600_000).lastInsertRowid);
+    q('UPDATE users SET approved = 0, level_id = ? WHERE id = ?').run(levelId('user'), pendingId);
+    q('UPDATE users SET enabled = 0 WHERE id = ?').run(others[10]);
+
+    q('INSERT INTO announcements (title, body, author_id, active, created_at) VALUES (?, ?, ?, 1, ?)').run(
+      'Добро пожаловать в Glendale!',
+      'Мы запустили новую версию сети: мгновенные сообщения, сообщества и тёмная тема. Пожалуйтесь на нарушение через меню «…» у записи — модераторы разберутся.',
+      adminId,
+      Date.now() - 2 * DAY,
+    );
+    const insReport = q('INSERT INTO reports (reporter_id, target_type, target_id, category, description, created_at) VALUES (?, ?, ?, ?, ?, ?)');
+    insReport.run(others[2], 'post', postIds[3], 'spam', 'Похоже на рекламу', Date.now() - 5 * 3600_000);
+    insReport.run(others[5], 'post', postIds[3], 'spam', '', Date.now() - 4 * 3600_000);
+    insReport.run(demo, 'user', others[9], 'fake', 'Чужие фотографии в профиле', Date.now() - 2 * 3600_000);
   });
   return true;
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   seed({ reset: true });
-  console.log('База заполнена демо-данными. Вход: demo@glendale.app / demo123');
+  console.log('База заполнена демо-данными. Вход: demo@glendale.app / demo123, админ: admin@glendale.app / admin123');
 }

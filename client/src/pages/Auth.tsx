@@ -4,9 +4,12 @@ import { ThemeSwitch } from '../components/uiverse';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useTheme } from '../lib/theme';
-import type { User } from '../lib/types';
+import { useConfig } from '../lib/config';
+import type { Me } from '../lib/types';
 
-export default function AuthPage() {
+export default function AuthPage({ staffOnly = false }: { staffOnly?: boolean }) {
+  const { config } = useConfig();
+  const [notice, setNotice] = useState('');
   const { signIn } = useAuth();
   const { theme, setTheme } = useTheme();
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -20,8 +23,13 @@ export default function AuthPage() {
     setBusy(true);
     setError('');
     try {
-      const r = await api<{ token: string; user: User }>(`/auth/${mode}`, { body: fields });
-      signIn(r.token, r.user);
+      const r = await api<{ token?: string; user?: Me; pending?: boolean; message?: string }>(`/auth/${mode}`, { body: fields });
+      if (r.pending) {
+        setNotice(r.message ?? 'Заявка отправлена');
+        setMode('login');
+        return;
+      }
+      signIn(r.token!, r.user!);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -42,8 +50,8 @@ export default function AuthPage() {
             <path d="M18.5 7.5A8 8 0 1 0 20 12h-7" />
           </svg>
         </span>
-        <h1>Glendale — общайтесь без задержек</h1>
-        <p>Социальная сеть для общения с друзьями, сообществами и всеми, кто вам интересен.</p>
+        <h1>{config.siteTitle} — общайтесь без задержек</h1>
+        <p>{config.siteDescription || 'Социальная сеть для общения с друзьями, сообществами и всеми, кто вам интересен.'}</p>
         <div className="auth-features">
           <div>
             <Zap size={22} /> Мгновенные сообщения и уведомления
@@ -58,7 +66,7 @@ export default function AuthPage() {
       </div>
 
       <form className="card auth-card" onSubmit={submit}>
-        <h2>{mode === 'login' ? 'Вход в Glendale' : 'Регистрация'}</h2>
+        <h2>{staffOnly ? 'Вход для администрации' : mode === 'login' ? `Вход в ${config.siteTitle}` : 'Регистрация'}</h2>
         {mode === 'register' && (
           <>
             <div className="form-row">
@@ -85,23 +93,30 @@ export default function AuthPage() {
           />
         </div>
         {error && <div className="error-text">{error}</div>}
+        {notice && <div className="auth-hint" style={{ margin: '0 0 12px' }}>{notice}</div>}
+        {mode === 'register' && config.signupMode === 'approval' && (
+          <div className="auth-hint" style={{ margin: '0 0 12px' }}>Новые аккаунты активируются после проверки администратором.</div>
+        )}
         <button className="btn block lg" disabled={busy}>
           {mode === 'login' ? 'Войти' : 'Зарегистрироваться'}
         </button>
-        <button
-          type="button"
-          className="btn secondary block lg"
-          style={{ marginTop: 10 }}
-          onClick={() => {
-            setMode(mode === 'login' ? 'register' : 'login');
-            setError('');
-          }}
-        >
-          {mode === 'login' ? 'Создать аккаунт' : 'У меня уже есть аккаунт'}
-        </button>
-        {mode === 'login' && (
+        {!staffOnly && config.signupMode !== 'closed' && (
+          <button
+            type="button"
+            className="btn secondary block lg"
+            style={{ marginTop: 10 }}
+            onClick={() => {
+              setMode(mode === 'login' ? 'register' : 'login');
+              setError('');
+              setNotice('');
+            }}
+          >
+            {mode === 'login' ? 'Создать аккаунт' : 'У меня уже есть аккаунт'}
+          </button>
+        )}
+        {mode === 'login' && !staffOnly && (
           <div className="auth-hint">
-            Демо-доступ: <b>demo@glendale.app</b> / <b>demo123</b>{' '}
+            Демо-доступ: <b>demo@glendale.app</b> / <b>demo123</b>, админ: <b>admin@glendale.app</b> / <b>admin123</b>{' '}
             <button type="button" className="more-link" onClick={demo}>
               подставить
             </button>

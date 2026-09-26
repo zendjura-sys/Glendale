@@ -1,4 +1,7 @@
-import { lazy } from 'react';
+import { lazy, Suspense, useState } from 'react';
+import { Wrench } from 'lucide-react';
+import { useConfig } from './lib/config';
+import { isStaffLevel } from './lib/types';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './lib/auth';
 import { RealtimeProvider } from './lib/realtime';
@@ -18,6 +21,7 @@ const SearchPage = lazy(() => import('./pages/Search'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const SettingsPage = lazy(() => import('./pages/Settings'));
 const PostPage = lazy(() => import('./pages/PostPage'));
+const AdminApp = lazy(() => import('./admin'));
 
 function NotFound() {
   return (
@@ -27,8 +31,43 @@ function NotFound() {
   );
 }
 
+function MaintenanceScreen() {
+  const { config } = useConfig();
+  const { user, signOut } = useAuth();
+  const [staffLogin, setStaffLogin] = useState(false);
+  if (staffLogin && !user) return <AuthPage staffOnly />;
+  return (
+    <div className="maintenance-screen">
+      <div className="card">
+        <span className="announcement-icon" style={{ margin: '0 auto 14px', width: 52, height: 52, borderRadius: 16 }}>
+          <Wrench size={26} />
+        </span>
+        <h2 style={{ fontSize: 20, marginBottom: 8 }}>{config.siteTitle} на обслуживании</h2>
+        <p className="muted" style={{ whiteSpace: 'pre-wrap' }}>{config.maintenanceMessage}</p>
+        {user ? (
+          <button className="btn secondary" onClick={signOut}>
+            Выйти
+          </button>
+        ) : (
+          <button className="more-link" onClick={() => setStaffLogin(true)}>
+            Вход для администрации
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const { user, loading } = useAuth();
+  const { config, ready } = useConfig();
+  if (ready && config.maintenance && !(user && isStaffLevel(user.level.type)) && !loading)
+    return (
+      <>
+        <Aurora />
+        <MaintenanceScreen />
+      </>
+    );
   if (loading)
     return (
       <>
@@ -47,6 +86,14 @@ export default function App() {
     <RealtimeProvider>
       <Aurora />
       <Routes>
+        <Route
+          path="admin/*"
+          element={
+            <Suspense fallback={<Spinner />}>
+              <AdminApp />
+            </Suspense>
+          }
+        />
         <Route element={<Layout />}>
           <Route index element={<Navigate to="/feed" replace />} />
           <Route path="feed" element={<FeedPage />} />

@@ -14,6 +14,13 @@ export function send(userId, type, payload) {
   for (const ws of set) if (ws.readyState === ws.OPEN) ws.send(data);
 }
 
+/** Closes every socket of a user (after a ban, deletion or forced logout). */
+export function kick(userId) {
+  const set = sockets.get(userId);
+  if (!set) return;
+  for (const ws of set) ws.close(4003, 'session ended');
+}
+
 function friendIds(userId) {
   return q('SELECT friend_id AS id FROM friends WHERE user_id = ?').all(userId).map((r) => r.id);
 }

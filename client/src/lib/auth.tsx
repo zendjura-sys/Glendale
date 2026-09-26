@@ -1,20 +1,20 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { api, getToken, setToken, setUnauthorizedHandler } from './api';
-import type { User } from './types';
+import type { Me } from './types';
 
 interface AuthState {
-  user: User | null;
+  user: Me | null;
   loading: boolean;
-  signIn: (token: string, user: User) => void;
+  signIn: (token: string, user: Me) => void;
   signOut: () => void;
-  setUser: (user: User) => void;
+  setUser: (user: Me) => void;
 }
 
 const AuthContext = createContext<AuthState>(null!);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<Me | null>(null);
   const [loading, setLoading] = useState(!!getToken());
   const qc = useQueryClient();
 
@@ -27,13 +27,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setUnauthorizedHandler(reset);
     if (!getToken()) return;
-    api<{ user: User }>('/me')
+    api<{ user: Me }>('/me')
       .then((r) => setUser(r.user))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [reset]);
 
-  const signIn = useCallback((token: string, u: User) => {
+  const signIn = useCallback((token: string, u: Me) => {
     setToken(token);
     setUser(u);
   }, []);

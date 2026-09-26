@@ -1,13 +1,14 @@
 import { memo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useInfiniteQuery, useQuery, useQueryClient, type InfiniteData, type QueryClient } from '@tanstack/react-query';
-import { Heart, MessageCircle, MoreHorizontal, Newspaper, Repeat2, Share2, Trash2 } from 'lucide-react';
+import { Flag, Heart, MessageCircle, MoreHorizontal, Newspaper, Repeat2, Share2, Trash2 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useMe } from '../lib/auth';
 import type { Comment, Page, Post } from '../lib/types';
 import { formatDate, fullName } from '../lib/utils';
 import { AutoTextarea, Avatar, Empty, Modal, PhotoViewer, PostSkeleton, Spinner, useClickOutside, useSentinel } from './ui';
 import { LikeBurst, SendButton } from './uiverse';
+import { ReportModal, Verified } from './Moderation';
 
 type PostPages = InfiniteData<Page<Post>, number | undefined>;
 
@@ -52,6 +53,12 @@ function PostHeader({ post }: { post: Post }) {
           <Link to={link} className="name">
             {name}
           </Link>
+          {!asGroup && post.author.verified && (
+            <>
+              {' '}
+              <Verified size={14} />
+            </>
+          )}
           {post.wallOwner && (
             <span className="muted">
               {' '}▸{' '}
@@ -225,6 +232,8 @@ export const PostCard = memo(function PostCard({ post, openComments = false }: {
   const [showComments, setShowComments] = useState(openComments);
   const [menu, setMenu] = useState(false);
   const [repostOpen, setRepostOpen] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const me = useMe();
   const [pop, setPop] = useState(false);
   const menuRef = useClickOutside<HTMLDivElement>(menu, () => setMenu(false));
 
@@ -267,6 +276,17 @@ export const PostCard = memo(function PostCard({ post, openComments = false }: {
               <button className="menu-item" onClick={copyLink}>
                 <Share2 size={18} /> Скопировать ссылку
               </button>
+              {post.author.id !== me.id && (
+                <button
+                  className="menu-item"
+                  onClick={() => {
+                    setMenu(false);
+                    setReporting(true);
+                  }}
+                >
+                  <Flag size={18} /> Пожаловаться
+                </button>
+              )}
               {post.canDelete && (
                 <button className="menu-item danger" onClick={remove}>
                   <Trash2 size={18} /> Удалить запись
@@ -317,6 +337,7 @@ export const PostCard = memo(function PostCard({ post, openComments = false }: {
         />
       )}
       {repostOpen && <RepostModal post={source ?? post} onClose={() => setRepostOpen(false)} />}
+      {reporting && <ReportModal target={{ type: 'post', id: post.id }} onClose={() => setReporting(false)} />}
     </article>
   );
 });

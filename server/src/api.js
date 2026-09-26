@@ -1,6 +1,8 @@
 import express from 'express';
 import { q, tx, now } from './db.js';
-import { hashPassword, verifyPassword, createSession, requireAuth } from './auth.js';
+import { hashPassword, verifyPassword, createSession, requireAuth, levelOf, isStaff, clientIp } from './auth.js';
+import { fail, intParam, str, PAGE, beforeParam, page, errorHandler } from './http.js';
+import { getSetting, publicConfig, isEmailBanned, isIpBanned, censor } from './settings.js';
 import { upload, fileUrl } from './uploads.js';
 import { send } from './realtime.js';
 import {
@@ -19,32 +21,27 @@ import {
   notify,
   counters,
   pushCounters,
+  meFull,
 } from './models.js';
 
 export const api = express.Router();
 
-const PAGE = 20;
-
-class HttpError extends Error {
-  constructor(status, message) {
-    super(message);
-    this.status = status;
-  }
+/** Throws 403 unless the member level allows `flag` (can_post, can_comment, ...). */
+function need(req, flag, message) {
+  if (!req.level[flag]) fail(403, message || 'Ваш уровень доступа не позволяет это действие', 'forbidden');
 }
-const fail = (status, message) => {
-  throw new HttpError(status, message);
-};
 
-const intParam = (v) => {
-  const n = Number(v);
-  return Number.isInteger(n) && n > 0 ? n : null;
-};
-const beforeParam = (req) => intParam(req.query.before) ?? Number.MAX_SAFE_INTEGER;
-const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
-
-function page(items) {
-  return { items, nextCursor: items.length === PAGE ? items[items.length - 1].id : null };
+/** Flood control: minimum pause between posts for the member's level. */
+function checkFlood(req) {
+  const seconds = req.level.flood_seconds;
+  if (!seconds) return;
+  const last = q('SELECT created_at FROM posts WHERE author_id = ? ORDER BY id DESC LIMIT 1').get(req.user.id);
+  if (last && now() - last.created_at < seconds * 1000) fail(429, `Подождите ${seconds} сек. перед следующей публикацией`);
 }
+
+// ───────────────────────────── public ─────────────────────────────
+
+api.get('/config', (_req, res) => res.json(publicConfig()));
 
 // ───────────────────────────── auth ─────────────────────────────
 
@@ -58,20 +55,60 @@ api.post('/auth/register', (req, res) => {
   if (password.length < 6) fail(400, 'Пароль должен быть не короче 6 символов');
   if (q('SELECT 1 FROM users WHERE email = ?').get(email)) fail(409, 'Пользователь с таким email уже существует');
 
+  const mode = getSetting('signupMode');
+  if (mode === 'closed') fail(403, 'Регистрация временно закрыта');
+  if (getSetting('maintenance')) fail(503, getSetting('maintenanceMessage'), 'maintenance');
+  const ip = clientIp(req);
+  if (isEmailBanned(email) || isIpBanned(ip)) fail(403, 'Регистрация с этим адресом запрещена');
+
+  // The very first account of a fresh installation becomes the superadmin.
+  const hasSuperadmin = q("SELECT 1 FROM users u JOIN levels l ON l.id = u.level_id WHERE l.type = 'superadmin'").get();
+  const levelId = hasSuperadmin
+    ? q('SELECT id FROM levels WHERE is_default = 1').get().id
+    : q("SELECT id FROM levels WHERE type = 'superadmin'").get().id;
+  const approved = mode === 'approval' && hasSuperadmin ? 0 : 1;
+
   const t = now();
   const r = q(
-    'INSERT INTO users (first_name, last_name, email, password_hash, created_at, last_seen) VALUES (?, ?, ?, ?, ?, ?)',
-  ).run(firstName, lastName, email, hashPassword(password), t, t);
+    `INSERT INTO users (first_name, last_name, email, password_hash, level_id, approved, signup_ip, last_ip, created_at, last_seen)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(firstName, lastName, email, hashPassword(password), levelId, approved, ip, ip, t, t);
   const user = getUser(Number(r.lastInsertRowid));
-  res.status(201).json({ token: createSession(user.id), user: userFull(user) });
+  if (!approved) return res.status(202).json({ pending: true, message: 'Заявка на регистрацию отправлена. Вы сможете войти после одобрения администратором.' });
+  res.status(201).json({ token: createSession(user.id), user: meFull(user) });
 });
 
 api.post('/auth/login', (req, res) => {
   const email = str(req.body.email, 120).toLowerCase();
   const password = typeof req.body.password === 'string' ? req.body.password : '';
   const user = q('SELECT * FROM users WHERE email = ?').get(email);
-  if (!user || !verifyPassword(password, user.password_hash)) fail(401, 'Неверный email или пароль');
-  res.json({ token: createSession(user.id), user: userFull(user) });
+  if (!user) fail(401, 'Неверный email или пароль');
+
+  // Temporary lock after repeated failed attempts (anti brute force).
+  if (user.locked_until > now()) {
+    const minutes = Math.ceil((user.locked_until - now()) / 60000);
+    fail(429, `Слишком много неудачных попыток. Попробуйте через ${minutes} мин.`);
+  }
+  if (!verifyPassword(password, user.password_hash)) {
+    const attempts = user.failed_logins + 1;
+    const limit = getSetting('lockAttempts');
+    const lock = limit > 0 && attempts >= limit;
+    q('UPDATE users SET failed_logins = ?, locked_until = ? WHERE id = ?').run(
+      lock ? 0 : attempts,
+      lock ? now() + getSetting('lockMinutes') * 60000 : 0,
+      user.id,
+    );
+    fail(401, 'Неверный email или пароль');
+  }
+  if (!user.enabled) fail(403, 'Аккаунт заблокирован администрацией', 'banned');
+  if (!user.approved) fail(403, 'Аккаунт ожидает одобрения администратором', 'pending');
+  const staff = isStaff(levelOf(user));
+  const ip = clientIp(req);
+  if (!staff && isIpBanned(ip)) fail(403, 'Доступ с вашего адреса ограничен', 'banned');
+  if (!staff && getSetting('maintenance')) fail(503, getSetting('maintenanceMessage'), 'maintenance');
+
+  q('UPDATE users SET failed_logins = 0, locked_until = 0, last_ip = ? WHERE id = ?').run(ip, user.id);
+  res.json({ token: createSession(user.id), user: meFull(user) });
 });
 
 api.use(requireAuth);
@@ -84,7 +121,7 @@ api.post('/auth/logout', (req, res) => {
 // ───────────────────────────── me / users ─────────────────────────────
 
 api.get('/me', (req, res) => {
-  res.json({ user: userFull(req.user), counters: counters(req.user.id) });
+  res.json({ user: meFull(req.user), counters: counters(req.user.id) });
 });
 
 api.get('/counters', (req, res) => res.json(counters(req.user.id)));
@@ -99,7 +136,7 @@ api.patch('/me', (req, res) => {
     if (key === 'birthday' && value && !/^\d{4}-\d{2}-\d{2}$/.test(value)) fail(400, 'Некорректная дата рождения');
     q(`UPDATE users SET ${col} = ? WHERE id = ?`).run(value, req.user.id);
   }
-  res.json(userFull(getUser(req.user.id)));
+  res.json(meFull(getUser(req.user.id)));
 });
 
 api.post('/me/password', (req, res) => {
@@ -116,19 +153,21 @@ api.post('/me/password', (req, res) => {
 });
 
 api.post('/me/avatar', upload.single('image'), (req, res) => {
+  need(req, 'can_upload', 'Загрузка фотографий недоступна для вашего уровня');
   if (!req.file) fail(400, 'Файл не выбран');
   const url = fileUrl(req.file);
   tx(() => {
     q('UPDATE users SET avatar = ? WHERE id = ?').run(url, req.user.id);
     q("INSERT INTO photos (user_id, url, album, created_at) VALUES (?, ?, 'profile', ?)").run(req.user.id, url, now());
   });
-  res.json(userFull(getUser(req.user.id)));
+  res.json(meFull(getUser(req.user.id)));
 });
 
 api.post('/me/cover', upload.single('image'), (req, res) => {
+  need(req, 'can_upload', 'Загрузка фотографий недоступна для вашего уровня');
   if (!req.file) fail(400, 'Файл не выбран');
   q('UPDATE users SET cover = ? WHERE id = ?').run(fileUrl(req.file), req.user.id);
-  res.json(userFull(getUser(req.user.id)));
+  res.json(meFull(getUser(req.user.id)));
 });
 
 api.get('/users/:id', (req, res) => {
@@ -299,7 +338,10 @@ api.get('/posts/:id', (req, res) => {
 
 api.post('/posts', upload.single('image'), (req, res) => {
   const me = req.user.id;
-  const text = str(req.body.text, 10000);
+  need(req, 'can_post', 'Публикация записей недоступна для вашего уровня');
+  if (req.file) need(req, 'can_upload', 'Загрузка фотографий недоступна для вашего уровня');
+  checkFlood(req);
+  const text = censor(str(req.body.text, 10000));
   const image = fileUrl(req.file);
   if (!text && !image) fail(400, 'Запись не может быть пустой');
   const ownerType = req.body.ownerType === 'group' ? 'group' : 'user';
@@ -308,7 +350,7 @@ api.post('/posts', upload.single('image'), (req, res) => {
 
   if (ownerType === 'user') {
     if (!getUser(ownerId)) fail(404, 'Пользователь не найден');
-    if (ownerId !== me && !areFriends(me, ownerId)) fail(403, 'Писать на стене могут только друзья');
+    if (ownerId !== me && getSetting('wallForFriendsOnly') && !areFriends(me, ownerId)) fail(403, 'Писать на стене могут только друзья');
   } else {
     if (!getGroup(ownerId)) fail(404, 'Сообщество не найдено');
     if (!isGroupAdmin(ownerId, me)) fail(403, 'Публиковать записи могут только администраторы сообщества');
@@ -366,7 +408,8 @@ api.post('/posts/:id/repost', (req, res) => {
   // Reposting a repost shares the original, like VK does.
   if (p.repost_of) p = q('SELECT * FROM posts WHERE id = ?').get(p.repost_of) ?? p;
   if (q('SELECT 1 FROM posts WHERE repost_of = ? AND author_id = ?').get(p.id, me)) fail(409, 'Вы уже поделились этой записью');
-  const text = str(req.body?.text, 2000);
+  need(req, 'can_post', 'Публикация записей недоступна для вашего уровня');
+  const text = censor(str(req.body?.text, 2000));
   const r = q(
     "INSERT INTO posts (author_id, owner_type, owner_id, text, repost_of, created_at) VALUES (?, 'user', ?, ?, ?, ?)",
   ).run(me, me, text, p.id, now());
@@ -383,7 +426,8 @@ api.get('/posts/:id/comments', (req, res) => {
 
 api.post('/posts/:id/comments', (req, res) => {
   const p = postOr404(req.params.id);
-  const text = str(req.body.text, 4000);
+  need(req, 'can_comment', 'Комментирование недоступно для вашего уровня');
+  const text = censor(str(req.body.text, 4000));
   if (!text) fail(400, 'Комментарий не может быть пустым');
   const r = q('INSERT INTO comments (post_id, author_id, text, created_at) VALUES (?, ?, ?, ?)').run(p.id, req.user.id, text, now());
   notify(p.author_id, req.user.id, 'comment', { postId: p.id, text: text.slice(0, 120) });
@@ -438,7 +482,9 @@ api.post('/messages/:peerId', upload.single('image'), (req, res) => {
   const me = req.user.id;
   const peer = intParam(req.params.peerId);
   if (!getUser(peer)) fail(404, 'Пользователь не найден');
-  const text = str(req.body.text, 4000);
+  need(req, 'can_message', 'Отправка сообщений недоступна для вашего уровня');
+  if (req.file) need(req, 'can_upload', 'Загрузка фотографий недоступна для вашего уровня');
+  const text = censor(str(req.body.text, 4000));
   const image = fileUrl(req.file);
   if (!text && !image) fail(400, 'Сообщение не может быть пустым');
   const r = q('INSERT INTO messages (from_id, to_id, text, image, is_read, created_at) VALUES (?, ?, ?, ?, ?, ?)').run(
@@ -494,9 +540,10 @@ api.get('/groups', (req, res) => {
 });
 
 api.post('/groups', (req, res) => {
-  const name = str(req.body.name, 100);
+  need(req, 'can_create_groups', 'Создание сообществ недоступно для вашего уровня');
+  const name = censor(str(req.body.name, 100));
   if (!name) fail(400, 'Укажите название сообщества');
-  const description = str(req.body.description, 2000);
+  const description = censor(str(req.body.description, 2000));
   const t = now();
   const id = tx(() => {
     const r = q('INSERT INTO groups (name, description, owner_id, created_at) VALUES (?, ?, ?, ?)').run(name, description, req.user.id, t);
@@ -596,6 +643,7 @@ api.get('/users/:id/photos', (req, res) => {
 });
 
 api.post('/photos', upload.array('images', 10), (req, res) => {
+  need(req, 'can_upload', 'Загрузка фотографий недоступна для вашего уровня');
   if (!req.files?.length) fail(400, 'Файлы не выбраны');
   const t = now();
   const ids = tx(() =>
@@ -650,14 +698,51 @@ api.get('/search', (req, res) => {
   });
 });
 
+// ───────────────────────────── reports & announcements ─────────────────────────────
+
+export const REPORT_CATEGORIES = {
+  spam: 'Спам',
+  abuse: 'Оскорбления',
+  inappropriate: 'Неприемлемый контент',
+  fake: 'Фейк или мошенничество',
+  copyright: 'Нарушение авторских прав',
+  other: 'Другое',
+};
+
+const reportTargetExists = {
+  post: (id) => q('SELECT 1 FROM posts WHERE id = ?').get(id),
+  comment: (id) => q('SELECT 1 FROM comments WHERE id = ?').get(id),
+  user: (id) => q('SELECT 1 FROM users WHERE id = ?').get(id),
+  group: (id) => q('SELECT 1 FROM groups WHERE id = ?').get(id),
+  message: (id) => q('SELECT 1 FROM messages WHERE id = ?').get(id),
+};
+
+api.post('/reports', (req, res) => {
+  const type = str(req.body.targetType, 20);
+  const id = intParam(req.body.targetId);
+  const category = str(req.body.category, 30);
+  if (!reportTargetExists[type] || !id || !reportTargetExists[type](id)) fail(404, 'Объект жалобы не найден');
+  if (!REPORT_CATEGORIES[category]) fail(400, 'Выберите причину жалобы');
+  if (q("SELECT 1 FROM reports WHERE reporter_id = ? AND target_type = ? AND target_id = ? AND status = 'open'").get(req.user.id, type, id)) {
+    fail(409, 'Вы уже пожаловались на это');
+  }
+  q('INSERT INTO reports (reporter_id, target_type, target_id, category, description, created_at) VALUES (?, ?, ?, ?, ?, ?)').run(
+    req.user.id,
+    type,
+    id,
+    category,
+    str(req.body.description, 1000),
+    now(),
+  );
+  res.status(201).json({ ok: true });
+});
+
+api.get('/announcements', (_req, res) => {
+  const rows = q('SELECT * FROM announcements WHERE active = 1 ORDER BY id DESC LIMIT 3').all();
+  res.json(rows.map((a) => ({ id: a.id, title: a.title, body: a.body, createdAt: a.created_at })));
+});
+
 // ───────────────────────────── errors ─────────────────────────────
 
 api.use((req, res) => res.status(404).json({ error: 'Метод не найден' }));
-
-// eslint-disable-next-line no-unused-vars
-api.use((err, req, res, _next) => {
-  if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'Файл слишком большой (макс. 15 МБ)' });
-  const status = err.status || 500;
-  if (status >= 500) console.error(err);
-  res.status(status).json({ error: status >= 500 ? 'Внутренняя ошибка сервера' : err.message });
-});
+api.use(errorHandler);

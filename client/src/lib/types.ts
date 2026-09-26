@@ -5,7 +5,36 @@ export interface UserShort {
   avatar: string | null;
   online: boolean;
   lastSeen: number;
+  verified?: boolean;
 }
+
+export type LevelType = 'superadmin' | 'admin' | 'moderator' | 'user';
+
+export interface Me extends User {
+  email: string;
+  level: { id: number; title: string; type: LevelType };
+  permissions: { post: boolean; comment: boolean; message: boolean; createGroups: boolean; upload: boolean };
+}
+
+export interface SiteConfig {
+  siteTitle: string;
+  siteDescription: string;
+  signupMode: 'open' | 'approval' | 'closed';
+  maintenance: boolean;
+  maintenanceMessage: string;
+  accentColor: string;
+  aurora: boolean;
+}
+
+export interface Announcement {
+  id: number;
+  title: string;
+  body: string;
+  createdAt: number;
+}
+
+export const isStaffLevel = (t?: LevelType) => t === 'superadmin' || t === 'admin' || t === 'moderator';
+export const isAdminLevel = (t?: LevelType) => t === 'superadmin' || t === 'admin';
 
 export interface User extends UserShort {
   cover: string | null;

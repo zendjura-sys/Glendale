@@ -12,6 +12,7 @@ import {
   Newspaper,
   Search,
   Settings,
+  Shield,
   Sun,
   Users,
   UsersRound,
@@ -22,10 +23,14 @@ import { useRealtime } from '../lib/realtime';
 import { useTheme } from '../lib/theme';
 import { fullName } from '../lib/utils';
 import { NotificationList } from './Notifications';
+import { ImpersonationBar } from './Moderation';
+import { useConfig } from '../lib/config';
+import { isStaffLevel } from '../lib/types';
 import { Avatar, Spinner, useClickOutside } from './ui';
 import { ThemeSwitch } from './uiverse';
 
 function Logo() {
+  const { config } = useConfig();
   return (
     <Link to="/feed" className="logo" aria-label="Glendale">
       <span className="logo-mark">
@@ -33,7 +38,7 @@ function Logo() {
           <path d="M18.5 7.5A8 8 0 1 0 20 12h-7" />
         </svg>
       </span>
-      <span>glendale</span>
+      <span>{config.siteTitle.toLowerCase()}</span>
     </Link>
   );
 }
@@ -103,6 +108,11 @@ function UserMenu() {
             </div>
           </Link>
           <div className="menu-sep" />
+          {isStaffLevel(me.level.type) && (
+            <Link to="/admin" className="menu-item" onClick={close}>
+              <Shield size={18} /> Админ-панель
+            </Link>
+          )}
           <Link to="/settings" className="menu-item" onClick={close}>
             <Settings size={18} /> Настройки
           </Link>
@@ -123,7 +133,7 @@ function UserMenu() {
   );
 }
 
-function Header() {
+export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const [q, setQ] = useState('');
@@ -159,6 +169,7 @@ function Counter({ n, hot }: { n: number; hot?: boolean }) {
 
 function Sidebar() {
   const me = useMe();
+  const { config } = useConfig();
   const { counters } = useRealtime();
   return (
     <nav className="sidebar" aria-label="Главное меню">
@@ -187,7 +198,14 @@ function Sidebar() {
       <NavLink to="/settings">
         <Settings size={20} /> Настройки
       </NavLink>
-      <div className="sidebar-foot">Glendale © {new Date().getFullYear()}</div>
+      {isStaffLevel(me.level.type) && (
+        <NavLink to="/admin">
+          <Shield size={20} /> Админ-панель
+        </NavLink>
+      )}
+      <div className="sidebar-foot">
+        {config.siteTitle} © {new Date().getFullYear()}
+      </div>
     </nav>
   );
 }
@@ -218,7 +236,7 @@ function TabBar() {
   );
 }
 
-function Toasts() {
+export function Toasts() {
   const { toasts, dismissToast } = useRealtime();
   return (
     <div className="toasts" aria-live="polite">
@@ -253,6 +271,7 @@ export function Layout() {
       </div>
       <TabBar />
       <Toasts />
+      <ImpersonationBar />
     </>
   );
 }

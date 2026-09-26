@@ -16,6 +16,12 @@ Premium but **minimal and flat**. The layout stays familiar to VK users (header,
 - **Icons**: Lucide only (`lucide-react`).
 - **UI elements**: adapted from Uiverse.io (MIT) in `client/src/uiverse.css` / `components/uiverse.tsx`, prefixed `uv-` and wired to theme tokens; credit the original author in a comment.
 
+## Admin panel
+
+- Server: `server/src/admin.js` (router at `/api/admin`), settings in `server/src/settings.js`, member levels/permissions in the `levels` table (`need(req, 'can_*')` in `api.js`). Every admin action must call `log()` (audit log).
+- Client: `client/src/admin/*` — lazy-loaded chunk, route `/admin/*`, own layout reusing the app header. Moderators see dashboard/reports/content only.
+- SocialEngine 5 (PHP) was used only as a feature reference; do not copy its code.
+
 ## Checks
 
 - `npm run typecheck` and `npm run build` (client), `npm test -w server` (API tests).

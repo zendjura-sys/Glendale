@@ -4,7 +4,7 @@ import { Camera, LogOut, Palette, ShieldCheck, UserRound } from 'lucide-react';
 import { api, form } from '../lib/api';
 import { useAuth, useMe } from '../lib/auth';
 import { useTheme } from '../lib/theme';
-import type { User } from '../lib/types';
+import type { Me } from '../lib/types';
 import { fullName } from '../lib/utils';
 import { Avatar, pickFile } from '../components/ui';
 import { ThemeSwitch } from '../components/uiverse';
@@ -50,7 +50,7 @@ function ProfileForm() {
   const save = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      const u = await api<User>('/me', { method: 'PATCH', body: f });
+      const u = await api<Me>('/me', { method: 'PATCH', body: f });
       setUser(u);
       qc.invalidateQueries({ queryKey: ['user', u.id] });
       setMsg({ ok: true, text: 'Изменения сохранены' });
@@ -62,7 +62,7 @@ function ProfileForm() {
   const changeAvatar = async () => {
     const [file] = await pickFile();
     if (!file) return;
-    const u = await api<User>('/me/avatar', { body: form({ image: file }) });
+    const u = await api<Me>('/me/avatar', { body: form({ image: file }) });
     setUser(u);
     qc.invalidateQueries({ queryKey: ['user', u.id] });
   };

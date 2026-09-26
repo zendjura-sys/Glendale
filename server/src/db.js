@@ -133,6 +133,94 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE INDEX IF NOT EXISTS idx_notif_user ON notifications(user_id, id);
 `);
 
+db.exec(`
+CREATE TABLE IF NOT EXISTS levels (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  title             TEXT NOT NULL,
+  description       TEXT NOT NULL DEFAULT '',
+  type              TEXT NOT NULL DEFAULT 'user' CHECK (type IN ('superadmin', 'admin', 'moderator', 'user')),
+  can_post          INTEGER NOT NULL DEFAULT 1,
+  can_comment       INTEGER NOT NULL DEFAULT 1,
+  can_message       INTEGER NOT NULL DEFAULT 1,
+  can_create_groups INTEGER NOT NULL DEFAULT 1,
+  can_upload        INTEGER NOT NULL DEFAULT 1,
+  flood_seconds     INTEGER NOT NULL DEFAULT 0,
+  is_default        INTEGER NOT NULL DEFAULT 0,
+  created_at        INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS settings (
+  key   TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS reports (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  reporter_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  target_type TEXT NOT NULL CHECK (target_type IN ('post', 'comment', 'user', 'group', 'message')),
+  target_id   INTEGER NOT NULL,
+  category    TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  status      TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'resolved', 'dismissed')),
+  resolved_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  resolution  TEXT NOT NULL DEFAULT '',
+  created_at  INTEGER NOT NULL,
+  resolved_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status, id);
+
+CREATE TABLE IF NOT EXISTS announcements (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  title      TEXT NOT NULL,
+  body       TEXT NOT NULL DEFAULT '',
+  author_id  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  active     INTEGER NOT NULL DEFAULT 1,
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS admin_log (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  admin_id   INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  action     TEXT NOT NULL,
+  target     TEXT NOT NULL DEFAULT '',
+  details    TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL
+);
+`);
+
+/** Adds a column to an existing table if it is missing (lightweight migrations). */
+function addColumn(table, column, definition) {
+  const exists = db.prepare(`PRAGMA table_info(${table})`).all().some((c) => c.name === column);
+  if (!exists) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+}
+addColumn('users', 'level_id', 'INTEGER REFERENCES levels(id)');
+addColumn('users', 'enabled', 'INTEGER NOT NULL DEFAULT 1');
+addColumn('users', 'approved', 'INTEGER NOT NULL DEFAULT 1');
+addColumn('users', 'verified', 'INTEGER NOT NULL DEFAULT 0');
+addColumn('users', 'signup_ip', "TEXT NOT NULL DEFAULT ''");
+addColumn('users', 'last_ip', "TEXT NOT NULL DEFAULT ''");
+addColumn('users', 'failed_logins', 'INTEGER NOT NULL DEFAULT 0');
+addColumn('users', 'locked_until', 'INTEGER NOT NULL DEFAULT 0');
+
+// Default member levels (modelled on classic social-network admin panels).
+if (db.prepare('SELECT COUNT(*) AS c FROM levels').get().c === 0) {
+  const ins = db.prepare(
+    `INSERT INTO levels (title, description, type, can_post, can_comment, can_message, can_create_groups, can_upload, flood_seconds, is_default, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  );
+  const t = Date.now();
+  ins.run('Суперадминистратор', 'Полный доступ ко всему, включая других администраторов.', 'superadmin', 1, 1, 1, 1, 1, 0, 0, t);
+  ins.run('Администратор', 'Доступ к админ-панели: участники, контент, настройки.', 'admin', 1, 1, 1, 1, 1, 0, 0, t);
+  ins.run('Модератор', 'Разбирает жалобы и модерирует контент.', 'moderator', 1, 1, 1, 1, 1, 0, 0, t);
+  ins.run('Участник', 'Обычный пользователь.', 'user', 1, 1, 1, 1, 1, 0, 1, t);
+  ins.run('Ограниченный', 'Может читать, но не публиковать и не писать сообщения.', 'user', 0, 0, 0, 0, 0, 30, 0, t);
+}
+db.exec("UPDATE users SET level_id = (SELECT id FROM levels WHERE is_default = 1 LIMIT 1) WHERE level_id IS NULL");
+// An installation always has at least one superadmin: promote the first account if there is none.
+if (!db.prepare("SELECT 1 FROM users u JOIN levels l ON l.id = u.level_id WHERE l.type = 'superadmin'").get()) {
+  db.exec("UPDATE users SET level_id = (SELECT id FROM levels WHERE type = 'superadmin' LIMIT 1) WHERE id = (SELECT MIN(id) FROM users)");
+}
+
 // SQLite's LOWER/LIKE only fold ASCII; this handles Cyrillic too.
 db.function('ulower', { deterministic: true }, (v) => (typeof v === 'string' ? v.toLowerCase() : v));
 

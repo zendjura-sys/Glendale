@@ -4,19 +4,20 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Cake, Camera, Info, MapPin, MessageCircle, Pencil } from 'lucide-react';
 import { api, form } from '../lib/api';
 import { useAuth, useMe } from '../lib/auth';
-import type { Profile, User } from '../lib/types';
+import type { Profile, Me } from '../lib/types';
 import { countLabel, formatBirthday, formatDate, fullName, lastSeenText, plural } from '../lib/utils';
 import { Composer } from '../components/Composer';
 import { PostList } from '../components/Post';
 import { Avatar, Empty, Modal, PhotoTile, PhotoViewer, Spinner, pickFile } from '../components/ui';
 import { FriendButton } from '../components/People';
+import { ReportButton, Verified } from '../components/Moderation';
 
 function StatusEditor({ value, onDone }: { value: string; onDone: () => void }) {
   const { setUser } = useAuth();
   const qc = useQueryClient();
   const [text, setText] = useState(value);
   const save = async () => {
-    const u = await api<User>('/me', { method: 'PATCH', body: { status: text } });
+    const u = await api<Me>('/me', { method: 'PATCH', body: { status: text } });
     setUser(u);
     qc.invalidateQueries({ queryKey: ['user', u.id] });
     onDone();
@@ -124,7 +125,7 @@ export default function ProfilePage() {
     if (!file) return;
     setUploading(true);
     try {
-      const u = await api<User>(`/me/${kind}`, { body: form({ image: file }) });
+      const u = await api<Me>(`/me/${kind}`, { body: form({ image: file }) });
       setUser(u);
       qc.invalidateQueries({ queryKey: ['user', me.id] });
       qc.invalidateQueries({ queryKey: ['photos', me.id] });
@@ -161,6 +162,7 @@ export default function ProfilePage() {
           <div className="profile-name">
             <h1>
               {name}
+              {user.verified && <Verified size={20} />}
               {user.online && <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--online)' }} title="онлайн" />}
             </h1>
             {editingStatus ? (
@@ -189,6 +191,7 @@ export default function ProfilePage() {
                 <button className="btn secondary" onClick={() => navigate(`/im/${user.id}`)}>
                   <MessageCircle size={16} /> Сообщение
                 </button>
+                <ReportButton target={{ type: 'user', id: user.id }} className="icon-btn" />
               </>
             )}
           </div>

@@ -5,11 +5,14 @@ import { api } from '../lib/api';
 import type { Group, UserShort } from '../lib/types';
 import { countLabel, fullName } from '../lib/utils';
 import { Composer } from '../components/Composer';
+import { AnnouncementBanner } from '../components/Moderation';
+import { useMe } from '../lib/auth';
 import { PostList } from '../components/Post';
 import { Avatar } from '../components/ui';
 import { FriendButton } from '../components/People';
 
 export default function FeedPage() {
+  const me = useMe();
   const [params, setParams] = useSearchParams();
   const tab = params.get('tab') === 'popular' ? 'popular' : 'news';
   const key = ['posts', 'feed', tab];
@@ -23,7 +26,8 @@ export default function FeedPage() {
   return (
     <div className="columns">
       <div className="col-main">
-        <Composer queryKeys={[key, ['posts', 'feed', 'popular']]} />
+        <AnnouncementBanner />
+        {me.permissions.post && <Composer queryKeys={[key, ['posts', 'feed', 'popular']]} />}
         <div className="card">
           <div className="tabs" style={{ borderBottom: 'none' }}>
             <button className={`tab${tab === 'news' ? ' active' : ''}`} onClick={() => setParams({})}>
