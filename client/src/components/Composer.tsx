@@ -7,6 +7,7 @@ import type { Post } from '../lib/types';
 import { fullName } from '../lib/utils';
 import { prependPost } from './Post';
 import { AutoTextarea, Avatar, pickFile } from './ui';
+import { SendButton } from './uiverse';
 
 export function Composer({
   ownerType = 'user',
@@ -96,9 +97,7 @@ export function Composer({
             <ImageIcon size={22} />
           </button>
           <div style={{ flex: 1 }} />
-          <button className="btn" onClick={submit} disabled={busy || (!text.trim() && !file)}>
-            Опубликовать
-          </button>
+          <SendButton label="Опубликовать" onClick={submit} disabled={busy || (!text.trim() && !file)} />
         </div>
       )}
     </div>

@@ -6,7 +6,7 @@ import { api, form } from '../lib/api';
 import { useMe } from '../lib/auth';
 import type { Page, Photo, Profile } from '../lib/types';
 import { fullName } from '../lib/utils';
-import { Empty, PhotoViewer, Spinner, pickFile, useSentinel } from '../components/ui';
+import { Empty, PhotoTile, PhotoViewer, Spinner, pickFile, useSentinel } from '../components/ui';
 
 export default function PhotosPage() {
   const { id } = useParams();
@@ -78,9 +78,7 @@ export default function PhotosPage() {
         <div className="photo-grid">
           {photos.map((p, i) => (
             <div key={p.id} style={{ position: 'relative' }}>
-              <button className="photo-tile" style={{ width: '100%' }} onClick={() => setViewer(i)}>
-                <img src={p.url} alt="" loading="lazy" decoding="async" />
-              </button>
+              <PhotoTile url={p.url} style={{ width: '100%' }} onClick={() => setViewer(i)} />
               {own && (
                 <button
                   className="icon-btn"

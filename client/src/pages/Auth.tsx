@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from 'react';
-import { MessageCircle, Moon, Sun, Users, Zap } from 'lucide-react';
+import { MessageCircle, Users, Zap } from 'lucide-react';
+import { ThemeSwitch } from '../components/uiverse';
+import { useTilt } from '../components/ui';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useTheme } from '../lib/theme';
@@ -7,11 +9,12 @@ import type { User } from '../lib/types';
 
 export default function AuthPage() {
   const { signIn } = useAuth();
-  const { theme, toggle } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [fields, setFields] = useState({ firstName: '', lastName: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const tilt = useTilt<HTMLFormElement>(6);
   const set = (k: keyof typeof fields) => (e: React.ChangeEvent<HTMLInputElement>) => setFields({ ...fields, [k]: e.target.value });
 
   const submit = async (e: FormEvent) => {
@@ -32,9 +35,9 @@ export default function AuthPage() {
 
   return (
     <div className="auth">
-      <button className="icon-btn" onClick={toggle} style={{ position: 'fixed', top: 16, right: 16 }} aria-label="Сменить тему">
-        {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-      </button>
+      <div style={{ position: 'fixed', top: 16, right: 16 }}>
+        <ThemeSwitch dark={theme === 'dark'} onChange={(d) => setTheme(d ? 'dark' : 'light')} size={10} />
+      </div>
       <div className="auth-promo">
         <span className="logo-mark" style={{ width: 56, height: 56, borderRadius: 18, display: 'inline-grid' }}>
           <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
@@ -56,7 +59,10 @@ export default function AuthPage() {
         </div>
       </div>
 
-      <form className="card auth-card" onSubmit={submit}>
+      <span className="shape3d orb" />
+      <span className="shape3d ring" />
+      <span className="shape3d glass" />
+      <form className="card auth-card" onSubmit={submit} ref={tilt}>
         <h2>{mode === 'login' ? 'Вход в Glendale' : 'Регистрация'}</h2>
         {mode === 'register' && (
           <>

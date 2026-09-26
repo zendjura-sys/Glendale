@@ -5,8 +5,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './lib/auth';
 import { ThemeProvider } from './lib/theme';
 import App from './App';
-import '@fontsource-variable/manrope';
+import '@fontsource-variable/montserrat';
 import './styles.css';
+import './uiverse.css';
+import './glass.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {

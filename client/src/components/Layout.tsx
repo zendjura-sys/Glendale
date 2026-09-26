@@ -23,6 +23,7 @@ import { useTheme } from '../lib/theme';
 import { fullName } from '../lib/utils';
 import { NotificationList } from './Notifications';
 import { Avatar, Spinner, useClickOutside } from './ui';
+import { ThemeSwitch } from './uiverse';
 
 function Logo() {
   return (
@@ -82,7 +83,7 @@ function NotificationsButton() {
 function UserMenu() {
   const me = useMe();
   const { signOut } = useAuth();
-  const { theme, toggle } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   const ref = useClickOutside<HTMLDivElement>(open, close);
@@ -105,11 +106,13 @@ function UserMenu() {
           <Link to="/settings" className="menu-item" onClick={close}>
             <Settings size={18} /> Настройки
           </Link>
-          <button className="menu-item" onClick={toggle}>
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          <div className="menu-item" style={{ cursor: 'default' }}>
+            {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
             Тема: {theme === 'dark' ? 'тёмная' : 'светлая'}
-            <span className={`switch${theme === 'dark' ? ' on' : ''}`} style={{ marginLeft: 'auto', transform: 'scale(0.8)' }} />
-          </button>
+            <span style={{ marginLeft: 'auto' }}>
+              <ThemeSwitch dark={theme === 'dark'} onChange={(d) => setTheme(d ? 'dark' : 'light')} size={9} />
+            </span>
+          </div>
           <div className="menu-sep" />
           <button className="menu-item" onClick={signOut}>
             <LogOut size={18} /> Выйти

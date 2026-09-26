@@ -1,5 +1,6 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Flame, Newspaper, Sparkles, UserPlus } from 'lucide-react';
 import { api } from '../lib/api';
 import type { Group, UserShort } from '../lib/types';
 import { countLabel, fullName } from '../lib/utils';
@@ -26,10 +27,10 @@ export default function FeedPage() {
         <div className="card">
           <div className="tabs" style={{ borderBottom: 'none' }}>
             <button className={`tab${tab === 'news' ? ' active' : ''}`} onClick={() => setParams({})}>
-              Новости
+              <Newspaper size={16} /> Новости
             </button>
             <button className={`tab${tab === 'popular' ? ' active' : ''}`} onClick={() => setParams({ tab: 'popular' })}>
-              Рекомендации
+              <Sparkles size={16} /> Рекомендации
             </button>
           </div>
         </div>
@@ -44,7 +45,7 @@ export default function FeedPage() {
         {!!suggestions?.length && (
           <div className="card">
             <div className="card-title">
-              Возможные друзья
+              <UserPlus size={18} /> Возможные друзья
               <Link to="/friends?tab=suggestions" className="right">
                 Все
               </Link>
@@ -68,7 +69,7 @@ export default function FeedPage() {
         {!!groups?.length && (
           <div className="card">
             <div className="card-title">
-              Популярные сообщества
+              <Flame size={18} /> Популярные сообщества
               <Link to="/groups?tab=all" className="right">
                 Все
               </Link>

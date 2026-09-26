@@ -1,86 +1,113 @@
-/* ───────────── design tokens (VK light / dark) ───────────── */
 /* ───────────── design tokens ─────────────
-   Layout is familiar to VK users, but the palette, shapes and details are Glendale's own:
-   indigo accent with a violet gradient, cool-tinted neutrals, softer and rounder surfaces. */
+   Glendale: VK-familiar layout, premium look — aurora backdrop, liquid-glass surfaces,
+   depth and 3D, Montserrat typography. Surfaces are translucent; `*-solid` tokens are
+   for places that must stay opaque (rings around avatars, borders over images). */
 :root {
   color-scheme: light;
-  --bg: #f3f4f8;
-  --card: #ffffff;
-  --header: rgba(255, 255, 255, 0.82);
-  --header-border: rgba(20, 24, 45, 0.07);
-  --field: #f1f2f7;
-  --field-border: transparent;
-  --separator: #eceef4;
-  --hover: #f3f4f9;
-  --active: #e9ebfb;
-  --text: #14172b;
-  --text-2: #737a91;
-  --text-3: #9aa0b4;
+  --bg: #eceefb;
+  --card: rgba(255, 255, 255, 0.58);
+  --card-solid: #ffffff;
+  --card-strong: rgba(255, 255, 255, 0.78);
+  --glass-border: rgba(255, 255, 255, 0.75);
+  --glass-edge: rgba(20, 24, 60, 0.07);
+  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0) 42%);
+  --glass-blur: blur(26px) saturate(185%);
+  --header: rgba(255, 255, 255, 0.55);
+  --header-border: rgba(255, 255, 255, 0.7);
+  --field: rgba(255, 255, 255, 0.55);
+  --field-border: rgba(20, 24, 60, 0.06);
+  --separator: rgba(20, 24, 60, 0.08);
+  --hover: rgba(76, 91, 245, 0.06);
+  --active: rgba(76, 91, 245, 0.12);
+  --text: #111430;
+  --text-2: #5f6685;
+  --text-3: #8d93ad;
   --accent: #4c5bf5;
   --accent-2: #8b5cf6;
-  --accent-soft: rgba(76, 91, 245, 0.1);
-  --gradient: linear-gradient(135deg, #4c5bf5 0%, #8b5cf6 100%);
+  --accent-soft: rgba(76, 91, 245, 0.12);
+  --gradient: linear-gradient(135deg, #4c5bf5 0%, #7c5cf6 55%, #c04cf5 100%);
   --link: #4c5bf5;
-  --name: #14172b;
-  --icon: #9aa0b4;
+  --name: #111430;
+  --icon: #8d93ad;
   --icon-accent: #4c5bf5;
   --btn-primary: #4c5bf5;
-  --btn-primary-hover: #3f4de6;
+  --btn-primary-hover: #5a68ff;
   --btn-primary-text: #ffffff;
-  --btn-secondary: #eef0fb;
-  --btn-secondary-hover: #e3e6fa;
-  --btn-secondary-text: #4c5bf5;
+  --btn-secondary: rgba(255, 255, 255, 0.6);
+  --btn-secondary-hover: rgba(255, 255, 255, 0.85);
+  --btn-secondary-text: #3f4be0;
   --like: #f43f70;
   --online: #22c55e;
   --danger: #e5484d;
   --badge: #f43f70;
-  --bubble-in: #ffffff;
-  --bubble-out: linear-gradient(135deg, #4c5bf5 0%, #6b5cf7 100%);
+  --bubble-in: rgba(255, 255, 255, 0.72);
+  --bubble-out: linear-gradient(135deg, #4c5bf5 0%, #7c5cf6 100%);
   --bubble-out-text: #ffffff;
-  --bubble-out-meta: rgba(255, 255, 255, 0.75);
-  --im-bg: #f3f4f8;
-  --overlay: rgba(12, 14, 30, 0.45);
-  --shadow: 0 12px 40px rgba(20, 24, 45, 0.14), 0 2px 6px rgba(20, 24, 45, 0.06);
-  --card-border: 0 1px 2px rgba(20, 24, 45, 0.04), 0 4px 18px rgba(20, 24, 45, 0.045);
-  --radius: 18px;
-  --radius-sm: 12px;
-  --header-h: 56px;
-  --content-w: 1040px;
+  --bubble-out-meta: rgba(255, 255, 255, 0.78);
+  --im-bg: transparent;
+  --overlay: rgba(10, 12, 35, 0.35);
+  --shadow: 0 24px 60px rgba(30, 35, 90, 0.2), 0 4px 14px rgba(30, 35, 90, 0.08);
+  --card-border: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 0 0 1px var(--glass-edge), 0 10px 30px -12px rgba(30, 35, 90, 0.18),
+    0 2px 6px -2px rgba(30, 35, 90, 0.06);
+  --lift: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 0 0 1px var(--glass-edge), 0 22px 44px -16px rgba(30, 35, 90, 0.28),
+    0 4px 10px -4px rgba(30, 35, 90, 0.1);
+  --aurora-1: #7c8cff;
+  --aurora-2: #c89bff;
+  --aurora-3: #ff9fce;
+  --aurora-4: #7fe3ff;
+  --aurora-opacity: 0.55;
+  --radius: 22px;
+  --radius-sm: 14px;
+  --header-h: 64px;
+  --content-w: 1080px;
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #0e1016;
-  --card: #171a23;
-  --header: rgba(23, 26, 35, 0.82);
-  --header-border: rgba(255, 255, 255, 0.06);
-  --field: #1f2330;
-  --field-border: transparent;
-  --separator: #252a37;
-  --hover: #1e222e;
-  --active: #242a45;
-  --text: #e7e9f2;
-  --text-2: #8a90a6;
-  --text-3: #636a80;
-  --accent: #8b95ff;
-  --accent-2: #b194ff;
-  --accent-soft: rgba(139, 149, 255, 0.14);
-  --link: #8b95ff;
-  --name: #e7e9f2;
-  --icon: #6f768c;
-  --icon-accent: #8b95ff;
+  --bg: #05060c;
+  --card: rgba(24, 27, 44, 0.5);
+  --card-solid: #141726;
+  --card-strong: rgba(28, 31, 50, 0.78);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-edge: rgba(255, 255, 255, 0.07);
+  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0) 40%);
+  --header: rgba(20, 22, 38, 0.5);
+  --header-border: rgba(255, 255, 255, 0.08);
+  --field: rgba(255, 255, 255, 0.05);
+  --field-border: rgba(255, 255, 255, 0.07);
+  --separator: rgba(255, 255, 255, 0.07);
+  --hover: rgba(255, 255, 255, 0.05);
+  --active: rgba(139, 149, 255, 0.16);
+  --text: #eceefa;
+  --text-2: #9398b3;
+  --text-3: #686e8a;
+  --accent: #9aa3ff;
+  --accent-2: #c3a6ff;
+  --accent-soft: rgba(139, 149, 255, 0.16);
+  --gradient: linear-gradient(135deg, #5563ff 0%, #8b5cf6 55%, #d64cf5 100%);
+  --link: #9aa3ff;
+  --name: #eceefa;
+  --icon: #7b819e;
+  --icon-accent: #aab2ff;
   --btn-primary: #5d6bff;
   --btn-primary-hover: #6d7aff;
   --btn-primary-text: #ffffff;
-  --btn-secondary: #232840;
-  --btn-secondary-hover: #2b3150;
-  --btn-secondary-text: #aab2ff;
-  --bubble-in: #1f2330;
-  --bubble-out: linear-gradient(135deg, #4c5bf5 0%, #7c5cf6 100%);
-  --im-bg: #0e1016;
-  --overlay: rgba(0, 0, 0, 0.65);
-  --shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
-  --card-border: 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --btn-secondary: rgba(255, 255, 255, 0.07);
+  --btn-secondary-hover: rgba(255, 255, 255, 0.12);
+  --btn-secondary-text: #c4c9ff;
+  --bubble-in: rgba(255, 255, 255, 0.07);
+  --bubble-out: linear-gradient(135deg, #5563ff 0%, #8b5cf6 100%);
+  --im-bg: transparent;
+  --overlay: rgba(0, 0, 0, 0.55);
+  --shadow: 0 30px 70px rgba(0, 0, 0, 0.6), 0 6px 18px rgba(0, 0, 0, 0.35);
+  --card-border: 0 1px 0 rgba(255, 255, 255, 0.07) inset, 0 0 0 1px var(--glass-edge), 0 18px 40px -18px rgba(0, 0, 0, 0.7);
+  --lift: 0 1px 0 rgba(255, 255, 255, 0.1) inset, 0 0 0 1px rgba(255, 255, 255, 0.1), 0 28px 50px -18px rgba(0, 0, 0, 0.8),
+    0 0 40px -10px rgba(110, 100, 255, 0.25);
+  --aurora-1: #3b46ff;
+  --aurora-2: #8b3cf6;
+  --aurora-3: #e0409a;
+  --aurora-4: #0fb5d8;
+  --aurora-opacity: 0.6;
 }
 
 /* ───────────── base ───────────── */
@@ -94,7 +121,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 14px/1.45 'Manrope Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  font: 14px/1.5 'Montserrat Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 a {
@@ -116,6 +143,18 @@ button {
 }
 img {
   display: block;
+}
+/* Lucide icons (lucide.dev): one consistent, slightly lighter stroke everywhere. */
+.lucide {
+  stroke-width: 1.85px;
+  flex-shrink: 0;
+}
+.tab .lucide {
+  vertical-align: -3px;
+  margin-right: 2px;
+}
+.card-title > .lucide {
+  color: var(--accent);
 }
 h1,
 h2,
@@ -589,7 +628,7 @@ textarea.field {
   min-height: 10px;
   border-radius: 50%;
   background: var(--online);
-  box-shadow: 0 0 0 2px var(--card);
+  box-shadow: 0 0 0 2px var(--card-solid);
 }
 .avatar.square {
   border-radius: 30%;
@@ -700,14 +739,6 @@ textarea.field {
 }
 .action.on {
   color: var(--accent);
-}
-.action.like-pop svg {
-  animation: likepop 0.3s ease;
-}
-@keyframes likepop {
-  50% {
-    transform: scale(1.3);
-  }
 }
 .post-actions .views {
   margin-left: auto;
@@ -938,7 +969,7 @@ textarea.field {
 }
 .profile-avatar {
   margin-top: -56px;
-  border: 5px solid var(--card);
+  border: 4px solid var(--glass-border);
   border-radius: 50%;
   box-shadow: 0 6px 20px rgba(20, 24, 45, 0.15);
   background: var(--card);
@@ -1203,24 +1234,6 @@ textarea.field {
 .typing {
   color: var(--accent);
 }
-.typing-dots::after {
-  content: '';
-  animation: dots 1.2s steps(4) infinite;
-}
-@keyframes dots {
-  0% {
-    content: '';
-  }
-  25% {
-    content: '.';
-  }
-  50% {
-    content: '..';
-  }
-  75% {
-    content: '...';
-  }
-}
 
 /* ───────────── modal / viewer ───────────── */
 .modal-backdrop {
@@ -1366,26 +1379,6 @@ textarea.field {
   font-size: 15px;
   margin-bottom: 4px;
 }
-.spinner {
-  width: 24px;
-  height: 24px;
-  border: 2.5px solid var(--separator);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  margin: 24px auto;
-}
-.spinner.sm {
-  width: 16px;
-  height: 16px;
-  border-width: 2px;
-  margin: 0;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
 .skeleton {
   background: linear-gradient(90deg, var(--hover) 25%, var(--active) 50%, var(--hover) 75%);
   background-size: 200% 100%;
@@ -1423,34 +1416,6 @@ textarea.field {
 .info-list dd {
   margin: 0;
   white-space: pre-wrap;
-}
-.switch {
-  position: relative;
-  width: 40px;
-  height: 24px;
-  border-radius: 12px;
-  background: var(--field-border);
-  border: none;
-  transition: background 0.15s;
-  flex-shrink: 0;
-}
-.switch::after {
-  content: '';
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #fff;
-  transition: transform 0.15s;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-.switch.on {
-  background: var(--gradient);
-}
-.switch.on::after {
-  transform: translateX(16px);
 }
 .theme-options {
   display: grid;

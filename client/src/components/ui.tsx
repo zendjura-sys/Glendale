@@ -1,6 +1,7 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type TextareaHTMLAttributes } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type TextareaHTMLAttributes } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { DotSpinner } from './uiverse';
 
 const COLORS = ['#4c5bf5', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6', '#0ea5e9', '#22c55e', '#6366f1'];
 
@@ -40,7 +41,7 @@ export function Avatar({
   );
 }
 
-export const Spinner = ({ small }: { small?: boolean }) => <div className={`spinner${small ? ' sm' : ''}`} />;
+export const Spinner = ({ small }: { small?: boolean }) => <DotSpinner small={small} />;
 
 export function Empty({ icon, title, children }: { icon?: ReactNode; title?: string; children?: ReactNode }) {
   return (
@@ -155,6 +156,52 @@ export function AutoTextarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>)
   }, [props.value]);
   return <textarea ref={ref} rows={1} {...props} />;
 }
+
+/** 3D tilt: writes --rx/--ry on the element as the pointer moves over it. */
+export function useTilt<T extends HTMLElement>(max = 8) {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || matchMedia('(hover: none), (prefers-reduced-motion: reduce)').matches) return;
+    const move = (e: PointerEvent) => {
+      const r = el.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5;
+      const y = (e.clientY - r.top) / r.height - 0.5;
+      el.style.setProperty('--rx', `${(-y * max).toFixed(2)}deg`);
+      el.style.setProperty('--ry', `${(x * max).toFixed(2)}deg`);
+    };
+    const leave = () => {
+      el.style.setProperty('--rx', '0deg');
+      el.style.setProperty('--ry', '0deg');
+    };
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerleave', leave);
+    return () => {
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerleave', leave);
+    };
+  }, [max]);
+  return ref;
+}
+
+/** Photo tile with a 3D tilt on hover. */
+export function PhotoTile({ url, onClick, style }: { url: string; onClick: () => void; style?: CSSProperties }) {
+  const ref = useTilt<HTMLButtonElement>(14);
+  return (
+    <button ref={ref} className="photo-tile" style={style} onClick={onClick}>
+      <img src={url} alt="" loading="lazy" decoding="async" />
+    </button>
+  );
+}
+
+export const Aurora = () => (
+  <div className="aurora" aria-hidden>
+    <i />
+    <i />
+    <i />
+    <i />
+  </div>
+);
 
 /** Calls `onVisible` whenever the returned sentinel scrolls into view. */
 export function useSentinel(onVisible: () => void, enabled: boolean) {

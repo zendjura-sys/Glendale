@@ -1,13 +1,14 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Check, CheckCheck, Image as ImageIcon, MessageCircle, Search, Send, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Check, CheckCheck, Image as ImageIcon, MessageCircle, Search, Trash2, X } from 'lucide-react';
 import { api, form } from '../lib/api';
 import { useMe } from '../lib/auth';
 import { isTyping, useRealtime, type MessagesCache } from '../lib/realtime';
 import type { Dialog, Message, Profile } from '../lib/types';
 import { formatDay, formatShort, formatTime, fullName, lastSeenText } from '../lib/utils';
 import { AutoTextarea, Avatar, Empty, PhotoViewer, Spinner, pickFile } from '../components/ui';
+import { SendButton, TypingDots } from '../components/uiverse';
 
 function DialogList({ activeId }: { activeId: number | null }) {
   const me = useMe();
@@ -44,12 +45,18 @@ function DialogList({ activeId }: { activeId: number | null }) {
                 <div className="preview">
                   {isTyping(typing, d.peer.id) ? (
                     <span className="text typing ellipsis">
-                      печатает<span className="typing-dots" />
+                      печатает<TypingDots />
                     </span>
                   ) : (
                     <span className="text ellipsis">
                       {mine && <span style={{ color: 'var(--text-2)' }}>Вы: </span>}
-                      <span style={{ color: mine ? 'var(--text-2)' : 'var(--text)' }}>{m.text || '🖼 Фотография'}</span>
+                      <span style={{ color: mine ? 'var(--text-2)' : 'var(--text)' }}>
+                        {m.text || (
+                          <>
+                            <ImageIcon size={14} style={{ verticalAlign: '-2px' }} /> Фотография
+                          </>
+                        )}
+                      </span>
                     </span>
                   )}
                   {d.unread > 0 && <span className="badge">{d.unread}</span>}
@@ -199,7 +206,7 @@ function Chat({ peerId }: { peerId: number }) {
               <div className={`meta${peerTyping ? ' typing' : ''}`}>
                 {peerTyping ? (
                   <>
-                    печатает<span className="typing-dots" />
+                    печатает<TypingDots />
                   </>
                 ) : (
                   lastSeenText(peerShort)
@@ -248,7 +255,7 @@ function Chat({ peerId }: { peerId: number }) {
       </div>
 
       {preview && (
-        <div className="attach-preview" style={{ margin: '8px 12px 0', background: 'var(--card)' }}>
+        <div className="attach-preview" style={{ margin: '8px 12px 0', background: 'var(--card-solid)' }}>
           <img src={preview} alt="" />
           <button onClick={() => setFile(null)} aria-label="Убрать фото">
             <X size={14} />
@@ -283,9 +290,7 @@ function Chat({ peerId }: { peerId: number }) {
             }
           }}
         />
-        <button className="icon-btn" onClick={send} disabled={!text.trim() && !file} aria-label="Отправить">
-          <Send size={22} color="var(--icon-accent)" />
-        </button>
+        <SendButton onClick={send} disabled={!text.trim() && !file} />
       </div>
       {viewer && <PhotoViewer urls={[viewer]} index={0} onClose={() => setViewer(null)} />}
     </div>

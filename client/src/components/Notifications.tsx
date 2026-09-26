@@ -34,7 +34,7 @@ export function NotificationItem({ n, onClick }: { n: Notification; onClick?: ()
             background: color,
             display: 'grid',
             placeItems: 'center',
-            boxShadow: '0 0 0 2px var(--card)',
+            boxShadow: '0 0 0 2px var(--card-solid)',
           }}
         >
           <Icon size={12} color="#fff" fill={n.type === 'like' ? '#fff' : 'none'} />

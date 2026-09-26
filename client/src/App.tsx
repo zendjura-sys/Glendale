@@ -3,7 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './lib/auth';
 import { RealtimeProvider } from './lib/realtime';
 import { Layout } from './components/Layout';
-import { Empty, Spinner } from './components/ui';
+import { Aurora, Empty, Spinner } from './components/ui';
 import AuthPage from './pages/Auth';
 import FeedPage from './pages/Feed';
 
@@ -29,10 +29,23 @@ function NotFound() {
 
 export default function App() {
   const { user, loading } = useAuth();
-  if (loading) return <Spinner />;
-  if (!user) return <AuthPage />;
+  if (loading)
+    return (
+      <>
+        <Aurora />
+        <Spinner />
+      </>
+    );
+  if (!user)
+    return (
+      <>
+        <Aurora />
+        <AuthPage />
+      </>
+    );
   return (
     <RealtimeProvider>
+      <Aurora />
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<Navigate to="/feed" replace />} />

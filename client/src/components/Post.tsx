@@ -1,12 +1,13 @@
 import { memo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useInfiniteQuery, useQuery, useQueryClient, type InfiniteData, type QueryClient } from '@tanstack/react-query';
-import { Heart, MessageCircle, MoreHorizontal, Newspaper, Repeat2, Send, Share2, Trash2 } from 'lucide-react';
+import { Heart, MessageCircle, MoreHorizontal, Newspaper, Repeat2, Share2, Trash2 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useMe } from '../lib/auth';
 import type { Comment, Page, Post } from '../lib/types';
 import { formatDate, fullName } from '../lib/utils';
 import { AutoTextarea, Avatar, Empty, Modal, PhotoViewer, PostSkeleton, Spinner, useClickOutside, useSentinel } from './ui';
+import { LikeBurst, SendButton } from './uiverse';
 
 type PostPages = InfiniteData<Page<Post>, number | undefined>;
 
@@ -164,9 +165,7 @@ function Comments({ postId, onCountChange }: { postId: number; onCountChange: (d
             }
           }}
         />
-        <button className="icon-btn" onClick={submit} disabled={!text.trim() || sending} aria-label="Отправить">
-          <Send size={20} color="var(--icon-accent)" />
-        </button>
+        <SendButton onClick={submit} disabled={!text.trim() || sending} />
       </div>
     </div>
   );
@@ -290,8 +289,11 @@ export const PostCard = memo(function PostCard({ post, openComments = false }: {
       )}
 
       <div className="post-actions">
-        <button className={`action${post.liked ? ' liked' : ''}${pop ? ' like-pop' : ''}`} onClick={toggleLike} aria-label="Нравится">
-          <Heart size={20} />
+        <button className={`action${post.liked ? ' liked' : ''}`} onClick={toggleLike} aria-label="Нравится" aria-pressed={post.liked}>
+          <span className={`uv-like${post.liked ? ' on' : ''}${pop && post.liked ? ' pop' : ''}`}>
+            <Heart size={20} />
+            <LikeBurst />
+          </span>
           {post.likes > 0 && post.likes}
         </button>
         <button className={`action${showComments ? ' on' : ''}`} onClick={() => setShowComments((s) => !s)} aria-label="Комментарии">

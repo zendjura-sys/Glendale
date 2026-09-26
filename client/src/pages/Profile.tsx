@@ -8,7 +8,7 @@ import type { Profile, User } from '../lib/types';
 import { countLabel, formatBirthday, formatDate, fullName, lastSeenText, plural } from '../lib/utils';
 import { Composer } from '../components/Composer';
 import { PostList } from '../components/Post';
-import { Avatar, Empty, Modal, PhotoViewer, Spinner, pickFile } from '../components/ui';
+import { Avatar, Empty, Modal, PhotoTile, PhotoViewer, Spinner, pickFile } from '../components/ui';
 import { FriendButton } from '../components/People';
 
 function StatusEditor({ value, onDone }: { value: string; onDone: () => void }) {
@@ -245,9 +245,7 @@ export default function ProfilePage() {
               </div>
               <div className="photo-grid small">
                 {user.photosSample.map((p, i) => (
-                  <button key={p.id} className="photo-tile" onClick={() => setViewer({ urls: user.photosSample.map((x) => x.url), index: i })}>
-                    <img src={p.url} alt="" loading="lazy" />
-                  </button>
+                  <PhotoTile key={p.id} url={p.url} onClick={() => setViewer({ urls: user.photosSample.map((x) => x.url), index: i })} />
                 ))}
               </div>
             </div>
