@@ -1941,14 +1941,7 @@ select.k-select:focus {
     padding: 22px 18px 40px;
   }
   .k-hero-thumbs {
-    top: 16px;
-    right: 14px;
-    transform: none;
-    flex-direction: row;
-  }
-  .k-hero-thumbs button {
-    width: 40px;
-    height: 46px;
+    display: none;
   }
   .k-btn {
     height: 46px;
