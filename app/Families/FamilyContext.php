@@ -149,6 +149,7 @@ final class FamilyContext
     /** Кеш «хто в якій родині» — між задачами черги (воркер живе годину). */
     public static function flushCache(): void
     {
+        FamilyPositions::flush();
         self::$resolved = [];
         self::$default = null;
         self::$defaultLoaded = false;

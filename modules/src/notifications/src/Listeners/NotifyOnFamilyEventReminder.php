@@ -23,7 +23,7 @@ class NotifyOnFamilyEventReminder
         $body = 'Початок о '.$when.($familyEvent->location ? ' · '.$familyEvent->location : '');
 
         $now = now();
-        User::query()->select('id')->chunk(200, function ($users) use ($title, $body, $now) {
+        User::query()->inActiveFamily()->select('id')->chunk(200, function ($users) use ($title, $body, $now) {
             DB::table('notifications')->insert($users->map(fn (User $user) => [
                 'user_id' => $user->id,
                 'type' => 'family_event_reminder',

@@ -88,7 +88,7 @@ class DisciplineController
     public function searchMembers(Request $request): JsonResponse
     {
         $query = trim((string) $request->query('q', ''));
-        $members = mb_strlen($query) < 2 ? collect() : User::query()
+        $members = mb_strlen($query) < 2 ? collect() : User::query()->inActiveFamily()
             ->where('is_shadow', false)
             ->where('name', 'like', '%'.$query.'%')
             ->orderBy('name')

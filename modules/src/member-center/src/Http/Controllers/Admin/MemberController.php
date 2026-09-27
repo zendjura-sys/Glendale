@@ -26,7 +26,7 @@ class MemberController
         // тому тут підзапити замість $user->memberProfile.
         $search = $request->string('q')->toString();
 
-        $members = User::query()
+        $members = User::query()->inActiveFamily()
             ->select('users.id', 'users.name', 'users.email')
             ->selectSub(
                 MemberProfile::query()->select('hr_status')->whereColumn('user_id', 'users.id'),

@@ -19,7 +19,7 @@ class BirthdayGreeter
     {
         $today = Carbon::now('Europe/Kyiv');
 
-        $users = User::query()
+        $users = User::query()->inActiveFamily()
             ->whereNotNull('birth_date')
             ->whereMonth('birth_date', $today->month)
             ->whereDay('birth_date', $today->day)

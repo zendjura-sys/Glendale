@@ -234,6 +234,18 @@ Route::middleware(['auth', 'verified', 'permission:addons.manage'])
         Route::get('/status', [DeployController::class, 'status'])->name('status');
     });
 
+// Профіль родини — керування СВОЄЮ родиною для лідера й заступників
+// (members.manage вони мають в активній родині через FamilyAbilities).
+Route::middleware(['auth', 'verified', 'family.member', 'permission:members.manage'])
+    ->prefix('admin/family-profile')
+    ->name('admin.family-profile.')
+    ->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\FamilyProfileController::class, 'index'])->name('index');
+        Route::put('/content', [\App\Http\Controllers\Admin\FamilyProfileController::class, 'updateContent'])->name('content');
+        Route::put('/rules', [\App\Http\Controllers\Admin\FamilyProfileController::class, 'updateRules'])->name('rules');
+        Route::put('/members/{user}/position', [\App\Http\Controllers\Admin\FamilyProfileController::class, 'updatePosition'])->whereNumber('user')->name('position');
+    });
+
 // Дизайн — обычный раздел настроек, а не аддон: см. DesignController.
 Route::middleware(['auth', 'verified', 'permission:settings.manage'])
     ->prefix('admin/design')

@@ -118,4 +118,49 @@ class FamilyToolsTest extends TestCase
 
         $this->postJson('/api/v2/me/active-family', ['familyId' => $c])->assertForbidden();
     }
+
+    public function test_family_profile_content_rules_and_positions_are_per_family(): void
+    {
+        $this->seed(SystemPermissionsSeeder::class);
+        $a = $this->family('Monsory');
+        $b = $this->family('Corleone');
+        $leaderB = $this->member($b, 'leader');
+        $memberB = $this->member($b);
+        $memberA = $this->member($a);
+
+        // Нова родина — типові посади, не посади Monsory.
+        $this->actingAs($leaderB);
+        FamilyContext::flushCache();
+        $this->get('/admin/family-profile')->assertOk()
+            ->assertInertia(fn ($page) => $page->component('Admin/FamilyProfile/Index', false)
+                ->where('family.name', 'Corleone')
+                ->where('content.positions.0.key', 'newcomer'));
+
+        $this->put('/admin/family-profile/content', [
+            'about' => ['Сицилійська родина'],
+            'leadership' => [],
+            'positions' => [['key' => 'soldier', 'title' => 'Солдат'], ['key' => 'capo', 'title' => 'Капо']],
+            'promotionCriteria' => ['Активність'],
+        ])->assertSessionHasNoErrors();
+        $this->put('/admin/family-profile/rules', ['rules' => "# 1. Омерта\n**1.1 Мовчання**"])->assertSessionHasNoErrors();
+        $this->put("/admin/family-profile/members/{$memberB->id}/position", ['positionKey' => 'capo'])->assertSessionHasNoErrors();
+        $this->put("/admin/family-profile/members/{$memberA->id}/position", ['positionKey' => 'capo'])->assertNotFound();
+
+        FamilyContext::flushCache();
+        $this->assertSame(['Сицилійська родина'], \App\Support\FamilyContent::about());
+        $this->assertSame('capo', $memberB->fresh()->position_key);
+        $this->assertSame('Правила родини Corleone', \App\Support\FamilyRules::payload()['books'][0]['title']);
+
+        // У Monsory — свій контент, правки Corleone його не зачепили.
+        $this->actingAs($memberA);
+        FamilyContext::flushCache();
+        $this->assertNotSame(['Сицилійська родина'], \App\Support\FamilyContent::about());
+        $this->assertSame('monsory', \App\Support\FamilyRules::payload()['books'][0]['slug']);
+
+        // Звичайний учасник профіль родини не редагує.
+        $this->actingAs($memberB);
+        FamilyContext::flushCache();
+        $this->get('/admin/family-profile')->assertForbidden();
+    }
 }
+

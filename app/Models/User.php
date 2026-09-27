@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Families\FamilyContext;
+use App\Families\FamilyPositions;
 use App\Support\FamilyContent;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
@@ -180,6 +183,51 @@ class User extends Authenticatable implements MustVerifyEmail
      * зберіганні індексом перестановка мовчки переприсвоювала б людям
      * чужі посади.
      */
+    /**
+     * Посада — своя в кожній родині: читається з family_members активної
+     * родини (FamilyContext). У першій родині платформи (Monsory) колонка
+     * users.position_key лишається синхронною — на неї ще спираються
+     * реєстрація й платформні списки.
+     */
+    protected function positionKey(): Attribute
+    {
+        return Attribute::make(
+            get: function ($value) {
+                $familyId = $this->exists ? FamilyContext::id() : null;
+                if ($familyId === null) {
+                    return $value;
+                }
+                $map = FamilyPositions::map($familyId);
+                if (array_key_exists($this->id, $map)) {
+                    return $map[$this->id];
+                }
+
+                return $familyId === FamilyContext::defaultId() ? $value : null;
+            },
+            set: function ($value) {
+                $familyId = $this->exists ? FamilyContext::id() : null;
+                if ($familyId !== null) {
+                    FamilyPositions::set($familyId, $this->id, $value);
+                    if ($familyId !== FamilyContext::defaultId()) {
+                        return ['position_key' => $this->getRawOriginal('position_key')];
+                    }
+                }
+
+                return ['position_key' => $value];
+            },
+        );
+    }
+
+    /** Учасники активної родини (звіти, банк, розсилки — лише їй). */
+    public function scopeInActiveFamily($query)
+    {
+        $familyId = FamilyContext::id();
+
+        return $familyId === null
+            ? $query
+            : $query->whereIn($this->qualifyColumn('id'), DB::table('family_members')->where('family_id', $familyId)->select('user_id'));
+    }
+
     protected function positionTitle(): Attribute
     {
         return Attribute::make(

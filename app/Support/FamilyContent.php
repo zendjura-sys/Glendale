@@ -20,6 +20,54 @@ class FamilyContent
 {
     private const GROUP = 'content';
 
+    /**
+     * Типовий склад для нової родини (config/family.php — це вміст саме
+     * Monsory, першої родини). Лідер змінює все під себе в керуванні родиною.
+     */
+    private const GENERIC = [
+        'positions' => [
+            ['key' => 'newcomer', 'title' => 'Новачок', 'text' => '', 'image' => ''],
+            ['key' => 'member', 'title' => 'Учасник', 'text' => '', 'image' => ''],
+            ['key' => 'veteran', 'title' => 'Ветеран', 'text' => '', 'image' => ''],
+            ['key' => 'officer', 'title' => 'Старший', 'text' => '', 'image' => ''],
+            ['key' => 'deputy', 'title' => 'Заступник', 'text' => '', 'image' => ''],
+            ['key' => 'leader', 'title' => 'Лідер', 'text' => '', 'image' => ''],
+        ],
+        'directions' => [],
+        'leadership' => [],
+        'promotion_criteria' => [],
+        'about' => [],
+    ];
+
+    /**
+     * Контент — свій у кожній родини: у першій (Monsory) — колишні ключі
+     * (нічого не переноситься), в інших — «family.{id}.{ключ}». Тексти
+     * союзу (union_*) — спільні.
+     */
+    private static function keyFor(string $key): string
+    {
+        $familyId = self::familyId($key);
+
+        return $familyId === null ? $key : "family.{$familyId}.{$key}";
+    }
+
+    /** Родина, чий контент читається; null — перша родина (Monsory) або союз. */
+    private static function familyId(?string $key = null): ?int
+    {
+        if ($key !== null && str_starts_with($key, 'union_')) {
+            return null;
+        }
+        $id = \App\Families\FamilyContext::id();
+
+        return ($id === null || $id === \App\Families\FamilyContext::defaultId()) ? null : $id;
+    }
+
+    /** @return array<int,mixed> Значення за замовчуванням: Monsory — config, інші — типовий склад. */
+    private static function defaults(string $key): array
+    {
+        return self::familyId($key) === null ? (array) config("family.{$key}", []) : (self::GENERIC[$key] ?? []);
+    }
+
     /** Ключи, которые админка может перезаписать, и их форма. */
     private const SHAPES = [
         // 'key' первым нарочно: это единственное поле здесь, которое
@@ -89,7 +137,7 @@ class FamilyContent
         $stored = self::decode('promotion_criteria');
 
         if ($stored === null) {
-            return (array) config('family.promotion_criteria', []);
+            return self::defaults('promotion_criteria');
         }
 
         return array_values(array_filter(
@@ -104,7 +152,7 @@ class FamilyContent
         $stored = self::decode('about');
 
         if ($stored === null) {
-            return (array) config('family.about', []);
+            return self::defaults('about');
         }
 
         return array_values(array_filter(
@@ -137,7 +185,7 @@ class FamilyContent
         $stored = self::decode($key);
 
         if ($stored === null) {
-            return (array) config("family.{$key}", []);
+            return self::defaults($key);
         }
 
         return array_values(array_filter(
@@ -177,7 +225,7 @@ class FamilyContent
             ));
         }
 
-        Setting::set($key, json_encode($value, JSON_UNESCAPED_UNICODE), self::GROUP);
+        Setting::set(self::keyFor($key), json_encode($value, JSON_UNESCAPED_UNICODE), self::GROUP);
     }
 
     /**
@@ -239,7 +287,7 @@ class FamilyContent
     /** Вернуть ключ к значению из config/family.php. */
     public static function reset(string $key): void
     {
-        Setting::set($key, null, self::GROUP);
+        Setting::set(self::keyFor($key), null, self::GROUP);
     }
 
     /** @return array<int,array<string,string>> */
@@ -248,7 +296,7 @@ class FamilyContent
         $stored = self::decode($key);
 
         if ($stored === null) {
-            return (array) config("family.{$key}", []);
+            return $key === 'positions' ? self::preparePositions(self::defaults($key)) : self::defaults($key);
         }
 
         // Посади читаються через той самий preparePositions(), що й при
@@ -284,7 +332,7 @@ class FamilyContent
      */
     private static function decode(string $key): ?array
     {
-        $raw = Setting::get($key);
+        $raw = Setting::get(self::keyFor($key));
 
         if ($raw === null || trim($raw) === '') {
             return null;

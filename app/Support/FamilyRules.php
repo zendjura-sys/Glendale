@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\Setting;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -139,16 +140,74 @@ class FamilyRules
         ];
     }
 
+    /**
+     * Правила активної родини в тому ж форматі Discord: її власний текст
+     * (керування родиною → Профіль родини). Для першої родини (Monsory),
+     * поки текст не редагували, — файл resources/rules/monsory.md.
+     */
+    public static function familyMarkdown(): string
+    {
+        $stored = Setting::get(self::familyRulesKey());
+        if ($stored !== null) {
+            return $stored;
+        }
+
+        return self::isDefaultFamily() ? (string) @file_get_contents(self::path('monsory.md')) : '';
+    }
+
+    public static function saveFamilyMarkdown(?string $markdown): void
+    {
+        Setting::set(self::familyRulesKey(), $markdown !== null && trim($markdown) !== '' ? $markdown : null, 'content');
+    }
+
+    private static function familyRulesKey(): string
+    {
+        return 'family.'.(\App\Families\FamilyContext::id() ?? 0).'.rules_md';
+    }
+
+    private static function isDefaultFamily(): bool
+    {
+        $id = \App\Families\FamilyContext::id();
+
+        return $id === null || $id === \App\Families\FamilyContext::defaultId();
+    }
+
+    /**
+     * Книги для активної родини: власні правила родини + правила проєкту
+     * (Верба Онлайн — лише для родин цього проєкту).
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    private static function booksForFamily(): array
+    {
+        $family = \App\Families\FamilyContext::family();
+        $verba = ! $family || mb_strtolower((string) $family->project) === 'verba online';
+
+        return collect(self::books())
+            ->filter(fn ($b) => $b['kind'] === 'family' || $verba)
+            ->map(function ($b) use ($family) {
+                if ($b['kind'] !== 'family') {
+                    return $b + ['markdown' => (string) @file_get_contents(self::path($b['file']))];
+                }
+                $name = $family->name ?? 'Monsory';
+
+                return array_merge($b, [
+                    // Monsory лишає свій slug — на нього посилається застосунок.
+                    'slug' => self::isDefaultFamily() ? $b['slug'] : 'family',
+                    'title' => "Правила родини {$name}",
+                    'markdown' => self::familyMarkdown(),
+                ]);
+            })->values()->all();
+    }
+
     /** Повна відповідь для сайту й застосунку. */
     public static function payload(): array
     {
-        // Кеш за часом зміни файлів — розбір md на кожен запит не потрібен,
-        // а заміна тексту правил одразу скидає кеш без artisan cache:clear.
-        $stamp = collect(self::books())->map(fn ($b) => @filemtime(self::path($b['file'])) ?: 0)->implode('-');
+        $books = self::booksForFamily();
 
-        return Cache::rememberForever('family_rules.'.md5($stamp), fn () => [
+        return Cache::rememberForever('family_rules.'.md5(json_encode(array_map(fn ($b) => [$b['slug'], $b['title'], md5($b['markdown'])], $books))), fn () => [
             'levels' => self::levels(),
-            'books' => collect(self::books())->map(fn (array $book) => [
+            'books' => collect($books)->map(fn (array $book) => [
                 'slug' => $book['slug'],
                 'title' => $book['title'],
                 'short' => $book['short'],
@@ -156,7 +215,7 @@ class FamilyRules
                 'kind' => $book['kind'],
                 'description' => $book['description'],
                 'updatedAt' => $book['updatedAt'],
-                'sections' => self::parse((string) @file_get_contents(self::path($book['file'])), $book['kind']),
+                'sections' => self::parse($book['markdown'], $book['kind']),
             ])->values()->all(),
         ]);
     }

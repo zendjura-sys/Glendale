@@ -92,7 +92,7 @@ class BonusAdminController
             return response()->json(['ok' => true, 'message' => null, 'data' => ['members' => []], 'errors' => null, 'redirect' => null]);
         }
 
-        $members = User::query()
+        $members = User::query()->inActiveFamily()
             ->where('is_shadow', false)
             ->where('name', 'like', '%'.$query.'%')
             ->orderBy('name')

@@ -181,7 +181,7 @@ class BankController
             return response()->json(['members' => []]);
         }
 
-        $members = User::query()
+        $members = User::query()->inActiveFamily()
             ->where('id', '!=', $request->user()->id)
             ->where('is_shadow', false)
             ->where('name', 'like', '%'.$query.'%')

@@ -167,7 +167,7 @@ class ProgressController
                 ->get()
                 ->map(fn (ProgressionProfile $p) => ['name' => $p->user?->name ?? '—', 'position' => $p->user?->position_title, 'value' => $p->kapt_wins])
                 ->values(),
-            'veterans' => \App\Models\User::query()
+            'veterans' => \App\Models\User::query()->inActiveFamily()
                 ->where('is_shadow', false)
                 ->whereNotNull('email_verified_at')
                 ->orderBy('created_at')
@@ -246,7 +246,7 @@ class ProgressController
      */
     protected function balanceLeaderboard(): array
     {
-        return \App\Models\User::query()
+        return \App\Models\User::query()->inActiveFamily()
             ->where('is_shadow', false)
             ->whereNotNull('email_verified_at')
             ->get(['id', 'name', 'first_name', 'last_name', 'position_key'])

@@ -28,7 +28,7 @@ class NotifyOnFamilyEventStartingSoon
         $skipUserIds = $familyEvent->rsvps()->where('status', 'not_going')->pluck('user_id');
 
         $now = now();
-        User::query()->select('id')->whereNotIn('id', $skipUserIds)->chunk(200, function ($users) use ($title, $body, $now) {
+        User::query()->inActiveFamily()->select('id')->whereNotIn('id', $skipUserIds)->chunk(200, function ($users) use ($title, $body, $now) {
             DB::table('notifications')->insert($users->map(fn (User $user) => [
                 'user_id' => $user->id,
                 'type' => 'family_event_starting_soon',

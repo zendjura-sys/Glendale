@@ -76,10 +76,12 @@ class BroadcastController
      */
     protected function publish(array $data, User $author): Broadcast
     {
-        $recipients = User::query()
+        $recipients = User::query()->inActiveFamily()
             ->select('id')
             ->when($data['audience_type'] === 'role', fn ($q) => $q->role($data['audience_value']))
-            ->when($data['audience_type'] === 'position', fn ($q) => $q->where('position_key', $data['audience_value']))
+            // Посада — своя в кожній родині (family_members.position_key).
+            ->when($data['audience_type'] === 'position', fn ($q) => $q->whereIn('id', \Illuminate\Support\Facades\DB::table('family_members')
+                ->where('family_id', \App\Families\FamilyContext::id())->where('position_key', $data['audience_value'])->select('user_id')))
             ->get();
 
         $broadcast = Broadcast::create([
