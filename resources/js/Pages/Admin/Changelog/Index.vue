@@ -52,7 +52,7 @@ function fmtDate(iso) {
 </script>
 
 <template>
-    <Head title="Що нового — Monsory Connect" />
+    <Head title="Що нового" />
 
     <AdminLayout title="Що нового">
         <p

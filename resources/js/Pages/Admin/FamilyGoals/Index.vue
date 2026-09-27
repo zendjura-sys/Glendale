@@ -83,7 +83,7 @@ async function closeGoal(goal) {
 </script>
 
 <template>
-    <Head title="Цілі родини — Monsory Connect" />
+    <Head title="Цілі родини" />
 
     <AdminLayout title="Цілі родини">
         <div class="pointer-events-none fixed inset-x-4 top-6 z-[100] flex flex-col gap-3 sm:inset-x-auto sm:right-6 sm:w-full sm:max-w-sm">

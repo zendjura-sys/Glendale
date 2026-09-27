@@ -1,0 +1,112 @@
+/* Спільні токени оформлення — і для соцмережі (React), і для сторінок Vue
+   (resources/css/app.css імпортує цей самий файл): одна палітра, одна тема. */
+:root {
+  color-scheme: light;
+  --bg: #f5f1e8;
+  --card: rgba(255, 253, 248, 0.62);
+  --card-solid: #fffdf8;
+  --card-strong: rgba(255, 253, 248, 0.82);
+  --glass-border: rgba(255, 255, 255, 0.75);
+  --glass-edge: rgba(60, 44, 12, 0.08);
+  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0) 42%);
+  --glass-blur: blur(26px) saturate(185%);
+  --header: rgba(255, 255, 255, 0.55);
+  --header-border: rgba(255, 255, 255, 0.7);
+  --field: rgba(255, 255, 255, 0.55);
+  --field-border: rgba(60, 44, 12, 0.08);
+  --separator: rgba(60, 44, 12, 0.09);
+  --hover: rgba(176, 132, 40, 0.07);
+  --active: rgba(176, 132, 40, 0.14);
+  --text: #1d1810;
+  --text-2: #6b5f4b;
+  --text-3: #998c74;
+  --accent: #9c7424;
+  --accent-2: #c08a2e;
+  --accent-soft: rgba(176, 132, 40, 0.14);
+  --gradient: linear-gradient(135deg, #b8862b 0%, #d9ad52 55%, #f0cf7c 100%);
+  --link: #8a6419;
+  --name: #1d1810;
+  --icon: #998c74;
+  --icon-accent: #9c7424;
+  --btn-primary: #b08428;
+  --btn-primary-hover: #c29434;
+  --btn-primary-text: #1a1408;
+  --btn-secondary: rgba(255, 253, 248, 0.65);
+  --btn-secondary-hover: rgba(255, 253, 248, 0.9);
+  --btn-secondary-text: #7d5a14;
+  --like: #f43f70;
+  --online: #22c55e;
+  --danger: #e5484d;
+  --badge: #f43f70;
+  --bubble-in: rgba(255, 253, 248, 0.78);
+  --bubble-out: linear-gradient(135deg, #c9982f 0%, #e2b95c 100%);
+  --bubble-out-text: #1a1408;
+  --bubble-out-meta: rgba(26, 20, 8, 0.65);
+  --im-bg: transparent;
+  --overlay: rgba(25, 18, 5, 0.35);
+  --shadow: 0 24px 60px rgba(30, 35, 90, 0.2), 0 4px 14px rgba(30, 35, 90, 0.08);
+  --card-border: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 0 0 1px var(--glass-edge), 0 10px 30px -12px rgba(30, 35, 90, 0.18),
+    0 2px 6px -2px rgba(30, 35, 90, 0.06);
+  --lift: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 0 0 1px var(--glass-edge), 0 22px 44px -16px rgba(30, 35, 90, 0.28),
+    0 4px 10px -4px rgba(30, 35, 90, 0.1);
+  --aurora-1: #f2cf7d;
+  --aurora-2: #e8b36a;
+  --aurora-3: #f3d9a4;
+  --aurora-4: #d9c3ff;
+  --aurora-opacity: 0.32;
+  --radius: 22px;
+  --radius-sm: 14px;
+  --header-h: 64px;
+  --content-w: 1080px;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #070605;
+  --card: rgba(30, 26, 20, 0.52);
+  --card-solid: #15120d;
+  --card-strong: rgba(34, 29, 22, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-edge: rgba(255, 255, 255, 0.07);
+  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0) 40%);
+  --header: rgba(22, 19, 14, 0.55);
+  --header-border: rgba(255, 255, 255, 0.08);
+  --field: rgba(255, 244, 220, 0.05);
+  --field-border: rgba(255, 244, 220, 0.08);
+  --separator: rgba(255, 244, 220, 0.07);
+  --hover: rgba(255, 244, 220, 0.05);
+  --active: rgba(227, 189, 106, 0.16);
+  --text: #f3ecdc;
+  --text-2: #a89c84;
+  --text-3: #766c59;
+  --accent: #e3bd6a;
+  --accent-2: #f0d08b;
+  --accent-soft: rgba(227, 189, 106, 0.16);
+  --gradient: linear-gradient(135deg, #a8792a 0%, #d9ad52 55%, #f3d68f 100%);
+  --link: #e8c67c;
+  --name: #f3ecdc;
+  --icon: #8a7f69;
+  --icon-accent: #e8c67c;
+  --btn-primary: #d4a843;
+  --btn-primary-hover: #e0b755;
+  --btn-primary-text: #140f05;
+  --btn-secondary: rgba(255, 244, 220, 0.07);
+  --btn-secondary-hover: rgba(255, 244, 220, 0.12);
+  --btn-secondary-text: #ecd297;
+  --bubble-in: rgba(255, 244, 220, 0.07);
+  --bubble-out: linear-gradient(135deg, #b98a2f 0%, #dcb259 100%);
+  --im-bg: transparent;
+  --overlay: rgba(0, 0, 0, 0.55);
+  --shadow: 0 30px 70px rgba(0, 0, 0, 0.6), 0 6px 18px rgba(0, 0, 0, 0.35);
+  --card-border: 0 1px 0 rgba(255, 255, 255, 0.07) inset, 0 0 0 1px var(--glass-edge), 0 18px 40px -18px rgba(0, 0, 0, 0.7);
+  --lift: 0 1px 0 rgba(255, 255, 255, 0.1) inset, 0 0 0 1px rgba(255, 255, 255, 0.1), 0 28px 50px -18px rgba(0, 0, 0, 0.8),
+    0 0 40px -10px rgba(110, 100, 255, 0.25);
+  --aurora-1: #8a5a12;
+  --aurora-2: #c28a2c;
+  --aurora-3: #5a3a10;
+  --aurora-4: #3b2d6b;
+  --aurora-opacity: 0.3;
+  --bubble-out-text: #140f05;
+  --bubble-out-meta: rgba(20, 15, 5, 0.65);
+}
+

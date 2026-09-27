@@ -42,7 +42,7 @@ function fmtDate(iso) {
         <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
             <div v-reveal class="mb-8">
                 <p class="text-white/50">
-                    Вітаємо, <span class="text-gold-300">{{ $page.props.auth.user.name }}</span> — це ваш особистий кабінет Monsory Connect.
+                    Вітаємо, <span class="text-gold-300">{{ $page.props.auth.user.name }}</span> — це ваш особистий кабінет GameConnect.
                 </p>
             </div>
 

@@ -26,15 +26,17 @@ export default {
                 xs: '400px',
             },
             fontFamily: {
-                sans: ['Manrope', ...defaultTheme.fontFamily.sans],
+                sans: ['Montserrat Variable', 'Montserrat', ...defaultTheme.fontFamily.sans],
                 display: ['Montserrat', ...defaultTheme.fontFamily.sans],
             },
             colors: {
+                // Через CSS-змінні: у світлій темі «обсидіан» стає кремовими
+                // поверхнями соцмережі (див. «ЄДИНЕ ОФОРМЛЕННЯ» в app.css).
                 obsidian: {
-                    950: '#060605',
-                    900: '#0b0a09',
-                    800: '#141210',
-                    700: '#1e1b18',
+                    950: 'rgb(var(--obsidian-950) / <alpha-value>)',
+                    900: 'rgb(var(--obsidian-900) / <alpha-value>)',
+                    800: 'rgb(var(--obsidian-800) / <alpha-value>)',
+                    700: 'rgb(var(--obsidian-700) / <alpha-value>)',
                 },
                 // Через CSS-переменные, а не хексом: акцентный цвет
                 // задаётся в админке (Дизайн → Оформлення) и подставляется

@@ -40,7 +40,7 @@ function fmtDate(iso) {
 </script>
 
 <template>
-    <Head title="Союз — Monsory Connect" />
+    <Head title="Союз" />
 
     <AdminLayout title="Союз">
         <p

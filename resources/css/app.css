@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* Спільні токени оформлення з соцмережею: одна палітра й тема на весь сайт. */
+@import "../app/shell/tokens.css";
 /* Тримаємо старий JS-конфіг (кастомні кольори через CSS-змінні, шрифти,
    @tailwindcss/forms) замість переписування на CSS-native @theme —
    значення нікуди не рухаються, ризик помилково перекласти щось при
@@ -749,3 +751,234 @@
 }
 
 } /* закриває @layer components, відкритий вище (LIQUID GLASS) */
+
+
+/* ================= ЄДИНЕ ОФОРМЛЕННЯ =================
+   Сторінки Vue виглядають так само, як соцмережа (React): ті самі токени
+   (resources/app/shell/tokens.css), та сама тема — світла чи темна, яку
+   людина обрала в меню. Палітра Tailwind тут прив'язана до токенів:
+   text-white → основний колір тексту теми, obsidian → поверхні, gold →
+   акцент, темніший у світлій темі (інакше золото на кремовому не читається). */
+:root {
+    --color-white: var(--text);
+    --obsidian-950: 7 6 5;
+    --obsidian-900: 11 10 9;
+    --obsidian-800: 20 18 16;
+    --obsidian-700: 30 27 24;
+}
+:root[data-theme='light'] {
+    --obsidian-950: 245 241 232;
+    --obsidian-900: 255 253 248;
+    --obsidian-800: 250 246 238;
+    --obsidian-700: 238 231 216;
+    --gold-100: 110 80 18;
+    --gold-200: 125 90 20;
+    --gold-300: 140 104 30;
+    --gold-350: 150 112 34;
+    --gold-400: 176 132 40;
+    --gold-500: 156 116 36;
+    --gold-600: 125 90 20;
+    /* Світлі відтінки статусів (текст на темному) → насичені для світлого фону. */
+    --color-emerald-100: oklch(43.2% 0.095 166.913);
+    --color-emerald-200: oklch(50.8% 0.118 165.612);
+    --color-emerald-300: oklch(50.8% 0.118 165.612);
+    --color-emerald-400: oklch(59.6% 0.145 163.225);
+    --color-red-100: oklch(44.4% 0.177 26.899);
+    --color-red-200: oklch(50.5% 0.213 27.518);
+    --color-red-300: oklch(50.5% 0.213 27.518);
+    --color-red-400: oklch(57.7% 0.245 27.325);
+    --color-amber-100: oklch(47.3% 0.137 46.201);
+    --color-amber-200: oklch(55.5% 0.163 48.998);
+    --color-amber-300: oklch(55.5% 0.163 48.998);
+    --color-amber-400: oklch(66.6% 0.179 58.318);
+    --color-sky-200: oklch(50% 0.134 242.749);
+    --color-sky-300: oklch(50% 0.134 242.749);
+    --color-sky-400: oklch(58.8% 0.158 241.966);
+    --color-orange-200: oklch(55.3% 0.195 38.402);
+    --color-orange-300: oklch(55.3% 0.195 38.402);
+    --color-orange-400: oklch(64.6% 0.222 41.116);
+    --color-fuchsia-200: oklch(51.8% 0.253 323.949);
+    --color-fuchsia-400: oklch(59.1% 0.293 322.896);
+}
+
+html,
+body {
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* Скляні картки — ті самі, що .card у соцмережі. */
+.glass-panel,
+.glass-panel-gold {
+    background: var(--card);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    box-shadow: var(--card-border);
+}
+.glass-panel::before,
+.glass-panel-gold::before {
+    display: none;
+}
+.glass-panel-gold {
+    background: linear-gradient(155deg, var(--accent-soft) 0%, var(--card) 55%);
+}
+.glass-pill {
+    background: var(--btn-secondary);
+    box-shadow: var(--card-border);
+}
+
+/* ---------- геометрія сторінки під спільною оболонкою ----------
+   Точно як .page у соцмережі: шапка зверху, меню 196px ліворуч, вміст
+   праворуч — у тих самих межах --content-w. */
+html[data-shell='admin'] {
+    --content-w: 1240px;
+}
+.gc-frame {
+    max-width: var(--content-w);
+    margin: 0 auto;
+    padding: calc(var(--header-h) + 16px) 16px 24px calc(16px + 196px + 16px);
+    font-family: 'Montserrat Variable', 'Montserrat', system-ui, sans-serif;
+}
+.gc-side {
+    position: fixed;
+    z-index: 40;
+    top: calc(var(--header-h) + 16px);
+    left: calc(max(0px, (100% - var(--content-w)) / 2) + 16px);
+    width: 196px;
+    max-height: calc(100vh - var(--header-h) - 32px);
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+.gc-side .sidebar {
+    position: static;
+}
+.gc-page {
+    min-width: 0;
+    color: var(--text);
+}
+.gc-page-head {
+    margin-bottom: 16px;
+}
+.gc-page-head h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+}
+@media (max-width: 760px) {
+    .gc-frame {
+        padding: calc(var(--header-h) + 8px) 8px calc(72px + env(safe-area-inset-bottom));
+    }
+    .gc-side {
+        display: none;
+    }
+}
+
+/* Корені оболонки — лише «рамка» для фіксованих шапки/меню: правила
+   body із стилів соцмережі (фон, min-height: 100vh) сюди не стосуються,
+   інакше вони штовхають сторінку на висоту екрана вниз. */
+#gc-shell.gc-shell,
+#gc-top.gc-shell {
+    min-height: 0;
+    background: none;
+}
+
+/* Старі сторінки мали власні поля й ширину (max-w-7xl px-… py-…) під
+   колишню шапку — у спільній рамці вони лише зсували вміст убік від
+   заголовка. Заголовки сторінок — одного вигляду, як у соцмережі. */
+.gc-page > .mx-auto,
+.gc-page > div > .mx-auto:first-child {
+    max-width: none;
+    padding-inline: 0;
+    padding-top: 0;
+}
+.gc-page-head :is(h1, h2) {
+    font-family: inherit;
+    font-size: 22px;
+    font-weight: 700;
+    font-style: normal;
+    letter-spacing: -0.01em;
+    color: var(--text);
+}
+
+/* ---------- вхід / реєстрація ---------- */
+.gc-guest {
+    position: relative;
+    display: flex;
+    min-height: 100svh;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 40px 16px;
+    font-family: 'Montserrat Variable', 'Montserrat', system-ui, sans-serif;
+    color: var(--text);
+}
+.gc-guest-card {
+    width: 100%;
+    max-width: 440px;
+    padding: 28px;
+    border-radius: var(--radius);
+    background: var(--card);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    box-shadow: var(--card-border);
+}
+.gc-guest-foot {
+    color: var(--text-3);
+    font-size: 12px;
+    text-align: center;
+}
+.gc-guest-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text);
+}
+.gc-logo-mark {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    place-items: center;
+    border-radius: 12px;
+    background: var(--gradient);
+    color: var(--btn-primary-text);
+    font-size: 20px;
+    font-weight: 800;
+}
+.gc-logo-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.05;
+}
+.gc-logo-main {
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+.gc-logo-sub {
+    color: var(--accent);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.32em;
+}
+/* Той самий спокійний фон, що в соцмережі (.aurora). */
+.gc-aurora {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    background: var(--bg);
+}
+.gc-aurora i {
+    position: absolute;
+    width: 60vmax;
+    height: 60vmax;
+    border-radius: 50%;
+    opacity: var(--aurora-opacity);
+    filter: blur(80px);
+}
+.gc-aurora i:nth-child(1) { top: -20vmax; left: -15vmax; background: var(--aurora-1); }
+.gc-aurora i:nth-child(2) { top: -10vmax; right: -20vmax; background: var(--aurora-2); }
+.gc-aurora i:nth-child(3) { bottom: -25vmax; left: 10vmax; background: var(--aurora-3); }
+.gc-aurora i:nth-child(4) { bottom: -20vmax; right: -10vmax; background: var(--aurora-4); }

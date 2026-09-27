@@ -118,7 +118,7 @@ function sendDigest() {
 </script>
 
 <template>
-    <Head title="Події родини — Monsory Connect" />
+    <Head title="Події родини" />
 
     <AdminLayout title="Події родини">
         <div class="mb-6 flex flex-wrap gap-3">

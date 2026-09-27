@@ -163,7 +163,7 @@ async function deleteAccount() {
 </script>
 
 <template>
-    <Head title="Учасники — Monsory Connect" />
+    <Head title="Учасники" />
 
     <AdminLayout title="Учасники">
         <div class="mb-6 flex flex-wrap items-end gap-3">

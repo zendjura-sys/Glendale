@@ -223,8 +223,9 @@ const MONSORY_LINKS = () => [
   { href: '/rules', icon: BookOpen, label: tr('Правила') },
 ];
 
-function Sidebar() {
+export function Sidebar() {
   const me = useMe();
+  const { pathname } = useLocation();
   const { config } = useConfig();
   const { counters } = useRealtime();
   return (
@@ -235,7 +236,7 @@ function Sidebar() {
       <NavLink to="/feed">
         <Newspaper size={20} /> {tr('Новости')}
       </NavLink>
-      <a href="/messenger">
+      <a href="/messenger" className={pathname.startsWith('/messenger') ? 'active' : undefined}>
         <MessageCircle size={20} /> {tr('Мессенджер')} <Counter n={counters.messages} hot />
       </a>
       <NavLink to="/friends">
@@ -266,7 +267,7 @@ function Sidebar() {
       </NavLink>
       {me.verified &&
         MONSORY_LINKS().map(({ href, icon: Icon, label }) => (
-          <a key={href} href={href}>
+          <a key={href} href={href} className={pathname === href || pathname.startsWith(href + '/') ? 'active' : undefined}>
             <Icon size={20} /> {label}
           </a>
         ))}
@@ -275,7 +276,7 @@ function Sidebar() {
         <Settings size={20} /> {tr('Настройки')}
       </NavLink>
       {isStaffLevel(me.level.type) && (
-        <a href="/admin">
+        <a href="/admin" className={pathname.startsWith('/admin') ? 'active' : undefined}>
           <Shield size={20} /> {tr('Админ-панель')}
         </a>
       )}
@@ -286,7 +287,7 @@ function Sidebar() {
   );
 }
 
-function TabBar() {
+export function TabBar() {
   const me = useMe();
   const { counters } = useRealtime();
   return (

@@ -17,14 +17,20 @@
         ? (App\Support\FamilyContent::unionAbout()[0] ?? 'Союз Monsory — окремий вхід для родин-партнерів.')
         : (App\Support\FamilyContent::about()[0] ?? 'Monsory Family — закрита родина на RP-сервері.');
     $ogImage = $design['logoUrl'] ?: asset('images/icons/icon-512.png');
+
+    // Єдина оболонка (шапка, меню, нижня панель — ті самі, що в соцмережі).
+    $shell = App\Support\ShellNav::enabled(request(), $page);
+    $shellConfig = $shell ? App\Support\ShellNav::for(request(), request()->user()) : null;
 @endphp
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-effects="{{ $design['effects'] }}" data-season="{{ $design['seasonalTheme'] }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-effects="{{ $design['effects'] }}" data-season="{{ $design['seasonalTheme'] }}" @if ($shell) data-shell="{{ $shellConfig['mode'] }}" @endif>
     <head>
         <meta charset="utf-8">
         {{-- viewport-fit=cover — иначе на телефонах с вырезом (iPhone X и
              новее) контент не доходит до краёв экрана и по бокам остаются
              чёрные поля вместо полноэкранной сцены. --}}
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+        {{-- Для спільної оболонки: обмін сесії на токен API (/platform/session-token). --}}
+        <meta name="csrf-token" content="{{ csrf_token() }}">
         {{-- Красит адресную строку браузера на телефоне в цвет фона сайта:
              без этого поверх тёмной страницы висит светлая полоса. --}}
         <meta name="theme-color" content="#060605">
@@ -68,9 +74,26 @@
              хостится из public/fonts (см. app.css), а не тянется с bunny.net. --}}
         <link href="https://fonts.bunny.net/css?family=manrope:400,500,600,700&display=swap" rel="stylesheet" />
 
+        {{-- Тема (світла/темна) — та сама, що в соцмережі, і до першої
+             відмальовки, без спалаху. --}}
+        <script>
+            try {
+                var t = localStorage.getItem('theme');
+                if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+                document.documentElement.dataset.theme = t;
+            } catch (e) {}
+            @if ($shell)
+                window.GC_SHELL = @json($shellConfig);
+            @endif
+        </script>
+
         <!-- Scripts -->
         @routes
-        @vite(['resources/js/app.js', "resources/js/Pages/{$page['component']}.vue"])
+        @if ($shell)
+            @vite(['resources/js/app.js', 'resources/app/shell.tsx', "resources/js/Pages/{$page['component']}.vue"])
+        @else
+            @vite(['resources/js/app.js', "resources/js/Pages/{$page['component']}.vue"])
+        @endif
 
         @if ($accentCss)
             {{-- Пять переменных перекрашивают весь сайт: палитра золота в
@@ -85,6 +108,14 @@
         @inertiaHead
     </head>
     <body class="font-sans antialiased">
-        @inertia
+        @if ($shell)
+            <div id="gc-shell" class="gc-shell"></div>
+            <div class="gc-frame">
+                <div id="gc-top" class="gc-shell"></div>
+                @inertia
+            </div>
+        @else
+            @inertia
+        @endif
     </body>
 </html>

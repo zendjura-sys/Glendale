@@ -86,7 +86,7 @@ async function destroyRole(role) {
 </script>
 
 <template>
-    <Head title="Права доступу — Monsory Connect" />
+    <Head title="Права доступу" />
 
     <AdminLayout title="Права доступу">
         <form v-reveal class="glass-panel mb-8 flex flex-wrap items-end gap-4 p-6" @submit.prevent="createRole">

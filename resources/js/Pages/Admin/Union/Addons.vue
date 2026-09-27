@@ -119,7 +119,7 @@ const infoAddon = ref(null);
 </script>
 
 <template>
-    <Head title="Аддони союзу — Monsory Connect" />
+    <Head title="Аддони союзу" />
 
     <AdminLayout title="Аддони союзу">
         <div class="pointer-events-none fixed inset-x-4 top-6 z-[100] flex flex-col gap-3 sm:inset-x-auto sm:right-6 sm:w-full sm:max-w-sm">

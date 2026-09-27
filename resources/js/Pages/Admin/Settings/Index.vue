@@ -260,7 +260,7 @@ async function testAi() {
 </script>
 
 <template>
-    <Head title="Налаштування — Monsory Connect" />
+    <Head title="Налаштування" />
 
     <AdminLayout title="Налаштування">
         <div class="mb-8 flex flex-wrap gap-2">

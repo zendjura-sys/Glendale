@@ -16,7 +16,7 @@ import { startCursor, stopCursor } from './lib/cursor';
 import { startAuroraShader, stopAuroraShader } from './lib/auroraShader';
 import { startSeasonalDecoration, stopSeasonalDecoration } from './lib/seasonalDecoration';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'GameConnect';
 
 /**
  * «Тяжёлые» украшения — инерционный скролл, кастомный курсор и шейдерный
@@ -36,7 +36,9 @@ const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
  * с ним, а не только при первом заходе.
  */
 function syncDecorations() {
-    if (window.location.pathname.startsWith('/admin')) {
+    // Сторінки в спільній оболонці (як соцмережа) — без курсора, шейдера й
+    // Lenis: там свій спокійний фон-аврора, однаковий на всьому сайті.
+    if (document.documentElement.dataset.shell || window.location.pathname.startsWith('/admin')) {
         stopSmoothScroll();
         stopCursor();
         stopAuroraShader();
@@ -71,6 +73,34 @@ function startDecorations() {
         resetScroll();
     });
 }
+
+/**
+ * Оболонка (шапка/меню) рендериться сервером під тип сторінки: звичайне
+ * меню чи меню адмінки, а на вході/головній її немає зовсім. Перехід Inertia
+ * через цю межу — повне завантаження, щоб оболонка відповідала сторінці.
+ */
+const shellMode = () => document.documentElement.dataset.shell || '';
+const isAdminPath = (url) => new URL(url, window.location.origin).pathname.startsWith('/admin');
+document.addEventListener('inertia:before', (event) => {
+    const visit = event.detail.visit;
+    if (!shellMode() || visit.method !== 'get') return;
+    const url = visit.url.toString();
+    if (isAdminPath(url) !== (shellMode() === 'admin')) {
+        event.preventDefault();
+        window.location.assign(url);
+    }
+});
+// Перша подія — саме завантаження сторінки: її оболонку вже вирішив сервер.
+let initialNavigate = true;
+document.addEventListener('inertia:navigate', (event) => {
+    if (initialNavigate) {
+        initialNavigate = false;
+        return;
+    }
+    const page = event.detail.page;
+    const wantsShell = !!page.props?.auth?.user && !/^(Auth\/|Union\/|Home$)/.test(page.component);
+    if (wantsShell !== !!shellMode()) window.location.reload();
+});
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,

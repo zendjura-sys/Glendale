@@ -11,8 +11,21 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $code }} — {{ $title }}</title>
+    <script>
+        try {
+            var t = localStorage.getItem('theme');
+            if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+            document.documentElement.dataset.theme = t;
+        } catch (e) {}
+    </script>
     <style>
         :root { color-scheme: dark; }
+        /* Світла тема сайту — ті самі кольори, що в соцмережі. */
+        :root[data-theme='light'] { color-scheme: light; }
+        :root[data-theme='light'] body { background: #f5f1e8 !important; background-image: none !important; color: #6b5f4b !important; }
+        :root[data-theme='light'] .card, :root[data-theme='light'] [class*='card'] { background: rgba(255, 253, 248, 0.8) !important; box-shadow: 0 10px 30px -12px rgba(30, 35, 90, 0.18) !important; border-color: rgba(60, 44, 12, 0.08) !important; }
+        :root[data-theme='light'] h1 { color: #1d1810 !important; }
+        :root[data-theme='light'] .mark span { color: #9c7424 !important; }
         * { box-sizing: border-box; }
         body {
             margin: 0;
@@ -93,7 +106,7 @@
 </head>
 <body>
     <div class="card">
-        <div class="mark"><span>M</span></div>
+        <div class="mark"><span>G</span></div>
         <p class="code">Помилка {{ $code }}</p>
         <h1>{{ $title }}</h1>
         <p class="message">{{ $message }}</p>

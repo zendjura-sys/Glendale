@@ -552,6 +552,19 @@ if [ "$APP_DOMAIN" != "_" ] && [ -n "${HOSTINGER_API_TOKEN:-}" ]; then
         # (не HOSTINGER_API_TOKEN) — інакше «You didn't specify a Hostinger
         # API Key yet».
         export HOSTINGER_Token="$HOSTINGER_API_TOKEN"
+        # Діагностика до випуску: плагін на будь-яку проблему пише лише
+        # «invalid domain». Питаємо Hostinger DNS API сам — і кажемо причину.
+        HOSTINGER_CHECK_CODE="$(curl -s -o /tmp/hostinger-zone.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${HOSTINGER_API_TOKEN}" \
+            "https://developers.hostinger.com/api/dns/v1/zones/${PRIMARY_DOMAIN}" || echo 000)"
+        case "$HOSTINGER_CHECK_CODE" in
+            200) grep -q '"type"' /tmp/hostinger-zone.json 2>/dev/null \
+                    || warn "Hostinger: зона ${PRIMARY_DOMAIN} порожня — домен є в акаунті, але DNS-записів немає (перевір, що nameservers домену — Hostinger)." ;;
+            401|403) warn "Hostinger API відхилив токен (HTTP ${HOSTINGER_CHECK_CODE}) — створи новий у hPanel → Профіль → API і запусти: HOSTINGER_API_TOKEN='...' ./deploy/setup-vps.sh" ;;
+            404|422) warn "Hostinger не знає DNS-зону ${PRIMARY_DOMAIN} (HTTP ${HOSTINGER_CHECK_CODE}) — домен в іншому акаунті або його DNS не на Hostinger (dig NS ${PRIMARY_DOMAIN} +short має показати ns1/ns2.dns-parking.com)." ;;
+            *) warn "Hostinger API недоступний (HTTP ${HOSTINGER_CHECK_CODE}) — спробую все одно." ;;
+        esac
+        rm -f /tmp/hostinger-zone.json
         # --install-cert прописує ці шляхи й --reloadcmd у свій конфіг
         # продовження назавжди: наступне автопродовження (власний таймер
         # acme.sh, незалежний від деплоїв) саме перекладе сертифікат сюди

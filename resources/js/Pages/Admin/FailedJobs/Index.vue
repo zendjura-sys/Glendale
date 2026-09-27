@@ -40,7 +40,7 @@ function clearAll() {
 </script>
 
 <template>
-    <Head title="Провалені джоби — Monsory Connect" />
+    <Head title="Провалені джоби" />
 
     <AdminLayout title="Провалені джоби">
         <p

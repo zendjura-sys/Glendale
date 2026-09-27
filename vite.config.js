@@ -9,7 +9,7 @@ export default defineConfig({
         laravel({
             // Дві точки входу на час переходу: старі сторінки родини (Vue +
             // Inertia) і нова платформа (React SPA у resources/app).
-            input: ['resources/js/app.js', 'resources/app/main.tsx'],
+            input: ['resources/js/app.js', 'resources/app/main.tsx', 'resources/app/shell.tsx'],
             refresh: true,
         }),
         vue({

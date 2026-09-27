@@ -57,15 +57,15 @@ const sections = [
 </script>
 
 <template>
-    <Head title="Панель CMS — Monsory Connect" />
+    <Head title="Панель CMS" />
 
     <AdminLayout>
         <div v-reveal class="mb-10">
-            <p class="mb-2 text-sm font-medium uppercase tracking-[0.4em] text-gold-300/90">Monsory Connect</p>
+            <p class="mb-2 text-sm font-medium uppercase tracking-[0.4em] text-gold-300/90">GameConnect</p>
             <h1 class="font-display text-4xl font-light text-white">
                 Панель <span class="text-gradient-gold italic">керування</span>
             </h1>
-            <p class="mt-2 text-white/40">Власна CMS родини Monsory — все в одному місці.</p>
+            <p class="mt-2 text-white/40">Керування всім сайтом GameConnect — в одному місці.</p>
         </div>
 
         <Link

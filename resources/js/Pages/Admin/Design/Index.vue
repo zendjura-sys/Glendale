@@ -221,7 +221,7 @@ function saveSocialLinks() {
 </script>
 
 <template>
-    <Head title="Дизайн — Monsory Connect" />
+    <Head title="Дизайн" />
 
     <AdminLayout title="Дизайн">
         <p

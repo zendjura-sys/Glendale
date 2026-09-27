@@ -334,7 +334,7 @@ onBeforeUnmount(() => {
                                     : 'bg-white/5 text-white/85 ring-1 ring-white/10'"
                             >
                                 <p v-if="m.type === 'text_e2ee'" class="italic opacity-70">
-                                    Повідомлення з застосунку — відкрийте його в Monsory Connect
+                                    Повідомлення з застосунку — відкрийте його в GameConnect
                                 </p>
                                 <p v-else class="whitespace-pre-wrap [overflow-wrap:anywhere]">{{ m.body }}</p>
                             </div>

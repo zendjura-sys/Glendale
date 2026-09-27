@@ -94,7 +94,7 @@ async function review(application, decision) {
 </script>
 
 <template>
-    <Head title="Telegram-бот — Monsory Connect" />
+    <Head title="Telegram-бот" />
 
     <AdminLayout title="Telegram-бот">
         <div class="pointer-events-none fixed inset-x-4 top-6 z-[100] flex flex-col gap-3 sm:inset-x-auto sm:right-6 sm:w-full sm:max-w-sm">

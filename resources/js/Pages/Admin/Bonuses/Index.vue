@@ -214,7 +214,7 @@ async function cancelCashRequest(r) {
 </script>
 
 <template>
-    <Head title="Банк — Monsory Connect" />
+    <Head title="Банк" />
 
     <AdminLayout title="Банк">
         <div class="mb-6 flex justify-end">

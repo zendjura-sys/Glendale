@@ -58,7 +58,7 @@ function fmtDateTime(iso) {
 </script>
 
 <template>
-    <Head title="Розсилки — Monsory Connect" />
+    <Head title="Розсилки" />
 
     <AdminLayout title="Розсилки">
         <div class="mb-6">

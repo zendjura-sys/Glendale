@@ -60,7 +60,7 @@ function fmtDate(iso) {
 </script>
 
 <template>
-    <Head title="Чорний список союзу — Monsory Connect" />
+    <Head title="Чорний список союзу" />
 
     <AdminLayout title="Чорний список союзу">
         <p
