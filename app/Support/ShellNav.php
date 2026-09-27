@@ -34,6 +34,9 @@ final class ShellNav
             ['admin.bonuses.index', 'Банк', 'bonuses.manage', 'wallet'],
             ['admin.broadcasts.index', 'Розсилки', 'broadcasts.manage', 'megaphone'],
         ]],
+        ['Контент', [
+            ['admin.cinema.index', 'Кінопортал', 'cinema.manage', 'film'],
+        ]],
         ['Союз', [
             ['admin.union.index', 'Контент і союзники', 'union.manage', 'handshake'],
             ['admin.union.complaints.index', 'Скарги', 'union.manage', 'scroll'],

@@ -1,4 +1,6 @@
 import { tr } from '../lib/i18n';
+import { Composer } from '../components/Composer';
+import { PostList } from '../components/Post';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -749,6 +751,13 @@ export function FamilyPage() {
 
       {f.canManage && f.requestsCount > 0 && <Requests family={f} />}
       <Members family={f} />
+      {f.myRole && f.status === 'verified' && (
+        <>
+          <div className="section-title">{tr('Стіна родини')}</div>
+          <Composer ownerType="family" ownerId={f.id} queryKeys={[['posts', 'family', f.id], ['posts', 'feed', 'news']]} placeholder={tr('Написати родині…')} />
+          <PostList queryKey={['posts', 'family', f.id]} path={`/wall/family/${f.id}`} emptyText={tr('Тут учасники пишуть одне одному, діляться фільмами й домовляються про збори. Стіну бачать лише учасники родини.')} />
+        </>
+      )}
       {editing && (
         <EditFamilyModal
           family={f}

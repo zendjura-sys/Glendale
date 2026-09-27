@@ -311,6 +311,7 @@ export const NOTIFICATION_TEXT = (): Record<Notification['type'], string> => ({
   union_rejected: tr('відхилив(ла) заявку вашого союзу'),
   union_join_request: tr('подав(ла) заявку родини до союзу'),
   union_join_accepted: tr('прийняв(ла) вашу родину до союзу'),
+  cinema_recommend: tr('радить вам подивитися'),
 });
 
 export const useRealtime = () => useContext(RealtimeContext);

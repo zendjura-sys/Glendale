@@ -174,8 +174,9 @@ h3,
 .card:focus-within {
   z-index: 5;
 }
+/* Діалоги — непрозорі: текст сторінки під ними не проступає. */
 .modal {
-  background: var(--card-strong);
+  background: var(--card-solid);
 }
 /* Menus live inside panes that already have a backdrop-filter, so their own blur can't see the page
    behind them (nested backdrop roots). Keep them nearly opaque so underlying text never shows through. */

@@ -1,7 +1,7 @@
 import { tr } from '../lib/i18n';
 import { Link } from 'react-router-dom';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { Bell, BadgeCheck, CircleX, Crown, Handshake, Heart, MessageCircle, Repeat2, UserCheck, UserPlus, UsersRound, PenLine } from 'lucide-react';
+import { Bell, BadgeCheck, CircleX, Clapperboard, Crown, Handshake, Heart, MessageCircle, Repeat2, UserCheck, UserPlus, UsersRound, PenLine } from 'lucide-react';
 import { api } from '../lib/api';
 import { NOTIFICATION_TEXT } from '../lib/realtime';
 import type { Notification, Page } from '../lib/types';
@@ -25,11 +25,14 @@ const ICONS: Record<Notification['type'], { icon: typeof Heart; color: string }>
   union_rejected: { icon: CircleX, color: '#e5484d' },
   union_join_request: { icon: Handshake, color: '#c9982f' },
   union_join_accepted: { icon: Handshake, color: '#4bb34b' },
+  cinema_recommend: { icon: Clapperboard, color: '#e5484d' },
 };
 
 export function NotificationItem({ n, onClick }: { n: Notification; onClick?: () => void }) {
   const { icon: Icon, color } = ICONS[n.type] ?? { icon: Bell, color: '#998c74' };
-  const link = n.post
+  const link = n.titleId
+    ? `/cinema/title/${n.titleId}`
+    : n.post
     ? `/wall/${n.post.id}`
     : n.unionId
       ? `/unions/${n.unionId}`

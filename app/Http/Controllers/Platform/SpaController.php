@@ -22,7 +22,7 @@ class SpaController extends Controller
     public const PAGES = [
         '/feed', '/id/{any}', '/friends', '/groups', '/club/{any}', '/photos/{any}',
         '/search', '/wall/{any}', '/activity', '/settings', '/music/{any?}',
-        '/families/{any?}', '/unions/{any?}',
+        '/families/{any?}', '/unions/{any?}', '/cinema/{any?}',
     ];
 
     /** Ім'я токена: за ним відкликаємо саме токени веб-SPA, не застосунку. */

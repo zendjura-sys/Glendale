@@ -17,7 +17,7 @@ export function Composer({
   queryKeys,
   placeholder = tr('Что у вас нового?'),
 }: {
-  ownerType?: 'user' | 'group';
+  ownerType?: 'user' | 'group' | 'family';
   ownerId?: number;
   queryKeys: unknown[][];
   placeholder?: string;

@@ -221,7 +221,7 @@ export interface Post {
   text: string;
   image: string | null;
   createdAt: number;
-  ownerType: 'user' | 'group';
+  ownerType: 'user' | 'group' | 'family';
   ownerId: number;
   fromGroup: boolean;
   author: UserShort;
@@ -230,6 +230,8 @@ export interface Post {
   repost: Post | null;
   audio: Track | null;
   spotify: SpotifyRef | null;
+  family?: { id: number; name: string; tag: string; avatar: string | null } | null;
+  cinema?: TitleCard | null;
   likes: number;
   liked: boolean;
   comments: number;
@@ -323,7 +325,8 @@ export interface Notification {
     | 'union_verified'
     | 'union_rejected'
     | 'union_join_request'
-    | 'union_join_accepted';
+    | 'union_join_accepted'
+    | 'cinema_recommend';
   text: string;
   isRead: boolean;
   createdAt: number;
@@ -332,6 +335,7 @@ export interface Notification {
   groupId: number | null;
   familyId?: number | null;
   unionId?: number | null;
+  titleId?: number | null;
 }
 
 export interface Counters {
@@ -343,4 +347,91 @@ export interface Counters {
 export interface Page<T> {
   items: T[];
   nextCursor: number | null;
+}
+
+/* ——— Кінопортал ——— */
+
+export interface TitleCard {
+  id: number;
+  type: 'movie' | 'series';
+  name: string;
+  originalName: string | null;
+  year: number | null;
+  poster: string | null;
+  backdrop: string | null;
+  rating: number | null;
+  localRating: number | null;
+  hasPlayer: boolean;
+  genres: string[];
+  myRating?: number;
+  role?: string | null;
+}
+
+export interface CinemaCredit {
+  personId: number;
+  name: string;
+  photo: string | null;
+  role: string | null;
+}
+
+export interface TitleFull extends TitleCard {
+  overview: string;
+  tagline: string | null;
+  releaseDate: string | null;
+  runtime: number | null;
+  countries: string[];
+  status: string | null;
+  voteCount: number;
+  localRatingCount: number;
+  seasonsCount: number | null;
+  episodesCount: number | null;
+  backdropLarge: string | null;
+  trailer: string | null;
+  videos: { key: string; name: string | null; type: string | null }[];
+  cast: CinemaCredit[];
+  crew: CinemaCredit[];
+  seasons: { number: number; name: string | null; episodes: number; poster: string | null; airDate: string | null }[];
+  inWatchlist: boolean;
+  myReview: { rating: number; body: string } | null;
+  progress: { season: number | null; episode: number | null; position: number; duration: number | null } | null;
+  translations: { index: number; title: string; quality: string | null }[];
+  social: {
+    ratings: { user: UserShort; rating: number; family: boolean }[];
+    wantToWatch: UserShort[];
+  };
+  isPublished: boolean;
+  similar: TitleCard[];
+}
+
+export interface CinemaHome {
+  featured: TitleCard[];
+  continue: TitleCard[];
+  watchlist: TitleCard[];
+  circle: TitleCard[];
+  movies: TitleCard[];
+  series: TitleCard[];
+  top: TitleCard[];
+  fresh: TitleCard[];
+  genres: { id: number; name: string }[];
+}
+
+export interface CinemaEpisode {
+  number: number;
+  name: string | null;
+  overview: string;
+  still: string | null;
+  airDate: string | null;
+  runtime: number | null;
+}
+
+export interface CinemaPerson {
+  id: number;
+  name: string;
+  photo: string | null;
+  biography: string;
+  birthday: string | null;
+  deathday: string | null;
+  placeOfBirth: string | null;
+  knownFor: string | null;
+  titles: TitleCard[];
 }

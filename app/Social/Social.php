@@ -130,7 +130,13 @@ final class Social
         return $group->privacy !== 'closed' || self::isGroupMember($groupId, $user->id) || self::isStaff($user);
     }
 
-    /** Приховує записи закритих спільнот від тих, хто в них не складається. */
+    /** Стіна родини — для її учасників (і адміністрації платформи). */
+    public static function canSeeFamilyWall(int $familyId, User $user): bool
+    {
+        return \App\Families\FamilyContext::isMember($user, $familyId) || $user->can('families.manage');
+    }
+
+    /** Приховує записи закритих спільнот і стін чужих родин. */
     public static function visiblePosts(Builder $query, int $viewerId): Builder
     {
         return $query->whereNot(function (Builder $q) use ($viewerId) {
@@ -139,6 +145,9 @@ final class Social
                     $sub->select('g.id')->from('social_groups as g')->where('g.privacy', 'closed')
                         ->whereNotIn('g.id', fn (Builder $m) => $m->select('group_id')->from('social_group_members')->where('user_id', $viewerId));
                 });
+        })->whereNot(function (Builder $q) use ($viewerId) {
+            $q->where('social_posts.owner_type', 'family')
+                ->whereNotIn('social_posts.owner_id', fn (Builder $m) => $m->select('family_id')->from('family_members')->where('user_id', $viewerId));
         });
     }
 

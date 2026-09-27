@@ -11,6 +11,7 @@ import type { Profile, Me } from '../lib/types';
 import { countLabel, formatBirthday, formatDate, fullName, lastSeenText, plural } from '../lib/utils';
 import { Composer } from '../components/Composer';
 import { PostList } from '../components/Post';
+import { ProfileCinema } from './Cinema';
 import { Avatar, Empty, Modal, PhotoTile, PhotoViewer, Spinner, pickFile } from '../components/ui';
 import { FriendButton } from '../components/People';
 import { ReportButton, Verified } from '../components/Moderation';
@@ -262,6 +263,7 @@ export default function ProfilePage() {
               </div>
             </div>
           )}
+          <ProfileCinema userId={user.id} />
           {canPost && (
             <Composer
               ownerId={user.id}

@@ -201,7 +201,7 @@ foreach (\App\Http\Controllers\Platform\SpaController::PAGES as $page) {
 // Старі посилання /social/... з першої версії.
 Route::get('/social/{any?}', fn (?string $any = null) => redirect('/'.($any ?: 'feed'), 301))->where('any', '.*');
 
-Route::middleware(['auth', 'verified', 'permission:addons.manage|reports.manage|progression.manage|settings.manage|roles.manage|users.manage|members.manage|goals.manage|broadcasts.manage|bonuses.manage|events.manage|union.manage'])
+Route::middleware(['auth', 'verified', 'permission:addons.manage|reports.manage|progression.manage|settings.manage|roles.manage|users.manage|members.manage|goals.manage|broadcasts.manage|bonuses.manage|events.manage|union.manage|cinema.manage|families.manage'])
     ->get('/admin', [DashboardController::class, 'index'])
     ->name('admin.dashboard');
 
@@ -229,6 +229,23 @@ Route::middleware(['auth', 'verified', 'permission:addons.manage'])
     ->group(function () {
         Route::post('/trigger', [DeployController::class, 'trigger'])->name('trigger');
         Route::get('/status', [DeployController::class, 'status'])->name('status');
+    });
+
+// Кінопортал — ключі API, імпорт із TMDB, каталог.
+Route::middleware(['auth', 'verified', 'permission:cinema.manage'])
+    ->prefix('admin/cinema')
+    ->name('admin.cinema.')
+    ->group(function () {
+        $c = \App\Http\Controllers\Admin\CinemaAdminController::class;
+        Route::get('/', [$c, 'index'])->name('index');
+        Route::put('/settings', [$c, 'settings'])->name('settings');
+        Route::get('/tmdb', [$c, 'tmdb'])->name('tmdb');
+        Route::post('/import', [$c, 'import'])->name('import');
+        Route::post('/bulk', [$c, 'bulk'])->name('bulk');
+        Route::patch('/titles/{id}', [$c, 'update'])->whereNumber('id')->name('update');
+        Route::post('/titles/{id}/refresh', [$c, 'refresh'])->whereNumber('id')->name('refresh');
+        Route::post('/titles/{id}/kodik', [$c, 'kodik'])->whereNumber('id')->name('kodik');
+        Route::delete('/titles/{id}', [$c, 'destroy'])->whereNumber('id')->name('destroy');
     });
 
 // Профіль родини — керування СВОЄЮ родиною для лідера й заступників

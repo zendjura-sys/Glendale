@@ -48,7 +48,7 @@ Route::middleware(['auth:sanctum', 'throttle:240,1,api-v2'])->group(function () 
         Route::post('/friends/{id}', [PeopleController::class, 'add']);
         Route::delete('/friends/{id}', [PeopleController::class, 'remove']);
 
-        Route::get('/wall/{type}/{id}', [PostController::class, 'wall'])->whereIn('type', ['user', 'group']);
+        Route::get('/wall/{type}/{id}', [PostController::class, 'wall'])->whereIn('type', ['user', 'group', 'family']);
         Route::get('/feed', [PostController::class, 'feed']);
         Route::post('/posts', [PostController::class, 'store'])->middleware('throttle:30,1,post-create');
         Route::get('/posts/{id}', [PostController::class, 'show']);
@@ -81,6 +81,25 @@ Route::middleware(['auth:sanctum', 'throttle:240,1,api-v2'])->group(function () 
         Route::get('/notifications', [MiscController::class, 'notifications']);
         Route::post('/notifications/read', [MiscController::class, 'readNotifications']);
         Route::get('/search', [MiscController::class, 'search']);
+        // Кінопортал (частина ядра): каталог, плеєр, оцінки, «хочу подивитись» і зв'язки з соцмережею й родинами.
+        Route::prefix('cinema')->group(function () {
+            Route::get('/home', [\App\Http\Controllers\Api\V2\CinemaController::class, 'home']);
+            Route::get('/titles', [\App\Http\Controllers\Api\V2\CinemaController::class, 'browse']);
+            Route::get('/titles/{id}', [\App\Http\Controllers\Api\V2\CinemaController::class, 'show'])->whereNumber('id');
+            Route::get('/titles/{id}/seasons/{number}', [\App\Http\Controllers\Api\V2\CinemaController::class, 'season'])->whereNumber('id')->whereNumber('number');
+            Route::get('/titles/{id}/player', [\App\Http\Controllers\Api\V2\CinemaController::class, 'player'])->whereNumber('id');
+            Route::post('/titles/{id}/progress', [\App\Http\Controllers\Api\V2\CinemaController::class, 'progress'])->whereNumber('id')->middleware('throttle:120,1,cinema-progress');
+            Route::post('/titles/{id}/watchlist', [\App\Http\Controllers\Api\V2\CinemaController::class, 'watchlistAdd'])->whereNumber('id');
+            Route::delete('/titles/{id}/watchlist', [\App\Http\Controllers\Api\V2\CinemaController::class, 'watchlistRemove'])->whereNumber('id');
+            Route::get('/titles/{id}/reviews', [\App\Http\Controllers\Api\V2\CinemaController::class, 'reviews'])->whereNumber('id');
+            Route::put('/titles/{id}/review', [\App\Http\Controllers\Api\V2\CinemaController::class, 'review'])->whereNumber('id')->middleware('throttle:30,1,cinema-review');
+            Route::delete('/titles/{id}/review', [\App\Http\Controllers\Api\V2\CinemaController::class, 'reviewDelete'])->whereNumber('id');
+            Route::post('/titles/{id}/recommend', [\App\Http\Controllers\Api\V2\CinemaController::class, 'recommend'])->whereNumber('id')->middleware('throttle:20,1,cinema-recommend');
+            Route::post('/titles/{id}/family-event', [\App\Http\Controllers\Api\V2\CinemaController::class, 'familyEvent'])->whereNumber('id');
+            Route::get('/watchlist', [\App\Http\Controllers\Api\V2\CinemaController::class, 'watchlist']);
+            Route::get('/people/{id}', [\App\Http\Controllers\Api\V2\CinemaController::class, 'person'])->whereNumber('id');
+            Route::get('/users/{userId}', [\App\Http\Controllers\Api\V2\CinemaController::class, 'userCinema'])->whereNumber('userId');
+        });
         Route::post('/reports', [MiscController::class, 'report'])->middleware('throttle:20,1,report');
 
         // Система управління родинами («Моя родина»).

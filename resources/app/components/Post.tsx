@@ -2,10 +2,10 @@ import { tr } from '../lib/i18n';
 import { memo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useInfiniteQuery, useQuery, useQueryClient, type InfiniteData, type QueryClient } from '@tanstack/react-query';
-import { Flag, Heart, MessageCircle, MoreHorizontal, Newspaper, Repeat2, Share2, Trash2 } from 'lucide-react';
+import { Clapperboard, Flag, Heart, Play, Star, MessageCircle, MoreHorizontal, Newspaper, Repeat2, Share2, Trash2 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useMe } from '../lib/auth';
-import type { Comment, Page, Post } from '../lib/types';
+import type { Comment, Page, Post, TitleCard } from '../lib/types';
 import { formatDate, fullName } from '../lib/utils';
 import { AutoTextarea, Avatar, Empty, Modal, PhotoViewer, PostSkeleton, Spinner, useClickOutside, useSentinel } from './ui';
 import { LikeBurst, SendButton } from './uiverse';
@@ -61,6 +61,14 @@ function PostHeader({ post }: { post: Post }) {
               <Verified size={14} />
             </>
           )}
+          {post.family && (
+            <span className="muted">
+              {' '}▸{' '}
+              <Link to={`/families/${post.family.id}`} className="name">
+                {post.family.name}
+              </Link>
+            </span>
+          )}
           {post.wallOwner && (
             <span className="muted">
               {' '}▸{' '}
@@ -106,6 +114,7 @@ function PostBody({ post, big }: { post: Post; big?: boolean }) {
         </div>
       )}
       {post.spotify && <SpotifyEmbed spotify={post.spotify} />}
+      {post.cinema && <PostTitleCard title={post.cinema} />}
       {post.image && (
         <div className="post-image" onClick={() => setViewer(true)}>
           <img src={post.image} alt="" loading="lazy" decoding="async" />
@@ -113,6 +122,27 @@ function PostBody({ post, big }: { post: Post; big?: boolean }) {
       )}
       {viewer && post.image && <PhotoViewer urls={[post.image]} index={0} onClose={() => setViewer(false)} />}
     </>
+  );
+}
+
+/** Фільм або серіал із кінопорталу у записі: рецензія, «подивіться», кіновечір. */
+function PostTitleCard({ title }: { title: TitleCard }) {
+  return (
+    <Link to={`/cinema/title/${title.id}`} className="post-title-card">
+      {title.backdrop && <img className="ptc-bg" src={title.backdrop} alt="" loading="lazy" />}
+      <div className="ptc-body">
+        {title.poster ? <img className="ptc-poster" src={title.poster} alt="" loading="lazy" /> : <div className="ptc-poster blank"><Clapperboard size={28} /></div>}
+        <div className="ptc-info">
+          <div className="ptc-kind">{title.type === 'series' ? tr('Серіал') : tr('Фільм')}{title.year ? ` · ${title.year}` : ''}</div>
+          <div className="ptc-name">{title.name}</div>
+          {title.genres.length > 0 && <div className="ptc-genres">{title.genres.join(' · ')}</div>}
+          <div className="ptc-meta">
+            {title.rating ? <span className="ptc-rate"><Star size={13} fill="currentColor" /> {title.rating.toFixed(1)}</span> : null}
+            {title.hasPlayer && <span className="ptc-watch"><Play size={13} fill="currentColor" /> {tr('Дивитися')}</span>}
+          </div>
+        </div>
+      </div>
+    </Link>
   );
 }
 

@@ -30,6 +30,11 @@ const SettingsPage = lazy(() => import('./pages/Settings'));
 const PostPage = lazy(() => import('./pages/PostPage'));
 const MusicPage = lazy(() => import('./pages/Music'));
 const PlaylistPage = lazy(() => import('./pages/Music').then((m) => ({ default: m.PlaylistPage })));
+const CinemaHomePage = lazy(() => import('./pages/Cinema'));
+const CinemaBrowsePage = lazy(() => import('./pages/Cinema').then((m) => ({ default: m.CinemaBrowsePage })));
+const CinemaTitlePage = lazy(() => import('./pages/Cinema').then((m) => ({ default: m.CinemaTitlePage })));
+const CinemaPersonPage = lazy(() => import('./pages/Cinema').then((m) => ({ default: m.CinemaPersonPage })));
+const CinemaWatchlistPage = lazy(() => import('./pages/Cinema').then((m) => ({ default: m.CinemaWatchlistPage })));
 const SpotifyCallback = lazy(() => import('./pages/Spotify').then((m) => ({ default: m.SpotifyCallback })));
 
 function NotFound() {
@@ -129,6 +134,11 @@ export default function App() {
           <Route path="wall/:id" element={<PostPage />} />
           <Route path="music" element={<MusicPage />} />
           <Route path="music/playlist/:id" element={<PlaylistPage />} />
+          <Route path="cinema" element={<CinemaHomePage />} />
+          <Route path="cinema/browse" element={<CinemaBrowsePage />} />
+          <Route path="cinema/title/:id" element={<CinemaTitlePage />} />
+          <Route path="cinema/person/:id" element={<CinemaPersonPage />} />
+          <Route path="cinema/watchlist" element={<CinemaWatchlistPage />} />
           <Route path="spotify/callback" element={<SpotifyCallback />} />
           <Route path="*" element={<NotFound />} />
         </Route>

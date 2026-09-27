@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   Bell,
   ChevronDown,
+  Clapperboard,
   CircleUserRound,
   Image as ImageIcon,
   LogOut,
@@ -295,6 +296,9 @@ export function Sidebar() {
       <NavLink to="/activity">
         <Bell size={20} /> {tr('Уведомления')} <Counter n={counters.notifications} />
       </NavLink>
+      <NavLink to="/cinema">
+        <Clapperboard size={20} /> {tr('Кіно')}
+      </NavLink>
       <div className="sidebar-sep" />
       {/* Система управління родинами — публічно «Моя родина». */}
       <div className="sidebar-title">{tr('Моя родина')}</div>
@@ -334,8 +338,8 @@ export function TabBar() {
       <NavLink to="/feed">
         <Newspaper size={24} /> {tr('Новости')}
       </NavLink>
-      <NavLink to="/groups">
-        <UsersRound size={24} /> {tr('Группы')}
+      <NavLink to="/cinema">
+        <Clapperboard size={24} /> {tr('Кіно')}
       </NavLink>
       <a href="/messenger">
         <MessageCircle size={24} /> {tr('Мессенджер')}

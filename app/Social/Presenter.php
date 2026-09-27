@@ -154,14 +154,21 @@ final class Presenter
 
         $userIds = [];
         $groupIds = [];
+        $familyIds = [];
         foreach ($rows as $p) {
             $userIds[] = $p->author_id;
             if ($p->owner_type === 'user') {
                 $userIds[] = $p->owner_id;
+            } elseif ($p->owner_type === 'family') {
+                $familyIds[] = $p->owner_id;
             } else {
                 $groupIds[] = $p->owner_id;
             }
         }
+        // Стіна родини й фільм у записі — частини одного сайту.
+        $families = $familyIds ? DB::table('families')->whereIn('id', array_unique($familyIds))->get(['id', 'name', 'tag', 'avatar_path'])->keyBy('id') : collect();
+        $familyManager = $familyIds ? DB::table('family_members')->whereIn('family_id', $familyIds)->where('user_id', $meId)->whereIn('role', ['leader', 'deputy'])->pluck('family_id')->flip() : collect();
+        $titles = \App\Cinema\CinemaPresenter::cardsById(array_values(array_filter(array_map(fn ($p) => $p->cinema_title_id ?? null, $rows))));
         $users = self::users($userIds);
         $groupRows = $groupIds ? DB::table('social_groups')->whereIn('id', array_unique($groupIds))->get()->all() : [];
         $groups = collect(self::groups($groupRows, $meId))->keyBy('id');
@@ -177,11 +184,13 @@ final class Presenter
             }
         }
 
-        return array_map(function ($p) use ($meId, $likes, $liked, $comments, $reposts, $reposted, $users, $groups, $adminOf, $staff, $sources) {
+        return array_map(function ($p) use ($meId, $likes, $liked, $comments, $reposts, $reposted, $users, $groups, $adminOf, $staff, $sources, $families, $familyManager, $titles) {
             $canDelete = $p->author_id === $meId
                 || ($p->owner_type === 'user' && $p->owner_id === $meId)
                 || ($p->owner_type === 'group' && isset($adminOf[$p->owner_id]))
+                || ($p->owner_type === 'family' && isset($familyManager[$p->owner_id]))
                 || $staff;
+            $family = $p->owner_type === 'family' ? ($families[$p->owner_id] ?? null) : null;
 
             return [
                 'id' => $p->id,
@@ -193,6 +202,8 @@ final class Presenter
                 'fromGroup' => (bool) $p->from_group,
                 'author' => self::userShort($users[$p->author_id] ?? null),
                 'group' => $p->owner_type === 'group' ? ($groups[$p->owner_id] ?? null) : null,
+                'family' => $family ? ['id' => $family->id, 'name' => $family->name, 'tag' => $family->tag, 'avatar' => Social::url($family->avatar_path)] : null,
+                'cinema' => ($p->cinema_title_id ?? null) ? ($titles[$p->cinema_title_id] ?? null) : null,
                 'wallOwner' => $p->owner_type === 'user' && $p->owner_id !== $p->author_id ? self::userShort($users[$p->owner_id] ?? null) : null,
                 'repost' => $p->repost_of ? ($sources[$p->repost_of] ?? null) : null,
                 'audio' => null,
@@ -264,6 +275,7 @@ final class Presenter
                 'groupId' => $n->group_id,
                 'familyId' => $n->family_id ?? null,
                 'unionId' => $n->union_id ?? null,
+                'titleId' => $n->cinema_title_id ?? null,
             ];
         }, $rows);
     }

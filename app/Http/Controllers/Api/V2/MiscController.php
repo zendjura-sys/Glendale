@@ -74,7 +74,7 @@ class MiscController extends Controller
     {
         $search = Social::str($request->query('q'), 100);
         if ($search === '') {
-            return response()->json(['users' => [], 'groups' => [], 'posts' => [], 'tracks' => []]);
+            return response()->json(['users' => [], 'groups' => [], 'posts' => [], 'tracks' => [], 'titles' => [], 'families' => []]);
         }
         $me = $request->user();
         $like = '%'.$search.'%';
@@ -89,12 +89,20 @@ class MiscController extends Controller
             ->limit(20)->get()->all();
         $postQuery = DB::table('social_posts')->where('text', 'like', $like);
         $posts = Social::visiblePosts($postQuery, $me->id)->orderByDesc('id')->limit(20)->get()->all();
+        // Один пошук на весь сайт: і фільми кінопорталу, і родини.
+        $titles = \App\Cinema\Title::query()->published()->with('genres')
+            ->where(fn ($q) => $q->where('name', 'like', $like)->orWhere('original_name', 'like', $like))
+            ->orderByDesc('popularity')->limit(20)->get();
+        $families = DB::table('families')->where('status', 'verified')
+            ->where(fn ($q) => $q->where('name', 'like', $like)->orWhere('tag', 'like', $like))->limit(20)->get()->all();
 
         return response()->json([
             'users' => $users->map(fn ($u) => [...Presenter::userShort($u), 'city' => (string) $u->city, 'friendship' => Social::friendship($me->id, $u->id)])->values(),
             'groups' => Presenter::groups($groups, $me->id),
             'posts' => Presenter::posts($posts, $me),
             'tracks' => [],
+            'titles' => \App\Cinema\CinemaPresenter::cards($titles),
+            'families' => \App\Social\Families::presentMany($families, $me),
         ]);
     }
 

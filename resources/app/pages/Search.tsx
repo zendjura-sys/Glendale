@@ -4,15 +4,17 @@ import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
 import { api } from '../lib/api';
-import type { Friendship, Group, Post, UserShort } from '../lib/types';
+import type { Family, Friendship, Group, Post, TitleCard, UserShort } from '../lib/types';
 import { lastSeenText } from '../lib/utils';
 import { PostCard } from '../components/Post';
 import { Empty, Spinner } from '../components/ui';
 import { FriendButton, UserRow } from '../components/People';
 import { GroupRow } from './Groups';
+import { FamilyRow } from './Families';
+import { TitleGrid } from './Cinema';
 
-type Result = { users: (UserShort & { city: string; friendship: Friendship })[]; groups: Group[]; posts: Post[] };
-type Tab = 'all' | 'people' | 'groups' | 'posts';
+type Result = { users: (UserShort & { city: string; friendship: Friendship })[]; groups: Group[]; posts: Post[]; titles: TitleCard[]; families: Family[] };
+type Tab = 'all' | 'people' | 'groups' | 'families' | 'cinema' | 'posts';
 
 export default function SearchPage() {
   const [params, setParams] = useSearchParams();
@@ -37,7 +39,7 @@ export default function SearchPage() {
 
   const setTab = (t: Tab) => setParams({ q, tab: t });
   const show = (t: Tab) => tab === 'all' || tab === t;
-  const nothing = data && !data.users.length && !data.groups.length && !data.posts.length;
+  const nothing = data && !data.users.length && !data.groups.length && !data.posts.length && !data.titles?.length && !data.families?.length;
 
   return (
     <div className="col-main">
@@ -48,7 +50,7 @@ export default function SearchPage() {
             className="field"
             autoFocus
             style={{ paddingLeft: 40, height: 40 }}
-            placeholder={tr('Поиск людей, сообществ и записей')}
+            placeholder={tr('Люди, спільноти, родини, фільми й записи')}
             value={input}
             onChange={(e) => setInput(e.target.value)}
           />
@@ -59,6 +61,8 @@ export default function SearchPage() {
               ['all', tr('Все')],
               ['people', tr('Люди')],
               ['groups', tr('Сообщества')],
+              ['families', tr('Родини')],
+              ['cinema', tr('Кіно')],
               ['posts', tr('Записи')],
             ] as [Tab, string][]
           ).map(([t, label]) => (
@@ -92,6 +96,24 @@ export default function SearchPage() {
           {(tab === 'all' ? data.groups.slice(0, 5) : data.groups).map((g) => (
             <GroupRow key={g.id} g={g} />
           ))}
+        </div>
+      )}
+      {data && show('families') && data.families?.length > 0 && (
+        <div className="card">
+          <div className="card-title">
+            {tr('Родини')} <span className="count">{data.families.length}</span>
+          </div>
+          {(tab === 'all' ? data.families.slice(0, 5) : data.families).map((f) => (
+            <FamilyRow key={f.id} f={f} />
+          ))}
+        </div>
+      )}
+      {data && show('cinema') && data.titles?.length > 0 && (
+        <div className="card" style={{ padding: '0 16px 16px' }}>
+          <div className="card-title" style={{ padding: '14px 4px' }}>
+            {tr('Фільми та серіали')} <span className="count">{data.titles.length}</span>
+          </div>
+          <TitleGrid items={tab === 'all' ? data.titles.slice(0, 6) : data.titles} />
         </div>
       )}
       {data && show('posts') && data.posts.length > 0 && (

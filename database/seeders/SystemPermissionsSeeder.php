@@ -16,7 +16,7 @@ class SystemPermissionsSeeder extends Seeder
     {
         $role = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
 
-        foreach (['settings.manage', 'roles.manage', 'users.manage', 'union.manage', 'families.manage'] as $name) {
+        foreach (['settings.manage', 'roles.manage', 'users.manage', 'union.manage', 'families.manage', 'cinema.manage'] as $name) {
             $permission = Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
             $role->givePermissionTo($permission);
         }

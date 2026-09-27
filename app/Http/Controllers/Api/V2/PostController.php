@@ -29,13 +29,19 @@ class PostController extends Controller
         if ($post->owner_type === 'group' && ! Social::canSeeGroup($post->owner_id, $user)) {
             Social::fail(403, 'Це закрита спільнота', 'closed_group');
         }
+        if ($post->owner_type === 'family' && ! Social::canSeeFamilyWall($post->owner_id, $user)) {
+            Social::fail(403, 'Стіну родини бачать лише її учасники', 'family_only');
+        }
     }
 
     public function wall(Request $request, string $type, int $id): JsonResponse
     {
-        $type = $type === 'group' ? 'group' : 'user';
+        $type = in_array($type, ['group', 'family'], true) ? $type : 'user';
         if ($type === 'group' && ! Social::canSeeGroup($id, $request->user())) {
             Social::fail(403, 'Це закрита спільнота', 'closed_group');
+        }
+        if ($type === 'family' && ! Social::canSeeFamilyWall($id, $request->user())) {
+            Social::fail(403, 'Стіну родини бачать лише її учасники', 'family_only');
         }
 
         $rows = DB::table('social_posts')->where('owner_type', $type)->where('owner_id', $id)
@@ -63,6 +69,10 @@ class PostController extends Controller
                 })->orWhere(function (Builder $w) use ($me) {
                     $w->where('owner_type', 'group')
                         ->whereIn('owner_id', fn ($s) => $s->select('group_id')->from('social_group_members')->where('user_id', $me));
+                })->orWhere(function (Builder $w) use ($me) {
+                    // Стіни моїх родин — теж у моїй стрічці.
+                    $w->where('owner_type', 'family')
+                        ->whereIn('owner_id', fn ($s) => $s->select('family_id')->from('family_members')->where('user_id', $me));
                 });
             });
         }
@@ -86,25 +96,37 @@ class PostController extends Controller
             'text' => ['nullable', 'string', 'max:10000'],
             'image' => ['nullable', ...Social::IMAGE_RULES],
             'spotify' => ['nullable', 'string', 'max:300'],
-            'ownerType' => ['nullable', 'in:user,group'],
+            'ownerType' => ['nullable', 'in:user,group,family'],
             'ownerId' => ['nullable', 'integer'],
+            'cinemaTitleId' => ['nullable', 'integer'],
         ]);
         $me = $request->user();
 
         $text = Social::str($request->input('text'), 10000);
         $spotify = Social::str($request->input('spotify'), 300);
         $spotify = Presenter::spotifyRef($spotify) ? $spotify : '';
-        if ($text === '' && ! $request->hasFile('image') && $spotify === '') {
+        // Фільм із кінопорталу — картка в записі («поділитися», рецензія).
+        $titleId = $request->filled('cinemaTitleId')
+            ? \App\Cinema\Title::query()->published()->whereKey((int) $request->input('cinemaTitleId'))->value('id')
+            : null;
+        if ($request->filled('cinemaTitleId') && ! $titleId) {
+            Social::fail(404, 'Фільм не знайдено');
+        }
+        if ($text === '' && ! $request->hasFile('image') && $spotify === '' && ! $titleId) {
             Social::fail(400, 'Запис не може бути порожнім');
         }
 
-        $ownerType = $request->input('ownerType') === 'group' ? 'group' : 'user';
+        $ownerType = in_array($request->input('ownerType'), ['group', 'family'], true) ? $request->input('ownerType') : 'user';
         $ownerId = (int) ($request->input('ownerId') ?: $me->id);
         $fromGroup = false;
 
         if ($ownerType === 'user') {
             if (! User::query()->whereKey($ownerId)->exists()) {
                 Social::fail(404, 'Користувача не знайдено');
+            }
+        } elseif ($ownerType === 'family') {
+            if (! \App\Families\FamilyContext::isMember($me, $ownerId)) {
+                Social::fail(403, 'Писати на стіні родини можуть лише її учасники');
             }
         } else {
             if (! Social::group($ownerId)) {
@@ -125,6 +147,7 @@ class PostController extends Controller
             'text' => $text,
             'image_path' => $image,
             'spotify' => $spotify,
+            'cinema_title_id' => $titleId,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   Blocks,
   CalendarDays,
+  Clapperboard,
   Crown,
   Handshake,
   History,
@@ -48,6 +49,7 @@ const ICONS: Record<string, LucideIcon> = {
   history: History,
   alert: AlertTriangle,
   settings: Settings,
+  film: Clapperboard,
 };
 
 /** Активний пункт: сама сторінка або вкладені (/admin/families/… для «Родини та союзи»). */
