@@ -5,17 +5,27 @@ namespace Tests\Unit;
 use App\Models\User;
 use App\Support\FamilyStats;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 /**
- * Реєстр реальних метрик з БД. Модульні таблиці (reports/bonus_payouts/
- * family_goals) у тестовій базі не існують — цим перевіряємо саме
- * Schema::hasTable()-охорону: метрики без встановленого модуля просто
- * зникають зі списку доступних, а не падають помилкою "no such table".
+ * Реєстр реальних метрик з БД. Модулі родини тепер частина ядра, тож їхні
+ * таблиці є й у тестовій базі; де перевіряється Schema::hasTable()-охорона
+ * (метрика без таблиці просто зникає, а не падає "no such table"), таблиці
+ * прибираються явно — withoutModuleTables().
  */
 class FamilyStatsTest extends TestCase
 {
     use RefreshDatabase;
+
+    private function withoutModuleTables(): void
+    {
+        Schema::disableForeignKeyConstraints();
+        foreach (['report_attachments', 'ai_report_reviews', 'reports', 'bonus_payouts', 'family_goals'] as $table) {
+            Schema::dropIfExists($table);
+        }
+        Schema::enableForeignKeyConstraints();
+    }
 
     public function test_members_metric_counts_only_non_union_users(): void
     {
@@ -29,6 +39,7 @@ class FamilyStatsTest extends TestCase
 
     public function test_module_dependent_metrics_are_absent_without_their_table(): void
     {
+        $this->withoutModuleTables();
         $keys = array_column(FamilyStats::available(), 'key');
 
         $this->assertNotContains('reports_total', $keys);
@@ -50,6 +61,7 @@ class FamilyStatsTest extends TestCase
 
     public function test_selected_keys_default_to_available_defaults(): void
     {
+        $this->withoutModuleTables();
         $this->assertSame(['members'], FamilyStats::selectedKeys());
     }
 
@@ -62,6 +74,7 @@ class FamilyStatsTest extends TestCase
 
     public function test_save_silently_drops_unavailable_keys(): void
     {
+        $this->withoutModuleTables();
         FamilyStats::save(['members', 'bonuses_paid', 'not_a_real_key']);
 
         $this->assertSame(['members'], FamilyStats::selectedKeys());

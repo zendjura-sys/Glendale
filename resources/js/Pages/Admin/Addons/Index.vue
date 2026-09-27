@@ -7,6 +7,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 const props = defineProps({
     addons: { type: Object, required: true },
     recentAudit: { type: Array, default: () => [] },
+    coreModules: { type: Array, default: () => [] },
 });
 
 /* ---------- деплой одним кліком: кнопка лише лишає мітку на сервері,
@@ -199,6 +200,18 @@ function showInfo(addon) {
     <Head title="Аддони — Core / Modules / Plugins" />
 
     <AdminLayout>
+        <section class="glass-panel mb-8 p-6">
+            <h2 class="text-lg font-semibold text-white">Вбудовано в ядро</h2>
+            <p class="mt-1 mb-4 text-xs text-white/45">Система родин — частина сайту: ці модулі завжди ввімкнені й оновлюються разом із сайтом.</p>
+            <div class="grid gap-3 sm:grid-cols-2">
+                <div v-for="m in coreModules" :key="m.slug" class="rounded-xl border border-white/10 p-3">
+                    <div class="flex items-center gap-2 text-sm text-white">
+                        {{ m.name }} <span class="text-[11px] text-white/40">v{{ m.version }}</span>
+                    </div>
+                    <p class="mt-1 text-xs text-white/50">{{ m.summary }}</p>
+                </div>
+            </div>
+        </section>
         <!-- ================= TOASTS ================= -->
         <div class="pointer-events-none fixed inset-x-4 top-6 z-[100] flex flex-col gap-3 sm:inset-x-auto sm:right-6 sm:w-full sm:max-w-sm">
             <TransitionGroup name="toast">

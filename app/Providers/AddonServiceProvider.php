@@ -3,6 +3,10 @@
 namespace App\Providers;
 
 use App\Addons\AddonAutoloader;
+use App\Addons\CoreModules;
+use Illuminate\Database\Events\MigrationsEnded;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -20,6 +24,25 @@ class AddonServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Модулі системи родин — частина ядра: їхні міграції йдуть тим
+        // самим `php artisan migrate`, але окремим кроком ПІСЛЯ міграцій
+        // сайту — ранні файли модулів датовані 2024 роком і на чистій базі
+        // інакше бігли б раніше за таблиці ядра (permissions, users…), від
+        // яких залежать. Перейменувати їх не можна: на сервері вони вже
+        // записані в migrations під цими іменами.
+        Event::listen(MigrationsEnded::class, function (MigrationsEnded $event) {
+            static $running = false;
+            if ($running || $event->method !== 'up' || ! CoreModules::migrationPaths()) {
+                return;
+            }
+            $running = true;
+            try {
+                Artisan::call('migrate', ['--path' => CoreModules::migrationPaths(), '--realpath' => true, '--force' => true]);
+            } finally {
+                $running = false;
+            }
+        });
+
         $autoloader = $this->app->make(AddonAutoloader::class);
         $autoloader->bootActive();
 

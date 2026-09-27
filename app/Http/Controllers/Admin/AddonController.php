@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Addons\AddonInstaller;
+use App\Addons\CoreModules;
 use App\Http\Controllers\Controller;
 use App\Models\Addon;
 use App\Models\AddonAuditLog;
@@ -26,7 +27,10 @@ class AddonController extends Controller
 
     public function index(): InertiaResponse
     {
+        // Модулі системи родин вбудовані в ядро (modules/src) — у списку
+        // завантажених аддонів їх немає: вимкнути чи видалити їх не можна.
         $addons = Addon::query()
+            ->whereNotIn('slug', CoreModules::slugs())
             ->orderByDesc('created_at')
             ->get()
             ->groupBy('type');
@@ -35,6 +39,12 @@ class AddonController extends Controller
             'addons' => collect(self::TYPES)->mapWithKeys(
                 fn ($type) => [$type => ($addons[$type] ?? collect())->values()]
             ),
+            'coreModules' => array_values(array_map(fn ($m) => [
+                'slug' => $m['slug'],
+                'name' => $m['manifest']['name'] ?? $m['slug'],
+                'version' => $m['manifest']['version'] ?? '',
+                'summary' => $m['manifest']['summary'] ?? '',
+            ], CoreModules::all())),
             'recentAudit' => AddonAuditLog::query()
                 ->with(['addon:id,name,type,slug', 'user:id,name'])
                 ->latest()

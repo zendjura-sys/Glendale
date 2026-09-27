@@ -19,7 +19,7 @@ final class AddonAutoloader
     {
         foreach ($this->activeCodeAddons() as $addon) {
             $manifest = AddonManifest::fromArray($addon['manifest']);
-            $baseDir = storage_path('app/' . $addon['path']);
+            $baseDir = $this->baseDir($addon);
 
             foreach ($manifest->psr4 as $namespace => $relativeDir) {
                 $dir = rtrim($baseDir . '/' . ltrim($relativeDir, '/'), '/');
@@ -63,17 +63,43 @@ final class AddonAutoloader
             if (! $entry) {
                 continue;
             }
-            $file = storage_path('app/' . $addon['path'] . '/' . ltrim($entry, '/'));
+            $file = $this->baseDir($addon) . '/' . ltrim($entry, '/');
             if (is_file($file)) {
                 require $file;
             }
         }
     }
 
+    /** Вбудовані модулі — з repo (modules/src), завантажені — зі storage. */
+    private function baseDir(array $addon): string
+    {
+        return ! empty($addon['core']) ? $addon['path'] : storage_path('app/' . $addon['path']);
+    }
+
+    /**
+     * Вбудовані в ядро модулі (CoreModules) + активні завантажені аддони,
+     * крім ZIP-копій тих самих вбудованих модулів.
+     *
+     * @return array<int, array{type:string, slug:string, path:string, manifest:array, core?:bool}>
+     */
+    private function activeCodeAddons(): array
+    {
+        $core = array_values(array_map(fn ($m) => [
+            'type' => (string) ($m['manifest']['type'] ?? 'module'),
+            'slug' => $m['slug'],
+            'path' => $m['dir'],
+            'manifest' => $m['manifest'],
+            'core' => true,
+        ], CoreModules::all()));
+        $uploaded = array_values(array_filter($this->uploadedAddons(), fn ($a) => ! CoreModules::has($a['slug'])));
+
+        return [...$core, ...$uploaded];
+    }
+
     /**
      * @return array<int, array{type:string, slug:string, path:string, manifest:array}>
      */
-    private function activeCodeAddons(): array
+    private function uploadedAddons(): array
     {
         // На свежем деплое (до первой миграции) не существует ни таблицы
         // addons, ни, что легко упустить, самой таблицы cache — а
