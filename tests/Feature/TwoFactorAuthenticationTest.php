@@ -83,7 +83,7 @@ class TwoFactorAuthenticationTest extends TestCase
         $this->post('/login', ['email' => $user->email, 'password' => 'password']);
         $response = $this->post(route('two-factor.login.store'), ['code' => $this->currentOtp($user)]);
 
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect('/feed');
         $this->assertAuthenticatedAs($user);
     }
 
@@ -112,7 +112,7 @@ class TwoFactorAuthenticationTest extends TestCase
         $this->post('/login', ['email' => $user->email, 'password' => 'password']);
         $response = $this->post(route('two-factor.login.store'), ['recovery_code' => $recoveryCode]);
 
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect('/feed');
         $this->assertAuthenticatedAs($user);
         $this->assertNotContains($recoveryCode, $user->fresh()->two_factor_recovery_codes);
         $this->assertCount(7, $user->fresh()->two_factor_recovery_codes);
@@ -175,7 +175,7 @@ class TwoFactorAuthenticationTest extends TestCase
             'remember_device' => true,
         ]);
 
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect('/feed');
         $this->assertNotNull($response->headers->getCookies()[0] ?? null);
         $this->assertSame(TwoFactorAuthentication::TRUST_COOKIE, $response->headers->getCookies()[0]->getName());
         $this->assertCount(1, $user->fresh()->two_factor_trusted_devices);
@@ -199,7 +199,7 @@ class TwoFactorAuthenticationTest extends TestCase
         $response = $this->withUnencryptedCookie(TwoFactorAuthentication::TRUST_COOKIE, $token)
             ->post('/login', ['email' => $user->email, 'password' => 'password']);
 
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect('/feed');
         $this->assertAuthenticatedAs($user);
     }
 

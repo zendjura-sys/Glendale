@@ -48,6 +48,11 @@ onBeforeUnmount(() => {
                         <div
                             class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex"
                         >
+                            <!-- Соцмережа платформи (React) — інша частина сайту:
+                                 Inertia-перехід туди сервер перетворює на повний. -->
+                            <NavLink href="/feed" :active="false">
+                                Стрічка
+                            </NavLink>
                             <NavLink
                                 :href="route('dashboard')"
                                 :active="route().current('dashboard')"
@@ -266,6 +271,15 @@ onBeforeUnmount(() => {
                 class="sm:hidden"
             >
                 <div class="space-y-1 pb-3 pt-2">
+                    <ResponsiveNavLink href="/feed" :active="false">
+                        Стрічка
+                    </ResponsiveNavLink>
+                    <ResponsiveNavLink href="/friends" :active="false">
+                        Друзі
+                    </ResponsiveNavLink>
+                    <ResponsiveNavLink href="/groups" :active="false">
+                        Спільноти
+                    </ResponsiveNavLink>
                     <ResponsiveNavLink
                         :href="route('dashboard')"
                         :active="route().current('dashboard')"

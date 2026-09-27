@@ -4,18 +4,18 @@ import { ThemeSwitch } from '../components/uiverse';
 import { LanguageSelect } from '../components/LanguageSelect';
 import { useTheme } from '../lib/theme';
 import { useConfig } from '../lib/config';
-import { APP_BASE } from '../lib/api';
+import { PLATFORM } from '../lib/api';
 
 /**
  * Вхід і реєстрація живуть на сторінках сайту (підтвердження пошти, 2FA,
- * чорні списки, тіньові акаунти) — тут лише ведемо туди. {APP_BASE}/enter
+ * чорні списки, тіньові акаунти) — тут лише ведемо туди. /platform/enter
  * вимагає сесії: Laravel відправить на /login і поверне назад, а SPA
  * обміняє сесію на токен API.
  */
 export default function AuthPage({ staffOnly = false }: { staffOnly?: boolean }) {
   const { config } = useConfig();
   const { theme, setTheme } = useTheme();
-  const enter = `${APP_BASE}/enter`;
+  const enter = `${PLATFORM}/enter`;
 
   return (
     <div className="auth">

@@ -214,7 +214,11 @@ h3 {
   font-weight: 800;
   letter-spacing: 0;
 }
+.logo {
+  min-width: 0;
+}
 .logo-text {
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1038,11 +1042,14 @@ textarea.field {
 }
 .counters {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   padding: 0 12px 12px;
 }
 .counters a {
-  flex: 1;
+  flex: 1 1 72px;
+  min-width: 0;
+  overflow-wrap: anywhere;
   padding: 10px 8px;
   border-radius: var(--radius-sm);
   background: var(--hover);
@@ -1536,8 +1543,17 @@ textarea.field {
   }
   .sidebar,
   .header-search,
-  .header-user .name-short {
+  .header-user .name-short,
+  .header-user > svg {
     display: none;
+  }
+  /* Довга назва сайту (та ще й зі збільшеним системним шрифтом) не має
+     виштовхувати аватар за край: логотип стискається, решта — ні. */
+  .logo {
+    flex: 1 1 auto;
+  }
+  .header-inner > :not(.logo) {
+    flex-shrink: 0;
   }
   .logo {
     width: auto;
@@ -1776,4 +1792,19 @@ textarea.field {
 .offline-screen p {
   max-width: 340px;
   margin: 0 0 8px;
+}
+
+/* Заголовок розділу в бічному меню («Система управління родинами»). */
+.sidebar-title {
+  padding: 6px 12px 4px;
+  color: var(--text-3);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+/* Будь-що ширше за екран не має розтягувати сторінку вбік. */
+html,
+body {
+  overflow-x: clip;
 }

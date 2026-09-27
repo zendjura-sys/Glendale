@@ -59,6 +59,8 @@ class AvatarModerationTest extends TestCase
             'avatar' => UploadedFile::fake()->image('me.jpg'),
         ]);
 
+        // Головна-лендинг — для гостей; той, хто увійшов, потрапляє в стрічку.
+        auth()->guard('web')->logout();
         $response = $this->get('/');
 
         $response->assertInertia(fn ($page) => $page->where('memberPhotos', []));
@@ -87,6 +89,8 @@ class AvatarModerationTest extends TestCase
         ]);
         $this->actingAs($admin)->post(route('admin.design.avatars.approve', $member->fresh()));
 
+        // Головна-лендинг — для гостей; той, хто увійшов, потрапляє в стрічку.
+        auth()->guard('web')->logout();
         $response = $this->get('/');
 
         $response->assertInertia(fn ($page) => $page->has('memberPhotos', 1));

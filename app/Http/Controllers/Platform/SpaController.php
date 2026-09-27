@@ -12,13 +12,17 @@ use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Нова платформа (соцмережа + родини + кіно) — React SPA. Поки старі
- * сторінки родини ще на Vue, SPA живе під BASE; наприкінці переходу
- * змонтуємо її в корінь сайту.
+ * Нова платформа (соцмережа + родини + кіно) — React SPA на головному
+ * домені. Сторінки родини поки на Vue (Inertia): переходи між двома
+ * частинами — повне перезавантаження сторінки (go()).
  */
 class SpaController extends Controller
 {
-    public const BASE = '/social';
+    /** Адреси сторінок SPA (React Router). Решта сайту — Vue/модулі. */
+    public const PAGES = [
+        '/feed', '/id/{any}', '/friends', '/groups', '/club/{any}', '/photos/{any}',
+        '/search', '/wall/{any}', '/activity', '/settings', '/music/{any?}',
+    ];
 
     /** Ім'я токена: за ним відкликаємо саме токени веб-SPA, не застосунку. */
     public const TOKEN_NAME = 'web-spa';
@@ -30,14 +34,27 @@ class SpaController extends Controller
      */
     public function enter(Request $request): Response|RedirectResponse
     {
-        $target = self::BASE.'/feed';
+        return self::go('/feed', $request);
+    }
 
+    /**
+     * Перехід на сторінку SPA. Для Inertia-запиту (XHR зі сторінки на Vue)
+     * звичайний редирект не спрацює — просимо браузер перейти повністю.
+     */
+    public static function go(string $target, Request $request): Response|RedirectResponse
+    {
         return $request->header('X-Inertia') ? Inertia::location($target) : redirect($target);
     }
 
-    public function show(): View
+    public function show(Request $request): View|Response
     {
-        return view('spa', ['base' => self::BASE]);
+        // Посилання зі сторінки на Vue (<Link>) приходить як Inertia-запит:
+        // HTML SPA він показати не може — повне перезавантаження.
+        if ($request->header('X-Inertia')) {
+            return Inertia::location($request->fullUrl());
+        }
+
+        return view('spa', ['base' => '']);
     }
 
     /**

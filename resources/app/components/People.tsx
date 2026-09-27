@@ -1,3 +1,4 @@
+import { openDirect } from '../lib/api';
 import { tr } from '../lib/i18n';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
@@ -80,7 +81,7 @@ export function UserRow({ user, children, sub }: { user: UserShort; children?: R
           {fullName(user)}
         </Link>
         <div className="meta">{sub ?? lastSeenText(user)}</div>
-        <Link to={`/im/${user.id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 6 }}>
+        <Link to="#" onClick={(e) => { e.preventDefault(); openDirect(user.id); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 6 }}>
           <MessageCircle size={14} /> {tr('Написать сообщение')}
         </Link>
       </div>

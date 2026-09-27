@@ -67,7 +67,12 @@ if ($unionDomain = config('app.union_domain')) {
 Route::get('/downloads/mobile-apk', [MobileDownloadController::class, 'apk'])->name('mobile.download.apk');
 Route::get('/downloads/mobile-build.txt', [MobileDownloadController::class, 'build'])->name('mobile.download.build');
 
-Route::get('/', function () {
+Route::get('/', function (Request $request) {
+    // Увійшов — головна для нього стрічка платформи; лендинг родини — для гостей.
+    if ($request->user()) {
+        return \App\Http\Controllers\Platform\SpaController::go('/feed', $request);
+    }
+
     // Только реальные цифры — модулей Reports/Progression ещё нет,
     // поэтому XP/рейтинги/звіти на главной пока не показываем вообще,
     // а не подставляем нули или выдуманные значения.
@@ -183,15 +188,21 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__.'/auth.php';
 
-// Нова платформа (React SPA). Вхід/реєстрація — на сторінках сайту:
-// /social/enter вимагає сесії, тож гостя Laravel відправить на /login і
-// поверне сюди (intended), а SPA обміняє сесію на токен API.
-Route::prefix(\App\Http\Controllers\Platform\SpaController::BASE)->group(function () {
+// Нова платформа (React SPA) на головному домені. Сторінки соцмережі
+// перелічено явно — без перехоплення «всього», щоб не зачепити адреси
+// модулів родини (/reports, /bonuses, /messenger, /notifications…).
+// Вхід/реєстрація — на сторінках сайту; /platform/* — службові адреси
+// SPA (міст сесія → токен API, вихід).
+Route::prefix('platform')->group(function () {
     Route::get('/enter', [\App\Http\Controllers\Platform\SpaController::class, 'enter'])->middleware('auth');
     Route::post('/session-token', [\App\Http\Controllers\Platform\SpaController::class, 'sessionToken'])->middleware('throttle:20,1');
     Route::post('/logout', [\App\Http\Controllers\Platform\SpaController::class, 'logout']);
-    Route::get('/{any?}', [\App\Http\Controllers\Platform\SpaController::class, 'show'])->where('any', '.*');
 });
+foreach (\App\Http\Controllers\Platform\SpaController::PAGES as $page) {
+    Route::get($page, [\App\Http\Controllers\Platform\SpaController::class, 'show'])->where('any', '.*');
+}
+// Старі посилання /social/... з першої версії.
+Route::get('/social/{any?}', fn (?string $any = null) => redirect('/'.($any ?: 'feed'), 301))->where('any', '.*');
 
 Route::middleware(['auth', 'verified', 'permission:addons.manage|reports.manage|progression.manage|settings.manage|roles.manage|users.manage|members.manage|goals.manage|broadcasts.manage|telegram.manage|bonuses.manage|events.manage|union.manage'])
     ->get('/admin', [DashboardController::class, 'index'])

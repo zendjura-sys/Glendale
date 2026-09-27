@@ -1,3 +1,5 @@
+import { useConfig } from '../lib/config';
+import { openDirect } from '../lib/api';
 import { tr } from '../lib/i18n';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -99,6 +101,7 @@ function DetailsModal({ user, onClose }: { user: Profile; onClose: () => void })
 }
 
 export default function ProfilePage() {
+  const { config } = useConfig();
   const { id } = useParams();
   const userId = Number(id);
   const me = useMe();
@@ -193,7 +196,7 @@ export default function ProfilePage() {
             ) : (
               <>
                 <FriendButton userId={user.id} initial={user.friendship} />
-                <button className="btn secondary" onClick={() => navigate(`/im/${user.id}`)}>
+                <button className="btn secondary" onClick={() => openDirect(user.id)}>
                   <MessageCircle size={16} /> {tr('Сообщение')}
                 </button>
                 <ReportButton target={{ type: 'user', id: user.id }} className="icon-btn" />
@@ -235,10 +238,6 @@ export default function ProfilePage() {
             <b>{user.counts.groups}</b>
             {plural(user.counts.groups, tr('сообщество|сообщества|сообществ'))}
           </Link>
-          <Link to={own ? '/music' : `/music?id=${user.id}`}>
-            <b>{user.counts.music}</b>
-            {plural(user.counts.music, tr('трек|трека|треков'))}
-          </Link>
           <Link to={`/id/${user.id}`}>
             <b>{user.counts.posts}</b>
             {plural(user.counts.posts, tr('запись|записи|записей'))}
@@ -279,7 +278,7 @@ export default function ProfilePage() {
         </div>
 
         <aside className="col-side static">
-          <SpotifyNowPlayingCard userId={user.id} />
+          {config.spotifyEnabled && <SpotifyNowPlayingCard userId={user.id} />}
           <div className="card">
             <div className="card-title">
               <Link to={`/friends?id=${user.id}`}>{tr('Друзья')}</Link> <span className="count">{user.counts.friends}</span>

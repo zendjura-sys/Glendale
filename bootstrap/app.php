@@ -23,6 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // ПІСЛЯ обробки, коли auth/auth:sanctum маршруту його визначили.
         $middleware->append(\App\Http\Middleware\TrackLastSeen::class);
 
+        // Той, хто вже увійшов і відкрив /login чи /register, — у стрічку.
+        $middleware->redirectUsersTo('/feed');
+
         $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,

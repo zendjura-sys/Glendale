@@ -128,10 +128,10 @@ class SocialApiTest extends TestCase
 
     public function test_session_bridge_issues_token_only_for_signed_in_user(): void
     {
-        $this->postJson('/social/session-token')->assertStatus(401);
+        $this->postJson('/platform/session-token')->assertStatus(401);
 
         $user = $this->user();
-        $token = $this->actingAs($user)->postJson('/social/session-token')->assertOk()->json('token');
+        $token = $this->actingAs($user)->postJson('/platform/session-token')->assertOk()->json('token');
         $this->assertNotEmpty($token);
 
         $this->app['auth']->forgetGuards();
@@ -140,6 +140,25 @@ class SocialApiTest extends TestCase
 
     public function test_spa_page_renders_for_guests(): void
     {
-        $this->get('/social/feed')->assertOk()->assertSee('window.APP_BASE', false);
+        $this->get('/feed')->assertOk()->assertSee('window.APP_BASE', false);
+    }
+
+    public function test_platform_lives_on_the_main_domain(): void
+    {
+        $user = $this->user();
+
+        // Гість бачить лендинг родини, той, хто увійшов, — стрічку.
+        $this->get('/')->assertOk();
+        $this->actingAs($user)->get('/')->assertRedirect('/feed');
+
+        // Перехід зі сторінки на Vue (Inertia XHR) — повне перезавантаження.
+        $this->actingAs($user)->get('/feed', ['X-Inertia' => 'true'])
+            ->assertStatus(409)->assertHeader('X-Inertia-Location', url('/feed'));
+
+        // Старі посилання першої версії.
+        $this->get('/social/groups')->assertRedirect('/groups');
+        $this->get('/login')->assertRedirect('/feed');
+        auth()->guard('web')->logout();
+        $this->post('/login', ['email' => $user->email, 'password' => 'password'])->assertRedirect('/feed');
     }
 }

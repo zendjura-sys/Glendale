@@ -6,11 +6,11 @@ const TOKEN_KEY = 'token';
 /** Спільний API платформи: той самий, що й у Flutter-застосунку. */
 export const API_BASE = '/api/v2';
 
-/** Шлях, під яким змонтовано SPA (поки старі сторінки родини ще на Vue). */
+/** Шлях, під яким змонтовано SPA (зараз — корінь сайту). */
 export const APP_BASE: string = (window as unknown as { APP_BASE?: string }).APP_BASE ?? '';
 
-/** Повний шлях сторінки SPA для звичайних посилань і location.href. */
-export const appPath = (path: string) => `${APP_BASE}${path}`;
+/** Службові адреси SPA на сервері: вхід, міст сесії, вихід. */
+export const PLATFORM = '/platform';
 
 /**
  * Якщо людина вже увійшла на сайті (сесія Laravel), обмінюємо сесію на
@@ -20,7 +20,7 @@ export async function bridgeSession(): Promise<boolean> {
   const csrf = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content;
   if (!csrf) return false;
   try {
-    const res = await fetch(`${APP_BASE}/session-token`, {
+    const res = await fetch(`${PLATFORM}/session-token`, {
       method: 'POST',
       headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' },
       credentials: 'same-origin',
@@ -94,3 +94,22 @@ export const form = (fields: Record<string, string | Blob | null | undefined>) =
   for (const [k, v] of Object.entries(fields)) if (v != null) fd.append(k, v);
   return fd;
 };
+
+/**
+ * Особиста розмова — у мессенджері родини (/messenger, сторінки на Vue).
+ * Сервер створює або знаходить діалог і перенаправляє в нього, тому це
+ * звичайна відправка форми з CSRF-токеном сторінки, а не запит API.
+ */
+export function openDirect(userId: number) {
+  const csrf = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '';
+  const f = document.createElement('form');
+  f.method = 'POST';
+  f.action = `/messenger/direct/${userId}`;
+  const t = document.createElement('input');
+  t.type = 'hidden';
+  t.name = '_token';
+  t.value = csrf;
+  f.appendChild(t);
+  document.body.appendChild(f);
+  f.submit();
+}

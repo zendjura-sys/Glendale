@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { api, APP_BASE, ApiError, bridgeSession, getToken, setToken, setUnauthorizedHandler } from './api';
+import { api, PLATFORM, ApiError, bridgeSession, getToken, setToken, setUnauthorizedHandler } from './api';
 import type { Me } from './types';
 
 interface AuthState {
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // (bridgeSession) одразу впустив би назад.
     const csrf = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content;
     if (csrf) {
-      fetch(`${APP_BASE}/logout`, { method: 'POST', headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' }, credentials: 'same-origin' }).catch(() => {});
+      fetch(`${PLATFORM}/logout`, { method: 'POST', headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' }, credentials: 'same-origin' }).catch(() => {});
     }
     reset();
   }, [reset]);

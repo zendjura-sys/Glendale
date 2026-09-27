@@ -67,7 +67,7 @@ class TwoFactorChallengeController extends Controller
         Auth::login($user, $remember);
         $request->session()->regenerate();
 
-        $response = redirect()->intended(route('dashboard', absolute: false));
+        $response = redirect()->intended('/feed');
 
         if ($data['remember_device'] ?? false) {
             $token = $this->service->trustDevice($user);

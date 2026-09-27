@@ -9,7 +9,7 @@
   color: #fff;
 }
 .track-cover.placeholder {
-  background: linear-gradient(135deg, #6f7cff, #a78bfa);
+  background: linear-gradient(135deg, #b8862b, #f0cf7c);
 }
 .track-cover.placeholder[data-hue='1'] {
   background: linear-gradient(135deg, #f472b6, #fb923c);
@@ -21,7 +21,7 @@
   background: linear-gradient(135deg, #34d399, #0ea5e9);
 }
 .track-cover.placeholder[data-hue='4'] {
-  background: linear-gradient(135deg, #a78bfa, #ec4899);
+  background: linear-gradient(135deg, #c0703a, #a33b3b);
 }
 .track-cover.placeholder[data-hue='5'] {
   background: linear-gradient(135deg, #fbbf24, #f43f5e);
@@ -579,7 +579,7 @@ body.has-player .toasts {
   color: rgba(255, 255, 255, 0.9);
 }
 .fp-cover-empty {
-  background: linear-gradient(135deg, #6f7cff, #a78bfa);
+  background: linear-gradient(135deg, #b8862b, #f0cf7c);
 }
 .fp-cover-empty[data-hue='1'] {
   background: linear-gradient(135deg, #f472b6, #fb923c);
@@ -591,7 +591,7 @@ body.has-player .toasts {
   background: linear-gradient(135deg, #34d399, #0ea5e9);
 }
 .fp-cover-empty[data-hue='4'] {
-  background: linear-gradient(135deg, #a78bfa, #ec4899);
+  background: linear-gradient(135deg, #c0703a, #a33b3b);
 }
 .fp-cover-empty[data-hue='5'] {
   background: linear-gradient(135deg, #fbbf24, #f43f5e);

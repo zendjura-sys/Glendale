@@ -1,5 +1,5 @@
 import { tr } from './lib/i18n';
-import { lazy, Suspense, useState } from 'react';
+import { lazy, useState } from 'react';
 import { RefreshCw, WifiOff, Wrench } from 'lucide-react';
 import { useConfig } from './lib/config';
 import { PlayerProvider } from './lib/player';
@@ -17,7 +17,6 @@ import FeedPage from './pages/Feed';
 // Rarely-first pages are split into separate chunks so the initial load stays small.
 const ProfilePage = lazy(() => import('./pages/Profile'));
 const FriendsPage = lazy(() => import('./pages/Friends'));
-const MessengerPage = lazy(() => import('./pages/Messenger'));
 const GroupsPage = lazy(() => import('./pages/Groups'));
 const GroupPage = lazy(() => import('./pages/Group'));
 const PhotosPage = lazy(() => import('./pages/Photos'));
@@ -25,7 +24,6 @@ const SearchPage = lazy(() => import('./pages/Search'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const SettingsPage = lazy(() => import('./pages/Settings'));
 const PostPage = lazy(() => import('./pages/PostPage'));
-const AdminApp = lazy(() => import('./admin'));
 const MusicPage = lazy(() => import('./pages/Music'));
 const PlaylistPage = lazy(() => import('./pages/Music').then((m) => ({ default: m.PlaylistPage })));
 const SpotifyCallback = lazy(() => import('./pages/Spotify').then((m) => ({ default: m.SpotifyCallback })));
@@ -109,27 +107,16 @@ export default function App() {
       <SpotifyProvider>
       <Aurora />
       <Routes>
-        <Route
-          path="admin/*"
-          element={
-            <Suspense fallback={<Spinner />}>
-              <AdminApp />
-            </Suspense>
-          }
-        />
         <Route element={<Layout />}>
           <Route index element={<Navigate to="/feed" replace />} />
           <Route path="feed" element={<FeedPage />} />
           <Route path="id/:id" element={<ProfilePage />} />
           <Route path="friends" element={<FriendsPage />} />
-          <Route path="im" element={<MessengerPage />} />
-          <Route path="im/:peerId" element={<MessengerPage />} />
-          <Route path="im/c/:chatId" element={<MessengerPage />} />
           <Route path="groups" element={<GroupsPage />} />
           <Route path="club/:id" element={<GroupPage />} />
           <Route path="photos/:id" element={<PhotosPage />} />
           <Route path="search" element={<SearchPage />} />
-          <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="activity" element={<NotificationsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="wall/:id" element={<PostPage />} />
           <Route path="music" element={<MusicPage />} />

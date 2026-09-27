@@ -12,8 +12,17 @@ import {
   Moon,
   Newspaper,
   Search,
-  Music,
   Settings,
+  BookOpen,
+  CalendarDays,
+  ClipboardList,
+  Crown,
+  Landmark,
+  LayoutDashboard,
+  Scale,
+  Target,
+  Trophy,
+  UserCog,
   Shield,
   Sun,
   Users,
@@ -78,7 +87,7 @@ function NotificationsButton() {
           <div style={{ maxHeight: 420, overflowY: 'auto' }}>
             <NotificationList compact onItemClick={close} />
           </div>
-          <Link to="/notifications" className="menu-item" style={{ justifyContent: 'center', color: 'var(--accent)', borderTop: '1px solid var(--separator)', padding: 12 }} onClick={close}>
+          <Link to="/activity" className="menu-item" style={{ justifyContent: 'center', color: 'var(--accent)', borderTop: '1px solid var(--separator)', padding: 12 }} onClick={close}>
             {tr('Показать все')}
           </Link>
         </div>
@@ -112,13 +121,16 @@ function UserMenu() {
           </Link>
           <div className="menu-sep" />
           {isStaffLevel(me.level.type) && (
-            <Link to="/admin" className="menu-item" onClick={close}>
+            <a href="/admin" className="menu-item" onClick={close}>
               <Shield size={18} /> {tr('Админ-панель')}
-            </Link>
+            </a>
           )}
           <Link to="/settings" className="menu-item" onClick={close}>
             <Settings size={18} /> {tr('Настройки')}
           </Link>
+          <a href="/profile" className="menu-item" onClick={close}>
+            <UserCog size={18} /> {tr('Акаунт і безпека')}
+          </a>
           <div className="menu-item" style={{ cursor: 'default' }}>
             {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
             {tr('Тема:')} {theme === 'dark' ? tr('тёмная') : tr('светлая')}
@@ -184,6 +196,22 @@ function Counter({ n, hot }: { n: number; hot?: boolean }) {
   return n > 0 ? <span className={`badge${hot ? ' hot' : ''}`}>{n}</span> : null;
 }
 
+/**
+ * Розділи системи управління родинами (публічна назва в меню — «Моя
+ * родина») — поки сторінки на Vue (Inertia),
+ * тому звичайні посилання з повним переходом, а не NavLink.
+ */
+const FAMILY_LINKS = () => [
+  { href: '/dashboard', icon: LayoutDashboard, label: tr('Кабінет') },
+  { href: '/reports', icon: ClipboardList, label: tr('Звіти') },
+  { href: '/bonuses', icon: Landmark, label: tr('Банк') },
+  { href: '/discipline', icon: Scale, label: tr('Покарання') },
+  { href: '/family', icon: Target, label: tr('Цілі родини') },
+  { href: '/events', icon: CalendarDays, label: tr('Події') },
+  { href: '/leaderboard', icon: Trophy, label: tr('Рейтинг') },
+  { href: '/rules', icon: BookOpen, label: tr('Правила') },
+];
+
 function Sidebar() {
   const me = useMe();
   const { config } = useConfig();
@@ -196,9 +224,9 @@ function Sidebar() {
       <NavLink to="/feed">
         <Newspaper size={20} /> {tr('Новости')}
       </NavLink>
-      <NavLink to="/im">
+      <a href="/messenger">
         <MessageCircle size={20} /> {tr('Мессенджер')} <Counter n={counters.messages} hot />
-      </NavLink>
+      </a>
       <NavLink to="/friends">
         <Users size={20} /> {tr('Друзья')} <Counter n={counters.friends} />
       </NavLink>
@@ -208,20 +236,24 @@ function Sidebar() {
       <NavLink to={`/photos/${me.id}`}>
         <ImageIcon size={20} /> {tr('Фотографии')}
       </NavLink>
-      <NavLink to="/music">
-        <Music size={20} /> {tr('Музыка')}
+      <NavLink to="/activity">
+        <Bell size={20} /> {tr('Уведомления')} <Counter n={counters.notifications} />
       </NavLink>
-      <NavLink to="/notifications">
-        <Bell size={20} /> {tr('Уведомления')}
-      </NavLink>
+      <div className="sidebar-sep" />
+      <div className="sidebar-title">{tr('Моя родина')}</div>
+      {FAMILY_LINKS().map(({ href, icon: Icon, label }) => (
+        <a key={href} href={href}>
+          <Icon size={20} /> {label}
+        </a>
+      ))}
       <div className="sidebar-sep" />
       <NavLink to="/settings">
         <Settings size={20} /> {tr('Настройки')}
       </NavLink>
       {isStaffLevel(me.level.type) && (
-        <NavLink to="/admin">
+        <a href="/admin">
           <Shield size={20} /> {tr('Админ-панель')}
-        </NavLink>
+        </a>
       )}
       <div className="sidebar-foot">
         {config.siteTitle} © {new Date().getFullYear()}
@@ -241,17 +273,13 @@ function TabBar() {
       <NavLink to="/groups">
         <UsersRound size={24} /> {tr('Группы')}
       </NavLink>
-      <NavLink to="/im">
+      <a href="/messenger">
         <MessageCircle size={24} /> {tr('Мессенджер')}
         {counters.messages > 0 && <span className="badge">{counters.messages}</span>}
-      </NavLink>
-      <NavLink to="/friends">
-        <Users size={24} /> {tr('Друзья')}
-        {counters.friends > 0 && <span className="badge">{counters.friends}</span>}
-      </NavLink>
-      <NavLink to="/music">
-        <Music size={24} /> {tr('Музыка')}
-      </NavLink>
+      </a>
+      <a href="/dashboard">
+        <Crown size={24} /> {tr('Родина')}
+      </a>
       <NavLink to={`/id/${me.id}`}>
         <CircleUserRound size={24} /> {tr('Профиль')}
       </NavLink>
