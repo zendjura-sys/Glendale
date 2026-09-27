@@ -153,8 +153,13 @@ class FamilyController extends Controller
         abort_unless(DB::table('game_projects')->where('id', $project)->exists(), 404);
         $data = $request->validate(['names' => ['required', 'string', 'max:5000']]);
 
-        // «1-20» чи «Сервер 1-20» розгортається в «Сервер 1» … «Сервер 20».
-        $names = collect(ProjectServers::expand($data['names']))->unique(fn ($n) => mb_strtolower($n));
+        // По одному на рядок, вручну: номер 1–999 або назва кирилицею.
+        [$names, $invalid] = collect(preg_split('/\R/u', $data['names']))->map(fn ($n) => trim($n))->filter(fn ($n) => $n !== '')
+            ->partition(fn ($n) => ProjectServers::valid($n));
+        $names = $names->unique(fn ($n) => mb_strtolower($n));
+        if ($names->isEmpty()) {
+            return back()->withErrors(['names' => ProjectServers::NAME_HINT]);
+        }
         $existing = DB::table('game_servers')->where('project_id', $project)->pluck('name')->map(fn ($n) => mb_strtolower($n))->flip();
         $rows = $names->reject(fn ($n) => isset($existing[mb_strtolower($n)]))->values()
             ->map(fn ($name) => ['project_id' => $project, 'name' => $name, 'approved' => true, 'sort' => 100, 'created_by' => $request->user()->id, 'created_at' => now(), 'updated_at' => now()]);
@@ -163,7 +168,9 @@ class FamilyController extends Controller
         }
         $added = $rows->count();
 
-        return back()->with('status', "Додано серверів: {$added}.");
+        $skipped = $invalid->count() ? ' Пропущено некоректних: '.$invalid->count().' ('.ProjectServers::NAME_HINT.')' : '';
+
+        return back()->with('status', "Додано серверів: {$added}.{$skipped}");
     }
 
     /** Ілюстрація проєкту для довідника (каталог, форма реєстрації). */

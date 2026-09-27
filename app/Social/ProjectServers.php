@@ -132,28 +132,14 @@ final class ProjectServers
         return preg_match('/^\s*(?:(?:server|сервер|серв|s)\s*)?[#№]?\s*(\d{1,4})\s*$/iu', $name, $m) ? (int) $m[1] : null;
     }
 
-    /**
-     * Рядки для масового додавання: «1-20» чи «Сервер 1-20» розгортаються
-     * в «Сервер 1» … «Сервер 20» (номери 1–999).
-     *
-     * @return list<string>
-     */
-    public static function expand(string $text): array
-    {
-        $out = [];
-        foreach (preg_split('/\R/u', $text) as $line) {
-            $line = trim($line);
-            if (preg_match('/^(.*?)(\d{1,3})\s*[-–—]\s*(\d{1,3})$/u', $line, $m) && (int) $m[3] >= (int) $m[2]) {
-                $prefix = trim($m[1]) === '' ? 'Сервер ' : rtrim($m[1]).' ';
-                foreach (range((int) $m[2], (int) $m[3]) as $n) {
-                    $out[] = $prefix.$n;
-                }
-            } elseif ($line !== '') {
-                $out[] = mb_substr($line, 0, 60);
-            }
-        }
+    /** Сервер, введений вручну: номер 1–999 або назва кирилицею. */
+    public const NAME_RULE = '/^(?:[1-9]\d{0,2}|[А-Яа-яЁёЇїІіЄєҐґ]+(?:[ \'’-][А-Яа-яЁёЇїІіЄєҐґ]+)*)$/u';
 
-        return $out;
+    public const NAME_HINT = 'Сервер — номер від 1 до 999 або назва кирилицею (А–Я, а–я).';
+
+    public static function valid(string $name): bool
+    {
+        return mb_strlen($name) <= 40 && preg_match(self::NAME_RULE, $name) === 1;
     }
 
     private static function plain(string $s): string

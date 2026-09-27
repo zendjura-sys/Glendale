@@ -271,7 +271,7 @@ function fmt(d) {
                     <span v-if="p.serversSyncedAt" class="text-white/35">оновлено {{ new Date(p.serversSyncedAt).toLocaleString('uk-UA') }}</span>
                 </div>
                 <div class="mt-3 flex flex-wrap items-start gap-2">
-                    <textarea v-model="serverInput[p.id]" rows="2" placeholder="Сервери — по одному на рядок або діапазоном: 1-999, Server 1-20" class="min-w-0 flex-1 rounded-xl border border-white/10 bg-obsidian-900/60 px-3 py-2 text-xs text-white placeholder:text-white/30"></textarea>
+                    <textarea v-model="serverInput[p.id]" rows="2" placeholder="Сервери — по одному на рядок: номер 1–999 або назва кирилицею" class="min-w-0 flex-1 rounded-xl border border-white/10 bg-obsidian-900/60 px-3 py-2 text-xs text-white placeholder:text-white/30"></textarea>
                     <button class="rounded-full border border-white/15 px-4 py-2 text-xs text-white/75 hover:bg-white/5" @click="addServers(p)">Додати сервери</button>
                 </div>
             </div>

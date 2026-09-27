@@ -44,7 +44,7 @@ class FamilyApiTest extends TestCase
             'name' => 'Corleone',
             'tag' => 'crl',
             'project' => 'Verba Online',
-            'server' => 'Server 1',
+            'server' => '1',
             'description' => 'Сім\'я',
             'proof' => UploadedFile::fake()->image('proof.jpg'),
         ], $extra), ['Accept' => 'application/json'])->assertCreated()->json();
@@ -119,11 +119,11 @@ class FamilyApiTest extends TestCase
         // Гравець не може заснувати ще одну родину на тому самому сервері…
         Sanctum::actingAs($player);
         $this->post('/api/v2/families', [
-            'name' => 'Друга', 'project' => 'verba online', 'server' => 'server 1',
+            'name' => 'Друга', 'project' => 'verba online', 'server' => '1',
             'proof' => UploadedFile::fake()->image('p.jpg'),
         ], ['Accept' => 'application/json'])->assertStatus(409);
         // …а на іншому — може.
-        $this->register($player, ['name' => 'Друга', 'server' => 'Server 2']);
+        $this->register($player, ['name' => 'Друга', 'server' => '2']);
 
         // Лідер не може просто вийти, заступник — може.
         Sanctum::actingAs($leader);
@@ -196,9 +196,9 @@ class FamilyApiTest extends TestCase
         $this->assertNotNull($verba, 'стартові проєкти засіяні');
 
         // Адмін додає сервери списком, дублікати пропускаються.
-        $this->actingAs($admin)->post("/admin/families/projects/{$verba}/servers", ['names' => "Server 1\nServer 2\nserver 1"])->assertRedirect();
+        $this->actingAs($admin)->post("/admin/families/projects/{$verba}/servers", ['names' => "1\n2\n1"])->assertRedirect();
         $this->assertSame(2, \Illuminate\Support\Facades\DB::table('game_servers')->where('project_id', $verba)->count());
-        $server = \Illuminate\Support\Facades\DB::table('game_servers')->where('project_id', $verba)->where('name', 'Server 2')->value('id');
+        $server = \Illuminate\Support\Facades\DB::table('game_servers')->where('project_id', $verba)->where('name', '2')->value('id');
 
         // Вибір зі списку за id.
         $a = $this->user('ЛідерА');
@@ -208,7 +208,7 @@ class FamilyApiTest extends TestCase
 
         // Свій проєкт — непідтверджений: інші його не бачать, автор — бачить.
         $b = $this->user('ЛідерБ');
-        $famB = $this->register($b, ['name' => 'Kyiv Boys', 'project' => 'Ukraine RP', 'server' => '#3']);
+        $famB = $this->register($b, ['name' => 'Kyiv Boys', 'project' => 'Ukraine RP', 'server' => '3']);
         $this->getJson('/api/v2/families/projects')->assertJsonFragment(['name' => 'Ukraine RP', 'approved' => false]);
         Sanctum::actingAs($a);
         $this->assertNotContains('Ukraine RP', collect($this->getJson('/api/v2/families/projects')->json())->pluck('name'));
@@ -218,7 +218,7 @@ class FamilyApiTest extends TestCase
         Sanctum::actingAs($a);
         $projects = collect($this->getJson('/api/v2/families/projects')->json())->keyBy('name');
         $this->assertTrue($projects['Ukraine RP']['approved']);
-        $this->assertSame('#3', $projects['Ukraine RP']['servers'][0]['name']);
+        $this->assertSame('3', $projects['Ukraine RP']['servers'][0]['name']);
 
         // Фільтр каталогу за проєктом.
         $this->getJson('/api/v2/families?projectId='.$projects['Ukraine RP']['id'])->assertJsonCount(1)->assertJsonPath('0.name', 'Kyiv Boys');
@@ -249,20 +249,26 @@ class FamilyApiTest extends TestCase
             ->assertSessionHas('status');
     }
 
-    public function test_servers_range_numbers_and_new_project_logo(): void
+    public function test_manual_server_input_and_new_project_logo(): void
     {
         $admin = $this->admin();
         $verba = DB::table('game_projects')->where('name', 'Verba Online')->value('id');
 
-        // Діапазон 1-999 розгортається в «Сервер 1» … «Сервер 999».
-        $this->actingAs($admin)->post("/admin/families/projects/{$verba}/servers", ['names' => '1-999'])->assertSessionHas('status', 'Додано серверів: 999.');
-        $this->assertSame(999, DB::table('game_servers')->where('project_id', $verba)->count());
-        $this->actingAs($admin)->post("/admin/families/projects/{$verba}/servers", ['names' => "Сервер 1-3\nЛьвів"])->assertSessionHas('status', 'Додано серверів: 1.');
+        // Сервери вводяться вручну: номер 1–999 або назва кирилицею; решта пропускається.
+        $this->actingAs($admin)->post("/admin/families/projects/{$verba}/servers", ['names' => "1\n999\nЛьвів\nБіла Церква\n1000\n0\nServer 5\n7a"])
+            ->assertSessionHas('status', fn ($s) => str_starts_with($s, 'Додано серверів: 4. Пропущено некоректних: 4'));
+        $this->assertEqualsCanonicalizing(['1', '999', 'Львів', 'Біла Церква'], DB::table('game_servers')->where('project_id', $verba)->pluck('name')->all());
+        $this->actingAs($admin)->post("/admin/families/projects/{$verba}/servers", ['names' => "abc"])->assertSessionHasErrors('names');
 
-        // «#7» чи «7» з форми — це наявний «Сервер 7», а не новий запис.
-        $family = $this->register($this->user('Лідер'), ['server' => '#7']);
-        $this->assertSame('Сервер 7', $family['server']);
-        $this->assertSame(1000, DB::table('game_servers')->where('project_id', $verba)->count());
+        // У формі — так само; «999» — це наявний сервер, а не новий запис.
+        $family = $this->register($this->user('Лідер'), ['server' => '999']);
+        $this->assertSame('999', $family['server']);
+        Sanctum::actingAs($this->user('Ще один'));
+        foreach (['Server 1', '1000', '07', 'Kyiv'] as $bad) {
+            $this->post('/api/v2/families', ['name' => 'X', 'project' => 'Verba Online', 'server' => $bad, 'proof' => UploadedFile::fake()->image('p.jpg')], ['Accept' => 'application/json'])
+                ->assertStatus(422);
+        }
+        $this->assertSame(4, DB::table('game_servers')->where('project_id', $verba)->count());
 
         // Новий проєкт — одразу з логотипом.
         $other = $this->register($this->user('Інший'), ['project' => 'Kyiv RP', 'server' => '1', 'projectLogo' => UploadedFile::fake()->image('logo.png', 128, 128)]);

@@ -77,6 +77,9 @@ final class GameProjects
         if ($request->filled('serverId')) {
             $server = DB::table('game_servers')->where('project_id', $project->id)->find((int) $request->input('serverId'));
         } elseif (($name = Social::str($request->input('server'), 60)) !== '') {
+            if (! ProjectServers::valid($name)) {
+                Social::fail(422, ProjectServers::NAME_HINT);
+            }
             $server = DB::table('game_servers')->where('project_id', $project->id)->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])->first()
                 ?? self::byNumber($project->id, $name);
             if (! $server) {
