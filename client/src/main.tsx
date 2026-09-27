@@ -7,6 +7,7 @@ import { ThemeProvider } from './lib/theme';
 import { ConfigProvider } from './lib/config';
 import App from './App';
 import { getLang, loadLang, onLangChange } from './lib/i18n';
+import { registerServiceWorker } from './lib/install';
 import { useEffect, useState } from 'react';
 import '@fontsource-variable/montserrat';
 import './styles.css';
@@ -30,6 +31,8 @@ function LangRoot() {
   }, [lang]);
   return <App key={lang} />;
 }
+
+registerServiceWorker();
 
 const root = createRoot(document.getElementById('root')!);
 // Render once the saved language's dictionary is in place, so the first paint is already translated.

@@ -5,8 +5,10 @@ import {
   Check,
   ListMusic,
   ListPlus,
+  Maximize2,
   MoreHorizontal,
   Music,
+  Pencil,
   Pause,
   Play,
   Plus,
@@ -25,6 +27,7 @@ import { useMe } from '../lib/auth';
 import { formatDuration, usePlayer } from '../lib/player';
 import type { Playlist, SpotifyRef, Track } from '../lib/types';
 import { Empty, Modal, Spinner, useClickOutside } from './ui';
+import { FullPlayer, TrackEditor } from './FullPlayer';
 
 export function TrackCover({ track, size = 40 }: { track: Pick<Track, 'cover' | 'id'>; size?: number }) {
   return track.cover ? (
@@ -107,6 +110,7 @@ export function TrackRow({
   const [added, setAdded] = useState(track.added);
   const [menu, setMenu] = useState(false);
   const [picker, setPicker] = useState(false);
+  const [editing, setEditing] = useState(false);
   const close = useCallback(() => setMenu(false), []);
   const menuRef = useClickOutside<HTMLDivElement>(menu, close);
   const active = player.isCurrent(track.id);
@@ -167,6 +171,17 @@ export function TrackRow({
               <ListPlus size={18} /> {tr('Добавить в плейлист')}
             </button>
             {track.ownerId === me.id && (
+              <button
+                className="menu-item"
+                onClick={() => {
+                  setMenu(false);
+                  setEditing(true);
+                }}
+              >
+                <Pencil size={18} /> {tr('Редактировать трек')}
+              </button>
+            )}
+            {track.ownerId === me.id && (
               <button className="menu-item danger" onClick={remove}>
                 <Trash2 size={18} /> {tr('Удалить')}
               </button>
@@ -175,6 +190,7 @@ export function TrackRow({
         )}
       </div>
       {picker && <PlaylistPicker track={track} onClose={() => setPicker(false)} />}
+      {editing && <TrackEditor track={track} onClose={() => setEditing(false)} />}
     </div>
   );
 }
@@ -267,13 +283,15 @@ export function PlayerBar() {
         />
       </div>
       <div className="player-main">
-        <TrackCover track={t} size={42} />
-        <div className="track-info">
-          <div className="track-title ellipsis">{t.title}</div>
-          <div className="track-artist ellipsis">
-            {t.artist || tr('Неизвестный исполнитель')} · {formatDuration(p.time)} / {formatDuration(p.duration)}
-          </div>
-        </div>
+        <button className="player-open" onClick={() => p.setExpanded(true)} aria-label={tr('Развернуть плеер')} title={tr('Развернуть плеер')}>
+          <TrackCover track={t} size={42} />
+          <span className="track-info">
+            <span className="track-title ellipsis">{t.title}</span>
+            <span className="track-artist ellipsis">
+              {t.artist || tr('Неизвестный исполнитель')} · {formatDuration(p.time)} / {formatDuration(p.duration)}
+            </span>
+          </span>
+        </button>
         <div className="player-controls">
           <button className={`icon-btn hide-mobile${p.shuffle ? ' on' : ''}`} onClick={() => p.setShuffle(!p.shuffle)} aria-label={tr('Перемешать')} title={tr('Перемешать')}>
             <Shuffle size={18} />
@@ -312,11 +330,15 @@ export function PlayerBar() {
               />
             )}
           </div>
+          <button className="icon-btn hide-mobile" onClick={() => p.setExpanded(true)} aria-label={tr('Развернуть плеер')} title={tr('Развернуть плеер')}>
+            <Maximize2 size={18} />
+          </button>
           <button className="icon-btn" onClick={p.close} aria-label={tr('Закрыть плеер')}>
             <X size={18} />
           </button>
         </div>
       </div>
+      {p.expanded && <FullPlayer />}
     </div>
   );
 }

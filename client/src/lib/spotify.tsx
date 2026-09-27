@@ -21,6 +21,8 @@ export interface SpotifyItem {
 export interface SpotifyStatus {
   enabled: boolean;
   connected: boolean;
+  /** The catalog (search, albums, artists) works without a personal connection. */
+  catalog?: boolean;
   profile: { spotifyId: string; displayName: string; avatar: string | null } | null;
   showNowPlaying: boolean;
   product: string | null;

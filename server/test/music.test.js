@@ -22,8 +22,16 @@ const mock = http.createServer((req, res) => {
     const track = { id: 'track0000001', name: 'Song', type: 'track', uri: 'spotify:track:track0000001', duration_ms: 1000, artists: [{ id: 'artist000001', name: 'Band' }], album: { id: 'album0000001', name: 'LP', images: [] } };
     if (req.url === '/api/token') {
       const p = new URLSearchParams(body);
-      if (p.get('grant_type') === 'authorization_code' && p.get('code') === 'good' && p.get('code_verifier')) return json(200, { access_token: 'AT', refresh_token: 'RT', expires_in: 3600 });
+      const basic = req.headers.authorization === `Basic ${Buffer.from('abcdef0123456789abcdef0123456789:0123456789abcdef0123456789abcdef').toString('base64')}`;
+      if (p.get('grant_type') === 'client_credentials' && basic) return json(200, { access_token: 'APP', expires_in: 3600 });
+      if (p.get('grant_type') === 'authorization_code' && p.get('code') === 'good' && (p.get('code_verifier') || basic)) {
+        return json(200, { access_token: 'AT', refresh_token: 'RT', expires_in: 3600 });
+      }
       return json(400, { error: 'invalid_grant' });
+    }
+    // The app token (Client Credentials) may only read the catalog.
+    if (req.headers.authorization === 'Bearer APP' && req.url.startsWith('/v1/search')) {
+      return json(200, { tracks: { items: [track] }, artists: { items: [{ id: 'artist000001', name: 'Band', type: 'artist', images: [] }] } });
     }
     if (req.headers.authorization !== 'Bearer AT') return json(401, { error: { message: 'bad token' } });
     if (req.url === '/v1/me') return json(200, { id: 'spuser', display_name: 'Spotify User', product: 'premium', images: [] });
@@ -153,4 +161,67 @@ test('spotify: PKCE connect, data, playback control, now playing', async () => {
 
   assert.equal((await call(boss.token, 'DELETE', '/spotify')).status, 200);
   assert.equal((await call(boss.token, 'GET', '/spotify')).body.connected, false);
+});
+
+test('music: track metadata editor and cover', async () => {
+  const owner = (await call(null, 'POST', '/auth/login', { email: 'a@m.dev', password: 'secret1' })).body;
+  const other = (await call(null, 'POST', '/auth/login', { email: 'b@m.dev', password: 'secret1' })).body;
+  const { buffer } = renderWav({ chords: [[60, 64, 67]], bars: 1 });
+  const fd = new FormData();
+  fd.append('audio', new Blob([buffer], { type: 'audio/wav' }), '40b74fc09897c7.wav');
+  const t = (await call(owner.token, 'POST', '/music', fd)).body[0];
+  assert.equal(t.title, '40b74fc09897c7');
+
+  const edit = { title: 'Ой у лузі', artist: 'Гурт', album: 'Альбом', genre: 'Folk', year: 2024, trackNo: 3, lyrics: 'Ой у лузі червона калина' };
+  const e = await call(owner.token, 'PATCH', `/music/${t.id}`, edit);
+  assert.equal(e.status, 200, JSON.stringify(e.body));
+  assert.deepEqual(
+    { title: e.body.title, artist: e.body.artist, album: e.body.album, genre: e.body.genre, year: e.body.year, trackNo: e.body.trackNo, lyrics: e.body.lyrics },
+    edit,
+  );
+  assert.equal((await call(owner.token, 'PATCH', `/music/${t.id}`, { year: 99999 })).body.year, null);
+  assert.equal((await call(owner.token, 'PATCH', `/music/${t.id}`, { title: '' })).status, 400);
+  assert.equal((await call(other.token, 'PATCH', `/music/${t.id}`, { title: 'x' })).status, 403);
+
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+  const img = new FormData();
+  img.append('image', new Blob([png], { type: 'image/png' }), 'c.png');
+  const c = await call(owner.token, 'POST', `/music/${t.id}/cover`, img);
+  assert.equal(c.status, 200, JSON.stringify(c.body));
+  assert.match(c.body.cover, /^\/uploads\/.+\.png$/);
+  assert.equal((await call(owner.token, 'DELETE', `/music/${t.id}/cover`)).body.cover, null);
+});
+
+test('spotify: client secret — hidden from admins, confidential connect, catalog without a connection', async () => {
+  const admin = (await call(null, 'POST', '/auth/login', { email: 'a@m.dev', password: 'secret1' })).body;
+  const guest = await register('Гість', 'guest@m.dev');
+  const secret = '0123456789abcdef0123456789abcdef';
+  await call(admin.token, 'PATCH', '/admin/settings', { spotifyClientId: 'abcdef0123456789abcdef0123456789', spotifyClientSecret: secret });
+  const settings = (await call(admin.token, 'GET', '/admin/settings')).body;
+  assert.equal(settings.spotifyClientSecret, '');
+  assert.equal(settings.spotifyClientSecretSet, true);
+  // Saving the form with the secret left empty keeps it.
+  await call(admin.token, 'PATCH', '/admin/settings', { spotifyClientSecret: '' });
+  assert.equal((await call(admin.token, 'GET', '/admin/settings')).body.spotifyClientSecretSet, true);
+  const log = (await call(admin.token, 'GET', '/admin/log')).body;
+  assert.ok(!JSON.stringify(log).includes(secret));
+
+  // Members who haven't connected Spotify can still search the catalog (app token).
+  assert.equal((await call(guest.token, 'GET', '/spotify')).body.catalog, true);
+  const found = await call(guest.token, 'GET', '/spotify/search?q=song');
+  assert.equal(found.status, 200, JSON.stringify(found.body));
+  assert.deepEqual(found.body.map((i) => i.type), ['artist', 'track']);
+  assert.match(calls.findLast((c) => c.url.startsWith('/v1/search')).url, /market=UA/);
+  assert.equal((await call(guest.token, 'GET', '/spotify/playlists')).status, 400);
+
+  // With a secret the connection uses the classic Authorization Code flow (no PKCE challenge).
+  const url = new URL((await call(guest.token, 'POST', '/spotify/connect', { redirectUri: 'http://localhost:5173/spotify/callback' })).body.url);
+  assert.equal(url.searchParams.get('code_challenge'), null);
+  const ok = await call(guest.token, 'POST', '/spotify/callback', { code: 'good', state: url.searchParams.get('state') });
+  assert.equal(ok.status, 200, JSON.stringify(ok.body));
+  assert.equal((await call(guest.token, 'GET', '/spotify')).body.connected, true);
+
+  await call(admin.token, 'PATCH', '/admin/settings', { spotifyClientSecret: null });
+  assert.equal((await call(admin.token, 'GET', '/admin/settings')).body.spotifyClientSecretSet, false);
+  assert.equal((await call(guest.token, 'GET', '/spotify')).body.catalog, false);
 });

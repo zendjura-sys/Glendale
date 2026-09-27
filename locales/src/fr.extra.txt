@@ -1,2 +1,80 @@
 Для гостей и участников, которые не выбрали язык сами.	Pour les visiteurs et membres qui n'ont pas choisi de langue eux-mêmes.
 Язык сайта по умолчанию	Langue par défaut du site
+, тип приложения «Web application».	, type d’application « Web application ».
+. До этого вход доступен только тестовым пользователям из того же раздела.	. D’ici là, seuls les utilisateurs de test de cette même section peuvent se connecter.
+. Тип аудитории — «External», укажите название сайта и свой email.	. Type d’audience : « External » ; indiquez le nom du site et votre e-mail.
+Android-приложение	Application Android
+Google не подтвердил email этого аккаунта	Google n’a pas confirmé l’e-mail de ce compte
+«На экран «Домой»»	« Sur l’écran d’accueil »
+«Поделиться» в Safari	« Partager » dans Safari
+Будет доступен по адресу	Sera disponible à l’adresse
+Будет удалён после сохранения	Sera supprimé à l’enregistrement
+В «Authorized JavaScript origins» добавьте:	Dans « Authorized JavaScript origins », ajoutez :
+В «Authorized redirect URIs» добавьте:	Dans « Authorized redirect URIs », ajoutez :
+В поле «Redirect URIs» добавьте адрес:	Dans le champ « Redirect URIs », ajoutez l’adresse :
+В разделе «Which API/SDKs are you planning to use?» отметьте «Web API» и «Web Playback SDK», примите условия и сохраните.	Dans « Which API/SDKs are you planning to use? », cochez « Web API » et « Web Playback SDK », acceptez les conditions et enregistrez.
+Войти через Google	Se connecter avec Google
+Вход через Google не настроен	La connexion Google n’est pas configurée
+Вход через Google отменён	Connexion Google annulée
+Вы входите через Google. Задайте пароль, чтобы входить и по email.	Vous vous connectez avec Google. Définissez un mot de passe pour pouvoir aussi vous connecter par e-mail.
+Вы открыли сайт как приложение.	Vous avez ouvert le site comme une application.
+Выберите	Choisissez
+Год	Année
+Для участников без подключённого Spotify: от страны зависит, какие треки доступны.	Pour les membres sans Spotify connecté : le pays détermine les morceaux disponibles.
+Добавить текст	Ajouter les paroles
+Жанр	Genre
+Иконка на главном экране, полноэкранный режим и быстрый запуск.	Une icône sur l’écran d’accueil, le mode plein écran et un lancement rapide.
+Исполнители, треки, альбомы в Spotify	Artistes, morceaux, albums sur Spotify
+Ищите любых исполнителей, альбомы и треки. Превью доступно без подключения.	Cherchez n’importe quel artiste, album ou morceau. Les extraits fonctionnent sans connexion.
+Как получить ключи	Comment obtenir les clés
+Как собрать APK	Comment générer l’APK
+Каталог Spotify	Catalogue Spotify
+Когда оба поля заполнены, на странице входа появляется кнопка «Войти через Google». Участник с тем же email входит в свой аккаунт, новый — регистрируется.	Quand les deux champs sont remplis, un bouton « Se connecter avec Google » apparaît sur la page de connexion. Un membre avec le même e-mail se connecte à son compte, un nouveau s’inscrit.
+Нажмите	Touchez
+Нажмите «Create app». Название и описание — любые, например «Glendale».	Cliquez sur « Create app ». Nom et description libres, par exemple « Glendale ».
+Нажмите «Create», скопируйте Client ID и Client secret сюда и сохраните.	Cliquez sur « Create », copiez ici le Client ID et le Client secret, puis enregistrez.
+Нажмите «Package for stores» → «Android» → «Generate Package». Package ID оставьте предложенный или укажите свой, например net.monsory.social.	Cliquez sur « Package for stores » → « Android » → « Generate Package ». Gardez le Package ID proposé ou indiquez le vôtre, par exemple net.monsory.social.
+Настройте экран согласия:	Configurez l’écran de consentement :
+Не задан	Non défini
+Не настроено	Non configuré
+Не удалось войти через Google	Impossible de se connecter avec Google
+Нет соединения	Pas de connexion
+Откройте	Ouvrez
+Откройте assetlinks.json из архива, скопируйте всё содержимое в поле ниже и сохраните. Тогда приложение откроется без адресной строки браузера.	Ouvrez assetlinks.json dans l’archive, copiez tout son contenu dans le champ ci-dessous et enregistrez. L’application s’ouvrira alors sans barre d’adresse.
+Откройте «Settings» приложения: скопируйте Client ID, затем нажмите «View client secret» и скопируйте секрет. Вставьте оба сюда и нажмите «Сохранить».	Ouvrez les « Settings » de l’application : copiez le Client ID, puis cliquez sur « View client secret » et copiez le secret. Collez les deux ici et cliquez sur « Enregistrer ».
+Откройте меню браузера и выберите «Установить приложение» или «Добавить на главный экран».	Ouvrez le menu du navigateur et choisissez « Installer l’application » ou « Ajouter à l’écran d’accueil ».
+Очередь	File d’attente
+Повторить	Réessayer
+Подключено	Connecté
+Подключите свой Spotify	Connectez votre Spotify
+Пока приложение в режиме Development, подключать Spotify могут только те, чей email добавлен во вкладке «User Management» (до 25 человек). Чтобы открыть всем — подайте заявку «Extension request» там же.	Tant que l’application est en mode Development, seules les personnes dont l’e-mail figure dans « User Management » (25 maximum) peuvent connecter Spotify. Pour l’ouvrir à tous, envoyez une « Extension request » au même endroit.
+Показать	Afficher
+Приложение	Application
+Приложение установлено	Application installée
+Проверьте интернет — приложение подключится само, как только сеть появится.	Vérifiez votre connexion — l’application se reconnectera dès que le réseau reviendra.
+Развернуть плеер	Agrandir le lecteur
+Редактировать трек	Modifier le morceau
+С секретом поиск, альбомы и исполнители Spotify доступны всем участникам, даже без подключения своего аккаунта. Секрет хранится только на сервере.	Avec le secret, la recherche, les albums et les artistes Spotify sont accessibles à tous les membres, même sans connecter leur compte. Le secret reste uniquement sur le serveur.
+Сайт уже устанавливается как приложение прямо из браузера (Chrome на Android, Safari на iPhone). Файл APK/AAB для Google Play собирается из него без программирования:	Le site s’installe déjà comme une application directement depuis le navigateur (Chrome sur Android, Safari sur iPhone). L’APK/AAB pour Google Play se génère à partir de lui sans programmation :
+Свернуть	Réduire
+Сейчас играет	En cours de lecture
+Скачайте архив. В нём: APK для установки на телефон, AAB для Google Play, ключ подписи (signing.keystore и пароль) и файл assetlinks.json.	Téléchargez l’archive. Elle contient un APK à installer sur le téléphone, un AAB pour Google Play, la clé de signature (signing.keystore et son mot de passe) et assetlinks.json.
+Скопировать	Copier
+Создайте ключ:	Créez la clé :
+Сохранён — введите новый, чтобы заменить	Enregistré — saisissez-en un nouveau pour le remplacer
+Страна каталога	Pays du catalogue
+Текст песни	Paroles
+Текста песни пока нет.	Pas encore de paroles.
+Убрать обложку	Retirer la pochette
+Установите APK на телефон (разрешите установку из неизвестных источников) или загрузите AAB в Google Play Console.	Installez l’APK sur le téléphone (autorisez les sources inconnues) ou envoyez l’AAB dans la Google Play Console.
+Установите приложение	Installez l’application
+Установить	Installer
+Установить приложение	Installer l’application
+Храните ключ подписи в надёжном месте: без него нельзя выпустить обновление приложения.	Conservez la clé de signature en lieu sûr : sans elle, impossible de publier des mises à jour.
+Чтобы видеть свои плейлисты, медиатеку и топ, управлять воспроизведением и слушать целиком в браузере.	Pour voir vos playlists, votre bibliothèque et votre top, contrôler la lecture et écouter les morceaux en entier dans le navigateur.
+Чтобы входить мог любой пользователь Google, опубликуйте приложение:	Pour que tout utilisateur Google puisse se connecter, publiez l’application :
+и войдите своим аккаунтом Spotify.	et connectez-vous avec votre compte Spotify.
+и создайте проект (например, «Glendale»).	et créez un projet (par exemple « Glendale »).
+или	ou
+— адрес сайта подставится сам. Дождитесь проверки.	— l’adresse du site est remplie automatiquement. Attendez la fin de la vérification.
+№ трека	N° de piste

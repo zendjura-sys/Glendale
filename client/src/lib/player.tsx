@@ -25,6 +25,13 @@ interface PlayerState {
   setRepeat: (v: Repeat) => void;
   close: () => void;
   isCurrent: (id: number) => boolean;
+  /** Full-screen player. */
+  expanded: boolean;
+  setExpanded: (v: boolean) => void;
+  /** Applies edited metadata to the queued copies of a track. */
+  updateTrack: (t: Track) => void;
+  /** Plays a track of the queue by position. */
+  jump: (index: number) => void;
 }
 
 const PlayerContext = createContext<PlayerState>(null!);
@@ -57,6 +64,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [volume, setVolumeState] = useState(() => load('player.volume', 0.8));
   const [shuffle, setShuffleState] = useState(() => load('player.shuffle', false));
   const [repeat, setRepeatState] = useState<Repeat>(() => load('player.repeat', 'off'));
+  const [expanded, setExpanded] = useState(false);
   const current = index >= 0 ? queue[index] ?? null : null;
   const counted = useRef<number | null>(null);
 
@@ -166,7 +174,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     audio.current!.pause();
     setQueue([]);
     setIndex(-1);
+    setExpanded(false);
   }, []);
+  const updateTrack = useCallback((t: Track) => {
+    setQueue((q) => {
+      const next = q.map((x) => (x.id === t.id ? { ...x, ...t } : x));
+      state.current.queue = next;
+      return next;
+    });
+  }, []);
+  const jump = useCallback((i: number) => startAt(i), [startAt]);
   const next = useCallback(() => pickNext(1, false), [pickNext]);
   const prev = useCallback(() => {
     // Like most players: "previous" restarts the track unless we are at its very beginning.
@@ -174,20 +191,43 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     else pickNext(-1, false);
   }, [pickNext, seek]);
 
-  // Lock-screen / headset controls.
+  // Lock-screen / headset controls, including seeking from the notification.
   useEffect(() => {
     if (!('mediaSession' in navigator) || !current) return;
-    navigator.mediaSession.metadata = new MediaMetadata({
+    const ms = navigator.mediaSession;
+    ms.metadata = new MediaMetadata({
       title: current.title,
       artist: current.artist,
       album: current.album,
-      artwork: current.cover ? [{ src: current.cover, sizes: '512x512' }] : [],
+      artwork: current.cover ? [{ src: new URL(current.cover, location.href).href, sizes: '512x512' }] : [],
     });
-    navigator.mediaSession.setActionHandler('play', toggle);
-    navigator.mediaSession.setActionHandler('pause', toggle);
-    navigator.mediaSession.setActionHandler('nexttrack', next);
-    navigator.mediaSession.setActionHandler('previoustrack', prev);
-  }, [current, toggle, next, prev]);
+    const handlers: [MediaSessionAction, MediaSessionActionHandler][] = [
+      ['play', toggle],
+      ['pause', toggle],
+      ['nexttrack', next],
+      ['previoustrack', prev],
+      ['seekto', (d) => d.seekTime != null && seek(d.seekTime)],
+      ['seekbackward', (d) => seek((audio.current?.currentTime ?? 0) - (d.seekOffset ?? 10))],
+      ['seekforward', (d) => seek((audio.current?.currentTime ?? 0) + (d.seekOffset ?? 10))],
+    ];
+    for (const [action, fn] of handlers) {
+      try {
+        ms.setActionHandler(action, fn);
+      } catch {
+        /* action not supported by this browser */
+      }
+    }
+  }, [current, toggle, next, prev, seek]);
+
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || !current || !duration) return;
+    navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
+    try {
+      navigator.mediaSession.setPositionState({ duration, position: Math.min(time, duration), playbackRate: 1 });
+    } catch {
+      /* position state not supported */
+    }
+  }, [current, duration, time, playing]);
 
   const value = useMemo<PlayerState>(
     () => ({
@@ -210,8 +250,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setRepeat,
       close,
       isCurrent: (id) => current?.id === id,
+      expanded,
+      setExpanded,
+      updateTrack,
+      jump,
     }),
-    [queue, index, current, playing, time, duration, volume, shuffle, repeat, play, toggle, next, prev, seek, setVolume, setShuffle, setRepeat, close],
+    [queue, index, current, playing, time, duration, volume, shuffle, repeat, play, toggle, next, prev, seek, setVolume, setShuffle, setRepeat, close, expanded, updateTrack, jump],
   );
 
   return <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>;

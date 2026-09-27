@@ -122,3 +122,20 @@ test('login lockout after repeated failures', async () => {
   const locked = await call(null, 'POST', '/auth/login', { email: 'lock@t.dev', password: 'secret1' });
   assert.equal(locked.status, 429);
 });
+
+test('app: manifest follows settings, assetlinks served only when set', async () => {
+  const admin = (await call(null, 'POST', '/auth/login', { email: 'boss@t.dev', password: 'secret1' })).body;
+  const root = base.replace('/api', '');
+  const manifest = await (await fetch(`${root}/manifest.webmanifest`)).json();
+  assert.equal(manifest.display, 'standalone');
+  assert.ok(manifest.icons.some((i) => i.purpose === 'maskable'));
+  assert.equal((await fetch(`${root}/.well-known/assetlinks.json`)).status, 404);
+  await call(admin.token, 'PATCH', '/admin/settings', { androidAssetLinks: 'not json' });
+  assert.equal((await fetch(`${root}/.well-known/assetlinks.json`)).status, 404);
+  const links = '[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"net.monsory.social","sha256_cert_fingerprints":["AA:BB"]}}]';
+  await call(admin.token, 'PATCH', '/admin/settings', { androidAssetLinks: links, siteTitle: 'Monsory Social' });
+  const res = await fetch(`${root}/.well-known/assetlinks.json`);
+  assert.equal(res.status, 200);
+  assert.equal((await res.json())[0].target.package_name, 'net.monsory.social');
+  assert.equal((await (await fetch(`${root}/manifest.webmanifest`)).json()).name, 'Monsory Social');
+});

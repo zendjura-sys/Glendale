@@ -2,7 +2,8 @@ import { LANGUAGES, tr } from '../lib/i18n';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check } from 'lucide-react';
+import { Check, Copy, Eye, EyeOff, Smartphone, Trash2 } from 'lucide-react';
+import { GoogleLogo, SpotifyLogo } from '../components/brands';
 import { api } from '../lib/api';
 import { useConfig } from '../lib/config';
 import { Spinner } from '../components/ui';
@@ -174,28 +175,169 @@ export default function SettingsPage() {
       )}
 
       {key === 'integrations' && (
-        <div className="card">
-          <div className="card-title">Spotify</div>
-          <div className="settings-form">
-            <div>
-              <label className="label">{tr('Client ID приложения Spotify')}</label>
-              <input
-                className="field"
-                value={s.spotifyClientId}
-                placeholder={tr('например, 3f8c1a…')}
-                onChange={(e) => set('spotifyClientId', e.target.value.trim())}
-                spellCheck={false}
+        <>
+          <div className="card">
+            <div className="card-title integration-title">
+              <SpotifyLogo size={20} /> Spotify
+              <span className={`pill ${s.spotifyClientId ? 'good' : ''}`}>{s.spotifyClientId ? tr('Подключено') : tr('Не настроено')}</span>
+            </div>
+            <div className="settings-form">
+              <div>
+                <label className="label">Client ID</label>
+                <input
+                  className="field"
+                  value={s.spotifyClientId}
+                  placeholder={tr('например, 3f8c1a…')}
+                  onChange={(e) => set('spotifyClientId', e.target.value.trim())}
+                  spellCheck={false}
+                />
+              </div>
+              <SecretField
+                label="Client Secret"
+                isSet={s.spotifyClientSecretSet}
+                value={s.spotifyClientSecret}
+                onChange={(v) => set('spotifyClientSecret', v)}
+                hint={tr('С секретом поиск, альбомы и исполнители Spotify доступны всем участникам, даже без подключения своего аккаунта. Секрет хранится только на сервере.')}
               />
-              <div className="hint">
-                {tr('Создайте приложение на developer.spotify.com (Dashboard → Create app, API: Web API и Web Playback SDK) и добавьте Redirect URI:')}
-                <br />
-                <code style={{ userSelect: 'all' }}>{`${location.origin}/spotify/callback`}</code>
-                <br />
-                {tr('Секрет не нужен — используется безопасная авторизация PKCE. Пока приложение в режиме разработки, добавьте email участников в User Management на сайте Spotify.')}
+              <div>
+                <label className="label">{tr('Страна каталога')}</label>
+                <select className="field" value={s.spotifyMarket} onChange={(e) => set('spotifyMarket', e.target.value)}>
+                  {MARKETS.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+                <div className="hint">{tr('Для участников без подключённого Spotify: от страны зависит, какие треки доступны.')}</div>
+              </div>
+              <Steps
+                title={tr('Как получить ключи')}
+                steps={[
+                  <>
+                    {tr('Откройте')}{' '}
+                    <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noreferrer">
+                      developer.spotify.com/dashboard
+                    </a>{' '}
+                    {tr('и войдите своим аккаунтом Spotify.')}
+                  </>,
+                  tr('Нажмите «Create app». Название и описание — любые, например «Glendale».'),
+                  <>
+                    {tr('В поле «Redirect URIs» добавьте адрес:')} <CopyCode text={`${location.origin}/spotify/callback`} />
+                  </>,
+                  tr('В разделе «Which API/SDKs are you planning to use?» отметьте «Web API» и «Web Playback SDK», примите условия и сохраните.'),
+                  tr('Откройте «Settings» приложения: скопируйте Client ID, затем нажмите «View client secret» и скопируйте секрет. Вставьте оба сюда и нажмите «Сохранить».'),
+                  tr('Пока приложение в режиме Development, подключать Spotify могут только те, чей email добавлен во вкладке «User Management» (до 25 человек). Чтобы открыть всем — подайте заявку «Extension request» там же.'),
+                ]}
+              />
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-title integration-title">
+              <GoogleLogo size={20} /> Google
+              <span className={`pill ${s.googleClientId && s.googleClientSecretSet ? 'good' : ''}`}>
+                {s.googleClientId && s.googleClientSecretSet ? tr('Подключено') : tr('Не настроено')}
+              </span>
+            </div>
+            <div className="settings-form">
+              <div>
+                <label className="label">Client ID</label>
+                <input
+                  className="field"
+                  value={s.googleClientId}
+                  placeholder="1234567890-abc….apps.googleusercontent.com"
+                  onChange={(e) => set('googleClientId', e.target.value.trim())}
+                  spellCheck={false}
+                />
+              </div>
+              <SecretField label="Client Secret" isSet={s.googleClientSecretSet} value={s.googleClientSecret} onChange={(v) => set('googleClientSecret', v)} />
+              <div className="hint">{tr('Когда оба поля заполнены, на странице входа появляется кнопка «Войти через Google». Участник с тем же email входит в свой аккаунт, новый — регистрируется.')}</div>
+              <Steps
+                title={tr('Как получить ключи')}
+                steps={[
+                  <>
+                    {tr('Откройте')}{' '}
+                    <a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noreferrer">
+                      console.cloud.google.com
+                    </a>{' '}
+                    {tr('и создайте проект (например, «Glendale»).')}
+                  </>,
+                  <>
+                    {tr('Настройте экран согласия:')}{' '}
+                    <a href="https://console.cloud.google.com/auth/branding" target="_blank" rel="noreferrer">
+                      Google Auth Platform → Branding
+                    </a>
+                    {tr('. Тип аудитории — «External», укажите название сайта и свой email.')}
+                  </>,
+                  <>
+                    {tr('Создайте ключ:')}{' '}
+                    <a href="https://console.cloud.google.com/auth/clients/create" target="_blank" rel="noreferrer">
+                      Clients → Create client
+                    </a>
+                    {tr(', тип приложения «Web application».')}
+                  </>,
+                  <>
+                    {tr('В «Authorized JavaScript origins» добавьте:')} <CopyCode text={location.origin} />
+                  </>,
+                  <>
+                    {tr('В «Authorized redirect URIs» добавьте:')} <CopyCode text={`${location.origin}/api/auth/google/callback`} />
+                  </>,
+                  tr('Нажмите «Create», скопируйте Client ID и Client secret сюда и сохраните.'),
+                  <>
+                    {tr('Чтобы входить мог любой пользователь Google, опубликуйте приложение:')}{' '}
+                    <a href="https://console.cloud.google.com/auth/audience" target="_blank" rel="noreferrer">
+                      Audience → Publish app
+                    </a>
+                    {tr('. До этого вход доступен только тестовым пользователям из того же раздела.')}
+                  </>,
+                ]}
+              />
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-title integration-title">
+              <Smartphone size={20} /> {tr('Android-приложение')}
+              <span className={`pill ${s.androidAssetLinks.trim() ? 'good' : ''}`}>{s.androidAssetLinks.trim() ? tr('Подключено') : tr('Не настроено')}</span>
+            </div>
+            <div className="settings-form">
+              <div className="hint" style={{ marginTop: 0 }}>
+                {tr('Сайт уже устанавливается как приложение прямо из браузера (Chrome на Android, Safari на iPhone). Файл APK/AAB для Google Play собирается из него без программирования:')}
+              </div>
+              <Steps
+                title={tr('Как собрать APK')}
+                steps={[
+                  <>
+                    {tr('Откройте')}{' '}
+                    <a href={`https://www.pwabuilder.com/reportcard?site=${encodeURIComponent(location.origin)}`} target="_blank" rel="noreferrer">
+                      pwabuilder.com
+                    </a>{' '}
+                    {tr('— адрес сайта подставится сам. Дождитесь проверки.')}
+                  </>,
+                  tr('Нажмите «Package for stores» → «Android» → «Generate Package». Package ID оставьте предложенный или укажите свой, например net.monsory.social.'),
+                  tr('Скачайте архив. В нём: APK для установки на телефон, AAB для Google Play, ключ подписи (signing.keystore и пароль) и файл assetlinks.json.'),
+                  tr('Храните ключ подписи в надёжном месте: без него нельзя выпустить обновление приложения.'),
+                  tr('Откройте assetlinks.json из архива, скопируйте всё содержимое в поле ниже и сохраните. Тогда приложение откроется без адресной строки браузера.'),
+                  tr('Установите APK на телефон (разрешите установку из неизвестных источников) или загрузите AAB в Google Play Console.'),
+                ]}
+              />
+              <div>
+                <label className="label">assetlinks.json</label>
+                <textarea
+                  className="field mono"
+                  rows={6}
+                  spellCheck={false}
+                  placeholder='[{"relation": ["delegate_permission/common.handle_all_urls"], "target": {…}}]'
+                  value={s.androidAssetLinks}
+                  onChange={(e) => set('androidAssetLinks', e.target.value)}
+                />
+                <div className="hint">
+                  {tr('Будет доступен по адресу')} <CopyCode text={`${location.origin}/.well-known/assetlinks.json`} />
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       {key === 'appearance' && (
@@ -222,5 +364,89 @@ export default function SettingsPage() {
         </div>
       )}
     </>
+  );
+}
+
+const MARKETS = ['UA', 'KZ', 'PL', 'DE', 'FR', 'ES', 'GB', 'US', 'JP'];
+
+/** Write-only secret: shows whether one is stored, never its value. */
+function SecretField({
+  label,
+  isSet,
+  value,
+  onChange,
+  hint,
+}: {
+  label: string;
+  isSet: boolean;
+  value: string | null;
+  onChange: (v: string | null) => void;
+  hint?: string;
+}) {
+  const [show, setShow] = useState(false);
+  const cleared = value === null;
+  return (
+    <div>
+      <label className="label">{label}</label>
+      <div className="secret-field">
+        <input
+          className="field"
+          type={show ? 'text' : 'password'}
+          value={value ?? ''}
+          autoComplete="off"
+          spellCheck={false}
+          placeholder={cleared ? tr('Будет удалён после сохранения') : isSet ? tr('Сохранён — введите новый, чтобы заменить') : tr('Не задан')}
+          onChange={(e) => onChange(e.target.value.trim())}
+        />
+        <button type="button" className="icon-btn" onClick={() => setShow((v) => !v)} aria-label={show ? tr('Скрыть') : tr('Показать')}>
+          {show ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+        {isSet && !cleared && (
+          <button type="button" className="btn secondary small" onClick={() => onChange(null)}>
+            <Trash2 size={14} /> {tr('Удалить')}
+          </button>
+        )}
+      </div>
+      {hint && <div className="hint">{hint}</div>}
+    </div>
+  );
+}
+
+function CopyCode({ text }: { text: string }) {
+  const [done, setDone] = useState(false);
+  return (
+    <span className="copy-code">
+      <code>{text}</code>
+      <button
+        type="button"
+        className="icon-btn"
+        aria-label={tr('Скопировать')}
+        title={tr('Скопировать')}
+        onClick={async () => {
+          try {
+            await navigator.clipboard.writeText(text);
+            setDone(true);
+            setTimeout(() => setDone(false), 1500);
+          } catch {
+            /* clipboard unavailable: the code is selectable */
+          }
+        }}
+      >
+        {done ? <Check size={14} /> : <Copy size={14} />}
+      </button>
+    </span>
+  );
+}
+
+function Steps({ title, steps }: { title: string; steps: React.ReactNode[] }) {
+  return (
+    <details className="setup-steps">
+      <summary>{title}</summary>
+      <ol>
+        {steps.map((st, i) => (
+          <li key={i}>{st}</li>
+        ))}
+      </ol>
+    </details>
   );
 }

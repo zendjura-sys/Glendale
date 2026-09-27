@@ -551,3 +551,64 @@ table.admin input[type='checkbox'],
     white-space: normal;
   }
 }
+
+/* Integrations: secret fields and step-by-step setup guides. */
+.integration-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.integration-title .pill {
+  margin-left: auto;
+}
+.secret-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.secret-field .field {
+  flex: 1;
+  min-width: 0;
+}
+.copy-code {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  vertical-align: middle;
+}
+.copy-code code {
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: var(--field);
+  font-size: 12.5px;
+  word-break: break-all;
+  user-select: all;
+}
+.copy-code .icon-btn {
+  width: 28px;
+  height: 28px;
+}
+.setup-steps {
+  border-radius: 14px;
+  background: var(--accent-soft);
+  padding: 10px 14px;
+}
+.setup-steps summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--accent);
+}
+.setup-steps ol {
+  margin: 10px 0 2px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.field.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+}

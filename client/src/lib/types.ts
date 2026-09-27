@@ -12,6 +12,8 @@ export type LevelType = 'superadmin' | 'admin' | 'moderator' | 'user';
 
 export interface Me extends User {
   email: string;
+  /** False for accounts created through Google until the member sets a password. */
+  hasPassword: boolean;
   level: { id: number; title: string; type: LevelType };
   permissions: { post: boolean; comment: boolean; message: boolean; createGroups: boolean; upload: boolean };
 }
@@ -25,6 +27,8 @@ export interface SiteConfig {
   accentColor: string;
   aurora: boolean;
   spotifyEnabled: boolean;
+  googleEnabled: boolean;
+  demoAccounts: boolean;
   defaultLanguage: string;
 }
 
@@ -86,6 +90,10 @@ export interface Track {
   title: string;
   artist: string;
   album: string;
+  genre: string;
+  year: number | null;
+  trackNo: number | null;
+  lyrics: string;
   duration: number;
   url: string;
   cover: string | null;

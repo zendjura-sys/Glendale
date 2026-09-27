@@ -5,7 +5,7 @@ import crypto from 'node:crypto';
 import { parseFile } from 'music-metadata';
 import { db, q, tx, now } from './db.js';
 import { fail, intParam, str, need, beforeParam, PAGE } from './http.js';
-import { uploadAudio, uploadsDir } from './uploads.js';
+import { upload, uploadAudio, uploadsDir, fileUrl } from './uploads.js';
 import { trackJson, getTrack, getUser, userShort } from './models.js';
 import { isStaff } from './auth.js';
 import { censor } from './settings.js';
@@ -30,12 +30,23 @@ async function readTags(file) {
       title: meta.common.title,
       artist: meta.common.artist || meta.common.albumartist,
       album: meta.common.album,
+      genre: meta.common.genre?.[0],
+      year: meta.common.year,
+      trackNo: meta.common.track?.no,
+      lyrics: lyricsText(meta.common.lyrics),
       duration: meta.format.duration ?? 0,
       cover,
     };
   } catch {
     return {};
   }
+}
+
+/** Unsynchronised lyrics from tags (music-metadata returns strings or { text } objects depending on version). */
+function lyricsText(list) {
+  const first = list?.[0];
+  if (!first) return '';
+  return String(typeof first === 'string' ? first : first.text ?? '').slice(0, 20000);
 }
 
 const baseName = (name) => name.replace(/\.[^.]+$/, '').replace(/[_]+/g, ' ').trim();
@@ -90,8 +101,23 @@ music.post('/music', uploadAudio.array('audio', 10), async (req, res) => {
     const t = now();
     const id = tx(() => {
       const r = q(
-        'INSERT INTO tracks (owner_id, title, artist, album, duration, file, cover, size, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      ).run(req.user.id, title, artist, tags.album || '', tags.duration || 0, `/uploads/${file.filename}`, tags.cover, file.size, t);
+        `INSERT INTO tracks (owner_id, title, artist, album, genre, year, track_no, lyrics, duration, file, cover, size, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        req.user.id,
+        title,
+        artist,
+        str(tags.album, 200),
+        str(tags.genre, 100),
+        yearValue(tags.year),
+        trackNoValue(tags.trackNo),
+        tags.lyrics || '',
+        tags.duration || 0,
+        `/uploads/${file.filename}`,
+        tags.cover,
+        file.size,
+        t,
+      );
       const trackId = Number(r.lastInsertRowid);
       q('INSERT INTO user_tracks (user_id, track_id, added_at) VALUES (?, ?, ?)').run(req.user.id, trackId, t);
       return trackId;
@@ -108,21 +134,66 @@ function ownTrack(req) {
   return t;
 }
 
+const yearValue = (v) => {
+  const n = Number(v);
+  return Number.isInteger(n) && n >= 1000 && n <= 2999 ? n : null;
+};
+const trackNoValue = (v) => {
+  const n = Number(v);
+  return Number.isInteger(n) && n > 0 && n < 10000 ? n : null;
+};
+const removeUpload = (f) => {
+  if (f?.startsWith('/uploads/')) fs.rm(path.join(uploadsDir, path.basename(f)), () => {});
+};
+
+/** Track metadata editor: only fields present in the body change. */
 music.patch('/music/:id', (req, res) => {
   const t = ownTrack(req);
-  const title = req.body.title !== undefined ? censor(str(req.body.title, 200)) : t.title;
+  const b = req.body ?? {};
+  const text = (key, max, fallback) => (b[key] !== undefined ? censor(str(b[key], max)) : fallback);
+  const title = text('title', 200, t.title);
   if (!title) fail(400, 'Укажите название');
-  const artist = req.body.artist !== undefined ? censor(str(req.body.artist, 200)) : t.artist;
-  q('UPDATE tracks SET title = ?, artist = ? WHERE id = ?').run(title, artist, t.id);
+  q(
+    'UPDATE tracks SET title = ?, artist = ?, album = ?, genre = ?, year = ?, track_no = ?, lyrics = ? WHERE id = ?',
+  ).run(
+    title,
+    text('artist', 200, t.artist),
+    text('album', 200, t.album),
+    text('genre', 100, t.genre ?? ''),
+    b.year !== undefined ? yearValue(b.year) : t.year,
+    b.trackNo !== undefined ? trackNoValue(b.trackNo) : t.track_no,
+    b.lyrics !== undefined ? censor(String(b.lyrics ?? '').slice(0, 20000)) : t.lyrics ?? '',
+    t.id,
+  );
+  res.json(trackJson(getTrack(t.id), req.user.id));
+});
+
+music.post('/music/:id/cover', upload.single('image'), (req, res) => {
+  let t;
+  try {
+    t = ownTrack(req);
+  } catch (e) {
+    removeUpload(fileUrl(req.file)); // multer stored it before the ownership check
+    throw e;
+  }
+  if (!req.file) fail(400, 'Файл не выбран');
+  q('UPDATE tracks SET cover = ? WHERE id = ?').run(fileUrl(req.file), t.id);
+  removeUpload(t.cover);
+  res.json(trackJson(getTrack(t.id), req.user.id));
+});
+
+music.delete('/music/:id/cover', (req, res) => {
+  const t = ownTrack(req);
+  q('UPDATE tracks SET cover = NULL WHERE id = ?').run(t.id);
+  removeUpload(t.cover);
   res.json(trackJson(getTrack(t.id), req.user.id));
 });
 
 music.delete('/music/:id', (req, res) => {
   const t = ownTrack(req);
   q('DELETE FROM tracks WHERE id = ?').run(t.id);
-  for (const f of [t.file, t.cover]) {
-    if (f?.startsWith('/uploads/')) fs.rm(path.join(uploadsDir, path.basename(f)), () => {});
-  }
+  removeUpload(t.file);
+  removeUpload(t.cover);
   res.json({ ok: true });
 });
 

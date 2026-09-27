@@ -459,3 +459,390 @@ body.has-player .toasts {
 .bubble-row.first {
   margin-top: 6px;
 }
+
+/* ───────── Mini player: open button and always-visible progress ───────── */
+.player-progress {
+  padding: 0 18px;
+}
+.player-progress input {
+  height: 3px;
+  border-radius: 2px;
+}
+.player-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.player-open .track-title,
+.player-open .track-artist {
+  display: block;
+}
+
+/* ───────── Full-screen player ───────── */
+.fullplayer {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  overflow-y: auto;
+  animation: fp-in 0.28s ease-out;
+}
+@keyframes fp-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+/* The cover, blurred, tints the whole screen — flat colour, no 3D. */
+.fp-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.fp-backdrop img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(70px) saturate(160%);
+  opacity: 0.45;
+  transform: scale(1.2);
+}
+.fp-backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 30%, var(--bg));
+}
+.fp-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: calc(12px + env(safe-area-inset-top)) 16px 8px;
+}
+.fp-head-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+.fp-head-title .muted {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.fp-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 440px) minmax(0, 420px);
+  justify-content: center;
+  align-items: start;
+  gap: 48px;
+  padding: 16px 24px calc(24px + env(safe-area-inset-bottom));
+}
+.fp-main {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.fp-cover {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.fp-cover img,
+.fp-cover-empty {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.9);
+}
+.fp-cover-empty {
+  background: linear-gradient(135deg, #6f7cff, #a78bfa);
+}
+.fp-cover-empty[data-hue='1'] {
+  background: linear-gradient(135deg, #f472b6, #fb923c);
+}
+.fp-cover-empty[data-hue='2'] {
+  background: linear-gradient(135deg, #22d3ee, #4c5bf5);
+}
+.fp-cover-empty[data-hue='3'] {
+  background: linear-gradient(135deg, #34d399, #0ea5e9);
+}
+.fp-cover-empty[data-hue='4'] {
+  background: linear-gradient(135deg, #a78bfa, #ec4899);
+}
+.fp-cover-empty[data-hue='5'] {
+  background: linear-gradient(135deg, #fbbf24, #f43f5e);
+}
+.fp-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.fp-titles {
+  flex: 1;
+  min-width: 0;
+}
+.fp-titles h2 {
+  margin: 0 0 2px;
+  font-size: 22px;
+  font-weight: 700;
+}
+.fp-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 6px;
+  margin: 8px 0;
+  border-radius: 3px;
+  background: linear-gradient(to right, var(--accent) var(--pct), var(--separator) var(--pct));
+  cursor: pointer;
+  touch-action: none;
+}
+.fp-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.fp-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.fp-times {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.fp-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+.fp-skip {
+  width: 52px;
+  height: 52px;
+}
+.fp-toggle {
+  width: 72px;
+  height: 72px;
+  border: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--btn-primary);
+  color: #fff;
+  transition: background-color 0.15s, transform 0.1s;
+}
+.fp-toggle:hover {
+  background: var(--btn-primary-hover);
+}
+.fp-toggle:active {
+  transform: scale(0.95);
+}
+.fp-volume {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fp-side {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 120px);
+  overflow: hidden;
+}
+.fp-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 10px;
+  border-bottom: 1px solid var(--separator);
+}
+.fp-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 17px;
+  background: none;
+  color: var(--text-2);
+  font-weight: 600;
+  transition: background-color 0.15s, color 0.15s;
+}
+.fp-tabs button.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.fp-queue {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+}
+.fp-queue-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 12px;
+  background: none;
+  color: inherit;
+  text-align: left;
+  transition: background-color 0.15s;
+}
+.fp-queue-item:hover {
+  background: var(--hover);
+}
+.fp-queue-item.active {
+  background: var(--accent-soft);
+}
+.fp-queue-item.active .track-title {
+  color: var(--accent);
+}
+.fp-queue-item .track-title,
+.fp-queue-item .track-artist {
+  display: block;
+}
+.fp-lyrics {
+  padding: 18px 22px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-size: 17px;
+  line-height: 1.7;
+  font-weight: 500;
+}
+.fp-lyrics-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 20px;
+  text-align: center;
+}
+@media (max-width: 900px) {
+  .fp-body {
+    grid-template-columns: minmax(0, 480px);
+    gap: 24px;
+    padding: 8px 20px calc(24px + env(safe-area-inset-bottom));
+  }
+  .fp-cover {
+    width: min(100%, 52vh);
+    margin: 0 auto;
+  }
+  .fp-side {
+    max-height: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fullplayer {
+    animation: none;
+  }
+}
+
+/* ───────── Track metadata editor ───────── */
+.btn.small {
+  height: 30px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+.track-editor {
+  display: flex;
+  gap: 22px;
+}
+.track-editor-cover {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.track-editor-cover .track-cover {
+  border-radius: 18px;
+}
+.track-editor-cover-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+.track-editor-fields {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.form-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+.track-editor-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 10px;
+}
+.track-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+@media (max-width: 600px) {
+  .track-editor {
+    flex-direction: column;
+  }
+}
+
+.spotify-btn {
+  background: #1ed760;
+  color: #000;
+}
+.spotify-btn:hover:not(:disabled) {
+  background: #3be477;
+}
+.spotify-connect-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 14px 16px 4px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--field);
+}

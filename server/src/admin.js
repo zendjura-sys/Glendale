@@ -4,7 +4,7 @@ import { db, q, tx, now } from './db.js';
 import { requireAuth, isStaff, isAdminLevel, levelOf, createSession, hashPassword } from './auth.js';
 import { fail, intParam, str, errorHandler } from './http.js';
 import { translate } from './i18n.js';
-import { getAllSettings, updateSettings } from './settings.js';
+import { adminSettings, getAllSettings, updateSettings } from './settings.js';
 import { userShort, groupShort, getUser, getGroup, hydratePosts } from './models.js';
 import { kick } from './realtime.js';
 import { REPORT_CATEGORIES } from './api.js';
@@ -604,14 +604,15 @@ admin.delete('/announcements/:id', adminOnly, (req, res) => {
 
 // ───────────────────────────── settings ─────────────────────────────
 
-admin.get('/settings', adminOnly, (_req, res) => res.json(getAllSettings()));
+admin.get('/settings', adminOnly, (_req, res) => res.json(adminSettings()));
 
 admin.patch('/settings', adminOnly, (req, res) => {
   const before = getAllSettings();
   const after = updateSettings(req.body ?? {});
+  // The audit log names changed keys only, never secret values.
   const changed = Object.keys(after).filter((k) => JSON.stringify(after[k]) !== JSON.stringify(before[k]));
   if (changed.length) log(req, 'settings.update', changed.join(', '));
-  res.json(after);
+  res.json(adminSettings());
 });
 
 // ───────────────────────────── statistics ─────────────────────────────

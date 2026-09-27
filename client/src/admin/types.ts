@@ -115,6 +115,14 @@ export interface Settings {
   aurora: boolean;
   wallForFriendsOnly: boolean;
   spotifyClientId: string;
+  /** Secrets are write-only: '' keeps the stored value, null clears it; `*Set` tells whether one is stored. */
+  spotifyClientSecret: string | null;
+  spotifyClientSecretSet: boolean;
+  spotifyMarket: string;
+  googleClientId: string;
+  googleClientSecret: string | null;
+  googleClientSecretSet: boolean;
+  androidAssetLinks: string;
   defaultLanguage: string;
 }
 

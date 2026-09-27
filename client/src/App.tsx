@@ -1,6 +1,6 @@
 import { tr } from './lib/i18n';
 import { lazy, Suspense, useState } from 'react';
-import { Wrench } from 'lucide-react';
+import { RefreshCw, WifiOff, Wrench } from 'lucide-react';
 import { useConfig } from './lib/config';
 import { PlayerProvider } from './lib/player';
 import { SpotifyProvider } from './lib/spotify';
@@ -66,7 +66,7 @@ function MaintenanceScreen() {
 }
 
 export default function App() {
-  const { user, loading } = useAuth();
+  const { user, loading, offline, retry } = useAuth();
   const { config, ready } = useConfig();
   if (ready && config.maintenance && !(user && isStaffLevel(user.level.type)) && !loading)
     return (
@@ -80,6 +80,20 @@ export default function App() {
       <>
         <Aurora />
         <Spinner />
+      </>
+    );
+  if (!user && offline)
+    return (
+      <>
+        <Aurora />
+        <div className="offline-screen">
+          <WifiOff size={44} />
+          <h2>{tr('Нет соединения')}</h2>
+          <p className="muted">{tr('Проверьте интернет — приложение подключится само, как только сеть появится.')}</p>
+          <button className="btn" onClick={retry}>
+            <RefreshCw size={16} /> {tr('Повторить')}
+          </button>
+        </div>
       </>
     );
   if (!user)

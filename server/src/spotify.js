@@ -5,8 +5,11 @@ import { fail, intParam, str } from './http.js';
 import { getSetting } from './settings.js';
 
 /**
- * Spotify integration (Authorization Code with PKCE — only a Client ID is needed, no secret).
- * The admin sets the Client ID in the admin panel; every member can connect their own account.
+ * Spotify integration. The admin sets the Client ID (and, optionally, the Client Secret) in the admin panel;
+ * every member can connect their own account.
+ * - Client ID only: Authorization Code with PKCE.
+ * - With the secret: classic Authorization Code (confidential client) plus an app token (Client Credentials),
+ *   so the catalog (search, albums, artists, public playlists) works even for members who haven't connected.
  */
 export const spotify = express.Router();
 
@@ -32,17 +35,25 @@ const SCOPES = [
 
 
 const clientId = () => String(getSetting('spotifyClientId') || '').trim();
+const clientSecret = () => String(getSetting('spotifyClientSecret') || '').trim();
 const enabled = () => !!clientId();
+/** The catalog is available without a personal connection only when the app has a secret. */
+const catalogEnabled = () => enabled() && !!clientSecret();
 
 /** state → PKCE verifier for sign-ins in progress (10 minutes). */
 const pending = new Map();
 const b64url = (buf) => buf.toString('base64url');
 
 async function tokenRequest(params) {
+  const secret = clientSecret();
   const res = await fetch(`${ACCOUNTS()}/api/token`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ client_id: clientId(), ...params }),
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      // Confidential client: authenticate with the secret. Otherwise (PKCE) the client_id goes in the body.
+      ...(secret && { Authorization: `Basic ${Buffer.from(`${clientId()}:${secret}`).toString('base64')}` }),
+    },
+    body: new URLSearchParams(secret ? params : { client_id: clientId(), ...params }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) fail(502, 'Spotify отклонил запрос: {reason}', undefined, { reason: data.error_description || data.error || res.status });
@@ -63,10 +74,29 @@ async function accessToken(userId) {
   return t.access_token;
 }
 
-/** Calls the Spotify Web API on behalf of a member. Returns null for empty responses (204, e.g. nothing playing). */
-async function sp(userId, path, { method = 'GET', body } = {}) {
+/** App-level token (Client Credentials) for catalog requests, cached until shortly before it expires. */
+let appTokenCache = null;
+async function appToken() {
+  if (!catalogEnabled()) return null;
+  const key = `${clientId()}:${clientSecret()}`;
+  if (appTokenCache?.key === key && appTokenCache.expiresAt - 60_000 > now()) return appTokenCache.token;
+  const t = await tokenRequest({ grant_type: 'client_credentials' });
+  appTokenCache = { key, token: t.access_token, expiresAt: now() + t.expires_in * 1000 };
+  return t.access_token;
+}
+
+const connectedUser = (userId) => !!q('SELECT 1 FROM spotify_accounts WHERE user_id = ?').get(userId);
+/** Market for catalog requests: the member's own account when connected, otherwise the admin's setting. */
+const market = (userId) => (connectedUser(userId) ? 'from_token' : String(getSetting('spotifyMarket') || 'UA'));
+
+/**
+ * Calls the Spotify Web API on behalf of a member. Returns null for empty responses (204, e.g. nothing playing).
+ * `catalog: true` falls back to the app token for members who haven't connected Spotify.
+ */
+async function sp(userId, path, { method = 'GET', body, catalog = false } = {}) {
   if (!enabled()) fail(400, 'Интеграция со Spotify не настроена администратором');
-  const token = await accessToken(userId);
+  const userToken = await accessToken(userId);
+  const token = userToken ?? (catalog ? await appToken() : null);
   if (!token) fail(400, 'Подключите Spotify в разделе «Музыка»');
   const res = await fetch(`${API()}${path}`, {
     method,
@@ -82,6 +112,10 @@ async function sp(userId, path, { method = 'GET', body } = {}) {
     data = {};
   }
   if (res.status === 401) {
+    if (!userToken) {
+      appTokenCache = null;
+      fail(502, 'Ошибка Spotify: {reason}', undefined, { reason: data.error?.message || res.status });
+    }
     q('DELETE FROM spotify_accounts WHERE user_id = ?').run(userId);
     fail(400, 'Доступ к Spotify отозван — подключите аккаунт заново');
   }
@@ -128,6 +162,7 @@ spotify.get('/spotify', (req, res) => {
   res.json({
     enabled: enabled(),
     connected: !!acc,
+    catalog: catalogEnabled(),
     profile: acc ? { spotifyId: acc.spotify_id, displayName: acc.display_name, avatar: acc.avatar } : null,
     showNowPlaying: acc ? !!acc.show_now_playing : true,
     product: acc?.product ?? null,
@@ -151,14 +186,13 @@ spotify.post('/spotify/connect', (req, res) => {
   const challenge = b64url(crypto.createHash('sha256').update(verifier).digest());
   const state = b64url(crypto.randomBytes(16));
   for (const [k, v] of pending) if (v.at < now() - 10 * 60_000) pending.delete(k);
-  pending.set(state, { userId: req.user.id, verifier, redirectUri, at: now() });
+  pending.set(state, { userId: req.user.id, verifier: clientSecret() ? null : verifier, redirectUri, at: now() });
   const url = new URL(`${ACCOUNTS()}/authorize`);
   url.search = new URLSearchParams({
     client_id: clientId(),
     response_type: 'code',
     redirect_uri: redirectUri,
-    code_challenge_method: 'S256',
-    code_challenge: challenge,
+    ...(!clientSecret() && { code_challenge_method: 'S256', code_challenge: challenge }),
     scope: SCOPES,
     state,
   }).toString();
@@ -173,7 +207,7 @@ spotify.post('/spotify/callback', async (req, res) => {
     grant_type: 'authorization_code',
     code: str(req.body.code, 1000),
     redirect_uri: flow.redirectUri,
-    code_verifier: flow.verifier,
+    ...(flow.verifier && { code_verifier: flow.verifier }),
   });
   const meRes = await fetch(`${API()}/me`, { headers: { Authorization: `Bearer ${t.access_token}` } });
   const me = await meRes.json().catch(() => ({}));
@@ -242,13 +276,17 @@ spotify.delete('/spotify/saved/:id', async (req, res) => {
 
 spotify.get('/spotify/playlists/:id', async (req, res) => {
   const id = idParam(req.params.id);
-  const p = await sp(req.user.id, `/playlists/${id}?fields=id,name,description,uri,type,images,owner(display_name),tracks.total,external_urls`);
-  const tracks = await sp(req.user.id, `/playlists/${id}/tracks?limit=100&fields=items(track(id,name,uri,type,duration_ms,explicit,external_urls,artists(id,name),album(id,name,images)))`);
+  const p = await sp(req.user.id, `/playlists/${id}?fields=id,name,description,uri,type,images,owner(display_name),tracks.total,external_urls`, { catalog: true });
+  const tracks = await sp(
+    req.user.id,
+    `/playlists/${id}/tracks?limit=100&fields=items(track(id,name,uri,type,duration_ms,explicit,external_urls,artists(id,name),album(id,name,images)))`,
+    { catalog: true },
+  );
   res.json({ ...item(p), description: p.description, tracks: (tracks?.items ?? []).map((i) => item(i.track)).filter((t) => t?.id) });
 });
 
 spotify.get('/spotify/albums/:id', async (req, res) => {
-  const a = await sp(req.user.id, `/albums/${idParam(req.params.id)}`);
+  const a = await sp(req.user.id, `/albums/${idParam(req.params.id)}?market=${market(req.user.id)}`, { catalog: true });
   res.json({
     ...item(a),
     releaseDate: a.release_date,
@@ -259,9 +297,9 @@ spotify.get('/spotify/albums/:id', async (req, res) => {
 spotify.get('/spotify/artists/:id', async (req, res) => {
   const id = idParam(req.params.id);
   const [a, top, albums] = await Promise.all([
-    sp(req.user.id, `/artists/${id}`),
-    sp(req.user.id, `/artists/${id}/top-tracks?market=from_token`),
-    sp(req.user.id, `/artists/${id}/albums?include_groups=album,single&limit=20`),
+    sp(req.user.id, `/artists/${id}`, { catalog: true }),
+    sp(req.user.id, `/artists/${id}/top-tracks?market=${market(req.user.id)}`, { catalog: true }),
+    sp(req.user.id, `/artists/${id}/albums?include_groups=album,single&limit=20`, { catalog: true }),
   ]);
   res.json({
     ...item(a),
@@ -373,8 +411,14 @@ spotify.get('/spotify/recent', async (req, res) => {
 spotify.get('/spotify/search', async (req, res) => {
   const text = str(req.query.q, 100);
   if (!text) return res.json([]);
-  const data = await sp(req.user.id, `/search?type=track,album,playlist&limit=8&q=${encodeURIComponent(text)}`);
-  res.json([...(data?.tracks?.items ?? []), ...(data?.albums?.items ?? []), ...(data?.playlists?.items ?? [])].filter(Boolean).map(item));
+  const data = await sp(req.user.id, `/search?type=track,album,artist,playlist&limit=8&market=${market(req.user.id)}&q=${encodeURIComponent(text)}`, {
+    catalog: true,
+  });
+  res.json(
+    [...(data?.artists?.items ?? []).slice(0, 3), ...(data?.tracks?.items ?? []), ...(data?.albums?.items ?? []), ...(data?.playlists?.items ?? [])]
+      .filter(Boolean)
+      .map(item),
+  );
 });
 
 /** What a member is listening to right now (shown on their profile if they allow it). */

@@ -36,6 +36,7 @@ export function meFull(u) {
   return {
     ...userFull(u),
     email: u.email,
+    hasPassword: u.has_password !== 0,
     level: { id: l.id, title: l.title, type: l.type },
     permissions: {
       post: !!l.can_post,
@@ -106,6 +107,10 @@ export function trackJson(t, meId) {
     title: t.title,
     artist: t.artist,
     album: t.album,
+    genre: t.genre ?? '',
+    year: t.year ?? null,
+    trackNo: t.track_no ?? null,
+    lyrics: t.lyrics ?? '',
     duration: Math.round(t.duration),
     url: t.file,
     cover: t.cover,

@@ -1,6 +1,7 @@
 import express from 'express';
 import { q, tx, now } from './db.js';
-import { hashPassword, verifyPassword, createSession, requireAuth, levelOf, isStaff, clientIp } from './auth.js';
+import { hashPassword, verifyPassword, createSession, requireAuth, levelOf, isStaff, clientIp, insertUser, assertCanLogin } from './auth.js';
+import { google } from './google.js';
 import { translate } from './i18n.js';
 import { fail, intParam, str, PAGE, beforeParam, page, errorHandler, need } from './http.js';
 import { getSetting, publicConfig, isEmailBanned, isIpBanned, censor } from './settings.js';
@@ -59,26 +60,8 @@ api.post('/auth/register', (req, res) => {
   if (password.length < 6) fail(400, 'Пароль должен быть не короче 6 символов');
   if (q('SELECT 1 FROM users WHERE email = ?').get(email)) fail(409, 'Пользователь с таким email уже существует');
 
-  const mode = getSetting('signupMode');
-  if (mode === 'closed') fail(403, 'Регистрация временно закрыта');
-  if (getSetting('maintenance')) fail(503, getSetting('maintenanceMessage'), 'maintenance');
-  const ip = clientIp(req);
-  if (isEmailBanned(email) || isIpBanned(ip)) fail(403, 'Регистрация с этим адресом запрещена');
-
-  // The very first account of a fresh installation becomes the superadmin.
-  const hasSuperadmin = q("SELECT 1 FROM users u JOIN levels l ON l.id = u.level_id WHERE l.type = 'superadmin'").get();
-  const levelId = hasSuperadmin
-    ? q('SELECT id FROM levels WHERE is_default = 1').get().id
-    : q("SELECT id FROM levels WHERE type = 'superadmin'").get().id;
-  const approved = mode === 'approval' && hasSuperadmin ? 0 : 1;
-
-  const t = now();
-  const r = q(
-    `INSERT INTO users (first_name, last_name, email, password_hash, level_id, approved, signup_ip, last_ip, created_at, last_seen)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).run(firstName, lastName, email, hashPassword(password), levelId, approved, ip, ip, t, t);
-  const user = getUser(Number(r.lastInsertRowid));
-  if (!approved) return res.status(202).json({ pending: true, message: 'Заявка на регистрацию отправлена. Вы сможете войти после одобрения администратором.' });
+  const user = insertUser({ firstName, lastName, email, passwordHash: hashPassword(password), ip: clientIp(req) });
+  if (!user.approved) return res.status(202).json({ pending: true, message: 'Заявка на регистрацию отправлена. Вы сможете войти после одобрения администратором.' });
   res.status(201).json({ token: createSession(user.id), user: meFull(user) });
 });
 
@@ -104,17 +87,11 @@ api.post('/auth/login', (req, res) => {
     );
     fail(401, 'Неверный email или пароль');
   }
-  if (!user.enabled) fail(403, 'Аккаунт заблокирован администрацией', 'banned');
-  if (!user.approved) fail(403, 'Аккаунт ожидает одобрения администратором', 'pending');
-  const staff = isStaff(levelOf(user));
-  const ip = clientIp(req);
-  if (!staff && isIpBanned(ip)) fail(403, 'Доступ с вашего адреса ограничен', 'banned');
-  if (!staff && getSetting('maintenance')) fail(503, getSetting('maintenanceMessage'), 'maintenance');
-
-  q('UPDATE users SET failed_logins = 0, locked_until = 0, last_ip = ? WHERE id = ?').run(ip, user.id);
+  assertCanLogin(user, clientIp(req));
   res.json({ token: createSession(user.id), user: meFull(user) });
 });
 
+api.use(google);
 api.use(requireAuth);
 api.use(music);
 api.use(spotify);
@@ -149,10 +126,11 @@ api.patch('/me', (req, res) => {
 api.post('/me/password', (req, res) => {
   const current = typeof req.body.current === 'string' ? req.body.current : '';
   const next = typeof req.body.next === 'string' ? req.body.next : '';
-  if (!verifyPassword(current, req.user.password_hash)) fail(400, 'Неверный текущий пароль');
+  // Accounts created through Google have no password of their own yet: the first one needs no current password.
+  if (req.user.has_password && !verifyPassword(current, req.user.password_hash)) fail(400, 'Неверный текущий пароль');
   if (next.length < 6) fail(400, 'Пароль должен быть не короче 6 символов');
   tx(() => {
-    q('UPDATE users SET password_hash = ? WHERE id = ?').run(hashPassword(next), req.user.id);
+    q('UPDATE users SET password_hash = ?, has_password = 1 WHERE id = ?').run(hashPassword(next), req.user.id);
     // Sign out every other session.
     q('DELETE FROM sessions WHERE user_id = ? AND token != ?').run(req.user.id, req.token);
   });

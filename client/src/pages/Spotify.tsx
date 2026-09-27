@@ -1,5 +1,6 @@
 import { tr, countLabel } from '../lib/i18n';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { SpotifyLogo } from '../components/brands';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -33,15 +34,10 @@ import { Empty, Modal, Spinner, useClickOutside } from '../components/ui';
 import { SpotifyEmbed } from '../components/Music';
 import { Toggle } from '../admin/ui';
 
-type View = { kind: 'home' | 'library' | 'playlists' | 'search' } | { kind: 'playlist' | 'album' | 'artist'; id: string };
+/** True when browsing the catalog without a connected account: personal actions (hearts, playlists) are hidden. */
+const GuestContext = createContext(false);
 
-function SpotifyLogo({ size = 18 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden fill="#1ed760">
-      <path d="M12 0a12 12 0 1 0 0 24 12 12 0 0 0 0-24Zm5.5 17.3a.75.75 0 0 1-1 .25c-2.85-1.74-6.43-2.13-10.66-1.17a.75.75 0 1 1-.33-1.46c4.62-1.05 8.6-.6 11.74 1.33.36.22.47.69.25 1.05Zm1.47-3.26a.94.94 0 0 1-1.29.3c-3.26-2-8.23-2.59-12.09-1.42a.94.94 0 1 1-.54-1.8c4.4-1.33 9.88-.69 13.61 1.6.44.28.58.86.31 1.32Zm.13-3.4C15.2 8.32 8.78 8.1 5.07 9.23a1.13 1.13 0 1 1-.65-2.16c4.26-1.29 11.34-1.04 15.82 1.62a1.13 1.13 0 1 1-1.14 1.95Z" />
-    </svg>
-  );
-}
+type View = { kind: 'home' | 'library' | 'playlists' | 'search' } | { kind: 'playlist' | 'album' | 'artist'; id: string };
 
 /** Playback control that explains Premium / device problems instead of failing silently. */
 function useSafe() {
@@ -164,6 +160,7 @@ function SpotifyRow({
   premium: boolean;
 }) {
   const { playUris, command } = useSpotify();
+  const guest = useContext(GuestContext);
   const { data: player } = useQuery<SpotifyPlayerState>({ queryKey: ['spotify', 'player'], enabled: false });
   const [menu, setMenu] = useState(false);
   const [modal, setModal] = useState<'playlist' | 'share' | 'preview' | null>(null);
@@ -217,7 +214,7 @@ function SpotifyRow({
           {error && <div className="error-text" style={{ margin: '2px 0 0' }}>{error}</div>}
         </div>
         {item.durationMs != null && <span className="track-time">{msToTime(item.durationMs)}</span>}
-        {isTrack && onSaved && (
+        {isTrack && onSaved && !guest && (
           <button
             className={`icon-btn${saved ? ' on' : ''}`}
             aria-label={saved ? tr('Убрать из медиатеки') : tr('Сохранить в медиатеку')}
@@ -250,7 +247,7 @@ function SpotifyRow({
                   <ListMusic size={18} /> {tr('В очередь')}
                 </button>
               )}
-              {isTrack && (
+              {isTrack && !guest && (
                 <button
                   className="menu-item"
                   onClick={() => {
@@ -315,7 +312,8 @@ const TYPE_LABEL = (): Record<SpotifyItem['type'], string> => ({
 
 /** Keeps "saved" hearts in sync for a list of tracks. */
 function useSaved(items: SpotifyItem[] | undefined) {
-  const ids = (items ?? []).filter((i) => i.type === 'track').map((i) => i.id).slice(0, 50).join(',');
+  const guest = useContext(GuestContext);
+  const ids = guest ? '' : (items ?? []).filter((i) => i.type === 'track').map((i) => i.id).slice(0, 50).join(',');
   const { data } = useQuery({
     queryKey: ['spotify', 'contains', ids],
     queryFn: () => api<Record<string, boolean>>(`/spotify/saved/contains?ids=${ids}`),
@@ -553,6 +551,7 @@ export function SpotifyTab() {
   const [range, setRange] = useState<'short_term' | 'medium_term' | 'long_term'>('medium_term');
   const [error, setError] = useState('');
   const connected = !!status?.connected;
+  const guest = !connected && !!status?.catalog;
   const premium = status?.product === 'premium';
 
   useEffect(() => {
@@ -586,8 +585,18 @@ export function SpotifyTab() {
   const { data: results, isFetching } = useQuery({
     queryKey: ['spotify', 'search', debounced],
     queryFn: () => api<SpotifyItem[]>(`/spotify/search?q=${encodeURIComponent(debounced)}`),
-    enabled: connected && view.kind === 'search' && !!debounced,
+    enabled: (connected || guest) && (view.kind === 'search' || guest) && !!debounced,
   });
+
+  const connect = async () => {
+    setError('');
+    try {
+      const r = await api<{ url: string }>('/spotify/connect', { body: { redirectUri: `${location.origin}/spotify/callback` } });
+      location.href = r.url;
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
 
   if (!config.spotifyEnabled || (status && !status.enabled))
     return (
@@ -604,6 +613,42 @@ export function SpotifyTab() {
 
   if (!status) return <Spinner />;
 
+  if (guest)
+    return (
+      <GuestContext.Provider value>
+        <div className="spotify-connect-banner">
+          <SpotifyLogo size={28} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <b>{tr('Подключите свой Spotify')}</b>
+            <div className="meta">{tr('Чтобы видеть свои плейлисты, медиатеку и топ, управлять воспроизведением и слушать целиком в браузере.')}</div>
+          </div>
+          <button className="btn spotify-btn" onClick={connect}>
+            {tr('Войти через Spotify')}
+          </button>
+        </div>
+        {error && <div className="error-text" style={{ padding: '0 16px' }}>{error}</div>}
+        {'id' in view ? (
+          <Detail view={view} onOpen={open} onBack={back} premium={false} />
+        ) : (
+          <>
+            <div style={{ padding: '14px 16px 6px', position: 'relative' }}>
+              <Search size={16} style={{ position: 'absolute', left: 28, top: 26, color: 'var(--icon)' }} />
+              <input className="field" style={{ paddingLeft: 38 }} placeholder={tr('Исполнители, треки, альбомы в Spotify')} value={q} onChange={(e) => setQ(e.target.value)} />
+            </div>
+            {!debounced ? (
+              <Empty icon={<Search size={36} />} title={tr('Каталог Spotify')}>
+                {tr('Ищите любых исполнителей, альбомы и треки. Превью доступно без подключения.')}
+              </Empty>
+            ) : isFetching && !results ? (
+              <Spinner />
+            ) : (
+              <List items={results} onOpen={open} premium={false} empty={tr('Ничего не найдено')} />
+            )}
+          </>
+        )}
+      </GuestContext.Provider>
+    );
+
   if (!connected)
     return (
       <div className="empty">
@@ -612,19 +657,7 @@ export function SpotifyTab() {
         <p className="muted" style={{ maxWidth: 440, margin: '0 auto 14px' }}>
           {tr('Ваши плейлисты, медиатека и топ прямо здесь; управление воспроизведением на любом устройстве, плеер в браузере (Premium) и «Сейчас слушает» в профиле.')}
         </p>
-        <button
-          className="btn"
-          style={{ background: '#1ed760', color: '#000' }}
-          onClick={async () => {
-            setError('');
-            try {
-              const r = await api<{ url: string }>('/spotify/connect', { body: { redirectUri: `${location.origin}/spotify/callback` } });
-              location.href = r.url;
-            } catch (e) {
-              setError((e as Error).message);
-            }
-          }}
-        >
+        <button className="btn spotify-btn" onClick={connect}>
           <SpotifyLogo size={16} /> {tr('Войти через Spotify')}
         </button>
         {error && <div className="error-text">{error}</div>}

@@ -14,6 +14,8 @@ const FALLBACK: SiteConfig = {
   accentColor: DEFAULT_ACCENT,
   aurora: true,
   spotifyEnabled: false,
+  googleEnabled: false,
+  demoAccounts: false,
   defaultLanguage: 'uk',
 };
 

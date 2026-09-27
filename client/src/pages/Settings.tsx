@@ -1,7 +1,8 @@
 import { tr } from '../lib/i18n';
 import { useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Camera, LogOut, Palette, ShieldCheck, UserRound } from 'lucide-react';
+import { Camera, LogOut, Palette, ShieldCheck, UserRound, Smartphone } from 'lucide-react';
+import { InstallAppCard } from '../components/InstallApp';
 import { api, form } from '../lib/api';
 import { useAuth, useMe } from '../lib/auth';
 import { useTheme } from '../lib/theme';
@@ -110,6 +111,8 @@ function ProfileForm() {
 }
 
 function PasswordForm() {
+  const me = useMe();
+  const { setUser } = useAuth();
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -117,6 +120,7 @@ function PasswordForm() {
     e.preventDefault();
     try {
       await api('/me/password', { body: { current, next } });
+      if (!me.hasPassword) setUser({ ...me, hasPassword: true });
       setCurrent('');
       setNext('');
       setMsg({ ok: true, text: tr('Пароль изменён') });
@@ -126,10 +130,16 @@ function PasswordForm() {
   };
   return (
     <form onSubmit={save} style={{ padding: '0 20px 20px' }}>
-      <div className="form-row">
-        <label className="label">{tr('Текущий пароль')}</label>
-        <input className="field" type="password" value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" required />
-      </div>
+      {me.hasPassword === false ? (
+        <div className="auth-hint" style={{ margin: '0 0 14px' }}>
+          {tr('Вы входите через Google. Задайте пароль, чтобы входить и по email.')}
+        </div>
+      ) : (
+        <div className="form-row">
+          <label className="label">{tr('Текущий пароль')}</label>
+          <input className="field" type="password" value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" required />
+        </div>
+      )}
       <div className="form-row">
         <label className="label">{tr('Новый пароль')}</label>
         <input className="field" type="password" value={next} onChange={(e) => setNext(e.target.value)} minLength={6} autoComplete="new-password" required />
@@ -159,6 +169,12 @@ export default function SettingsPage() {
           </div>
           <LanguageSelect />
         </div>
+      </div>
+      <div className="card">
+        <div className="card-title">
+          <Smartphone size={18} /> {tr('Приложение')}
+        </div>
+        <InstallAppCard />
       </div>
       <div className="card">
         <div className="card-title">

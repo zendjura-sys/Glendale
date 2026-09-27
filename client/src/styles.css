@@ -1659,3 +1659,110 @@ textarea.field {
   backdrop-filter: var(--glass-blur);
   box-shadow: var(--card-border);
 }
+
+/* Auth page toolbar: in the corner on wide screens, above the content on phones (never over the logo). */
+.auth-toolbar {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.auth-or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0;
+  color: var(--text-3);
+  font-size: 12.5px;
+}
+.auth-or::before,
+.auth-or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--separator);
+}
+.google-btn {
+  gap: 10px;
+  text-decoration: none;
+}
+@media (max-width: 760px) {
+  .auth {
+    justify-content: flex-start;
+    padding-top: 12px;
+  }
+  .auth-toolbar {
+    position: static;
+    align-self: flex-end;
+  }
+  .auth-promo h1 {
+    font-size: 26px;
+  }
+}
+
+/* Horizontally scrolling tab strips fade out at the right edge on phones, hinting there is more. */
+@media (max-width: 760px) {
+  .tabs {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+    padding-right: 36px;
+  }
+}
+
+/* Install-app card (Settings). */
+.install-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 0 20px 20px;
+}
+.install-card img {
+  flex-shrink: 0;
+  border-radius: 14px;
+}
+.install-card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.install-card-body b {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.install-steps {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-2);
+  font-size: 13.5px;
+}
+.install-steps svg {
+  vertical-align: -3px;
+}
+
+.offline-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+  color: var(--text-2);
+}
+.offline-screen h2 {
+  margin: 6px 0 0;
+  color: var(--text);
+}
+.offline-screen p {
+  max-width: 340px;
+  margin: 0 0 8px;
+}

@@ -201,6 +201,8 @@ addColumn('users', 'signup_ip', "TEXT NOT NULL DEFAULT ''");
 addColumn('users', 'last_ip', "TEXT NOT NULL DEFAULT ''");
 addColumn('users', 'failed_logins', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('users', 'locked_until', 'INTEGER NOT NULL DEFAULT 0');
+// 0 for accounts created through Google until the member sets a password.
+addColumn('users', 'has_password', 'INTEGER NOT NULL DEFAULT 1');
 
 // ───────── music ─────────
 db.exec(`
@@ -243,6 +245,11 @@ CREATE TABLE IF NOT EXISTS playlist_tracks (
 );
 `);
 addColumn('posts', 'audio_id', 'INTEGER REFERENCES tracks(id) ON DELETE SET NULL');
+// Extended track metadata (editable in the track editor).
+addColumn('tracks', 'genre', "TEXT NOT NULL DEFAULT ''");
+addColumn('tracks', 'year', 'INTEGER');
+addColumn('tracks', 'track_no', 'INTEGER');
+addColumn('tracks', 'lyrics', "TEXT NOT NULL DEFAULT ''");
 addColumn('posts', 'spotify', "TEXT NOT NULL DEFAULT ''");
 addColumn('groups', 'privacy', "TEXT NOT NULL DEFAULT 'open'");
 addColumn('notifications', 'group_id', 'INTEGER REFERENCES groups(id) ON DELETE CASCADE');

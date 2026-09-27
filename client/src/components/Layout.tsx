@@ -18,7 +18,10 @@ import {
   Sun,
   Users,
   UsersRound,
+  Download,
 } from 'lucide-react';
+import { useInstallState } from './InstallApp';
+import { promptInstall } from '../lib/install';
 import { api } from '../lib/api';
 import { useAuth, useMe } from '../lib/auth';
 import { useRealtime } from '../lib/realtime';
@@ -94,6 +97,7 @@ function UserMenu() {
   const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
+  const install = useInstallState();
   const ref = useClickOutside<HTMLDivElement>(open, close);
   return (
     <div style={{ position: 'relative' }} ref={ref}>
@@ -129,6 +133,17 @@ function UserMenu() {
           <div className="menu-item" style={{ cursor: 'default' }}>
             <LanguageSelect />
           </div>
+          {install.available && !install.installed && (
+            <button
+              className="menu-item"
+              onClick={() => {
+                close();
+                promptInstall();
+              }}
+            >
+              <Download size={18} /> {tr('Установить приложение')}
+            </button>
+          )}
           <div className="menu-sep" />
           <button className="menu-item" onClick={signOut}>
             <LogOut size={18} /> {tr('Выйти')}
