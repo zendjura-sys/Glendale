@@ -1,3 +1,4 @@
+import { tr, countLabel } from '../lib/i18n';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -85,7 +86,7 @@ function PlaylistChooser({ track, onClose }: { track: SpotifyItem; onClose: () =
     await add(p.id);
   };
   return (
-    <Modal title="Добавить в плейлист Spotify" onClose={onClose}>
+    <Modal title={tr('Добавить в плейлист Spotify')} onClose={onClose}>
       <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {!data && <Spinner />}
         {data?.map((p) => (
@@ -95,9 +96,9 @@ function PlaylistChooser({ track, onClose }: { track: SpotifyItem; onClose: () =
           </button>
         ))}
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <input className="field" placeholder="Новый плейлист" value={name} maxLength={100} onChange={(e) => setName(e.target.value)} />
+          <input className="field" placeholder={tr('Новый плейлист')} value={name} maxLength={100} onChange={(e) => setName(e.target.value)} />
           <button className="btn" disabled={!name.trim()} onClick={create}>
-            <Plus size={16} /> Создать
+            <Plus size={16} /> {tr('Создать')}
           </button>
         </div>
         {error && <div className="error-text">{error}</div>}
@@ -117,26 +118,26 @@ function ShareModal({ item, onClose }: { item: SpotifyItem; onClose: () => void 
   };
   return (
     <Modal
-      title="Поделиться на стене"
+      title={tr('Поделиться на стене')}
       onClose={onClose}
       footer={
         done ? (
           <button className="btn" onClick={onClose}>
-            Готово
+            {tr('Готово')}
           </button>
         ) : (
           <button className="btn" onClick={share}>
-            Опубликовать
+            {tr('Опубликовать')}
           </button>
         )
       }
     >
       <div className="modal-body">
         {done ? (
-          'Запись опубликована на вашей стене.'
+          tr('Запись опубликована на вашей стене.')
         ) : (
           <>
-            <textarea className="field" placeholder="Комментарий (необязательно)" value={text} onChange={(e) => setText(e.target.value)} />
+            <textarea className="field" placeholder={tr('Комментарий (необязательно)')} value={text} onChange={(e) => setText(e.target.value)} />
             <SpotifyEmbed spotify={{ type: item.type, id: item.id }} />
           </>
         )}
@@ -191,7 +192,7 @@ function SpotifyRow({
   return (
     <>
       <div className={`track${current ? ' active' : ''}`}>
-        <button className="track-play" onClick={isTrack ? play : open} aria-label={isTrack ? 'Слушать' : 'Открыть'}>
+        <button className="track-play" onClick={isTrack ? play : open} aria-label={isTrack ? tr('Слушать') : tr('Открыть')}>
           <ItemCover item={item} round={item.type === 'artist'} />
           <span className="track-play-icon">{isTrack ? <Play size={18} fill="currentColor" /> : <ArrowLeft size={18} style={{ transform: 'rotate(180deg)' }} />}</span>
         </button>
@@ -201,7 +202,7 @@ function SpotifyRow({
             {item.explicit && <span className="pill" style={{ marginLeft: 6, height: 16, fontSize: 10 }}>E</span>}
           </div>
           <div className="track-artist ellipsis">
-            {item.type !== 'track' && <span style={{ textTransform: 'capitalize' }}>{TYPE_LABEL[item.type]} · </span>}
+            {item.type !== 'track' && <span style={{ textTransform: 'capitalize' }}>{TYPE_LABEL()[item.type]} · </span>}
             {isTrack && item.artists?.length
               ? item.artists.map((a, i) => (
                   <span key={a.id}>
@@ -219,7 +220,7 @@ function SpotifyRow({
         {isTrack && onSaved && (
           <button
             className={`icon-btn${saved ? ' on' : ''}`}
-            aria-label={saved ? 'Убрать из медиатеки' : 'Сохранить в медиатеку'}
+            aria-label={saved ? tr('Убрать из медиатеки') : tr('Сохранить в медиатеку')}
             onClick={async () => {
               const r = await api<{ saved: boolean }>(`/spotify/saved/${item.id}`, { method: saved ? 'DELETE' : 'PUT' });
               onSaved(item.id, r.saved);
@@ -229,7 +230,7 @@ function SpotifyRow({
           </button>
         )}
         <div style={{ position: 'relative' }} ref={ref}>
-          <button className="icon-btn" onClick={() => setMenu((m) => !m)} aria-label="Ещё">
+          <button className="icon-btn" onClick={() => setMenu((m) => !m)} aria-label={tr('Ещё')}>
             <MoreHorizontal size={18} />
           </button>
           {menu && (
@@ -246,7 +247,7 @@ function SpotifyRow({
                     }
                   }}
                 >
-                  <ListMusic size={18} /> В очередь
+                  <ListMusic size={18} /> {tr('В очередь')}
                 </button>
               )}
               {isTrack && (
@@ -257,7 +258,7 @@ function SpotifyRow({
                     setModal('playlist');
                   }}
                 >
-                  <ListPlus size={18} /> В плейлист Spotify
+                  <ListPlus size={18} /> {tr('В плейлист Spotify')}
                 </button>
               )}
               {isTrack && item.album && (
@@ -268,7 +269,7 @@ function SpotifyRow({
                     onOpen({ kind: 'album', id: item.album!.id });
                   }}
                 >
-                  <ListMusic size={18} /> Открыть альбом
+                  <ListMusic size={18} /> {tr('Открыть альбом')}
                 </button>
               )}
               <button
@@ -278,10 +279,10 @@ function SpotifyRow({
                   setModal('share');
                 }}
               >
-                <Share2 size={18} /> Поделиться на стене
+                <Share2 size={18} /> {tr('Поделиться на стене')}
               </button>
               <a className="menu-item" href={item.url} target="_blank" rel="noreferrer" onClick={() => setMenu(false)}>
-                <ExternalLink size={18} /> Открыть в Spotify
+                <ExternalLink size={18} /> {tr('Открыть в Spotify')}
               </a>
             </div>
           )}
@@ -294,7 +295,7 @@ function SpotifyRow({
           <div className="modal-body">
             <SpotifyEmbed spotify={{ type: item.type, id: item.id }} />
             <p className="meta" style={{ marginTop: 10 }}>
-              Полное воспроизведение и управление доступны со Spotify Premium. Без Premium Spotify показывает превью или полный трек, если вы вошли в Spotify в этом браузере.
+              {tr('Полное воспроизведение и управление доступны со Spotify Premium. Без Premium Spotify показывает превью или полный трек, если вы вошли в Spotify в этом браузере.')}
             </p>
           </div>
         </Modal>
@@ -303,14 +304,14 @@ function SpotifyRow({
   );
 }
 
-const TYPE_LABEL: Record<SpotifyItem['type'], string> = {
-  track: 'Трек',
-  album: 'Альбом',
-  playlist: 'Плейлист',
-  artist: 'Исполнитель',
-  episode: 'Эпизод',
-  show: 'Подкаст',
-};
+const TYPE_LABEL = (): Record<SpotifyItem['type'], string> => ({
+  track: tr('Трек'),
+  album: tr('Альбом'),
+  playlist: tr('Плейлист'),
+  artist: tr('Исполнитель'),
+  episode: tr('Эпизод'),
+  show: tr('Подкаст'),
+});
 
 /** Keeps "saved" hearts in sync for a list of tracks. */
 function useSaved(items: SpotifyItem[] | undefined) {
@@ -330,7 +331,7 @@ function useSaved(items: SpotifyItem[] | undefined) {
 function List({ items, context, onOpen, premium, empty }: { items: SpotifyItem[] | undefined; context?: string; onOpen: (v: View) => void; premium: boolean; empty?: string }) {
   const { saved, onSaved } = useSaved(items);
   if (!items) return <Spinner />;
-  if (!items.length) return <Empty title={empty ?? 'Здесь пусто'} />;
+  if (!items.length) return <Empty title={empty ?? tr('Здесь пусто')} />;
   return (
     <div className="track-list">
       {items.map((it) => (
@@ -365,7 +366,7 @@ function NowPlaying({ premium }: { premium: boolean }) {
   }, [p]);
 
   const allDevices = [
-    ...(webDeviceId && !p?.devices.some((d) => d.id === webDeviceId) ? [{ id: webDeviceId, name: 'Этот браузер', type: 'Computer', active: false, volume: null }] : []),
+    ...(webDeviceId && !p?.devices.some((d) => d.id === webDeviceId) ? [{ id: webDeviceId, name: tr('Этот браузер'), type: 'Computer', active: false, volume: null }] : []),
     ...(p?.devices ?? []),
   ];
 
@@ -394,7 +395,7 @@ function NowPlaying({ premium }: { premium: boolean }) {
                 onMouseUp={(e) => run(() => command('seek', { positionMs: Number((e.target as HTMLInputElement).value) }))}
                 onTouchEnd={(e) => run(() => command('seek', { positionMs: Number((e.target as HTMLInputElement).value) }))}
                 style={{ ['--pct' as string]: `${pct}%`, borderRadius: 2 }}
-                aria-label="Перемотка"
+                aria-label={tr('Перемотка')}
               />
               <span className="track-time">{msToTime(dur)}</span>
             </div>
@@ -402,27 +403,27 @@ function NowPlaying({ premium }: { premium: boolean }) {
         </>
       ) : (
         <div style={{ flex: 1 }} className="muted">
-          {premium ? 'Сейчас ничего не играет. Включите трек ниже или на любом устройстве.' : 'Сейчас ничего не играет.'}
+          {premium ? tr('Сейчас ничего не играет. Включите трек ниже или на любом устройстве.') : tr('Сейчас ничего не играет.')}
         </div>
       )}
       {premium && (
         <div className="player-controls" style={{ flexWrap: 'wrap' }}>
-          <button className={`icon-btn${p?.shuffle ? ' on' : ''}`} onClick={() => run(() => command('shuffle', { state: !p?.shuffle }))} aria-label="Перемешать">
+          <button className={`icon-btn${p?.shuffle ? ' on' : ''}`} onClick={() => run(() => command('shuffle', { state: !p?.shuffle }))} aria-label={tr('Перемешать')}>
             <Shuffle size={18} />
           </button>
-          <button className="icon-btn" onClick={() => run(() => command('previous'))} aria-label="Предыдущий">
+          <button className="icon-btn" onClick={() => run(() => command('previous'))} aria-label={tr('Предыдущий')}>
             <SkipBack size={20} fill="currentColor" />
           </button>
-          <button className="player-toggle" onClick={() => run(() => command(p?.isPlaying ? 'pause' : 'play'))} aria-label={p?.isPlaying ? 'Пауза' : 'Слушать'}>
+          <button className="player-toggle" onClick={() => run(() => command(p?.isPlaying ? 'pause' : 'play'))} aria-label={p?.isPlaying ? tr('Пауза') : tr('Слушать')}>
             {p?.isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
           </button>
-          <button className="icon-btn" onClick={() => run(() => command('next'))} aria-label="Следующий">
+          <button className="icon-btn" onClick={() => run(() => command('next'))} aria-label={tr('Следующий')}>
             <SkipForward size={20} fill="currentColor" />
           </button>
           <button
             className={`icon-btn${p?.repeat !== 'off' ? ' on' : ''}`}
             onClick={() => run(() => command('repeat', { state: p?.repeat === 'off' ? 'context' : p?.repeat === 'context' ? 'track' : 'off' }))}
-            aria-label="Повтор"
+            aria-label={tr('Повтор')}
           >
             {p?.repeat === 'track' ? <Repeat1 size={18} /> : <Repeat size={18} />}
           </button>
@@ -437,17 +438,17 @@ function NowPlaying({ premium }: { premium: boolean }) {
                 key={p.device?.id}
                 onMouseUp={(e) => run(() => command('volume', { volume: Number((e.target as HTMLInputElement).value) }))}
                 style={{ width: 80, ['--pct' as string]: `${p.volume}%` }}
-                aria-label="Громкость"
+                aria-label={tr('Громкость')}
               />
             </span>
           )}
           <div style={{ position: 'relative' }} ref={devRef}>
             <button className="btn secondary" onClick={() => setDevices((d) => !d)}>
-              <MonitorSpeaker size={16} /> {p?.device?.name ?? 'Устройство'}
+              <MonitorSpeaker size={16} /> {p?.device?.name ?? tr('Устройство')}
             </button>
             {devices && (
               <div className="dropdown" style={{ minWidth: 240 }}>
-                {!allDevices.length && <div className="menu-item muted">Откройте Spotify на телефоне или компьютере</div>}
+                {!allDevices.length && <div className="menu-item muted">{tr('Откройте Spotify на телефоне или компьютере')}</div>}
                 {allDevices.map((d) => (
                   <button
                     key={d.id}
@@ -458,7 +459,7 @@ function NowPlaying({ premium }: { premium: boolean }) {
                       run(() => command('transfer', { deviceId: d.id, play: !!p?.isPlaying }));
                     }}
                   >
-                    <MonitorSpeaker size={18} /> {d.id === webDeviceId ? 'Этот браузер' : d.name}
+                    <MonitorSpeaker size={18} /> {d.id === webDeviceId ? tr('Этот браузер') : d.name}
                     {(d.active || d.id === deviceId) && <Check size={16} style={{ marginLeft: 'auto' }} />}
                   </button>
                 ))}
@@ -478,20 +479,20 @@ function DetailHeader({ item, extra, onBack, onPlay }: { item: SpotifyItem & { d
       <ItemCover item={item} size={110} round={item.type === 'artist'} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <button className="more-link" onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-          <ArrowLeft size={14} /> Назад
+          <ArrowLeft size={14} /> {tr('Назад')}
         </button>
-        <div className="meta">{TYPE_LABEL[item.type]}</div>
+        <div className="meta">{TYPE_LABEL()[item.type]}</div>
         <h2 style={{ fontSize: 22, fontWeight: 700, margin: '2px 0' }}>{item.name}</h2>
         {item.description && <div className="muted ellipsis">{item.description.replace(/<[^>]+>/g, '')}</div>}
         <div className="meta">{extra ?? item.subtitle}</div>
         <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
           {onPlay && (
             <button className="btn" onClick={onPlay}>
-              <Play size={16} fill="currentColor" /> Слушать
+              <Play size={16} fill="currentColor" /> {tr('Слушать')}
             </button>
           )}
           <a className="btn secondary" href={item.url} target="_blank" rel="noreferrer">
-            <SpotifyLogo size={16} /> Открыть в Spotify
+            <SpotifyLogo size={16} /> {tr('Открыть в Spotify')}
           </a>
         </div>
       </div>
@@ -519,7 +520,7 @@ function Detail({ view, onOpen, onBack, premium }: { view: Extract<View, { id: s
         onPlay={play}
         extra={
           view.kind === 'artist'
-            ? `${(data.followers ?? 0).toLocaleString('ru-RU')} подписчиков${data.genres?.length ? ` · ${data.genres.slice(0, 3).join(', ')}` : ''}`
+            ? `${countLabel(data.followers ?? 0, 'подписчик|подписчика|подписчиков')}${data.genres?.length ? ` · ${data.genres.slice(0, 3).join(', ')}` : ''}`
             : view.kind === 'album'
               ? `${data.subtitle} · ${data.releaseDate?.slice(0, 4) ?? ''}`
               : undefined
@@ -528,9 +529,9 @@ function Detail({ view, onOpen, onBack, premium }: { view: Extract<View, { id: s
       {error && <div className="error-text" style={{ padding: '0 20px' }}>{error}</div>}
       {view.kind === 'artist' ? (
         <>
-          <div className="section-title">Популярные треки</div>
+          <div className="section-title">{tr('Популярные треки')}</div>
           <List items={data.topTracks} onOpen={onOpen} premium={premium} />
-          <div className="section-title">Альбомы и синглы</div>
+          <div className="section-title">{tr('Альбомы и синглы')}</div>
           <List items={data.albums} onOpen={onOpen} premium={premium} />
         </>
       ) : (
@@ -590,13 +591,13 @@ export function SpotifyTab() {
 
   if (!config.spotifyEnabled || (status && !status.enabled))
     return (
-      <Empty icon={<SpotifyLogo size={44} />} title="Spotify ещё не подключён к сети">
+      <Empty icon={<SpotifyLogo size={44} />} title={tr('Spotify ещё не подключён к сети')}>
         {isAdminLevel(me.level.type) ? (
           <>
-            Укажите Client ID приложения Spotify в <Link to="/admin/settings/integrations">админ-панели → Интеграции</Link>.
+            {tr('Укажите Client ID приложения Spotify в')} <Link to="/admin/settings/integrations">{tr('админ-панели → Интеграции')}</Link>.
           </>
         ) : (
-          'Администратор пока не включил интеграцию.'
+          tr('Администратор пока не включил интеграцию.')
         )}
       </Empty>
     );
@@ -607,9 +608,9 @@ export function SpotifyTab() {
     return (
       <div className="empty">
         <SpotifyLogo size={48} />
-        <h3>Подключите Spotify</h3>
+        <h3>{tr('Подключите Spotify')}</h3>
         <p className="muted" style={{ maxWidth: 440, margin: '0 auto 14px' }}>
-          Ваши плейлисты, медиатека и топ прямо здесь; управление воспроизведением на любом устройстве, плеер в браузере (Premium) и «Сейчас слушает» в профиле.
+          {tr('Ваши плейлисты, медиатека и топ прямо здесь; управление воспроизведением на любом устройстве, плеер в браузере (Premium) и «Сейчас слушает» в профиле.')}
         </p>
         <button
           className="btn"
@@ -624,7 +625,7 @@ export function SpotifyTab() {
             }
           }}
         >
-          <SpotifyLogo size={16} /> Войти через Spotify
+          <SpotifyLogo size={16} /> {tr('Войти через Spotify')}
         </button>
         {error && <div className="error-text">{error}</div>}
       </div>
@@ -641,10 +642,10 @@ export function SpotifyTab() {
           </div>
         </div>
         <label className="meta" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          «Сейчас слушает» в профиле
+          {tr('«Сейчас слушает» в профиле')}
           <Toggle
             on={status.showNowPlaying}
-            label="Показывать, что я слушаю"
+            label={tr("Показывать, что я слушаю")}
             onChange={async (v) => {
               await api('/spotify', { method: 'PATCH', body: { showNowPlaying: v } });
               qc.invalidateQueries({ queryKey: ['spotify', 'status'] });
@@ -653,10 +654,10 @@ export function SpotifyTab() {
         </label>
         <button
           className="icon-btn"
-          title="Отключить Spotify"
-          aria-label="Отключить Spotify"
+          title={tr('Отключить Spotify')}
+          aria-label={tr('Отключить Spotify')}
           onClick={async () => {
-            if (!confirm('Отключить Spotify?')) return;
+            if (!confirm(tr('Отключить Spotify?'))) return;
             await api('/spotify', { method: 'DELETE' });
             qc.invalidateQueries({ queryKey: ['spotify'] });
           }}
@@ -670,10 +671,10 @@ export function SpotifyTab() {
       <div className="tabs" style={{ borderTop: '1px solid var(--separator)' }}>
         {(
           [
-            ['home', 'Главное'],
-            ['library', 'Медиатека'],
-            ['playlists', 'Плейлисты'],
-            ['search', 'Поиск'],
+            ['home', tr('Главное')],
+            ['library', tr('Медиатека')],
+            ['playlists', tr('Плейлисты')],
+            ['search', tr('Поиск')],
           ] as const
         ).map(([k, label]) => (
           <button key={k} className={`tab${view.kind === k ? ' active' : ''}`} onClick={() => go(k)}>
@@ -686,16 +687,16 @@ export function SpotifyTab() {
         <Detail view={view} onOpen={open} onBack={back} premium={premium} />
       ) : view.kind === 'home' ? (
         <>
-          <div className="section-title">Недавно прослушанные</div>
-          <List items={recent} onOpen={open} premium={premium} empty="Пока пусто" />
+          <div className="section-title">{tr('Недавно прослушанные')}</div>
+          <List items={recent} onOpen={open} premium={premium} empty={tr("Пока пусто")} />
           <div className="toolbar" style={{ borderBottom: 'none', paddingBottom: 0 }}>
-            <b>Ваш топ</b>
+            <b>{tr('Ваш топ')}</b>
             <div className="segmented" style={{ marginLeft: 'auto' }}>
               {(
                 [
-                  ['short_term', '4 недели'],
-                  ['medium_term', '6 месяцев'],
-                  ['long_term', 'Всё время'],
+                  ['short_term', tr('4 недели')],
+                  ['medium_term', tr('6 месяцев')],
+                  ['long_term', tr('Всё время')],
                 ] as const
               ).map(([r, label]) => (
                 <button key={r} className={range === r ? 'on' : ''} onClick={() => setRange(r)}>
@@ -714,22 +715,22 @@ export function SpotifyTab() {
               ))}
             </div>
           )}
-          <List items={top} onOpen={open} premium={premium} empty="Слушайте больше — и здесь появится ваш топ" />
+          <List items={top} onOpen={open} premium={premium} empty={tr("Слушайте больше — и здесь появится ваш топ")} />
         </>
       ) : view.kind === 'library' ? (
         <>
-          {saved && <div className="section-title">Любимые треки · {saved.total}</div>}
-          <List items={saved?.items} onOpen={open} premium={premium} empty="В медиатеке пока нет треков" />
+          {saved && <div className="section-title">{tr('Любимые треки ·')} {saved.total}</div>}
+          <List items={saved?.items} onOpen={open} premium={premium} empty={tr("В медиатеке пока нет треков")} />
         </>
       ) : view.kind === 'playlists' ? (
-        <List items={playlists} onOpen={open} premium={premium} empty="Плейлистов нет" />
+        <List items={playlists} onOpen={open} premium={premium} empty={tr("Плейлистов нет")} />
       ) : (
         <>
           <div style={{ padding: '14px 16px 6px', position: 'relative' }}>
             <Search size={16} style={{ position: 'absolute', left: 28, top: 26, color: 'var(--icon)' }} />
-            <input className="field" autoFocus style={{ paddingLeft: 38 }} placeholder="Треки, альбомы, плейлисты в Spotify" value={q} onChange={(e) => setQ(e.target.value)} />
+            <input className="field" autoFocus style={{ paddingLeft: 38 }} placeholder={tr('Треки, альбомы, плейлисты в Spotify')} value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
-          {!debounced ? null : isFetching && !results ? <Spinner /> : <List items={results} onOpen={open} premium={premium} empty="Ничего не найдено" />}
+          {!debounced ? null : isFetching && !results ? <Spinner /> : <List items={results} onOpen={open} premium={premium} empty={tr("Ничего не найдено")} />}
         </>
       )}
     </>
@@ -747,7 +748,7 @@ export function SpotifyCallback() {
     started.current = true;
     const p = new URLSearchParams(location.search);
     if (p.get('error')) {
-      setError(p.get('error') === 'access_denied' ? 'Вы отменили подключение Spotify' : `Spotify: ${p.get('error')}`);
+      setError(p.get('error') === 'access_denied' ? tr('Вы отменили подключение Spotify') : `Spotify: ${p.get('error')}`);
       return;
     }
     api('/spotify/callback', { body: { code: p.get('code'), state: p.get('state') } })
@@ -760,11 +761,11 @@ export function SpotifyCallback() {
   return (
     <div className="card">
       {error ? (
-        <Empty icon={<SpotifyLogo size={40} />} title="Не удалось подключить Spotify">
+        <Empty icon={<SpotifyLogo size={40} />} title={tr('Не удалось подключить Spotify')}>
           {error}
           <div style={{ marginTop: 12 }}>
             <Link to="/music?tab=spotify" className="btn secondary">
-              Вернуться
+              {tr('Вернуться')}
             </Link>
           </div>
         </Empty>
@@ -775,7 +776,7 @@ export function SpotifyCallback() {
   );
 }
 
-/** "Сейчас слушает" card on a profile. */
+/** tr("Сейчас слушает") card on a profile. */
 export function SpotifyNowPlayingCard({ userId }: { userId: number }) {
   const { data } = useQuery({
     queryKey: ['spotify', 'now', userId],
@@ -788,7 +789,7 @@ export function SpotifyNowPlayingCard({ userId }: { userId: number }) {
       <ItemCover item={data} size={48} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="meta" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <SpotifyLogo size={13} /> Сейчас слушает
+          <SpotifyLogo size={13} /> {tr('Сейчас слушает')}
           <span className="eq inline" aria-hidden>
             <i />
             <i />

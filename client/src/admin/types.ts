@@ -115,6 +115,7 @@ export interface Settings {
   aurora: boolean;
   wallForFriendsOnly: boolean;
   spotifyClientId: string;
+  defaultLanguage: string;
 }
 
 export interface Stats {

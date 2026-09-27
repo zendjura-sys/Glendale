@@ -1,3 +1,6 @@
+import { tr } from './i18n';
+import { getLang } from './i18n';
+
 const TOKEN_KEY = 'token';
 
 export const getToken = () => {
@@ -27,7 +30,7 @@ let onUnauthorized: () => void = () => {};
 export const setUnauthorizedHandler = (fn: () => void) => (onUnauthorized = fn);
 
 export async function api<T = unknown>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { 'Accept-Language': getLang() };
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
   let body: BodyInit | undefined;
@@ -41,13 +44,13 @@ export async function api<T = unknown>(path: string, options: { method?: string;
   try {
     res = await fetch(`/api${path}`, { method: options.method ?? (body ? 'POST' : 'GET'), headers, body });
   } catch {
-    throw new ApiError(0, 'Нет соединения с сервером');
+    throw new ApiError(0, tr('Нет соединения с сервером'));
   }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     if (res.status === 401 && token) onUnauthorized();
     if (data.code === 'maintenance') window.dispatchEvent(new Event('maintenance'));
-    throw new ApiError(res.status, data.error || 'Что-то пошло не так', data.code);
+    throw new ApiError(res.status, data.error || tr('Что-то пошло не так'), data.code);
   }
   return data as T;
 }

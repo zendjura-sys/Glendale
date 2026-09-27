@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -8,13 +9,13 @@ import { Avatar, Empty, Spinner } from '../components/ui';
 import { AdminHead, Pager } from './ui';
 import type { Paged, Report } from './types';
 
-const TARGET_LABEL: Record<Report['targetType'], string> = {
-  post: 'Запись',
-  comment: 'Комментарий',
-  user: 'Профиль',
-  group: 'Сообщество',
-  message: 'Сообщение',
-};
+const TARGET_LABEL = (): Record<Report['targetType'], string> => ({
+  post: tr('Запись'),
+  comment: tr('Комментарий'),
+  user: tr('Профиль'),
+  group: tr('Сообщество'),
+  message: tr('Сообщение'),
+});
 
 type Status = 'open' | 'resolved' | 'dismissed';
 
@@ -41,27 +42,27 @@ function ReportCard({ r, onDone }: { r: Report; onDone: () => void }) {
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <span className="pill bad">
-            <Flag size={12} /> {r.categoryLabel}
+            <Flag size={12} /> {tr(r.categoryLabel)}
           </span>
-          <b>{TARGET_LABEL[r.targetType]}</b>
+          <b>{TARGET_LABEL()[r.targetType]}</b>
           {author && (
             <>
               {' '}
-              от{' '}
+              {tr('от')}{' '}
               <Link to={`/id/${author.id}`} className="name">
                 {fullName(author)}
               </Link>
             </>
           )}
-          {r.duplicates > 1 && r.status === 'open' && <span className="pill warn">жалоб: {r.duplicates}</span>}
+          {r.duplicates > 1 && r.status === 'open' && <span className="pill warn">{tr('жалоб:')} {r.duplicates}</span>}
         </div>
         {r.target.exists ? (
           <div className="quote">
-            {r.target.text || <span className="muted">без текста</span>}
+            {r.target.text || <span className="muted">{tr('без текста')}</span>}
             {r.target.image && <img src={r.target.image} alt="" />}
           </div>
         ) : (
-          <div className="quote muted">Объект уже удалён</div>
+          <div className="quote muted">{tr('Объект уже удалён')}</div>
         )}
         <div className="meta" style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
           {r.reporter && (
@@ -73,13 +74,13 @@ function ReportCard({ r, onDone }: { r: Report; onDone: () => void }) {
           {r.description && <span>· «{r.description}»</span>}
           {r.target.link && (
             <Link to={r.target.link} style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-              · открыть <ExternalLink size={12} />
+              {tr('· открыть')} <ExternalLink size={12} />
             </Link>
           )}
         </div>
         {r.status !== 'open' && (
           <div className="meta" style={{ marginTop: 6 }}>
-            {r.status === 'dismissed' ? 'Отклонена' : `Решена: ${r.resolution}`}
+            {r.status === 'dismissed' ? tr('Отклонена') : tr('Решена: {how}', { how: r.resolution.split(', ').map((x) => tr(x)).join(', ') })}
             {r.resolvedBy && ` · ${fullName(r.resolvedBy)}`}
             {r.resolvedAt && ` · ${formatDate(r.resolvedAt)}`}
           </div>
@@ -89,21 +90,21 @@ function ReportCard({ r, onDone }: { r: Report; onDone: () => void }) {
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
             {canDeleteContent && (
               <button className="btn" disabled={busy} onClick={() => resolve('delete')}>
-                <Trash2 size={16} /> Удалить
+                <Trash2 size={16} /> {tr('Удалить')}
               </button>
             )}
             {canDeleteContent && author && (
-              <button className="btn secondary" disabled={busy} onClick={() => resolve('delete_ban', `Удалить и заблокировать ${fullName(author)}?`)}>
-                <Ban size={16} /> Удалить и заблокировать
+              <button className="btn secondary" disabled={busy} onClick={() => resolve('delete_ban', tr('Удалить и заблокировать {name}?', { name: fullName(author) }))}>
+                <Ban size={16} /> {tr('Удалить и заблокировать')}
               </button>
             )}
             {!canDeleteContent && author && (
-              <button className="btn secondary" disabled={busy} onClick={() => resolve('ban', `Заблокировать ${fullName(author)}?`)}>
-                <Ban size={16} /> Заблокировать автора
+              <button className="btn secondary" disabled={busy} onClick={() => resolve('ban', tr('Заблокировать {name}?', { name: fullName(author) }))}>
+                <Ban size={16} /> {tr('Заблокировать автора')}
               </button>
             )}
             <button className="btn secondary" disabled={busy} onClick={() => resolve('dismiss')}>
-              <Check size={16} /> Нарушений нет
+              <Check size={16} /> {tr('Нарушений нет')}
             </button>
           </div>
         )}
@@ -127,15 +128,15 @@ export default function ReportsPage() {
 
   return (
     <>
-      <AdminHead title="Жалобы" subtitle="Сообщения участников о нарушениях" />
+      <AdminHead title={tr('Жалобы')} subtitle={tr("Сообщения участников о нарушениях")} />
       <div className="card">
         <div className="toolbar">
           <div className="segmented">
             {(
               [
-                ['open', 'Новые'],
-                ['resolved', 'Решённые'],
-                ['dismissed', 'Отклонённые'],
+                ['open', tr('Новые')],
+                ['resolved', tr('Решённые')],
+                ['dismissed', tr('Отклонённые')],
               ] as [Status, string][]
             ).map(([s, label]) => (
               <button
@@ -154,8 +155,8 @@ export default function ReportsPage() {
         {isLoading ? (
           <Spinner />
         ) : !data?.items.length ? (
-          <Empty icon={<Flag size={40} />} title={status === 'open' ? 'Новых жалоб нет' : 'Здесь пусто'}>
-            {status === 'open' ? 'Всё спокойно — можно выпить чаю.' : ''}
+          <Empty icon={<Flag size={40} />} title={status === 'open' ? tr('Новых жалоб нет') : tr('Здесь пусто')}>
+            {status === 'open' ? tr('Всё спокойно — можно выпить чаю.') : ''}
           </Empty>
         ) : (
           // Several open reports about the same object collapse into one card (newest first).

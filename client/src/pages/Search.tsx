@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -47,7 +48,7 @@ export default function SearchPage() {
             className="field"
             autoFocus
             style={{ paddingLeft: 40, height: 40 }}
-            placeholder="Поиск людей, сообществ и записей"
+            placeholder={tr('Поиск людей, сообществ и записей')}
             value={input}
             onChange={(e) => setInput(e.target.value)}
           />
@@ -55,10 +56,10 @@ export default function SearchPage() {
         <div className="tabs">
           {(
             [
-              ['all', 'Все'],
-              ['people', 'Люди'],
-              ['groups', 'Сообщества'],
-              ['posts', 'Записи'],
+              ['all', tr('Все')],
+              ['people', tr('Люди')],
+              ['groups', tr('Сообщества')],
+              ['posts', tr('Записи')],
             ] as [Tab, string][]
           ).map(([t, label]) => (
             <button key={t} className={`tab${tab === t ? ' active' : ''}`} onClick={() => setTab(t)}>
@@ -66,15 +67,15 @@ export default function SearchPage() {
             </button>
           ))}
         </div>
-        {!q && <Empty icon={<Search size={48} />} title="Начните вводить запрос" />}
+        {!q && <Empty icon={<Search size={48} />} title={tr('Начните вводить запрос')} />}
         {q && isFetching && !data && <Spinner />}
-        {q && nothing && <Empty title="Ничего не найдено">Попробуйте изменить запрос</Empty>}
+        {q && nothing && <Empty title={tr('Ничего не найдено')}>{tr('Попробуйте изменить запрос')}</Empty>}
       </div>
 
       {data && show('people') && data.users.length > 0 && (
         <div className="card">
           <div className="card-title">
-            Люди <span className="count">{data.users.length}</span>
+            {tr('Люди')} <span className="count">{data.users.length}</span>
           </div>
           {(tab === 'all' ? data.users.slice(0, 5) : data.users).map((u) => (
             <UserRow key={u.id} user={u} sub={[u.city, lastSeenText(u)].filter(Boolean).join(' · ')}>
@@ -86,7 +87,7 @@ export default function SearchPage() {
       {data && show('groups') && data.groups.length > 0 && (
         <div className="card">
           <div className="card-title">
-            Сообщества <span className="count">{data.groups.length}</span>
+            {tr('Сообщества')} <span className="count">{data.groups.length}</span>
           </div>
           {(tab === 'all' ? data.groups.slice(0, 5) : data.groups).map((g) => (
             <GroupRow key={g.id} g={g} />
@@ -97,7 +98,7 @@ export default function SearchPage() {
         <>
           <div className="card">
             <div className="card-title">
-              Записи <span className="count">{data.posts.length}</span>
+              {tr('Записи')} <span className="count">{data.posts.length}</span>
             </div>
           </div>
           {data.posts.map((p) => (

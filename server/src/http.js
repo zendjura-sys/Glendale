@@ -1,15 +1,18 @@
 // Small helpers shared by the API routers.
+import { translate } from './i18n.js';
 
 export class HttpError extends Error {
-  constructor(status, message, code) {
+  constructor(status, message, code, params) {
     super(message);
     this.status = status;
     this.code = code;
+    this.params = params;
   }
 }
 
-export const fail = (status, message, code) => {
-  throw new HttpError(status, message, code);
+/** Throws an HTTP error; `message` is a translation key (Russian source), `params` fill its {placeholders}. */
+export const fail = (status, message, code, params) => {
+  throw new HttpError(status, message, code, params);
 };
 
 export const intParam = (v) => {
@@ -30,11 +33,11 @@ export function page(items) {
 /** JSON error handler for a router. */
 // eslint-disable-next-line no-unused-vars
 export function errorHandler(err, req, res, _next) {
-  if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'Файл слишком большой' });
+  if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: translate('Файл слишком большой', null, req.lang) });
   const status = err.status || 500;
   const expected = err instanceof HttpError || (err.status && err.status < 500);
   if (!expected) console.error(err);
-  res.status(status).json({ error: expected ? err.message : 'Внутренняя ошибка сервера', code: err.code });
+  res.status(status).json({ error: translate(expected ? err.message : 'Внутренняя ошибка сервера', err.params, req.lang), code: err.code });
 }
 
 /** Throws 403 unless the member level allows `flag` (can_post, can_comment, ...). */

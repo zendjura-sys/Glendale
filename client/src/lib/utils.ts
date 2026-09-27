@@ -1,12 +1,14 @@
 import type { UserShort } from './types';
+import { locale, tr, tp } from './i18n';
+
+export { countLabel } from './i18n';
 
 export const fullName = (u: Pick<UserShort, 'firstName' | 'lastName'>) => `${u.firstName} ${u.lastName}`;
 
-const MONTHS = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
-const MONTHS_FULL = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+/** Plural form for `n`; `forms` are the Russian source forms joined by "|" (translated per language). */
+export const plural = (n: number, forms: string) => tp(n, forms);
 
-const pad = (n: number) => String(n).padStart(2, '0');
-const hm = (d: Date) => `${d.getHours()}:${pad(d.getMinutes())}`;
+const time = (d: Date) => d.toLocaleTimeString(locale(), { hour: 'numeric', minute: '2-digit' });
 
 function dayDiff(ts: number) {
   const d = new Date(ts);
@@ -16,61 +18,52 @@ function dayDiff(ts: number) {
   return Math.round((b - a) / 86_400_000);
 }
 
-export function plural(n: number, one: string, few: string, many: string) {
-  const m10 = n % 10;
-  const m100 = n % 100;
-  if (m10 === 1 && m100 !== 11) return one;
-  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
-  return many;
-}
+const sameYear = (d: Date) => d.getFullYear() === new Date().getFullYear();
 
-/** VK-style relative date: "только что", "5 минут назад", "сегодня в 14:05", "12 мар в 9:00". */
+/** Relative post/comment date: "только что", "5 минут назад", "сегодня в 14:05", "12 мар в 9:00". */
 export function formatDate(ts: number) {
   const diff = Date.now() - ts;
-  if (diff < 60_000) return 'только что';
+  if (diff < 60_000) return tr('только что');
   if (diff < 3_600_000) {
-    const m = Math.floor(diff / 60_000);
-    return `${m} ${plural(m, 'минуту', 'минуты', 'минут')} назад`;
+    return new Intl.RelativeTimeFormat(locale(), { numeric: 'auto' }).format(-Math.floor(diff / 60_000), 'minute');
   }
   const d = new Date(ts);
   const days = dayDiff(ts);
-  if (days === 0) return `сегодня в ${hm(d)}`;
-  if (days === 1) return `вчера в ${hm(d)}`;
-  const year = d.getFullYear() !== new Date().getFullYear() ? ` ${d.getFullYear()}` : '';
-  return `${d.getDate()} ${MONTHS[d.getMonth()]}${year} в ${hm(d)}`;
+  if (days === 0) return tr('сегодня в {time}', { time: time(d) });
+  if (days === 1) return tr('вчера в {time}', { time: time(d) });
+  const date = d.toLocaleDateString(locale(), { day: 'numeric', month: 'short', ...(sameYear(d) ? {} : { year: 'numeric' }) });
+  return tr('{date} в {time}', { date, time: time(d) });
 }
 
-/** Short time for dialog lists: "14:05", "вчера", "12 мар". */
+/** Short time for conversation lists: "14:05", "вчера", "12 мар". */
 export function formatShort(ts: number) {
   const d = new Date(ts);
   const days = dayDiff(ts);
-  if (days === 0) return hm(d);
-  if (days === 1) return 'вчера';
-  return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+  if (days === 0) return time(d);
+  if (days === 1) return tr('вчера');
+  return d.toLocaleDateString(locale(), { day: 'numeric', month: 'short' });
 }
 
-export const formatTime = (ts: number) => hm(new Date(ts));
+export const formatTime = (ts: number) => time(new Date(ts));
 
+/** Day separator in chats: "Сегодня", "Вчера", "12 марта". */
 export function formatDay(ts: number) {
   const days = dayDiff(ts);
-  if (days === 0) return 'Сегодня';
-  if (days === 1) return 'Вчера';
+  if (days === 0) return tr('Сегодня');
+  if (days === 1) return tr('Вчера');
   const d = new Date(ts);
-  const year = d.getFullYear() !== new Date().getFullYear() ? ` ${d.getFullYear()}` : '';
-  return `${d.getDate()} ${MONTHS_FULL[d.getMonth()]}${year}`;
+  return d.toLocaleDateString(locale(), { day: 'numeric', month: 'long', ...(sameYear(d) ? {} : { year: 'numeric' }) });
 }
 
 export function formatBirthday(value: string) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!m) return value;
-  return `${Number(m[3])} ${MONTHS_FULL[Number(m[2]) - 1]} ${m[1]} г.`;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 export function lastSeenText(u: UserShort) {
-  if (u.online) return 'онлайн';
-  return `был(а) в сети ${formatDate(u.lastSeen)}`;
+  if (u.online) return tr('онлайн');
+  return tr('был(а) в сети {when}', { when: formatDate(u.lastSeen) });
 }
 
-export function countLabel(n: number, one: string, few: string, many: string) {
-  return `${n.toLocaleString('ru-RU')} ${plural(n, one, few, many)}`;
-}
+export const formatNumber = (n: number) => n.toLocaleString(locale());

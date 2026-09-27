@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { memo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useInfiniteQuery, useQuery, useQueryClient, type InfiniteData, type QueryClient } from '@tanstack/react-query';
@@ -94,7 +95,7 @@ function PostBody({ post, big }: { post: Post; big?: boolean }) {
           {long ? post.text.slice(0, 400).trimEnd() + '… ' : post.text}
           {long && (
             <button className="more-link" onClick={() => setExpanded(true)}>
-              Показать полностью
+              {tr('Показать полностью')}
             </button>
           )}
         </div>
@@ -158,7 +159,7 @@ function Comments({ postId, onCountChange }: { postId: number; onCountChange: (d
             <div className="meta">{formatDate(c.createdAt)}</div>
           </div>
           {c.author.id === me.id && (
-            <button className="icon-btn del" onClick={() => remove(c.id)} aria-label="Удалить комментарий">
+            <button className="icon-btn del" onClick={() => remove(c.id)} aria-label={tr('Удалить комментарий')}>
               <Trash2 size={16} />
             </button>
           )}
@@ -168,7 +169,7 @@ function Comments({ postId, onCountChange }: { postId: number; onCountChange: (d
         <Avatar src={me.avatar} name={fullName(me)} id={me.id} size={32} />
         <AutoTextarea
           className="autogrow"
-          placeholder="Написать комментарий..."
+          placeholder={tr('Написать комментарий...')}
           value={text}
           maxLength={4000}
           onChange={(e) => setText(e.target.value)}
@@ -204,24 +205,24 @@ function RepostModal({ post, onClose }: { post: Post; onClose: () => void }) {
   };
   return (
     <Modal
-      title="Поделиться записью"
+      title={tr('Поделиться записью')}
       onClose={onClose}
       footer={
         <>
           <button className="btn secondary" onClick={onClose}>
-            Отмена
+            {tr('Отмена')}
           </button>
           <button className="btn" onClick={submit} disabled={busy}>
-            Поделиться
+            {tr('Поделиться')}
           </button>
         </>
       }
     >
       <div className="modal-body">
         <div className="muted" style={{ marginBottom: 8 }}>
-          Запись появится на вашей странице и в новостях у друзей
+          {tr('Запись появится на вашей странице и в новостях у друзей')}
         </div>
-        <textarea className="field" placeholder="Ваш комментарий" value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} />
+        <textarea className="field" placeholder={tr('Ваш комментарий')} value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} />
         <div className="repost" style={{ marginTop: 12 }}>
           <div className="post-head">
             <PostHeader post={post} />
@@ -258,7 +259,7 @@ export const PostCard = memo(function PostCard({ post, openComments = false }: {
 
   const remove = async () => {
     setMenu(false);
-    if (!confirm('Удалить запись?')) return;
+    if (!confirm(tr('Удалить запись?'))) return;
     await api(`/posts/${post.id}`, { method: 'DELETE' });
     removePostEverywhere(qc, post.id);
   };
@@ -275,13 +276,13 @@ export const PostCard = memo(function PostCard({ post, openComments = false }: {
       <div className="post-head">
         <PostHeader post={post} />
         <div style={{ position: 'relative' }} ref={menuRef}>
-          <button className="icon-btn" onClick={() => setMenu((m) => !m)} aria-label="Действия">
+          <button className="icon-btn" onClick={() => setMenu((m) => !m)} aria-label={tr('Действия')}>
             <MoreHorizontal size={20} />
           </button>
           {menu && (
             <div className="dropdown">
               <button className="menu-item" onClick={copyLink}>
-                <Share2 size={18} /> Скопировать ссылку
+                <Share2 size={18} /> {tr('Скопировать ссылку')}
               </button>
               {post.author.id !== me.id && (
                 <button
@@ -291,12 +292,12 @@ export const PostCard = memo(function PostCard({ post, openComments = false }: {
                     setReporting(true);
                   }}
                 >
-                  <Flag size={18} /> Пожаловаться
+                  <Flag size={18} /> {tr('Пожаловаться')}
                 </button>
               )}
               {post.canDelete && (
                 <button className="menu-item danger" onClick={remove}>
-                  <Trash2 size={18} /> Удалить запись
+                  <Trash2 size={18} /> {tr('Удалить запись')}
                 </button>
               )}
             </div>
@@ -316,21 +317,21 @@ export const PostCard = memo(function PostCard({ post, openComments = false }: {
       )}
 
       <div className="post-actions">
-        <button className={`action${post.liked ? ' liked' : ''}`} onClick={toggleLike} aria-label="Нравится" aria-pressed={post.liked}>
+        <button className={`action${post.liked ? ' liked' : ''}`} onClick={toggleLike} aria-label={tr('Нравится')} aria-pressed={post.liked}>
           <span className={`uv-like${post.liked ? ' on' : ''}${pop && post.liked ? ' pop' : ''}`}>
             <Heart size={20} />
             <LikeBurst />
           </span>
           {post.likes > 0 && post.likes}
         </button>
-        <button className={`action${showComments ? ' on' : ''}`} onClick={() => setShowComments((s) => !s)} aria-label="Комментарии">
+        <button className={`action${showComments ? ' on' : ''}`} onClick={() => setShowComments((s) => !s)} aria-label={tr('Комментарии')}>
           <MessageCircle size={20} />
           {post.comments > 0 && post.comments}
         </button>
         <button
           className={`action${post.reposted || source?.reposted ? ' on' : ''}`}
           onClick={() => setRepostOpen(true)}
-          aria-label="Поделиться"
+          aria-label={tr('Поделиться')}
         >
           <Repeat2 size={20} />
           {post.reposts > 0 && post.reposts}
@@ -370,7 +371,7 @@ export function PostList({ queryKey, path, emptyText }: { queryKey: unknown[]; p
   if (!posts.length)
     return (
       <div className="card">
-        <Empty icon={<Newspaper size={48} />} title="Здесь пока пусто">
+        <Empty icon={<Newspaper size={48} />} title={tr('Здесь пока пусто')}>
           {emptyText}
         </Empty>
       </div>

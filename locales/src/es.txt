@@ -1,0 +1,752 @@
+0	 · eres tú
+1	+{n} esta semana
+2	, admin:
+3	, {n} omitidos (sin permisos)
+4	. El título, el artista y la portada se toman de las etiquetas.
+5	0 — no bloquear nunca
+6	4 semanas
+7	6 meses
+8	Client ID de la app de Spotify
+9	El email ya está en uso
+10	IP de registro
+11	Spotify aún no está conectado a esta red
+12	Spotify rechazó la solicitud: {reason}
+13	Spotify: error de autorización del reproductor
+14	{actor} añadió a {user}
+15	{actor} cambió el nombre del chat a «{title}»
+16	{actor} expulsó a {user}
+17	{actor} actualizó la foto del chat
+18	{actor} creó el chat «{title}»
+19	{date} a las {time}
+20	{d} d {h} h
+21	{h} h {m} min
+22	{label} en {days} días
+23	{n} KB
+24	{n} MB
+25	{user} ya no es admin del chat
+26	{user} salió del chat
+27	{user} ahora es admin del chat
+28	«Escuchando ahora» en mi perfil
+29	· abrir
+30	Avatar, portada, fotos en publicaciones y álbumes
+31	Panel de administración
+32	Administrador
+33	El administrador aún no ha activado la integración.
+34	La cuenta está activa
+35	Cuenta bloqueada por la administración
+36	La cuenta espera la aprobación de un administrador
+37	Activo
+38	Actividad de la red por día
+39	Activos
+40	Los anuncios activos se muestran arriba en el feed de noticias
+41	Álbum
+42	Álbumes y sencillos
+43	Analítica
+44	Pista no encontrada
+45	Base de datos
+46	Bloqueos y censura
+47	Sin repetición
+48	Seguridad
+49	Chat
+50	Chat no encontrado
+51	Bloqueo de acceso, minutos
+52	Bloqueos por email e IP, censura, protección contra fuerza bruta
+53	Un chat puede tener como máximo {n} miembros
+54	Solo se puede añadir a amigos a un chat
+55	Aún no hay pistas en tu biblioteca
+56	En mi música
+57	Estas palabras se sustituyen por asteriscos en nuevas publicaciones, comentarios y mensajes.
+58	Añadir a la cola
+59	Añadir a playlist de Spotify
+60	Aún no hay publicaciones en esta comunidad.
+61	Tu comentario
+62	Tu top
+63	Tus playlists, biblioteca y top aquí mismo; control de reproducción en cualquier dispositivo, un reproductor en el navegador (Premium) y «Escuchando ahora» en tu perfil.
+64	Escribe un estado
+65	Volver
+66	Volver al panel de administración
+67	Propietario
+68	El propietario no puede abandonar la comunidad
+69	No se puede expulsar al propietario
+70	Adjunto
+71	Apariencia
+72	Puede que se haya eliminado o que aún no exista.
+73	Puede que se haya eliminado.
+74	Quizá conozcas a
+75	Iniciar sesión
+76	Entrar como
+77	¿Entrar como {name}? Podrás volver al panel de administración.
+78	Iniciar sesión con Spotify
+79	Reproducir en el navegador requiere Spotify Premium
+80	Sesión iniciada como miembro
+81	Siguiente
+82	Todos
+83	Todos los amigos
+84	Todas las playlists
+85	Todos los estados
+86	Todos ya son tus amigos
+87	Todos los niveles
+88	Todos los miembros
+89	Unirse
+90	Unirse a la comunidad
+91	Cualquiera puede unirse, las publicaciones son visibles para todos.
+92	Todo el tiempo
+93	Todo tranquilo — hora de un té.
+94	Iniciar sesión en {site}
+95	Acceso del equipo
+96	Acceso bloqueado
+97	Recibidas ·
+98	Ayer
+99	Tú
+100	No eres miembro de este chat
+101	Cancelaste la conexión con Spotify
+102	Estás navegando como
+103	Ya compartiste esta publicación
+104	Ya denunciaste esto
+105	Eres miembro
+106	Tú:
+107	Elegir archivos de audio
+108	Elige un motivo para la denuncia
+109	Elegir dispositivo
+110	Elige un chat o empieza una conversación nueva
+111	Elige a quién añadir
+112	Seleccionados:
+113	Seleccionar a {name}
+114	Seleccionar todos
+115	Cerrar sesión
+116	Cerrar sesión de la cuenta
+117	Salir del chat
+118	¿Salir del chat?
+119	Una marca junto al nombre
+120	Inicio
+121	Menú principal
+122	Ciudad
+123	Hecho
+124	Gráfico
+125	Volumen
+126	Grupos
+127	Acción
+128	Acciones
+129	Acceso de demostración:
+130	Cumpleaños
+131	Añadir
+132	Añadir a amigos
+133	Añadir a mi música
+134	Añadir a playlist
+135	Añadir a playlist de Spotify
+136	Añadir portada
+137	Añade pistas desde el menú «…» → «Añadir a playlist»
+138	Solo puedes añadir a tus propios amigos
+139	Añade amigos o únete a comunidades para ver sus publicaciones.
+140	Añade al menos un miembro
+141	Se revocó el acceso a Spotify — vuelve a conectar tu cuenta
+142	Acceso al panel de administración: miembros, contenido, ajustes.
+143	El acceso desde tu dirección está restringido
+144	Otro
+145	Amigos
+146	Amigos en línea
+147	Amigos, comunidades y un feed de noticias
+148	Si se desactiva, cualquier miembro podrá publicar en tu muro
+149	Más
+150	Denuncia no encontrada
+151	Denuncias
+152	Denuncias pendientes de decisión
+153	Denuncias contra él
+154	Pendientes de aprobación
+155	Pendiente de aprobación
+156	Registro
+157	Registro de acciones
+158	El registro está vacío
+159	Bloqueó al autor tras una denuncia
+160	Bloqueó miembros
+161	Bloqueado
+162	Bloqueados
+163	Un miembro bloqueado no puede iniciar sesión; todas sus sesiones se cierran
+164	Bloqueado
+165	Bloqueados
+166	Bloquear
+167	¿Bloquear a {name}?
+168	Bloquear al autor
+169	Cerró las sesiones de un miembro
+170	¿Cerrar todas las sesiones de este miembro?
+171	Cerrar sesiones
+172	Título
+173	Subir fotos
+174	Sube música en la sección «Música»
+175	Sube tus primeras fotos
+176	Sube tus pistas o añade algunas desde la búsqueda
+177	Subir fotos
+178	Cargando
+179	La subida de archivos no está disponible para tu nivel
+180	La subida de fotos no está disponible para tu nivel
+181	Cerrada
+182	Cerrada
+183	Comunidad cerrada
+184	Cerrar
+185	Cerrar reproductor
+186	Publicaciones
+187	Publicaciones de {name}
+188	Solo los miembros ven las publicaciones y los miembros; ingreso por solicitud.
+189	Publicaciones en muros y compartidos
+190	Publicaciones, comentarios y comunidades
+191	Publicación
+192	Una publicación no puede estar vacía
+193	Publicación no encontrada
+194	La publicación se ha compartido en tu muro.
+195	La publicación aparecerá en tu página y en las noticias de tus amigos
+196	Direcciones IP bloqueadas
+197	Emails bloqueados
+198	Registrado
+199	Registrarse
+200	Protección
+201	Protección y bloqueos
+202	Protección contra fuerza bruta
+203	Protección contra flood, en segundos (0 — sin límite)
+204	Solicitud no encontrada
+205	Solicitud enviada
+206	Solicitud enviada — los administradores la revisarán pronto.
+207	Solicitudes
+208	Solicitudes de ingreso
+209	Aquí aparecerá el historial de tus conversaciones
+210	Aquí aparecerán los me gusta, comentarios y solicitudes de amistad
+211	Aún no hay nada aquí
+212	No hay nada aquí
+213	Hola, {name}. Esto es lo que pasa en la red.
+214	Cambios guardados
+215	Cambió los ajustes
+216	Editó un anuncio
+217	Editó un nivel
+218	Editó un miembro
+219	Cambia los filtros o la búsqueda
+220	Cambiar portada
+221	Cambiar contraseña
+222	Cambiar la foto del chat
+223	Cambiar foto
+224	Solo los admins pueden editar el chat
+225	Nombre
+226	El nombre y el apellido no pueden estar vacíos
+227	El nombre no puede estar vacío
+228	Nombre, email o ID
+229	Integraciones
+230	El administrador no ha configurado la integración con Spotify
+231	Información
+232	Información del chat
+233	Solo los admins pueden expulsar miembros
+234	Expulsar
+235	¿Expulsar a {name}?
+236	Solo el propietario puede expulsar a un administrador
+237	Expulsar del chat
+238	Expulsar de la comunidad
+239	Artista
+240	Artista, pista o álbum
+241	Enviadas ·
+242	Busca entre todas las pistas subidas por los miembros
+243	Botones, enlaces y elementos activos para todos los miembros. Los cambios se ven tras guardar.
+244	Cuándo
+245	Comentarios
+246	Comentarios en publicaciones
+247	Comentario
+248	Comentario (opcional)
+249	Un comentario no puede estar vacío
+250	Comentario no encontrado
+251	Comentar no está disponible para tu nivel
+252	Comentar
+253	Contactos
+254	Contenido
+255	Comunidades más grandes
+256	Quién
+257	Quién puede unirse y cómo
+258	Quién del equipo cambió qué
+259	Me gusta
+260	Me gusta, comentarios y compartidos
+261	Mensajes privados en el mensajero
+262	Canciones que te gustan ·
+263	Cualquiera puede registrarse y empezar a usar la red al instante.
+264	Personas
+265	Mensajes instantáneos y notificaciones
+266	Biblioteca
+267	Menú del perfil
+268	Mensajero
+269	Método no encontrado
+270	Moderador
+271	Los moderadores gestionan denuncias y limpian contenido. Los administradores tienen todo el panel.
+272	Moderación
+273	Puede leer, pero no publicar ni enviar mensajes.
+274	Solo puedes editar tus propias pistas
+275	Solo puedes eliminar tus propios mensajes
+276	Mis publicaciones
+277	Mis comunidades
+278	Mis fotos
+279	Mi música
+280	Mi página
+281	Música
+282	Un suave resplandor de color detrás de la interfaz
+283	En Glendale desde
+284	Ir al sitio
+285	Aún no hay publicaciones en el muro.
+286	Navegación
+287	Atrás
+288	Nombre
+289	Nombre del chat
+290	Nombre de la red
+291	Nombre de la red, descripción y modo de mantenimiento
+292	Se asigna a los nuevos miembros al registrarse
+293	Solo el creador del chat puede nombrar admins
+294	Nombrar administrador
+295	Solo un superadmin puede nombrar a un superadmin
+296	Encuentra música
+297	Buscar amigos
+298	Buscar comunidades interesantes
+299	Escribe un comentario...
+300	Enviar mensaje
+301	Escribe a un amigo o crea un chat
+302	Escribe tu primera publicación.
+303	Escribe un mensaje...
+304	Escribe algo a {name}...
+305	Escribe algo en nombre de la comunidad...
+306	Infracción de derechos de autor
+307	Sin infracción
+308	Ajustes
+309	Ajustes guardados
+310	Empieza a escribir una búsqueda
+311	No hay usuarios seleccionados
+312	No leídos
+313	No se pudo cargar el reproductor de Spotify
+314	No se pudo conectar Spotify
+315	No se pudo obtener el perfil de Spotify
+316	Email o contraseña incorrectos
+317	Contraseña actual incorrecta
+318	Escuchado recientemente
+319	Tipo de nivel no válido
+320	Permisos insuficientes
+321	Acción desconocida
+322	Artista desconocido
+323	Fecha de nacimiento no válida
+324	Email no válido
+325	Dirección de retorno no válida
+326	ID de Spotify no válido
+327	Pista no válida
+328	No puedes bloquearte a ti mismo
+329	No se puede bloquear a un miembro del equipo mediante una denuncia
+330	No se puede cambiar el rol de este miembro
+331	No puedes cambiar tu propio nivel
+332	No puedes eliminar tu propia cuenta
+333	Contenido inapropiado
+334	No hay ningún dispositivo de Spotify activo — abre Spotify o elige un dispositivo
+335	No hay pistas
+336	Sin acceso al panel de administración
+337	No hay amigos para añadir
+338	No hay solicitudes nuevas
+339	No hay solicitudes enviadas
+340	Sin permisos
+341	Sin permiso para eliminar
+342	Sin conexión con el servidor
+343	No hay mensajes
+344	No hay pistas para añadir
+345	No hay notificaciones
+346	No hay fotos
+347	Intentos fallidos antes del bloqueo
+348	No se encontró a nadie
+349	No se encontró nada
+350	Nuevo chat
+351	Nuevo anuncio
+352	Nueva comunidad
+353	Noticias
+354	Nuevas
+355	Las cuentas nuevas se activan tras la revisión de un administrador.
+356	Las cuentas nuevas esperan aprobación en la sección «Miembros».
+357	Nuevas publicaciones en 14 días
+358	No se admiten nuevos registros. Los miembros existentes inician sesión como siempre.
+359	Nuevos miembros
+360	Nueva contraseña
+361	Nueva contraseña (opcional)
+362	Nueva playlist
+363	Nuevo nivel
+364	No hay denuncias nuevas
+365	No hay solicitudes nuevas
+366	Me gusta
+367	Necesario si el registro requiere aprobación
+368	Se requieren permisos de administrador de la comunidad
+369	Sobre mí
+370	Resumen
+371	General
+372	Ajustes generales
+373	Objeto
+374	No se encontró el elemento denunciado
+375	El elemento ya fue eliminado
+376	Anuncio
+377	Anuncio no encontrado
+378	Aún no hay anuncios
+379	Anuncios
+380	Un usuario normal.
+381	Restringido
+382	Aprobado
+383	Aprobado
+384	Aprobó miembros
+385	Aprobar
+386	Descripción
+387	Sin descripción
+388	Publicó un anuncio
+389	Publicar
+390	Acoso
+391	Déjalo vacío para no cambiarlo
+392	Rechazada
+393	Rechazó una denuncia
+394	Rechazar
+395	Rechazar solicitud
+396	Rechazadas
+397	Desconectar Spotify
+398	¿Desconectar Spotify?
+399	Abre Spotify en tu teléfono u ordenador
+400	Abierta
+401	Abierta
+402	Comunidad abierta
+403	Abrir
+404	Abrir álbum
+405	Abrir en Spotify
+406	Abrir publicación
+407	Cancelar
+408	Cancelar solicitud
+409	Enviar
+410	Enviar mensajes no está disponible para tu nivel
+411	Apariencia
+412	Error de Spotify: {reason}
+413	Memoria
+414	Contraseña
+415	La contraseña debe tener al menos 6 caracteres
+416	Contraseña cambiada
+417	Pausa
+418	Pausa entre publicaciones
+419	Ir a tu página
+420	Aleatorio
+421	Avanzar
+422	Arrastra aquí archivos MP3, M4A, OGG, WAV o FLAC — o
+423	Solo los amigos pueden publicar en el muro
+424	Enviar mensajes
+425	Reproductor
+426	Playlist
+427	Playlist no encontrada
+428	No hay playlists
+429	Aún no hay playlists
+430	Playlists
+431	Por actividad
+432	Por nombre
+433	Una por línea, «*» al final para un rango. No se aplica al equipo.
+434	Una por línea. «*@dominio» bloquea todo el dominio. Se aplica a registros nuevos.
+435	Con aprobación
+436	Repetir
+437	Repetir lista
+438	Repetir pista
+439	Envía una solicitud para ver las publicaciones y los miembros.
+440	Solicitar ingreso
+441	Archivos de audio admitidos: MP3, M4A, AAC, OGG, WAV, FLAC y WEBM
+442	Solo se admiten imágenes JPG, PNG, GIF y WEBP
+443	Compartir
+444	Compartir publicación
+445	Compartir en el muro
+446	Pódcast
+447	Conexión de servicios externos
+448	Conectar Spotify
+449	Conecta Spotify en la sección «Música»
+450	Espera {n} s antes de tu próxima publicación
+451	Información detallada
+452	Más información
+453	Detalles (opcional)
+454	Verificó miembros
+455	Verificar
+456	Verificado
+457	Verificado
+458	Verificados
+459	Cuenta verificada
+460	Denunciar
+461	Buscar
+462	Buscar en mi música
+463	Buscar amigos
+464	Buscar personas, comunidades y publicaciones
+465	Buscar en el texto
+466	Buscar comunidades
+467	Búsqueda, moderación y gestión de cuentas
+468	Aún no hay amigos
+469	Aún vacío
+470	Mostrar todo
+471	Mostrar más
+472	Se muestra en la pestaña del navegador y en la página de inicio de sesión.
+473	Mostrar
+474	Mostrar a los miembros
+475	Mostrar lo que escucho
+476	¿Abandonar la comunidad «{name}»?
+477	La reproducción completa y el control están disponibles con Spotify Premium. Sin Premium, Spotify reproduce una vista previa, o la pista completa si has iniciado sesión en Spotify en este navegador.
+478	Acceso total a todo, incluidos otros administradores.
+479	Usuario
+480	El usuario aún no ha añadido fotos
+481	El usuario está bloqueado
+482	Usuario no encontrado
+483	Ya existe un usuario con este email
+484	Prueba a cambiar la búsqueda
+485	Popular
+486	Comunidades populares
+487	Pistas populares
+488	Última IP
+489	Última visita
+490	Página anterior
+491	Anterior
+492	Adjuntar
+493	Adjuntar pista
+494	Adjuntar foto
+495	Aceptar
+496	Aceptar solicitud
+497	Comprueba la dirección o vuelve al feed.
+498	Perfil
+499	Publicar no está disponible para tu nivel
+500	Publicar
+501	Solo los administradores de la comunidad pueden publicar
+502	Tiempo activo
+503	Gestiona denuncias y modera el contenido.
+504	Desbloqueó miembros
+505	Desbloqueado
+506	Desbloquear
+507	Esta sección es solo para administradores
+508	Secciones del panel de administración
+509	Registros
+510	Registros en 14 días
+511	Registro
+512	El registro está cerrado temporalmente
+513	No se permite registrarse con esta dirección
+514	Editar
+515	Editar perfil
+516	Modo de mantenimiento
+517	Modo de registro
+518	Recomendaciones
+519	Sugerencia
+520	Compartido
+521	Resuelta: {how}
+522	Resueltas
+523	Roles de los miembros y lo que pueden hacer
+524	No se puede cambiar el rol del propietario
+525	El sitio está cerrado para todos excepto administradores y moderadores
+526	Autores más activos
+527	Claro
+528	Tema claro
+529	Color propio
+530	Hacer admin
+531	Hoy
+532	En línea ahora
+533	No se está reproduciendo nada.
+534	No se está reproduciendo nada. Pon una pista abajo o en cualquier dispositivo.
+535	Escuchando ahora
+536	No hace falta secreto — se usa la autorización segura PKCE. Mientras la app esté en modo desarrollo, añade los emails de los miembros en User Management en el sitio de Spotify.
+537	Servidor
+538	Sesiones
+539	La sesión de conexión ha caducado — inténtalo de nuevo
+540	Copiar enlace
+541	Ocultar
+542	Ocultar anuncio
+543	Página siguiente
+544	Siguiente
+545	Demasiados intentos fallidos. Inténtalo de nuevo en {n} min.
+546	Escucha más — y aquí aparecerá tu top
+547	Escuchar
+548	Más recientes primero
+549	Quitar admin
+550	Solo el propietario puede quitar a un admin
+551	Desbloquear acceso
+552	Crear comunidades
+553	Solo un superadmin puede crear niveles de administrador
+554	Crea una app en developer.spotify.com (Dashboard → Create app, API: Web API y Web Playback SDK) y añade la Redirect URI:
+555	Creó un nivel
+556	Crear comunidades no está disponible para tu nivel
+557	Creado
+558	Creador
+559	Crear
+560	Crear cuenta
+561	Crear chat
+562	Crear comunidad
+563	Mensaje
+564	Mensaje durante el mantenimiento
+565	Un mensaje no puede estar vacío
+566	Mensaje no encontrado
+567	Mensajes
+568	Mensajes para todos los miembros arriba en el feed
+569	Mensajes en 14 días
+570	Denuncias de infracciones de los miembros
+571	No se encontraron comunidades
+572	Comunidades
+573	Comunidad
+574	Comunidad no encontrada
+575	Orden
+576	Guardado
+577	Guardar
+578	Guardar en la biblioteca
+579	Una red social para estar en contacto con amigos, comunidades y todas las personas que te interesan.
+580	Spam
+581	¡Gracias! Los moderadores revisarán tu denuncia.
+582	Estadísticas
+583	Estado
+584	Página no encontrada
+585	Superadmin
+586	Superadministrador
+587	Solo un superadmin puede editar a un superadmin
+588	Texto
+589	Contraseña actual
+590	Tema:
+591	Tipo
+592	Tipo de comunidad
+593	Se requiere autorización
+594	Pista
+595	Pistas, álbumes y playlists en Spotify
+596	Oscuro
+597	Tema oscuro
+598	Amigos
+599	Ya tengo una cuenta
+600	Quitar pista
+601	Quitar de la biblioteca
+602	Quitar de mi música
+603	Quitar foto
+604	Notificaciones
+605	Eliminado
+606	Eliminó una publicación
+607	Eliminó un comentario
+608	Eliminó contenido y bloqueó al autor
+609	Eliminó contenido tras una denuncia
+610	Eliminó un anuncio
+611	Eliminó una comunidad
+612	Eliminó un nivel
+613	Eliminó un miembro
+614	Eliminó miembros
+615	Eliminar
+616	¿Eliminar a {name} de tus amigos?
+617	¿Eliminar a {name}?
+618	¿Eliminar {what}?
+619	¿Eliminar «{title}» para siempre?
+620	¿Eliminar la cuenta {name} con todas sus publicaciones? No se puede deshacer.
+621	¿Eliminar {n} cuentas? No se puede deshacer.
+622	Eliminar publicación
+623	¿Eliminar esta publicación?
+624	Eliminar y bloquear
+625	¿Eliminar y bloquear a {name}?
+626	Eliminar de amigos
+627	¿Eliminar de amigos?
+628	Eliminar comentario
+629	¿Eliminar el anuncio «{title}»?
+630	Eliminar playlist
+631	¿Eliminar la playlist «{title}»?
+632	¿Eliminar el mensaje para todos?
+633	¿Eliminar la comunidad y todas sus publicaciones? Esta acción no se puede deshacer.
+634	Solo el propietario puede eliminar la comunidad
+635	Eliminar nivel
+636	¿Eliminar el nivel «{title}»? Sus miembros ({n}) recibirán el nivel predeterminado.
+637	Eliminar foto
+638	¿Eliminar esta foto?
+639	Eliminado
+640	Indica el Client ID de la app de Spotify en
+641	Indica un título
+642	Indica tu nombre y apellido
+643	Indica un nombre
+644	Indica un nombre para el chat
+645	Indica un nombre para la playlist
+646	Indica un nombre para la comunidad
+647	Indica un nombre para el nivel
+648	Gestión
+649	El control de reproducción solo está disponible con Spotify Premium
+650	Gestión de la comunidad
+651	Gestionar
+652	Nivel
+653	Nivel de volumen
+654	Nivel de acceso
+655	Nivel no encontrado
+656	Nivel predeterminado
+657	Solo un superadmin puede cambiar el nivel de superadmin
+658	Niveles
+659	Niveles de acceso
+660	Poner estado
+661	Dispositivo
+662	Miembro
+663	Miembro no encontrado
+664	Miembros
+665	Miembros por nivel
+666	Ningún archivo seleccionado
+667	El archivo es demasiado grande
+668	No hay archivos seleccionados
+669	Apellido
+670	El apellido no puede estar vacío
+671	Falso o estafa
+672	Color de marca
+673	Color de marca y fondo para todos los miembros
+674	Fondo «Aurora»
+675	Fotos
+676	Fotos
+677	Foto
+678	Foto no encontrada
+679	Color {c}
+680	Censura de palabras
+681	¿Qué pasa?
+682	¿Qué hay de nuevo?
+683	Algo salió mal
+684	Episodio
+685	Esta es una comunidad cerrada
+686	Esta no es tu playlist
+687	Este navegador
+688	Este nivel no se puede eliminar
+689	Idioma
+690	autor bloqueado
+691	panel de administración → Integraciones
+692	sin texto
+693	visto {when}
+694	en memoria
+695	en línea
+696	propietario {name}
+697	entrar como
+698	ayer
+699	ayer a las {time}
+700	elige archivos
+701	sí
+702	días
+703	amigo|amigos
+704	denuncias:
+705	publicación
+706	publicación|publicaciones
+707	de
+708	comentario
+709	comentario|comentarios
+710	contenido eliminado
+711	me gusta|me gusta
+712	está en mantenimiento
+713	publicó en tu muro
+714	p. ej., 3f8c1a…
+715	no
+716	amigo en común|amigos en común
+717	en común
+718	aprobó tu solicitud para unirte a la comunidad
+719	en línea
+720	de
+721	rechazada
+722	le gustó tu publicación
+723	está escribiendo
+724	están escribiendo
+725	una palabra por línea
+726	predeterminado
+727	compartió tu publicación
+728	seguidor|seguidores
+729	insertar
+730	aceptó tu solicitud de amistad
+731	comentó tu publicación
+732	registro|registros
+733	claro
+734	hoy a las {time}
+735	mensaje|mensajes
+736	la comunidad «{name}» con todas sus publicaciones
+737	comunidad|comunidades
+738	justo ahora
+739	pista|pistas
+740	oscuro
+741	ya está en el chat
+742	miembro|miembros
+743	fotos
+744	quiere unirse a la comunidad
+745	quiere ser tu amigo
+746	— comunícate sin demoras
+747	› Amigos
+748	› Música
+749	› Comunidades
+750	› Fotos
+751	🖼 Foto

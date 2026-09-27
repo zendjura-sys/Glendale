@@ -25,6 +25,7 @@ export interface SiteConfig {
   accentColor: string;
   aurora: boolean;
   spotifyEnabled: boolean;
+  defaultLanguage: string;
 }
 
 export interface Announcement {
@@ -160,6 +161,7 @@ export interface ChatMessage {
   author: UserShort | null;
   kind: 'text' | 'system';
   text: string;
+  system: { key: string; params: Record<string, string | number> } | null;
   image: string | null;
   audio: Track | null;
   spotify: SpotifyRef | null;

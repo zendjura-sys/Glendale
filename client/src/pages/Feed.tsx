@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Flame, Newspaper, Sparkles, UserPlus } from 'lucide-react';
@@ -31,10 +32,10 @@ export default function FeedPage() {
         <div className="card">
           <div className="tabs" style={{ borderBottom: 'none' }}>
             <button className={`tab${tab === 'news' ? ' active' : ''}`} onClick={() => setParams({})}>
-              <Newspaper size={16} /> Новости
+              <Newspaper size={16} /> {tr('Новости')}
             </button>
             <button className={`tab${tab === 'popular' ? ' active' : ''}`} onClick={() => setParams({ tab: 'popular' })}>
-              <Sparkles size={16} /> Рекомендации
+              <Sparkles size={16} /> {tr('Рекомендации')}
             </button>
           </div>
         </div>
@@ -42,16 +43,16 @@ export default function FeedPage() {
           key={tab}
           queryKey={key}
           path={`/feed?tab=${tab}`}
-          emptyText="Добавьте друзей или вступите в сообщества, чтобы видеть их записи."
+          emptyText={tr("Добавьте друзей или вступите в сообщества, чтобы видеть их записи.")}
         />
       </div>
       <aside className="col-side">
         {!!suggestions?.length && (
           <div className="card">
             <div className="card-title">
-              <UserPlus size={18} /> Возможные друзья
+              <UserPlus size={18} /> {tr('Возможные друзья')}
               <Link to="/friends?tab=suggestions" className="right">
-                Все
+                {tr('Все')}
               </Link>
             </div>
             {suggestions.slice(0, 4).map((u) => (
@@ -63,7 +64,7 @@ export default function FeedPage() {
                   <Link to={`/id/${u.id}`} className="name ellipsis" style={{ display: 'block' }}>
                     {fullName(u)}
                   </Link>
-                  <div className="meta">{u.mutual ? countLabel(u.mutual, 'общий друг', 'общих друга', 'общих друзей') : 'Рекомендация'}</div>
+                  <div className="meta">{u.mutual ? countLabel(u.mutual, tr('общий друг|общих друга|общих друзей')) : tr('Рекомендация')}</div>
                 </div>
                 <FriendButton userId={u.id} initial="none" compact />
               </div>
@@ -73,9 +74,9 @@ export default function FeedPage() {
         {!!groups?.length && (
           <div className="card">
             <div className="card-title">
-              <Flame size={18} /> Популярные сообщества
+              <Flame size={18} /> {tr('Популярные сообщества')}
               <Link to="/groups?tab=all" className="right">
-                Все
+                {tr('Все')}
               </Link>
             </div>
             {groups.slice(0, 4).map((g) => (
@@ -83,7 +84,7 @@ export default function FeedPage() {
                 <Avatar src={g.avatar} name={g.name} id={g.id + 100} square size={40} />
                 <div className="info">
                   <div className="name ellipsis">{g.name}</div>
-                  <div className="meta">{countLabel(g.membersCount, 'участник', 'участника', 'участников')}</div>
+                  <div className="meta">{countLabel(g.membersCount, tr('участник|участника|участников'))}</div>
                 </div>
               </Link>
             ))}

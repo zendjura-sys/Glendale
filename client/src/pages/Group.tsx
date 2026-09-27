@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -20,7 +21,7 @@ export function JoinButton({ group, compact }: { group: Group; compact?: boolean
     setBusy(true);
     try {
       const leaving = state.member || state.requested;
-      if (state.member && !confirm(`Покинуть сообщество «${group.name}»?`)) return;
+      if (state.member && !confirm(tr('Покинуть сообщество «{name}»?', { name: group.name }))) return;
       const g = await api<Group>(`/groups/${group.id}/join`, { method: leaving ? 'DELETE' : 'POST' });
       setState({ member: g.isMember, requested: g.requested });
       qc.setQueryData<GroupFull>(['group', group.id], (old) => (old ? { ...old, ...g } : old));
@@ -40,32 +41,32 @@ export function JoinButton({ group, compact }: { group: Group; compact?: boolean
     return state.member ? (
       <Check size={20} color="var(--text-3)" />
     ) : state.requested ? (
-      <Clock size={20} color="var(--text-3)" aria-label="Заявка отправлена" />
+      <Clock size={20} color="var(--text-3)" aria-label={tr('Заявка отправлена')} />
     ) : (
-      <button className="icon-btn" onClick={toggle} disabled={busy} aria-label={group.privacy === 'closed' ? 'Подать заявку' : 'Вступить'}>
+      <button className="icon-btn" onClick={toggle} disabled={busy} aria-label={group.privacy === 'closed' ? tr('Подать заявку') : tr('Вступить')}>
         <Plus size={22} color="var(--icon-accent)" />
       </button>
     );
   if (state.member)
     return (
       <button className="btn secondary" onClick={toggle} disabled={busy}>
-        <Check size={16} /> Вы участник
+        <Check size={16} /> {tr('Вы участник')}
       </button>
     );
   if (state.requested)
     return (
-      <button className="btn secondary" onClick={toggle} disabled={busy} title="Отменить заявку">
-        <Clock size={16} /> Заявка отправлена
+      <button className="btn secondary" onClick={toggle} disabled={busy} title={tr('Отменить заявку')}>
+        <Clock size={16} /> {tr('Заявка отправлена')}
       </button>
     );
   return (
     <button className="btn" onClick={toggle} disabled={busy}>
       {group.privacy === 'closed' ? (
         <>
-          <Lock size={16} /> Подать заявку
+          <Lock size={16} /> {tr('Подать заявку')}
         </>
       ) : (
-        'Вступить в сообщество'
+        tr('Вступить в сообщество')
       )}
     </button>
   );
@@ -76,14 +77,14 @@ export function PrivacyPicker({ value, onChange }: { value: 'open' | 'closed'; o
     <div>
       <div className="segmented">
         <button className={value === 'open' ? 'on' : ''} onClick={() => onChange('open')} type="button">
-          <Globe size={14} style={{ verticalAlign: '-2px' }} /> Открытое
+          <Globe size={14} style={{ verticalAlign: '-2px' }} /> {tr('Открытое')}
         </button>
         <button className={value === 'closed' ? 'on' : ''} onClick={() => onChange('closed')} type="button">
-          <Lock size={14} style={{ verticalAlign: '-2px' }} /> Закрытое
+          <Lock size={14} style={{ verticalAlign: '-2px' }} /> {tr('Закрытое')}
         </button>
       </div>
       <div className="meta" style={{ marginTop: 6 }}>
-        {value === 'open' ? 'Вступить может любой, записи видны всем.' : 'Записи и участников видят только участники; вступление по заявке.'}
+        {value === 'open' ? tr('Вступить может любой, записи видны всем.') : tr('Записи и участников видят только участники; вступление по заявке.')}
       </div>
     </div>
   );
@@ -108,42 +109,42 @@ function EditGroupModal({ group, onClose }: { group: GroupFull; onClose: () => v
     }
   };
   const remove = async () => {
-    if (!confirm('Удалить сообщество и все его записи? Это действие нельзя отменить.')) return;
+    if (!confirm(tr('Удалить сообщество и все его записи? Это действие нельзя отменить.'))) return;
     await api(`/groups/${group.id}`, { method: 'DELETE' });
     qc.invalidateQueries({ queryKey: ['groups'] });
     navigate('/groups');
   };
   return (
     <Modal
-      title="Управление сообществом"
+      title={tr('Управление сообществом')}
       onClose={onClose}
       footer={
         <>
           {group.isOwner && (
             <button className="btn danger" style={{ marginRight: 'auto' }} onClick={remove}>
-              <Trash2 size={16} /> Удалить
+              <Trash2 size={16} /> {tr('Удалить')}
             </button>
           )}
           <button className="btn secondary" onClick={onClose}>
-            Отмена
+            {tr('Отмена')}
           </button>
           <button className="btn" onClick={save} disabled={!name.trim()}>
-            Сохранить
+            {tr('Сохранить')}
           </button>
         </>
       }
     >
       <div className="modal-body">
         <div className="form-row">
-          <label className="label">Название</label>
+          <label className="label">{tr('Название')}</label>
           <input className="field" value={name} maxLength={100} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="form-row">
-          <label className="label">Описание</label>
+          <label className="label">{tr('Описание')}</label>
           <textarea className="field" value={description} maxLength={2000} onChange={(e) => setDescription(e.target.value)} />
         </div>
         <div className="form-row">
-          <label className="label">Тип сообщества</label>
+          <label className="label">{tr('Тип сообщества')}</label>
           <PrivacyPicker value={privacy} onChange={setPrivacy} />
         </div>
         {error && <div className="error-text">{error}</div>}
@@ -173,7 +174,7 @@ function MembersModal({ group, onClose }: { group: GroupFull; onClose: () => voi
     }
   };
   return (
-    <Modal title="Участники" onClose={onClose}>
+    <Modal title={tr('Участники')} onClose={onClose}>
       <div style={{ maxHeight: '60vh', overflowY: 'auto', padding: '8px 0' }}>
         {!data && <Spinner />}
         {data?.map((u) => (
@@ -188,7 +189,7 @@ function MembersModal({ group, onClose }: { group: GroupFull; onClose: () => voi
               {u.role !== 'member' && (
                 <div className="meta">
                   {u.role === 'owner' ? <Crown size={12} style={{ verticalAlign: '-1px' }} /> : <Shield size={12} style={{ verticalAlign: '-1px' }} />}{' '}
-                  {u.role === 'owner' ? 'Владелец' : 'Администратор'}
+                  {u.role === 'owner' ? tr('Владелец') : tr('Администратор')}
                 </div>
               )}
             </div>
@@ -197,8 +198,8 @@ function MembersModal({ group, onClose }: { group: GroupFull; onClose: () => voi
                 {(u.role === 'member' || group.isOwner) && (
                   <button
                     className="icon-btn"
-                    title={u.role === 'admin' ? 'Снять администратора' : 'Назначить администратором'}
-                    aria-label={u.role === 'admin' ? 'Снять администратора' : 'Назначить администратором'}
+                    title={u.role === 'admin' ? tr('Снять администратора') : tr('Назначить администратором')}
+                    aria-label={u.role === 'admin' ? tr('Снять администратора') : tr('Назначить администратором')}
                     onClick={() => run(() => api(`/groups/${group.id}/members/${u.id}`, { method: 'PATCH', body: { role: u.role === 'admin' ? 'member' : 'admin' } }))}
                   >
                     <Shield size={16} className={u.role === 'admin' ? 'on' : ''} />
@@ -207,9 +208,9 @@ function MembersModal({ group, onClose }: { group: GroupFull; onClose: () => voi
                 {(u.role === 'member' || group.isOwner) && (
                   <button
                     className="icon-btn"
-                    title="Исключить"
-                    aria-label="Исключить из сообщества"
-                    onClick={() => confirm(`Исключить ${fullName(u)}?`) && run(() => api(`/groups/${group.id}/members/${u.id}`, { method: 'DELETE' }))}
+                    title={tr('Исключить')}
+                    aria-label={tr('Исключить из сообщества')}
+                    onClick={() => confirm(tr('Исключить {name}?', { name: fullName(u) })) && run(() => api(`/groups/${group.id}/members/${u.id}`, { method: 'DELETE' }))}
                   >
                     <UserMinus size={16} />
                   </button>
@@ -236,12 +237,12 @@ function RequestsModal({ group, onClose }: { group: GroupFull; onClose: () => vo
     qc.invalidateQueries({ queryKey: ['group', group.id] });
   };
   return (
-    <Modal title="Заявки на вступление" onClose={onClose}>
+    <Modal title={tr('Заявки на вступление')} onClose={onClose}>
       <div style={{ maxHeight: '60vh', overflowY: 'auto', padding: '8px 0' }}>
         {!data ? (
           <Spinner />
         ) : !data.length ? (
-          <Empty icon={<UserCheck size={36} />} title="Новых заявок нет" />
+          <Empty icon={<UserCheck size={36} />} title={tr('Новых заявок нет')} />
         ) : (
           data.map((u) => (
             <div key={u.id} className="row">
@@ -254,9 +255,9 @@ function RequestsModal({ group, onClose }: { group: GroupFull; onClose: () => vo
               </div>
               <div className="actions">
                 <button className="btn" onClick={() => decide(u.id, true)}>
-                  <Check size={16} /> Принять
+                  <Check size={16} /> {tr('Принять')}
                 </button>
-                <button className="icon-btn" onClick={() => decide(u.id, false)} aria-label="Отклонить заявку" title="Отклонить">
+                <button className="icon-btn" onClick={() => decide(u.id, false)} aria-label={tr('Отклонить заявку')} title={tr('Отклонить')}>
                   <X size={18} />
                 </button>
               </div>
@@ -283,7 +284,7 @@ export default function GroupPage() {
   if (error || !group)
     return (
       <div className="card">
-        <Empty title="Сообщество не найдено" />
+        <Empty title={tr('Сообщество не найдено')} />
       </div>
     );
 
@@ -302,7 +303,7 @@ export default function GroupPage() {
         <div className="cover" style={group.cover ? { backgroundImage: `url(${group.cover})` } : undefined}>
           {group.isAdmin && (
             <button className="btn secondary cover-edit" onClick={() => upload('cover')}>
-              <Camera size={16} /> {group.cover ? 'Изменить обложку' : 'Добавить обложку'}
+              <Camera size={16} /> {group.cover ? tr('Изменить обложку') : tr('Добавить обложку')}
             </button>
           )}
         </div>
@@ -310,7 +311,7 @@ export default function GroupPage() {
           <div className="profile-avatar" style={{ borderRadius: '32%' }}>
             <Avatar src={group.avatar} name={group.name} id={group.id + 100} size={112} square />
             {group.isAdmin && (
-              <button className="avatar-edit" onClick={() => upload('avatar')} aria-label="Изменить фотографию">
+              <button className="avatar-edit" onClick={() => upload('avatar')} aria-label={tr('Изменить фотографию')}>
                 <Camera size={26} />
               </button>
             )}
@@ -320,28 +321,28 @@ export default function GroupPage() {
             <div className="meta" style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
               {group.privacy === 'closed' ? (
                 <span className="pill">
-                  <Lock size={11} /> Закрытое сообщество
+                  <Lock size={11} /> {tr('Закрытое сообщество')}
                 </span>
               ) : (
                 <span className="pill">
-                  <Globe size={11} /> Открытое сообщество
+                  <Globe size={11} /> {tr('Открытое сообщество')}
                 </span>
               )}
-              {countLabel(group.membersCount, 'участник', 'участника', 'участников')}
-              {group.friendsInGroup > 0 && ` · ${countLabel(group.friendsInGroup, 'друг', 'друга', 'друзей')}`}
+              {countLabel(group.membersCount, tr('участник|участника|участников'))}
+              {group.friendsInGroup > 0 && ` · ${countLabel(group.friendsInGroup, tr('друг|друга|друзей'))}`}
             </div>
           </div>
           <div className="profile-buttons">
             <JoinButton group={group} />
             {group.isAdmin && group.requestsCount > 0 && (
               <button className="btn secondary" onClick={() => setModal('requests')}>
-                <UserPlus size={16} /> Заявки <span className="badge">{group.requestsCount}</span>
+                <UserPlus size={16} /> {tr('Заявки')} <span className="badge">{group.requestsCount}</span>
               </button>
             )}
             {!group.isAdmin && <ReportButton target={{ type: 'group', id: group.id }} className="icon-btn" />}
             {group.isAdmin && (
               <button className="btn secondary" onClick={() => setModal('edit')}>
-                <Pencil size={16} /> Управление
+                <Pencil size={16} /> {tr('Управление')}
               </button>
             )}
           </div>
@@ -350,24 +351,24 @@ export default function GroupPage() {
 
       <div className="columns stack">
         <div className="col-main">
-          {group.isAdmin && <Composer ownerType="group" ownerId={group.id} queryKeys={[wallKey]} placeholder="Напишите что-нибудь от имени сообщества..." />}
+          {group.isAdmin && <Composer ownerType="group" ownerId={group.id} queryKeys={[wallKey]} placeholder={tr('Напишите что-нибудь от имени сообщества...')} />}
           {group.canSeeContent ? (
-            <PostList queryKey={wallKey} path={`/wall/group/${group.id}`} emptyText="В сообществе пока нет записей." />
+            <PostList queryKey={wallKey} path={`/wall/group/${group.id}`} emptyText={tr("В сообществе пока нет записей.")} />
           ) : (
             <div className="card">
-              <Empty icon={<Lock size={40} />} title="Это закрытое сообщество">
-                {group.requested ? 'Заявка отправлена — администраторы скоро её рассмотрят.' : 'Подайте заявку, чтобы видеть записи и участников.'}
+              <Empty icon={<Lock size={40} />} title={tr('Это закрытое сообщество')}>
+                {group.requested ? tr('Заявка отправлена — администраторы скоро её рассмотрят.') : tr('Подайте заявку, чтобы видеть записи и участников.')}
               </Empty>
             </div>
           )}
         </div>
         <aside className="col-side static">
           <div className="card">
-            <div className="card-title">Информация</div>
+            <div className="card-title">{tr('Информация')}</div>
             <div style={{ padding: '0 20px 16px', whiteSpace: 'pre-wrap' }}>
-              {group.description || <span className="muted">Описание не заполнено</span>}
+              {group.description || <span className="muted">{tr('Описание не заполнено')}</span>}
               <div className="meta" style={{ marginTop: 8 }}>
-                Создано {formatDate(group.createdAt)}
+                {tr('Создано')} {formatDate(group.createdAt)}
               </div>
             </div>
           </div>
@@ -375,12 +376,12 @@ export default function GroupPage() {
             <div className="card">
               <div className="card-title">
                 <button className="more-link" style={{ color: 'var(--text)', fontWeight: 700 }} onClick={() => setModal('members')}>
-                  Участники
+                  {tr('Участники')}
                 </button>
                 <span className="count">{group.membersCount}</span>
                 {group.isAdmin && (
                   <button className="more-link right" onClick={() => setModal('members')}>
-                    Управлять
+                    {tr('Управлять')}
                   </button>
                 )}
               </div>
@@ -395,13 +396,13 @@ export default function GroupPage() {
             </div>
           )}
           <div className="card">
-            <div className="card-title">Контакты</div>
+            <div className="card-title">{tr('Контакты')}</div>
             {group.admins.map((u) => (
               <Link key={u.id} to={`/id/${u.id}`} className="row row-link" style={{ padding: '6px 16px', borderTop: 'none' }}>
                 <Avatar src={u.avatar} name={fullName(u)} id={u.id} size={36} />
                 <div className="info">
                   <div className="name ellipsis">{fullName(u)}</div>
-                  <div className="meta">{u.id === group.ownerId ? 'Владелец' : 'Администратор'}</div>
+                  <div className="meta">{u.id === group.ownerId ? tr('Владелец') : tr('Администратор')}</div>
                 </div>
               </Link>
             ))}

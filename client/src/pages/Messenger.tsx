@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -72,17 +73,17 @@ function CreateChatModal({ onClose }: { onClose: () => void }) {
   };
   return (
     <Modal
-      title="Новая беседа"
+      title={tr('Новая беседа')}
       onClose={onClose}
       footer={
         <button className="btn" disabled={!title.trim() || !picked.size} onClick={create}>
-          Создать беседу{picked.size ? ` · ${picked.size + 1}` : ''}
+          {tr('Создать беседу')}{picked.size ? ` · ${picked.size + 1}` : ''}
         </button>
       }
     >
       <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <input className="field" autoFocus placeholder="Название беседы" maxLength={100} value={title} onChange={(e) => setTitle(e.target.value)} />
-        <input className="field" placeholder="Поиск друзей" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="field" autoFocus placeholder={tr('Название беседы')} maxLength={100} value={title} onChange={(e) => setTitle(e.target.value)} />
+        <input className="field" placeholder={tr('Поиск друзей')} value={q} onChange={(e) => setQ(e.target.value)} />
         <FriendChecklist users={list} picked={picked} setPicked={setPicked} loading={!friends} />
         {error && <div className="error-text">{error}</div>}
       </div>
@@ -104,7 +105,7 @@ function FriendChecklist({
   disabled?: Set<number>;
 }) {
   if (loading) return <Spinner />;
-  if (!users.length) return <Empty icon={<Users size={32} />} title="Нет друзей для добавления" />;
+  if (!users.length) return <Empty icon={<Users size={32} />} title={tr('Нет друзей для добавления')} />;
   return (
     <div style={{ maxHeight: '45vh', overflowY: 'auto' }}>
       {users.map((u) => {
@@ -124,7 +125,7 @@ function FriendChecklist({
             />
             <Avatar src={u.avatar} name={fullName(u)} id={u.id} size={32} online={u.online} />
             {fullName(u)}
-            {off && <span className="meta" style={{ marginLeft: 'auto' }}>уже в беседе</span>}
+            {off && <span className="meta" style={{ marginLeft: 'auto' }}>{tr('уже в беседе')}</span>}
           </label>
         );
       })}
@@ -153,17 +154,17 @@ function ConversationList({ active }: { active: string | null }) {
       <div className="im-list-head" style={{ display: 'flex', gap: 8 }}>
         <div style={{ position: 'relative', flex: 1 }}>
           <Search size={16} style={{ position: 'absolute', left: 12, top: 12, color: 'var(--icon)' }} />
-          <input className="field" style={{ paddingLeft: 36 }} placeholder="Поиск" value={filter} onChange={(e) => setFilter(e.target.value)} />
+          <input className="field" style={{ paddingLeft: 36 }} placeholder={tr('Поиск')} value={filter} onChange={(e) => setFilter(e.target.value)} />
         </div>
-        <button className="icon-btn" style={{ width: 40, height: 40 }} onClick={() => setCreating(true)} aria-label="Новая беседа" title="Новая беседа">
+        <button className="icon-btn" style={{ width: 40, height: 40 }} onClick={() => setCreating(true)} aria-label={tr('Новая беседа')} title={tr('Новая беседа')}>
           <SquarePen size={20} />
         </button>
       </div>
       <div className="im-list-scroll">
         {(l1 || l2) && <Spinner />}
         {!l1 && !l2 && !entries.length && (
-          <Empty icon={<MessageCircle size={40} />} title="Нет сообщений">
-            Напишите другу или создайте беседу
+          <Empty icon={<MessageCircle size={40} />} title={tr('Нет сообщений')}>
+            {tr('Напишите другу или создайте беседу')}
           </Empty>
         )}
         {entries.map((e) => {
@@ -182,17 +183,17 @@ function ConversationList({ active }: { active: string | null }) {
                   <div className="preview">
                     {isTyping(typing, d.peer.id) ? (
                       <span className="text typing ellipsis">
-                        печатает
+                        {tr('печатает')}
                         <TypingDots />
                       </span>
                     ) : (
                       <span className="text ellipsis">
-                        {mine && <span style={{ color: 'var(--text-2)' }}>Вы: </span>}
+                        {mine && <span style={{ color: 'var(--text-2)' }}>{tr('Вы:')} </span>}
                         <span style={{ color: mine ? 'var(--text-2)' : 'var(--text)' }}>{previewText(m)}</span>
                       </span>
                     )}
                     {d.unread > 0 && <span className="badge">{d.unread}</span>}
-                    {mine && !m.isRead && <span className="unread-dot" title="Не прочитано" />}
+                    {mine && !m.isRead && <span className="unread-dot" title={tr('Не прочитано')} />}
                   </div>
                 </div>
               </Link>
@@ -216,19 +217,19 @@ function ConversationList({ active }: { active: string | null }) {
                 <div className="preview">
                   {typers.length ? (
                     <span className="text typing ellipsis">
-                      {typers.length === 1 ? 'печатает' : 'печатают'}
+                      {typers.length === 1 ? tr('печатает') : tr('печатают')}
                       <TypingDots />
                     </span>
                   ) : (
                     <span className="text ellipsis">
                       {m && m.kind === 'text' && (
-                        <span style={{ color: 'var(--text-2)' }}>{mine ? 'Вы' : m.author?.firstName}: </span>
+                        <span style={{ color: 'var(--text-2)' }}>{mine ? tr('Вы') : m.author?.firstName}: </span>
                       )}
-                      <span style={{ color: m?.kind === 'system' || mine ? 'var(--text-2)' : 'var(--text)' }}>{m ? previewText(m) : 'Нет сообщений'}</span>
+                      <span style={{ color: m?.kind === 'system' || mine ? 'var(--text-2)' : 'var(--text)' }}>{m ? previewText(m) : tr('Нет сообщений')}</span>
                     </span>
                   )}
                   {c.unread > 0 && <span className="badge">{c.unread}</span>}
-                  {mine && m && c.readUpTo < m.id && <span className="unread-dot" title="Не прочитано" />}
+                  {mine && m && c.readUpTo < m.id && <span className="unread-dot" title={tr('Не прочитано')} />}
                 </div>
               </div>
             </Link>
@@ -240,8 +241,11 @@ function ConversationList({ active }: { active: string | null }) {
   );
 }
 
-const previewText = (m: Pick<Message, 'text' | 'image' | 'audio'>) =>
-  m.text || (m.audio ? `🎵 ${m.audio.artist ? `${m.audio.artist} — ` : ''}${m.audio.title}` : m.image ? '🖼 Фотография' : '');
+const systemText = (m: Pick<ChatMessage, 'system' | 'text'>) => (m.system ? tr(m.system.key, m.system.params) : m.text);
+
+const previewText = (m: Pick<Message, 'text' | 'image' | 'audio'> & { system?: ChatMessage['system'] }) =>
+  m.system ? systemText(m as ChatMessage) :
+  m.text || (m.audio ? `🎵 ${m.audio.artist ? `${m.audio.artist} — ` : ''}${m.audio.title}` : m.image ? tr('🖼 Фотография') : '');
 
 // ───────────────────────────── shared chat pieces ─────────────────────────────
 
@@ -299,7 +303,7 @@ function Composer({ onSend, onTyping }: { onSend: (p: { text: string; file: File
           {preview && (
             <div className="attach-preview" style={{ margin: 0 }}>
               <img src={preview} alt="" />
-              <button onClick={() => setFile(null)} aria-label="Убрать фото">
+              <button onClick={() => setFile(null)} aria-label={tr('Убрать фото')}>
                 <X size={14} />
               </button>
             </div>
@@ -311,7 +315,7 @@ function Composer({ onSend, onTyping }: { onSend: (p: { text: string; file: File
                 <div className="track-title ellipsis">{audio.title}</div>
                 <div className="track-artist ellipsis">{audio.artist}</div>
               </div>
-              <button className="icon-btn" onClick={() => setAudio(null)} aria-label="Убрать аудиозапись">
+              <button className="icon-btn" onClick={() => setAudio(null)} aria-label={tr('Убрать аудиозапись')}>
                 <X size={16} />
               </button>
             </div>
@@ -321,7 +325,7 @@ function Composer({ onSend, onTyping }: { onSend: (p: { text: string; file: File
       <div className="im-input">
         <button
           className="icon-btn"
-          aria-label="Прикрепить фото"
+          aria-label={tr('Прикрепить фото')}
           onClick={async () => {
             const [f] = await pickFile();
             if (f) setFile(f);
@@ -329,12 +333,12 @@ function Composer({ onSend, onTyping }: { onSend: (p: { text: string; file: File
         >
           <ImageIcon size={22} />
         </button>
-        <button className="icon-btn" aria-label="Прикрепить аудиозапись" onClick={() => setPicking(true)}>
+        <button className="icon-btn" aria-label={tr('Прикрепить аудиозапись')} onClick={() => setPicking(true)}>
           <Music size={22} />
         </button>
         <AutoTextarea
           className="autogrow"
-          placeholder="Напишите сообщение..."
+          placeholder={tr('Напишите сообщение...')}
           value={text}
           maxLength={4000}
           autoFocus
@@ -410,7 +414,7 @@ function ChatShell({
           <div className="im-empty">
             <div>
               <MessageCircle size={48} color="var(--icon)" />
-              <div style={{ marginTop: 8 }}>Здесь будет выводиться история переписки</div>
+              <div style={{ marginTop: 8 }}>{tr('Здесь будет выводиться история переписки')}</div>
             </div>
           </div>
         )}
@@ -483,7 +487,7 @@ function PeerChat({ peerId }: { peerId: number }) {
   };
 
   const remove = async (m: AnyMessage) => {
-    if (!confirm('Удалить сообщение для всех?')) return;
+    if (!confirm(tr('Удалить сообщение для всех?'))) return;
     await api(`/messages/item/${m.id}`, { method: 'DELETE' });
     qc.setQueryData<MessagesCache>(['messages', peerId], (old) => (old ? { ...old, items: old.items.filter((x) => x.id !== m.id) } : old));
     qc.invalidateQueries({ queryKey: ['dialogs'] });
@@ -506,7 +510,7 @@ function PeerChat({ peerId }: { peerId: number }) {
         loadOlder={loadOlder}
         head={
           <>
-            <button className="icon-btn mobile-only" onClick={() => navigate('/im')} aria-label="Назад">
+            <button className="icon-btn mobile-only" onClick={() => navigate('/im')} aria-label={tr('Назад')}>
               <ArrowLeft size={22} />
             </button>
             {peerShort && (
@@ -521,7 +525,7 @@ function PeerChat({ peerId }: { peerId: number }) {
                   <div className={`meta${peerTyping ? ' typing' : ''}`}>
                     {peerTyping ? (
                       <>
-                        печатает
+                        {tr('печатает')}
                         <TypingDots />
                       </>
                     ) : (
@@ -539,7 +543,7 @@ function PeerChat({ peerId }: { peerId: number }) {
           return (
             <div className={`bubble-row${out ? ' out' : ''}${m.pending ? ' pending' : ''}`}>
               {out && m.id > 0 && (
-                <button className="icon-btn msg-del" onClick={() => remove(m)} aria-label="Удалить">
+                <button className="icon-btn msg-del" onClick={() => remove(m)} aria-label={tr('Удалить')}>
                   <Trash2 size={16} />
                 </button>
               )}
@@ -587,7 +591,7 @@ function ChatInfoModal({ chat, onClose }: { chat: Chat; onClose: () => void }) {
   };
 
   return (
-    <Modal title="Информация о беседе" onClose={onClose}>
+    <Modal title={tr('Информация о беседе')} onClose={onClose}>
       <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ position: 'relative' }}>
@@ -596,7 +600,7 @@ function ChatInfoModal({ chat, onClose }: { chat: Chat; onClose: () => void }) {
               <button
                 className="icon-btn"
                 style={{ position: 'absolute', right: -6, bottom: -6, background: 'var(--card-strong)', boxShadow: 'var(--card-border)' }}
-                aria-label="Изменить фото беседы"
+                aria-label={tr('Изменить фото беседы')}
                 onClick={async () => {
                   const [f] = await pickFile();
                   if (f) run(() => api(`/chats/${chat.id}/avatar`, { body: form({ image: f }) }));
@@ -608,7 +612,7 @@ function ChatInfoModal({ chat, onClose }: { chat: Chat; onClose: () => void }) {
           </div>
           {admin ? (
             <div style={{ display: 'flex', gap: 8, flex: 1 }}>
-              <input className="field" value={title} maxLength={100} onChange={(e) => setTitle(e.target.value)} aria-label="Название беседы" />
+              <input className="field" value={title} maxLength={100} onChange={(e) => setTitle(e.target.value)} aria-label={tr('Название беседы')} />
               <button className="btn secondary" disabled={!title.trim() || title === chat.title} onClick={() => run(() => api(`/chats/${chat.id}`, { method: 'PATCH', body: { title } }))}>
                 <Pencil size={16} />
               </button>
@@ -619,9 +623,9 @@ function ChatInfoModal({ chat, onClose }: { chat: Chat; onClose: () => void }) {
         </div>
 
         <div className="section-title" style={{ padding: 0, display: 'flex', alignItems: 'center' }}>
-          {chat.membersCount} {plural(chat.membersCount, 'участник', 'участника', 'участников')}
+          {chat.membersCount} {plural(chat.membersCount, tr('участник|участника|участников'))}
           <button className="more-link" style={{ marginLeft: 'auto', textTransform: 'none', letterSpacing: 0 }} onClick={() => setAdding((a) => !a)}>
-            <UserPlus size={14} style={{ verticalAlign: '-2px' }} /> Добавить
+            <UserPlus size={14} style={{ verticalAlign: '-2px' }} /> {tr('Добавить')}
           </button>
         </div>
 
@@ -640,7 +644,7 @@ function ChatInfoModal({ chat, onClose }: { chat: Chat; onClose: () => void }) {
                 })
               }
             >
-              Добавить {picked.size || ''}
+              {tr('Добавить')} {picked.size || ''}
             </button>
           </div>
         )}
@@ -656,11 +660,11 @@ function ChatInfoModal({ chat, onClose }: { chat: Chat; onClose: () => void }) {
                 <div className="meta">
                   {m.role === 'owner' ? (
                     <>
-                      <Crown size={12} style={{ verticalAlign: '-1px' }} /> Создатель
+                      <Crown size={12} style={{ verticalAlign: '-1px' }} /> {tr('Создатель')}
                     </>
                   ) : m.role === 'admin' ? (
                     <>
-                      <Shield size={12} style={{ verticalAlign: '-1px' }} /> Администратор
+                      <Shield size={12} style={{ verticalAlign: '-1px' }} /> {tr('Администратор')}
                     </>
                   ) : (
                     lastSeenText(m)
@@ -670,8 +674,8 @@ function ChatInfoModal({ chat, onClose }: { chat: Chat; onClose: () => void }) {
               {chat.myRole === 'owner' && m.role !== 'owner' && (
                 <button
                   className="icon-btn"
-                  title={m.role === 'admin' ? 'Снять администратора' : 'Сделать администратором'}
-                  aria-label={m.role === 'admin' ? 'Снять администратора' : 'Сделать администратором'}
+                  title={m.role === 'admin' ? tr('Снять администратора') : tr('Сделать администратором')}
+                  aria-label={m.role === 'admin' ? tr('Снять администратора') : tr('Сделать администратором')}
                   onClick={() => run(() => api(`/chats/${chat.id}/members/${m.id}`, { method: 'PATCH', body: { role: m.role === 'admin' ? 'member' : 'admin' } }))}
                 >
                   <Shield size={16} className={m.role === 'admin' ? 'on' : ''} />
@@ -680,9 +684,9 @@ function ChatInfoModal({ chat, onClose }: { chat: Chat; onClose: () => void }) {
               {admin && m.id !== me.id && m.role !== 'owner' && (m.role !== 'admin' || chat.myRole === 'owner') && (
                 <button
                   className="icon-btn"
-                  title="Исключить"
-                  aria-label="Исключить из беседы"
-                  onClick={() => confirm(`Исключить ${fullName(m)}?`) && run(() => api(`/chats/${chat.id}/members/${m.id}`, { method: 'DELETE' }))}
+                  title={tr('Исключить')}
+                  aria-label={tr('Исключить из беседы')}
+                  onClick={() => confirm(tr('Исключить {name}?', { name: fullName(m) })) && run(() => api(`/chats/${chat.id}/members/${m.id}`, { method: 'DELETE' }))}
                 >
                   <UserMinus size={16} />
                 </button>
@@ -694,14 +698,14 @@ function ChatInfoModal({ chat, onClose }: { chat: Chat; onClose: () => void }) {
         <button
           className="btn danger"
           onClick={async () => {
-            if (!confirm('Выйти из беседы?')) return;
+            if (!confirm(tr('Выйти из беседы?'))) return;
             await api(`/chats/${chat.id}/members/${me.id}`, { method: 'DELETE' });
             qc.invalidateQueries({ queryKey: ['chats'] });
             onClose();
             navigate('/im');
           }}
         >
-          <LogOut size={16} /> Выйти из беседы
+          <LogOut size={16} /> {tr('Выйти из беседы')}
         </button>
       </div>
     </Modal>
@@ -738,7 +742,7 @@ function GroupChat({ chatId }: { chatId: number }) {
 
   const send = async ({ text, file, audio }: { text: string; file: File | null; audio: Track | null }) => {
     const id = tempId--;
-    const temp: AnyMessage = { id, chatId, fromId: me.id, author: me, kind: 'text', text, image: null, audio, spotify: null, createdAt: Date.now(), pending: true };
+    const temp: AnyMessage = { id, chatId, fromId: me.id, author: me, kind: 'text', text, system: null, image: null, audio, spotify: null, createdAt: Date.now(), pending: true };
     qc.setQueryData<ChatMessagesCache>(['chat-messages', chatId], (old) => ({ items: [...(old?.items ?? []), temp as ChatMessage], hasMore: old?.hasMore ?? false }));
     try {
       const msg = await api<ChatMessage>(`/chats/${chatId}/messages`, { body: form({ text, image: file, audioId: audio ? String(audio.id) : undefined }) });
@@ -754,7 +758,7 @@ function GroupChat({ chatId }: { chatId: number }) {
   };
 
   const remove = async (m: AnyMessage) => {
-    if (!confirm('Удалить сообщение для всех?')) return;
+    if (!confirm(tr('Удалить сообщение для всех?'))) return;
     await api(`/chats/${chatId}/messages/${m.id}`, { method: 'DELETE' });
   };
 
@@ -786,12 +790,12 @@ function GroupChat({ chatId }: { chatId: number }) {
         loadOlder={loadOlder}
         head={
           <>
-            <button className="icon-btn mobile-only" onClick={() => navigate('/im')} aria-label="Назад">
+            <button className="icon-btn mobile-only" onClick={() => navigate('/im')} aria-label={tr('Назад')}>
               <ArrowLeft size={22} />
             </button>
             {chat && (
               <>
-                <button className="more-link" onClick={() => setInfo(true)} aria-label="Информация о беседе">
+                <button className="more-link" onClick={() => setInfo(true)} aria-label={tr('Информация о беседе')}>
                   <ChatAvatar chat={chat} size={40} />
                 </button>
                 <div style={{ minWidth: 0, flex: 1 }}>
@@ -801,15 +805,15 @@ function GroupChat({ chatId }: { chatId: number }) {
                   <div className={`meta${typers.length ? ' typing' : ''}`}>
                     {typers.length ? (
                       <>
-                        {typers.join(', ')} {typers.length > 1 ? 'печатают' : 'печатает'}
+                        {typers.join(', ')} {typers.length > 1 ? tr('печатают') : tr('печатает')}
                         <TypingDots />
                       </>
                     ) : (
-                      `${chat.membersCount} ${plural(chat.membersCount, 'участник', 'участника', 'участников')}`
+                      `${chat.membersCount} ${plural(chat.membersCount, tr('участник|участника|участников'))}`
                     )}
                   </div>
                 </div>
-                <button className="icon-btn" onClick={() => setInfo(true)} aria-label="Информация о беседе">
+                <button className="icon-btn" onClick={() => setInfo(true)} aria-label={tr('Информация о беседе')}>
                   <Info size={20} />
                 </button>
               </>
@@ -817,7 +821,7 @@ function GroupChat({ chatId }: { chatId: number }) {
           </>
         }
         renderRow={(m, i) => {
-          if ((m as ChatMessage).kind === 'system') return <div className="system-msg">{m.text}</div>;
+          if ((m as ChatMessage).kind === 'system') return <div className="system-msg">{systemText(m as ChatMessage)}</div>;
           const cm = m as ChatMessage;
           const out = cm.fromId === me.id;
           const prev = messages[i - 1] as ChatMessage | undefined;
@@ -835,7 +839,7 @@ function GroupChat({ chatId }: { chatId: number }) {
                 </span>
               )}
               {(out || admin) && m.id > 0 && (
-                <button className="icon-btn msg-del" onClick={() => remove(m)} aria-label="Удалить">
+                <button className="icon-btn msg-del" onClick={() => remove(m)} aria-label={tr('Удалить')}>
                   <Trash2 size={16} />
                 </button>
               )}
@@ -877,7 +881,7 @@ export default function MessengerPage() {
           <div className="im-empty">
             <div>
               <MessageCircle size={56} color="var(--icon)" />
-              <div style={{ marginTop: 8 }}>Выберите чат или начните новую беседу</div>
+              <div style={{ marginTop: 8 }}>{tr('Выберите чат или начните новую беседу')}</div>
             </div>
           </div>
         </div>

@@ -1,3 +1,4 @@
+import { tr } from './lib/i18n';
 import { lazy, Suspense, useState } from 'react';
 import { Wrench } from 'lucide-react';
 import { useConfig } from './lib/config';
@@ -32,7 +33,7 @@ const SpotifyCallback = lazy(() => import('./pages/Spotify').then((m) => ({ defa
 function NotFound() {
   return (
     <div className="card">
-      <Empty title="Страница не найдена">Проверьте адрес или вернитесь в ленту.</Empty>
+      <Empty title={tr('Страница не найдена')}>{tr('Проверьте адрес или вернитесь в ленту.')}</Empty>
     </div>
   );
 }
@@ -48,15 +49,15 @@ function MaintenanceScreen() {
         <span className="announcement-icon" style={{ margin: '0 auto 14px', width: 52, height: 52, borderRadius: 16 }}>
           <Wrench size={26} />
         </span>
-        <h2 style={{ fontSize: 20, marginBottom: 8 }}>{config.siteTitle} на обслуживании</h2>
+        <h2 style={{ fontSize: 20, marginBottom: 8 }}>{config.siteTitle} {tr('на обслуживании')}</h2>
         <p className="muted" style={{ whiteSpace: 'pre-wrap' }}>{config.maintenanceMessage}</p>
         {user ? (
           <button className="btn secondary" onClick={signOut}>
-            Выйти
+            {tr('Выйти')}
           </button>
         ) : (
           <button className="more-link" onClick={() => setStaffLogin(true)}>
-            Вход для администрации
+            {tr('Вход для администрации')}
           </button>
         )}
       </div>

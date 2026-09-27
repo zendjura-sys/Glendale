@@ -1,3 +1,4 @@
+import { tr } from './i18n';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './api';
@@ -112,13 +113,13 @@ export function SpotifyProvider({ children }: { children: ReactNode }) {
         });
         p.addListener('not_ready', () => setWebDeviceId(null));
         p.addListener('initialization_error', ({ message }: { message: string }) => setSdkError(message));
-        p.addListener('authentication_error', () => setSdkError('Spotify: ошибка авторизации плеера'));
-        p.addListener('account_error', () => setSdkError('Воспроизведение в браузере требует Spotify Premium'));
+        p.addListener('authentication_error', () => setSdkError(tr('Spotify: ошибка авторизации плеера')));
+        p.addListener('account_error', () => setSdkError(tr('Воспроизведение в браузере требует Spotify Premium')));
         p.addListener('player_state_changed', () => qc.invalidateQueries({ queryKey: ['spotify', 'player'] }));
         p.connect();
         player.current = p;
       })
-      .catch(() => setSdkError('Не удалось загрузить плеер Spotify'));
+      .catch(() => setSdkError(tr('Не удалось загрузить плеер Spotify')));
     return () => {
       cancelled = true;
       player.current?.disconnect();

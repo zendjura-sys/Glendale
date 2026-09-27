@@ -1,6 +1,7 @@
 import express from 'express';
 import { q, tx, now } from './db.js';
 import { hashPassword, verifyPassword, createSession, requireAuth, levelOf, isStaff, clientIp } from './auth.js';
+import { translate } from './i18n.js';
 import { fail, intParam, str, PAGE, beforeParam, page, errorHandler, need } from './http.js';
 import { getSetting, publicConfig, isEmailBanned, isIpBanned, censor } from './settings.js';
 import { upload, fileUrl } from './uploads.js';
@@ -39,7 +40,7 @@ function checkFlood(req) {
   const seconds = req.level.flood_seconds;
   if (!seconds) return;
   const last = q('SELECT created_at FROM posts WHERE author_id = ? ORDER BY id DESC LIMIT 1').get(req.user.id);
-  if (last && now() - last.created_at < seconds * 1000) fail(429, `Подождите ${seconds} сек. перед следующей публикацией`);
+  if (last && now() - last.created_at < seconds * 1000) fail(429, 'Подождите {n} сек. перед следующей публикацией', undefined, { n: seconds });
 }
 
 // ───────────────────────────── public ─────────────────────────────
@@ -90,7 +91,7 @@ api.post('/auth/login', (req, res) => {
   // Temporary lock after repeated failed attempts (anti brute force).
   if (user.locked_until > now()) {
     const minutes = Math.ceil((user.locked_until - now()) / 60000);
-    fail(429, `Слишком много неудачных попыток. Попробуйте через ${minutes} мин.`);
+    fail(429, 'Слишком много неудачных попыток. Попробуйте через {n} мин.', undefined, { n: minutes });
   }
   if (!verifyPassword(password, user.password_hash)) {
     const attempts = user.failed_logins + 1;
@@ -838,5 +839,5 @@ api.get('/announcements', (_req, res) => {
 
 // ───────────────────────────── errors ─────────────────────────────
 
-api.use((req, res) => res.status(404).json({ error: 'Метод не найден' }));
+api.use((req, res) => res.status(404).json({ error: translate('Метод не найден', null, req.lang) }));
 api.use(errorHandler);

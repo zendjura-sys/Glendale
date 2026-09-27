@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { api } from './api';
+import { hasExplicitLang, setLang, type Lang } from './i18n';
 import type { SiteConfig } from './types';
 
 const DEFAULT_ACCENT = '#4c5bf5';
@@ -13,6 +14,7 @@ const FALLBACK: SiteConfig = {
   accentColor: DEFAULT_ACCENT,
   aurora: true,
   spotifyEnabled: false,
+  defaultLanguage: 'uk',
 };
 
 const ConfigContext = createContext<{ config: SiteConfig; ready: boolean; reload: () => void }>(null!);
@@ -42,6 +44,8 @@ function applyAppearance(c: SiteConfig) {
     else root.style.removeProperty(k);
   }
   root.classList.toggle('no-aurora', !c.aurora);
+  // The site default applies until the visitor picks a language themselves.
+  if (!hasExplicitLang()) setLang(c.defaultLanguage as Lang, false);
   document.title = c.siteTitle;
 }
 

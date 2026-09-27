@@ -3,10 +3,10 @@ import { q } from './db.js';
 /** Site-wide settings managed from the admin panel. Stored as JSON in the `settings` table. */
 export const DEFAULTS = {
   siteTitle: 'Glendale',
-  siteDescription: 'Социальная сеть для общения с друзьями и сообществами',
+  siteDescription: 'Соціальна мережа для спілкування з друзями та спільнотами',
   signupMode: 'open', // 'open' | 'approval' | 'closed'
   maintenance: false,
-  maintenanceMessage: 'Мы проводим технические работы и скоро вернёмся.',
+  maintenanceMessage: 'Ми проводимо технічні роботи й скоро повернемося.',
   bannedEmails: '', // one per line; "*@domain.com" bans a whole domain
   bannedIps: '', // one per line; a trailing "*" matches a prefix
   bannedWords: '', // one per line; replaced with *** in posts, comments and messages
@@ -16,6 +16,7 @@ export const DEFAULTS = {
   aurora: true,
   wallForFriendsOnly: true,
   spotifyClientId: '',
+  defaultLanguage: 'uk',
 };
 
 const cache = new Map();
@@ -49,6 +50,7 @@ export function updateSettings(patch) {
     if (key === 'accentColor' && !/^#[0-9a-f]{6}$/i.test(value)) continue;
     if (key === 'spotifyClientId' && value && !/^[0-9a-zA-Z]{16,64}$/.test(value.trim())) continue;
     if (key === 'siteTitle' && !value.trim()) continue;
+    if (key === 'defaultLanguage' && !['uk', 'en', 'zh', 'de', 'fr', 'es', 'ru', 'ja', 'kk'].includes(value)) continue;
     q('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(
       key,
       JSON.stringify(value),
@@ -70,6 +72,7 @@ export function publicConfig() {
     accentColor: s.accentColor,
     aurora: s.aurora,
     spotifyEnabled: !!String(s.spotifyClientId || '').trim(),
+    defaultLanguage: s.defaultLanguage,
   };
 }
 

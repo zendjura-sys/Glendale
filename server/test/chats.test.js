@@ -56,9 +56,12 @@ test('group chats: create, messages, unread, roles, leave', async () => {
 
   // Outsiders can't read; members add their own friends.
   assert.equal((await call(c.token, 'GET', `/chats/${chat.id}/messages`)).status, 403);
+  // Errors come back in the requested language (falls back to the source text without a dictionary entry).
+  const denied = await fetch(`${base}/chats/${chat.id}/messages`, { headers: { Authorization: `Bearer ${c.token}`, 'Accept-Language': 'ru' } });
+  assert.equal((await denied.json()).error, 'Вы не участник этой беседы');
   await call(a.token, 'POST', `/chats/${chat.id}/members`, { userIds: [c.user.id] });
   const history = (await call(c.token, 'GET', `/chats/${chat.id}/messages`)).body.items;
-  assert.ok(history.some((m) => m.kind === 'system' && m.text.includes('добавил')));
+  assert.ok(history.some((m) => m.kind === 'system' && m.system.key === '{actor} добавил(а) {user}' && m.system.params.user === 'Ві Т'));
 
   // Roles: only the owner promotes; admins remove members; members can't.
   assert.equal((await call(b.token, 'DELETE', `/chats/${chat.id}/members/${c.user.id}`)).status, 403);

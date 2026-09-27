@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type TextareaHTMLAttributes } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
@@ -97,7 +98,7 @@ export function Modal({
       <div className={`modal${wide ? ' wide' : ''}`} role="dialog" aria-label={title}>
         <div className="modal-head">
           {title}
-          <button className="icon-btn" onClick={onClose} aria-label="Закрыть">
+          <button className="icon-btn" onClick={onClose} aria-label={tr('Закрыть')}>
             <X size={20} />
           </button>
         </div>
@@ -124,19 +125,19 @@ export function PhotoViewer({ urls, index, onClose }: { urls: string[]; index: n
   return createPortal(
     <div className="viewer" onClick={onClose}>
       <img src={urls[i]} alt="" onClick={(e) => e.stopPropagation()} />
-      <button className="icon-btn close" onClick={onClose} aria-label="Закрыть">
+      <button className="icon-btn close" onClick={onClose} aria-label={tr('Закрыть')}>
         <X size={28} />
       </button>
       {urls.length > 1 && (
         <>
-          <button className="icon-btn nav prev" onClick={(e) => (e.stopPropagation(), go(-1))} aria-label="Назад">
+          <button className="icon-btn nav prev" onClick={(e) => (e.stopPropagation(), go(-1))} aria-label={tr('Назад')}>
             <ChevronLeft size={28} />
           </button>
-          <button className="icon-btn nav next" onClick={(e) => (e.stopPropagation(), go(1))} aria-label="Вперёд">
+          <button className="icon-btn nav next" onClick={(e) => (e.stopPropagation(), go(1))} aria-label={tr('Вперёд')}>
             <ChevronRight size={28} />
           </button>
           <div className="counter">
-            {i + 1} из {urls.length}
+            {i + 1} {tr('из')} {urls.length}
           </div>
         </>
       )}

@@ -1,3 +1,4 @@
+import { countLabel, locale, tr } from '../lib/i18n';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -6,7 +7,7 @@ import type { DayPoint } from './types';
 const nf = new Intl.NumberFormat('ru-RU');
 export const fmt = (n: number) => nf.format(n);
 export const compact = (n: number) =>
-  n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1).replace('.0', '')} млн` : n >= 10_000 ? `${(n / 1000).toFixed(1).replace('.0', '')} тыс.` : fmt(n);
+  n >= 10_000 ? new Intl.NumberFormat(locale(), { notation: 'compact', maximumFractionDigits: 1 }).format(n) : fmt(n);
 
 const dayLabel = (ts: number) => new Date(ts).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
 
@@ -46,7 +47,7 @@ export function StatTile({
 }
 
 /** Single-series column chart (one hue, no legend — the card title names the series) with a hover tooltip. */
-export function BarChart({ data, height = 160, unit }: { data: DayPoint[]; height?: number; unit: [string, string, string] }) {
+export function BarChart({ data, height = 160, unit }: { data: DayPoint[]; height?: number; unit: string }) {
   const [hover, setHover] = useState<number | null>(null);
   const box = useRef<HTMLDivElement>(null);
   const [W, setW] = useState(600);
@@ -70,17 +71,12 @@ export function BarChart({ data, height = 160, unit }: { data: DayPoint[]; heigh
   const barW = Math.min(24, band - 2);
   const y = (v: number) => (height - padB) * (1 - v / top);
   const every = Math.ceil(data.length / Math.max(2, Math.floor(W / 70)));
-  const plural = (n: number) => {
-    const m10 = n % 10;
-    const m100 = n % 100;
-    return m10 === 1 && m100 !== 11 ? unit[0] : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? unit[1] : unit[2];
-  };
   const h = hover != null ? data[hover] : null;
 
   return (
     <div className="chart" onMouseLeave={() => setHover(null)}>
       <div ref={box} style={{ width: '100%' }} />
-      <svg width={W} height={height} viewBox={`0 0 ${W} ${height}`} role="img" aria-label={`График: ${data.map((d) => `${dayLabel(d.date)} — ${d.count}`).join(', ')}`}>
+      <svg width={W} height={height} viewBox={`0 0 ${W} ${height}`} role="img" aria-label={`${tr('График')}: ${data.map((d) => `${dayLabel(d.date)} — ${d.count}`).join(', ')}`}>
         <g className="grid">
           {ticks.map((t) => (
             <line key={t} x1={padL} x2={W} y1={y(t)} y2={y(t)} />
@@ -121,7 +117,7 @@ export function BarChart({ data, height = 160, unit }: { data: DayPoint[]; heigh
         <div className="tooltip" style={{ left: 20 + padL + band * hover + band / 2, top: 4 + y(h.count) }}>
           {dayLabel(h.date)}
           <b>
-            {fmt(h.count)} {plural(h.count)}
+            {countLabel(h.count, unit)}
           </b>
         </div>
       )}
@@ -153,13 +149,13 @@ export function Pager({ page, total, perPage, onPage }: { page: number; total: n
   return (
     <div className="pager">
       <span>
-        {fmt(from)}–{fmt(to)} из {fmt(total)}
+        {fmt(from)}–{fmt(to)} {tr('из')} {fmt(total)}
       </span>
       <span style={{ display: 'flex', gap: 4 }}>
-        <button className="icon-btn" disabled={page <= 1} onClick={() => onPage(page - 1)} aria-label="Предыдущая страница">
+        <button className="icon-btn" disabled={page <= 1} onClick={() => onPage(page - 1)} aria-label={tr('Предыдущая страница')}>
           <ChevronLeft size={18} />
         </button>
-        <button className="icon-btn" disabled={page >= pages} onClick={() => onPage(page + 1)} aria-label="Следующая страница">
+        <button className="icon-btn" disabled={page >= pages} onClick={() => onPage(page + 1)} aria-label={tr('Следующая страница')}>
           <ChevronRight size={18} />
         </button>
       </span>
@@ -195,4 +191,4 @@ export function AdminHead({ title, subtitle, children }: { title: string; subtit
   );
 }
 
-export const LEVEL_TYPE_LABEL = { superadmin: 'Суперадмин', admin: 'Администратор', moderator: 'Модератор', user: 'Пользователь' } as const;
+export const LEVEL_TYPE_LABEL = () => ({ superadmin: tr('Суперадмин'), admin: tr('Администратор'), moderator: tr('Модератор'), user: tr('Пользователь') } as const);

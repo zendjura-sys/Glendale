@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ScrollText } from 'lucide-react';
@@ -7,52 +8,52 @@ import { Avatar, Empty, Spinner } from '../components/ui';
 import { AdminHead, Pager } from './ui';
 import type { LogEntry, Paged } from './types';
 
-const ACTIONS: Record<string, string> = {
-  'user.update': 'Изменил участника',
-  'user.delete': 'Удалил участника',
-  'user.login_as': 'Вошёл как участник',
-  'user.logout_all': 'Завершил сессии участника',
-  'user.bulk_approve': 'Одобрил участников',
-  'user.bulk_verify': 'Подтвердил участников',
-  'user.bulk_enable': 'Разблокировал участников',
-  'user.bulk_disable': 'Заблокировал участников',
-  'user.bulk_delete': 'Удалил участников',
-  'level.create': 'Создал уровень',
-  'level.update': 'Изменил уровень',
-  'level.delete': 'Удалил уровень',
-  'report.dismiss': 'Отклонил жалобу',
-  'report.delete': 'Удалил контент по жалобе',
-  'report.ban': 'Заблокировал автора по жалобе',
-  'report.delete_ban': 'Удалил контент и заблокировал автора',
-  'post.delete': 'Удалил запись',
-  'comment.delete': 'Удалил комментарий',
-  'group.delete': 'Удалил сообщество',
-  'announcement.create': 'Опубликовал объявление',
-  'announcement.update': 'Изменил объявление',
-  'announcement.delete': 'Удалил объявление',
-  'settings.update': 'Изменил настройки',
-};
+const ACTIONS = (): Record<string, string> => ({
+  'user.update': tr('Изменил участника'),
+  'user.delete': tr('Удалил участника'),
+  'user.login_as': tr('Вошёл как участник'),
+  'user.logout_all': tr('Завершил сессии участника'),
+  'user.bulk_approve': tr('Одобрил участников'),
+  'user.bulk_verify': tr('Подтвердил участников'),
+  'user.bulk_enable': tr('Разблокировал участников'),
+  'user.bulk_disable': tr('Заблокировал участников'),
+  'user.bulk_delete': tr('Удалил участников'),
+  'level.create': tr('Создал уровень'),
+  'level.update': tr('Изменил уровень'),
+  'level.delete': tr('Удалил уровень'),
+  'report.dismiss': tr('Отклонил жалобу'),
+  'report.delete': tr('Удалил контент по жалобе'),
+  'report.ban': tr('Заблокировал автора по жалобе'),
+  'report.delete_ban': tr('Удалил контент и заблокировал автора'),
+  'post.delete': tr('Удалил запись'),
+  'comment.delete': tr('Удалил комментарий'),
+  'group.delete': tr('Удалил сообщество'),
+  'announcement.create': tr('Опубликовал объявление'),
+  'announcement.update': tr('Изменил объявление'),
+  'announcement.delete': tr('Удалил объявление'),
+  'settings.update': tr('Изменил настройки'),
+});
 
 export default function LogPage() {
   const [page, setPage] = useState(1);
   const { data } = useQuery({ queryKey: ['admin', 'log', page], queryFn: () => api<Paged<LogEntry>>(`/admin/log?page=${page}`), placeholderData: (p) => p });
   return (
     <>
-      <AdminHead title="Журнал действий" subtitle="Кто из команды и что менял" />
+      <AdminHead title={tr('Журнал действий')} subtitle={tr("Кто из команды и что менял")} />
       <div className="card">
         {!data ? (
           <Spinner />
         ) : !data.items.length ? (
-          <Empty icon={<ScrollText size={40} />} title="Журнал пуст" />
+          <Empty icon={<ScrollText size={40} />} title={tr('Журнал пуст')} />
         ) : (
           <div className="table-wrap">
             <table className="admin">
               <thead>
                 <tr>
-                  <th>Кто</th>
-                  <th>Действие</th>
-                  <th>Объект</th>
-                  <th className="hide-sm">Когда</th>
+                  <th>{tr('Кто')}</th>
+                  <th>{tr('Действие')}</th>
+                  <th>{tr('Объект')}</th>
+                  <th className="hide-sm">{tr('Когда')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -66,7 +67,7 @@ export default function LogPage() {
                         </div>
                       )}
                     </td>
-                    <td>{ACTIONS[e.action] ?? e.action}</td>
+                    <td>{ACTIONS()[e.action] ?? e.action}</td>
                     <td>
                       {e.target}
                       {e.details && e.details !== '{}' && <div className="meta ellipsis" style={{ maxWidth: 280 }}>{e.details}</div>}

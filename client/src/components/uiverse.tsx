@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 // UI elements adapted from Uiverse.io (MIT) — styles live in ../uiverse.css.
 import type { ButtonHTMLAttributes } from 'react';
 
@@ -7,13 +8,13 @@ const STARS_PATH =
 /** Day/night switch — Uiverse.io by Galahhad. `size` is the base font size in px. */
 export function ThemeSwitch({ dark, onChange, size = 12 }: { dark: boolean; onChange: (dark: boolean) => void; size?: number }) {
   return (
-    <label className="uv-theme" style={{ ['--toggle-size' as string]: `${size}px` }} title={dark ? 'Тёмная тема' : 'Светлая тема'}>
+    <label className="uv-theme" style={{ ['--toggle-size' as string]: `${size}px` }} title={dark ? tr('Тёмная тема') : tr('Светлая тема')}>
       <input
         type="checkbox"
         className="uv-theme__checkbox"
         checked={dark}
         onChange={(e) => onChange(e.target.checked)}
-        aria-label="Тёмная тема"
+        aria-label={tr('Тёмная тема')}
       />
       <div className="uv-theme__container">
         <div className="uv-theme__clouds" />
@@ -39,7 +40,7 @@ export function ThemeSwitch({ dark, onChange, size = 12 }: { dark: boolean; onCh
 /** Eight-dot spinner — Uiverse.io by abrahamcalsin. */
 export function DotSpinner({ small }: { small?: boolean }) {
   return (
-    <div className={`uv-dot-spinner${small ? ' sm' : ''}`} role="status" aria-label="Загрузка">
+    <div className={`uv-dot-spinner${small ? ' sm' : ''}`} role="status" aria-label={tr('Загрузка')}>
       {Array.from({ length: 8 }, (_, i) => (
         <div key={i} className="uv-dot-spinner__dot" />
       ))}
@@ -73,7 +74,7 @@ const PLANE = 'M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.
 /** Send button with a flying paper plane — Uiverse.io by adamgiebl. Omit `label` for the round icon version. */
 export function SendButton({ label, className = '', ...props }: { label?: string } & ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <button className={`uv-send${label ? '' : ' round'} ${className}`} aria-label={label ?? 'Отправить'} {...props}>
+    <button className={`uv-send${label ? '' : ' round'} ${className}`} aria-label={label ?? tr('Отправить')} {...props}>
       <div className="uv-send__wrap">
         <svg height="18" width="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path d={PLANE} fill="currentColor" />

@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { q, now } from './db.js';
 import { getSetting, isIpBanned } from './settings.js';
+import { translate } from './i18n.js';
 
 export function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');
@@ -37,10 +38,10 @@ export function requireAuth(req, res, next) {
   const header = req.get('authorization') || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   const user = token && userByToken(token);
-  if (!user) return res.status(401).json({ error: 'Требуется авторизация' });
+  if (!user) return res.status(401).json({ error: translate('Требуется авторизация', null, req.lang) });
   const level = levelOf(user);
   if (!isStaff(level)) {
-    if (isIpBanned(clientIp(req))) return res.status(403).json({ error: 'Доступ с вашего адреса ограничен', code: 'banned' });
+    if (isIpBanned(clientIp(req))) return res.status(403).json({ error: translate('Доступ с вашего адреса ограничен', null, req.lang), code: 'banned' });
     if (getSetting('maintenance')) return res.status(503).json({ error: getSetting('maintenanceMessage'), code: 'maintenance' });
   }
   req.user = user;

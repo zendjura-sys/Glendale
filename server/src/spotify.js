@@ -45,7 +45,7 @@ async function tokenRequest(params) {
     body: new URLSearchParams({ client_id: clientId(), ...params }),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) fail(502, `Spotify отклонил запрос: ${data.error_description || data.error || res.status}`);
+  if (!res.ok) fail(502, 'Spotify отклонил запрос: {reason}', undefined, { reason: data.error_description || data.error || res.status });
   return data;
 }
 
@@ -89,7 +89,7 @@ async function sp(userId, path, { method = 'GET', body } = {}) {
     fail(403, 'Управление воспроизведением доступно только с Spotify Premium', 'premium_required');
   }
   if (res.status === 404 && path.startsWith('/me/player')) fail(404, 'Нет активного устройства Spotify — откройте Spotify или выберите устройство', 'no_device');
-  if (!res.ok) fail(502, `Ошибка Spotify: ${data.error?.message || res.status}`);
+  if (!res.ok) fail(502, 'Ошибка Spotify: {reason}', undefined, { reason: data.error?.message || res.status });
   return data;
 }
 

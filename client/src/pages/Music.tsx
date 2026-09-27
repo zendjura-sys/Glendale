@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useEffect, useState, type DragEvent } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -21,7 +22,7 @@ function PlayAll({ tracks }: { tracks: Track[] }) {
     <div style={{ display: 'flex', gap: 8 }}>
       <button className="btn" onClick={() => (playingThis ? player.toggle() : player.play(tracks, 0))}>
         {playingThis ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
-        {playingThis ? 'Пауза' : 'Слушать'}
+        {playingThis ? tr('Пауза') : tr('Слушать')}
       </button>
       <button
         className="btn secondary"
@@ -30,7 +31,7 @@ function PlayAll({ tracks }: { tracks: Track[] }) {
           player.play(tracks, Math.floor(Math.random() * tracks.length));
         }}
       >
-        <Shuffle size={16} /> Перемешать
+        <Shuffle size={16} /> {tr('Перемешать')}
       </button>
     </div>
   );
@@ -42,7 +43,7 @@ function Uploader({ onDone }: { onDone: () => void }) {
   const [error, setError] = useState('');
   const send = async (files: File[]) => {
     const audio = files.filter((f) => f.type.startsWith('audio/') || /\.(mp3|m4a|aac|ogg|oga|wav|flac|webm)$/i.test(f.name)).slice(0, 10);
-    if (!audio.length) return setError('Выберите аудиофайлы');
+    if (!audio.length) return setError(tr('Выберите аудиофайлы'));
     setBusy(true);
     setError('');
     try {
@@ -75,11 +76,11 @@ function Uploader({ onDone }: { onDone: () => void }) {
         <Spinner small />
       ) : (
         <>
-          Перетащите сюда MP3, M4A, OGG, WAV или FLAC — или{' '}
+          {tr('Перетащите сюда MP3, M4A, OGG, WAV или FLAC — или')}{' '}
           <button className="more-link" onClick={async () => send(await pickFile('audio/*,.mp3,.m4a,.aac,.ogg,.wav,.flac', true))}>
-            выберите файлы
+            {tr('выберите файлы')}
           </button>
-          . Название, исполнитель и обложка возьмутся из тегов.
+          {tr('. Название, исполнитель и обложка возьмутся из тегов.')}
         </>
       )}
       {error && <div className="error-text">{error}</div>}
@@ -116,30 +117,30 @@ function Playlists({ userId, own }: { userId: number; own: boolean }) {
             <div className="playlist-art single" style={{ background: 'var(--field)', color: 'var(--accent)' }}>
               <Plus size={40} />
             </div>
-            <b>Новый плейлист</b>
+            <b>{tr('Новый плейлист')}</b>
           </button>
         )}
         {data.map((p) => (
           <Link key={p.id} to={`/music/playlist/${p.id}`} className="playlist-card">
             <PlaylistArt p={p} />
             <b className="ellipsis">{p.title}</b>
-            <span className="meta">{countLabel(p.count, 'трек', 'трека', 'треков')}</span>
+            <span className="meta">{countLabel(p.count, 'трек|трека|треков')}</span>
           </Link>
         ))}
       </div>
-      {!data.length && !own && <Empty icon={<ListMusic size={40} />} title="Плейлистов пока нет" />}
+      {!data.length && !own && <Empty icon={<ListMusic size={40} />} title={tr('Плейлистов пока нет')} />}
       {creating && (
         <Modal
-          title="Новый плейлист"
+          title={tr('Новый плейлист')}
           onClose={() => setCreating(false)}
           footer={
             <button className="btn" disabled={!title.trim()} onClick={create}>
-              Создать
+              {tr('Создать')}
             </button>
           }
         >
           <div className="modal-body">
-            <input className="field" autoFocus placeholder="Название" value={title} maxLength={100} onChange={(e) => setTitle(e.target.value)} />
+            <input className="field" autoFocus placeholder={tr('Название')} value={title} maxLength={100} onChange={(e) => setTitle(e.target.value)} />
           </div>
         </Modal>
       )}
@@ -157,13 +158,13 @@ export function PlaylistPage() {
   if (!p)
     return (
       <div className="card">
-        <Empty title="Плейлист не найден" />
+        <Empty title={tr('Плейлист не найден')} />
       </div>
     );
   const own = p.owner.id === me.id;
   const tracks = p.tracks ?? [];
   const remove = async () => {
-    if (!confirm(`Удалить плейлист «${p.title}»?`)) return;
+    if (!confirm(tr('Удалить плейлист «{title}»?', { title: p.title }))) return;
     await api(`/playlists/${p.id}`, { method: 'DELETE' });
     qc.invalidateQueries({ queryKey: ['playlists'] });
     navigate('/music?tab=playlists');
@@ -174,27 +175,27 @@ export function PlaylistPage() {
         <div className="music-hero">
           <PlaylistArt p={p} size={120} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="meta">Плейлист</div>
+            <div className="meta">{tr('Плейлист')}</div>
             <h1 style={{ fontSize: 24, fontWeight: 700, margin: '2px 0 4px' }}>{p.title}</h1>
             {p.description && <div className="muted">{p.description}</div>}
             <div className="meta" style={{ margin: '4px 0 12px' }}>
-              <Link to={`/id/${p.owner.id}`}>{fullName(p.owner)}</Link> · {countLabel(p.count, 'трек', 'трека', 'треков')} · {formatDuration(p.duration)}
+              <Link to={`/id/${p.owner.id}`}>{fullName(p.owner)}</Link> · {countLabel(p.count, 'трек|трека|треков')} · {formatDuration(p.duration)}
             </div>
             <PlayAll tracks={tracks} />
           </div>
         </div>
         <TrackList
           tracks={tracks}
-          empty={own ? 'Добавляйте треки через меню «…» → «Добавить в плейлист»' : ''}
+          empty={own ? tr('Добавляйте треки через меню «…» → «Добавить в плейлист»') : ''}
           onRemoved={() => qc.invalidateQueries({ queryKey: ['playlist', p.id] })}
         />
         <div className="toolbar" style={{ borderTop: '1px solid var(--separator)', borderBottom: 'none' }}>
           <Link to="/music?tab=playlists" className="btn tertiary">
-            <ArrowLeft size={16} /> Все плейлисты
+            <ArrowLeft size={16} /> {tr('Все плейлисты')}
           </Link>
           {own && (
             <button className="btn danger" style={{ marginLeft: 'auto' }} onClick={remove}>
-              <Trash2 size={16} /> Удалить плейлист
+              <Trash2 size={16} /> {tr('Удалить плейлист')}
             </button>
           )}
         </div>
@@ -235,12 +236,12 @@ export default function MusicPage() {
   const setTab = (t: Tab) => setParams(own ? { tab: t } : { id: String(userId), tab: t });
   const refresh = () => qc.invalidateQueries({ queryKey: ['music'] });
   const tabs: [Tab, string, React.ReactNode][] = [
-    ['mine', own ? 'Моя музыка' : 'Музыка', <Library size={16} key="l" />],
-    ['playlists', 'Плейлисты', <ListMusic size={16} key="p" />],
+    ['mine', own ? tr('Моя музыка') : tr('Музыка'), <Library size={16} key="l" />],
+    ['playlists', tr('Плейлисты'), <ListMusic size={16} key="p" />],
     ...(own
       ? ([
-          ['popular', 'Популярное', <Flame size={16} key="f" />],
-          ['search', 'Поиск', <Search size={16} key="s" />],
+          ['popular', tr('Популярное'), <Flame size={16} key="f" />],
+          ['search', tr('Поиск'), <Search size={16} key="s" />],
           ['spotify', 'Spotify', <MusicIcon size={16} key="sp" />],
         ] as [Tab, string, React.ReactNode][])
       : []),
@@ -252,7 +253,7 @@ export default function MusicPage() {
         {!own && owner && (
           <div className="card-title">
             <Link to={`/id/${userId}`}>{fullName(owner)}</Link>
-            <span className="muted">› Музыка</span>
+            <span className="muted">{tr('› Музыка')}</span>
           </div>
         )}
         <div className="tabs">
@@ -271,11 +272,11 @@ export default function MusicPage() {
               <div className="toolbar" style={{ borderBottom: 'none', paddingBottom: 4 }}>
                 <PlayAll tracks={mine} />
                 <span className="meta" style={{ marginLeft: 'auto' }}>
-                  {countLabel(mine.length, 'трек', 'трека', 'треков')}
+                  {countLabel(mine.length, tr('трек|трека|треков'))}
                 </span>
               </div>
             )}
-            {!mine ? <Spinner /> : <TrackList tracks={mine} onRemoved={refresh} empty={own ? 'Загрузите свои треки или добавьте из поиска' : ''} />}
+            {!mine ? <Spinner /> : <TrackList tracks={mine} onRemoved={refresh} empty={own ? tr('Загрузите свои треки или добавьте из поиска') : ''} />}
           </>
         )}
 
@@ -287,16 +288,16 @@ export default function MusicPage() {
           <>
             <div style={{ padding: '14px 16px 6px', position: 'relative' }}>
               <Search size={16} style={{ position: 'absolute', left: 28, top: 26, color: 'var(--icon)' }} />
-              <input className="field" autoFocus style={{ paddingLeft: 38 }} placeholder="Исполнитель, трек или альбом" value={input} onChange={(e) => setInput(e.target.value)} />
+              <input className="field" autoFocus style={{ paddingLeft: 38 }} placeholder={tr('Исполнитель, трек или альбом')} value={input} onChange={(e) => setInput(e.target.value)} />
             </div>
             {!q.trim() ? (
-              <Empty icon={<Upload size={36} />} title="Найдите музыку">
-                Ищите среди всех треков, загруженных участниками
+              <Empty icon={<Upload size={36} />} title={tr('Найдите музыку')}>
+                {tr('Ищите среди всех треков, загруженных участниками')}
               </Empty>
             ) : isFetching && !found ? (
               <Spinner />
             ) : (
-              <TrackList tracks={found ?? []} onRemoved={refresh} empty="Ничего не найдено" />
+              <TrackList tracks={found ?? []} onRemoved={refresh} empty={tr("Ничего не найдено")} />
             )}
           </>
         )}

@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -30,7 +31,7 @@ function StatusEditor({ value, onDone }: { value: string; onDone: () => void }) 
         autoFocus
         value={text}
         maxLength={140}
-        placeholder="Введите статус"
+        placeholder={tr('Введите статус')}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter') save();
@@ -38,7 +39,7 @@ function StatusEditor({ value, onDone }: { value: string; onDone: () => void }) 
         }}
       />
       <button className="btn" onClick={save}>
-        Сохранить
+        {tr('Сохранить')}
       </button>
     </div>
   );
@@ -46,48 +47,51 @@ function StatusEditor({ value, onDone }: { value: string; onDone: () => void }) 
 
 function DetailsModal({ user, onClose }: { user: Profile; onClose: () => void }) {
   return (
-    <Modal title="Подробная информация" onClose={onClose}>
+    <Modal title={tr('Подробная информация')} onClose={onClose}>
       <dl className="info-list" style={{ paddingTop: 16 }}>
         {user.status && (
           <>
-            <dt>Статус</dt>
+            <dt>{tr('Статус')}</dt>
             <dd>{user.status}</dd>
           </>
         )}
         {user.birthday && (
           <>
-            <dt>День рождения</dt>
+            <dt>{tr('День рождения')}</dt>
             <dd>{formatBirthday(user.birthday)}</dd>
           </>
         )}
         {user.city && (
           <>
-            <dt>Город</dt>
+            <dt>{tr('Город')}</dt>
             <dd>{user.city}</dd>
           </>
         )}
         {user.bio && (
           <>
-            <dt>О себе</dt>
+            <dt>{tr('О себе')}</dt>
             <dd>{user.bio}</dd>
           </>
         )}
-        <dt>На Glendale с</dt>
+        <dt>{tr('На Glendale с')}</dt>
         <dd>{formatDate(user.createdAt)}</dd>
       </dl>
       <div className="counters">
         <Link to={`/friends?id=${user.id}`}>
           <b>{user.counts.friends}</b>
-          {plural(user.counts.friends, 'друг', 'друга', 'друзей')}
+          {plural(user.counts.friends, tr('друг|друга|друзей'))}
         </Link>
         <Link to={`/friends?id=${user.id}`}>
-          <b>{user.counts.followers}</b>подписчиков
+          <b>{user.counts.followers}</b>
+          {plural(user.counts.followers, 'подписчик|подписчика|подписчиков')}
         </Link>
         <Link to={`/photos/${user.id}`}>
-          <b>{user.counts.photos}</b>фото
+          <b>{user.counts.photos}</b>
+          {tr('фото')}
         </Link>
         <Link to={`/groups?id=${user.id}`}>
-          <b>{user.counts.groups}</b>сообществ
+          <b>{user.counts.groups}</b>
+          {plural(user.counts.groups, 'сообщество|сообщества|сообществ')}
         </Link>
       </div>
     </Modal>
@@ -117,7 +121,7 @@ export default function ProfilePage() {
   if (error || !user)
     return (
       <div className="card">
-        <Empty title="Страница не найдена">Возможно, она была удалена или ещё не создана.</Empty>
+        <Empty title={tr('Страница не найдена')}>{tr('Возможно, она была удалена или ещё не создана.')}</Empty>
       </div>
     );
 
@@ -145,7 +149,7 @@ export default function ProfilePage() {
         <div className="cover" style={user.cover ? { backgroundImage: `url(${user.cover})` } : undefined}>
           {own && (
             <button className="btn secondary cover-edit" onClick={() => upload('cover')} disabled={uploading}>
-              <Camera size={16} /> {user.cover ? 'Изменить обложку' : 'Добавить обложку'}
+              <Camera size={16} /> {user.cover ? tr('Изменить обложку') : tr('Добавить обложку')}
             </button>
           )}
         </div>
@@ -155,7 +159,7 @@ export default function ProfilePage() {
               <Avatar src={user.avatar} name={name} id={user.id} size={128} />
             </div>
             {own && (
-              <button className="avatar-edit" onClick={() => upload('avatar')} aria-label="Изменить фотографию">
+              <button className="avatar-edit" onClick={() => upload('avatar')} aria-label={tr('Изменить фотографию')}>
                 <Camera size={28} />
               </button>
             )}
@@ -164,7 +168,7 @@ export default function ProfilePage() {
             <h1>
               {name}
               {user.verified && <Verified size={20} />}
-              {user.online && <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--online)' }} title="онлайн" />}
+              {user.online && <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--online)' }} title={tr('онлайн')} />}
             </h1>
             {editingStatus ? (
               <StatusEditor value={user.status} onDone={() => setEditingStatus(false)} />
@@ -174,7 +178,7 @@ export default function ProfilePage() {
                 style={{ cursor: 'pointer' }}
                 onClick={() => setEditingStatus(true)}
               >
-                {user.status || 'Установить статус'}
+                {user.status || tr('Установить статус')}
               </div>
             ) : (
               user.status && <div className="profile-status">{user.status}</div>
@@ -184,13 +188,13 @@ export default function ProfilePage() {
           <div className="profile-buttons">
             {own ? (
               <button className="btn secondary" onClick={() => navigate('/settings')}>
-                <Pencil size={16} /> Редактировать профиль
+                <Pencil size={16} /> {tr('Редактировать профиль')}
               </button>
             ) : (
               <>
                 <FriendButton userId={user.id} initial={user.friendship} />
                 <button className="btn secondary" onClick={() => navigate(`/im/${user.id}`)}>
-                  <MessageCircle size={16} /> Сообщение
+                  <MessageCircle size={16} /> {tr('Сообщение')}
                 </button>
                 <ReportButton target={{ type: 'user', id: user.id }} className="icon-btn" />
               </>
@@ -209,34 +213,35 @@ export default function ProfilePage() {
             </span>
           )}
           <button className="more-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => setDetails(true)}>
-            <Info size={16} /> Подробнее
+            <Info size={16} /> {tr('Подробнее')}
           </button>
         </div>
         <div className="counters">
           <Link to={`/friends?id=${user.id}`}>
             <b>{user.counts.friends}</b>
-            {plural(user.counts.friends, 'друг', 'друга', 'друзей')}
+            {plural(user.counts.friends, tr('друг|друга|друзей'))}
           </Link>
           {!own && user.counts.mutual > 0 && (
             <Link to={`/friends?id=${user.id}`}>
               <b>{user.counts.mutual}</b>
-              общих
+              {tr('общих')}
             </Link>
           )}
           <Link to={`/photos/${user.id}`}>
-            <b>{user.counts.photos}</b>фото
+            <b>{user.counts.photos}</b>
+            {tr('фото')}
           </Link>
           <Link to={`/groups?id=${user.id}`}>
             <b>{user.counts.groups}</b>
-            {plural(user.counts.groups, 'сообщество', 'сообщества', 'сообществ')}
+            {plural(user.counts.groups, tr('сообщество|сообщества|сообществ'))}
           </Link>
           <Link to={own ? '/music' : `/music?id=${user.id}`}>
             <b>{user.counts.music}</b>
-            {plural(user.counts.music, 'трек', 'трека', 'треков')}
+            {plural(user.counts.music, tr('трек|трека|треков'))}
           </Link>
           <Link to={`/id/${user.id}`}>
             <b>{user.counts.posts}</b>
-            {plural(user.counts.posts, 'запись', 'записи', 'записей')}
+            {plural(user.counts.posts, tr('запись|записи|записей'))}
           </Link>
         </div>
       </div>
@@ -246,9 +251,9 @@ export default function ProfilePage() {
           {user.photosSample.length > 0 && (
             <div className="card">
               <div className="card-title">
-                <Link to={`/photos/${user.id}`}>Фотографии</Link> <span className="count">{user.counts.photos}</span>
+                <Link to={`/photos/${user.id}`}>{tr('Фотографии')}</Link> <span className="count">{user.counts.photos}</span>
                 <Link to={`/photos/${user.id}`} className="right">
-                  Показать все
+                  {tr('Показать все')}
                 </Link>
               </div>
               <div className="photo-grid small">
@@ -262,22 +267,22 @@ export default function ProfilePage() {
             <Composer
               ownerId={user.id}
               queryKeys={[wallKey]}
-              placeholder={own ? 'Что у вас нового?' : `Напишите что-нибудь ${user.firstName}...`}
+              placeholder={own ? tr('Что у вас нового?') : tr('Напишите что-нибудь {name}...', { name: user.firstName })}
             />
           )}
           <div className="card">
             <div className="card-title">
-              {own ? 'Мои записи' : `Записи ${user.firstName}`} <span className="count">{user.counts.posts}</span>
+              {own ? tr('Мои записи') : tr('Записи {name}', { name: user.firstName })} <span className="count">{user.counts.posts}</span>
             </div>
           </div>
-          <PostList queryKey={wallKey} path={`/wall/user/${user.id}`} emptyText={own ? 'Напишите первую запись.' : 'На стене пока нет записей.'} />
+          <PostList queryKey={wallKey} path={`/wall/user/${user.id}`} emptyText={own ? tr('Напишите первую запись.') : tr('На стене пока нет записей.')} />
         </div>
 
         <aside className="col-side static">
           <SpotifyNowPlayingCard userId={user.id} />
           <div className="card">
             <div className="card-title">
-              <Link to={`/friends?id=${user.id}`}>Друзья</Link> <span className="count">{user.counts.friends}</span>
+              <Link to={`/friends?id=${user.id}`}>{tr('Друзья')}</Link> <span className="count">{user.counts.friends}</span>
             </div>
             {user.friendsSample.length ? (
               <div className="mini-grid">
@@ -290,21 +295,21 @@ export default function ProfilePage() {
               </div>
             ) : (
               <div className="muted" style={{ padding: '0 20px 16px' }}>
-                Пока нет друзей
+                {tr('Пока нет друзей')}
               </div>
             )}
           </div>
           {user.groupsSample.length > 0 && (
             <div className="card">
               <div className="card-title">
-                <Link to={`/groups?id=${user.id}`}>Сообщества</Link> <span className="count">{user.counts.groups}</span>
+                <Link to={`/groups?id=${user.id}`}>{tr('Сообщества')}</Link> <span className="count">{user.counts.groups}</span>
               </div>
               {user.groupsSample.map((g) => (
                 <Link key={g.id} to={`/club/${g.id}`} className="row row-link" style={{ padding: '6px 16px', borderTop: 'none' }}>
                   <Avatar src={g.avatar} name={g.name} id={g.id + 100} square size={36} />
                   <div className="info">
                     <div className="name ellipsis">{g.name}</div>
-                    <div className="meta">{countLabel(g.membersCount, 'участник', 'участника', 'участников')}</div>
+                    <div className="meta">{countLabel(g.membersCount, tr('участник|участника|участников'))}</div>
                   </div>
                 </Link>
               ))}

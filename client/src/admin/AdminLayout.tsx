@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { Suspense, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -37,76 +38,76 @@ export function AdminLayout() {
     <>
       <Header />
       <div className="page">
-        <nav className="sidebar admin-nav" aria-label="Админ-панель">
+        <nav className="sidebar admin-nav" aria-label={tr('Админ-панель')}>
           <NavLink to="/admin" end>
-            <LayoutDashboard size={20} /> Обзор
+            <LayoutDashboard size={20} /> {tr('Обзор')}
           </NavLink>
-          <div className="nav-group">Модерация</div>
+          <div className="nav-group">{tr('Модерация')}</div>
           <NavLink to="/admin/reports">
-            <Flag size={20} /> Жалобы {openReports > 0 && <span className="count">{openReports}</span>}
+            <Flag size={20} /> {tr('Жалобы')} {openReports > 0 && <span className="count">{openReports}</span>}
           </NavLink>
           <NavLink to="/admin/content">
-            <MessagesSquare size={20} /> Контент
+            <MessagesSquare size={20} /> {tr('Контент')}
           </NavLink>
           {full && (
             <>
-              <div className="nav-group">Управление</div>
+              <div className="nav-group">{tr('Управление')}</div>
               <NavLink to="/admin/members">
-                <Users size={20} /> Участники {pending > 0 && <span className="count">{pending}</span>}
+                <Users size={20} /> {tr('Участники')} {pending > 0 && <span className="count">{pending}</span>}
               </NavLink>
               <NavLink to="/admin/levels">
-                <ShieldCheck size={20} /> Уровни доступа
+                <ShieldCheck size={20} /> {tr('Уровни доступа')}
               </NavLink>
               <NavLink to="/admin/announcements">
-                <Megaphone size={20} /> Объявления
+                <Megaphone size={20} /> {tr('Объявления')}
               </NavLink>
-              <div className="nav-group">Настройки</div>
+              <div className="nav-group">{tr('Настройки')}</div>
               <NavLink to="/admin/settings/general">
-                <Settings2 size={20} /> Общие
+                <Settings2 size={20} /> {tr('Общие')}
               </NavLink>
               <NavLink to="/admin/settings/signup">
-                <UserPlus size={20} /> Регистрация
+                <UserPlus size={20} /> {tr('Регистрация')}
               </NavLink>
               <NavLink to="/admin/settings/security">
-                <ShieldAlert size={20} /> Защита и баны
+                <ShieldAlert size={20} /> {tr('Защита и баны')}
               </NavLink>
               <NavLink to="/admin/settings/appearance">
-                <Palette size={20} /> Оформление
+                <Palette size={20} /> {tr('Оформление')}
               </NavLink>
               <NavLink to="/admin/settings/integrations">
-                <Plug size={20} /> Интеграции
+                <Plug size={20} /> {tr('Интеграции')}
               </NavLink>
-              <div className="nav-group">Аналитика</div>
+              <div className="nav-group">{tr('Аналитика')}</div>
               <NavLink to="/admin/stats">
-                <BarChart3 size={20} /> Статистика
+                <BarChart3 size={20} /> {tr('Статистика')}
               </NavLink>
               <NavLink to="/admin/log">
-                <ScrollText size={20} /> Журнал
+                <ScrollText size={20} /> {tr('Журнал')}
               </NavLink>
             </>
           )}
           <div className="sidebar-sep" />
           <NavLink to="/feed">
-            <ArrowLeft size={20} /> На сайт
+            <ArrowLeft size={20} /> {tr('На сайт')}
           </NavLink>
         </nav>
         <main className="main">
-          <nav className="admin-chips" aria-label="Разделы админ-панели">
+          <nav className="admin-chips" aria-label={tr('Разделы админ-панели')}>
             {[
-              ['/admin', 'Обзор', true],
-              ['/admin/reports', `Жалобы${openReports ? ` · ${openReports}` : ''}`, true],
-              ['/admin/content', 'Контент', true],
-              ['/admin/members', `Участники${pending ? ` · ${pending}` : ''}`, full],
-              ['/admin/levels', 'Уровни', full],
-              ['/admin/announcements', 'Объявления', full],
-              ['/admin/settings/general', 'Настройки', full],
-              ['/admin/settings/signup', 'Регистрация', full],
-              ['/admin/settings/security', 'Защита', full],
-              ['/admin/settings/appearance', 'Оформление', full],
-              ['/admin/settings/integrations', 'Интеграции', full],
-              ['/admin/stats', 'Статистика', full],
-              ['/admin/log', 'Журнал', full],
-              ['/feed', 'На сайт', true],
+              ['/admin', tr('Обзор'), true],
+              ['/admin/reports', `${tr('Жалобы')}${openReports ? ` · ${openReports}` : ''}`, true],
+              ['/admin/content', tr('Контент'), true],
+              ['/admin/members', `${tr('Участники')}${pending ? ` · ${pending}` : ''}`, full],
+              ['/admin/levels', tr('Уровни'), full],
+              ['/admin/announcements', tr('Объявления'), full],
+              ['/admin/settings/general', tr('Настройки'), full],
+              ['/admin/settings/signup', tr('Регистрация'), full],
+              ['/admin/settings/security', tr('Защита'), full],
+              ['/admin/settings/appearance', tr('Оформление'), full],
+              ['/admin/settings/integrations', tr('Интеграции'), full],
+              ['/admin/stats', tr('Статистика'), full],
+              ['/admin/log', tr('Журнал'), full],
+              ['/feed', tr('На сайт'), true],
             ]
               .filter(([, , show]) => show)
               .map(([to, label]) => (

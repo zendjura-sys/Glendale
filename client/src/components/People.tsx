@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -29,7 +30,7 @@ export function FriendButton({ userId, initial, compact }: { userId: number; ini
   if (compact) {
     if (status === 'none')
       return (
-        <button className="icon-btn" onClick={() => act('POST')} disabled={busy} aria-label="Добавить в друзья">
+        <button className="icon-btn" onClick={() => act('POST')} disabled={busy} aria-label={tr('Добавить в друзья')}>
           <UserPlus size={20} color="var(--icon-accent)" />
         </button>
       );
@@ -38,31 +39,31 @@ export function FriendButton({ userId, initial, compact }: { userId: number; ini
   switch (status) {
     case 'friends':
       return (
-        <button className="btn secondary" onClick={() => confirm('Удалить из друзей?') && act('DELETE')} disabled={busy}>
-          <UserCheck size={16} /> У вас в друзьях
+        <button className="btn secondary" onClick={() => confirm(tr('Удалить из друзей?')) && act('DELETE')} disabled={busy}>
+          <UserCheck size={16} /> {tr('У вас в друзьях')}
         </button>
       );
     case 'outgoing':
       return (
         <button className="btn secondary" onClick={() => act('DELETE')} disabled={busy}>
-          <X size={16} /> Отменить заявку
+          <X size={16} /> {tr('Отменить заявку')}
         </button>
       );
     case 'incoming':
       return (
         <>
           <button className="btn" onClick={() => act('POST')} disabled={busy}>
-            <UserPlus size={16} /> Принять заявку
+            <UserPlus size={16} /> {tr('Принять заявку')}
           </button>
           <button className="btn secondary" onClick={() => act('DELETE')} disabled={busy}>
-            Отклонить
+            {tr('Отклонить')}
           </button>
         </>
       );
     default:
       return (
         <button className="btn" onClick={() => act('POST')} disabled={busy}>
-          <UserPlus size={16} /> Добавить в друзья
+          <UserPlus size={16} /> {tr('Добавить в друзья')}
         </button>
       );
   }
@@ -80,7 +81,7 @@ export function UserRow({ user, children, sub }: { user: UserShort; children?: R
         </Link>
         <div className="meta">{sub ?? lastSeenText(user)}</div>
         <Link to={`/im/${user.id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 6 }}>
-          <MessageCircle size={14} /> Написать сообщение
+          <MessageCircle size={14} /> {tr('Написать сообщение')}
         </Link>
       </div>
       {children && <div className="actions">{children}</div>}

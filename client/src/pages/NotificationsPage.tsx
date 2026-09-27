@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useEffect } from 'react';
 import { api } from '../lib/api';
 import { useRealtime } from '../lib/realtime';
@@ -14,7 +15,7 @@ export default function NotificationsPage() {
     <div className="col-main">
       <div className="card" style={{ paddingBottom: 8 }}>
         <div className="card-title" style={{ borderBottom: '1px solid var(--separator)', paddingBottom: 14 }}>
-          Уведомления
+          {tr('Уведомления')}
         </div>
         <NotificationList />
       </div>

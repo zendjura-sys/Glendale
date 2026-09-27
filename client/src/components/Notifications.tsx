@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { Link } from 'react-router-dom';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Bell, Heart, MessageCircle, Repeat2, UserCheck, UserPlus, UsersRound, PenLine } from 'lucide-react';
@@ -44,7 +45,7 @@ export function NotificationItem({ n, onClick }: { n: Notification; onClick?: ()
       </div>
       <div className="info">
         <div>
-          <span className="name">{fullName(n.actor)}</span> {NOTIFICATION_TEXT[n.type]}
+          <span className="name">{fullName(n.actor)}</span> {NOTIFICATION_TEXT()[n.type]}
         </div>
         {n.text && <div className="ellipsis" style={{ color: 'var(--text)' }}>«{n.text}»</div>}
         {!n.text && n.post?.text && <div className="ellipsis muted">{n.post.text}</div>}
@@ -67,8 +68,8 @@ export function NotificationList({ onItemClick, compact }: { onItemClick?: () =>
   if (isLoading) return <Spinner />;
   if (!items.length)
     return (
-      <Empty icon={<Bell size={40} />} title="Нет уведомлений">
-        Здесь будут лайки, комментарии и заявки в друзья
+      <Empty icon={<Bell size={40} />} title={tr('Нет уведомлений')}>
+        {tr('Здесь будут лайки, комментарии и заявки в друзья')}
       </Empty>
     );
   return (

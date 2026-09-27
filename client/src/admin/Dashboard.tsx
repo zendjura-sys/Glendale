@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Ban, Flag, Image, MessageCircle, MessagesSquare, Newspaper, UserCheck, UserPlus, Users, UsersRound, Wifi } from 'lucide-react';
@@ -9,8 +10,11 @@ import { Avatar, Spinner } from '../components/ui';
 import { AdminHead, BarChart, StatTile, fmt } from './ui';
 import type { Dashboard } from './types';
 
-const bytes = (n: number) => (n > 1 << 20 ? `${(n / (1 << 20)).toFixed(1)} МБ` : `${Math.round(n / 1024)} КБ`);
-const uptime = (s: number) => (s > 86400 ? `${Math.floor(s / 86400)} д ${Math.floor((s % 86400) / 3600)} ч` : `${Math.floor(s / 3600)} ч ${Math.floor((s % 3600) / 60)} мин`);
+const bytes = (n: number) => (n > 1 << 20 ? tr('{n} МБ', { n: (n / (1 << 20)).toFixed(1) }) : tr('{n} КБ', { n: Math.round(n / 1024) }));
+const uptime = (s: number) =>
+  s > 86400
+    ? tr('{d} д {h} ч', { d: Math.floor(s / 86400), h: Math.floor((s % 86400) / 3600) })
+    : tr('{h} ч {m} мин', { h: Math.floor(s / 3600), m: Math.floor((s % 3600) / 60) });
 
 export default function DashboardPage() {
   const me = useMe();
@@ -21,56 +25,56 @@ export default function DashboardPage() {
 
   return (
     <>
-      <AdminHead title="Обзор" subtitle={`Здравствуйте, ${me.firstName}. Вот что происходит в сети.`} />
+      <AdminHead title={tr('Обзор')} subtitle={tr('Здравствуйте, {name}. Вот что происходит в сети.', { name: me.firstName })} />
 
       {(t.openReports > 0 || (full && t.pendingUsers > 0)) && (
         <div className="tiles">
-          {t.openReports > 0 && <StatTile label="Жалобы ждут решения" value={t.openReports} icon={<Flag size={15} />} alert href="/admin/reports" />}
+          {t.openReports > 0 && <StatTile label={tr("Жалобы ждут решения")} value={t.openReports} icon={<Flag size={15} />} alert href="/admin/reports" />}
           {full && t.pendingUsers > 0 && (
-            <StatTile label="Ждут одобрения" value={t.pendingUsers} icon={<UserCheck size={15} />} alert href="/admin/members?status=pending" />
+            <StatTile label={tr("Ждут одобрения")} value={t.pendingUsers} icon={<UserCheck size={15} />} alert href="/admin/members?status=pending" />
           )}
         </div>
       )}
 
       <div className="tiles">
-        <StatTile label="Участники" value={t.users} delta={`+${fmt(t.newUsersWeek)} за неделю`} icon={<Users size={15} />} />
-        <StatTile label="Сейчас в сети" value={t.online} icon={<Wifi size={15} />} />
-        <StatTile label="Записи" value={t.posts} delta={`+${fmt(t.postsWeek)} за неделю`} icon={<Newspaper size={15} />} />
-        <StatTile label="Комментарии" value={t.comments} icon={<MessagesSquare size={15} />} />
-        <StatTile label="Сообщения" value={t.messages} icon={<MessageCircle size={15} />} />
-        <StatTile label="Сообщества" value={t.groups} icon={<UsersRound size={15} />} />
-        <StatTile label="Фотографии" value={t.photos} icon={<Image size={15} />} />
-        <StatTile label="Заблокированы" value={t.bannedUsers} icon={<Ban size={15} />} />
+        <StatTile label={tr("Участники")} value={t.users} delta={tr('+{n} за неделю', { n: fmt(t.newUsersWeek) })} icon={<Users size={15} />} />
+        <StatTile label={tr("Сейчас в сети")} value={t.online} icon={<Wifi size={15} />} />
+        <StatTile label={tr("Записи")} value={t.posts} delta={tr('+{n} за неделю', { n: fmt(t.postsWeek) })} icon={<Newspaper size={15} />} />
+        <StatTile label={tr("Комментарии")} value={t.comments} icon={<MessagesSquare size={15} />} />
+        <StatTile label={tr("Сообщения")} value={t.messages} icon={<MessageCircle size={15} />} />
+        <StatTile label={tr("Сообщества")} value={t.groups} icon={<UsersRound size={15} />} />
+        <StatTile label={tr("Фотографии")} value={t.photos} icon={<Image size={15} />} />
+        <StatTile label={tr("Заблокированы")} value={t.bannedUsers} icon={<Ban size={15} />} />
       </div>
 
       <div className="chart-grid">
         <div className="card">
           <div className="card-title">
-            <UserPlus size={18} /> Регистрации за 14 дней
+            <UserPlus size={18} /> {tr('Регистрации за 14 дней')}
           </div>
-          <BarChart data={data.activity.signups} unit={['регистрация', 'регистрации', 'регистраций']} />
+          <BarChart data={data.activity.signups} unit={'регистрация|регистрации|регистраций'} />
         </div>
         <div className="card">
           <div className="card-title">
-            <Newspaper size={18} /> Новые записи за 14 дней
+            <Newspaper size={18} /> {tr('Новые записи за 14 дней')}
           </div>
-          <BarChart data={data.activity.posts} unit={['запись', 'записи', 'записей']} />
+          <BarChart data={data.activity.posts} unit={'запись|записи|записей'} />
         </div>
         <div className="card">
           <div className="card-title">
-            <MessageCircle size={18} /> Сообщения за 14 дней
+            <MessageCircle size={18} /> {tr('Сообщения за 14 дней')}
           </div>
-          <BarChart data={data.activity.messages} unit={['сообщение', 'сообщения', 'сообщений']} />
+          <BarChart data={data.activity.messages} unit={'сообщение|сообщения|сообщений'} />
         </div>
       </div>
 
       <div className="columns">
         <div className="card" style={{ flex: 1, minWidth: 0 }}>
           <div className="card-title">
-            Новые участники
+            {tr('Новые участники')}
             {full && (
               <Link to="/admin/members" className="right">
-                Все участники
+                {tr('Все участники')}
               </Link>
             )}
           </div>
@@ -83,22 +87,22 @@ export default function DashboardPage() {
                 </Link>
                 <div className="meta">{formatDate(u.createdAt)}</div>
               </div>
-              {!u.approved && <span className="pill warn">Ждёт одобрения</span>}
-              {!u.enabled && <span className="pill bad">Заблокирован</span>}
+              {!u.approved && <span className="pill warn">{tr('Ждёт одобрения')}</span>}
+              {!u.enabled && <span className="pill bad">{tr('Заблокирован')}</span>}
             </div>
           ))}
         </div>
         <div className="card col-side static" style={{ position: 'static' }}>
-          <div className="card-title">Сервер</div>
+          <div className="card-title">{tr('Сервер')}</div>
           <dl className="info-list" style={{ gridTemplateColumns: '110px 1fr' }}>
             <dt>Node.js</dt>
             <dd>{data.system.node}</dd>
-            <dt>Работает</dt>
+            <dt>{tr('Работает')}</dt>
             <dd>{uptime(data.system.uptime)}</dd>
-            <dt>Память</dt>
+            <dt>{tr('Память')}</dt>
             <dd>{bytes(data.system.memory)}</dd>
-            <dt>База данных</dt>
-            <dd>{data.system.dbSize ? bytes(data.system.dbSize) : 'в памяти'}</dd>
+            <dt>{tr('База данных')}</dt>
+            <dd>{data.system.dbSize ? bytes(data.system.dbSize) : tr('в памяти')}</dd>
           </dl>
         </div>
       </div>

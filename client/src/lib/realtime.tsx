@@ -1,3 +1,4 @@
+import { tr } from './i18n';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { api, getToken } from './api';
@@ -94,7 +95,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
             pushToast({
               user: peer,
               title: `${peer.firstName} ${peer.lastName}`,
-              text: message.text || 'Фотография',
+              text: message.text || tr('Фотография'),
               link: `/im/${peer.id}`,
             });
           }
@@ -150,8 +151,8 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
             const chat = qc.getQueryData<Chat[]>(['chats'])?.find((c) => c.id === chatId);
             pushToast({
               user: message.author,
-              title: chat?.title ?? 'Беседа',
-              text: `${message.author.firstName}: ${message.text || 'Вложение'}`,
+              title: chat?.title ?? tr('Беседа'),
+              text: `${message.author.firstName}: ${message.text || tr('Вложение')}`,
               link: `/im/c/${chatId}`,
             });
           }
@@ -187,7 +188,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
           pushToast({
             user: n.actor,
             title: `${n.actor.firstName} ${n.actor.lastName}`,
-            text: NOTIFICATION_TEXT[n.type],
+            text: NOTIFICATION_TEXT()[n.type],
             link: n.post ? `/wall/${n.post.id}` : n.groupId ? `/club/${n.groupId}` : `/id/${n.actor.id}`,
           });
           break;
@@ -279,16 +280,16 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export const NOTIFICATION_TEXT: Record<Notification['type'], string> = {
-  like: 'оценил(а) вашу запись',
-  comment: 'прокомментировал(а) вашу запись',
-  repost: 'поделился(ась) вашей записью',
-  wall_post: 'написал(а) на вашей стене',
-  friend_request: 'хочет добавить вас в друзья',
-  friend_accept: 'принял(а) вашу заявку в друзья',
-  group_request: 'хочет вступить в сообщество',
-  group_accept: 'одобрил(а) вашу заявку в сообщество',
-};
+export const NOTIFICATION_TEXT = (): Record<Notification['type'], string> => ({
+  like: tr('оценил(а) вашу запись'),
+  comment: tr('прокомментировал(а) вашу запись'),
+  repost: tr('поделился(ась) вашей записью'),
+  wall_post: tr('написал(а) на вашей стене'),
+  friend_request: tr('хочет добавить вас в друзья'),
+  friend_accept: tr('принял(а) вашу заявку в друзья'),
+  group_request: tr('хочет вступить в сообщество'),
+  group_accept: tr('одобрил(а) вашу заявку в сообщество'),
+});
 
 export const useRealtime = () => useContext(RealtimeContext);
 

@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Camera, LogOut, Palette, ShieldCheck, UserRound } from 'lucide-react';
@@ -8,6 +9,7 @@ import type { Me } from '../lib/types';
 import { fullName } from '../lib/utils';
 import { Avatar, pickFile } from '../components/ui';
 import { ThemeSwitch } from '../components/uiverse';
+import { LanguageSelect } from '../components/LanguageSelect';
 
 function ThemePicker() {
   const { theme, setTheme } = useTheme();
@@ -26,8 +28,8 @@ function ThemePicker() {
   );
   return (
     <div className="theme-options">
-      {option('light', 'Светлая', 'linear-gradient(135deg,#c7ceff,#f3d6ff,#ffd6ea)', 'rgba(255,255,255,.65)', '#4c5bf5')}
-      {option('dark', 'Тёмная', 'linear-gradient(135deg,#1a1f6b,#3b1a6b,#5a1646)', 'rgba(24,27,44,.6)', '#9aa3ff')}
+      {option('light', tr('Светлая'), 'linear-gradient(135deg,#c7ceff,#f3d6ff,#ffd6ea)', 'rgba(255,255,255,.65)', '#4c5bf5')}
+      {option('dark', tr('Тёмная'), 'linear-gradient(135deg,#1a1f6b,#3b1a6b,#5a1646)', 'rgba(24,27,44,.6)', '#9aa3ff')}
     </div>
   );
 }
@@ -53,7 +55,7 @@ function ProfileForm() {
       const u = await api<Me>('/me', { method: 'PATCH', body: f });
       setUser(u);
       qc.invalidateQueries({ queryKey: ['user', u.id] });
-      setMsg({ ok: true, text: 'Изменения сохранены' });
+      setMsg({ ok: true, text: tr('Изменения сохранены') });
     } catch (err) {
       setMsg({ ok: false, text: (err as Error).message });
     }
@@ -72,37 +74,37 @@ function ProfileForm() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
         <Avatar src={me.avatar} name={fullName(me)} id={me.id} size={72} />
         <button type="button" className="btn secondary" onClick={changeAvatar}>
-          <Camera size={16} /> Изменить фотографию
+          <Camera size={16} /> {tr('Изменить фотографию')}
         </button>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div className="form-row">
-          <label className="label">Имя</label>
+          <label className="label">{tr('Имя')}</label>
           <input className="field" value={f.firstName} onChange={set('firstName')} maxLength={50} required />
         </div>
         <div className="form-row">
-          <label className="label">Фамилия</label>
+          <label className="label">{tr('Фамилия')}</label>
           <input className="field" value={f.lastName} onChange={set('lastName')} maxLength={50} required />
         </div>
         <div className="form-row">
-          <label className="label">Город</label>
+          <label className="label">{tr('Город')}</label>
           <input className="field" value={f.city} onChange={set('city')} maxLength={80} />
         </div>
         <div className="form-row">
-          <label className="label">День рождения</label>
+          <label className="label">{tr('День рождения')}</label>
           <input className="field" type="date" value={f.birthday} onChange={set('birthday')} />
         </div>
       </div>
       <div className="form-row">
-        <label className="label">Статус</label>
+        <label className="label">{tr('Статус')}</label>
         <input className="field" value={f.status} onChange={set('status')} maxLength={140} />
       </div>
       <div className="form-row">
-        <label className="label">О себе</label>
+        <label className="label">{tr('О себе')}</label>
         <textarea className="field" value={f.bio} onChange={set('bio')} maxLength={1000} />
       </div>
       {msg && <div className={msg.ok ? 'muted' : 'error-text'} style={{ marginBottom: 10 }}>{msg.text}</div>}
-      <button className="btn">Сохранить</button>
+      <button className="btn">{tr('Сохранить')}</button>
     </form>
   );
 }
@@ -117,7 +119,7 @@ function PasswordForm() {
       await api('/me/password', { body: { current, next } });
       setCurrent('');
       setNext('');
-      setMsg({ ok: true, text: 'Пароль изменён' });
+      setMsg({ ok: true, text: tr('Пароль изменён') });
     } catch (err) {
       setMsg({ ok: false, text: (err as Error).message });
     }
@@ -125,15 +127,15 @@ function PasswordForm() {
   return (
     <form onSubmit={save} style={{ padding: '0 20px 20px' }}>
       <div className="form-row">
-        <label className="label">Текущий пароль</label>
+        <label className="label">{tr('Текущий пароль')}</label>
         <input className="field" type="password" value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" required />
       </div>
       <div className="form-row">
-        <label className="label">Новый пароль</label>
+        <label className="label">{tr('Новый пароль')}</label>
         <input className="field" type="password" value={next} onChange={(e) => setNext(e.target.value)} minLength={6} autoComplete="new-password" required />
       </div>
       {msg && <div className={msg.ok ? 'muted' : 'error-text'} style={{ marginBottom: 10 }}>{msg.text}</div>}
-      <button className="btn secondary">Изменить пароль</button>
+      <button className="btn secondary">{tr('Изменить пароль')}</button>
     </form>
   );
 }
@@ -145,28 +147,34 @@ export default function SettingsPage() {
     <div className="col-main">
       <div className="card">
         <div className="card-title">
-          <Palette size={18} /> Внешний вид
+          <Palette size={18} /> {tr('Внешний вид')}
           <span className="right">
             <ThemeSwitch dark={theme === 'dark'} onChange={(d) => setTheme(d ? 'dark' : 'light')} size={10} />
           </span>
         </div>
         <ThemePicker />
+        <div className="switch-row" style={{ padding: '0 20px 20px', borderBottom: 'none' }}>
+          <div className="text">
+            <b>{tr('Язык')}</b>
+          </div>
+          <LanguageSelect />
+        </div>
       </div>
       <div className="card">
         <div className="card-title">
-          <UserRound size={18} /> Профиль
+          <UserRound size={18} /> {tr('Профиль')}
         </div>
         <ProfileForm />
       </div>
       <div className="card">
         <div className="card-title">
-          <ShieldCheck size={18} /> Безопасность
+          <ShieldCheck size={18} /> {tr('Безопасность')}
         </div>
         <PasswordForm />
       </div>
       <div className="card card-pad">
         <button className="btn danger" onClick={signOut}>
-          <LogOut size={16} /> Выйти из аккаунта
+          <LogOut size={16} /> {tr('Выйти из аккаунта')}
         </button>
       </div>
     </div>

@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Megaphone, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -25,29 +26,29 @@ function Editor({ initial, onClose }: { initial: Draft; onClose: () => void }) {
   };
   return (
     <Modal
-      title={d.id ? 'Объявление' : 'Новое объявление'}
+      title={d.id ? tr('Объявление') : tr('Новое объявление')}
       onClose={onClose}
       footer={
         <>
           <button className="btn secondary" onClick={onClose}>
-            Отмена
+            {tr('Отмена')}
           </button>
           <button className="btn" onClick={save} disabled={!d.title.trim()}>
-            {d.id ? 'Сохранить' : 'Опубликовать'}
+            {d.id ? tr('Сохранить') : tr('Опубликовать')}
           </button>
         </>
       }
     >
       <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
-          <label className="label">Заголовок</label>
+          <label className="label">{tr('Заголовок')}</label>
           <input className="field" autoFocus value={d.title} maxLength={150} onChange={(e) => setD({ ...d, title: e.target.value })} />
         </div>
         <div>
-          <label className="label">Текст</label>
+          <label className="label">{tr('Текст')}</label>
           <textarea className="field" value={d.body} maxLength={3000} onChange={(e) => setD({ ...d, body: e.target.value })} />
         </div>
-        <SwitchRow title="Показывать участникам" hint="Активные объявления видны вверху ленты новостей" on={d.active} onChange={(v) => setD({ ...d, active: v })} />
+        <SwitchRow title={tr('Показывать участникам')} hint={tr("Активные объявления видны вверху ленты новостей")} on={d.active} onChange={(v) => setD({ ...d, active: v })} />
         {error && <div className="error-text">{error}</div>}
       </div>
     </Modal>
@@ -65,7 +66,7 @@ export default function AnnouncementsPage() {
     qc.invalidateQueries({ queryKey: ['announcements'] });
   };
   const remove = async (a: AdminAnnouncement) => {
-    if (!confirm(`Удалить объявление «${a.title}»?`)) return;
+    if (!confirm(tr('Удалить объявление «{title}»?', { title: a.title }))) return;
     await api(`/admin/announcements/${a.id}`, { method: 'DELETE' });
     qc.invalidateQueries({ queryKey: ['admin', 'announcements'] });
     qc.invalidateQueries({ queryKey: ['announcements'] });
@@ -73,16 +74,16 @@ export default function AnnouncementsPage() {
 
   return (
     <>
-      <AdminHead title="Объявления" subtitle="Сообщения для всех участников вверху ленты">
+      <AdminHead title={tr('Объявления')} subtitle={tr("Сообщения для всех участников вверху ленты")}>
         <button className="btn" onClick={() => setEdit({ title: '', body: '', active: true })}>
-          <Plus size={16} /> Новое объявление
+          <Plus size={16} /> {tr('Новое объявление')}
         </button>
       </AdminHead>
       <div className="card">
         {!data ? (
           <Spinner />
         ) : !data.length ? (
-          <Empty icon={<Megaphone size={40} />} title="Объявлений пока нет" />
+          <Empty icon={<Megaphone size={40} />} title={tr('Объявлений пока нет')} />
         ) : (
           data.map((a) => (
             <div className="row" key={a.id} style={{ alignItems: 'flex-start' }}>
@@ -95,11 +96,11 @@ export default function AnnouncementsPage() {
                 </div>
               </div>
               <div className="actions" style={{ alignItems: 'center' }}>
-                <Toggle on={a.active} onChange={(v) => toggle(a, v)} label="Показывать" />
-                <button className="icon-btn" onClick={() => setEdit(a)} aria-label="Редактировать">
+                <Toggle on={a.active} onChange={(v) => toggle(a, v)} label={tr("Показывать")} />
+                <button className="icon-btn" onClick={() => setEdit(a)} aria-label={tr('Редактировать')}>
                   <Pencil size={16} />
                 </button>
-                <button className="icon-btn" onClick={() => remove(a)} aria-label="Удалить">
+                <button className="icon-btn" onClick={() => remove(a)} aria-label={tr('Удалить')}>
                   <Trash2 size={16} />
                 </button>
               </div>

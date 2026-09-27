@@ -148,14 +148,30 @@ h3,
   mask-composite: exclude;
   pointer-events: none;
 }
+/* A pane with backdrop-filter becomes a backdrop root, and Chromium then composites an open menu that
+   overflows it with the page bleeding through. While a menu is open, the pane blurs via its sheen layer. */
+.card:has(.dropdown),
+.header-inner:has(.dropdown) {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.card:has(.dropdown)::before,
+.header-inner:has(.dropdown)::before {
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
 /* Keep open menus above the following panes (each pane is its own stacking context). */
 .card:has(.dropdown),
 .card:focus-within {
   z-index: 5;
 }
-.dropdown,
 .modal {
   background: var(--card-strong);
+}
+/* Menus live inside panes that already have a backdrop-filter, so their own blur can't see the page
+   behind them (nested backdrop roots). Keep them nearly opaque so underlying text never shows through. */
+.dropdown {
+  background: color-mix(in srgb, var(--card-solid) 94%, transparent);
 }
 
 /* ───────── Transitions (flat: fades and color changes, no 3D) ───────── */

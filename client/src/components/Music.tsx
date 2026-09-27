@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useCallback, useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -35,7 +36,7 @@ export function TrackCover({ track, size = 40 }: { track: Pick<Track, 'cover' | 
   );
 }
 
-/** Adds/removes a track from "Моя музыка" everywhere it is cached. */
+/** Adds/removes a track from tr("Моя музыка") everywhere it is cached. */
 function useLibraryToggle() {
   const qc = useQueryClient();
   return useCallback(
@@ -67,7 +68,7 @@ function PlaylistPicker({ track, onClose }: { track: Track; onClose: () => void 
     await add(p.id);
   };
   return (
-    <Modal title="Добавить в плейлист" onClose={onClose}>
+    <Modal title={tr('Добавить в плейлист')} onClose={onClose}>
       <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {!data && <Spinner />}
         {data?.map((p) => (
@@ -77,9 +78,9 @@ function PlaylistPicker({ track, onClose }: { track: Track; onClose: () => void 
           </button>
         ))}
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <input className="field" placeholder="Новый плейлист" value={title} maxLength={100} onChange={(e) => setTitle(e.target.value)} />
+          <input className="field" placeholder={tr('Новый плейлист')} value={title} maxLength={100} onChange={(e) => setTitle(e.target.value)} />
           <button className="btn" disabled={!title.trim()} onClick={create}>
-            <Plus size={16} /> Создать
+            <Plus size={16} /> {tr('Создать')}
           </button>
         </div>
       </div>
@@ -113,14 +114,14 @@ export function TrackRow({
 
   const remove = async () => {
     setMenu(false);
-    if (!confirm(`Удалить «${track.title}» навсегда?`)) return;
+    if (!confirm(tr('Удалить «{title}» навсегда?', { title: track.title }))) return;
     await api(`/music/${track.id}`, { method: 'DELETE' });
     onRemoved?.(track.id);
   };
 
   return (
     <div className={`track${active ? ' active' : ''}`} onDoubleClick={() => player.play(list, index)}>
-      <button className="track-play" onClick={() => player.play(list, index)} aria-label={playing ? 'Пауза' : 'Слушать'}>
+      <button className="track-play" onClick={() => player.play(list, index)} aria-label={playing ? tr('Пауза') : tr('Слушать')}>
         <TrackCover track={track} />
         <span className="track-play-icon">{playing ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}</span>
         {playing && (
@@ -133,7 +134,7 @@ export function TrackRow({
       </button>
       <div className="track-info">
         <div className="track-title ellipsis">{track.title}</div>
-        <div className="track-artist ellipsis">{track.artist || 'Неизвестный исполнитель'}</div>
+        <div className="track-artist ellipsis">{track.artist || tr('Неизвестный исполнитель')}</div>
       </div>
       <span className="track-time">{active ? formatDuration(player.time) : formatDuration(track.duration)}</span>
       {extraAction ? (
@@ -143,15 +144,15 @@ export function TrackRow({
       ) : (
         <button
           className={`icon-btn${added ? ' on' : ''}`}
-          aria-label={added ? 'Убрать из моей музыки' : 'Добавить в мою музыку'}
-          title={added ? 'В моей музыке' : 'Добавить в мою музыку'}
+          aria-label={added ? tr('Убрать из моей музыки') : tr('Добавить в мою музыку')}
+          title={added ? tr('В моей музыке') : tr('Добавить в мою музыку')}
           onClick={async () => setAdded((await toggleLibrary({ ...track, added })).added)}
         >
           {added ? <Check size={18} /> : <Plus size={18} />}
         </button>
       )}
       <div style={{ position: 'relative' }} ref={menuRef}>
-        <button className="icon-btn" onClick={() => setMenu((m) => !m)} aria-label="Ещё">
+        <button className="icon-btn" onClick={() => setMenu((m) => !m)} aria-label={tr('Ещё')}>
           <MoreHorizontal size={18} />
         </button>
         {menu && (
@@ -163,11 +164,11 @@ export function TrackRow({
                 setPicker(true);
               }}
             >
-              <ListPlus size={18} /> Добавить в плейлист
+              <ListPlus size={18} /> {tr('Добавить в плейлист')}
             </button>
             {track.ownerId === me.id && (
               <button className="menu-item danger" onClick={remove}>
-                <Trash2 size={18} /> Удалить
+                <Trash2 size={18} /> {tr('Удалить')}
               </button>
             )}
           </div>
@@ -181,7 +182,7 @@ export function TrackRow({
 export function TrackList({ tracks, onRemoved, empty }: { tracks: Track[]; onRemoved?: (id: number) => void; empty?: string }) {
   if (!tracks.length)
     return (
-      <Empty icon={<Music size={40} />} title="Нет аудиозаписей">
+      <Empty icon={<Music size={40} />} title={tr('Нет аудиозаписей')}>
         {empty}
       </Empty>
     );
@@ -200,19 +201,19 @@ export function TrackPicker({ onPick, onClose }: { onPick: (t: Track) => void; o
   const [q, setQ] = useState('');
   const list = (data ?? []).filter((t) => `${t.artist} ${t.title}`.toLowerCase().includes(q.trim().toLowerCase()));
   return (
-    <Modal title="Прикрепить аудиозапись" onClose={onClose} wide>
+    <Modal title={tr('Прикрепить аудиозапись')} onClose={onClose} wide>
       <div className="modal-body">
-        <input className="field" placeholder="Поиск в моей музыке" value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
+        <input className="field" placeholder={tr('Поиск в моей музыке')} value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
         <div style={{ maxHeight: '55vh', overflowY: 'auto', marginTop: 10 }}>
           {!data ? (
             <Spinner />
           ) : !list.length ? (
-            <Empty icon={<Music size={36} />} title="Ничего не найдено">
-              Загрузите музыку в разделе «Музыка»
+            <Empty icon={<Music size={36} />} title={tr('Ничего не найдено')}>
+              {tr('Загрузите музыку в разделе «Музыка»')}
             </Empty>
           ) : (
             list.map((t, i) => (
-              <TrackRow key={t.id} track={t} list={list} index={i} extraAction={{ label: 'Прикрепить', icon: <Plus size={18} />, run: () => onPick(t) }} />
+              <TrackRow key={t.id} track={t} list={list} index={i} extraAction={{ label: tr('Прикрепить'), icon: <Plus size={18} />, run: () => onPick(t) }} />
             ))
           )}
         </div>
@@ -252,7 +253,7 @@ export function PlayerBar() {
   const nextRepeat = p.repeat === 'off' ? 'all' : p.repeat === 'all' ? 'one' : 'off';
 
   return (
-    <div className="player-bar" role="region" aria-label="Плеер">
+    <div className="player-bar" role="region" aria-label={tr('Плеер')}>
       <div className="player-progress">
         <input
           type="range"
@@ -261,7 +262,7 @@ export function PlayerBar() {
           step={0.1}
           value={p.time}
           onChange={(e) => p.seek(Number(e.target.value))}
-          aria-label="Перемотка"
+          aria-label={tr('Перемотка')}
           style={{ ['--pct' as string]: `${pct}%` }}
         />
       </div>
@@ -270,32 +271,32 @@ export function PlayerBar() {
         <div className="track-info">
           <div className="track-title ellipsis">{t.title}</div>
           <div className="track-artist ellipsis">
-            {t.artist || 'Неизвестный исполнитель'} · {formatDuration(p.time)} / {formatDuration(p.duration)}
+            {t.artist || tr('Неизвестный исполнитель')} · {formatDuration(p.time)} / {formatDuration(p.duration)}
           </div>
         </div>
         <div className="player-controls">
-          <button className={`icon-btn hide-mobile${p.shuffle ? ' on' : ''}`} onClick={() => p.setShuffle(!p.shuffle)} aria-label="Перемешать" title="Перемешать">
+          <button className={`icon-btn hide-mobile${p.shuffle ? ' on' : ''}`} onClick={() => p.setShuffle(!p.shuffle)} aria-label={tr('Перемешать')} title={tr('Перемешать')}>
             <Shuffle size={18} />
           </button>
-          <button className="icon-btn" onClick={p.prev} aria-label="Предыдущий">
+          <button className="icon-btn" onClick={p.prev} aria-label={tr('Предыдущий')}>
             <SkipBack size={20} fill="currentColor" />
           </button>
-          <button className="player-toggle" onClick={p.toggle} aria-label={p.playing ? 'Пауза' : 'Слушать'}>
+          <button className="player-toggle" onClick={p.toggle} aria-label={p.playing ? tr('Пауза') : tr('Слушать')}>
             {p.playing ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
           </button>
-          <button className="icon-btn" onClick={p.next} aria-label="Следующий">
+          <button className="icon-btn" onClick={p.next} aria-label={tr('Следующий')}>
             <SkipForward size={20} fill="currentColor" />
           </button>
           <button
             className={`icon-btn hide-mobile${p.repeat !== 'off' ? ' on' : ''}`}
             onClick={() => p.setRepeat(nextRepeat)}
-            aria-label="Повтор"
-            title={p.repeat === 'one' ? 'Повтор трека' : p.repeat === 'all' ? 'Повтор списка' : 'Без повтора'}
+            aria-label={tr('Повтор')}
+            title={p.repeat === 'one' ? tr('Повтор трека') : p.repeat === 'all' ? tr('Повтор списка') : tr('Без повтора')}
           >
             {p.repeat === 'one' ? <Repeat1 size={18} /> : <Repeat size={18} />}
           </button>
           <div className="player-volume hide-mobile" onMouseLeave={() => setVolOpen(false)}>
-            <button className="icon-btn" onClick={() => p.setVolume(p.volume ? 0 : 0.8)} onMouseEnter={() => setVolOpen(true)} aria-label="Громкость">
+            <button className="icon-btn" onClick={() => p.setVolume(p.volume ? 0 : 0.8)} onMouseEnter={() => setVolOpen(true)} aria-label={tr('Громкость')}>
               {p.volume ? <Volume2 size={18} /> : <VolumeX size={18} />}
             </button>
             {volOpen && (
@@ -306,12 +307,12 @@ export function PlayerBar() {
                 step={0.01}
                 value={p.volume}
                 onChange={(e) => p.setVolume(Number(e.target.value))}
-                aria-label="Уровень громкости"
+                aria-label={tr('Уровень громкости')}
                 style={{ ['--pct' as string]: `${p.volume * 100}%` }}
               />
             )}
           </div>
-          <button className="icon-btn" onClick={p.close} aria-label="Закрыть плеер">
+          <button className="icon-btn" onClick={p.close} aria-label={tr('Закрыть плеер')}>
             <X size={18} />
           </button>
         </div>

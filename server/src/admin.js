@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import { db, q, tx, now } from './db.js';
 import { requireAuth, isStaff, isAdminLevel, levelOf, createSession, hashPassword } from './auth.js';
 import { fail, intParam, str, errorHandler } from './http.js';
+import { translate } from './i18n.js';
 import { getAllSettings, updateSettings } from './settings.js';
 import { userShort, groupShort, getUser, getGroup, hydratePosts } from './models.js';
 import { kick } from './realtime.js';
@@ -661,5 +662,5 @@ admin.get('/log', adminOnly, (req, res) => {
   });
 });
 
-admin.use((_req, res) => res.status(404).json({ error: 'Метод не найден' }));
+admin.use((req, res) => res.status(404).json({ error: translate('Метод не найден', null, req.lang) }));
 admin.use(errorHandler);

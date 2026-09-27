@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Image as ImageIcon, Music, X } from 'lucide-react';
@@ -14,7 +15,7 @@ export function Composer({
   ownerType = 'user',
   ownerId,
   queryKeys,
-  placeholder = 'Что у вас нового?',
+  placeholder = tr('Что у вас нового?'),
 }: {
   ownerType?: 'user' | 'group';
   ownerId?: number;
@@ -81,7 +82,7 @@ export function Composer({
           }}
         />
         {!expanded && (
-          <button className="icon-btn" onClick={attach} aria-label="Прикрепить фото">
+          <button className="icon-btn" onClick={attach} aria-label={tr('Прикрепить фото')}>
             <ImageIcon size={22} />
           </button>
         )}
@@ -89,7 +90,7 @@ export function Composer({
       {preview && (
         <div className="attach-preview">
           <img src={preview} alt="" />
-          <button onClick={() => setFile(null)} aria-label="Убрать фото">
+          <button onClick={() => setFile(null)} aria-label={tr('Убрать фото')}>
             <X size={14} />
           </button>
         </div>
@@ -101,7 +102,7 @@ export function Composer({
             <div className="track-title ellipsis">{audio.title}</div>
             <div className="track-artist ellipsis">{audio.artist}</div>
           </div>
-          <button className="icon-btn" onClick={() => setAudio(null)} aria-label="Убрать аудиозапись">
+          <button className="icon-btn" onClick={() => setAudio(null)} aria-label={tr('Убрать аудиозапись')}>
             <X size={16} />
           </button>
         </div>
@@ -119,14 +120,14 @@ export function Composer({
       )}
       {expanded && (
         <div className="composer-tools">
-          <button className="icon-btn" onClick={attach} aria-label="Прикрепить фото">
+          <button className="icon-btn" onClick={attach} aria-label={tr('Прикрепить фото')}>
             <ImageIcon size={22} />
           </button>
-          <button className="icon-btn" onClick={() => setPicking(true)} aria-label="Прикрепить аудиозапись">
+          <button className="icon-btn" onClick={() => setPicking(true)} aria-label={tr('Прикрепить аудиозапись')}>
             <Music size={22} />
           </button>
           <div style={{ flex: 1 }} />
-          <SendButton label="Опубликовать" onClick={submit} disabled={busy || (!text.trim() && !file && !audio)} />
+          <SendButton label={tr("Опубликовать")} onClick={submit} disabled={busy || (!text.trim() && !file && !audio)} />
         </div>
       )}
     </div>

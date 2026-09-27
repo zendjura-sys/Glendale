@@ -22,6 +22,14 @@ Premium but **minimal and flat**. The layout stays familiar to VK users (header,
 - Client: `client/src/admin/*` — lazy-loaded chunk, route `/admin/*`, own layout reusing the app header. Moderators see dashboard/reports/content only.
 - SocialEngine 5 (PHP) was used only as a feature reference; do not copy its code.
 
+## Localization
+
+- Every UI string goes through `tr()` / `tp()` / `countLabel()` from `client/src/lib/i18n.ts`; server errors go through `fail()` (translated by `errorHandler` from `Accept-Language`). The Russian source text is the key.
+- Languages: uk (default), en, zh, de, fr, es, ru (source, no dictionary), ja, kk. Dictionaries in `locales/*.json`; only uk is bundled, the rest load on demand.
+- After adding strings: `python3 scripts/i18n-extract.py`, add translations for every language to `locales/src/<lang>.extra.txt` (`source<TAB>translation`), then `python3 scripts/i18n-build.py uk en zh de fr es ja kk` (must print OK for all).
+- Constants with translated text must be functions (`LABELS()`), not module-level values, so they follow language switches.
+- Demo data (`server/src/seed.js`) is in Ukrainian.
+
 ## Checks
 
 - `npm run typecheck` and `npm run build` (client), `npm test -w server` (API tests).

@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -25,11 +26,11 @@ export function loginAs(token: string) {
 function StatusPills({ u }: { u: AdminUser }) {
   return (
     <span style={{ display: 'inline-flex', gap: 4, flexWrap: 'wrap' }}>
-      {!u.enabled && <span className="pill bad">Заблокирован</span>}
-      {!u.approved && <span className="pill warn">Ждёт одобрения</span>}
-      {u.lockedUntil > Date.now() && <span className="pill warn">Вход заблокирован</span>}
-      {u.enabled && u.approved && <span className="pill good">Активен</span>}
-      {u.verified && <span className="pill accent">Подтверждён</span>}
+      {!u.enabled && <span className="pill bad">{tr('Заблокирован')}</span>}
+      {!u.approved && <span className="pill warn">{tr('Ждёт одобрения')}</span>}
+      {u.lockedUntil > Date.now() && <span className="pill warn">{tr('Вход заблокирован')}</span>}
+      {u.enabled && u.approved && <span className="pill good">{tr('Активен')}</span>}
+      {u.verified && <span className="pill accent">{tr('Подтверждён')}</span>}
     </span>
   );
 }
@@ -73,7 +74,7 @@ function MemberModal({ id, levels, onClose }: { id: number; levels: Level[]; onC
   };
 
   const remove = async () => {
-    if (!u || !confirm(`Удалить аккаунт ${fullName(u)} со всеми записями? Это необратимо.`)) return;
+    if (!u || !confirm(tr('Удалить аккаунт {name} со всеми записями? Это необратимо.', { name: fullName(u) }))) return;
     try {
       await api(`/admin/users/${id}`, { method: 'DELETE' });
       qc.invalidateQueries({ queryKey: ['admin'] });
@@ -86,7 +87,7 @@ function MemberModal({ id, levels, onClose }: { id: number; levels: Level[]; onC
   const self = u?.id === me.id;
 
   return (
-    <Modal title="Участник" onClose={onClose} wide>
+    <Modal title={tr('Участник')} onClose={onClose} wide>
       {!u || !form ? (
         <Spinner />
       ) : (
@@ -107,14 +108,14 @@ function MemberModal({ id, levels, onClose }: { id: number; levels: Level[]; onC
           <div className="tiles" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
             {(
               [
-                ['Записи', u.stats.posts],
-                ['Комментарии', u.stats.comments],
-                ['Сообщения', u.stats.messages],
-                ['Друзья', u.stats.friends],
-                ['Сообщества', u.stats.groups],
-                ['Фото', u.stats.photos],
-                ['Сессии', u.stats.sessions],
-                ['Жалобы на него', u.stats.reportsAgainst],
+                [tr('Записи'), u.stats.posts],
+                [tr('Комментарии'), u.stats.comments],
+                [tr('Сообщения'), u.stats.messages],
+                [tr('Друзья'), u.stats.friends],
+                [tr('Сообщества'), u.stats.groups],
+                [tr('Фото'), u.stats.photos],
+                [tr('Сессии'), u.stats.sessions],
+                [tr('Жалобы на него'), u.stats.reportsAgainst],
               ] as [string, number][]
             ).map(([label, value]) => (
               <div key={label} className="counters" style={{ padding: 0 }}>
@@ -128,11 +129,11 @@ function MemberModal({ id, levels, onClose }: { id: number; levels: Level[]; onC
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              <label className="label">Имя</label>
+              <label className="label">{tr('Имя')}</label>
               <input className="field" value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />
             </div>
             <div>
-              <label className="label">Фамилия</label>
+              <label className="label">{tr('Фамилия')}</label>
               <input className="field" value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />
             </div>
             <div>
@@ -140,22 +141,22 @@ function MemberModal({ id, levels, onClose }: { id: number; levels: Level[]; onC
               <input className="field" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
             </div>
             <div>
-              <label className="label">Уровень доступа</label>
+              <label className="label">{tr('Уровень доступа')}</label>
               <select className="field" value={form.levelId} disabled={self} onChange={(e) => setForm({ ...form, levelId: Number(e.target.value) })}>
                 {levels.map((l) => (
                   <option key={l.id} value={l.id}>
-                    {l.title}
+                    {tr(l.title)}
                   </option>
                 ))}
               </select>
             </div>
             <div style={{ gridColumn: '1 / -1' }}>
-              <label className="label">Новый пароль (необязательно)</label>
+              <label className="label">{tr('Новый пароль (необязательно)')}</label>
               <input
                 className="field"
                 type="password"
                 autoComplete="new-password"
-                placeholder="Оставьте пустым, чтобы не менять"
+                placeholder={tr('Оставьте пустым, чтобы не менять')}
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
               />
@@ -163,24 +164,24 @@ function MemberModal({ id, levels, onClose }: { id: number; levels: Level[]; onC
           </div>
 
           <div>
-            <SwitchRow title="Аккаунт активен" hint="Заблокированный участник не может войти, все его сессии завершаются" on={u.enabled} onChange={(v) => !self && patch({ enabled: v })} />
-            <SwitchRow title="Одобрен" hint="Нужен, если регистрация идёт по одобрению" on={u.approved} onChange={(v) => patch({ approved: v })} />
-            <SwitchRow title="Подтверждённый аккаунт" hint="Галочка рядом с именем" on={u.verified} onChange={(v) => patch({ verified: v })} />
+            <SwitchRow title={tr('Аккаунт активен')} hint={tr("Заблокированный участник не может войти, все его сессии завершаются")} on={u.enabled} onChange={(v) => !self && patch({ enabled: v })} />
+            <SwitchRow title={tr('Одобрен')} hint={tr("Нужен, если регистрация идёт по одобрению")} on={u.approved} onChange={(v) => patch({ approved: v })} />
+            <SwitchRow title={tr('Подтверждённый аккаунт')} hint={tr("Галочка рядом с именем")} on={u.verified} onChange={(v) => patch({ verified: v })} />
           </div>
 
           <dl className="info-list" style={{ padding: 0, gridTemplateColumns: '150px 1fr' }}>
-            <dt>Зарегистрирован</dt>
+            <dt>{tr('Зарегистрирован')}</dt>
             <dd>{formatDate(u.createdAt)}</dd>
-            <dt>Последний визит</dt>
-            <dd>{u.online ? 'в сети' : formatDate(u.lastSeen)}</dd>
-            <dt>IP при регистрации</dt>
+            <dt>{tr('Последний визит')}</dt>
+            <dd>{u.online ? tr('в сети') : formatDate(u.lastSeen)}</dd>
+            <dt>{tr('IP при регистрации')}</dt>
             <dd>{u.signupIp || '—'}</dd>
-            <dt>Последний IP</dt>
+            <dt>{tr('Последний IP')}</dt>
             <dd>{u.lastIp || '—'}</dd>
           </dl>
 
           {error && <div className="error-text">{error}</div>}
-          {saved && !error && <div className="muted">Сохранено</div>}
+          {saved && !error && <div className="muted">{tr('Сохранено')}</div>}
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button
@@ -190,24 +191,24 @@ function MemberModal({ id, levels, onClose }: { id: number; levels: Level[]; onC
                 patch(password ? { ...rest, password } : rest);
               }}
             >
-              <Check size={16} /> Сохранить
+              <Check size={16} /> {tr('Сохранить')}
             </button>
             {!self && u.enabled && (
-              <button className="btn secondary" onClick={() => action('login-as', `Войти как ${fullName(u)}? Вы сможете вернуться в админку.`)}>
-                <LogIn size={16} /> Войти как
+              <button className="btn secondary" onClick={() => action('login-as', tr('Войти как {name}? Вы сможете вернуться в админку.', { name: fullName(u) }))}>
+                <LogIn size={16} /> {tr('Войти как')}
               </button>
             )}
-            <button className="btn secondary" onClick={() => action('logout-all', 'Завершить все сессии участника?')}>
-              <LogOut size={16} /> Завершить сессии
+            <button className="btn secondary" onClick={() => action('logout-all', tr('Завершить все сессии участника?'))}>
+              <LogOut size={16} /> {tr('Завершить сессии')}
             </button>
             {u.lockedUntil > Date.now() && (
               <button className="btn secondary" onClick={() => patch({ unlock: true })}>
-                <Unlock size={16} /> Снять блокировку входа
+                <Unlock size={16} /> {tr('Снять блокировку входа')}
               </button>
             )}
             {!self && (
               <button className="btn danger" style={{ marginLeft: 'auto' }} onClick={remove}>
-                <Trash2 size={16} /> Удалить
+                <Trash2 size={16} /> {tr('Удалить')}
               </button>
             )}
           </div>
@@ -262,61 +263,61 @@ export default function MembersPage() {
     });
 
   const bulk = async (action: string, label: string) => {
-    if (action === 'delete' && !confirm(`Удалить ${selected.size} аккаунт(ов)? Это необратимо.`)) return;
+    if (action === 'delete' && !confirm(tr('Удалить аккаунтов: {n}? Это необратимо.', { n: selected.size }))) return;
     const r = await api<{ done: number; skipped: number[] }>('/admin/users/bulk', { body: { ids: [...selected], action } });
-    setNotice(`${label}: ${r.done}${r.skipped.length ? `, пропущено ${r.skipped.length} (нет прав)` : ''}`);
+    setNotice(`${label}: ${r.done}${r.skipped.length ? tr(', пропущено {n} (нет прав)', { n: r.skipped.length }) : ''}`);
     setSelected(new Set());
     qc.invalidateQueries({ queryKey: ['admin'] });
   };
 
   return (
     <>
-      <AdminHead title="Участники" subtitle="Поиск, модерация и управление аккаунтами" />
+      <AdminHead title={tr('Участники')} subtitle={tr("Поиск, модерация и управление аккаунтами")} />
       <div className="card">
         <div className="toolbar">
           <div className="grow" style={{ position: 'relative' }}>
             <Search size={16} style={{ position: 'absolute', left: 12, top: 10, color: 'var(--icon)' }} />
-            <input className="field" style={{ width: '100%', paddingLeft: 36 }} placeholder="Имя, email или ID" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <input className="field" style={{ width: '100%', paddingLeft: 36 }} placeholder={tr('Имя, email или ID')} value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
-          <select className="field" value={status} onChange={(e) => set({ status: e.target.value })} aria-label="Статус">
-            <option value="">Все статусы</option>
-            <option value="active">Активные</option>
-            <option value="pending">Ждут одобрения</option>
-            <option value="banned">Заблокированные</option>
-            <option value="verified">Подтверждённые</option>
+          <select className="field" value={status} onChange={(e) => set({ status: e.target.value })} aria-label={tr('Статус')}>
+            <option value="">{tr('Все статусы')}</option>
+            <option value="active">{tr('Активные')}</option>
+            <option value="pending">{tr('Ждут одобрения')}</option>
+            <option value="banned">{tr('Заблокированные')}</option>
+            <option value="verified">{tr('Подтверждённые')}</option>
           </select>
-          <select className="field" value={level} onChange={(e) => set({ level: e.target.value })} aria-label="Уровень">
-            <option value="">Все уровни</option>
+          <select className="field" value={level} onChange={(e) => set({ level: e.target.value })} aria-label={tr('Уровень')}>
+            <option value="">{tr('Все уровни')}</option>
             {levels.map((l) => (
               <option key={l.id} value={l.id}>
-                {l.title}
+                {tr(l.title)}
               </option>
             ))}
           </select>
-          <select className="field" value={sort} onChange={(e) => set({ sort: e.target.value })} aria-label="Сортировка">
-            <option value="">Сначала новые</option>
-            <option value="last_seen">По активности</option>
-            <option value="name">По имени</option>
+          <select className="field" value={sort} onChange={(e) => set({ sort: e.target.value })} aria-label={tr('Сортировка')}>
+            <option value="">{tr('Сначала новые')}</option>
+            <option value="last_seen">{tr('По активности')}</option>
+            <option value="name">{tr('По имени')}</option>
           </select>
         </div>
 
         {selected.size > 0 && (
           <div className="bulkbar">
-            <b>Выбрано: {selected.size}</b>
-            <button className="btn secondary" onClick={() => bulk('approve', 'Одобрено')}>
-              <UserCheck size={16} /> Одобрить
+            <b>{tr('Выбрано:')} {selected.size}</b>
+            <button className="btn secondary" onClick={() => bulk('approve', tr('Одобрено'))}>
+              <UserCheck size={16} /> {tr('Одобрить')}
             </button>
-            <button className="btn secondary" onClick={() => bulk('verify', 'Подтверждено')}>
-              <BadgeCheck size={16} /> Подтвердить
+            <button className="btn secondary" onClick={() => bulk('verify', tr('Подтверждено'))}>
+              <BadgeCheck size={16} /> {tr('Подтвердить')}
             </button>
-            <button className="btn secondary" onClick={() => bulk('enable', 'Разблокировано')}>
-              <KeyRound size={16} /> Разблокировать
+            <button className="btn secondary" onClick={() => bulk('enable', tr('Разблокировано'))}>
+              <KeyRound size={16} /> {tr('Разблокировать')}
             </button>
-            <button className="btn secondary" onClick={() => bulk('disable', 'Заблокировано')}>
-              <Ban size={16} /> Заблокировать
+            <button className="btn secondary" onClick={() => bulk('disable', tr('Заблокировано'))}>
+              <Ban size={16} /> {tr('Заблокировать')}
             </button>
-            <button className="btn danger" onClick={() => bulk('delete', 'Удалено')}>
-              <Trash2 size={16} /> Удалить
+            <button className="btn danger" onClick={() => bulk('delete', tr('Удалено'))}>
+              <Trash2 size={16} /> {tr('Удалить')}
             </button>
           </div>
         )}
@@ -324,7 +325,7 @@ export default function MembersPage() {
           <div className="toolbar muted" style={{ justifyContent: 'space-between' }}>
             {notice}
             <button className="more-link" onClick={() => setNotice('')}>
-              Скрыть
+              {tr('Скрыть')}
             </button>
           </div>
         )}
@@ -332,7 +333,7 @@ export default function MembersPage() {
         {isLoading ? (
           <Spinner />
         ) : !items.length ? (
-          <Empty title="Никого не нашлось">Измените фильтры или запрос</Empty>
+          <Empty title={tr('Никого не нашлось')}>{tr('Измените фильтры или запрос')}</Empty>
         ) : (
           <div className="table-wrap">
             <table className="admin">
@@ -341,16 +342,16 @@ export default function MembersPage() {
                   <th style={{ width: 32 }}>
                     <input
                       type="checkbox"
-                      aria-label="Выбрать всех"
+                      aria-label={tr('Выбрать всех')}
                       checked={allChecked}
                       onChange={() => setSelected(allChecked ? new Set() : new Set(items.map((u) => u.id)))}
                     />
                   </th>
-                  <th>Участник</th>
+                  <th>{tr('Участник')}</th>
                   <th className="hide-sm">Email</th>
-                  <th>Уровень</th>
-                  <th>Статус</th>
-                  <th className="hide-sm">Регистрация</th>
+                  <th>{tr('Уровень')}</th>
+                  <th>{tr('Статус')}</th>
+                  <th className="hide-sm">{tr('Регистрация')}</th>
                   <th />
                 </tr>
               </thead>
@@ -358,7 +359,7 @@ export default function MembersPage() {
                 {items.map((u) => (
                   <tr key={u.id} className={selected.has(u.id) ? 'selected' : ''}>
                     <td>
-                      <input type="checkbox" aria-label={`Выбрать ${fullName(u)}`} checked={selected.has(u.id)} onChange={() => toggle(u.id)} />
+                      <input type="checkbox" aria-label={tr('Выбрать {name}', { name: fullName(u) })} checked={selected.has(u.id)} onChange={() => toggle(u.id)} />
                     </td>
                     <td>
                       <div className="who">
@@ -367,7 +368,7 @@ export default function MembersPage() {
                           <button className="more-link name" style={{ color: 'var(--name)' }} onClick={() => setOpen(u.id)}>
                             {fullName(u)}
                           </button>
-                          <div className="meta">#{u.id}{u.id === me.id ? ' · это вы' : ''}</div>
+                          <div className="meta">#{u.id}{u.id === me.id ? tr(' · это вы') : ''}</div>
                         </div>
                       </div>
                     </td>
@@ -375,8 +376,8 @@ export default function MembersPage() {
                       {u.email}
                     </td>
                     <td>
-                      <span className={`pill${u.level.type !== 'user' ? ' accent' : ''}`} title={LEVEL_TYPE_LABEL[u.level.type]}>
-                        {u.level.title}
+                      <span className={`pill${u.level.type !== 'user' ? ' accent' : ''}`} title={LEVEL_TYPE_LABEL()[u.level.type]}>
+                        {tr(u.level.title)}
                       </span>
                     </td>
                     <td>
@@ -384,7 +385,7 @@ export default function MembersPage() {
                     </td>
                     <td className="hide-sm muted">{new Date(u.createdAt).toLocaleDateString('ru-RU')}</td>
                     <td className="actions">
-                      <button className="icon-btn" onClick={() => setOpen(u.id)} aria-label="Редактировать">
+                      <button className="icon-btn" onClick={() => setOpen(u.id)} aria-label={tr('Редактировать')}>
                         <Pencil size={16} />
                       </button>
                     </td>

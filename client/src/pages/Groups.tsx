@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -25,25 +26,25 @@ function CreateGroupModal({ onClose }: { onClose: () => void }) {
   };
   return (
     <Modal
-      title="Новое сообщество"
+      title={tr('Новое сообщество')}
       onClose={onClose}
       footer={
         <button className="btn" onClick={create} disabled={!name.trim()}>
-          Создать сообщество
+          {tr('Создать сообщество')}
         </button>
       }
     >
       <div className="modal-body">
         <div className="form-row">
-          <label className="label">Название</label>
+          <label className="label">{tr('Название')}</label>
           <input className="field" autoFocus value={name} maxLength={100} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="form-row">
-          <label className="label">Описание</label>
+          <label className="label">{tr('Описание')}</label>
           <textarea className="field" value={description} maxLength={2000} onChange={(e) => setDescription(e.target.value)} />
         </div>
         <div className="form-row">
-          <label className="label">Тип сообщества</label>
+          <label className="label">{tr('Тип сообщества')}</label>
           <PrivacyPicker value={privacy} onChange={setPrivacy} />
         </div>
         {error && <div className="error-text">{error}</div>}
@@ -62,9 +63,9 @@ export function GroupRow({ g }: { g: Group }) {
         <Link to={`/club/${g.id}`} className="name" style={{ fontSize: 14 }}>
           {g.name}
         </Link>
-        {g.privacy === 'closed' && <Lock size={13} style={{ marginLeft: 6, verticalAlign: '-1px', color: 'var(--text-3)' }} aria-label="Закрытое" />}
+        {g.privacy === 'closed' && <Lock size={13} style={{ marginLeft: 6, verticalAlign: '-1px', color: 'var(--text-3)' }} aria-label={tr('Закрытое')} />}
         {g.description && <div className="ellipsis muted">{g.description}</div>}
-        <div className="meta">{countLabel(g.membersCount, 'участник', 'участника', 'участников')}</div>
+        <div className="meta">{countLabel(g.membersCount, tr('участник|участника|участников'))}</div>
       </div>
       <div className="actions">
         <JoinButton group={g} compact />
@@ -103,23 +104,23 @@ export default function GroupsPage() {
         {!own && owner && (
           <div className="card-title">
             <Link to={`/id/${userId}`}>{fullName(owner)}</Link>
-            <span className="muted">› Сообщества</span>
+            <span className="muted">{tr('› Сообщества')}</span>
           </div>
         )}
         <div className="tabs" style={{ alignItems: 'center' }}>
           <button className={`tab${tab === 'mine' ? ' active' : ''}`} onClick={() => setParams(own ? {} : { id: String(userId) })}>
-            {own ? 'Мои сообщества' : 'Сообщества'}
+            {own ? tr('Мои сообщества') : tr('Сообщества')}
             <span className="n">{mine?.length ?? ''}</span>
           </button>
           {own && (
             <button className={`tab${tab === 'all' ? ' active' : ''}`} onClick={() => setParams({ tab: 'all' })}>
-              Поиск сообществ
+              {tr('Поиск сообществ')}
             </button>
           )}
           <div style={{ flex: 1 }} />
           {own && (
             <button className="btn" onClick={() => setCreating(true)}>
-              <Plus size={16} /> Создать
+              <Plus size={16} /> {tr('Создать')}
             </button>
           )}
         </div>
@@ -128,17 +129,17 @@ export default function GroupsPage() {
           <input
             className="field"
             style={{ paddingLeft: 36 }}
-            placeholder="Поиск сообществ"
+            placeholder={tr('Поиск сообществ')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
         {loading && <Spinner />}
         {!loading && !list.length && (
-          <Empty icon={<UsersRound size={48} />} title="Сообществ не найдено">
+          <Empty icon={<UsersRound size={48} />} title={tr('Сообществ не найдено')}>
             {tab === 'mine' && own && (
               <button className="btn" style={{ marginTop: 12 }} onClick={() => setParams({ tab: 'all' })}>
-                Найти интересные сообщества
+                {tr('Найти интересные сообщества')}
               </button>
             )}
           </Empty>

@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
@@ -12,7 +13,7 @@ export default function PostPage() {
   if (error || !data)
     return (
       <div className="card">
-        <Empty title="Запись не найдена">Возможно, она была удалена.</Empty>
+        <Empty title={tr('Запись не найдена')}>{tr('Возможно, она была удалена.')}</Empty>
       </div>
     );
   return (

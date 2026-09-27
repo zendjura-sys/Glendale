@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { Suspense, useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -25,6 +26,7 @@ import { useTheme } from '../lib/theme';
 import { fullName } from '../lib/utils';
 import { NotificationList } from './Notifications';
 import { ImpersonationBar } from './Moderation';
+import { LanguageSelect } from './LanguageSelect';
 import { useConfig } from '../lib/config';
 import { isStaffLevel } from '../lib/types';
 import { Avatar, Spinner, useClickOutside } from './ui';
@@ -65,20 +67,20 @@ function NotificationsButton() {
 
   return (
     <div style={{ position: 'relative' }} ref={ref}>
-      <button className="header-icon" onClick={toggle} aria-label="Уведомления">
+      <button className="header-icon" onClick={toggle} aria-label={tr('Уведомления')}>
         <Bell size={22} />
         {counters.notifications > 0 && <span className="badge">{counters.notifications}</span>}
       </button>
       {open && (
         <div className="dropdown" style={{ width: 380, maxWidth: 'calc(100vw - 24px)', right: -60, padding: 0, overflow: 'hidden' }}>
           <div className="card-title" style={{ borderBottom: '1px solid var(--separator)' }}>
-            Уведомления
+            {tr('Уведомления')}
           </div>
           <div style={{ maxHeight: 420, overflowY: 'auto' }}>
             <NotificationList compact onItemClick={close} />
           </div>
           <Link to="/notifications" className="menu-item" style={{ justifyContent: 'center', color: 'var(--accent)', borderTop: '1px solid var(--separator)', padding: 12 }} onClick={close}>
-            Показать все
+            {tr('Показать все')}
           </Link>
         </div>
       )}
@@ -95,7 +97,7 @@ function UserMenu() {
   const ref = useClickOutside<HTMLDivElement>(open, close);
   return (
     <div style={{ position: 'relative' }} ref={ref}>
-      <button className="header-user" onClick={() => setOpen((o) => !o)} aria-label="Меню профиля">
+      <button className="header-user" onClick={() => setOpen((o) => !o)} aria-label={tr('Меню профиля')}>
         <Avatar src={me.avatar} name={fullName(me)} id={me.id} size={32} />
         <ChevronDown size={16} />
       </button>
@@ -105,28 +107,31 @@ function UserMenu() {
             <Avatar src={me.avatar} name={fullName(me)} id={me.id} size={40} />
             <div style={{ minWidth: 0 }}>
               <div className="name ellipsis">{fullName(me)}</div>
-              <div className="meta">Перейти на свою страницу</div>
+              <div className="meta">{tr('Перейти на свою страницу')}</div>
             </div>
           </Link>
           <div className="menu-sep" />
           {isStaffLevel(me.level.type) && (
             <Link to="/admin" className="menu-item" onClick={close}>
-              <Shield size={18} /> Админ-панель
+              <Shield size={18} /> {tr('Админ-панель')}
             </Link>
           )}
           <Link to="/settings" className="menu-item" onClick={close}>
-            <Settings size={18} /> Настройки
+            <Settings size={18} /> {tr('Настройки')}
           </Link>
           <div className="menu-item" style={{ cursor: 'default' }}>
             {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
-            Тема: {theme === 'dark' ? 'тёмная' : 'светлая'}
+            {tr('Тема:')} {theme === 'dark' ? tr('тёмная') : tr('светлая')}
             <span style={{ marginLeft: 'auto' }}>
               <ThemeSwitch dark={theme === 'dark'} onChange={(d) => setTheme(d ? 'dark' : 'light')} size={9} />
             </span>
           </div>
+          <div className="menu-item" style={{ cursor: 'default' }}>
+            <LanguageSelect />
+          </div>
           <div className="menu-sep" />
           <button className="menu-item" onClick={signOut}>
-            <LogOut size={18} /> Выйти
+            <LogOut size={18} /> {tr('Выйти')}
           </button>
         </div>
       )}
@@ -151,10 +156,10 @@ export function Header() {
         <Logo />
         <form className="header-search" onSubmit={submit} role="search">
           <Search size={16} />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск" aria-label="Поиск" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tr('Поиск')} aria-label={tr('Поиск')} />
         </form>
         <div className="header-spacer" />
-        <Link to="/search" className="header-icon mobile-only" aria-label="Поиск">
+        <Link to="/search" className="header-icon mobile-only" aria-label={tr('Поиск')}>
           <Search size={22} />
         </Link>
         <NotificationsButton />
@@ -173,38 +178,38 @@ function Sidebar() {
   const { config } = useConfig();
   const { counters } = useRealtime();
   return (
-    <nav className="sidebar" aria-label="Главное меню">
+    <nav className="sidebar" aria-label={tr('Главное меню')}>
       <NavLink to={`/id/${me.id}`} end>
-        <CircleUserRound size={20} /> Моя страница
+        <CircleUserRound size={20} /> {tr('Моя страница')}
       </NavLink>
       <NavLink to="/feed">
-        <Newspaper size={20} /> Новости
+        <Newspaper size={20} /> {tr('Новости')}
       </NavLink>
       <NavLink to="/im">
-        <MessageCircle size={20} /> Мессенджер <Counter n={counters.messages} hot />
+        <MessageCircle size={20} /> {tr('Мессенджер')} <Counter n={counters.messages} hot />
       </NavLink>
       <NavLink to="/friends">
-        <Users size={20} /> Друзья <Counter n={counters.friends} />
+        <Users size={20} /> {tr('Друзья')} <Counter n={counters.friends} />
       </NavLink>
       <NavLink to="/groups">
-        <UsersRound size={20} /> Сообщества
+        <UsersRound size={20} /> {tr('Сообщества')}
       </NavLink>
       <NavLink to={`/photos/${me.id}`}>
-        <ImageIcon size={20} /> Фотографии
+        <ImageIcon size={20} /> {tr('Фотографии')}
       </NavLink>
       <NavLink to="/music">
-        <Music size={20} /> Музыка
+        <Music size={20} /> {tr('Музыка')}
       </NavLink>
       <NavLink to="/notifications">
-        <Bell size={20} /> Уведомления
+        <Bell size={20} /> {tr('Уведомления')}
       </NavLink>
       <div className="sidebar-sep" />
       <NavLink to="/settings">
-        <Settings size={20} /> Настройки
+        <Settings size={20} /> {tr('Настройки')}
       </NavLink>
       {isStaffLevel(me.level.type) && (
         <NavLink to="/admin">
-          <Shield size={20} /> Админ-панель
+          <Shield size={20} /> {tr('Админ-панель')}
         </NavLink>
       )}
       <div className="sidebar-foot">
@@ -218,26 +223,26 @@ function TabBar() {
   const me = useMe();
   const { counters } = useRealtime();
   return (
-    <nav className="tabbar" aria-label="Навигация">
+    <nav className="tabbar" aria-label={tr('Навигация')}>
       <NavLink to="/feed">
-        <Newspaper size={24} /> Новости
+        <Newspaper size={24} /> {tr('Новости')}
       </NavLink>
       <NavLink to="/groups">
-        <UsersRound size={24} /> Группы
+        <UsersRound size={24} /> {tr('Группы')}
       </NavLink>
       <NavLink to="/im">
-        <MessageCircle size={24} /> Мессенджер
+        <MessageCircle size={24} /> {tr('Мессенджер')}
         {counters.messages > 0 && <span className="badge">{counters.messages}</span>}
       </NavLink>
       <NavLink to="/friends">
-        <Users size={24} /> Друзья
+        <Users size={24} /> {tr('Друзья')}
         {counters.friends > 0 && <span className="badge">{counters.friends}</span>}
       </NavLink>
       <NavLink to="/music">
-        <Music size={24} /> Музыка
+        <Music size={24} /> {tr('Музыка')}
       </NavLink>
       <NavLink to={`/id/${me.id}`}>
-        <CircleUserRound size={24} /> Профиль
+        <CircleUserRound size={24} /> {tr('Профиль')}
       </NavLink>
     </nav>
   );

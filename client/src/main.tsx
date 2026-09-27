@@ -6,6 +6,8 @@ import { AuthProvider } from './lib/auth';
 import { ThemeProvider } from './lib/theme';
 import { ConfigProvider } from './lib/config';
 import App from './App';
+import { getLang, loadLang, onLangChange } from './lib/i18n';
+import { useEffect, useState } from 'react';
 import '@fontsource-variable/montserrat';
 import './styles.css';
 import './uiverse.css';
@@ -19,18 +21,30 @@ const queryClient = new QueryClient({
   },
 });
 
-createRoot(document.getElementById('root')!).render(
+/** Re-renders the whole app (keeping caches and providers) when the language changes. */
+function LangRoot() {
+  const [lang, setLangState] = useState(getLang());
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    return onLangChange(() => setLangState(getLang()));
+  }, [lang]);
+  return <App key={lang} />;
+}
+
+const root = createRoot(document.getElementById('root')!);
+// Render once the saved language's dictionary is in place, so the first paint is already translated.
+void loadLang(getLang()).finally(() => root.render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <ThemeProvider>
           <ConfigProvider>
             <AuthProvider>
-              <App />
+              <LangRoot />
             </AuthProvider>
           </ConfigProvider>
         </ThemeProvider>
       </BrowserRouter>
     </QueryClientProvider>
   </StrictMode>,
-);
+));

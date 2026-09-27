@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -31,7 +32,7 @@ export default function ContentPage() {
   });
 
   const remove = async (id: number, what: string) => {
-    if (!confirm(`Удалить ${what}?`)) return;
+    if (!confirm(tr('Удалить {what}?', { what }))) return;
     await api(`/admin/${kind}/${id}`, { method: 'DELETE' });
     qc.invalidateQueries({ queryKey: ['admin', 'content'] });
     qc.invalidateQueries({ queryKey: ['posts'] });
@@ -39,15 +40,15 @@ export default function ContentPage() {
 
   return (
     <>
-      <AdminHead title="Контент" subtitle="Записи, комментарии и сообщества" />
+      <AdminHead title={tr('Контент')} subtitle={tr("Записи, комментарии и сообщества")} />
       <div className="card">
         <div className="toolbar">
           <div className="segmented">
             {(
               [
-                ['posts', 'Записи'],
-                ['comments', 'Комментарии'],
-                ['groups', 'Сообщества'],
+                ['posts', tr('Записи')],
+                ['comments', tr('Комментарии')],
+                ['groups', tr('Сообщества')],
               ] as [Kind, string][]
             ).map(([k, label]) => (
               <button
@@ -64,13 +65,13 @@ export default function ContentPage() {
           </div>
           <div className="grow" style={{ position: 'relative' }}>
             <Search size={16} style={{ position: 'absolute', left: 12, top: 10, color: 'var(--icon)' }} />
-            <input className="field" style={{ width: '100%', paddingLeft: 36 }} placeholder="Поиск по тексту" value={input} onChange={(e) => setInput(e.target.value)} />
+            <input className="field" style={{ width: '100%', paddingLeft: 36 }} placeholder={tr('Поиск по тексту')} value={input} onChange={(e) => setInput(e.target.value)} />
           </div>
         </div>
         {isLoading ? (
           <Spinner />
         ) : !data?.items.length ? (
-          <Empty title="Ничего не найдено" />
+          <Empty title={tr('Ничего не найдено')} />
         ) : (
           <div className="table-wrap">
             <table className="admin">
@@ -86,19 +87,19 @@ export default function ContentPage() {
                             <div style={{ minWidth: 0 }}>
                               <b>{who}</b> <span className="meta">· {formatDate(p.createdAt)}</span>
                               <div className="ellipsis" style={{ maxWidth: 520 }}>
-                                {p.text || (p.repost ? 'Репост' : p.image ? 'Фотография' : '')}
+                                {p.text || (p.repost ? tr('Репост') : p.image ? tr('Фотография') : '')}
                               </div>
                               <div className="meta">
-                                {countLabel(p.likes, 'лайк', 'лайка', 'лайков')} · {countLabel(p.comments, 'комментарий', 'комментария', 'комментариев')}
+                                {countLabel(p.likes, 'лайк|лайка|лайков')} · {countLabel(p.comments, tr('комментарий|комментария|комментариев'))}
                               </div>
                             </div>
                           </div>
                         </td>
                         <td className="actions">
-                          <Link to={`/wall/${p.id}`} className="icon-btn" aria-label="Открыть">
+                          <Link to={`/wall/${p.id}`} className="icon-btn" aria-label={tr('Открыть')}>
                             <ExternalLink size={16} />
                           </Link>
-                          <button className="icon-btn" onClick={() => remove(p.id, 'запись')} aria-label="Удалить">
+                          <button className="icon-btn" onClick={() => remove(p.id, tr('запись'))} aria-label={tr('Удалить')}>
                             <Trash2 size={16} />
                           </button>
                         </td>
@@ -112,7 +113,7 @@ export default function ContentPage() {
                         <div className="who" style={{ alignItems: 'flex-start' }}>
                           {c.author && <Avatar src={c.author.avatar} name={fullName(c.author)} id={c.author.id} size={32} />}
                           <div style={{ minWidth: 0 }}>
-                            <b>{c.author ? fullName(c.author) : 'Удалённый'}</b> <span className="meta">· {formatDate(c.createdAt)}</span>
+                            <b>{c.author ? fullName(c.author) : tr('Удалённый')}</b> <span className="meta">· {formatDate(c.createdAt)}</span>
                             <div className="ellipsis" style={{ maxWidth: 520 }}>
                               {c.text}
                             </div>
@@ -120,10 +121,10 @@ export default function ContentPage() {
                         </div>
                       </td>
                       <td className="actions">
-                        <Link to={`/wall/${c.postId}`} className="icon-btn" aria-label="Открыть запись">
+                        <Link to={`/wall/${c.postId}`} className="icon-btn" aria-label={tr('Открыть запись')}>
                           <ExternalLink size={16} />
                         </Link>
-                        <button className="icon-btn" onClick={() => remove(c.id, 'комментарий')} aria-label="Удалить">
+                        <button className="icon-btn" onClick={() => remove(c.id, tr('комментарий'))} aria-label={tr('Удалить')}>
                           <Trash2 size={16} />
                         </button>
                       </td>
@@ -138,17 +139,17 @@ export default function ContentPage() {
                           <div style={{ minWidth: 0 }}>
                             <b>{g.name}</b>
                             <div className="meta">
-                              {countLabel(g.membersCount, 'участник', 'участника', 'участников')} · {countLabel(g.posts, 'запись', 'записи', 'записей')}
-                              {g.owner && ` · владелец ${fullName(g.owner)}`}
+                              {countLabel(g.membersCount, tr('участник|участника|участников'))} · {countLabel(g.posts, 'запись|записи|записей')}
+                              {g.owner && ` · ${tr('владелец {name}', { name: fullName(g.owner) })}`}
                             </div>
                           </div>
                         </div>
                       </td>
                       <td className="actions">
-                        <Link to={`/club/${g.id}`} className="icon-btn" aria-label="Открыть">
+                        <Link to={`/club/${g.id}`} className="icon-btn" aria-label={tr('Открыть')}>
                           <ExternalLink size={16} />
                         </Link>
-                        <button className="icon-btn" onClick={() => remove(g.id, `сообщество «${g.name}» со всеми записями`)} aria-label="Удалить">
+                        <button className="icon-btn" onClick={() => remove(g.id, tr('сообщество «{name}» со всеми записями', { name: g.name }))} aria-label={tr('Удалить')}>
                           <Trash2 size={16} />
                         </button>
                       </td>

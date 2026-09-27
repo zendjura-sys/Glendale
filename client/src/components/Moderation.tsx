@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BadgeCheck, Flag, Megaphone, UserRoundCog, X } from 'lucide-react';
@@ -7,14 +8,14 @@ import type { Announcement } from '../lib/types';
 import { fullName } from '../lib/utils';
 import { Modal } from './ui';
 
-const CATEGORIES: [string, string][] = [
-  ['spam', 'Спам'],
-  ['abuse', 'Оскорбления'],
-  ['inappropriate', 'Неприемлемый контент'],
-  ['fake', 'Фейк или мошенничество'],
-  ['copyright', 'Нарушение авторских прав'],
-  ['other', 'Другое'],
-];
+const CATEGORIES = (): [string, string][] => ([
+  ['spam', tr('Спам')],
+  ['abuse', tr('Оскорбления')],
+  ['inappropriate', tr('Неприемлемый контент')],
+  ['fake', tr('Фейк или мошенничество')],
+  ['copyright', tr('Нарушение авторских прав')],
+  ['other', tr('Другое')],
+]);
 
 export type ReportTarget = { type: 'post' | 'comment' | 'user' | 'group' | 'message'; id: number };
 
@@ -28,7 +29,7 @@ export function ReportModal({ target, onClose }: { target: ReportTarget; onClose
     setBusy(true);
     try {
       await api('/reports', { body: { targetType: target.type, targetId: target.id, category, description } });
-      setState({ ok: true, text: 'Спасибо! Модераторы рассмотрят жалобу.' });
+      setState({ ok: true, text: tr('Спасибо! Модераторы рассмотрят жалобу.') });
     } catch (e) {
       setState({ ok: false, text: (e as Error).message });
     } finally {
@@ -38,20 +39,20 @@ export function ReportModal({ target, onClose }: { target: ReportTarget; onClose
 
   return (
     <Modal
-      title="Пожаловаться"
+      title={tr('Пожаловаться')}
       onClose={onClose}
       footer={
         state?.ok ? (
           <button className="btn" onClick={onClose}>
-            Готово
+            {tr('Готово')}
           </button>
         ) : (
           <>
             <button className="btn secondary" onClick={onClose}>
-              Отмена
+              {tr('Отмена')}
             </button>
             <button className="btn" onClick={submit} disabled={!category || busy}>
-              Отправить
+              {tr('Отправить')}
             </button>
           </>
         )
@@ -62,16 +63,16 @@ export function ReportModal({ target, onClose }: { target: ReportTarget; onClose
           <p style={{ margin: 0 }}>{state.text}</p>
         ) : (
           <>
-            <div className="label">Что не так?</div>
+            <div className="label">{tr('Что не так?')}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 12 }}>
-              {CATEGORIES.map(([value, label]) => (
+              {CATEGORIES().map(([value, label]) => (
                 <label key={value} className="menu-item check" style={{ borderRadius: 10, cursor: 'pointer' }}>
                   <input type="radio" name="report-category" checked={category === value} onChange={() => setCategory(value)} />
                   {label}
                 </label>
               ))}
             </div>
-            <textarea className="field" placeholder="Подробности (необязательно)" maxLength={1000} value={description} onChange={(e) => setDescription(e.target.value)} />
+            <textarea className="field" placeholder={tr('Подробности (необязательно)')} maxLength={1000} value={description} onChange={(e) => setDescription(e.target.value)} />
             {state && <div className="error-text">{state.text}</div>}
           </>
         )}
@@ -81,7 +82,7 @@ export function ReportModal({ target, onClose }: { target: ReportTarget; onClose
 }
 
 /** Small "report" button that opens the modal. */
-export function ReportButton({ target, label = 'Пожаловаться', className = 'btn secondary' }: { target: ReportTarget; label?: string; className?: string }) {
+export function ReportButton({ target, label = tr('Пожаловаться'), className = 'btn secondary' }: { target: ReportTarget; label?: string; className?: string }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -129,7 +130,7 @@ export function AnnouncementBanner() {
             <b>{a.title}</b>
             {a.body && <div className="muted" style={{ whiteSpace: 'pre-wrap', marginTop: 2 }}>{a.body}</div>}
           </div>
-          <button className="icon-btn" onClick={() => dismiss(a.id)} aria-label="Скрыть объявление">
+          <button className="icon-btn" onClick={() => dismiss(a.id)} aria-label={tr('Скрыть объявление')}>
             <X size={18} />
           </button>
         </div>
@@ -140,7 +141,7 @@ export function AnnouncementBanner() {
 
 const IMPERSONATOR_KEY = 'impersonator';
 
-/** Shown while an admin is browsing as another member ("войти как"). */
+/** Shown while an admin is browsing as another member (tr("войти как")). */
 export function ImpersonationBar() {
   const me = useMe();
   let original: string | null = null;
@@ -159,17 +160,17 @@ export function ImpersonationBar() {
     <div className="impersonation">
       <UserRoundCog size={18} />
       <span>
-        Вы просматриваете сеть как <b>{fullName(me)}</b>
+        {tr('Вы просматриваете сеть как')} <b>{fullName(me)}</b>
       </span>
       <button className="btn secondary" onClick={back}>
-        Вернуться в админку
+        {tr('Вернуться в админку')}
       </button>
     </div>
   );
 }
 
 export const Verified = ({ size = 15 }: { size?: number }) => (
-  <BadgeCheck size={size} className="verified" aria-label="Подтверждённый аккаунт">
-    <title>Подтверждённый аккаунт</title>
+  <BadgeCheck size={size} className="verified" aria-label={tr('Подтверждённый аккаунт')}>
+    <title>{tr('Подтверждённый аккаунт')}</title>
   </BadgeCheck>
 );

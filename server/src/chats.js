@@ -15,6 +15,16 @@ const MAX_MEMBERS = 500;
 const memberIds = (chatId) => q('SELECT user_id FROM chat_members WHERE chat_id = ?').all(chatId).map((r) => r.user_id);
 const membership = (chatId, userId) => q('SELECT * FROM chat_members WHERE chat_id = ? AND user_id = ?').get(chatId, userId);
 
+function parseSystem(text) {
+  try {
+    const v = JSON.parse(text);
+    if (v && typeof v.k === 'string') return { key: v.k, params: v.p ?? {} };
+  } catch {
+    /* legacy plain text */
+  }
+  return { key: text, params: {} };
+}
+
 export function chatMessageJson(m) {
   return {
     id: m.id,
@@ -22,7 +32,8 @@ export function chatMessageJson(m) {
     fromId: m.from_id,
     author: m.from_id ? userShort(getUser(m.from_id)) : null,
     kind: m.kind,
-    text: m.text,
+    text: m.kind === 'system' ? '' : m.text,
+    system: m.kind === 'system' ? parseSystem(m.text) : null,
     image: m.image,
     audio: trackJson(getTrack(m.audio_id)),
     spotify: m.kind === 'text' ? spotifyRef(m.text) : null,
@@ -52,7 +63,8 @@ function post(chatId, fromId, { text = '', image = null, audioId = null, kind = 
   return msg;
 }
 
-const system = (chatId, actorId, text) => post(chatId, actorId, { text, kind: 'system' });
+/** System messages are stored as translatable templates: { k: key, p: params }. */
+const system = (chatId, actorId, key, params = {}) => post(chatId, actorId, { text: JSON.stringify({ k: key, p: params }), kind: 'system' });
 const nameOf = (u) => `${u.first_name} ${u.last_name}`;
 
 export function unreadChats(userId) {
@@ -116,7 +128,7 @@ chats.post('/chats', (req, res) => {
   if (!title) fail(400, 'Укажите название беседы');
   const ids = [...new Set((Array.isArray(req.body.memberIds) ? req.body.memberIds : []).map(intParam).filter((id) => id && id !== me))];
   if (!ids.length) fail(400, 'Добавьте хотя бы одного участника');
-  if (ids.length >= MAX_MEMBERS) fail(400, `В беседе может быть не больше ${MAX_MEMBERS} участников`);
+  if (ids.length >= MAX_MEMBERS) fail(400, 'В беседе может быть не больше {n} участников', undefined, { n: MAX_MEMBERS });
   for (const id of ids) if (!getUser(id) || !areFriends(me, id)) fail(403, 'В беседу можно добавлять только друзей');
   const t = now();
   const chatId = tx(() => {
@@ -125,7 +137,7 @@ chats.post('/chats', (req, res) => {
     for (const uid of ids) q('INSERT INTO chat_members (chat_id, user_id, joined_at) VALUES (?, ?, ?)').run(id, uid, t);
     return id;
   });
-  system(chatId, me, `${nameOf(req.user)} создал(а) беседу «${title}»`);
+  system(chatId, me, '{actor} создал(а) беседу «{title}»', { actor: nameOf(req.user), title });
   res.status(201).json(chatJson(q('SELECT * FROM chats WHERE id = ?').get(chatId), me, true));
 });
 
@@ -141,7 +153,7 @@ chats.patch('/chats/:id', (req, res) => {
   if (!title) fail(400, 'Укажите название беседы');
   if (title !== chat.title) {
     q('UPDATE chats SET title = ? WHERE id = ?').run(title, chat.id);
-    system(chat.id, req.user.id, `${nameOf(req.user)} изменил(а) название беседы на «${title}»`);
+    system(chat.id, req.user.id, '{actor} изменил(а) название беседы на «{title}»', { actor: nameOf(req.user), title });
     broadcast(chat.id, 'chat_updated', { chatId: chat.id });
   }
   res.json(chatJson(q('SELECT * FROM chats WHERE id = ?').get(chat.id), req.user.id, true));
@@ -152,7 +164,7 @@ chats.post('/chats/:id/avatar', upload.single('image'), (req, res) => {
   if (!isChatAdmin(me)) fail(403, 'Изменять беседу могут только администраторы');
   if (!req.file) fail(400, 'Файл не выбран');
   q('UPDATE chats SET avatar = ? WHERE id = ?').run(fileUrl(req.file), chat.id);
-  system(chat.id, req.user.id, `${nameOf(req.user)} обновил(а) фотографию беседы`);
+  system(chat.id, req.user.id, '{actor} обновил(а) фотографию беседы', { actor: nameOf(req.user) });
   broadcast(chat.id, 'chat_updated', { chatId: chat.id });
   res.json(chatJson(q('SELECT * FROM chats WHERE id = ?').get(chat.id), req.user.id, true));
 });
@@ -161,13 +173,13 @@ chats.post('/chats/:id/members', (req, res) => {
   const { chat } = requireMember(req);
   const ids = [...new Set((Array.isArray(req.body.userIds) ? req.body.userIds : []).map(intParam).filter(Boolean))].filter((id) => !membership(chat.id, id));
   if (!ids.length) fail(400, 'Выберите, кого добавить');
-  if (memberIds(chat.id).length + ids.length > MAX_MEMBERS) fail(400, `В беседе может быть не больше ${MAX_MEMBERS} участников`);
+  if (memberIds(chat.id).length + ids.length > MAX_MEMBERS) fail(400, 'В беседе может быть не больше {n} участников', undefined, { n: MAX_MEMBERS });
   for (const id of ids) if (!getUser(id) || !areFriends(req.user.id, id)) fail(403, 'Добавлять можно только своих друзей');
   const t = now();
   // New members see history from the moment they join.
   const lastId = q('SELECT COALESCE(MAX(id), 0) AS id FROM chat_messages WHERE chat_id = ?').get(chat.id).id;
   for (const id of ids) q('INSERT INTO chat_members (chat_id, user_id, last_read_id, joined_at) VALUES (?, ?, ?, ?)').run(chat.id, id, lastId, t);
-  for (const id of ids) system(chat.id, req.user.id, `${nameOf(req.user)} добавил(а) ${nameOf(getUser(id))}`);
+  for (const id of ids) system(chat.id, req.user.id, '{actor} добавил(а) {user}', { actor: nameOf(req.user), user: nameOf(getUser(id)) });
   broadcast(chat.id, 'chat_updated', { chatId: chat.id });
   res.json(chatJson(chat, req.user.id, true));
 });
@@ -184,7 +196,12 @@ chats.delete('/chats/:id/members/:userId', (req, res) => {
   }
   const before = memberIds(chat.id);
   const u = getUser(targetId);
-  system(chat.id, req.user.id, leaving ? `${nameOf(u)} покинул(а) беседу` : `${nameOf(req.user)} исключил(а) ${nameOf(u)}`);
+  system(
+    chat.id,
+    req.user.id,
+    leaving ? '{user} покинул(а) беседу' : '{actor} исключил(а) {user}',
+    { actor: nameOf(req.user), user: nameOf(u) },
+  );
   q('DELETE FROM chat_members WHERE chat_id = ? AND user_id = ?').run(chat.id, targetId);
   // If the owner leaves, the longest-standing admin (or member) takes over.
   if (target.role === 'owner') {
@@ -208,7 +225,7 @@ chats.patch('/chats/:id/members/:userId', (req, res) => {
   const role = req.body.role === 'admin' ? 'admin' : 'member';
   q('UPDATE chat_members SET role = ? WHERE chat_id = ? AND user_id = ?').run(role, chat.id, targetId);
   const u = getUser(targetId);
-  system(chat.id, req.user.id, role === 'admin' ? `${nameOf(u)} теперь администратор беседы` : `${nameOf(u)} больше не администратор беседы`);
+  system(chat.id, req.user.id, role === 'admin' ? '{user} теперь администратор беседы' : '{user} больше не администратор беседы', { user: nameOf(u) });
   broadcast(chat.id, 'chat_updated', { chatId: chat.id });
   res.json(chatJson(chat, req.user.id, true));
 });

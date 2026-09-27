@@ -9,6 +9,7 @@ import { admin } from './admin.js';
 import { uploadsDir } from './uploads.js';
 import { attachRealtime } from './realtime.js';
 import { seed } from './seed.js';
+import { languageMiddleware } from './i18n.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const clientDist = path.resolve(here, '../../client/dist');
@@ -19,6 +20,7 @@ export function createApp() {
   app.set('trust proxy', 'loopback');
   app.use(compression());
   app.use(express.json({ limit: '1mb' }));
+  app.use(languageMiddleware);
   app.use('/uploads', express.static(uploadsDir, { maxAge: '365d', immutable: true }));
   app.use('/api/admin', admin);
   app.use('/api', api);
