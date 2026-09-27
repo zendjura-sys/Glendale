@@ -302,27 +302,6 @@ class ApiClient {
     _decode(response);
   }
 
-  // ---------------- Telegram (модуль Telegram Bot) ----------------
-
-  Future<Map<String, dynamic>> telegramStatus() async {
-    final response = await http.get(_uri('/telegram/status'), headers: await _headers(auth: true));
-    final data = _decode(response) as Map<String, dynamic>;
-    return data['data'] as Map<String, dynamic>;
-  }
-
-  /// Повертає {code, bot_username} — застосунок сам будує
-  /// https://t.me/{bot}?start={code} і відкриває його url_launcher'ом.
-  Future<Map<String, dynamic>> telegramGenerateCode() async {
-    final response = await http.post(_uri('/telegram/generate-code'), headers: await _headers(auth: true));
-    final data = _decode(response) as Map<String, dynamic>;
-    return data['data'] as Map<String, dynamic>;
-  }
-
-  Future<void> telegramUnlink() async {
-    final response = await http.post(_uri('/telegram/unlink'), headers: await _headers(auth: true));
-    _decode(response);
-  }
-
   // ---------------- Адмінка (лише ядро, без аддонів) ----------------
 
   Future<List<dynamic>> adminStats() async {

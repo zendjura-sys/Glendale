@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../api_client.dart';
 import '../app_info.dart';
 import '../services/push_notifications.dart';
@@ -17,11 +16,8 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   Map<String, dynamic>? _me;
-  Map<String, dynamic>? _telegram;
   bool _loading = true;
-  bool _telegramBusy = false;
   String? _error;
-  String? _telegramError;
   bool _loggingOut = false;
 
   @override
@@ -38,75 +34,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final me = await ApiClient.instance.me();
       if (mounted) setState(() => _me = me);
-      // Telegram не критичний для решти екрана — окрема, тиха невдача не
-      // повинна блокувати показ профілю/виходу.
-      try {
-        final telegram = await ApiClient.instance.telegramStatus();
-        if (mounted) setState(() => _telegram = telegram);
-      } catch (_) {
-        // Модуль Telegram Bot може бути не встановлений — секція просто
-        // не з'явиться (перевіряємо на null нижче в build()).
-      }
     } on ApiException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {
       setState(() => _error = 'Не вдалося завантажити профіль.');
     } finally {
       if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  /// Той самий однокроковий deep-link, що й на сайті (TelegramLinkForm.vue):
-  /// беремо код і одразу відкриваємо https://t.me/{bot}?start={code} —
-  /// нічого вводити не треба, прив'язка стається сама після /start у боті.
-  Future<void> _linkTelegram() async {
-    setState(() {
-      _telegramBusy = true;
-      _telegramError = null;
-    });
-    try {
-      final data = await ApiClient.instance.telegramGenerateCode();
-      final code = data['code'] as String?;
-      final bot = data['bot_username'] as String?;
-      if (code == null || bot == null) {
-        setState(() => _telegramError = 'Бот ще не налаштований. Зверніться до адміністратора.');
-        return;
-      }
-      final botHandle = bot.startsWith('@') ? bot.substring(1) : bot;
-      await launchUrl(Uri.parse('https://t.me/$botHandle?start=$code'),
-          mode: LaunchMode.externalApplication);
-      final refreshed = await ApiClient.instance.telegramStatus();
-      if (mounted) setState(() => _telegram = refreshed);
-    } on ApiException catch (e) {
-      setState(() => _telegramError = e.message);
-    } catch (_) {
-      setState(() => _telegramError = 'Не вдалося отримати посилання.');
-    } finally {
-      if (mounted) setState(() => _telegramBusy = false);
-    }
-  }
-
-  Future<void> _unlinkTelegram() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.obsidian900,
-        title: const Text("Відв'язати Telegram?", style: TextStyle(color: Colors.white)),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Скасувати')),
-          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text("Відв'язати")),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-
-    setState(() => _telegramBusy = true);
-    try {
-      await ApiClient.instance.telegramUnlink();
-      final refreshed = await ApiClient.instance.telegramStatus();
-      if (mounted) setState(() => _telegram = refreshed);
-    } finally {
-      if (mounted) setState(() => _telegramBusy = false);
     }
   }
 
@@ -198,54 +131,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                     ),
-                    if (_telegram != null) ...[
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: glassPanelDecoration(radius: 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(Icons.send_outlined, color: AppColors.gold300, size: 18),
-                                const SizedBox(width: 8),
-                                const Text('Telegram',
-                                    style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            if (_telegram!['linked'] == true) ...[
-                              Text(
-                                _telegram!['telegram_username'] != null
-                                    ? "Привʼязано · @${_telegram!['telegram_username']}"
-                                    : 'Привʼязано',
-                                style: const TextStyle(color: Color(0xFF6EE7B7), fontSize: 13),
-                              ),
-                              const SizedBox(height: 10),
-                              TextButton(
-                                onPressed: _telegramBusy ? null : _unlinkTelegram,
-                                child: const Text("Відв'язати"),
-                              ),
-                            ] else ...[
-                              Text(
-                                'Привʼяжіть Telegram, щоб отримувати особисті сповіщення.',
-                                style: const TextStyle(color: Colors.white38, fontSize: 12),
-                              ),
-                              const SizedBox(height: 10),
-                              ElevatedButton(
-                                onPressed: _telegramBusy ? null : _linkTelegram,
-                                child: Text(_telegramBusy ? 'Відкриваємо…' : "Привʼязати Telegram"),
-                              ),
-                            ],
-                            if (_telegramError != null) ...[
-                              const SizedBox(height: 8),
-                              Text(_telegramError!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
                     const SizedBox(height: 24),
                     _SettingsTile(
                       icon: Icons.logout,
