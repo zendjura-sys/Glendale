@@ -544,7 +544,10 @@ if [ "$APP_DOMAIN" != "_" ] && [ -n "${HOSTINGER_API_TOKEN:-}" ]; then
         [ -x "$ACME_SH" ] || curl -s https://get.acme.sh | sh -s email="${CERTBOT_EMAIL:-admin@${PRIMARY_DOMAIN}}"
 
         mkdir -p "$CERT_DIR"
-        export HOSTINGER_API_TOKEN
+        # Плагін dns_hostinger у acme.sh читає токен саме з HOSTINGER_Token
+        # (не HOSTINGER_API_TOKEN) — інакше «You didn't specify a Hostinger
+        # API Key yet».
+        export HOSTINGER_Token="$HOSTINGER_API_TOKEN"
         # --install-cert прописує ці шляхи й --reloadcmd у свій конфіг
         # продовження назавжди: наступне автопродовження (власний таймер
         # acme.sh, незалежний від деплоїв) саме перекладе сертифікат сюди
@@ -564,7 +567,7 @@ if [ "$APP_DOMAIN" != "_" ] && [ -n "${HOSTINGER_API_TOKEN:-}" ]; then
                 "${APP_DIR}/deploy/nginx-laravel-ssl.conf" > /etc/nginx/sites-available/laravel
             nginx -t && systemctl reload nginx
         else
-            warn "Не вдалося випустити wildcard-сертифікат — перевір HOSTINGER_API_TOKEN (hPanel → API). Сайт лишиться на http. Повтори вручну: HOSTINGER_API_TOKEN=... $ACME_SH --issue --dns dns_hostinger -d ${PRIMARY_DOMAIN} -d '*.${PRIMARY_DOMAIN}' --server letsencrypt"
+            warn "Не вдалося випустити wildcard-сертифікат — перевір HOSTINGER_API_TOKEN (hPanel → API). Сайт лишиться на http. Повтори вручну: HOSTINGER_Token=... $ACME_SH --issue --dns dns_hostinger -d ${PRIMARY_DOMAIN} -d '*.${PRIMARY_DOMAIN}' --server letsencrypt"
         fi
     fi
 elif [ "$APP_DOMAIN" != "_" ] && command -v certbot >/dev/null 2>&1; then
