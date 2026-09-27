@@ -83,33 +83,35 @@ sleep 2
 systemctl is-active --quiet glendale || { journalctl -u glendale -n 40 --no-pager; exit 1; }
 curl -fsS "http://127.0.0.1:$PORT/api/config" >/dev/null && echo "Приложение отвечает на 127.0.0.1:$PORT"
 
-step "nginx: $DOMAIN"
+# Our vhost is always written from the templates: certbot only issues certificates (certonly --webroot)
+# and never edits nginx configs, so other sites on the server (e.g. a *.domain wildcard) stay untouched.
 conf="/etc/nginx/sites-available/$DOMAIN"
-if [ ! -f "$conf" ]; then
-  sed -e "s/social\.monsory\.net/$DOMAIN/g" -e "s/127\.0\.0\.1:3001/127.0.0.1:$PORT/g" "$APP_DIR/deploy/nginx.conf" > "$conf"
+cert="/etc/letsencrypt/live/$DOMAIN/fullchain.pem"
+write_vhost() {
+  sed -e "s/social\.monsory\.net/$DOMAIN/g" -e "s/127\.0\.0\.1:3001/127.0.0.1:$PORT/g" "$APP_DIR/deploy/$1" > "$conf"
   ln -sf "$conf" "/etc/nginx/sites-enabled/$DOMAIN"
-else
-  echo "Оставляю существующий $conf (в нём может быть блок HTTPS от certbot)"
-fi
-nginx -t
-systemctl reload nginx
+  nginx -t
+  systemctl reload nginx
+}
+mkdir -p /var/www/letsencrypt
+
+step "nginx: $DOMAIN"
+if [ -f "$cert" ]; then write_vhost nginx-ssl.conf; else write_vhost nginx.conf; fi
 
 step "HTTPS (Let's Encrypt)"
 server_ip="$(curl -fsS https://api.ipify.org || true)"
 dns_ip="$(getent ahostsv4 "$DOMAIN" | awk 'NR==1{print $1}' || true)"
-if [ -z "$dns_ip" ]; then
+if [ -f "$cert" ]; then
+  echo "Сертификат есть; certbot продлевает его автоматически."
+elif [ -z "$dns_ip" ]; then
   echo "DNS: $DOMAIN пока не резолвится. Добавьте A-запись $DOMAIN -> ${server_ip:-<IP сервера>} и запустите скрипт ещё раз."
 elif [ -n "$server_ip" ] && [ "$dns_ip" != "$server_ip" ]; then
   echo "DNS: $DOMAIN указывает на $dns_ip, а у сервера $server_ip. Исправьте A-запись и запустите скрипт ещё раз."
-elif grep -q "listen .*443" "$conf"; then
-  echo "HTTPS уже настроен; certbot продлевает сертификат автоматически."
-elif [ -d "/etc/letsencrypt/live/$DOMAIN" ]; then
-  # The certificate exists (e.g. from an earlier attempt) but this vhost has no HTTPS block yet:
-  # without it, another site's wildcard (*.domain) server answers on 443.
-  certbot --nginx -d "$DOMAIN" --reinstall --redirect --non-interactive
 else
   if [ -n "$EMAIL" ]; then mail=(--email "$EMAIL"); else mail=(--register-unsafely-without-email); fi
-  certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --redirect "${mail[@]}"
+  certbot certonly --webroot -w /var/www/letsencrypt -d "$DOMAIN" --non-interactive --agree-tos \
+    --deploy-hook "systemctl reload nginx" "${mail[@]}"
+  write_vhost nginx-ssl.conf
 fi
 
 step "Готово"

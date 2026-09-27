@@ -28,7 +28,7 @@ sudo DOMAIN=social.monsory.net EMAIL=you@example.com bash deploy/install.sh
 - копирует код в `/opt/glendale`, собирает клиент;
 - создаёт `/etc/glendale.env` и сервис `glendale.service`;
 - настраивает vhost nginx (WebSocket `/ws`, загрузки до 60 МБ);
-- выпускает сертификат с редиректом HTTP → HTTPS.
+- выпускает сертификат (`certbot certonly`, конфиги других сайтов certbot не трогает) и включает HTTPS с редиректом HTTP → HTTPS.
 
 Остальные сайты на сервере он не трогает. Если DNS ещё не обновился, скрипт скажет об этом. Тогда просто запустите его ещё раз позже.
 
