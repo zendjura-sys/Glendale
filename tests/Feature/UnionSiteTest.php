@@ -9,7 +9,7 @@ use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 /**
- * union.monsory.net (UNION_DOMAIN, встановлений у phpunit.xml для тестів)
+ * union.gamecon.online (UNION_DOMAIN, встановлений у phpunit.xml для тестів)
  * — той самий застосунок, база й логін, різниться лише ця публічна
  * сторінка. Перевіряємо: сторінка рендериться на union-домені, головний
  * домен її не показує, а адмінка редагує текст лише коли фіча увімкнена.

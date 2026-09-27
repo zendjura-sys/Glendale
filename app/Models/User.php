@@ -48,7 +48,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Позиція союзника В ЙОГО ВЛАСНІЙ родині — заповнюється лише при
-     * реєстрації через union.monsory.net, ніяк не пов'язана з
+     * реєстрації через union.gamecon.online, ніяк не пов'язана з
      * position_key (той — посада всередині самої Monsory).
      */
     public const UNION_ROLES = [

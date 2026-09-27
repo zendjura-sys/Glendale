@@ -15,7 +15,7 @@ const ROLE_LABELS = {
     member: 'Учасник',
 };
 
-// На union.monsory.net кабінет бачить БУДЬ-ХТО (навіть учасник родини
+// На union.gamecon.online кабінет бачить БУДЬ-ХТО (навіть учасник родини
 // Monsory, який сюди зайшов) — розділи "своя родина" й дії (скарги/ЧС),
 // доступні лише зареєстрованим союзникам, показуємо тільки якщо родина
 // союзу справді вказана.
@@ -44,7 +44,7 @@ function fmtDate(iso) {
             <div v-reveal class="mb-8">
                 <p class="text-white/50">
                     Вітаємо, <span class="text-gold-300">{{ $page.props.auth.user.name }}</span> —
-                    {{ isUnionMember ? 'це кабінет союзника Monsory.' : 'ви переглядаєте кабінет союзу union.monsory.net.' }}
+                    {{ isUnionMember ? 'це кабінет союзника Monsory.' : 'ви переглядаєте кабінет союзу union.gamecon.online.' }}
                 </p>
             </div>
 

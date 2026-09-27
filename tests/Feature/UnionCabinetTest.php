@@ -11,7 +11,7 @@ use Tests\TestCase;
  * /dashboard — спільна адреса: рішення, яку сторінку показати, приймає
  * ПОТОЧНИЙ ДОМЕН (UNION_DOMAIN, union.monsory.test у phpunit.xml), а не
  * тип акаунту — той самий принцип, що й для головної/реєстрації. Тому на
- * union.monsory.net кабінет союзу бачить БУДЬ-ХТО, навіть учасник родини
+ * union.gamecon.online кабінет союзу бачить БУДЬ-ХТО, навіть учасник родини
  * Monsory, який туди зайшов (union_family_name в нього порожнє).
  */
 class UnionCabinetTest extends TestCase

@@ -12,7 +12,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Розділ «Союз» в адмінці — контент union.monsory.net, перелік
+ * Розділ «Союз» в адмінці — контент union.gamecon.online, перелік
  * зареєстрованих союзників. Скарги й оголошення — у своїх контролерах
  * (UnionComplaintController, UnionAnnouncementController), об'єднані тут
  * лише спільною навігацією (AdminLayout).

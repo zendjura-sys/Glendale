@@ -31,7 +31,7 @@ class RegisteredUserController extends Controller
         ]);
     }
 
-    /** union.monsory.net реєструє союзників, а не учасників родини — форма й валідація тут різняться. */
+    /** union.gamecon.online реєструє союзників, а не учасників родини — форма й валідація тут різняться. */
     private function isUnionRequest(Request $request): bool
     {
         return UnionDomain::matches($request);
@@ -69,9 +69,9 @@ class RegisteredUserController extends Controller
         $fullName = trim($data['first_name'].' '.($data['last_name'] ?? ''));
 
         // ЧС гравця діє на ОБОХ сайтах — і союзному, і основному
-        // (monsory.net): гравець, якого союзники занесли в чорний список,
+        // (gamecon.online): гравець, якого союзники занесли в чорний список,
         // не може зареєструватись у родині так само, як не може
-        // зареєструватись союзником. ЧСС родин — лише для union.monsory.net,
+        // зареєструватись союзником. ЧСС родин — лише для union.gamecon.online,
         // на основному сайті поняття "родина союзника" не існує.
         if (UnionBlacklistedPlayer::isBlacklisted($data['first_name'], $data['last_name'] ?? null)) {
             throw ValidationException::withMessages(['first_name' => 'Цей гравець у чорному списку союзу — реєстрація недоступна.']);

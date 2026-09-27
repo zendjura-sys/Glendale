@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 @php
     $design = App\Support\DesignSettings::all();
-    $siteName = $design['siteName'] ?: config('app.name', 'Monsory');
+    $siteName = $design['siteName'] ?: config('app.name', 'GameConnect');
 @endphp
 <html lang="uk">
     <head>
@@ -16,6 +16,7 @@
         <link rel="apple-touch-icon" href="/images/icons/apple-touch-icon.png">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-title" content="GameCon">
         <title>{{ $siteName }}</title>
         {{-- Тема до першої відмальовки — без спалаху світлого екрана. --}}
         <script>

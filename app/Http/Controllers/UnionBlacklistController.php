@@ -11,7 +11,7 @@ use Inertia\Response;
 
 /**
  * ЧС гравців з боку союзників: додати може будь-який зареєстрований
- * союзник (union_family_name заповнене реєстрацією через union.monsory.net),
+ * союзник (union_family_name заповнене реєстрацією через union.gamecon.online),
  * а не лише лідер чи адмін — на відміну від ЧСС родин (Admin\UnionBlacklistController).
  */
 class UnionBlacklistController extends Controller

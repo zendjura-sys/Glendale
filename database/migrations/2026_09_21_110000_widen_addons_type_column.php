@@ -10,7 +10,7 @@ return new class extends Migration
     {
         // Було enum('core','module','plugin','theme') — CHECK-обмеження в
         // SQLite не пускало новий тип 'union' (Union-аддони для
-        // union.monsory.net, дивись AddonManifest::TYPES). Переводимо
+        // union.gamecon.online, дивись AddonManifest::TYPES). Переводимо
         // на звичайний string: новий тип пакета більше не вимагає міграції
         // схеми, дозволені значення й так контролює AddonManifest у коді.
         Schema::table('addons', function (Blueprint $table) {

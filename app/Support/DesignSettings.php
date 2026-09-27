@@ -54,7 +54,7 @@ class DesignSettings
         ];
     }
 
-    /** Заголовок і слоган union.monsory.net — той самий Setting-патерн, що й siteName/siteTagline вище. */
+    /** Заголовок і слоган union.gamecon.online — той самий Setting-патерн, що й siteName/siteTagline вище. */
     public static function unionTitle(): string
     {
         return Setting::get('union_title') ?: 'Спільнота союзників Monsory';

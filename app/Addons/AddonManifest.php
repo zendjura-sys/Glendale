@@ -20,14 +20,14 @@ final class AddonManifest
      * скомпилированные компоненты — она умела лишь подложить свои css/js
      * рядом, то есть держать второе, несогласованное оформление.
      *
-     * union — окрема гілка аддонів для union.monsory.net: той самий
+     * union — окрема гілка аддонів для union.gamecon.online: той самий
      * формат пакета й той самий AddonInstaller (перевірена логіка
      * ZIP/маніфесту не дублюється), але встановлює й активує їх лише
      * Admin\UnionAddonController під правом union.manage — незалежно
      * від "Аддони" (addons.manage) в основній адмінці. Код union-аддона
      * так само вантажиться в рантайм (AddonAutoloader), тож маршрути
      * з entrypoints.web самі відповідають за Route::domain($unionDomain),
-     * як і роут головної union.monsory.net у routes/web.php.
+     * як і роут головної union.gamecon.online у routes/web.php.
      */
     public const TYPES = ['core', 'module', 'plugin', 'union'];
 

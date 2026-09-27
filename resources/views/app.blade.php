@@ -9,7 +9,7 @@
     // Прев'ю посилання (Telegram, Discord тощо) читають <title> і
     // meta description САМЕ на момент завантаження — це та сама сторінка
     // на тому ж домені, лише інший заголовок/опис. Без цієї гілки
-    // union.monsory.net у прев'ю показував текст головного сайту, бо тег
+    // union.gamecon.online у прев'ю показував текст головного сайту, бо тег
     // був один статичний на весь застосунок.
     $isUnionPage = App\Support\UnionDomain::matches(request());
     $pageTitle = $isUnionPage ? App\Support\DesignSettings::unionTitle() : ($design['siteName'] ?: config('app.name', 'Laravel'));
@@ -42,7 +42,7 @@
         <link rel="apple-touch-icon" href="/images/icons/apple-touch-icon.png">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-        <meta name="apple-mobile-web-app-title" content="Monsory">
+        <meta name="apple-mobile-web-app-title" content="GameCon">
         <meta name="mobile-web-app-capable" content="yes">
 
         <meta name="description" content="{{ $pageDescription }}">
@@ -51,7 +51,7 @@
              підхоплює перший-ліпший <img> зі сторінки замість логотипу, а
              деякі клієнти взагалі ігнорують <meta name="description">. --}}
         <meta property="og:type" content="website">
-        <meta property="og:site_name" content="Monsory">
+        <meta property="og:site_name" content="{{ $design['siteName'] ?: 'GameConnect' }}">
         <meta property="og:url" content="{{ request()->url() }}">
         <meta property="og:title" content="{{ $pageTitle }}">
         <meta property="og:description" content="{{ $pageDescription }}">

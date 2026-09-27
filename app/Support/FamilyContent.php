@@ -113,7 +113,7 @@ class FamilyContent
         ));
     }
 
-    /** @return array<int,string> Текст для union.monsory.net — див. коментар у config/family.php. */
+    /** @return array<int,string> Текст для union.gamecon.online — див. коментар у config/family.php. */
     public static function unionAbout(): array
     {
         return self::simpleList('union_about');

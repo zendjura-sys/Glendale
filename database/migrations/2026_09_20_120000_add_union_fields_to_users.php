@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // Заповнюється лише при реєстрації через union.monsory.net —
+            // Заповнюється лише при реєстрації через union.gamecon.online —
             // це не посада в самій родині Monsory (та вже й так є в
             // position_key), а дані про СВОЮ спілку/родину союзника.
             $table->string('union_family_name')->nullable()->after('position_key');

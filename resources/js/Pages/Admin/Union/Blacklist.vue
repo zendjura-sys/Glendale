@@ -87,7 +87,7 @@ function fmtDate(iso) {
         <div v-if="activeTab === 'families'" class="max-w-3xl space-y-8">
             <div v-glow class="glass-panel p-6 sm:p-8">
                 <h2 class="font-display mb-1 text-lg text-white">Додати родину в ЧСС</h2>
-                <p class="mb-4 text-sm text-white/40">Родина з активним записом не зможе зареєструватись на union.monsory.net.</p>
+                <p class="mb-4 text-sm text-white/40">Родина з активним записом не зможе зареєструватись на union.gamecon.online.</p>
                 <form class="space-y-4" @submit.prevent="submitFamily">
                     <div>
                         <InputLabel for="family_name" value="Назва родини (повністю)" />

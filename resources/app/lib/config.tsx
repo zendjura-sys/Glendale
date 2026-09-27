@@ -6,7 +6,7 @@ import type { SiteConfig } from './types';
 const DEFAULT_ACCENT = '#d4a843';
 
 const FALLBACK: SiteConfig = {
-  siteTitle: 'Monsory',
+  siteTitle: 'GameConnect',
   siteDescription: '',
   signupMode: 'open',
   maintenance: false,

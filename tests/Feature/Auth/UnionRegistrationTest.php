@@ -7,7 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * union.monsory.net реєструє союзників (окрема спілка/родина), а не
+ * union.gamecon.online реєструє союзників (окрема спілка/родина), а не
  * учасників самої Monsory — форма й валідація там інші. UNION_DOMAIN
  * (union.monsory.test) заданий у phpunit.xml для всієї сюїти.
  */

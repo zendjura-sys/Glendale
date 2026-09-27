@@ -16,7 +16,7 @@ class ConfigController extends Controller
         $design = DesignSettings::all();
 
         return response()->json([
-            'siteTitle' => $design['siteName'] ?: config('app.name', 'Monsory'),
+            'siteTitle' => $design['siteName'] ?: config('app.name', 'GameConnect'),
             'siteDescription' => '',
             // Реєстрація й вхід — на сторінках сайту (підтвердження пошти,
             // 2FA, чорні списки); SPA лише веде туди.

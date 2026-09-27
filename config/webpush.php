@@ -8,7 +8,7 @@ return [
      * так само як TelegramClient без токена).
      */
     'vapid' => [
-        'subject' => env('APP_URL', 'https://monsory.net'),
+        'subject' => env('APP_URL', 'https://gamecon.online'),
         'public_key' => env('VAPID_PUBLIC_KEY'),
         'private_key' => env('VAPID_PRIVATE_KEY'),
     ],

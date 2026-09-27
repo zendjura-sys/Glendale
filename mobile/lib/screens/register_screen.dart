@@ -131,7 +131,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 12),
               Text(
                 'Реєстрація лише "за себе". Якщо за вас уже подавали звіт раніше, '
-                'завершіть реєстрацію на сайті monsory.net.',
+                'завершіть реєстрацію на сайті gamecon.online.',
                 style: TextStyle(color: AppColors.gold300, fontSize: 12),
                 textAlign: TextAlign.center,
               ),

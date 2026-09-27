@@ -136,7 +136,7 @@ const infoAddon = ref(null);
         </div>
 
         <p class="mb-8 max-w-2xl text-sm text-white/40">
-            Незалежна гілка аддонів для union.monsory.net — окремий тип пакета й окреме право (union.manage), не пов'язані з «Аддони» в основній адмінці. Формат ZIP і manifest.json той самий.
+            Незалежна гілка аддонів для union.gamecon.online — окремий тип пакета й окреме право (union.manage), не пов'язані з «Аддони» в основній адмінці. Формат ZIP і manifest.json той самий.
         </p>
 
         <!-- ================= UPLOAD ZONE ================= -->

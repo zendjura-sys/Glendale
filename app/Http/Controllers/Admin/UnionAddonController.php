@@ -17,7 +17,7 @@ use RuntimeException;
 use Throwable;
 
 /**
- * Аддони union.monsory.net — окрема гілка від "Аддони" (Admin\AddonController,
+ * Аддони union.gamecon.online — окрема гілка від "Аддони" (Admin\AddonController,
  * addons.manage): той самий перевірений AddonInstaller і формат ZIP/маніфесту,
  * але власний тип ('union'), власне право (union.manage) і власна сторінка.
  * Адмін союзу не отримує доступу до core/module/plugin, і навпаки — тому

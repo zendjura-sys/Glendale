@@ -43,7 +43,7 @@
 A-запись домена → новый IP. Проверить, что уже применилось:
 
 ```bash
-dig +short monsory.net
+dig +short gamecon.online
 ```
 
 Пока домен смотрит на старый IP, HTTPS выпустить не получится.
@@ -61,7 +61,7 @@ git checkout claude/vds-connection-3piazs
 ### 3. Разворачивание
 
 ```bash
-APP_DOMAIN="monsory.net www.monsory.net" ./deploy/setup-vps.sh
+APP_DOMAIN="gamecon.online www.gamecon.online" ./deploy/setup-vps.sh
 ```
 
 `APP_DOMAIN` достаточно передать один раз: скрипт запоминает его в
@@ -75,14 +75,14 @@ APP_DOMAIN="monsory.net www.monsory.net" ./deploy/setup-vps.sh
 Пароль к базе останется в `/root/laravel-deploy-credentials.txt`.
 
 **Wildcard-піддомени (опційно).** Якщо в DNS вже стоїть wildcard-запис
-(`*` → IP сервера) і піддомени `щось.monsory.net` мають працювати без
+(`*` → IP сервера) і піддомени `щось.gamecon.online` мають працювати без
 додавання кожного в DNS окремо, передай токен Hostinger DNS API — тоді
-скрипт сам видасть wildcard-сертифікат (`*.monsory.net`) через DNS-01
+скрипт сам видасть wildcard-сертифікат (`*.gamecon.online`) через DNS-01
 (`acme.sh` + `dns_hostinger`, а не звичайний HTTP-01 сертифікат нижче) і
-пропише `*.monsory.net` у `server_name` nginx:
+пропише `*.gamecon.online` у `server_name` nginx:
 
 ```bash
-HOSTINGER_API_TOKEN="токен_з_hPanel→API" APP_DOMAIN="monsory.net www.monsory.net" ./deploy/setup-vps.sh
+HOSTINGER_API_TOKEN="токен_з_hPanel→API" APP_DOMAIN="gamecon.online www.gamecon.online" ./deploy/setup-vps.sh
 ```
 
 Токен, як і `APP_DOMAIN`, запам'ятовується (`/etc/laravel-deploy-hostinger-token`,
@@ -97,14 +97,14 @@ HOSTINGER_API_TOKEN="токен_з_hPanel→API" APP_DOMAIN="monsory.net www.mon
 
 ```bash
 apt-get install -y certbot python3-certbot-nginx
-certbot --nginx -d monsory.net -d www.monsory.net
+certbot --nginx -d gamecon.online -d www.gamecon.online
 ```
 
 Certbot сам допишет 443 в конфиг nginx и настроит автопродление. После этого
 поправить в `.env` схему, иначе ссылки в письмах уйдут с `http://`:
 
 ```bash
-sed -i 's|^APP_URL=.*|APP_URL=https://monsory.net|' .env
+sed -i 's|^APP_URL=.*|APP_URL=https://gamecon.online|' .env
 php artisan config:cache
 ```
 
@@ -242,7 +242,7 @@ CSRF принимает base64 PFX-сертификат, пароль к нем�
 регулярно забирать наружу. Вручную:
 
 ```bash
-scp root@monsory.net:/root/backups/*.sql.gz root@monsory.net:/root/backups/*.tar.gz ~/monsory-backups/
+scp root@gamecon.online:/root/backups/*.sql.gz root@gamecon.online:/root/backups/*.tar.gz ~/monsory-backups/
 ```
 
 Или автоматически при каждом бэкапе — через [rclone](https://rclone.org/)

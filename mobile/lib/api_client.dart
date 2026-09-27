@@ -17,10 +17,10 @@ class ApiException implements Exception {
 }
 
 /// Базова адреса бекенду. У релізі підмінюється через
-/// --dart-define=API_BASE_URL=https://monsory.net (див. GitHub Actions
+/// --dart-define=API_BASE_URL=https://gamecon.online (див. GitHub Actions
 /// workflow) — за замовчуванням продакшн-домен, щоб debug-збірка теж
 /// одразу працювала проти реального сайту.
-const _defaultBaseUrl = 'https://monsory.net';
+const _defaultBaseUrl = 'https://gamecon.online';
 
 class ApiClient {
   ApiClient._();

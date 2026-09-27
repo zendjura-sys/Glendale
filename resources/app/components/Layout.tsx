@@ -46,8 +46,11 @@ import { ThemeSwitch } from './uiverse';
 
 function Logo() {
   const { config } = useConfig();
-  const [main, ...rest] = config.siteTitle.trim().split(/\s+/);
-  const sub = rest.join(' ');
+  const title = config.siteTitle.trim();
+  // «Monsory Connect» → MONSORY / CONNECT; «GameConnect» → GAME / CONNECT.
+  const words = title.includes(' ') ? title.split(/\s+/) : title.split(/(?=[A-ZА-ЯІЇЄҐ])/);
+  const [main, ...rest] = words.length > 1 ? words : [title];
+  const sub = rest.join(title.includes(' ') ? ' ' : '');
   return (
     <Link to="/feed" className="logo" aria-label={config.siteTitle}>
       <span className="logo-mark">{main.charAt(0)}</span>

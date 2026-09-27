@@ -108,7 +108,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Реєстрація "за себе" з застосунку — без союзних полів (union.monsory.net
+     * Реєстрація "за себе" з застосунку — без союзних полів (union.gamecon.online
      * не має мобільного застосунку) і без покрокового підтвердження
      * тіньового акаунту, що є на сайті (Auth/Register.vue): якщо ім'я
      * збігається з тіньовим акаунтом, просто просимо завершити реєстрацію
@@ -132,7 +132,7 @@ class AuthController extends Controller
 
         if (User::query()->where('is_shadow', true)->where('name', $fullName)->exists()) {
             throw ValidationException::withMessages([
-                'first_name' => 'За це ім\'я вже подавали звіт раніше. Завершіть реєстрацію на сайті monsory.net — там є підтвердження, що це саме ви.',
+                'first_name' => 'За це ім\'я вже подавали звіт раніше. Завершіть реєстрацію на сайті gamecon.online — там є підтвердження, що це саме ви.',
             ]);
         }
 

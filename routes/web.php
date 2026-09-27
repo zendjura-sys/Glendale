@@ -38,7 +38,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-// union.monsory.net — окремий публічний вхід для союзників родини. Той
+// union.gamecon.online — окремий публічний вхід для союзників родини. Той
 // самий застосунок, база, логін і адмінка, що й на основному домені;
 // різниться лише ЦЯ головна сторінка (до логіну). Зареєстровано ДО
 // загального '/' нижче — інакше той матчив би будь-який хост першим, і
@@ -122,8 +122,8 @@ Route::get('/', function (Request $request) {
 
 // Особистий кабінет — та сама адреса й авторизація для обох аудиторій,
 // різниться лише те, ЩО рендериться. Вирішує ПОТОЧНИЙ ДОМЕН (той самий
-// принцип, що й для головної та реєстрації): зайшов на union.monsory.net —
-// бачиш кабінет союзу, навіть якщо акаунт зареєстрований на monsory.net
+// принцип, що й для головної та реєстрації): зайшов на union.gamecon.online —
+// бачиш кабінет союзу, навіть якщо акаунт зареєстрований на gamecon.online
 // (union_family_name тоді просто порожнє — кабінет це враховує).
 Route::get('/dashboard', function (Request $request) {
     if (UnionDomain::matches($request)) {
@@ -254,7 +254,7 @@ Route::middleware(['auth', 'verified', 'permission:settings.manage'])
         Route::delete('/avatars/{user}', [DesignController::class, 'rejectAvatar'])->name('avatars.reject');
     });
 
-// Союз (union.monsory.net) — окреме право union.manage, а не settings.manage:
+// Союз (union.gamecon.online) — окреме право union.manage, а не settings.manage:
 // цим розділом можуть опікуватись інші люди, ніж дизайном основного сайту.
 Route::middleware(['auth', 'verified', 'permission:union.manage'])
     ->prefix('admin/union')

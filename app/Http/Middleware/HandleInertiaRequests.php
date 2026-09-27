@@ -44,7 +44,7 @@ class HandleInertiaRequests extends Middleware
             // налаштовано в .env — форма підписки просто себе ховає.
             'webPushPublicKey' => config('webpush.vapid.public_key'),
             // Пункт «Союз» у навігації адмінки ховається, поки фіча вимкнена
-            // (UNION_DOMAIN порожній) — так само, як сам union.monsory.net.
+            // (UNION_DOMAIN порожній) — так само, як сам union.gamecon.online.
             'unionEnabled' => (bool) config('app.union_domain'),
             'flash' => [
                 'status' => fn () => $request->session()->get('status'),

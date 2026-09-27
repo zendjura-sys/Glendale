@@ -9,7 +9,7 @@ use Tests\TestCase;
 /**
  * <title>/description/og:* у resources/views/app.blade.php — прев'ю
  * посилання (Telegram, Discord тощо) читають лише цю статичну розмітку
- * (SSR не налаштовано, отже без цього фіксу union.monsory.net завжди
+ * (SSR не налаштовано, отже без цього фіксу union.gamecon.online завжди
  * показував у прев'ю текст головного сайту).
  */
 class PageMetaTagsTest extends TestCase
@@ -21,7 +21,7 @@ class PageMetaTagsTest extends TestCase
         $response = $this->get('http://localhost/');
 
         $response->assertOk();
-        $response->assertSee('<title inertia>Monsory Connect</title>', false);
+        $response->assertSee('<title inertia>GameConnect</title>', false);
         $response->assertSee(config('family.about')[0], false);
     }
 

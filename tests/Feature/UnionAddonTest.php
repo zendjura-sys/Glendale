@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
 /**
- * Аддони union.monsory.net — окрема гілка від "Аддони" (addons.manage):
+ * Аддони union.gamecon.online — окрема гілка від "Аддони" (addons.manage):
  * свій тип пакета ('union'), своя адмінка (union.manage), і взаємно
  * замкнені один від одного — union.manage не дає керувати core/module/
  * plugin, addons.manage не бачить і не керує union-пакетами.
