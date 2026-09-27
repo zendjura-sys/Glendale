@@ -1,5 +1,5 @@
 import express from 'express';
-import { db, q, tx, now } from './db.js';
+import { q, tx, now } from './db.js';
 import { fail, intParam, str, need } from './http.js';
 import { upload, fileUrl } from './uploads.js';
 import { send } from './realtime.js';
@@ -9,35 +9,6 @@ import { areFriends, getUser, getTrack, trackJson, spotifyRef, userShort, pushCo
 /** Group chats ("беседы"): many members, roles, system messages, per-member read state. */
 export const chats = express.Router();
 
-db.exec(`
-CREATE TABLE IF NOT EXISTS chats (
-  id         INTEGER PRIMARY KEY AUTOINCREMENT,
-  title      TEXT NOT NULL,
-  avatar     TEXT,
-  owner_id   INTEGER REFERENCES users(id) ON DELETE SET NULL,
-  created_at INTEGER NOT NULL
-);
-CREATE TABLE IF NOT EXISTS chat_members (
-  chat_id      INTEGER NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
-  user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  role         TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('owner', 'admin', 'member')),
-  last_read_id INTEGER NOT NULL DEFAULT 0,
-  joined_at    INTEGER NOT NULL,
-  PRIMARY KEY (chat_id, user_id)
-);
-CREATE INDEX IF NOT EXISTS idx_chat_members_user ON chat_members(user_id);
-CREATE TABLE IF NOT EXISTS chat_messages (
-  id         INTEGER PRIMARY KEY AUTOINCREMENT,
-  chat_id    INTEGER NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
-  from_id    INTEGER REFERENCES users(id) ON DELETE SET NULL,
-  kind       TEXT NOT NULL DEFAULT 'text' CHECK (kind IN ('text', 'system')),
-  text       TEXT NOT NULL DEFAULT '',
-  image      TEXT,
-  audio_id   INTEGER REFERENCES tracks(id) ON DELETE SET NULL,
-  created_at INTEGER NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_chat_messages ON chat_messages(chat_id, id);
-`);
 
 const MAX_MEMBERS = 500;
 

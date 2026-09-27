@@ -64,7 +64,7 @@ const DIALOG = [
 
 export function seed({ reset = false } = {}) {
   if (reset) {
-    for (const t of ['chat_messages', 'chat_members', 'chats', 'playlist_tracks', 'playlists', 'user_tracks', 'tracks', 'admin_log', 'reports', 'announcements', 'notifications', 'photos', 'messages', 'comments', 'likes', 'posts', 'group_members', 'groups', 'friend_requests', 'friends', 'sessions', 'users']) {
+    for (const t of ['group_requests', 'chat_messages', 'chat_members', 'chats', 'playlist_tracks', 'playlists', 'user_tracks', 'tracks', 'admin_log', 'reports', 'announcements', 'notifications', 'photos', 'messages', 'comments', 'likes', 'posts', 'group_members', 'groups', 'friend_requests', 'friends', 'sessions', 'users']) {
       db.exec(`DELETE FROM ${t}`);
     }
     db.exec('DELETE FROM sqlite_sequence');
@@ -203,6 +203,14 @@ export function seed({ reset = false } = {}) {
     trackIds.forEach((id, i) => q('INSERT INTO user_tracks (user_id, track_id, added_at) VALUES (?, ?, ?)').run(demo, id, start + (i + 5) * DAY));
     const pl = Number(q('INSERT INTO playlists (owner_id, title, description, created_at) VALUES (?, ?, ?, ?)').run(demo, 'Для роботи', 'Спокійна музика без слів', start).lastInsertRowid);
     trackIds.forEach((id, i) => q('INSERT INTO playlist_tracks (playlist_id, track_id, position, added_at) VALUES (?, ?, ?, ?)').run(pl, id, i + 1, start));
+    // A closed community: the demo user's request waits for approval, and one request waits in the demo user's own group.
+    q("UPDATE groups SET privacy = 'closed' WHERE id = ?").run(groupIds[3]);
+    q('DELETE FROM group_members WHERE group_id = ? AND user_id = ?').run(groupIds[3], demo);
+    q('INSERT OR IGNORE INTO group_requests (group_id, user_id, created_at) VALUES (?, ?, ?)').run(groupIds[3], demo, Date.now() - DAY);
+    q("UPDATE groups SET privacy = 'closed' WHERE id = ?").run(groupIds[0]);
+    q('DELETE FROM group_members WHERE group_id = ? AND user_id = ?').run(groupIds[0], others[7]);
+    q('INSERT OR IGNORE INTO group_requests (group_id, user_id, created_at) VALUES (?, ?, ?)').run(groupIds[0], others[7], Date.now() - 3600_000);
+
     // Demo group chat with the demo user and three friends.
     const chatStart = Date.now() - 3 * 3600_000;
     const chatId = Number(q('INSERT INTO chats (title, owner_id, created_at) VALUES (?, ?, ?)').run('Похід у Карпати 🏔', others[0], chatStart).lastInsertRowid);

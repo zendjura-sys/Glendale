@@ -69,9 +69,13 @@ export function groupShort(g, meId) {
     avatar: g.avatar,
     cover: g.cover,
     ownerId: g.owner_id,
+    privacy: g.privacy === 'closed' ? 'closed' : 'open',
     membersCount,
     isMember: !!member,
     isAdmin: member?.role === 'admin',
+    isOwner: !!meId && g.owner_id === meId,
+    requested: !member && !!meId && !!q('SELECT 1 FROM group_requests WHERE group_id = ? AND user_id = ?').get(g.id, meId),
+    requestsCount: member?.role === 'admin' ? q('SELECT COUNT(*) AS c FROM group_requests WHERE group_id = ?').get(g.id).c : 0,
     createdAt: g.created_at,
   };
 }
@@ -118,6 +122,17 @@ export const getTrack = (id) => (id ? q('SELECT * FROM tracks WHERE id = ?').get
 export function spotifyRef(value) {
   const m = /open\.spotify\.com\/(?:intl-[a-z-]+\/)?(track|album|playlist|episode|show|artist)\/([A-Za-z0-9]{10,40})/.exec(value || '');
   return m ? { type: m[1], id: m[2] } : null;
+}
+
+/** SQL condition hiding posts of closed groups from non-members (bind the viewer id once). */
+export const VISIBLE_POSTS = `NOT (posts.owner_type = 'group' AND posts.owner_id IN (
+  SELECT g.id FROM groups g WHERE g.privacy = 'closed'
+    AND g.id NOT IN (SELECT group_id FROM group_members WHERE user_id = ?)))`;
+
+export function canSeeGroupContent(groupId, userId) {
+  const g = getGroup(groupId);
+  if (!g) return false;
+  return g.privacy !== 'closed' || !!q('SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?').get(groupId, userId) || isStaffUser(userId);
 }
 
 /** Turns raw post rows into API objects (author, counters, repost source). */
@@ -199,14 +214,15 @@ export function hydrateNotification(n) {
     createdAt: n.created_at,
     actor: userShort(getUser(n.actor_id)),
     post,
+    groupId: n.group_id ?? null,
   };
 }
 
-export function notify(userId, actorId, type, { postId = null, text = '' } = {}) {
+export function notify(userId, actorId, type, { postId = null, text = '', groupId = null } = {}) {
   if (userId === actorId) return;
   const r = q(
-    'INSERT INTO notifications (user_id, actor_id, type, post_id, text, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-  ).run(userId, actorId, type, postId, text, now());
+    'INSERT INTO notifications (user_id, actor_id, type, post_id, group_id, text, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+  ).run(userId, actorId, type, postId, groupId, text, now());
   const row = q('SELECT * FROM notifications WHERE id = ?').get(Number(r.lastInsertRowid));
   send(userId, 'notification', hydrateNotification(row));
 }

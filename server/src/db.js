@@ -244,6 +244,16 @@ CREATE TABLE IF NOT EXISTS playlist_tracks (
 `);
 addColumn('posts', 'audio_id', 'INTEGER REFERENCES tracks(id) ON DELETE SET NULL');
 addColumn('posts', 'spotify', "TEXT NOT NULL DEFAULT ''");
+addColumn('groups', 'privacy', "TEXT NOT NULL DEFAULT 'open'");
+addColumn('notifications', 'group_id', 'INTEGER REFERENCES groups(id) ON DELETE CASCADE');
+db.exec(`
+CREATE TABLE IF NOT EXISTS group_requests (
+  group_id   INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (group_id, user_id)
+);
+`);
 addColumn('messages', 'audio_id', 'INTEGER REFERENCES tracks(id) ON DELETE SET NULL');
 
 // Default member levels (modelled on classic social-network admin panels).
@@ -264,6 +274,53 @@ db.exec("UPDATE users SET level_id = (SELECT id FROM levels WHERE is_default = 1
 if (!db.prepare("SELECT 1 FROM users u JOIN levels l ON l.id = u.level_id WHERE l.type = 'superadmin'").get()) {
   db.exec("UPDATE users SET level_id = (SELECT id FROM levels WHERE type = 'superadmin' LIMIT 1) WHERE id = (SELECT MIN(id) FROM users)");
 }
+
+// ───────── group chats ─────────
+db.exec(`
+CREATE TABLE IF NOT EXISTS chats (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  title      TEXT NOT NULL,
+  avatar     TEXT,
+  owner_id   INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS chat_members (
+  chat_id      INTEGER NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
+  user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role         TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('owner', 'admin', 'member')),
+  last_read_id INTEGER NOT NULL DEFAULT 0,
+  joined_at    INTEGER NOT NULL,
+  PRIMARY KEY (chat_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_chat_members_user ON chat_members(user_id);
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  chat_id    INTEGER NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
+  from_id    INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  kind       TEXT NOT NULL DEFAULT 'text' CHECK (kind IN ('text', 'system')),
+  text       TEXT NOT NULL DEFAULT '',
+  image      TEXT,
+  audio_id   INTEGER REFERENCES tracks(id) ON DELETE SET NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_chat_messages ON chat_messages(chat_id, id);
+`);
+
+// ───────── Spotify ─────────
+db.exec(`
+CREATE TABLE IF NOT EXISTS spotify_accounts (
+  user_id          INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  spotify_id       TEXT NOT NULL,
+  display_name     TEXT NOT NULL DEFAULT '',
+  avatar           TEXT,
+  access_token     TEXT NOT NULL,
+  refresh_token    TEXT NOT NULL,
+  expires_at       INTEGER NOT NULL,
+  show_now_playing INTEGER NOT NULL DEFAULT 1,
+  connected_at     INTEGER NOT NULL
+);
+`);
+addColumn('spotify_accounts', 'product', "TEXT NOT NULL DEFAULT 'free'");
 
 // SQLite's LOWER/LIKE only fold ASCII; this handles Cyrillic too.
 db.function('ulower', { deterministic: true }, (v) => (typeof v === 'string' ? v.toLowerCase() : v));

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { Bell, Heart, MessageCircle, Repeat2, UserCheck, UserPlus, PenLine } from 'lucide-react';
+import { Bell, Heart, MessageCircle, Repeat2, UserCheck, UserPlus, UsersRound, PenLine } from 'lucide-react';
 import { api } from '../lib/api';
 import { NOTIFICATION_TEXT } from '../lib/realtime';
 import type { Notification, Page } from '../lib/types';
@@ -14,11 +14,13 @@ const ICONS: Record<Notification['type'], { icon: typeof Heart; color: string }>
   wall_post: { icon: PenLine, color: '#ff9e2c' },
   friend_request: { icon: UserPlus, color: '#2688eb' },
   friend_accept: { icon: UserCheck, color: '#4bb34b' },
+  group_request: { icon: UsersRound, color: '#8b5cf6' },
+  group_accept: { icon: UsersRound, color: '#4bb34b' },
 };
 
 export function NotificationItem({ n, onClick }: { n: Notification; onClick?: () => void }) {
   const { icon: Icon, color } = ICONS[n.type];
-  const link = n.post ? `/wall/${n.post.id}` : `/id/${n.actor.id}`;
+  const link = n.post ? `/wall/${n.post.id}` : n.groupId ? `/club/${n.groupId}` : `/id/${n.actor.id}`;
   return (
     <Link to={link} className="row row-link" onClick={onClick} style={n.isRead ? undefined : { background: 'var(--hover)' }}>
       <div style={{ position: 'relative' }}>

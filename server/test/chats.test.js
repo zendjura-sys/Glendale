@@ -73,3 +73,38 @@ test('group chats: create, messages, unread, roles, leave', async () => {
   assert.equal(after.myRole, 'owner');
   assert.equal(after.membersCount, 1);
 });
+
+test('closed groups: requests, hidden wall, roles', async () => {
+  const [o, m, x] = [await register('Оля', 'o@g.dev'), await register('Макс', 'm@g.dev'), await register('Ксена', 'x@g.dev')];
+  const g = (await call(o.token, 'POST', '/groups', { name: 'Закрита група', privacy: 'closed' })).body;
+  assert.equal(g.privacy, 'closed');
+  const post = (await call(o.token, 'POST', '/posts', { text: 'Секрет', ownerType: 'group', ownerId: g.id })).body;
+
+  // Outsiders see the card but not the wall, members or the post.
+  assert.equal((await call(m.token, 'GET', `/wall/group/${g.id}`)).status, 403);
+  assert.equal((await call(m.token, 'GET', `/groups/${g.id}/members`)).status, 403);
+  assert.equal((await call(m.token, 'GET', `/posts/${post.id}`)).status, 403);
+  assert.ok(!(await call(m.token, 'GET', '/feed?tab=popular')).body.items.some((p) => p.id === post.id));
+  assert.equal((await call(m.token, 'GET', `/groups/${g.id}`)).body.canSeeContent, false);
+
+  // Join = request; the owner gets notified, approves; now the wall opens.
+  const joined = (await call(m.token, 'POST', `/groups/${g.id}/join`)).body;
+  assert.equal(joined.isMember, false);
+  assert.equal(joined.requested, true);
+  assert.ok((await call(o.token, 'GET', '/notifications')).body.items.some((n) => n.type === 'group_request' && n.groupId === g.id));
+  assert.equal((await call(o.token, 'GET', `/groups/${g.id}`)).body.requestsCount, 1);
+  const reqs = (await call(o.token, 'GET', `/groups/${g.id}/requests`)).body;
+  assert.equal(reqs[0].id, m.user.id);
+  assert.equal((await call(m.token, 'GET', `/groups/${g.id}/requests`)).status, 403);
+  await call(o.token, 'POST', `/groups/${g.id}/requests/${m.user.id}`);
+  assert.equal((await call(m.token, 'GET', `/wall/group/${g.id}`)).status, 200);
+
+  // Roles: promote Max; admins can't remove the owner; only the owner demotes admins.
+  await call(o.token, 'PATCH', `/groups/${g.id}/members/${m.user.id}`, { role: 'admin' });
+  assert.equal((await call(m.token, 'DELETE', `/groups/${g.id}/members/${o.user.id}`)).status, 400);
+  await call(x.token, 'POST', `/groups/${g.id}/join`);
+  await call(m.token, 'DELETE', `/groups/${g.id}/requests/${x.user.id}`);
+  assert.equal((await call(x.token, 'GET', `/groups/${g.id}`)).body.requested, false);
+  const members = (await call(m.token, 'GET', `/groups/${g.id}/members`)).body;
+  assert.equal(members.find((u) => u.id === o.user.id).role, 'owner');
+});

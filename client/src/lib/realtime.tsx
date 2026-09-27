@@ -188,7 +188,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
             user: n.actor,
             title: `${n.actor.firstName} ${n.actor.lastName}`,
             text: NOTIFICATION_TEXT[n.type],
-            link: n.post ? `/wall/${n.post.id}` : `/id/${n.actor.id}`,
+            link: n.post ? `/wall/${n.post.id}` : n.groupId ? `/club/${n.groupId}` : `/id/${n.actor.id}`,
           });
           break;
         }
@@ -286,6 +286,8 @@ export const NOTIFICATION_TEXT: Record<Notification['type'], string> = {
   wall_post: 'написал(а) на вашей стене',
   friend_request: 'хочет добавить вас в друзья',
   friend_accept: 'принял(а) вашу заявку в друзья',
+  group_request: 'хочет вступить в сообщество',
+  group_accept: 'одобрил(а) вашу заявку в сообщество',
 };
 
 export const useRealtime = () => useContext(RealtimeContext);

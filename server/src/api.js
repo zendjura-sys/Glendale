@@ -25,6 +25,8 @@ import {
   counters,
   pushCounters,
   meFull,
+  VISIBLE_POSTS,
+  canSeeGroupContent,
   trackJson,
   getTrack,
   spotifyRef,
@@ -312,6 +314,7 @@ function wallQuery(ownerType, ownerId, before) {
 
 api.get('/wall/:type/:id', (req, res) => {
   const type = req.params.type === 'group' ? 'group' : 'user';
+  if (type === 'group' && !canSeeGroupContent(intParam(req.params.id), req.user.id)) fail(403, 'Это закрытое сообщество', 'closed_group');
   const rows = wallQuery(type, intParam(req.params.id), beforeParam(req));
   res.json(page(hydratePosts(rows, req.user.id)));
 });
@@ -322,7 +325,7 @@ api.get('/feed', (req, res) => {
   let rows;
   if (req.query.tab === 'popular') {
     // "Рекомендации": all public posts, not only from friends and communities.
-    rows = q(`SELECT * FROM posts WHERE id < ? ORDER BY id DESC LIMIT ${PAGE}`).all(before);
+    rows = q(`SELECT * FROM posts WHERE id < ? AND ${VISIBLE_POSTS} ORDER BY id DESC LIMIT ${PAGE}`).all(before, me);
   } else {
     rows = q(
       `SELECT * FROM posts WHERE id < ? AND (
@@ -338,6 +341,7 @@ api.get('/feed', (req, res) => {
 api.get('/posts/:id', (req, res) => {
   const p = q('SELECT * FROM posts WHERE id = ?').get(intParam(req.params.id));
   if (!p) fail(404, 'Запись не найдена');
+  if (p.owner_type === 'group' && !canSeeGroupContent(p.owner_id, req.user.id)) fail(403, 'Это закрытое сообщество', 'closed_group');
   res.json(hydratePosts([p], req.user.id)[0]);
 });
 
@@ -557,7 +561,8 @@ api.post('/groups', (req, res) => {
   const description = censor(str(req.body.description, 2000));
   const t = now();
   const id = tx(() => {
-    const r = q('INSERT INTO groups (name, description, owner_id, created_at) VALUES (?, ?, ?, ?)').run(name, description, req.user.id, t);
+    const privacy = req.body.privacy === 'closed' ? 'closed' : 'open';
+    const r = q('INSERT INTO groups (name, description, owner_id, privacy, created_at) VALUES (?, ?, ?, ?, ?)').run(name, description, req.user.id, privacy, t);
     const gid = Number(r.lastInsertRowid);
     q("INSERT INTO group_members (group_id, user_id, role, created_at) VALUES (?, ?, 'admin', ?)").run(gid, req.user.id, t);
     return gid;
@@ -578,9 +583,11 @@ api.get('/groups/:id', (req, res) => {
     `SELECT COUNT(*) AS c FROM group_members m JOIN friends f ON f.friend_id = m.user_id
      WHERE m.group_id = ? AND f.user_id = ?`,
   ).get(g.id, req.user.id).c;
+  const visible = canSeeGroupContent(g.id, req.user.id);
   res.json({
     ...groupShort(g, req.user.id),
-    membersSample: membersSample.map(userShort),
+    canSeeContent: visible,
+    membersSample: visible ? membersSample.map(userShort) : [],
     admins: admins.map(userShort),
     friendsInGroup,
   });
@@ -596,6 +603,18 @@ api.patch('/groups/:id', (req, res) => {
     q('UPDATE groups SET name = ? WHERE id = ?').run(name, g.id);
   }
   if (req.body.description !== undefined) q('UPDATE groups SET description = ? WHERE id = ?').run(str(req.body.description, 2000), g.id);
+  if (req.body.privacy !== undefined) {
+    const privacy = req.body.privacy === 'closed' ? 'closed' : 'open';
+    q('UPDATE groups SET privacy = ? WHERE id = ?').run(privacy, g.id);
+    // Opening a group lets everyone who asked in.
+    if (privacy === 'open') {
+      const t = now();
+      for (const r of q('SELECT user_id FROM group_requests WHERE group_id = ?').all(g.id)) {
+        q("INSERT OR IGNORE INTO group_members (group_id, user_id, role, created_at) VALUES (?, ?, 'member', ?)").run(g.id, r.user_id, t);
+      }
+      q('DELETE FROM group_requests WHERE group_id = ?').run(g.id);
+    }
+  }
   res.json(groupShort(getGroup(g.id), req.user.id));
 });
 
@@ -624,7 +643,16 @@ api.delete('/groups/:id', (req, res) => {
 api.post('/groups/:id/join', (req, res) => {
   const g = getGroup(intParam(req.params.id));
   if (!g) fail(404, 'Сообщество не найдено');
-  q("INSERT OR IGNORE INTO group_members (group_id, user_id, role, created_at) VALUES (?, ?, 'member', ?)").run(g.id, req.user.id, now());
+  if (g.privacy === 'closed' && !isGroupAdmin(g.id, req.user.id)) {
+    const r = q('INSERT OR IGNORE INTO group_requests (group_id, user_id, created_at) VALUES (?, ?, ?)').run(g.id, req.user.id, now());
+    if (r.changes) {
+      for (const a of q("SELECT user_id FROM group_members WHERE group_id = ? AND role = 'admin'").all(g.id)) {
+        notify(a.user_id, req.user.id, 'group_request', { groupId: g.id, text: g.name });
+      }
+    }
+  } else {
+    q("INSERT OR IGNORE INTO group_members (group_id, user_id, role, created_at) VALUES (?, ?, 'member', ?)").run(g.id, req.user.id, now());
+  }
   res.json(groupShort(g, req.user.id));
 });
 
@@ -633,14 +661,67 @@ api.delete('/groups/:id/join', (req, res) => {
   if (!g) fail(404, 'Сообщество не найдено');
   if (g.owner_id === req.user.id) fail(400, 'Владелец не может покинуть сообщество');
   q('DELETE FROM group_members WHERE group_id = ? AND user_id = ?').run(g.id, req.user.id);
+  q('DELETE FROM group_requests WHERE group_id = ? AND user_id = ?').run(g.id, req.user.id);
   res.json(groupShort(g, req.user.id));
 });
 
+function adminGroup(req) {
+  const g = getGroup(intParam(req.params.id));
+  if (!g) fail(404, 'Сообщество не найдено');
+  if (!isGroupAdmin(g.id, req.user.id)) fail(403, 'Нужны права администратора сообщества');
+  return g;
+}
+
+api.get('/groups/:id/requests', (req, res) => {
+  const g = adminGroup(req);
+  const rows = q('SELECT u.*, r.created_at AS requested_at FROM group_requests r JOIN users u ON u.id = r.user_id WHERE r.group_id = ? ORDER BY r.created_at').all(g.id);
+  res.json(rows.map((u) => ({ ...userShort(u), requestedAt: u.requested_at })));
+});
+
+api.post('/groups/:id/requests/:userId', (req, res) => {
+  const g = adminGroup(req);
+  const uid = intParam(req.params.userId);
+  const r = q('DELETE FROM group_requests WHERE group_id = ? AND user_id = ?').run(g.id, uid);
+  if (!r.changes) fail(404, 'Заявка не найдена');
+  q("INSERT OR IGNORE INTO group_members (group_id, user_id, role, created_at) VALUES (?, ?, 'member', ?)").run(g.id, uid, now());
+  notify(uid, req.user.id, 'group_accept', { groupId: g.id, text: g.name });
+  res.json({ ok: true });
+});
+
+api.delete('/groups/:id/requests/:userId', (req, res) => {
+  const g = adminGroup(req);
+  q('DELETE FROM group_requests WHERE group_id = ? AND user_id = ?').run(g.id, intParam(req.params.userId));
+  res.json({ ok: true });
+});
+
+api.patch('/groups/:id/members/:userId', (req, res) => {
+  const g = adminGroup(req);
+  const uid = intParam(req.params.userId);
+  if (uid === g.owner_id) fail(400, 'Роль владельца изменить нельзя');
+  if (!q('SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?').get(g.id, uid)) fail(404, 'Участник не найден');
+  // Only the owner can take admin rights away from another admin.
+  if (req.body.role !== 'admin' && isGroupAdmin(g.id, uid) && g.owner_id !== req.user.id) fail(403, 'Снять администратора может только владелец');
+  q('UPDATE group_members SET role = ? WHERE group_id = ? AND user_id = ?').run(req.body.role === 'admin' ? 'admin' : 'member', g.id, uid);
+  res.json({ ok: true });
+});
+
+api.delete('/groups/:id/members/:userId', (req, res) => {
+  const g = adminGroup(req);
+  const uid = intParam(req.params.userId);
+  if (uid === g.owner_id) fail(400, 'Владельца исключить нельзя');
+  if (isGroupAdmin(g.id, uid) && g.owner_id !== req.user.id) fail(403, 'Исключить администратора может только владелец');
+  q('DELETE FROM group_members WHERE group_id = ? AND user_id = ?').run(g.id, uid);
+  res.json({ ok: true });
+});
+
 api.get('/groups/:id/members', (req, res) => {
+  if (!canSeeGroupContent(intParam(req.params.id), req.user.id)) fail(403, 'Это закрытое сообщество', 'closed_group');
+  const gid = intParam(req.params.id);
+  const ownerId = getGroup(gid)?.owner_id;
   const rows = q(
     'SELECT u.*, m.role FROM group_members m JOIN users u ON u.id = m.user_id WHERE m.group_id = ? ORDER BY m.role, u.first_name LIMIT 500',
-  ).all(intParam(req.params.id));
-  res.json(rows.map((u) => ({ ...userShort(u), role: u.role })));
+  ).all(gid);
+  res.json(rows.map((u) => ({ ...userShort(u), role: u.id === ownerId ? 'owner' : u.role })));
 });
 
 // ───────────────────────────── photos ─────────────────────────────
@@ -701,7 +782,7 @@ api.get('/search', (req, res) => {
      ORDER BY last_seen DESC LIMIT 30`,
   ).all(like, like, like);
   const groups = q('SELECT * FROM groups WHERE ulower(name) LIKE ? OR ulower(description) LIKE ? LIMIT 20').all(like, like);
-  const posts = q('SELECT * FROM posts WHERE ulower(text) LIKE ? ORDER BY id DESC LIMIT 20').all(like);
+  const posts = q(`SELECT * FROM posts WHERE ulower(text) LIKE ? AND ${VISIBLE_POSTS} ORDER BY id DESC LIMIT 20`).all(like, req.user.id);
   const tracks = q('SELECT * FROM tracks WHERE ulower(title) LIKE ? OR ulower(artist) LIKE ? ORDER BY plays DESC LIMIT 20').all(like, like);
   res.json({
     users: users.map((u) => ({ ...userShort(u), city: u.city, friendship: friendshipStatus(req.user.id, u.id) })),

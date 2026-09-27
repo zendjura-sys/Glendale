@@ -1,22 +1,23 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Search, UsersRound } from 'lucide-react';
+import { Lock, Plus, Search, UsersRound } from 'lucide-react';
 import { api } from '../lib/api';
 import { useMe } from '../lib/auth';
 import type { Group, Profile } from '../lib/types';
 import { countLabel, fullName } from '../lib/utils';
 import { Avatar, Empty, Modal, Spinner } from '../components/ui';
-import { JoinButton } from './Group';
+import { JoinButton, PrivacyPicker } from './Group';
 
 function CreateGroupModal({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [privacy, setPrivacy] = useState<'open' | 'closed'>('open');
   const [error, setError] = useState('');
   const create = async () => {
     try {
-      const g = await api<Group>('/groups', { body: { name, description } });
+      const g = await api<Group>('/groups', { body: { name, description, privacy } });
       navigate(`/club/${g.id}`);
     } catch (e) {
       setError((e as Error).message);
@@ -41,6 +42,10 @@ function CreateGroupModal({ onClose }: { onClose: () => void }) {
           <label className="label">Описание</label>
           <textarea className="field" value={description} maxLength={2000} onChange={(e) => setDescription(e.target.value)} />
         </div>
+        <div className="form-row">
+          <label className="label">Тип сообщества</label>
+          <PrivacyPicker value={privacy} onChange={setPrivacy} />
+        </div>
         {error && <div className="error-text">{error}</div>}
       </div>
     </Modal>
@@ -57,6 +62,7 @@ export function GroupRow({ g }: { g: Group }) {
         <Link to={`/club/${g.id}`} className="name" style={{ fontSize: 14 }}>
           {g.name}
         </Link>
+        {g.privacy === 'closed' && <Lock size={13} style={{ marginLeft: 6, verticalAlign: '-1px', color: 'var(--text-3)' }} aria-label="Закрытое" />}
         {g.description && <div className="ellipsis muted">{g.description}</div>}
         <div className="meta">{countLabel(g.membersCount, 'участник', 'участника', 'участников')}</div>
       </div>

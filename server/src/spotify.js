@@ -1,6 +1,6 @@
 import express from 'express';
 import crypto from 'node:crypto';
-import { db, q, now } from './db.js';
+import { q, now } from './db.js';
 import { fail, intParam, str } from './http.js';
 import { getSetting } from './settings.js';
 
@@ -30,22 +30,6 @@ const SCOPES = [
   'user-follow-read',
 ].join(' ');
 
-db.exec(`
-CREATE TABLE IF NOT EXISTS spotify_accounts (
-  user_id          INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-  spotify_id       TEXT NOT NULL,
-  display_name     TEXT NOT NULL DEFAULT '',
-  avatar           TEXT,
-  access_token     TEXT NOT NULL,
-  refresh_token    TEXT NOT NULL,
-  expires_at       INTEGER NOT NULL,
-  show_now_playing INTEGER NOT NULL DEFAULT 1,
-  connected_at     INTEGER NOT NULL
-);
-`);
-if (!db.prepare('PRAGMA table_info(spotify_accounts)').all().some((c) => c.name === 'product')) {
-  db.exec("ALTER TABLE spotify_accounts ADD COLUMN product TEXT NOT NULL DEFAULT 'free'");
-}
 
 const clientId = () => String(getSetting('spotifyClientId') || '').trim();
 const enabled = () => !!clientId();

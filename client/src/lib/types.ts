@@ -55,13 +55,18 @@ export interface Group {
   avatar: string | null;
   cover: string | null;
   ownerId: number;
+  privacy: 'open' | 'closed';
   membersCount: number;
   isMember: boolean;
   isAdmin: boolean;
+  isOwner: boolean;
+  requested: boolean;
+  requestsCount: number;
   createdAt: number;
 }
 
 export interface GroupFull extends Group {
+  canSeeContent: boolean;
   membersSample: UserShort[];
   admins: UserShort[];
   friendsInGroup: number;
@@ -196,12 +201,13 @@ export interface Photo {
 
 export interface Notification {
   id: number;
-  type: 'like' | 'comment' | 'repost' | 'wall_post' | 'friend_request' | 'friend_accept';
+  type: 'like' | 'comment' | 'repost' | 'wall_post' | 'friend_request' | 'friend_accept' | 'group_request' | 'group_accept';
   text: string;
   isRead: boolean;
   createdAt: number;
   actor: UserShort;
   post: { id: number; text: string; image: string | null } | null;
+  groupId: number | null;
 }
 
 export interface Counters {
