@@ -59,3 +59,6 @@ Route::middleware(['auth:sanctum', SubstituteBindings::class, 'permission:users.
     Route::post('/admin/users/{user}/reset-password', [AdminUserController::class, 'resetPassword']);
     Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy']);
 });
+
+// API платформи (соцмережа, родини, кіно) — спільний для SPA і застосунку.
+Route::prefix('v2')->group(base_path('routes/api_v2.php'));

@@ -183,6 +183,16 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__.'/auth.php';
 
+// Нова платформа (React SPA). Вхід/реєстрація — на сторінках сайту:
+// /social/enter вимагає сесії, тож гостя Laravel відправить на /login і
+// поверне сюди (intended), а SPA обміняє сесію на токен API.
+Route::prefix(\App\Http\Controllers\Platform\SpaController::BASE)->group(function () {
+    Route::get('/enter', [\App\Http\Controllers\Platform\SpaController::class, 'enter'])->middleware('auth');
+    Route::post('/session-token', [\App\Http\Controllers\Platform\SpaController::class, 'sessionToken'])->middleware('throttle:20,1');
+    Route::post('/logout', [\App\Http\Controllers\Platform\SpaController::class, 'logout']);
+    Route::get('/{any?}', [\App\Http\Controllers\Platform\SpaController::class, 'show'])->where('any', '.*');
+});
+
 Route::middleware(['auth', 'verified', 'permission:addons.manage|reports.manage|progression.manage|settings.manage|roles.manage|users.manage|members.manage|goals.manage|broadcasts.manage|telegram.manage|bonuses.manage|events.manage|union.manage'])
     ->get('/admin', [DashboardController::class, 'index'])
     ->name('admin.dashboard');

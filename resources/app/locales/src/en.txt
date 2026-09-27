@@ -1,0 +1,752 @@
+0	 · that's you
+1	+{n} this week
+2	, admin:
+3	, skipped {n} (no permission)
+4	. Title, artist and cover are taken from the tags.
+5	0 — never lock
+6	4 weeks
+7	6 months
+8	Spotify app Client ID
+9	Email is already taken
+10	Signup IP
+11	Spotify isn't connected to this network yet
+12	Spotify rejected the request: {reason}
+13	Spotify: player authorization error
+14	{actor} added {user}
+15	{actor} renamed the chat to “{title}”
+16	{actor} removed {user}
+17	{actor} updated the chat photo
+18	{actor} created the chat “{title}”
+19	{date} at {time}
+20	{d} d {h} h
+21	{h} h {m} min
+22	{label} in {days} days
+23	{n} KB
+24	{n} MB
+25	{user} is no longer a chat admin
+26	{user} left the chat
+27	{user} is now a chat admin
+28	“Now playing” on my profile
+29	· open
+30	Avatar, cover, photos in posts and albums
+31	Admin panel
+32	Administrator
+33	The administrator hasn't enabled the integration yet.
+34	Account is active
+35	Account blocked by the administration
+36	Account is awaiting administrator approval
+37	Active
+38	Network activity by day
+39	Active
+40	Active announcements are shown at the top of the news feed
+41	Album
+42	Albums and singles
+43	Analytics
+44	Track not found
+45	Database
+46	Bans and censorship
+47	No repeat
+48	Security
+49	Chat
+50	Chat not found
+51	Login lock, minutes
+52	Email and IP bans, censorship, brute-force protection
+53	A chat can have at most {n} members
+54	Only friends can be added to a chat
+55	No tracks in your library yet
+56	In my music
+57	These words are replaced with asterisks in new posts, comments and messages.
+58	Add to queue
+59	Add to Spotify playlist
+60	No posts in this community yet.
+61	Your comment
+62	Your top
+63	Your playlists, library and top right here; control playback on any device, a player in the browser (Premium) and “Now playing” on your profile.
+64	Enter a status
+65	Back
+66	Back to admin panel
+67	Owner
+68	The owner can't leave the community
+69	The owner can't be removed
+70	Attachment
+71	Appearance
+72	It may have been deleted or not created yet.
+73	It may have been deleted.
+74	People you may know
+75	Log in
+76	Log in as
+77	Log in as {name}? You can return to the admin panel.
+78	Log in with Spotify
+79	Playing in the browser requires Spotify Premium
+80	Logged in as member
+81	Next
+82	All
+83	All friends
+84	All playlists
+85	All statuses
+86	Everyone is already your friend
+87	All levels
+88	All members
+89	Join
+90	Join community
+91	Anyone can join, posts are visible to everyone.
+92	All time
+93	All quiet — time for a cup of tea.
+94	Log in to {site}
+95	Staff login
+96	Login locked
+97	Incoming ·
+98	Yesterday
+99	You
+100	You're not a member of this chat
+101	You cancelled connecting Spotify
+102	You're browsing as
+103	You've already shared this post
+104	You've already reported this
+105	You're a member
+106	You:
+107	Choose audio files
+108	Choose a reason for the report
+109	Choose a device
+110	Choose a chat or start a new conversation
+111	Choose who to add
+112	Selected:
+113	Select {name}
+114	Select all
+115	Log out
+116	Log out of account
+117	Leave chat
+118	Leave the chat?
+119	A checkmark next to the name
+120	Home
+121	Main menu
+122	City
+123	Done
+124	Chart
+125	Volume
+126	Groups
+127	Action
+128	Actions
+129	Demo access:
+130	Birthday
+131	Add
+132	Add friend
+133	Add to my music
+134	Add to playlist
+135	Add to Spotify playlist
+136	Add cover
+137	Add tracks via the “…” menu → “Add to playlist”
+138	You can only add your own friends
+139	Add friends or join communities to see their posts.
+140	Add at least one member
+141	Spotify access was revoked — connect your account again
+142	Access to the admin panel: members, content, settings.
+143	Access from your address is restricted
+144	Other
+145	Friends
+146	Friends online
+147	Friends, communities and a news feed
+148	If turned off, any member can post on your wall
+149	More
+150	Report not found
+151	Reports
+152	Reports awaiting a decision
+153	Reports against them
+154	Awaiting approval
+155	Awaiting approval
+156	Log
+157	Audit log
+158	The log is empty
+159	Banned the author after a report
+160	Banned members
+161	Banned
+162	Banned
+163	A banned member can't log in; all their sessions are ended
+164	Banned
+165	Banned
+166	Ban
+167	Ban {name}?
+168	Ban author
+169	Ended member's sessions
+170	End all of this member's sessions?
+171	End sessions
+172	Title
+173	Upload photos
+174	Upload music in the “Music” section
+175	Upload your first photos
+176	Upload your tracks or add some from search
+177	Upload photos
+178	Loading
+179	File uploads aren't available for your level
+180	Photo uploads aren't available for your level
+181	Closed
+182	Closed
+183	Closed community
+184	Close
+185	Close player
+186	Posts
+187	{name}'s posts
+188	Only members see posts and members; joining by request.
+189	Wall posts and reposts
+190	Posts, comments and communities
+191	Post
+192	A post can't be empty
+193	Post not found
+194	The post has been published on your wall.
+195	The post will appear on your page and in your friends' news
+196	Banned IP addresses
+197	Banned emails
+198	Registered
+199	Sign up
+200	Protection
+201	Protection and bans
+202	Brute-force protection
+203	Flood protection, in seconds (0 — no limit)
+204	Request not found
+205	Request sent
+206	Request sent — the administrators will review it soon.
+207	Requests
+208	Join requests
+209	Your conversation history will appear here
+210	Likes, comments and friend requests will appear here
+211	Nothing here yet
+212	Nothing here
+213	Hello, {name}. Here's what's happening on the network.
+214	Changes saved
+215	Changed settings
+216	Edited an announcement
+217	Edited a level
+218	Edited a member
+219	Change the filters or the query
+220	Change cover
+221	Change password
+222	Change chat photo
+223	Change photo
+224	Only admins can edit the chat
+225	First name
+226	First and last name can't be empty
+227	First name can't be empty
+228	Name, email or ID
+229	Integrations
+230	The Spotify integration isn't configured by the administrator
+231	Info
+232	Chat info
+233	Only admins can remove members
+234	Remove
+235	Remove {name}?
+236	Only the owner can remove an administrator
+237	Remove from chat
+238	Remove from community
+239	Artist
+240	Artist, track or album
+241	Outgoing ·
+242	Search all tracks uploaded by members
+243	Buttons, links and active elements for all members. Changes are visible after saving.
+244	When
+245	Comments
+246	Comments on posts
+247	Comment
+248	Comment (optional)
+249	A comment can't be empty
+250	Comment not found
+251	Commenting isn't available for your level
+252	Comment
+253	Contacts
+254	Content
+255	Largest communities
+256	Who
+257	Who can join and how
+258	Who on the team changed what
+259	Likes
+260	Likes, comments and reposts
+261	Private messages in the messenger
+262	Liked songs ·
+263	Anyone can sign up and start using the network right away.
+264	People
+265	Instant messages and notifications
+266	Library
+267	Profile menu
+268	Messenger
+269	Method not found
+270	Moderator
+271	Moderators handle reports and clean up content. Administrators get the whole admin panel.
+272	Moderation
+273	Can read but not post or send messages.
+274	You can only edit your own tracks
+275	You can only delete your own messages
+276	My posts
+277	My communities
+278	My photos
+279	My music
+280	My profile
+281	Music
+282	A soft colored glow behind the interface
+283	On Glendale since
+284	To the site
+285	No posts on the wall yet.
+286	Navigation
+287	Back
+288	Name
+289	Chat name
+290	Network name
+291	Network name, description and maintenance mode
+292	Assigned to new members on signup
+293	Only the chat creator can appoint admins
+294	Make administrator
+295	Only a superadmin can appoint a superadmin
+296	Find music
+297	Find friends
+298	Find interesting communities
+299	Write a comment...
+300	Send a message
+301	Message a friend or create a chat
+302	Write your first post.
+303	Write a message...
+304	Write something to {name}...
+305	Write something on behalf of the community...
+306	Copyright infringement
+307	No violation
+308	Settings
+309	Settings saved
+310	Start typing a query
+311	No users selected
+312	Unread
+313	Couldn't load the Spotify player
+314	Couldn't connect Spotify
+315	Couldn't get the Spotify profile
+316	Wrong email or password
+317	Wrong current password
+318	Recently played
+319	Invalid level type
+320	Not enough permissions
+321	Unknown action
+322	Unknown artist
+323	Invalid date of birth
+324	Invalid email
+325	Invalid return address
+326	Invalid Spotify ID
+327	Invalid track
+328	You can't ban yourself
+329	Staff can't be banned through a report
+330	This member's role can't be changed
+331	You can't change your own level
+332	You can't delete your own account
+333	Inappropriate content
+334	No active Spotify device — open Spotify or choose a device
+335	No tracks
+336	No access to the admin panel
+337	No friends to add
+338	No new requests
+339	No sent requests
+340	No permission
+341	No permission to delete
+342	No connection to the server
+343	No messages
+344	No tracks to add
+345	No notifications
+346	No photos
+347	Failed attempts before locking
+348	No one found
+349	Nothing found
+350	New chat
+351	New announcement
+352	New community
+353	News
+354	New
+355	New accounts are activated after an administrator reviews them.
+356	New accounts wait for approval in the “Members” section.
+357	New posts in 14 days
+358	New signups are disabled. Existing members log in as usual.
+359	New members
+360	New password
+361	New password (optional)
+362	New playlist
+363	New level
+364	No new reports
+365	No new requests
+366	Like
+367	Needed when signup requires approval
+368	Community admin rights required
+369	About
+370	Overview
+371	General
+372	General settings
+373	Target
+374	The reported item wasn't found
+375	The item has already been deleted
+376	Announcement
+377	Announcement not found
+378	No announcements yet
+379	Announcements
+380	A regular user.
+381	Restricted
+382	Approved
+383	Approved
+384	Approved members
+385	Approve
+386	Description
+387	No description
+388	Published an announcement
+389	Publish
+390	Harassment
+391	Leave empty to keep the current one
+392	Dismissed
+393	Dismissed a report
+394	Decline
+395	Decline request
+396	Dismissed
+397	Disconnect Spotify
+398	Disconnect Spotify?
+399	Open Spotify on your phone or computer
+400	Open
+401	Open
+402	Open community
+403	Open
+404	Open album
+405	Open in Spotify
+406	Open post
+407	Cancel
+408	Cancel request
+409	Send
+410	Sending messages isn't available for your level
+411	Appearance
+412	Spotify error: {reason}
+413	Memory
+414	Password
+415	The password must be at least 6 characters
+416	Password changed
+417	Pause
+418	Pause between posts
+419	Go to your page
+420	Shuffle
+421	Seek
+422	Drop MP3, M4A, OGG, WAV or FLAC files here — or
+423	Only friends can post on the wall
+424	Send messages
+425	Player
+426	Playlist
+427	Playlist not found
+428	No playlists
+429	No playlists yet
+430	Playlists
+431	By activity
+432	By name
+433	One per line, “*” at the end for a range. Doesn't apply to staff.
+434	One per line. “*@domain” bans the whole domain. Applies to new signups.
+435	By approval
+436	Repeat
+437	Repeat list
+438	Repeat track
+439	Send a request to see posts and members.
+440	Request to join
+441	Supported audio files: MP3, M4A, AAC, OGG, WAV, FLAC and WEBM
+442	Only JPG, PNG, GIF and WEBP images are supported
+443	Share
+444	Share post
+445	Share on wall
+446	Podcast
+447	Connecting external services
+448	Connect Spotify
+449	Connect Spotify in the “Music” section
+450	Wait {n} s before your next post
+451	Details
+452	More info
+453	Details (optional)
+454	Verified members
+455	Verify
+456	Verified
+457	Verified
+458	Verified
+459	Verified account
+460	Report
+461	Search
+462	Search my music
+463	Search friends
+464	Search people, communities and posts
+465	Search by text
+466	Search communities
+467	Search, moderation and account management
+468	No friends yet
+469	Nothing yet
+470	Show all
+471	Show more
+472	Shown in the browser tab and on the login page.
+473	Show
+474	Show to members
+475	Show what I'm listening to
+476	Leave the community “{name}”?
+477	Full playback and control are available with Spotify Premium. Without Premium, Spotify plays a preview, or the full track if you're logged in to Spotify in this browser.
+478	Full access to everything, including other administrators.
+479	User
+480	The user hasn't added any photos yet
+481	The user is banned
+482	User not found
+483	A user with this email already exists
+484	Try changing the query
+485	Popular
+486	Popular communities
+487	Popular tracks
+488	Last IP
+489	Last visit
+490	Previous page
+491	Previous
+492	Attach
+493	Attach a track
+494	Attach a photo
+495	Accept
+496	Accept request
+497	Check the address or go back to the feed.
+498	Profile
+499	Posting isn't available for your level
+500	Publish posts
+501	Only community administrators can publish posts
+502	Uptime
+503	Handles reports and moderates content.
+504	Unbanned members
+505	Unbanned
+506	Unban
+507	This section is for administrators only
+508	Admin panel sections
+509	Signups
+510	Signups in 14 days
+511	Sign up
+512	Signup is temporarily closed
+513	Signing up with this address is not allowed
+514	Edit
+515	Edit profile
+516	Maintenance mode
+517	Signup mode
+518	Recommended
+519	Suggested
+520	Repost
+521	Resolved: {how}
+522	Resolved
+523	Member roles and what they're allowed to do
+524	The owner's role can't be changed
+525	The site is closed to everyone except administrators and moderators
+526	Most active authors
+527	Light
+528	Light theme
+529	Custom color
+530	Make admin
+531	Today
+532	Online now
+533	Nothing is playing right now.
+534	Nothing is playing right now. Start a track below or on any device.
+535	Now playing
+536	No secret needed — secure PKCE authorization is used. While the app is in development mode, add members' emails under User Management on the Spotify site.
+537	Server
+538	Sessions
+539	The connection session expired — please try again
+540	Copy link
+541	Hide
+542	Hide announcement
+543	Next page
+544	Next
+545	Too many failed attempts. Try again in {n} min.
+546	Listen more — and your top will appear here
+547	Play
+548	Newest first
+549	Remove admin
+550	Only the owner can remove an admin
+551	Unlock login
+552	Create communities
+553	Only a superadmin can create administrator levels
+554	Create an app at developer.spotify.com (Dashboard → Create app, APIs: Web API and Web Playback SDK) and add the Redirect URI:
+555	Created a level
+556	Creating communities isn't available for your level
+557	Created
+558	Creator
+559	Create
+560	Create account
+561	Create chat
+562	Create community
+563	Message
+564	Maintenance message
+565	A message can't be empty
+566	Message not found
+567	Messages
+568	Messages for all members at the top of the feed
+569	Messages in 14 days
+570	Members' reports of violations
+571	No communities found
+572	Communities
+573	Community
+574	Community not found
+575	Sort
+576	Saved
+577	Save
+578	Save to library
+579	A social network for staying in touch with friends, communities and everyone you're interested in.
+580	Spam
+581	Thank you! The moderators will review your report.
+582	Statistics
+583	Status
+584	Page not found
+585	Superadmin
+586	Superadministrator
+587	Only a superadmin can edit a superadmin
+588	Text
+589	Current password
+590	Theme:
+591	Type
+592	Community type
+593	Authorization required
+594	Track
+595	Tracks, albums, playlists on Spotify
+596	Dark
+597	Dark theme
+598	Friends
+599	I already have an account
+600	Remove track
+601	Remove from library
+602	Remove from my music
+603	Remove photo
+604	Notifications
+605	Deleted
+606	Deleted a post
+607	Deleted a comment
+608	Deleted content and banned the author
+609	Deleted content after a report
+610	Deleted an announcement
+611	Deleted a community
+612	Deleted a level
+613	Deleted a member
+614	Deleted members
+615	Delete
+616	Remove {name} from friends?
+617	Delete {name}?
+618	Delete {what}?
+619	Delete “{title}” permanently?
+620	Delete the account {name} with all posts? This can't be undone.
+621	Delete {n} accounts? This can't be undone.
+622	Delete post
+623	Delete this post?
+624	Delete and ban
+625	Delete and ban {name}?
+626	Remove from friends
+627	Remove from friends?
+628	Delete comment
+629	Delete the announcement “{title}”?
+630	Delete playlist
+631	Delete the playlist “{title}”?
+632	Delete the message for everyone?
+633	Delete the community and all its posts? This can't be undone.
+634	Only the owner can delete the community
+635	Delete level
+636	Delete the level “{title}”? Its members ({n}) will get the default level.
+637	Delete photo
+638	Delete this photo?
+639	Deleted
+640	Enter the Spotify app Client ID in
+641	Enter a title
+642	Enter your first and last name
+643	Enter a title
+644	Enter a chat name
+645	Enter a playlist name
+646	Enter a community name
+647	Enter a level name
+648	Manage
+649	Playback control is only available with Spotify Premium
+650	Community management
+651	Manage
+652	Level
+653	Volume level
+654	Access level
+655	Level not found
+656	Default level
+657	Only a superadmin can change the superadmin level
+658	Levels
+659	Access levels
+660	Set status
+661	Device
+662	Member
+663	Member not found
+664	Members
+665	Members by level
+666	No file selected
+667	The file is too large
+668	No files selected
+669	Last name
+670	Last name can't be empty
+671	Fake or scam
+672	Brand color
+673	Brand color and background for all members
+674	“Aurora” background
+675	Photos
+676	Photos
+677	Photo
+678	Photo not found
+679	Color {c}
+680	Word censorship
+681	What's wrong?
+682	What's new?
+683	Something went wrong
+684	Episode
+685	This is a closed community
+686	This isn't your playlist
+687	This browser
+688	This level can't be deleted
+689	Language
+690	author banned
+691	admin panel → Integrations
+692	no text
+693	last seen {when}
+694	in memory
+695	online
+696	owner {name}
+697	log in as
+698	yesterday
+699	yesterday at {time}
+700	choose files
+701	yes
+702	days
+703	friend|friends
+704	reports:
+705	post
+706	post|posts
+707	of
+708	comment
+709	comment|comments
+710	content deleted
+711	like|likes
+712	is under maintenance
+713	posted on your wall
+714	e.g. 3f8c1a…
+715	no
+716	mutual friend|mutual friends
+717	mutual
+718	approved your request to join the community
+719	online
+720	from
+721	dismissed
+722	liked your post
+723	is typing
+724	are typing
+725	one word per line
+726	default
+727	shared your post
+728	follower|followers
+729	fill in
+730	accepted your friend request
+731	commented on your post
+732	signup|signups
+733	light
+734	today at {time}
+735	message|messages
+736	the community “{name}” with all its posts
+737	community|communities
+738	just now
+739	track|tracks
+740	dark
+741	already in the chat
+742	member|members
+743	photos
+744	wants to join the community
+745	wants to be your friend
+746	— talk without delays
+747	› Friends
+748	› Music
+749	› Communities
+750	› Photos
+751	🖼 Photo

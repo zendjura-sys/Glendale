@@ -1,0 +1,415 @@
+/*
+ * Surface layer: calm aurora backdrop and minimal liquid-glass panels. Flat, no 3D.
+ * Loaded after styles.css and uiverse.css; relies on the tokens defined in styles.css.
+ */
+
+html {
+  background: var(--bg);
+}
+body {
+  background: transparent;
+  min-height: 100vh;
+  font-feature-settings: 'tnum' 0;
+}
+h1,
+h2,
+h3,
+.card-title,
+.profile-name h1,
+.logo {
+  letter-spacing: -0.02em;
+}
+
+/* ───────── Aurora backdrop ───────── */
+.aurora {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--bg);
+}
+.aurora i {
+  position: absolute;
+  width: 60vmax;
+  height: 60vmax;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: var(--aurora-opacity);
+  mix-blend-mode: normal;
+  will-change: transform;
+}
+.aurora i:nth-child(1) {
+  background: radial-gradient(circle, var(--aurora-1) 0%, transparent 65%);
+  top: -25vmax;
+  left: -15vmax;
+  animation: aurora-a 60s ease-in-out infinite alternate;
+}
+.aurora i:nth-child(2) {
+  background: radial-gradient(circle, var(--aurora-2) 0%, transparent 65%);
+  top: -10vmax;
+  right: -25vmax;
+  animation: aurora-b 70s ease-in-out infinite alternate;
+}
+.aurora i:nth-child(3) {
+  background: radial-gradient(circle, var(--aurora-3) 0%, transparent 65%);
+  bottom: -30vmax;
+  left: 10vmax;
+  animation: aurora-c 80s ease-in-out infinite alternate;
+}
+.aurora i:nth-child(4) {
+  background: radial-gradient(circle, var(--aurora-4) 0%, transparent 65%);
+  bottom: -25vmax;
+  right: -10vmax;
+  width: 45vmax;
+  height: 45vmax;
+  animation: aurora-a 66s ease-in-out infinite alternate-reverse;
+}
+/* Fine grain keeps the gradients from banding and gives the glass a tactile feel. */
+.aurora::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+@keyframes aurora-a {
+  to {
+    transform: translate(12vmax, 10vmax) scale(1.15);
+  }
+}
+@keyframes aurora-b {
+  to {
+    transform: translate(-14vmax, 14vmax) scale(0.9);
+  }
+}
+@keyframes aurora-c {
+  to {
+    transform: translate(10vmax, -12vmax) scale(1.2);
+  }
+}
+
+/* ───────── Liquid glass surfaces ───────── */
+.card,
+.dropdown,
+.modal,
+.toast,
+.header-inner,
+.sidebar,
+.tabbar {
+  background: var(--card);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--card-border);
+}
+.card,
+.modal,
+.toast,
+.header-inner {
+  position: relative;
+}
+.card,
+.dropdown,
+.modal,
+.toast,
+.header-inner,
+.sidebar {
+  isolation: isolate;
+}
+/* Specular sheen across the top of every pane. */
+.card::before,
+.dropdown::before,
+.modal::before,
+.header-inner::before,
+.sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--glass-sheen);
+  pointer-events: none;
+}
+/* Refractive rim: a gradient hairline that is brighter at the top-left, like light hitting a glass edge. */
+.card::after,
+.dropdown::after,
+.modal::after,
+.header-inner::after,
+.sidebar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(145deg, var(--glass-border), rgba(255, 255, 255, 0) 38%, rgba(255, 255, 255, 0) 62%, var(--glass-border));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+/* A pane with backdrop-filter becomes a backdrop root, and Chromium then composites an open menu that
+   overflows it with the page bleeding through. While a menu is open, the pane blurs via its sheen layer. */
+.card:has(.dropdown),
+.header-inner:has(.dropdown) {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.card:has(.dropdown)::before,
+.header-inner:has(.dropdown)::before {
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+/* Keep open menus above the following panes (each pane is its own stacking context). */
+.card:has(.dropdown),
+.card:focus-within {
+  z-index: 5;
+}
+.modal {
+  background: var(--card-strong);
+}
+/* Menus live inside panes that already have a backdrop-filter, so their own blur can't see the page
+   behind them (nested backdrop roots). Keep them nearly opaque so underlying text never shows through. */
+.dropdown {
+  background: color-mix(in srgb, var(--card-solid) 94%, transparent);
+}
+
+/* ───────── Transitions (flat: fades and color changes, no 3D) ───────── */
+.card,
+.row-link,
+.dialog,
+.menu-item,
+.action,
+.icon-btn,
+.header-icon,
+.header-user,
+.photo-tile,
+.counters a,
+.field,
+.autogrow,
+.header-search input {
+  transition: background-color 0.2s ease, box-shadow 0.25s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+@media (hover: hover) {
+  .card.post:hover {
+    box-shadow: var(--lift);
+  }
+}
+/* Each page fades in when the route changes. */
+.route-view {
+  animation: route-in 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes route-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+/* New posts and messages ease in instead of popping. */
+.card.post,
+.bubble-row,
+.toast {
+  animation: item-in 0.28s ease-out;
+}
+@keyframes item-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+/* Smooth cross-fade while switching light/dark theme (class set briefly by ThemeProvider). */
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition: background-color 0.45s ease, color 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease, fill 0.45s ease !important;
+}
+
+/* ───────── Floating header capsule ───────── */
+.header {
+  padding: 10px 16px 0;
+  height: auto;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.header-inner {
+  height: 54px;
+  padding: 0 10px 0 12px;
+  border-radius: 27px;
+  background: var(--header);
+}
+.header-search input {
+  background: var(--field);
+  box-shadow: inset 0 1px 2px rgba(20, 24, 60, 0.06);
+}
+.header-search input:focus {
+  background: var(--card-strong);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+/* ───────── Sidebar as a glass rail ───────── */
+.sidebar {
+  padding: 10px;
+  border-radius: var(--radius);
+}
+.sidebar-foot {
+  padding: 8px 12px 2px;
+}
+
+/* ───────── Buttons & pills: flat ───────── */
+.btn,
+.tab.active,
+.uv-send {
+  background: var(--btn-primary);
+  color: #fff;
+  box-shadow: none;
+}
+.btn:hover,
+.tab.active:hover {
+  background: var(--btn-primary-hover);
+}
+.btn.secondary,
+.btn.tertiary,
+.btn.danger {
+  background: var(--btn-secondary);
+  color: var(--btn-secondary-text);
+  box-shadow: 0 0 0 1px var(--glass-edge);
+}
+.btn.secondary:hover,
+.btn.tertiary:hover {
+  background: var(--btn-secondary-hover);
+}
+.btn.danger {
+  color: var(--danger);
+}
+.cover-edit {
+  background: rgba(10, 12, 30, 0.35) !important;
+  backdrop-filter: blur(14px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.2) !important;
+}
+.tabs {
+  gap: 6px;
+}
+.tab:not(.active):hover {
+  background: var(--hover);
+}
+.action:hover {
+  background: var(--btn-secondary);
+}
+.icon-btn:hover {
+  background: var(--btn-secondary);
+}
+
+/* ───────── Fields ───────── */
+.field,
+.autogrow {
+  background: var(--field);
+  border-color: var(--field-border);
+}
+.field:focus,
+.autogrow:focus {
+  background: var(--card-strong);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+/* ───────── Avatars ───────── */
+.profile-avatar {
+  background: transparent;
+  box-shadow: 0 0 0 1px var(--glass-edge);
+}
+
+/* ───────── Profile cover: quiet gradient ───────── */
+.cover {
+  overflow: hidden;
+  background: linear-gradient(120deg, #6f7cff, #a68bff 55%, #f0a6d4);
+}
+:root[data-theme='dark'] .cover {
+  background-image: linear-gradient(120deg, #2a33a0, #4a2e96 55%, #6e2a63);
+}
+.cover[style*='background-image'] {
+  background-size: cover;
+}
+.counters a {
+  background: var(--field);
+}
+
+/* ───────── Messenger ───────── */
+.im-chat,
+.im-chat-head,
+.im-input,
+.im-list {
+  background: transparent;
+}
+.im-chat-head,
+.im-input {
+  background: var(--glass-sheen);
+}
+.bubble {
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  box-shadow: 0 0 0 1px var(--glass-edge);
+}
+.bubble-row.out .bubble {
+  background: var(--btn-primary);
+  box-shadow: none;
+}
+.day-sep {
+  background: var(--card);
+  backdrop-filter: var(--glass-blur);
+}
+.dialog.active {
+  background: var(--active);
+}
+
+/* ───────── Posts ───────── */
+.repost {
+  background: var(--field);
+  box-shadow: none;
+}
+
+/* ───────── Overlays ───────── */
+.modal-backdrop {
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+}
+.viewer {
+  background: rgba(5, 6, 14, 0.8);
+  backdrop-filter: blur(18px);
+}
+
+/* ───────── Mobile: floating glass tab bar ───────── */
+@media (max-width: 760px) {
+  .header {
+    padding: 8px 8px 0;
+  }
+  .header-inner {
+    height: 50px;
+    border-radius: 25px;
+  }
+  .tabbar {
+    left: 10px;
+    right: 10px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    height: 62px;
+    padding-bottom: 0;
+    border-radius: 31px;
+    background: var(--header);
+  }
+
+  .page {
+    padding-bottom: calc(90px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora i,
+  .route-view,
+  .card.post,
+  .bubble-row,
+  .toast {
+    animation: none !important;
+  }
+}

@@ -37,5 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // API (мобільний застосунок, SPA) завжди отримує JSON — зокрема 401
+        // замість редиректу на /login, навіть без заголовка Accept.
+        $exceptions->shouldRenderJsonWhen(fn ($request) => $request->is('api/*') || $request->expectsJson());
     })->create();
