@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Addon;
 use App\Models\User;
 use App\Support\FamilyStats;
+use App\Support\ShellNav;
 use App\Support\SystemHealth;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,6 +19,10 @@ class DashboardController extends Controller
     public function index(Request $request): Response
     {
         return Inertia::render('Admin/Dashboard/Index', [
+            // Плитки розділів — той самий список, що й у боковому меню
+            // й мобільних чіпах (App\Support\ShellNav), тож нову сторінку
+            // адмінки досить додати в одному місці.
+            'groups' => ShellNav::tiles($request, $request->user()),
             'stats' => [
                 'members' => User::query()->count(),
                 'roles' => Role::query()->count(),

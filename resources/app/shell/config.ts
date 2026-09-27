@@ -1,7 +1,7 @@
 /** Що сервер (App\Support\ShellNav) передає оболонці на сторінці Vue. */
 export interface ShellConfig {
   mode: 'app' | 'admin';
-  admin: { label: string; items: { href: string; label: string; icon: string; active: boolean }[] }[];
+  admin: { label: string; items: { href: string; label: string; icon: string; description?: string; active: boolean }[] }[];
 }
 
 export const shellConfig = (): ShellConfig =>

@@ -5,6 +5,7 @@ import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 const props = defineProps({
+    groups: { type: Array, default: () => [] },
     stats: { type: Object, required: true },
     health: { type: Object, default: null },
     familyStats: { type: Object, default: null },
@@ -42,17 +43,9 @@ const page = usePage();
 // самого списку ролей не несуть, лише набір can.*.
 const showTwoFactorNudge = computed(() => page.props.can?.manageRoles && !page.props.auth.user.two_factor_enabled);
 
-const sections = [
-    { name: 'admin.addons.index', can: 'manageAddons', title: 'Аддони', text: 'Core, модулі, плагіни та теми — завантаження та керування ZIP-пакетами.' },
-    { name: 'admin.reports.index', can: 'manageReports', title: 'Модерація звітів', text: 'Розгляд звітів учасників за бізварами та контрактами.' },
-    { name: 'admin.progression.index', can: 'manageProgression', title: 'Прогресія', text: 'Досвід, ранги, досягнення та тижневі бонуси родини.' },
-    { name: 'admin.members.index', can: 'manageMembers', title: 'Кадровий облік', text: 'Статуси учасників, приватні кадрові нотатки та заявки на відпустку.' },
-    { name: 'admin.family-goals.index', can: 'manageGoals', title: 'Цілі родини', text: 'Спільні цілі з прогресом та загальна стрічка активності.' },
-    { name: 'admin.broadcasts.index', can: 'manageBroadcasts', title: 'Розсилки', text: 'Оголошення всім учасникам — кожен отримує особисте сповіщення.' },
-    { name: 'admin.roles.index', can: 'manageRoles', title: 'Права доступу', text: 'Ролі та права: хто що бачить і чим керує в CMS.' },
-    { name: 'admin.users.index', can: 'manageUsers', title: 'Учасники', text: 'Список учасників сайту та призначення їм ролей.' },
-    { name: 'admin.settings.index', can: 'manageSettings', title: 'Налаштування', text: 'Загальні параметри, інтеграція з Telegram та Discord.' },
-];
+// Плитки розділів приходять з сервера (App\Support\ShellNav::tiles) — той
+// самий список, що й у боковому меню й мобільних чіпах адмінки: нову
+// сторінку досить зареєструвати там раз, і вона одразу з'явиться тут.
 </script>
 
 <template>
@@ -157,21 +150,23 @@ const sections = [
             </div>
         </div>
 
-        <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            <template v-for="(section, i) in sections" :key="section.name">
+        <div v-for="group in groups" :key="group.label" class="mb-10 last:mb-0">
+            <h2 class="mb-4 text-xs font-semibold uppercase tracking-[0.3em] text-white/35">{{ group.label }}</h2>
+            <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 <Link
-                    v-if="$page.props.can?.[section.can] && route().has(section.name)"
-                    :href="route(section.name)"
+                    v-for="(item, i) in group.items"
+                    :key="item.href"
+                    :href="item.href"
                     v-reveal="'scale'"
-                    :style="{ transitionDelay: `${i * 80}ms` }"
+                    :style="{ transitionDelay: `${i * 60}ms` }"
                     v-glow class="group glass-panel relative overflow-hidden p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-gold"
                 >
                     <div class="glass-sheen"></div>
-                    <h3 class="relative font-semibold text-white">{{ section.title }}</h3>
-                    <p class="relative mt-2 text-sm leading-relaxed text-white/50">{{ section.text }}</p>
+                    <h3 class="relative font-semibold text-white">{{ item.label }}</h3>
+                    <p class="relative mt-2 text-sm leading-relaxed text-white/50">{{ item.description }}</p>
                     <span class="relative mt-4 inline-block text-xs uppercase tracking-widest text-gold-300/80">Відкрити →</span>
                 </Link>
-            </template>
+            </div>
         </div>
     </AdminLayout>
 </template>
