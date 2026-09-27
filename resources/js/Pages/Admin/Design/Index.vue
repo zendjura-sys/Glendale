@@ -235,7 +235,7 @@ function saveSocialLinks() {
             <button
                 v-for="tab in TABS"
                 :key="tab.key"
-                class="rounded-full px-5 py-2 text-xs font-medium uppercase tracking-widest transition-colors"
+                class="rounded-xl px-5 py-2 text-xs font-medium uppercase tracking-widest transition-colors"
                 :class="activeTab === tab.key
                     ? 'bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 text-obsidian-950'
                     : 'border border-white/10 text-white/50 hover:text-white'"
@@ -627,7 +627,7 @@ function saveSocialLinks() {
                     <button
                         type="submit"
                         :disabled="galleryForm.processing || !galleryForm.photo"
-                        class="rounded-full border border-gold-400/40 px-5 py-2 text-xs font-medium tracking-widest text-gold-200 hover:border-gold-300 disabled:opacity-40"
+                        class="rounded-xl border border-gold-400/40 px-5 py-2 text-xs font-medium tracking-widest text-gold-200 hover:border-gold-300 disabled:opacity-40"
                     >
                         Додати
                     </button>

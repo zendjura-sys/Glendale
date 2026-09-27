@@ -100,7 +100,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
                 @click.stop
             />
 
-            <span v-if="photos.length > 1" class="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-obsidian-950/70 px-3 py-1 text-xs text-white/60">
+            <span v-if="photos.length > 1" class="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-xl bg-obsidian-950/70 px-3 py-1 text-xs text-white/60">
                 {{ openIndex + 1 }} / {{ photos.length }}
             </span>
         </div>

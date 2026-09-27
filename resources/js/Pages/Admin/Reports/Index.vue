@@ -159,7 +159,7 @@ function fmtDate(iso) {
                 <button
                     v-for="s in ['pending', 'approved', 'rejected']"
                     :key="s"
-                    class="rounded-full border px-4 py-2 text-sm transition-all"
+                    class="rounded-xl border px-4 py-2 text-sm transition-all"
                     :class="status === s ? 'border-gold-400/50 bg-gold-400/10 text-gold-200' : 'border-white/10 text-white/50 hover:border-white/25'"
                     @click="switchStatus(s)"
                 >
@@ -190,7 +190,7 @@ function fmtDate(iso) {
                     <label class="mb-1 block text-[10px] uppercase tracking-widest text-white/40">Учасник</label>
                     <input v-model="filterForm.q" type="text" placeholder="Ім'я…" class="w-full rounded-lg border border-white/10 bg-obsidian-900 px-3 py-2 text-sm text-white placeholder:text-white/30" />
                 </div>
-                <button type="button" class="rounded-full border border-gold-400/40 px-4 py-2 text-xs font-medium tracking-widest text-gold-200 hover:border-gold-300" @click="applyFilters">
+                <button type="button" class="rounded-xl border border-gold-400/40 px-4 py-2 text-xs font-medium tracking-widest text-gold-200 hover:border-gold-300" @click="applyFilters">
                     Застосувати
                 </button>
                 <button
@@ -203,7 +203,7 @@ function fmtDate(iso) {
                 </button>
                 <a
                     :href="route('admin.reports.export', { status, ...filterForm })"
-                    class="ml-auto rounded-full border border-white/15 px-4 py-2 text-xs text-white/60 hover:border-white/30"
+                    class="ml-auto rounded-xl border border-white/15 px-4 py-2 text-xs text-white/60 hover:border-white/30"
                 >
                     ⬇ Експорт CSV
                 </a>
@@ -231,7 +231,7 @@ function fmtDate(iso) {
                             <span v-if="report.amount" class="text-xs uppercase text-white/40">{{ report.amount.toLocaleString('uk-UA') }}</span>
                             <span
                                 v-if="report.ai_review?.flagged"
-                                class="rounded-full border border-gold-400/30 bg-gold-400/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-gold-300"
+                                class="rounded-xl border border-gold-400/30 bg-gold-400/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-gold-300"
                                 :title="[report.ai_review.date_mismatch_detail, report.ai_review.count_mismatch_detail].filter(Boolean).join(' · ')"
                             >
                                 🤖 AI: розбіжність
@@ -254,7 +254,7 @@ function fmtDate(iso) {
                                 <button
                                     v-for="g in GRADES"
                                     :key="g"
-                                    class="rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+                                    class="rounded-xl border px-3 py-1 text-xs font-medium transition-colors"
                                     :class="selectedGrade === g ? 'border-gold-400/60 bg-gold-400/15 text-gold-200' : 'border-white/15 text-white/50 hover:border-white/30'"
                                     @click="selectedGrade = g"
                                 >
@@ -263,7 +263,7 @@ function fmtDate(iso) {
                                 <button
                                     v-if="aiGradeAdviceEnabled"
                                     :disabled="gradeAdvising"
-                                    class="rounded-full border border-gold-400/30 bg-gold-400/10 px-3 py-1 text-xs font-medium text-gold-300 hover:bg-gold-400/20 disabled:opacity-40"
+                                    class="rounded-xl border border-gold-400/30 bg-gold-400/10 px-3 py-1 text-xs font-medium text-gold-300 hover:bg-gold-400/20 disabled:opacity-40"
                                     @click="suggestGrade(report)"
                                 >
                                     {{ gradeAdvising ? 'Аналізую…' : '✨ Порекомендувати оцінку' }}
@@ -280,7 +280,7 @@ function fmtDate(iso) {
                             <div class="mt-2 flex gap-2">
                                 <button
                                     :disabled="busy === report.id || !selectedGrade || (LOW_GRADES.includes(selectedGrade) && !gradeReason.trim())"
-                                    class="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-400/20 disabled:opacity-30"
+                                    class="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-400/20 disabled:opacity-30"
                                     @click="confirmApprove(report)"
                                 >
                                     Підтвердити затвердження
@@ -300,14 +300,14 @@ function fmtDate(iso) {
                                 <button
                                     v-if="aiRejectionAdviceEnabled"
                                     :disabled="aiDrafting"
-                                    class="rounded-full border border-gold-400/30 bg-gold-400/10 px-4 py-1.5 text-xs font-medium text-gold-300 hover:bg-gold-400/20 disabled:opacity-40"
+                                    class="rounded-xl border border-gold-400/30 bg-gold-400/10 px-4 py-1.5 text-xs font-medium text-gold-300 hover:bg-gold-400/20 disabled:opacity-40"
                                     @click="draftAiRecommendation(report)"
                                 >
                                     {{ aiDrafting ? 'Генерую…' : '✨ Згенерувати рекомендацію' }}
                                 </button>
                                 <button
                                     :disabled="busy === report.id"
-                                    class="rounded-full border border-ember-500/25 bg-ember-600/10 px-4 py-1.5 text-xs font-medium text-ember-500/80 hover:bg-ember-600/20 disabled:opacity-40"
+                                    class="rounded-xl border border-ember-500/25 bg-ember-600/10 px-4 py-1.5 text-xs font-medium text-ember-500/80 hover:bg-ember-600/20 disabled:opacity-40"
                                     @click="confirmReject(report)"
                                 >
                                     Підтвердити відхилення
@@ -319,14 +319,14 @@ function fmtDate(iso) {
                     <div v-if="report.status === 'pending' && gradingReportId !== report.id && rejectingReportId !== report.id" class="flex gap-2">
                         <button
                             :disabled="busy === report.id"
-                            class="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-400/20 disabled:opacity-40"
+                            class="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-400/20 disabled:opacity-40"
                             @click="startGrading(report)"
                         >
                             Затвердити
                         </button>
                         <button
                             :disabled="busy === report.id"
-                            class="rounded-full border border-ember-500/25 px-4 py-1.5 text-xs font-medium text-ember-500/80 hover:bg-ember-600/10 disabled:opacity-40"
+                            class="rounded-xl border border-ember-500/25 px-4 py-1.5 text-xs font-medium text-ember-500/80 hover:bg-ember-600/10 disabled:opacity-40"
                             @click="startRejecting(report)"
                         >
                             Відхилити

@@ -170,12 +170,12 @@ function fmtDateOnly(iso) {
                 <div class="flex items-center gap-3">
                     <Link
                         :href="route('reports.schedule')"
-                        class="rounded-full border border-white/10 px-5 py-3 text-sm font-medium tracking-wide text-white/60 transition-colors hover:border-gold-400/40 hover:text-white"
+                        class="rounded-xl border border-white/10 px-5 py-3 text-sm font-medium tracking-wide text-white/60 transition-colors hover:border-gold-400/40 hover:text-white"
                     >
                         Розклад капта
                     </Link>
                     <button
-                        class="rounded-full bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-6 py-3 text-sm font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03]"
+                        class="rounded-xl bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-6 py-3 text-sm font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03]"
                         @click="showForm = !showForm"
                     >
                         {{ showForm ? 'Скасувати' : 'Подати звіт' }}
@@ -192,7 +192,7 @@ function fmtDateOnly(iso) {
                         <div class="flex gap-2">
                             <button
                                 type="button"
-                                class="rounded-full border px-4 py-1.5 text-xs uppercase tracking-widest transition-colors"
+                                class="rounded-xl border px-4 py-1.5 text-xs uppercase tracking-widest transition-colors"
                                 :class="form.subject_type === 'self' ? 'border-gold-400/50 bg-gold-400/10 text-gold-200' : 'border-white/10 text-white/40 hover:text-white'"
                                 @click="setSubjectType('self')"
                             >
@@ -200,7 +200,7 @@ function fmtDateOnly(iso) {
                             </button>
                             <button
                                 type="button"
-                                class="rounded-full border px-4 py-1.5 text-xs uppercase tracking-widest transition-colors"
+                                class="rounded-xl border px-4 py-1.5 text-xs uppercase tracking-widest transition-colors"
                                 :class="form.subject_type === 'friend' ? 'border-gold-400/50 bg-gold-400/10 text-gold-200' : 'border-white/10 text-white/40 hover:text-white'"
                                 @click="setSubjectType('friend')"
                             >
@@ -239,7 +239,7 @@ function fmtDateOnly(iso) {
                             <label class="mb-2 block text-xs uppercase tracking-widest text-white/40">Тип</label>
                             <button
                                 type="button"
-                                class="mb-2 flex shrink-0 items-center gap-1.5 rounded-full border border-gold-400/30 px-3 py-1 text-xs text-gold-300 transition-colors hover:border-gold-300 hover:text-gold-200"
+                                class="mb-2 flex shrink-0 items-center gap-1.5 rounded-xl border border-gold-400/30 px-3 py-1 text-xs text-gold-300 transition-colors hover:border-gold-300 hover:text-gold-200"
                                 @click="showGuide = true"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
@@ -279,7 +279,7 @@ function fmtDateOnly(iso) {
                                 <label
                                     v-for="time in kaptTimes"
                                     :key="time"
-                                    class="cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium tracking-wide transition-colors"
+                                    class="cursor-pointer rounded-xl border px-3 py-1.5 text-xs font-medium tracking-wide transition-colors"
                                     :class="form.kapt_times.includes(time)
                                         ? 'border-gold-400/50 bg-gold-400/10 text-gold-200'
                                         : 'border-white/10 text-white/40 hover:border-white/25 hover:text-white'"
@@ -376,7 +376,7 @@ function fmtDateOnly(iso) {
                     <button
                         type="submit"
                         :disabled="form.processing"
-                        class="mt-5 rounded-full border border-gold-400/40 px-6 py-2.5 text-sm font-medium tracking-widest text-gold-200 transition-all hover:border-gold-300 disabled:opacity-40"
+                        class="mt-5 rounded-xl border border-gold-400/40 px-6 py-2.5 text-sm font-medium tracking-widest text-gold-200 transition-all hover:border-gold-300 disabled:opacity-40"
                     >
                         Надіслати на розгляд
                     </button>
@@ -392,7 +392,7 @@ function fmtDateOnly(iso) {
                     <div>
                         <div class="flex flex-wrap items-center gap-2">
                             <span class="font-medium text-white">{{ typeLabels[report.type] }}</span>
-                            <span v-if="report.user?.id !== myId" class="rounded-full border border-gold-400/30 px-2 py-0.5 text-[10px] uppercase tracking-wide text-gold-300/80">
+                            <span v-if="report.user?.id !== myId" class="rounded-xl border border-gold-400/30 px-2 py-0.5 text-[10px] uppercase tracking-wide text-gold-300/80">
                                 за {{ report.user?.name }}
                             </span>
                             <span v-if="report.outcome" class="text-xs uppercase text-white/40">{{ report.outcome }}</span>
@@ -411,7 +411,7 @@ function fmtDateOnly(iso) {
                         </p>
                         <PhotoGallery v-if="report.attachments?.length" :photos="report.attachments" class="mt-3" />
                     </div>
-                    <span class="shrink-0 rounded-full border px-3 py-1 text-[11px] font-medium uppercase tracking-wide" :class="statusMeta[report.status]?.class">
+                    <span class="shrink-0 rounded-xl border px-3 py-1 text-[11px] font-medium uppercase tracking-wide" :class="statusMeta[report.status]?.class">
                         {{ statusMeta[report.status]?.label }}
                     </span>
                 </div>
@@ -427,7 +427,7 @@ function fmtDateOnly(iso) {
                 <p class="whitespace-pre-line text-sm leading-relaxed text-white/60">{{ reportGuides[form.type] || 'Для цього типу звіту поки немає окремої пам\'ятки.' }}</p>
                 <button
                     type="button"
-                    class="mt-6 rounded-full border border-white/15 px-5 py-2 text-sm text-white/60 hover:border-white/30"
+                    class="mt-6 rounded-xl border border-white/15 px-5 py-2 text-sm text-white/60 hover:border-white/30"
                     @click="showGuide = false"
                 >
                     Зрозуміло

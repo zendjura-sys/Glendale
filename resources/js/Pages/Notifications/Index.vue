@@ -93,7 +93,7 @@ function fmtDateTime(iso) {
                 <button
                     v-if="localUnread > 0"
                     :disabled="markingAll"
-                    class="rounded-full border border-white/15 px-4 py-2 text-xs text-white/60 transition-colors hover:border-white/30 disabled:opacity-40"
+                    class="rounded-xl border border-white/15 px-4 py-2 text-xs text-white/60 transition-colors hover:border-white/30 disabled:opacity-40"
                     @click="markAllRead"
                 >
                     Позначити всі прочитаними
@@ -146,7 +146,7 @@ function fmtDateTime(iso) {
                     :key="link.label"
                     :href="link.url || ''"
                     v-html="link.label"
-                    class="rounded-full border px-3 py-1.5 text-xs"
+                    class="rounded-xl border px-3 py-1.5 text-xs"
                     :class="[
                         link.active ? 'border-gold-400/50 bg-gold-400/10 text-gold-200' : 'border-white/10 text-white/40 hover:text-white',
                         !link.url && 'pointer-events-none opacity-30',

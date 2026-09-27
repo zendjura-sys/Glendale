@@ -106,7 +106,7 @@ async function destroyRole(role) {
                     </div>
                     <button
                         v-if="role.name !== 'admin'"
-                        class="shrink-0 rounded-full border border-ember-500/25 px-4 py-1.5 text-xs font-medium text-ember-500/80 transition-colors hover:bg-ember-600/10"
+                        class="shrink-0 rounded-xl border border-ember-500/25 px-4 py-1.5 text-xs font-medium text-ember-500/80 transition-colors hover:bg-ember-600/10"
                         @click="destroyRole(role)"
                     >
                         Видалити

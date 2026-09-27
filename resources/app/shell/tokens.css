@@ -54,8 +54,8 @@
   --aurora-3: #f3d9a4;
   --aurora-4: #d9c3ff;
   --aurora-opacity: 0.32;
-  --radius: 22px;
-  --radius-sm: 14px;
+  --radius: 10px;
+  --radius-sm: 6px;
   --header-h: 64px;
   --content-w: 1080px;
 }

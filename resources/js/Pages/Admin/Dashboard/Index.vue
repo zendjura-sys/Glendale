@@ -101,7 +101,7 @@ const sections = [
                 <button
                     type="button"
                     :disabled="statsForm.processing"
-                    class="rounded-full border border-gold-400/40 px-5 py-2 text-xs font-medium uppercase tracking-widest text-gold-200 hover:border-gold-300 disabled:opacity-40"
+                    class="rounded-xl border border-gold-400/40 px-5 py-2 text-xs font-medium uppercase tracking-widest text-gold-200 hover:border-gold-300 disabled:opacity-40"
                     @click="saveFamilyStats"
                 >
                     Зберегти вибір
@@ -114,7 +114,7 @@ const sections = [
                 <label
                     v-for="item in familyStats.available"
                     :key="item.key"
-                    class="flex cursor-pointer items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs transition-colors"
+                    class="flex cursor-pointer items-center gap-2 rounded-xl border px-3.5 py-1.5 text-xs transition-colors"
                     :class="statsForm.keys.includes(item.key) ? 'border-gold-400/40 bg-gold-400/[0.08] text-gold-200' : 'border-white/10 text-white/50 hover:border-white/25'"
                 >
                     <input type="checkbox" class="sr-only" :checked="statsForm.keys.includes(item.key)" @change="toggleStatKey(item.key)" />

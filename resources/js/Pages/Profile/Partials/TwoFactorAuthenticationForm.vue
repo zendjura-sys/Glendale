@@ -129,7 +129,7 @@ watch(() => page.props.flash?.recoveryCodes, (v) => {
                 <div class="flex flex-wrap gap-3">
                     <button
                         type="button"
-                        class="rounded-full border border-white/15 px-4 py-2 text-xs text-white/60 hover:border-white/30"
+                        class="rounded-xl border border-white/15 px-4 py-2 text-xs text-white/60 hover:border-white/30"
                         @click="showRegenerate = !showRegenerate"
                     >
                         Оновити резервні коди
@@ -137,14 +137,14 @@ watch(() => page.props.flash?.recoveryCodes, (v) => {
                     <button
                         v-if="trustedDeviceCount > 0"
                         type="button"
-                        class="rounded-full border border-white/15 px-4 py-2 text-xs text-white/60 hover:border-white/30"
+                        class="rounded-xl border border-white/15 px-4 py-2 text-xs text-white/60 hover:border-white/30"
                         @click="forgetTrustedDevices"
                     >
                         Забути довірені пристрої ({{ trustedDeviceCount }})
                     </button>
                     <button
                         type="button"
-                        class="rounded-full border border-ember-500/25 px-4 py-2 text-xs text-ember-500/80 hover:bg-ember-600/10"
+                        class="rounded-xl border border-ember-500/25 px-4 py-2 text-xs text-ember-500/80 hover:bg-ember-600/10"
                         @click="showDisable = !showDisable"
                     >
                         Вимкнути

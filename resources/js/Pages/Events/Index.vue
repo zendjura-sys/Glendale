@@ -52,7 +52,7 @@ function fmtTime(iso) {
                 <div v-for="event in events" :key="event.id" v-glow class="glass-panel p-6">
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <h3 class="font-display text-xl text-white">{{ event.title }}</h3>
-                        <span class="shrink-0 rounded-full border border-gold-400/30 bg-gold-400/10 px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-gold-300">
+                        <span class="shrink-0 rounded-xl border border-gold-400/30 bg-gold-400/10 px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-gold-300">
                             {{ fmtDate(event.starts_at) }} · {{ fmtTime(event.starts_at) }}
                         </span>
                     </div>
@@ -64,7 +64,7 @@ function fmtTime(iso) {
                             type="button"
                             :disabled="rsvping === event.id"
                             @click="rsvp(event, 'going')"
-                            class="rounded-full px-4 py-1.5 text-xs font-medium uppercase tracking-wide transition disabled:opacity-50"
+                            class="rounded-xl px-4 py-1.5 text-xs font-medium uppercase tracking-wide transition disabled:opacity-50"
                             :class="event.my_rsvp === 'going'
                                 ? 'bg-emerald-400/20 text-emerald-300 border border-emerald-400/40'
                                 : 'border border-white/10 text-white/50 hover:border-emerald-400/30 hover:text-emerald-300'"
@@ -75,7 +75,7 @@ function fmtTime(iso) {
                             type="button"
                             :disabled="rsvping === event.id"
                             @click="rsvp(event, 'not_going')"
-                            class="rounded-full px-4 py-1.5 text-xs font-medium uppercase tracking-wide transition disabled:opacity-50"
+                            class="rounded-xl px-4 py-1.5 text-xs font-medium uppercase tracking-wide transition disabled:opacity-50"
                             :class="event.my_rsvp === 'not_going'
                                 ? 'bg-red-400/20 text-red-300 border border-red-400/40'
                                 : 'border border-white/10 text-white/50 hover:border-red-400/30 hover:text-red-300'"

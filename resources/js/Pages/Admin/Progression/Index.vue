@@ -75,7 +75,7 @@ async function submitAdjust(userId) {
                         <div class="flex flex-wrap items-center gap-3">
                             <span class="whitespace-nowrap font-display text-lg text-gold-300">{{ p.xp }} очок досвіду</span>
                             <button
-                                class="shrink-0 rounded-full border border-white/15 px-4 py-1.5 text-xs text-white/60 hover:border-white/30"
+                                class="shrink-0 rounded-xl border border-white/15 px-4 py-1.5 text-xs text-white/60 hover:border-white/30"
                                 @click="openAdjust(p.id)"
                             >
                                 {{ adjustingUserId === p.id ? 'Скасувати' : 'Скоригувати' }}
@@ -94,7 +94,7 @@ async function submitAdjust(userId) {
                         </div>
                         <button
                             :disabled="busy || !reason"
-                            class="rounded-full bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-5 py-2 text-xs font-semibold uppercase tracking-widest text-obsidian-950 disabled:opacity-40"
+                            class="rounded-xl bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-5 py-2 text-xs font-semibold uppercase tracking-widest text-obsidian-950 disabled:opacity-40"
                             @click="submitAdjust(p.user_id)"
                         >
                             Застосувати

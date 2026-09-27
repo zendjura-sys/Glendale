@@ -334,7 +334,7 @@
   display: inline-flex;
   align-items: center;
   border: none;
-  border-radius: 18px;
+  border-radius: 8px;
   overflow: hidden;
   transition: transform 0.2s, opacity 0.2s;
 }

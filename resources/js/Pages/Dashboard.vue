@@ -68,11 +68,11 @@ function fmtDate(iso) {
                         <span class="break-all">{{ $page.props.auth.user.email }}</span>
                         <span
                             v-if="$page.props.auth.user.email_verified_at"
-                            class="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-emerald-300"
+                            class="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-emerald-300"
                         >Підтверджено</span>
                         <span
                             v-else
-                            class="rounded-full border border-gold-400/30 bg-gold-400/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-gold-300"
+                            class="rounded-xl border border-gold-400/30 bg-gold-400/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-gold-300"
                         >Не підтверджено</span>
                     </p>
                 </div>

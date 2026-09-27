@@ -123,12 +123,12 @@ function fmt(d) {
             <button
                 v-for="t in tabs"
                 :key="t.key"
-                class="rounded-full border px-4 py-2 text-sm transition"
+                class="rounded-xl border px-4 py-2 text-sm transition"
                 :class="props.status === t.key ? 'border-gold-400/60 bg-gold-400/15 text-gold-100' : 'border-white/10 text-white/60 hover:bg-white/5'"
                 @click="show(t.key)"
             >
                 {{ t.label }}
-                <span v-if="t.key === 'pending' && pending.families + pending.unions" class="ml-1 rounded-full bg-amber-400/20 px-2 text-xs text-amber-200">
+                <span v-if="t.key === 'pending' && pending.families + pending.unions" class="ml-1 rounded-xl bg-amber-400/20 px-2 text-xs text-amber-200">
                     {{ pending.families + pending.unions }}
                 </span>
             </button>
@@ -162,10 +162,10 @@ function fmt(d) {
                             <p v-if="f.reviewNote" class="mt-2 text-xs text-red-200/80">Причина відхилення: {{ f.reviewNote }}</p>
                         </div>
                         <div class="flex shrink-0 gap-2">
-                            <button v-if="status !== 'verified'" :disabled="busy" class="rounded-full border border-emerald-400/50 bg-emerald-400/10 px-4 py-2 text-xs text-emerald-100 hover:bg-emerald-400/20 disabled:opacity-40" @click="verify('family', f.id)">
+                            <button v-if="status !== 'verified'" :disabled="busy" class="rounded-xl border border-emerald-400/50 bg-emerald-400/10 px-4 py-2 text-xs text-emerald-100 hover:bg-emerald-400/20 disabled:opacity-40" @click="verify('family', f.id)">
                                 Підтвердити
                             </button>
-                            <button v-if="status !== 'rejected'" :disabled="busy" class="rounded-full border border-red-400/50 bg-red-400/10 px-4 py-2 text-xs text-red-100 hover:bg-red-400/20 disabled:opacity-40" @click="openReject('family', f)">
+                            <button v-if="status !== 'rejected'" :disabled="busy" class="rounded-xl border border-red-400/50 bg-red-400/10 px-4 py-2 text-xs text-red-100 hover:bg-red-400/20 disabled:opacity-40" @click="openReject('family', f)">
                                 {{ status === 'verified' ? 'Зняти верифікацію' : 'Відхилити' }}
                             </button>
                         </div>
@@ -189,10 +189,10 @@ function fmt(d) {
                         <p v-if="u.reviewNote" class="mt-2 text-xs text-red-200/80">Причина відхилення: {{ u.reviewNote }}</p>
                     </div>
                     <div class="flex shrink-0 gap-2">
-                        <button v-if="status !== 'verified'" :disabled="busy" class="rounded-full border border-emerald-400/50 bg-emerald-400/10 px-4 py-2 text-xs text-emerald-100 hover:bg-emerald-400/20 disabled:opacity-40" @click="verify('union', u.id)">
+                        <button v-if="status !== 'verified'" :disabled="busy" class="rounded-xl border border-emerald-400/50 bg-emerald-400/10 px-4 py-2 text-xs text-emerald-100 hover:bg-emerald-400/20 disabled:opacity-40" @click="verify('union', u.id)">
                             Підтвердити
                         </button>
-                        <button v-if="status !== 'rejected'" :disabled="busy" class="rounded-full border border-red-400/50 bg-red-400/10 px-4 py-2 text-xs text-red-100 hover:bg-red-400/20 disabled:opacity-40" @click="openReject('union', u)">
+                        <button v-if="status !== 'rejected'" :disabled="busy" class="rounded-xl border border-red-400/50 bg-red-400/10 px-4 py-2 text-xs text-red-100 hover:bg-red-400/20 disabled:opacity-40" @click="openReject('union', u)">
                             {{ status === 'verified' ? 'Зняти верифікацію' : 'Відхилити' }}
                         </button>
                     </div>
@@ -215,7 +215,7 @@ function fmt(d) {
                 </label>
                 <input v-model="newProject" maxlength="60" placeholder="Новий проєкт, напр. Arizona Online" class="min-w-0 flex-1 rounded-xl border border-white/10 bg-obsidian-900/60 px-3 py-2 text-sm text-white placeholder:text-white/30" />
                 <input v-model="newWebsite" maxlength="190" placeholder="Сайт (необов'язково) — звідти підтягнеться логотип" class="min-w-0 flex-1 rounded-xl border border-white/10 bg-obsidian-900/60 px-3 py-2 text-sm text-white placeholder:text-white/30" />
-                <button class="rounded-full border border-gold-400/50 bg-gold-400/10 px-4 py-2 text-xs text-gold-100 hover:bg-gold-400/20">Додати проєкт</button>
+                <button class="rounded-xl border border-gold-400/50 bg-gold-400/10 px-4 py-2 text-xs text-gold-100 hover:bg-gold-400/20">Додати проєкт</button>
             </form>
             <div v-for="p in projects" :key="p.id" class="mb-4 rounded-xl border border-white/10 bg-obsidian-900/40 p-4 last:mb-0">
                 <div class="flex flex-wrap items-center gap-3">
@@ -227,7 +227,7 @@ function fmt(d) {
                     </label>
                     <span class="text-base text-white">{{ p.name }}</span>
                     <span class="text-xs text-white/40">родин: {{ p.families }} · серверів: {{ p.servers.length }}</span>
-                    <button v-if="!p.approved" class="rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] text-amber-200 hover:bg-amber-400/25" @click="router.post(route('admin.families.projects.approve', p.id), {}, opts)">новий · підтвердити</button>
+                    <button v-if="!p.approved" class="rounded-xl bg-amber-400/15 px-2 py-0.5 text-[11px] text-amber-200 hover:bg-amber-400/25" @click="router.post(route('admin.families.projects.approve', p.id), {}, opts)">новий · підтвердити</button>
                     <button class="ml-auto text-xs text-red-300/70 hover:text-red-300" @click="removeProject(p)">Видалити проєкт</button>
                 </div>
                 <div class="mt-3 flex flex-wrap items-center gap-2">
@@ -238,18 +238,18 @@ function fmt(d) {
                         class="min-w-0 flex-1 rounded-xl border border-white/10 bg-obsidian-900/60 px-3 py-2 text-xs text-white placeholder:text-white/30"
                         @input="websiteInput[p.id] = $event.target.value"
                     />
-                    <button :disabled="fetching === p.id" class="rounded-full border border-gold-400/40 px-4 py-2 text-xs text-gold-100 hover:bg-gold-400/10 disabled:opacity-40" @click="fetchLogo(p)">
+                    <button :disabled="fetching === p.id" class="rounded-xl border border-gold-400/40 px-4 py-2 text-xs text-gold-100 hover:bg-gold-400/10 disabled:opacity-40" @click="fetchLogo(p)">
                         {{ fetching === p.id ? 'Завантажую…' : 'Логотип із сайту' }}
                     </button>
                 </div>
                 <div class="mt-3 flex flex-wrap gap-1.5">
-                    <span v-for="sv in expanded[p.id] ? p.servers : p.servers.slice(0, SERVERS_PREVIEW)" :key="sv.id" class="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs" :class="sv.approved ? 'border-white/10 text-white/70' : 'border-amber-400/40 text-amber-200'">
+                    <span v-for="sv in expanded[p.id] ? p.servers : p.servers.slice(0, SERVERS_PREVIEW)" :key="sv.id" class="inline-flex items-center gap-1 rounded-xl border px-2.5 py-1 text-xs" :class="sv.approved ? 'border-white/10 text-white/70' : 'border-amber-400/40 text-amber-200'">
                         {{ sv.name }}
                         <span v-if="sv.players != null" class="text-emerald-300/80" :title="sv.address">● {{ sv.players }}<template v-if="sv.maxPlayers">/{{ sv.maxPlayers }}</template></span>
                         <button v-if="!sv.approved" title="Підтвердити" class="text-amber-200 hover:text-white" @click="router.post(route('admin.families.servers.approve', sv.id), {}, opts)">✓</button>
                         <button title="Видалити" class="text-white/35 hover:text-red-300" @click="removeServer(sv)">×</button>
                     </span>
-                    <button v-if="p.servers.length > SERVERS_PREVIEW" class="rounded-full border border-white/10 px-2.5 py-1 text-xs text-gold-200/80 hover:bg-white/5" @click="expanded[p.id] = !expanded[p.id]">
+                    <button v-if="p.servers.length > SERVERS_PREVIEW" class="rounded-xl border border-white/10 px-2.5 py-1 text-xs text-gold-200/80 hover:bg-white/5" @click="expanded[p.id] = !expanded[p.id]">
                         {{ expanded[p.id] ? 'Згорнути' : `Показати всі (${p.servers.length})` }}
                     </button>
                     <span v-if="!p.servers.length" class="text-xs text-white/35">Серверів ще немає.</span>
@@ -265,14 +265,14 @@ function fmt(d) {
                         <option value="">вимкнено (вручну)</option>
                         <option value="ragemp">RAGE MP — назви, IP, онлайн</option>
                     </select>
-                    <button v-if="p.serversSource" :disabled="fetching === p.id" class="rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/75 hover:bg-white/5 disabled:opacity-40" @click="setSource(p, p.serversSource)">
+                    <button v-if="p.serversSource" :disabled="fetching === p.id" class="rounded-xl border border-white/15 px-3 py-1.5 text-xs text-white/75 hover:bg-white/5 disabled:opacity-40" @click="setSource(p, p.serversSource)">
                         Оновити зараз
                     </button>
                     <span v-if="p.serversSyncedAt" class="text-white/35">оновлено {{ new Date(p.serversSyncedAt).toLocaleString('uk-UA') }}</span>
                 </div>
                 <div class="mt-3 flex flex-wrap items-start gap-2">
                     <textarea v-model="serverInput[p.id]" rows="2" placeholder="Сервери — по одному на рядок: номер 1–999 або назва літерами" class="min-w-0 flex-1 rounded-xl border border-white/10 bg-obsidian-900/60 px-3 py-2 text-xs text-white placeholder:text-white/30"></textarea>
-                    <button class="rounded-full border border-white/15 px-4 py-2 text-xs text-white/75 hover:bg-white/5" @click="addServers(p)">Додати сервери</button>
+                    <button class="rounded-xl border border-white/15 px-4 py-2 text-xs text-white/75 hover:bg-white/5" @click="addServers(p)">Додати сервери</button>
                 </div>
             </div>
         </section>
@@ -285,8 +285,8 @@ function fmt(d) {
                 <textarea v-model="note" rows="4" class="mt-4 w-full rounded-xl border border-white/10 bg-obsidian-900/60 p-3 text-sm text-white placeholder:text-white/30" placeholder="Напр.: на скріншоті не видно назви родини в грі"></textarea>
                 <p v-if="error" class="mt-2 text-xs text-red-300">{{ error }}</p>
                 <div class="mt-4 flex justify-end gap-2">
-                    <button class="rounded-full border border-white/10 px-4 py-2 text-xs text-white/70 hover:bg-white/5" @click="rejecting = null">Скасувати</button>
-                    <button :disabled="busy" class="rounded-full border border-red-400/50 bg-red-400/15 px-4 py-2 text-xs text-red-100 hover:bg-red-400/25 disabled:opacity-40" @click="reject">Відхилити</button>
+                    <button class="rounded-xl border border-white/10 px-4 py-2 text-xs text-white/70 hover:bg-white/5" @click="rejecting = null">Скасувати</button>
+                    <button :disabled="busy" class="rounded-xl border border-red-400/50 bg-red-400/15 px-4 py-2 text-xs text-red-100 hover:bg-red-400/25 disabled:opacity-40" @click="reject">Відхилити</button>
                 </div>
             </div>
         </div>

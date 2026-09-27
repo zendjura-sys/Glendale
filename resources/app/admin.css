@@ -32,7 +32,7 @@
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
-  border-radius: 10px;
+  border-radius: 4px;
   background: var(--badge);
   color: #fff;
   font-size: 11px;
@@ -137,7 +137,7 @@ a.tile:hover {
   pointer-events: none;
   transform: translate(-50%, calc(-100% - 10px));
   padding: 6px 10px;
-  border-radius: 10px;
+  border-radius: 4px;
   background: var(--card-strong);
   backdrop-filter: var(--glass-blur);
   box-shadow: var(--shadow);
@@ -169,7 +169,7 @@ a.tile:hover {
 }
 .hbar .track {
   height: 10px;
-  border-radius: 5px;
+  border-radius: 4px;
   background: var(--field);
   overflow: hidden;
 }
@@ -295,7 +295,7 @@ table.admin input[type='checkbox'],
   gap: 4px;
   height: 22px;
   padding: 0 8px;
-  border-radius: 11px;
+  border-radius: 5px;
   font-size: 11.5px;
   font-weight: 600;
   white-space: nowrap;
@@ -356,7 +356,7 @@ table.admin input[type='checkbox'],
   height: 24px;
   flex-shrink: 0;
   border: none;
-  border-radius: 12px;
+  border-radius: 5px;
   background: var(--field-border);
   transition: background-color 0.2s;
   padding: 0;
@@ -386,14 +386,14 @@ table.admin input[type='checkbox'],
   display: inline-flex;
   padding: 3px;
   gap: 2px;
-  border-radius: 12px;
+  border-radius: 5px;
   background: var(--field);
 }
 .segmented button {
   border: none;
   background: none;
   padding: 7px 14px;
-  border-radius: 9px;
+  border-radius: 4px;
   color: var(--text-2);
   font-weight: 600;
   transition: background-color 0.2s, color 0.2s;
@@ -432,14 +432,14 @@ table.admin input[type='checkbox'],
 .report-card .quote {
   margin: 8px 0;
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: 5px;
   background: var(--field);
   white-space: pre-wrap;
   word-break: break-word;
 }
 .report-card .quote img {
   max-height: 120px;
-  border-radius: 8px;
+  border-radius: 4px;
   margin-top: 6px;
 }
 .perm-grid {
@@ -470,7 +470,7 @@ table.admin input[type='checkbox'],
     gap: 6px;
     height: 34px;
     padding: 0 12px;
-    border-radius: 17px;
+    border-radius: 8px;
     background: var(--card);
     backdrop-filter: var(--glass-blur);
     box-shadow: var(--card-border);
@@ -507,7 +507,7 @@ table.admin input[type='checkbox'],
   width: 36px;
   height: 36px;
   flex-shrink: 0;
-  border-radius: 12px;
+  border-radius: 5px;
   background: var(--accent-soft);
   color: var(--accent);
 }
@@ -521,7 +521,7 @@ table.admin input[type='checkbox'],
   align-items: center;
   gap: 10px;
   padding: 8px 8px 8px 16px;
-  border-radius: 24px;
+  border-radius: 11px;
   background: var(--card-strong);
   backdrop-filter: var(--glass-blur);
   box-shadow: var(--shadow);
@@ -579,7 +579,7 @@ table.admin input[type='checkbox'],
 }
 .copy-code code {
   padding: 2px 8px;
-  border-radius: 8px;
+  border-radius: 4px;
   background: var(--field);
   font-size: 12.5px;
   word-break: break-all;
@@ -590,7 +590,7 @@ table.admin input[type='checkbox'],
   height: 28px;
 }
 .setup-steps {
-  border-radius: 14px;
+  border-radius: 6px;
   background: var(--accent-soft);
   padding: 10px 14px;
 }

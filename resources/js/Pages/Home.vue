@@ -224,7 +224,7 @@ const benefits = [
         >
             <div class="mx-auto max-w-7xl px-4 sm:px-6">
                 <div
-                    class="flex items-center justify-between rounded-full px-5 py-3 transition-all duration-700 sm:px-6"
+                    class="flex items-center justify-between rounded-xl px-5 py-3 transition-all duration-700 sm:px-6"
                     :class="scrolled ? 'glass-pill' : ''"
                 >
                     <!-- На вузьких телефонах (360px) повний лого + кнопка

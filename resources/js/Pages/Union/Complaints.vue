@@ -195,7 +195,7 @@ function fmtDate(iso) {
                             type="file"
                             multiple
                             accept="image/jpeg,image/png,image/webp"
-                            class="mt-1 block w-full text-sm text-white/60 file:mr-4 file:rounded-full file:border-0 file:bg-gold-400/10 file:px-4 file:py-2 file:text-xs file:uppercase file:tracking-widest file:text-gold-200"
+                            class="mt-1 block w-full text-sm text-white/60 file:mr-4 file:rounded-xl file:border-0 file:bg-gold-400/10 file:px-4 file:py-2 file:text-xs file:uppercase file:tracking-widest file:text-gold-200"
                             @change="onPhotosChange"
                         />
                         <InputError :message="form.errors.photos" />
@@ -215,7 +215,7 @@ function fmtDate(iso) {
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div class="min-w-0">
                             <div class="flex flex-wrap items-center gap-2">
-                                <span class="rounded-full border px-2.5 py-0.5 text-[10px] uppercase tracking-widest" :class="STATUS_COLORS[complaint.status]">
+                                <span class="rounded-xl border px-2.5 py-0.5 text-[10px] uppercase tracking-widest" :class="STATUS_COLORS[complaint.status]">
                                     {{ STATUS_LABELS[complaint.status] ?? complaint.status }}
                                 </span>
                                 <span v-if="complaint.reporter_id === myId" class="text-[10px] uppercase tracking-widest text-white/30">моя скарга</span>
@@ -227,7 +227,7 @@ function fmtDate(iso) {
                                 Проти родини <span class="text-gold-300">{{ complaint.against_family }}</span>, гравець «{{ complaint.against_name }}»
                             </p>
                             <div class="mt-2 flex flex-wrap gap-1.5">
-                                <span v-for="r in complaint.reasons" :key="r" class="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-0.5 text-[11px] text-white/60">
+                                <span v-for="r in complaint.reasons" :key="r" class="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-0.5 text-[11px] text-white/60">
                                     {{ reasonLabel(r) }}
                                 </span>
                             </div>
@@ -262,7 +262,7 @@ function fmtDate(iso) {
                             class="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-white focus:border-gold-400/40 focus:ring-0"
                         ></textarea>
                         <div class="flex gap-3">
-                            <button type="button" class="rounded-full border border-gold-400/40 px-4 py-1.5 text-xs text-gold-200 hover:border-gold-300" @click="saveReview(complaint)">Зберегти</button>
+                            <button type="button" class="rounded-xl border border-gold-400/40 px-4 py-1.5 text-xs text-gold-200 hover:border-gold-300" @click="saveReview(complaint)">Зберегти</button>
                             <button type="button" class="text-xs text-white/40 hover:text-white" @click="editingId = null">Скасувати</button>
                         </div>
                     </div>

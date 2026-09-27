@@ -36,7 +36,7 @@ function submit() {
             <button
                 v-if="!showForm"
                 type="button"
-                class="rounded-full border border-ember-500/25 px-4 py-2 text-xs text-ember-500/80 hover:bg-ember-600/10"
+                class="rounded-xl border border-ember-500/25 px-4 py-2 text-xs text-ember-500/80 hover:bg-ember-600/10"
                 @click="showForm = true"
             >
                 Вийти з інших пристроїв

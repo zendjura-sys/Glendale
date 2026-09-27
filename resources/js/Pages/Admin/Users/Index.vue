@@ -193,7 +193,7 @@ async function deleteAccount() {
                     <option v-for="pos in positions" :key="pos.key" :value="pos.key">{{ pos.title }}</option>
                 </select>
             </div>
-            <button type="button" class="rounded-full border border-gold-400/40 px-4 py-2 text-xs font-medium tracking-widest text-gold-200 hover:border-gold-300" @click="search">
+            <button type="button" class="rounded-xl border border-gold-400/40 px-4 py-2 text-xs font-medium tracking-widest text-gold-200 hover:border-gold-300" @click="search">
                 Застосувати
             </button>
         </div>
@@ -240,7 +240,7 @@ async function deleteAccount() {
                         <label
                             v-for="role in roles"
                             :key="role"
-                            class="cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium tracking-wide transition-colors"
+                            class="cursor-pointer rounded-xl border px-3 py-1.5 text-xs font-medium tracking-wide transition-colors"
                             :class="user.roles.includes(role)
                                 ? 'border-gold-400/50 bg-gold-400/10 text-gold-200'
                                 : 'border-white/10 text-white/40 hover:border-white/25 hover:text-white'"
@@ -262,7 +262,7 @@ async function deleteAccount() {
                 :key="link.label"
                 :href="link.url || ''"
                 v-html="link.label"
-                class="rounded-full border px-3 py-1.5 text-xs"
+                class="rounded-xl border px-3 py-1.5 text-xs"
                 :class="[
                     link.active ? 'border-gold-400/50 bg-gold-400/10 text-gold-200' : 'border-white/10 text-white/40 hover:text-white',
                     !link.url && 'pointer-events-none opacity-30',
@@ -318,14 +318,14 @@ async function deleteAccount() {
                         <button
                             type="button"
                             :disabled="editSaving"
-                            class="rounded-full border border-gold-400/40 px-5 py-2 text-sm font-medium tracking-wide text-gold-200 transition-colors hover:border-gold-300 disabled:opacity-40"
+                            class="rounded-xl border border-gold-400/40 px-5 py-2 text-sm font-medium tracking-wide text-gold-200 transition-colors hover:border-gold-300 disabled:opacity-40"
                             @click="saveEdit"
                         >
                             {{ editSaving ? 'Зберігаю…' : 'Зберегти' }}
                         </button>
                         <button
                             type="button"
-                            class="rounded-full border border-white/15 px-5 py-2 text-sm text-white/60 hover:border-white/30"
+                            class="rounded-xl border border-white/15 px-5 py-2 text-sm text-white/60 hover:border-white/30"
                             @click="closeEdit"
                         >
                             Скасувати
@@ -341,7 +341,7 @@ async function deleteAccount() {
                     <button
                         type="button"
                         :disabled="resetPasswordBusy"
-                        class="rounded-full border border-white/15 px-5 py-2 text-sm text-white/60 transition-colors hover:border-white/30 disabled:opacity-40"
+                        class="rounded-xl border border-white/15 px-5 py-2 text-sm text-white/60 transition-colors hover:border-white/30 disabled:opacity-40"
                         @click="resetPassword"
                     >
                         {{ resetPasswordBusy ? 'Генерую…' : 'Скинути пароль' }}
@@ -353,7 +353,7 @@ async function deleteAccount() {
                     <button
                         type="button"
                         :disabled="deleteBusy"
-                        class="rounded-full border border-ember-500/30 px-5 py-2 text-sm font-medium text-ember-500/80 transition-colors hover:bg-ember-600/10 disabled:opacity-40"
+                        class="rounded-xl border border-ember-500/30 px-5 py-2 text-sm font-medium text-ember-500/80 transition-colors hover:bg-ember-600/10 disabled:opacity-40"
                         @click="deleteAccount"
                     >
                         {{ deleteBusy ? 'Видаляю…' : 'Видалити акаунт' }}

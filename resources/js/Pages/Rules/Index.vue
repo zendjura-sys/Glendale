@@ -76,7 +76,7 @@ function formatDate(iso) {
                     v-for="b in books"
                     :key="b.slug"
                     type="button"
-                    class="shrink-0 rounded-full border px-4 py-2 text-sm transition-colors"
+                    class="shrink-0 rounded-xl border px-4 py-2 text-sm transition-colors"
                     :class="b.slug === activeSlug
                         ? 'border-gold-400/60 bg-gold-400/15 text-gold-200'
                         : 'border-white/10 text-white/60 hover:border-gold-400/40 hover:text-gold-300'"
@@ -92,7 +92,7 @@ function formatDate(iso) {
                         <h3 class="font-display text-xl font-normal text-white">{{ book.icon }} {{ book.title }}</h3>
                         <p class="mt-2 text-sm leading-relaxed text-white/50">{{ book.description }}</p>
                     </div>
-                    <span class="shrink-0 rounded-full border border-white/10 px-3 py-1 text-[11px] text-white/40">
+                    <span class="shrink-0 rounded-xl border border-white/10 px-3 py-1 text-[11px] text-white/40">
                         Оновлено {{ formatDate(book.updatedAt) }}
                     </span>
                 </div>
@@ -114,7 +114,7 @@ function formatDate(iso) {
                 </button>
                 <div v-if="showLegend" class="mt-5 grid gap-3 sm:grid-cols-2">
                     <div v-for="level in levels" :key="level.key" class="rounded-xl border border-white/10 bg-obsidian-900/40 p-4">
-                        <span class="inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium" :class="levelStyle[level.key]">
+                        <span class="inline-block rounded-xl border px-2.5 py-0.5 text-xs font-medium" :class="levelStyle[level.key]">
                             {{ level.title }}
                         </span>
                         <p class="mt-2 text-xs leading-relaxed text-white/55">{{ level.description }}</p>
@@ -122,8 +122,8 @@ function formatDate(iso) {
                 </div>
             </div>
             <div v-else-if="book" class="flex flex-wrap items-center gap-2 px-1 text-xs text-white/40">
-                <span class="rounded-full border px-2.5 py-0.5" :class="levelStyle.jail">Jail / мут / kick</span>
-                <span class="rounded-full border px-2.5 py-0.5" :class="levelStyle.ban">Бан / блокування / втрата бізнесу</span>
+                <span class="rounded-xl border px-2.5 py-0.5" :class="levelStyle.jail">Jail / мут / kick</span>
+                <span class="rounded-xl border px-2.5 py-0.5" :class="levelStyle.ban">Бан / блокування / втрата бізнесу</span>
                 <span>— покарання адміністрації проєкту</span>
             </div>
 
@@ -158,7 +158,7 @@ function formatDate(iso) {
                             <span
                                 v-for="(p, i) in rule.penalties"
                                 :key="'p' + i"
-                                class="rounded-full border px-3 py-1 text-xs"
+                                class="rounded-xl border px-3 py-1 text-xs"
                                 :class="levelStyle[p.level] ?? levelStyle.jail"
                             >
                                 {{ p.text }}

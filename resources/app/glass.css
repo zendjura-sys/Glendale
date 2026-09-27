@@ -247,7 +247,7 @@ html.theme-switching *::after {
 .header-inner {
   height: 54px;
   padding: 0 10px 0 12px;
-  border-radius: 27px;
+  border-radius: 12px;
   background: var(--header);
 }
 .header-search input {
@@ -397,7 +397,7 @@ html.theme-switching *::after {
   }
   .header-inner {
     height: 50px;
-    border-radius: 25px;
+    border-radius: 11px;
   }
   .tabbar {
     left: 10px;
@@ -405,7 +405,7 @@ html.theme-switching *::after {
     bottom: calc(10px + env(safe-area-inset-bottom));
     height: 62px;
     padding-bottom: 0;
-    border-radius: 31px;
+    border-radius: 14px;
     /* Щільніше скло: текст сторінки під плаваючою панеллю не просвічує. */
     background: var(--card-strong);
     -webkit-backdrop-filter: blur(28px) saturate(180%);

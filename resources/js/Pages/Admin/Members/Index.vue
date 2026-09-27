@@ -140,14 +140,14 @@ function fmtDateTime(iso) {
                     <div class="flex gap-2">
                         <button
                             :disabled="leaveBusy === lr.id"
-                            class="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-400/20 disabled:opacity-40"
+                            class="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-400/20 disabled:opacity-40"
                             @click="reviewLeave(lr, 'approve')"
                         >
                             Затвердити
                         </button>
                         <button
                             :disabled="leaveBusy === lr.id"
-                            class="rounded-full border border-ember-500/25 px-4 py-1.5 text-xs font-medium text-ember-500/80 hover:bg-ember-600/10 disabled:opacity-40"
+                            class="rounded-xl border border-ember-500/25 px-4 py-1.5 text-xs font-medium text-ember-500/80 hover:bg-ember-600/10 disabled:opacity-40"
                             @click="reviewLeave(lr, 'reject')"
                         >
                             Відхилити
@@ -178,7 +178,7 @@ function fmtDateTime(iso) {
                         </div>
                         <div class="flex flex-wrap items-center gap-3">
                             <button
-                                class="rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/60 transition-colors hover:border-white/30"
+                                class="rounded-xl border border-white/15 px-3 py-1.5 text-xs text-white/60 transition-colors hover:border-white/30"
                                 @click="toggleNotes(member)"
                             >
                                 Нотатки ({{ member.notes_count }})
@@ -187,13 +187,13 @@ function fmtDateTime(iso) {
                             <Link
                                 v-if="route().has('admin.discipline.index')"
                                 :href="route('admin.discipline.index', { user: member.id, status: 'all' })"
-                                class="rounded-full border px-3 py-1.5 text-xs transition-colors"
+                                class="rounded-xl border px-3 py-1.5 text-xs transition-colors"
                                 :class="member.warnings_count > 0 ? 'border-orange-400/30 text-orange-300 hover:border-orange-400/50' : 'border-white/15 text-white/60 hover:border-white/30'"
                             >
                                 ⚖ Покарання ({{ member.warnings_count }})
                             </Link>
                             <select
-                                class="rounded-full border border-white/10 bg-obsidian-900 px-3 py-1.5 text-xs text-white focus:border-gold-400/50 focus:outline-none"
+                                class="rounded-xl border border-white/10 bg-obsidian-900 px-3 py-1.5 text-xs text-white focus:border-gold-400/50 focus:outline-none"
                                 :value="member.hr_status"
                                 @change="changeStatus(member, $event.target.value)"
                             >
@@ -241,7 +241,7 @@ function fmtDateTime(iso) {
                 :key="link.label"
                 :href="link.url || ''"
                 v-html="link.label"
-                class="rounded-full border px-3 py-1.5 text-xs"
+                class="rounded-xl border px-3 py-1.5 text-xs"
                 :class="[
                     link.active ? 'border-gold-400/50 bg-gold-400/10 text-gold-200' : 'border-white/10 text-white/40 hover:text-white',
                     !link.url && 'pointer-events-none opacity-30',

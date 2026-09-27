@@ -47,7 +47,7 @@ function fmtDateTime(iso) {
                 >
                     <div class="flex items-start justify-between gap-3">
                         <h3 class="font-display text-xl text-white">{{ goal.title }}</h3>
-                        <span class="shrink-0 rounded-full border px-3 py-1 text-[11px] font-medium uppercase tracking-wide" :class="statusMeta[goal.status]?.class">
+                        <span class="shrink-0 rounded-xl border px-3 py-1 text-[11px] font-medium uppercase tracking-wide" :class="statusMeta[goal.status]?.class">
                             {{ statusMeta[goal.status]?.label }}
                         </span>
                     </div>

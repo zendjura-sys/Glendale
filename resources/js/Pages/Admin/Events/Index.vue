@@ -123,14 +123,14 @@ function sendDigest() {
     <AdminLayout title="Події родини">
         <div class="mb-6 flex flex-wrap gap-3">
             <button
-                class="rounded-full bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-6 py-3 text-sm font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03]"
+                class="rounded-xl bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-6 py-3 text-sm font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03]"
                 @click="toggleForm"
             >
                 {{ showForm ? 'Скасувати' : 'Нова подія' }}
             </button>
             <button
                 :disabled="sendingDigest || events.length === 0"
-                class="rounded-full border border-white/15 px-6 py-3 text-sm font-medium uppercase tracking-widest text-white/60 transition-colors hover:border-gold-400/30 hover:text-gold-200 disabled:opacity-40"
+                class="rounded-xl border border-white/15 px-6 py-3 text-sm font-medium uppercase tracking-widest text-white/60 transition-colors hover:border-gold-400/30 hover:text-gold-200 disabled:opacity-40"
                 @click="sendDigest"
                 title="Надіслати всім список усіх майбутніх подій одним повідомленням"
             >
@@ -153,7 +153,7 @@ function sendDigest() {
                         <button
                             type="button"
                             :disabled="aiDrafting || ! eventHint.trim()"
-                            class="rounded-full border border-gold-400/40 px-4 py-2 text-xs font-medium tracking-widest text-gold-200 transition-all hover:border-gold-300 disabled:opacity-40"
+                            class="rounded-xl border border-gold-400/40 px-4 py-2 text-xs font-medium tracking-widest text-gold-200 transition-all hover:border-gold-300 disabled:opacity-40"
                             @click="draftEvent"
                         >
                             {{ aiDrafting ? 'Генерую…' : 'Згенерувати назву й опис' }}
@@ -190,7 +190,7 @@ function sendDigest() {
                 <button
                     type="submit"
                     :disabled="createForm.processing"
-                    class="mt-5 rounded-full border border-gold-400/40 px-6 py-2.5 text-sm font-medium tracking-widest text-gold-200 transition-all hover:border-gold-300 disabled:opacity-40"
+                    class="mt-5 rounded-xl border border-gold-400/40 px-6 py-2.5 text-sm font-medium tracking-widest text-gold-200 transition-all hover:border-gold-300 disabled:opacity-40"
                 >
                     Створити й оповістити
                 </button>
@@ -210,7 +210,7 @@ function sendDigest() {
                         </p>
                     </div>
                     <button
-                        class="shrink-0 rounded-full border border-ember-500/25 px-4 py-1.5 text-xs font-medium text-ember-500/80 hover:bg-ember-600/10"
+                        class="shrink-0 rounded-xl border border-ember-500/25 px-4 py-1.5 text-xs font-medium text-ember-500/80 hover:bg-ember-600/10"
                         @click="destroyEvent(event)"
                     >
                         Видалити
@@ -232,7 +232,7 @@ function sendDigest() {
                         <span
                             v-for="r in event.rsvps"
                             :key="r.id"
-                            class="rounded-full px-2.5 py-0.5 text-[11px]"
+                            class="rounded-xl px-2.5 py-0.5 text-[11px]"
                             :class="r.status === 'going' ? 'bg-emerald-400/10 text-emerald-300' : 'bg-red-400/10 text-red-300'"
                         >
                             {{ r.status === 'going' ? '✓' : '✕' }} {{ r.user?.name }}

@@ -49,7 +49,7 @@ function chooseClaim(claim) {
             <div class="mt-3 flex gap-2">
                 <button
                     type="button"
-                    class="rounded-full border px-4 py-1.5 text-xs uppercase tracking-widest transition-colors"
+                    class="rounded-xl border px-4 py-1.5 text-xs uppercase tracking-widest transition-colors"
                     :class="form.claim_shadow_id ? 'border-gold-400/50 bg-gold-400/10 text-gold-200' : 'border-white/15 text-white/50 hover:border-white/30'"
                     @click="chooseClaim(true)"
                 >
@@ -57,7 +57,7 @@ function chooseClaim(claim) {
                 </button>
                 <button
                     type="button"
-                    class="rounded-full border px-4 py-1.5 text-xs uppercase tracking-widest transition-colors"
+                    class="rounded-xl border px-4 py-1.5 text-xs uppercase tracking-widest transition-colors"
                     :class="form.skip_shadow_check ? 'border-gold-400/50 bg-gold-400/10 text-gold-200' : 'border-white/15 text-white/50 hover:border-white/30'"
                     @click="chooseClaim(false)"
                 >

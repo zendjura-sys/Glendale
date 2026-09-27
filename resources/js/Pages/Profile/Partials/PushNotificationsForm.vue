@@ -74,7 +74,7 @@ onMounted(refresh);
             <div v-else>
                 <button
                     :disabled="busy || pushPermission() === 'denied'"
-                    class="rounded-full bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-6 py-3 text-xs font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03] disabled:opacity-40"
+                    class="rounded-xl bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-6 py-3 text-xs font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03] disabled:opacity-40"
                     @click="enable"
                 >
                     {{ busy ? 'Вмикаємо…' : 'Увімкнути push-сповіщення' }}

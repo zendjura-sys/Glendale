@@ -63,7 +63,7 @@ function fmtDateTime(iso) {
     <AdminLayout title="Розсилки">
         <div class="mb-6">
             <button
-                class="rounded-full bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-6 py-3 text-sm font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03]"
+                class="rounded-xl bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-6 py-3 text-sm font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03]"
                 @click="showForm = !showForm"
             >
                 {{ showForm ? 'Скасувати' : 'Нова розсилка' }}
@@ -84,7 +84,7 @@ function fmtDateTime(iso) {
                             v-if="aiBroadcastAssistEnabled"
                             type="button"
                             :disabled="aiPolishing || !form.body.trim()"
-                            class="rounded-full border border-gold-400/30 bg-gold-400/10 px-3 py-1 text-[11px] font-medium text-gold-300 hover:bg-gold-400/20 disabled:opacity-40"
+                            class="rounded-xl border border-gold-400/30 bg-gold-400/10 px-3 py-1 text-[11px] font-medium text-gold-300 hover:bg-gold-400/20 disabled:opacity-40"
                             @click="polishText"
                         >
                             {{ aiPolishing ? 'Покращую…' : '✨ Покращити текст' }}
@@ -100,7 +100,7 @@ function fmtDateTime(iso) {
                             v-for="opt in [{ v: 'all', l: 'Усі учасники' }, { v: 'role', l: 'За роллю' }, { v: 'position', l: 'За посадою' }]"
                             :key="opt.v"
                             type="button"
-                            class="rounded-full border px-4 py-1.5 text-xs uppercase tracking-widest transition-colors"
+                            class="rounded-xl border px-4 py-1.5 text-xs uppercase tracking-widest transition-colors"
                             :class="form.audience_type === opt.v ? 'border-gold-400/50 bg-gold-400/10 text-gold-200' : 'border-white/10 text-white/40 hover:text-white'"
                             @click="form.audience_type = opt.v; form.audience_value = ''"
                         >
@@ -132,7 +132,7 @@ function fmtDateTime(iso) {
                 <button
                     type="submit"
                     :disabled="form.processing"
-                    class="mt-5 rounded-full border border-gold-400/40 px-6 py-2.5 text-sm font-medium tracking-widest text-gold-200 transition-all hover:border-gold-300 disabled:opacity-40"
+                    class="mt-5 rounded-xl border border-gold-400/40 px-6 py-2.5 text-sm font-medium tracking-widest text-gold-200 transition-all hover:border-gold-300 disabled:opacity-40"
                 >
                     Надіслати
                 </button>
@@ -169,7 +169,7 @@ function fmtDateTime(iso) {
                 :key="link.label"
                 :href="link.url || ''"
                 v-html="link.label"
-                class="rounded-full border px-3 py-1.5 text-xs"
+                class="rounded-xl border px-3 py-1.5 text-xs"
                 :class="[
                     link.active ? 'border-gold-400/50 bg-gold-400/10 text-gold-200' : 'border-white/10 text-white/40 hover:text-white',
                     !link.url && 'pointer-events-none opacity-30',

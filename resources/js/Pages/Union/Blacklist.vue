@@ -173,7 +173,7 @@ function fmtDate(iso) {
                     <p class="font-medium text-white">{{ p.first_name }} {{ p.last_name }}</p>
                     <p v-if="p.family_name" class="text-sm text-white/50">Родина: {{ p.family_name }}</p>
                     <div class="mt-2 flex flex-wrap gap-1.5">
-                        <span v-for="r in p.reasons" :key="r" class="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-0.5 text-[11px] text-white/60">
+                        <span v-for="r in p.reasons" :key="r" class="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-0.5 text-[11px] text-white/60">
                             {{ reasonLabel(r) }}
                         </span>
                     </div>

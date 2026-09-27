@@ -58,7 +58,7 @@ function fmtDate(iso) {
                     </h1>
                 </div>
                 <button
-                    class="rounded-full bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-6 py-3 text-sm font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03]"
+                    class="rounded-xl bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-6 py-3 text-sm font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03]"
                     @click="showForm = !showForm"
                 >
                     {{ showForm ? 'Скасувати' : 'Подати заявку' }}
@@ -72,7 +72,7 @@ function fmtDate(iso) {
                     <p class="text-xs uppercase tracking-widest text-white/40">Ваш статус</p>
                     <p class="font-display mt-1 text-xl text-white">Учасник родини</p>
                 </div>
-                <span class="shrink-0 rounded-full border px-4 py-1.5 text-xs font-medium uppercase tracking-wide" :class="statusMeta[hrStatus]?.class">
+                <span class="shrink-0 rounded-xl border px-4 py-1.5 text-xs font-medium uppercase tracking-wide" :class="statusMeta[hrStatus]?.class">
                     {{ statusMeta[hrStatus]?.label }}
                 </span>
             </div>
@@ -103,7 +103,7 @@ function fmtDate(iso) {
                     <button
                         type="submit"
                         :disabled="form.processing"
-                        class="mt-5 rounded-full border border-gold-400/40 px-6 py-2.5 text-sm font-medium tracking-widest text-gold-200 transition-all hover:border-gold-300 disabled:opacity-40"
+                        class="mt-5 rounded-xl border border-gold-400/40 px-6 py-2.5 text-sm font-medium tracking-widest text-gold-200 transition-all hover:border-gold-300 disabled:opacity-40"
                     >
                         Надіслати на розгляд
                     </button>
@@ -121,7 +121,7 @@ function fmtDate(iso) {
                         <p class="font-medium text-white">{{ fmtDate(lr.starts_on) }} — {{ fmtDate(lr.ends_on) }}</p>
                         <p v-if="lr.reason" class="mt-1 text-sm text-white/50">{{ lr.reason }}</p>
                     </div>
-                    <span class="shrink-0 rounded-full border px-3 py-1 text-[11px] font-medium uppercase tracking-wide" :class="leaveStatusMeta[lr.status]?.class">
+                    <span class="shrink-0 rounded-xl border px-3 py-1 text-[11px] font-medium uppercase tracking-wide" :class="leaveStatusMeta[lr.status]?.class">
                         {{ leaveStatusMeta[lr.status]?.label }}
                     </span>
                 </div>

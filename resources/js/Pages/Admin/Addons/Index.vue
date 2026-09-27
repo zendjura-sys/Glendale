@@ -242,7 +242,7 @@ function showInfo(addon) {
             <button
                 v-for="type in TYPES"
                 :key="type"
-                class="relative rounded-full border px-5 py-2.5 text-sm font-medium tracking-wide transition-all duration-300"
+                class="relative rounded-xl border px-5 py-2.5 text-sm font-medium tracking-wide transition-all duration-300"
                 :class="activeTab === type
                     ? 'border-gold-400/50 bg-gold-400/10 text-gold-200 shadow-gold'
                     : 'border-white/10 text-white/50 hover:border-white/25 hover:text-white'"
@@ -250,7 +250,7 @@ function showInfo(addon) {
             >
                 {{ TYPE_META[type].label }}
                 <span
-                    class="ml-2 rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] text-white/50"
+                    class="ml-2 rounded-xl bg-white/10 px-1.5 py-0.5 text-[10px] text-white/50"
                 >{{ addons[type]?.length || 0 }}</span>
             </button>
         </div>
@@ -291,7 +291,7 @@ function showInfo(addon) {
                         </p>
                         <p class="mt-1 text-xs text-white/30">Можна вибрати або перетягнути одразу кілька ZIP-архівів</p>
                         <label
-                            class="mt-6 inline-block cursor-pointer rounded-full bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-8 py-3 text-sm font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03]"
+                            class="mt-6 inline-block cursor-pointer rounded-xl bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-8 py-3 text-sm font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03]"
                         >
                             Вибрати ZIP
                             <input type="file" accept=".zip" multiple class="hidden" @change="onPick(activeTab, $event)" />
@@ -317,7 +317,7 @@ function showInfo(addon) {
                                 <p class="mt-0.5 text-xs text-white/40">{{ addon.slug }} · v{{ addon.version }}</p>
                             </div>
                             <span
-                                class="shrink-0 rounded-full border px-3 py-1 text-[11px] font-medium uppercase tracking-wide"
+                                class="shrink-0 rounded-xl border px-3 py-1 text-[11px] font-medium uppercase tracking-wide"
                                 :class="statusMeta[addon.status]?.class"
                             >
                                 {{ statusMeta[addon.status]?.label }}
@@ -336,7 +336,7 @@ function showInfo(addon) {
                         <div class="mt-5 flex flex-wrap gap-2">
                             <button
                                 v-if="addon.manifest?.highlights?.length || addon.manifest?.description"
-                                class="rounded-full border border-white/15 px-4 py-1.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/5"
+                                class="rounded-xl border border-white/15 px-4 py-1.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/5"
                                 @click="showInfo(addon)"
                             >
                                 ℹ️ Детальніше
@@ -344,7 +344,7 @@ function showInfo(addon) {
                             <button
                                 v-if="!addon.status || addon.status === 'inactive' || addon.status === 'failed'"
                                 :disabled="busyAddon === addon.id"
-                                class="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-1.5 text-xs font-medium text-emerald-300 transition-colors hover:bg-emerald-400/20 disabled:opacity-40"
+                                class="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-1.5 text-xs font-medium text-emerald-300 transition-colors hover:bg-emerald-400/20 disabled:opacity-40"
                                 @click="act(addon, 'activate')"
                             >
                                 Активувати
@@ -352,7 +352,7 @@ function showInfo(addon) {
                             <button
                                 v-if="addon.status === 'active'"
                                 :disabled="busyAddon === addon.id"
-                                class="rounded-full border border-white/15 px-4 py-1.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/5 disabled:opacity-40"
+                                class="rounded-xl border border-white/15 px-4 py-1.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/5 disabled:opacity-40"
                                 @click="act(addon, 'deactivate')"
                             >
                                 Деактивувати
@@ -360,7 +360,7 @@ function showInfo(addon) {
                             <button
                                 v-if="addon.manifest?.migrations && !addon.migrations_applied"
                                 :disabled="busyAddon === addon.id"
-                                class="rounded-full border border-gold-400/30 bg-gold-400/10 px-4 py-1.5 text-xs font-medium text-gold-300 transition-colors hover:bg-gold-400/20 disabled:opacity-40"
+                                class="rounded-xl border border-gold-400/30 bg-gold-400/10 px-4 py-1.5 text-xs font-medium text-gold-300 transition-colors hover:bg-gold-400/20 disabled:opacity-40"
                                 @click="act(addon, 'migrate')"
                             >
                                 Застосувати в БД
@@ -368,7 +368,7 @@ function showInfo(addon) {
                             <button
                                 v-if="addon.status !== 'active'"
                                 :disabled="busyAddon === addon.id"
-                                class="rounded-full border border-ember-500/25 px-4 py-1.5 text-xs font-medium text-ember-500/80 transition-colors hover:bg-ember-600/10 disabled:opacity-40"
+                                class="rounded-xl border border-ember-500/25 px-4 py-1.5 text-xs font-medium text-ember-500/80 transition-colors hover:bg-ember-600/10 disabled:opacity-40"
                                 @click="confirmDestroy(addon)"
                             >
                                 Видалити
@@ -390,7 +390,7 @@ function showInfo(addon) {
                 <div class="flex flex-wrap items-center gap-4">
                     <button
                         :disabled="deployTriggering || ['pending', 'running'].includes(deployStatus.status)"
-                        class="rounded-full bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-6 py-3 text-sm font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03] disabled:pointer-events-none disabled:opacity-40"
+                        class="rounded-xl bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-6 py-3 text-sm font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03] disabled:pointer-events-none disabled:opacity-40"
                         @click="triggerDeploy"
                     >
                         <span v-if="deployStatus.status === 'running'">Виконується…</span>
@@ -400,19 +400,19 @@ function showInfo(addon) {
 
                     <span
                         v-if="deployStatus.status === 'success'"
-                        class="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-300"
+                        class="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-300"
                     >
                         Успішно · {{ new Date(deployStatus.finished_at).toLocaleString('uk-UA') }}
                     </span>
                     <span
                         v-else-if="deployStatus.status === 'failed'"
-                        class="rounded-full border border-ember-500/30 bg-ember-600/10 px-3 py-1 text-xs font-medium text-ember-500"
+                        class="rounded-xl border border-ember-500/30 bg-ember-600/10 px-3 py-1 text-xs font-medium text-ember-500"
                     >
                         Помилка (код {{ deployStatus.exit_code }}) · {{ new Date(deployStatus.finished_at).toLocaleString('uk-UA') }}
                     </span>
                     <span
                         v-else-if="deployStatus.status === 'pending' || deployStatus.status === 'running'"
-                        class="rounded-full border border-gold-400/30 bg-gold-400/10 px-3 py-1 text-xs font-medium text-gold-300"
+                        class="rounded-xl border border-gold-400/30 bg-gold-400/10 px-3 py-1 text-xs font-medium text-gold-300"
                     >
                         {{ deployStatus.status === 'pending' ? 'Очікує на таймер сервера…' : 'Триває…' }}
                     </span>
@@ -478,7 +478,7 @@ function showInfo(addon) {
 
                 <div class="mt-6 flex justify-end">
                     <button
-                        class="rounded-full border border-white/15 px-5 py-2 text-xs font-medium text-white/60 transition-colors hover:bg-white/5"
+                        class="rounded-xl border border-white/15 px-5 py-2 text-xs font-medium text-white/60 transition-colors hover:bg-white/5"
                         @click="infoAddon = null"
                     >
                         Закрити

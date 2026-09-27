@@ -249,7 +249,7 @@ async function testAi() {
             <button
                 v-for="(tab, key) in TABS"
                 :key="key"
-                class="relative rounded-full border px-5 py-2.5 text-sm font-medium tracking-wide transition-all duration-300"
+                class="relative rounded-xl border px-5 py-2.5 text-sm font-medium tracking-wide transition-all duration-300"
                 :class="activeTab === key
                     ? 'border-gold-400/50 bg-gold-400/10 text-gold-200 shadow-gold'
                     : 'border-white/10 text-white/50 hover:border-white/25 hover:text-white'"
@@ -295,7 +295,7 @@ async function testAi() {
                         v-if="activeTab === 'api_keys'"
                         type="button"
                         :disabled="aiTesting"
-                        class="rounded-full border border-white/15 px-4 py-2 text-xs uppercase tracking-widest text-white/60 transition-colors hover:border-gold-400/40 hover:text-white disabled:opacity-40"
+                        class="rounded-xl border border-white/15 px-4 py-2 text-xs uppercase tracking-widest text-white/60 transition-colors hover:border-gold-400/40 hover:text-white disabled:opacity-40"
                         @click="testAi"
                     >
                         {{ aiTesting ? 'Перевіряю…' : 'Перевірити підключення Mistral' }}
@@ -322,7 +322,7 @@ async function testAi() {
                         <button
                             type="button"
                             :disabled="apkForm.processing"
-                            class="rounded-full border border-white/15 px-4 py-2 text-xs uppercase tracking-widest text-white/60 transition-colors hover:border-gold-400/40 hover:text-white disabled:opacity-40"
+                            class="rounded-xl border border-white/15 px-4 py-2 text-xs uppercase tracking-widest text-white/60 transition-colors hover:border-gold-400/40 hover:text-white disabled:opacity-40"
                             @click="pickApk"
                         >
                             {{ apkForm.processing ? `Завантажую… ${apkForm.progress?.percentage ?? 0}%` : 'Завантажити .apk' }}

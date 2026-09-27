@@ -50,7 +50,7 @@ const statusMeta = {
                 <span class="min-w-0 truncate text-sm text-white/80">{{ p.name ?? '—' }}</span>
                 <div class="flex shrink-0 items-center gap-3">
                     <span class="text-xs text-white/40">{{ p.wins }}–{{ p.losses }}</span>
-                    <span class="shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wide" :class="statusMeta[p.status]?.class">
+                    <span class="shrink-0 rounded-xl border px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wide" :class="statusMeta[p.status]?.class">
                         {{ statusMeta[p.status]?.label }}
                     </span>
                 </div>

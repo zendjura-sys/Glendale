@@ -405,7 +405,7 @@
     /* position: relative задаётся выше через :where() — нулевая
        специфичность, поэтому утилиты fixed/absolute из Tailwind всё равно
        побеждают (на этом раньше ломался мобильный сайдбар админки). */
-    border-radius: 28px;
+    border-radius: 12px;
     background:
         linear-gradient(155deg, rgba(255, 255, 255, 0.085) 0%, rgba(255, 255, 255, 0.018) 45%, rgba(255, 255, 255, 0.04) 100%);
     -webkit-backdrop-filter: blur(32px) saturate(165%) brightness(1.04);
@@ -441,7 +441,7 @@
 }
 
 .glass-pill {
-    border-radius: 9999px;
+    border-radius: 10px;
     background: linear-gradient(155deg, rgba(255, 255, 255, 0.11) 0%, rgba(255, 255, 255, 0.028) 100%);
     -webkit-backdrop-filter: blur(22px) saturate(170%);
     backdrop-filter: blur(22px) saturate(170%);
@@ -634,7 +634,7 @@
 .btn-gold {
     position: relative;
     overflow: hidden;
-    border-radius: 9999px;
+    border-radius: 10px;
     background: linear-gradient(180deg,
         rgb(var(--gold-100)) 0%,
         rgb(var(--gold-350)) 34%,

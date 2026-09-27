@@ -210,7 +210,7 @@ const transactionIcon = {
                     <button
                         type="submit"
                         :disabled="transferForm.processing || !transferForm.recipient_id"
-                        class="rounded-full border border-gold-400/40 px-5 py-2 text-xs font-medium uppercase tracking-widest text-gold-200 hover:border-gold-300 disabled:opacity-40"
+                        class="rounded-xl border border-gold-400/40 px-5 py-2 text-xs font-medium uppercase tracking-widest text-gold-200 hover:border-gold-300 disabled:opacity-40"
                     >
                         Переказати
                     </button>
@@ -234,7 +234,7 @@ const transactionIcon = {
                     <button
                         type="submit"
                         :disabled="depositForm.processing || !depositForm.amount"
-                        class="rounded-full border border-gold-400/40 px-5 py-2 text-xs font-medium uppercase tracking-widest text-gold-200 hover:border-gold-300 disabled:opacity-40"
+                        class="rounded-xl border border-gold-400/40 px-5 py-2 text-xs font-medium uppercase tracking-widest text-gold-200 hover:border-gold-300 disabled:opacity-40"
                     >
                         Відкрити депозит
                     </button>
@@ -246,7 +246,7 @@ const transactionIcon = {
                             <span class="font-medium text-white">{{ fmt(d.amount) }}</span>
                             <span class="ml-2 text-sm text-white/40">+{{ d.interest_rate }}%</span>
                             <span
-                                class="ml-2 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide"
+                                class="ml-2 rounded-xl px-2 py-0.5 text-[10px] uppercase tracking-wide"
                                 :class="{
                                     'bg-gold-400/10 text-gold-300': d.status === 'active',
                                     'bg-emerald-400/10 text-emerald-300': d.status === 'completed',
@@ -263,7 +263,7 @@ const transactionIcon = {
                         <button
                             v-if="d.status === 'active'"
                             :disabled="withdrawingDeposit === d.id"
-                            class="shrink-0 rounded-full border border-white/15 px-3 py-1 text-xs text-white/50 hover:border-ember-500/40 hover:text-ember-400 disabled:opacity-40"
+                            class="shrink-0 rounded-xl border border-white/15 px-3 py-1 text-xs text-white/50 hover:border-ember-500/40 hover:text-ember-400 disabled:opacity-40"
                             @click="withdrawDeposit(d)"
                         >
                             Зняти достроково
@@ -287,7 +287,7 @@ const transactionIcon = {
                     <button
                         type="submit"
                         :disabled="cashForm.processing || !cashForm.amount"
-                        class="rounded-full border border-gold-400/40 px-5 py-2 text-xs font-medium uppercase tracking-widest text-gold-200 hover:border-gold-300 disabled:opacity-40"
+                        class="rounded-xl border border-gold-400/40 px-5 py-2 text-xs font-medium uppercase tracking-widest text-gold-200 hover:border-gold-300 disabled:opacity-40"
                     >
                         Запросити готівку
                     </button>
@@ -298,7 +298,7 @@ const transactionIcon = {
                         <div>
                             <span class="font-medium text-white">{{ fmt(r.amount) }}</span>
                             <span
-                                class="ml-2 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide"
+                                class="ml-2 rounded-xl px-2 py-0.5 text-[10px] uppercase tracking-wide"
                                 :class="{
                                     'bg-gold-400/10 text-gold-300': r.status === 'pending',
                                     'bg-emerald-400/10 text-emerald-300': r.status === 'completed',
@@ -343,7 +343,7 @@ const transactionIcon = {
                     :key="link.label"
                     :href="link.url || ''"
                     v-html="link.label"
-                    class="rounded-full border px-3 py-1.5 text-xs"
+                    class="rounded-xl border px-3 py-1.5 text-xs"
                     :class="[
                         link.active ? 'border-gold-400/50 bg-gold-400/10 text-gold-200' : 'border-white/10 text-white/40 hover:text-white',
                         !link.url && 'pointer-events-none opacity-30',

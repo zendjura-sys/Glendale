@@ -32,7 +32,7 @@ const sourceLabels = { report: 'звіт', weekly_bonus: 'тижневий бо�
                 <Link
                     v-if="route().has('progression.leaderboard')"
                     :href="route('progression.leaderboard')"
-                    class="rounded-full border border-gold-400/40 px-5 py-2 text-xs font-medium tracking-widest text-gold-200 hover:border-gold-300"
+                    class="rounded-xl border border-gold-400/40 px-5 py-2 text-xs font-medium tracking-widest text-gold-200 hover:border-gold-300"
                 >
                     РЕЙТИНГ
                 </Link>

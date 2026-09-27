@@ -64,7 +64,7 @@ function clearAll() {
                 </button>
                 <button
                     type="button"
-                    class="rounded-full border border-ember-500/25 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-ember-500/80 hover:bg-ember-600/10"
+                    class="rounded-xl border border-ember-500/25 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-ember-500/80 hover:bg-ember-600/10"
                     @click="clearAll"
                 >
                     Очистити все
@@ -92,14 +92,14 @@ function clearAll() {
                     <div class="flex shrink-0 gap-2">
                         <button
                             type="button"
-                            class="rounded-full border border-emerald-400/30 px-3 py-1.5 text-[11px] text-emerald-300 hover:bg-emerald-400/10"
+                            class="rounded-xl border border-emerald-400/30 px-3 py-1.5 text-[11px] text-emerald-300 hover:bg-emerald-400/10"
                             @click="retry(job)"
                         >
                             Повторити
                         </button>
                         <button
                             type="button"
-                            class="rounded-full border border-ember-500/25 px-3 py-1.5 text-[11px] text-ember-500/80 hover:bg-ember-600/10"
+                            class="rounded-xl border border-ember-500/25 px-3 py-1.5 text-[11px] text-ember-500/80 hover:bg-ember-600/10"
                             @click="destroy(job)"
                         >
                             Видалити
@@ -128,7 +128,7 @@ function clearAll() {
                 :key="link.label"
                 :href="link.url || ''"
                 v-html="link.label"
-                class="rounded-full border px-3 py-1.5 text-xs"
+                class="rounded-xl border px-3 py-1.5 text-xs"
                 :class="[
                     link.active ? 'border-gold-400/50 bg-gold-400/10 text-gold-200' : 'border-white/10 text-white/40 hover:text-white',
                     !link.url && 'pointer-events-none opacity-30',

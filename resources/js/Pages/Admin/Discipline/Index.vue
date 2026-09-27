@@ -215,7 +215,7 @@ function fmt(iso) {
                                 v-for="t in types"
                                 :key="t.key"
                                 type="button"
-                                class="rounded-full border px-3 py-1.5 text-xs transition-opacity"
+                                class="rounded-xl border px-3 py-1.5 text-xs transition-opacity"
                                 :class="[typeStyle[t.key], form.type === t.key ? 'opacity-100 ring-1 ring-white/30' : 'opacity-50 hover:opacity-80']"
                                 @click="form.type = t.key"
                             >
@@ -261,7 +261,7 @@ function fmt(iso) {
                 <button
                     type="button"
                     :disabled="busy || !form.user || !form.reason.trim() || (form.type === 'fine' && !form.amount)"
-                    class="mt-4 rounded-full border border-gold-400/50 bg-gold-400/10 px-6 py-2 text-sm font-medium text-gold-200 transition hover:bg-gold-400/20 disabled:opacity-40"
+                    class="mt-4 rounded-xl border border-gold-400/50 bg-gold-400/10 px-6 py-2 text-sm font-medium text-gold-200 transition hover:bg-gold-400/20 disabled:opacity-40"
                     @click="issue"
                 >
                     {{ busy ? 'Видаю…' : 'Видати' }}
@@ -275,7 +275,7 @@ function fmt(iso) {
                         v-for="t in statusTabs"
                         :key="t.key"
                         type="button"
-                        class="rounded-full border px-3 py-1.5 text-xs"
+                        class="rounded-xl border px-3 py-1.5 text-xs"
                         :class="filters.status === t.key ? 'border-gold-400/60 bg-gold-400/15 text-gold-200' : 'border-white/10 text-white/60 hover:border-white/30'"
                         @click="setStatus(t.key)"
                     >
@@ -291,7 +291,7 @@ function fmt(iso) {
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div class="min-w-0">
                                 <div class="flex flex-wrap items-center gap-2">
-                                    <span class="rounded-full border px-2.5 py-0.5 text-xs" :class="typeStyle[p.type]">{{ p.emoji }} {{ p.typeLabel }}</span>
+                                    <span class="rounded-xl border px-2.5 py-0.5 text-xs" :class="typeStyle[p.type]">{{ p.emoji }} {{ p.typeLabel }}</span>
                                     <span v-if="p.type === 'fine'" class="text-sm text-amber-200">{{ money(p.amount) }}</span>
                                     <span v-if="p.originalAmount" class="text-xs text-white/30 line-through">{{ money(p.originalAmount) }}</span>
                                     <span class="text-sm text-white">{{ p.user?.name }}</span>
@@ -314,7 +314,7 @@ function fmt(iso) {
                                     <button
                                         v-if="['active', 'overdue'].includes(p.status) && p.type === 'fine'"
                                         :disabled="actionBusy === p.id"
-                                        class="rounded-full border border-emerald-400/40 px-3 py-1 text-xs text-emerald-200 hover:border-emerald-300 disabled:opacity-40"
+                                        class="rounded-xl border border-emerald-400/40 px-3 py-1 text-xs text-emerald-200 hover:border-emerald-300 disabled:opacity-40"
                                         @click="markPaid(p)"
                                     >
                                         Сплачено
@@ -322,7 +322,7 @@ function fmt(iso) {
                                     <button
                                         v-if="['active', 'overdue'].includes(p.status)"
                                         :disabled="actionBusy === p.id"
-                                        class="rounded-full border border-white/15 px-3 py-1 text-xs text-white/60 hover:border-white/40 disabled:opacity-40"
+                                        class="rounded-xl border border-white/15 px-3 py-1 text-xs text-white/60 hover:border-white/40 disabled:opacity-40"
                                         @click="revoke(p)"
                                     >
                                         Скасувати

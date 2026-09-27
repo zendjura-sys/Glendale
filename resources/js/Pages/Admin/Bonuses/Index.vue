@@ -219,7 +219,7 @@ async function cancelCashRequest(r) {
         <div class="mb-6 flex justify-end">
             <button
                 :disabled="running"
-                class="rounded-full border border-gold-400/40 px-5 py-2 text-xs font-medium uppercase tracking-widest text-gold-200 transition-all hover:border-gold-300 disabled:opacity-40"
+                class="rounded-xl border border-gold-400/40 px-5 py-2 text-xs font-medium uppercase tracking-widest text-gold-200 transition-all hover:border-gold-300 disabled:opacity-40"
                 @click="runNow"
             >
                 {{ running ? 'Рахую…' : '⟳ Розрахувати зараз' }}
@@ -273,7 +273,7 @@ async function cancelCashRequest(r) {
                     <button
                         type="submit"
                         :disabled="settingsForm.processing"
-                        class="rounded-full bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-6 py-2.5 text-sm font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03] disabled:opacity-40"
+                        class="rounded-xl bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-6 py-2.5 text-sm font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03] disabled:opacity-40"
                     >
                         Зберегти
                     </button>
@@ -304,7 +304,7 @@ async function cancelCashRequest(r) {
                     <button
                         type="submit"
                         :disabled="tierForm.processing"
-                        class="rounded-full border border-gold-400/40 px-5 py-2 text-xs font-medium uppercase tracking-widest text-gold-200 hover:border-gold-300 disabled:opacity-40"
+                        class="rounded-xl border border-gold-400/40 px-5 py-2 text-xs font-medium uppercase tracking-widest text-gold-200 hover:border-gold-300 disabled:opacity-40"
                     >
                         + Додати тір
                     </button>
@@ -344,7 +344,7 @@ async function cancelCashRequest(r) {
                     <button
                         type="submit"
                         :disabled="manualForm.processing || !manualForm.user_id"
-                        class="rounded-full border border-gold-400/40 px-5 py-2 text-xs font-medium uppercase tracking-widest text-gold-200 hover:border-gold-300 disabled:opacity-40"
+                        class="rounded-xl border border-gold-400/40 px-5 py-2 text-xs font-medium uppercase tracking-widest text-gold-200 hover:border-gold-300 disabled:opacity-40"
                     >
                         Видати премію
                     </button>
@@ -402,7 +402,7 @@ async function cancelCashRequest(r) {
                     <button
                         type="submit"
                         :disabled="bankForm.processing"
-                        class="rounded-full bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-6 py-2.5 text-sm font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03] disabled:opacity-40"
+                        class="rounded-xl bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-6 py-2.5 text-sm font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03] disabled:opacity-40"
                     >
                         Зберегти
                     </button>
@@ -426,7 +426,7 @@ async function cancelCashRequest(r) {
                         <span class="text-white">{{ r.user?.name }}</span>
                         <span class="ml-3 text-sm text-gold-200">{{ fmt(r.amount) }}</span>
                         <span
-                            class="ml-2 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide"
+                            class="ml-2 rounded-xl px-2 py-0.5 text-[10px] uppercase tracking-wide"
                             :class="{
                                 'bg-gold-400/10 text-gold-300': r.status === 'pending',
                                 'bg-emerald-400/10 text-emerald-300': r.status === 'completed',
@@ -443,14 +443,14 @@ async function cancelCashRequest(r) {
                     <div v-if="r.status === 'pending'" class="flex shrink-0 items-center gap-2">
                         <button
                             :disabled="resolvingCashRequest === r.id"
-                            class="rounded-full border border-emerald-400/30 px-3 py-1 text-xs text-emerald-300 hover:border-emerald-400/60 disabled:opacity-40"
+                            class="rounded-xl border border-emerald-400/30 px-3 py-1 text-xs text-emerald-300 hover:border-emerald-400/60 disabled:opacity-40"
                             @click="completeCashRequest(r)"
                         >
                             Видано
                         </button>
                         <button
                             :disabled="resolvingCashRequest === r.id"
-                            class="rounded-full border border-white/15 px-3 py-1 text-xs text-white/50 hover:border-ember-500/40 hover:text-ember-400 disabled:opacity-40"
+                            class="rounded-xl border border-white/15 px-3 py-1 text-xs text-white/50 hover:border-ember-500/40 hover:text-ember-400 disabled:opacity-40"
                             @click="cancelCashRequest(r)"
                         >
                             Скасувати
@@ -474,14 +474,14 @@ async function cancelCashRequest(r) {
                         <span class="text-white">{{ t.recipient?.name }}</span>
                         <span class="ml-3 text-sm text-gold-200">{{ fmt(t.amount) }}</span>
                         <span v-if="t.note" class="ml-2 text-sm text-white/40">— {{ t.note }}</span>
-                        <span v-if="t.reversed_at" class="ml-2 rounded-full bg-ember-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-ember-400">скасовано</span>
+                        <span v-if="t.reversed_at" class="ml-2 rounded-xl bg-ember-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-ember-400">скасовано</span>
                     </div>
                     <div class="flex shrink-0 items-center gap-3">
                         <span class="text-xs text-white/30">{{ fmtDateTime(t.created_at) }}</span>
                         <button
                             v-if="!t.reversed_at"
                             :disabled="reversingTransfer === t.id"
-                            class="rounded-full border border-white/15 px-3 py-1 text-xs text-white/50 hover:border-ember-500/40 hover:text-ember-400 disabled:opacity-40"
+                            class="rounded-xl border border-white/15 px-3 py-1 text-xs text-white/50 hover:border-ember-500/40 hover:text-ember-400 disabled:opacity-40"
                             @click="reverseTransfer(t)"
                         >
                             Скасувати
@@ -504,7 +504,7 @@ async function cancelCashRequest(r) {
                         <span class="ml-3 text-sm text-gold-200">{{ fmt(d.amount) }}</span>
                         <span class="ml-2 text-sm text-white/40">+{{ d.interest_rate }}%</span>
                         <span
-                            class="ml-2 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide"
+                            class="ml-2 rounded-xl px-2 py-0.5 text-[10px] uppercase tracking-wide"
                             :class="{
                                 'bg-gold-400/10 text-gold-300': d.status === 'active',
                                 'bg-emerald-400/10 text-emerald-300': d.status === 'completed',
@@ -526,7 +526,7 @@ async function cancelCashRequest(r) {
                 <h2 class="font-display text-lg text-white">Історія нарахувань</h2>
                 <a
                     :href="route('admin.bonuses.export', filterForm)"
-                    class="rounded-full border border-white/15 px-4 py-2 text-xs text-white/60 hover:border-white/30"
+                    class="rounded-xl border border-white/15 px-4 py-2 text-xs text-white/60 hover:border-white/30"
                 >
                     ⬇ Експорт CSV
                 </a>
@@ -549,7 +549,7 @@ async function cancelCashRequest(r) {
                         <option value="0">Не виплачено</option>
                     </select>
                 </div>
-                <button type="button" class="rounded-full border border-gold-400/40 px-4 py-2 text-xs font-medium tracking-widest text-gold-200 hover:border-gold-300" @click="applyFilters">
+                <button type="button" class="rounded-xl border border-gold-400/40 px-4 py-2 text-xs font-medium tracking-widest text-gold-200 hover:border-gold-300" @click="applyFilters">
                     Застосувати
                 </button>
                 <button
@@ -591,7 +591,7 @@ async function cancelCashRequest(r) {
                                 <button
                                     v-else
                                     :disabled="markingPaid === p.id"
-                                    class="rounded-full border border-white/15 px-3 py-1 text-xs text-white/50 hover:border-gold-400/40 hover:text-gold-200 disabled:opacity-40"
+                                    class="rounded-xl border border-white/15 px-3 py-1 text-xs text-white/50 hover:border-gold-400/40 hover:text-gold-200 disabled:opacity-40"
                                     @click="markPaid(p)"
                                 >
                                     Позначити виплаченим
@@ -611,7 +611,7 @@ async function cancelCashRequest(r) {
                     :key="link.label"
                     :href="link.url || ''"
                     v-html="link.label"
-                    class="rounded-full border px-3 py-1.5 text-xs"
+                    class="rounded-xl border px-3 py-1.5 text-xs"
                     :class="[
                         link.active ? 'border-gold-400/50 bg-gold-400/10 text-gold-200' : 'border-white/10 text-white/40 hover:text-white',
                         !link.url && 'pointer-events-none opacity-30',

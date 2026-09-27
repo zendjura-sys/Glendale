@@ -109,10 +109,10 @@ function destroy(t) {
 }
 
 const field = 'w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-gold-400/40 focus:ring-0';
-const pill = 'rounded-full border px-4 py-1.5 text-xs transition-colors';
+const pill = 'rounded-xl border px-4 py-1.5 text-xs transition-colors';
 const pillOn = 'border-gold-400/60 bg-gold-400/15 text-gold-100';
 const pillOff = 'border-white/10 text-white/60 hover:bg-white/5';
-const btn = 'rounded-full bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-5 py-2 text-xs font-semibold uppercase tracking-widest text-obsidian-950 disabled:opacity-40';
+const btn = 'rounded-xl bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-5 py-2 text-xs font-semibold uppercase tracking-widest text-obsidian-950 disabled:opacity-40';
 const act = 'rounded-lg px-2 py-1 text-[11px] text-white/55 hover:bg-white/5 hover:text-white';
 </script>
 
@@ -144,7 +144,7 @@ const act = 'rounded-lg px-2 py-1 text-[11px] text-white/55 hover:bg-white/5 hov
             <button v-for="t in tabs" :key="t.key" :class="[pill, tab === t.key ? pillOn : pillOff]" @click="t.key === 'import' ? openImport() : (tab = t.key)">
                 {{ t.label }}
             </button>
-            <a href="/cinema" class="ml-auto rounded-full border border-white/10 px-4 py-1.5 text-xs text-white/60 hover:bg-white/5">Відкрити кінопортал →</a>
+            <a href="/cinema" class="ml-auto rounded-xl border border-white/10 px-4 py-1.5 text-xs text-white/60 hover:bg-white/5">Відкрити кінопортал →</a>
         </div>
 
         <!-- Каталог -->
@@ -194,7 +194,7 @@ const act = 'rounded-lg px-2 py-1 text-[11px] text-white/55 hover:bg-white/5 hov
                     :key="link.label"
                     :href="link.url || ''"
                     preserve-scroll
-                    class="rounded-full border px-3 py-1.5 text-xs"
+                    class="rounded-xl border px-3 py-1.5 text-xs"
                     :class="[link.active ? pillOn : pillOff, !link.url && 'pointer-events-none opacity-30']"
                     v-html="link.label"
                 />

@@ -130,7 +130,7 @@ function fmtDate(iso) {
                         <div class="flex items-center gap-2">
                             <p class="font-medium text-white">{{ f.family_name }}</p>
                             <span
-                                class="rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-widest"
+                                class="rounded-xl border px-2 py-0.5 text-[10px] uppercase tracking-widest"
                                 :class="isActive(f) ? 'border-ember-500/40 bg-ember-500/10 text-ember-400' : 'border-white/15 bg-white/5 text-white/30'"
                             >
                                 {{ isActive(f) ? 'активний' : 'спливлий' }}
@@ -156,7 +156,7 @@ function fmtDate(iso) {
                         <p class="font-medium text-white">{{ p.first_name }} {{ p.last_name }}</p>
                         <p v-if="p.family_name" class="text-sm text-white/50">Родина: {{ p.family_name }}</p>
                         <div class="mt-2 flex flex-wrap gap-1.5">
-                            <span v-for="r in p.reasons" :key="r" class="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-0.5 text-[11px] text-white/60">
+                            <span v-for="r in p.reasons" :key="r" class="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-0.5 text-[11px] text-white/60">
                                 {{ reasonLabel(r) }}
                             </span>
                         </div>

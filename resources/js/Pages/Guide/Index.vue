@@ -32,7 +32,7 @@ defineProps({
                     v-for="category in categories"
                     :key="'nav-'+category.slug"
                     :href="'#'+category.slug"
-                    class="rounded-full border border-white/10 px-3 py-1.5 text-xs text-white/60 transition-colors hover:border-gold-400/50 hover:text-gold-300"
+                    class="rounded-xl border border-white/10 px-3 py-1.5 text-xs text-white/60 transition-colors hover:border-gold-400/50 hover:text-gold-300"
                 >
                     {{ category.icon }} {{ category.title }}
                 </a>

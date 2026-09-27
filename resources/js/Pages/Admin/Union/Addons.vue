@@ -165,7 +165,7 @@ const infoAddon = ref(null);
                     Формат назви: <code class="text-gold-300/80">(Union)(x.y.z)Name.zip</code>, manifest.type = "union"
                 </p>
                 <p class="mt-1 text-xs text-white/30">Можна вибрати або перетягнути одразу кілька ZIP-архівів</p>
-                <label class="mt-6 inline-block cursor-pointer rounded-full bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-8 py-3 text-sm font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03]">
+                <label class="mt-6 inline-block cursor-pointer rounded-xl bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-8 py-3 text-sm font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03]">
                     Вибрати ZIP
                     <input type="file" accept=".zip" multiple class="hidden" @change="onPick" />
                 </label>
@@ -189,7 +189,7 @@ const infoAddon = ref(null);
                         <h3 class="font-semibold text-white">{{ addon.name }}</h3>
                         <p class="mt-0.5 text-xs text-white/40">{{ addon.slug }} · v{{ addon.version }}</p>
                     </div>
-                    <span class="shrink-0 rounded-full border px-3 py-1 text-[11px] font-medium uppercase tracking-wide" :class="statusMeta[addon.status]?.class">
+                    <span class="shrink-0 rounded-xl border px-3 py-1 text-[11px] font-medium uppercase tracking-wide" :class="statusMeta[addon.status]?.class">
                         {{ statusMeta[addon.status]?.label }}
                     </span>
                 </div>
@@ -202,7 +202,7 @@ const infoAddon = ref(null);
                 <div class="mt-5 flex flex-wrap gap-2">
                     <button
                         v-if="addon.manifest?.highlights?.length || addon.manifest?.description"
-                        class="rounded-full border border-white/15 px-4 py-1.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/5"
+                        class="rounded-xl border border-white/15 px-4 py-1.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/5"
                         @click="infoAddon = addon"
                     >
                         ℹ️ Детальніше
@@ -210,7 +210,7 @@ const infoAddon = ref(null);
                     <button
                         v-if="!addon.status || addon.status === 'inactive' || addon.status === 'failed'"
                         :disabled="busyAddon === addon.id"
-                        class="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-1.5 text-xs font-medium text-emerald-300 transition-colors hover:bg-emerald-400/20 disabled:opacity-40"
+                        class="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-1.5 text-xs font-medium text-emerald-300 transition-colors hover:bg-emerald-400/20 disabled:opacity-40"
                         @click="act(addon, 'activate')"
                     >
                         Активувати
@@ -218,7 +218,7 @@ const infoAddon = ref(null);
                     <button
                         v-if="addon.status === 'active'"
                         :disabled="busyAddon === addon.id"
-                        class="rounded-full border border-white/15 px-4 py-1.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/5 disabled:opacity-40"
+                        class="rounded-xl border border-white/15 px-4 py-1.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/5 disabled:opacity-40"
                         @click="act(addon, 'deactivate')"
                     >
                         Деактивувати
@@ -226,7 +226,7 @@ const infoAddon = ref(null);
                     <button
                         v-if="addon.manifest?.migrations && !addon.migrations_applied"
                         :disabled="busyAddon === addon.id"
-                        class="rounded-full border border-gold-400/30 bg-gold-400/10 px-4 py-1.5 text-xs font-medium text-gold-300 transition-colors hover:bg-gold-400/20 disabled:opacity-40"
+                        class="rounded-xl border border-gold-400/30 bg-gold-400/10 px-4 py-1.5 text-xs font-medium text-gold-300 transition-colors hover:bg-gold-400/20 disabled:opacity-40"
                         @click="act(addon, 'migrate')"
                     >
                         Застосувати в БД
@@ -234,7 +234,7 @@ const infoAddon = ref(null);
                     <button
                         v-if="addon.status !== 'active'"
                         :disabled="busyAddon === addon.id"
-                        class="rounded-full border border-ember-500/25 px-4 py-1.5 text-xs font-medium text-ember-500/80 transition-colors hover:bg-ember-600/10 disabled:opacity-40"
+                        class="rounded-xl border border-ember-500/25 px-4 py-1.5 text-xs font-medium text-ember-500/80 transition-colors hover:bg-ember-600/10 disabled:opacity-40"
                         @click="confirmDestroy(addon)"
                     >
                         Видалити
@@ -280,7 +280,7 @@ const infoAddon = ref(null);
                 <p v-else-if="infoAddon.manifest?.description" class="mt-4 whitespace-pre-line text-sm leading-relaxed text-white/50">{{ infoAddon.manifest.description }}</p>
 
                 <div class="mt-6 flex justify-end">
-                    <button class="rounded-full border border-white/15 px-5 py-2 text-xs font-medium text-white/60 transition-colors hover:bg-white/5" @click="infoAddon = null">
+                    <button class="rounded-xl border border-white/15 px-5 py-2 text-xs font-medium text-white/60 transition-colors hover:bg-white/5" @click="infoAddon = null">
                         Закрити
                     </button>
                 </div>

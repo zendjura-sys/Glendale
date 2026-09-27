@@ -114,7 +114,7 @@ const mobileNavOpen = ref(false);
             <div class="pointer-events-none absolute left-1/2 top-0 -z-10 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-gold-500/10 blur-[120px]"></div>
 
             <div class="mx-auto max-w-2xl text-center">
-                <p v-reveal class="mb-4 inline-flex items-center gap-2 rounded-full border border-gold-400/20 bg-gold-400/[0.06] px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.3em] text-gold-300/90">
+                <p v-reveal class="mb-4 inline-flex items-center gap-2 rounded-xl border border-gold-400/20 bg-gold-400/[0.06] px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.3em] text-gold-300/90">
                     <Handshake class="h-3.5 w-3.5" /> Союз Monsory
                 </p>
                 <h1 v-reveal:80 class="font-display text-4xl font-light text-white sm:text-6xl">{{ title }}</h1>

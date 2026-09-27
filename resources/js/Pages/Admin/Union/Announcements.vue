@@ -97,7 +97,7 @@ function fmtDate(iso) {
                         <textarea v-model="editForm.body" rows="3" class="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-white focus:border-gold-400/40 focus:ring-0"></textarea>
                         <input v-model="editForm.published_at" type="date" class="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-white focus:border-gold-400/40 focus:ring-0" />
                         <div class="flex gap-3">
-                            <button type="button" class="rounded-full border border-gold-400/40 px-4 py-1.5 text-xs text-gold-200 hover:border-gold-300" @click="saveEdit(a)">Зберегти</button>
+                            <button type="button" class="rounded-xl border border-gold-400/40 px-4 py-1.5 text-xs text-gold-200 hover:border-gold-300" @click="saveEdit(a)">Зберегти</button>
                             <button type="button" class="text-xs text-white/40 hover:text-white" @click="editingId = null">Скасувати</button>
                         </div>
                     </div>

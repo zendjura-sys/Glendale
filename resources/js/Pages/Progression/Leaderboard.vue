@@ -40,7 +40,7 @@ function winrate(entry) {
                 <Link
                     v-if="route().has('progression.hall-of-fame')"
                     :href="route('progression.hall-of-fame')"
-                    class="rounded-full border border-gold-400/40 px-5 py-2 text-xs font-medium tracking-widest text-gold-200 hover:border-gold-300"
+                    class="rounded-xl border border-gold-400/40 px-5 py-2 text-xs font-medium tracking-widest text-gold-200 hover:border-gold-300"
                 >
                     ЗАЛ СЛАВИ
                 </Link>
@@ -52,7 +52,7 @@ function winrate(entry) {
                 <button
                     v-for="(label, key) in categories"
                     :key="key"
-                    class="rounded-full border px-4 py-1.5 text-xs font-medium uppercase tracking-widest transition-colors"
+                    class="rounded-xl border px-4 py-1.5 text-xs font-medium uppercase tracking-widest transition-colors"
                     :class="key === category
                         ? 'border-gold-400/50 bg-gold-400/10 text-gold-200'
                         : 'border-white/10 text-white/40 hover:border-white/25 hover:text-white'"

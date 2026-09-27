@@ -57,7 +57,7 @@ const small = 'text-xs text-white/40 hover:text-white';
             <button
                 v-for="t in tabs"
                 :key="t.key"
-                class="rounded-full border px-4 py-1.5 text-xs"
+                class="rounded-xl border px-4 py-1.5 text-xs"
                 :class="tab === t.key ? 'border-gold-400/60 bg-gold-400/15 text-gold-100' : 'border-white/10 text-white/60 hover:bg-white/5'"
                 @click="tab = t.key"
             >

@@ -104,7 +104,7 @@ function dots(count, limit) {
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div class="min-w-0">
                                 <div class="flex flex-wrap items-center gap-2">
-                                    <span class="rounded-full border px-2.5 py-0.5 text-xs" :class="typeStyle[p.type]">{{ p.emoji }} {{ p.typeLabel }}</span>
+                                    <span class="rounded-xl border px-2.5 py-0.5 text-xs" :class="typeStyle[p.type]">{{ p.emoji }} {{ p.typeLabel }}</span>
                                     <span v-if="p.type === 'fine'" class="text-base text-amber-200">{{ money(p.amount) }}</span>
                                     <span v-if="p.originalAmount" class="text-xs text-white/30 line-through">{{ money(p.originalAmount) }}</span>
                                     <Link v-if="p.ruleCode && route().has('rules')" :href="route('rules')" class="text-xs text-gold-300 hover:underline"><span class="font-mono">п. {{ p.ruleCode }}</span><template v-if="p.ruleLabel"> · {{ p.ruleLabel }}</template></Link>
@@ -120,7 +120,7 @@ function dots(count, limit) {
                             <button
                                 v-if="p.type === 'fine' && bankAvailable"
                                 :disabled="payingId === p.id"
-                                class="shrink-0 rounded-full border border-amber-400/50 bg-amber-400/10 px-4 py-2 text-xs font-medium text-amber-100 hover:bg-amber-400/20 disabled:opacity-40"
+                                class="shrink-0 rounded-xl border border-amber-400/50 bg-amber-400/10 px-4 py-2 text-xs font-medium text-amber-100 hover:bg-amber-400/20 disabled:opacity-40"
                                 @click="pay(p)"
                             >
                                 {{ payingId === p.id ? 'Оплата…' : `Сплатити з рахунку ${money(p.amount)}` }}
@@ -137,7 +137,7 @@ function dots(count, limit) {
                 <div class="mt-5 space-y-2">
                     <div v-for="p in history" :key="p.id" class="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white/[0.03] px-3 py-2 text-sm">
                         <div class="min-w-0">
-                            <span class="mr-2 rounded-full border px-2 py-0.5 text-[11px]" :class="typeStyle[p.type]">{{ p.typeLabel }}</span>
+                            <span class="mr-2 rounded-xl border px-2 py-0.5 text-[11px]" :class="typeStyle[p.type]">{{ p.typeLabel }}</span>
                             <span v-if="p.type === 'fine'" class="mr-2 text-white/60">{{ money(p.amount) }}</span>
                             <span class="text-white/55 [overflow-wrap:anywhere]">{{ p.reason }}</span>
                         </div>

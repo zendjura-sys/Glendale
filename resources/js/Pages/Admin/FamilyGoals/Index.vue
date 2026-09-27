@@ -101,7 +101,7 @@ async function closeGoal(goal) {
 
         <div class="mb-6">
             <button
-                class="rounded-full bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-6 py-3 text-sm font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03]"
+                class="rounded-xl bg-gradient-to-r from-gold-500 via-gold-300 to-gold-500 px-6 py-3 text-sm font-semibold uppercase tracking-widest text-obsidian-950 shadow-gold transition-transform hover:scale-[1.03]"
                 @click="showForm = !showForm"
             >
                 {{ showForm ? 'Скасувати' : 'Нова ціль' }}
@@ -146,7 +146,7 @@ async function closeGoal(goal) {
                 <button
                     type="submit"
                     :disabled="createForm.processing"
-                    class="mt-5 rounded-full border border-gold-400/40 px-6 py-2.5 text-sm font-medium tracking-widest text-gold-200 transition-all hover:border-gold-300 disabled:opacity-40"
+                    class="mt-5 rounded-xl border border-gold-400/40 px-6 py-2.5 text-sm font-medium tracking-widest text-gold-200 transition-all hover:border-gold-300 disabled:opacity-40"
                 >
                     Створити
                 </button>
@@ -163,7 +163,7 @@ async function closeGoal(goal) {
                             <span v-if="goal.metric" class="text-gold-300/70">· автоматично: {{ metrics[goal.metric] || goal.metric }}</span>
                         </p>
                     </div>
-                    <span class="shrink-0 rounded-full border px-3 py-1 text-[11px] font-medium uppercase tracking-wide" :class="statusMeta[goal.status]?.class">
+                    <span class="shrink-0 rounded-xl border px-3 py-1 text-[11px] font-medium uppercase tracking-wide" :class="statusMeta[goal.status]?.class">
                         {{ statusMeta[goal.status]?.label }}
                     </span>
                 </div>
@@ -190,14 +190,14 @@ async function closeGoal(goal) {
                     />
                     <button
                         :disabled="busyGoal === goal.id"
-                        class="rounded-full border border-gold-400/30 bg-gold-400/10 px-4 py-1.5 text-xs font-medium text-gold-300 hover:bg-gold-400/20 disabled:opacity-40"
+                        class="rounded-xl border border-gold-400/30 bg-gold-400/10 px-4 py-1.5 text-xs font-medium text-gold-300 hover:bg-gold-400/20 disabled:opacity-40"
                         @click="updateProgress(goal)"
                     >
                         {{ goal.metric ? 'Скоригувати' : 'Оновити' }}
                     </button>
                     <button
                         :disabled="busyGoal === goal.id"
-                        class="rounded-full border border-ember-500/25 px-4 py-1.5 text-xs font-medium text-ember-500/80 hover:bg-ember-600/10 disabled:opacity-40"
+                        class="rounded-xl border border-ember-500/25 px-4 py-1.5 text-xs font-medium text-ember-500/80 hover:bg-ember-600/10 disabled:opacity-40"
                         @click="closeGoal(goal)"
                     >
                         Закрити без досягнення

@@ -76,14 +76,14 @@ function isToday(iso) {
             <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
                 <div class="flex gap-2">
                     <button
-                        class="rounded-full border px-4 py-1.5 text-xs font-medium uppercase tracking-widest transition-colors"
+                        class="rounded-xl border px-4 py-1.5 text-xs font-medium uppercase tracking-widest transition-colors"
                         :class="view === 'day' ? 'border-gold-400/50 bg-gold-400/10 text-gold-200' : 'border-white/10 text-white/40 hover:text-white'"
                         @click="switchView('day')"
                     >
                         День
                     </button>
                     <button
-                        class="rounded-full border px-4 py-1.5 text-xs font-medium uppercase tracking-widest transition-colors"
+                        class="rounded-xl border px-4 py-1.5 text-xs font-medium uppercase tracking-widest transition-colors"
                         :class="view === 'week' ? 'border-gold-400/50 bg-gold-400/10 text-gold-200' : 'border-white/10 text-white/40 hover:text-white'"
                         @click="switchView('week')"
                     >
@@ -93,7 +93,7 @@ function isToday(iso) {
 
                 <div class="flex flex-wrap items-center gap-3">
                     <button
-                        class="rounded-full border border-white/10 px-3 py-1.5 text-sm text-white/60 transition-colors hover:border-gold-400/40 hover:text-white"
+                        class="rounded-xl border border-white/10 px-3 py-1.5 text-sm text-white/60 transition-colors hover:border-gold-400/40 hover:text-white"
                         @click="shiftDate(-1)"
                     >
                         ← {{ view === 'week' ? 'Попередній тиждень' : 'Попередній день' }}
@@ -109,7 +109,7 @@ function isToday(iso) {
                         {{ fmtRange(weekStart, weekEnd) }}
                     </span>
                     <button
-                        class="rounded-full border border-white/10 px-3 py-1.5 text-sm text-white/60 transition-colors hover:border-gold-400/40 hover:text-white"
+                        class="rounded-xl border border-white/10 px-3 py-1.5 text-sm text-white/60 transition-colors hover:border-gold-400/40 hover:text-white"
                         @click="shiftDate(1)"
                     >
                         {{ view === 'week' ? 'Наступний тиждень' : 'Наступний день' }} →
@@ -133,7 +133,7 @@ function isToday(iso) {
                         :class="isToday(day.date) ? 'text-gold-300' : ''"
                     >
                         {{ fmtDayLabel(day.date) }}
-                        <span v-if="isToday(day.date)" class="rounded-full border border-gold-400/40 px-2 py-0.5 text-[10px] uppercase tracking-widest text-gold-300">
+                        <span v-if="isToday(day.date)" class="rounded-xl border border-gold-400/40 px-2 py-0.5 text-[10px] uppercase tracking-widest text-gold-300">
                             Сьогодні
                         </span>
                     </h2>
