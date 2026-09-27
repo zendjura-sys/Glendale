@@ -101,8 +101,12 @@ if [ -z "$dns_ip" ]; then
   echo "DNS: $DOMAIN пока не резолвится. Добавьте A-запись $DOMAIN -> ${server_ip:-<IP сервера>} и запустите скрипт ещё раз."
 elif [ -n "$server_ip" ] && [ "$dns_ip" != "$server_ip" ]; then
   echo "DNS: $DOMAIN указывает на $dns_ip, а у сервера $server_ip. Исправьте A-запись и запустите скрипт ещё раз."
+elif grep -q "listen .*443" "$conf"; then
+  echo "HTTPS уже настроен; certbot продлевает сертификат автоматически."
 elif [ -d "/etc/letsencrypt/live/$DOMAIN" ]; then
-  echo "Сертификат уже есть; certbot продлевает его автоматически."
+  # The certificate exists (e.g. from an earlier attempt) but this vhost has no HTTPS block yet:
+  # without it, another site's wildcard (*.domain) server answers on 443.
+  certbot --nginx -d "$DOMAIN" --reinstall --redirect --non-interactive
 else
   if [ -n "$EMAIL" ]; then mail=(--email "$EMAIL"); else mail=(--register-unsafely-without-email); fi
   certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --redirect "${mail[@]}"
