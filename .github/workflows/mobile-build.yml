@@ -13,11 +13,15 @@ permissions:
 
 jobs:
   build:
-    # Ключ підпису (секрети ANDROID_*) є лише тут. У копіях репозиторію
-    # (zendjura-sys/glendale тощо) збірка пішла б під дебаг-ключем і
-    # опублікувала б несумісний APK — тому там job пропускається.
-    if: github.repository == 'zendjura-sys/laravel-12-railway'
+    # Проєкт живе в zendjura-sys/Glendale (порівняння в виразах GitHub
+    # нечутливе до регістру). У форках і копіях job пропускається.
+    if: github.repository == 'zendjura-sys/Glendale'
     runs-on: ubuntu-latest
+    env:
+      # Реліз публікуємо ЛИШЕ з ключем підпису: APK під дебаг-ключем не
+      # встановиться поверх уже встановленого застосунку ("конфліктує з
+      # іншим пакетом"). Без секрету збірка й тести все одно проходять.
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     defaults:
       run:
         working-directory: mobile
@@ -86,7 +90,12 @@ jobs:
       # .apk (.../releases/latest/download/monsory-connect.apk) лишається
       # незмінним і доступним БЕЗ логіну в GitHub, на відміну від Actions
       # Artifacts вище (ті — для налагодження конкретного прогону).
+      - name: Release skipped — no signing key
+        if: env.HAS_KEYSTORE != 'true'
+        run: echo "::warning::Секрету ANDROID_KEYSTORE_BASE64 немає — APK зібрано, але в реліз mobile-latest не опубліковано."
+
       - uses: softprops/action-gh-release@v2
+        if: env.HAS_KEYSTORE == 'true'
         with:
           tag_name: mobile-latest
           name: Monsory Connect (Android)

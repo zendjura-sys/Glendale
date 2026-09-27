@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\MobileRelease;
 use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -17,25 +18,23 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class MobileDownloadController extends Controller
 {
-    private const APK_URL = 'https://github.com/zendjura-sys/laravel-12-railway/releases/latest/download/monsory-connect.apk';
-    private const BUILD_URL = 'https://github.com/zendjura-sys/laravel-12-railway/releases/latest/download/build.txt';
-
     public function apk(): StreamedResponse
     {
-        return $this->proxy(self::APK_URL, 'monsory-connect.apk', 'application/vnd.android.package-archive');
+        return $this->proxy(MobileRelease::source('monsory-connect.apk'), 'monsory-connect.apk', 'application/vnd.android.package-archive');
     }
 
     public function build(): HttpResponse
     {
-        $response = Http::timeout(10)->get(self::BUILD_URL);
+        $body = MobileRelease::fetch('build.txt', 10);
 
-        return response($response->body(), $response->status())
+        return response($body ?? '', $body === null ? 502 : 200)
             ->header('Content-Type', 'text/plain');
     }
 
-    private function proxy(string $url, string $filename, string $contentType): StreamedResponse
+    /** @param  array{url: string, headers: array<string, string>}  $src */
+    private function proxy(array $src, string $filename, string $contentType): StreamedResponse
     {
-        $upstream = Http::timeout(60)->withOptions(['stream' => true])->get($url);
+        $upstream = Http::timeout(60)->withHeaders($src['headers'])->withOptions(['stream' => true])->get($src['url']);
         $body = $upstream->toPsrResponse()->getBody();
 
         return response()->stream(function () use ($body) {

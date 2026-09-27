@@ -72,4 +72,11 @@ return [
         'enabled' => (bool) env('NFE_ENDPOINT_ENABLED', false),
     ],
 
+
+    // Токен лише для читання релізів приватного zendjura-sys/Glendale
+    // (APK застосунку). Fine-grained: Contents — Read-only, один репозиторій.
+    'github' => [
+        'releases_token' => env('GITHUB_RELEASES_TOKEN'),
+    ],
+
 ];

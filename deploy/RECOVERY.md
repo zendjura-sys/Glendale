@@ -53,7 +53,7 @@ dig +short monsory.net
 ```bash
 apt-get update && apt-get install -y git
 mkdir -p /var/www && cd /var/www
-git clone https://github.com/zendjura-sys/laravel-12-railway.git laravel
+git clone https://github.com/zendjura-sys/Glendale.git laravel
 cd laravel
 git checkout claude/vds-connection-3piazs
 ```

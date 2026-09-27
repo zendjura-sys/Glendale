@@ -18,8 +18,8 @@ A clean Laravel 12 template with Docker (Laravel Sail) configured for consistent
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
-cd laravel-12-railway
+git clone git@github.com:zendjura-sys/Glendale.git
+cd Glendale
 
 # Generate application key
 php artisan key:generate
