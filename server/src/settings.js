@@ -15,6 +15,7 @@ export const DEFAULTS = {
   accentColor: '#4c5bf5',
   aurora: true,
   wallForFriendsOnly: true,
+  spotifyClientId: '',
 };
 
 const cache = new Map();
@@ -46,6 +47,7 @@ export function updateSettings(patch) {
     }
     if (key === 'signupMode' && !['open', 'approval', 'closed'].includes(value)) continue;
     if (key === 'accentColor' && !/^#[0-9a-f]{6}$/i.test(value)) continue;
+    if (key === 'spotifyClientId' && value && !/^[0-9a-zA-Z]{16,64}$/.test(value.trim())) continue;
     if (key === 'siteTitle' && !value.trim()) continue;
     q('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(
       key,
@@ -67,6 +69,7 @@ export function publicConfig() {
     maintenanceMessage: s.maintenanceMessage,
     accentColor: s.accentColor,
     aurora: s.aurora,
+    spotifyEnabled: !!String(s.spotifyClientId || '').trim(),
   };
 }
 

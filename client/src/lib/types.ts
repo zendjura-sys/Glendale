@@ -24,6 +24,7 @@ export interface SiteConfig {
   maintenanceMessage: string;
   accentColor: string;
   aurora: boolean;
+  spotifyEnabled: boolean;
 }
 
 export interface Announcement {
@@ -68,10 +69,41 @@ export interface GroupFull extends Group {
 
 export interface Profile extends User {
   friendship: Friendship;
-  counts: { friends: number; followers: number; photos: number; groups: number; posts: number; mutual: number };
+  counts: { friends: number; followers: number; photos: number; groups: number; posts: number; mutual: number; music: number };
   friendsSample: UserShort[];
   photosSample: { id: number; url: string }[];
   groupsSample: Group[];
+}
+
+export interface Track {
+  id: number;
+  title: string;
+  artist: string;
+  album: string;
+  duration: number;
+  url: string;
+  cover: string | null;
+  plays: number;
+  createdAt: number;
+  ownerId: number;
+  added: boolean;
+}
+
+export interface Playlist {
+  id: number;
+  title: string;
+  description: string;
+  createdAt: number;
+  owner: UserShort;
+  count: number;
+  duration: number;
+  covers: string[];
+  tracks?: Track[];
+}
+
+export interface SpotifyRef {
+  type: 'track' | 'album' | 'playlist' | 'episode' | 'show' | 'artist';
+  id: string;
 }
 
 export interface Post {
@@ -86,6 +118,8 @@ export interface Post {
   group: Group | null;
   wallOwner: UserShort | null;
   repost: Post | null;
+  audio: Track | null;
+  spotify: SpotifyRef | null;
   likes: number;
   liked: boolean;
   comments: number;
@@ -108,6 +142,8 @@ export interface Message {
   toId: number;
   text: string;
   image: string | null;
+  audio?: Track | null;
+  spotify?: SpotifyRef | null;
   isRead: boolean;
   createdAt: number;
 }

@@ -30,8 +30,14 @@ export function page(items) {
 /** JSON error handler for a router. */
 // eslint-disable-next-line no-unused-vars
 export function errorHandler(err, req, res, _next) {
-  if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'Файл слишком большой (макс. 15 МБ)' });
+  if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'Файл слишком большой' });
   const status = err.status || 500;
-  if (status >= 500) console.error(err);
-  res.status(status).json({ error: status >= 500 ? 'Внутренняя ошибка сервера' : err.message, code: err.code });
+  const expected = err instanceof HttpError || (err.status && err.status < 500);
+  if (!expected) console.error(err);
+  res.status(status).json({ error: expected ? err.message : 'Внутренняя ошибка сервера', code: err.code });
+}
+
+/** Throws 403 unless the member level allows `flag` (can_post, can_comment, ...). */
+export function need(req, flag, message) {
+  if (!req.level[flag]) fail(403, message || 'Ваш уровень доступа не позволяет это действие', 'forbidden');
 }

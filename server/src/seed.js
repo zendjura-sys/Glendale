@@ -1,6 +1,11 @@
 import { fileURLToPath } from 'node:url';
 import { db, q, tx } from './db.js';
 import { hashPassword } from './auth.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { uploadsDir } from './uploads.js';
+import { renderWav, DEMO_TRACKS } from './demoAudio.js';
 
 const PEOPLE = [
   ['Алексей', 'Смирнов', 'Санкт-Петербург', 'Кофе, код и велосипед'],
@@ -59,7 +64,7 @@ const DIALOG = [
 
 export function seed({ reset = false } = {}) {
   if (reset) {
-    for (const t of ['admin_log', 'reports', 'announcements', 'notifications', 'photos', 'messages', 'comments', 'likes', 'posts', 'group_members', 'groups', 'friend_requests', 'friends', 'sessions', 'users']) {
+    for (const t of ['playlist_tracks', 'playlists', 'user_tracks', 'tracks', 'admin_log', 'reports', 'announcements', 'notifications', 'photos', 'messages', 'comments', 'likes', 'posts', 'group_members', 'groups', 'friend_requests', 'friends', 'sessions', 'users']) {
       db.exec(`DELETE FROM ${t}`);
     }
     db.exec('DELETE FROM sqlite_sequence');
@@ -180,6 +185,27 @@ export function seed({ reset = false } = {}) {
     insReport.run(others[2], 'post', postIds[3], 'spam', 'Похоже на рекламу', Date.now() - 5 * 3600_000);
     insReport.run(others[5], 'post', postIds[3], 'spam', '', Date.now() - 4 * 3600_000);
     insReport.run(demo, 'user', others[9], 'fake', 'Чужие фотографии в профиле', Date.now() - 2 * 3600_000);
+
+    // Demo music: synthesized tracks in a few libraries, a playlist and a post with a track.
+    const trackIds = DEMO_TRACKS.map((d, i) => {
+      const { buffer, duration } = renderWav({ chords: d.chords, bpm: d.bpm, wave: d.wave, bars: 12 });
+      const name = `${crypto.randomBytes(12).toString('hex')}.wav`;
+      fs.writeFileSync(path.join(uploadsDir, name), buffer);
+      const owner = others[i % others.length];
+      const id = Number(
+        q('INSERT INTO tracks (owner_id, title, artist, album, duration, file, size, plays, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(
+          owner, d.title, d.artist, d.album, duration, `/uploads/${name}`, buffer.length, 40 - i * 7, start + i * DAY,
+        ).lastInsertRowid,
+      );
+      q('INSERT INTO user_tracks (user_id, track_id, added_at) VALUES (?, ?, ?)').run(owner, id, start + i * DAY);
+      return id;
+    });
+    trackIds.forEach((id, i) => q('INSERT INTO user_tracks (user_id, track_id, added_at) VALUES (?, ?, ?)').run(demo, id, start + (i + 5) * DAY));
+    const pl = Number(q('INSERT INTO playlists (owner_id, title, description, created_at) VALUES (?, ?, ?, ?)').run(demo, 'Для роботи', 'Спокійна музика без слів', start).lastInsertRowid);
+    trackIds.forEach((id, i) => q('INSERT INTO playlist_tracks (playlist_id, track_id, position, added_at) VALUES (?, ?, ?, ?)').run(pl, id, i + 1, start));
+    q("INSERT INTO posts (author_id, owner_type, owner_id, text, audio_id, created_at) VALUES (?, 'user', ?, ?, ?, ?)").run(
+      others[4], others[4], 'Записав новий трек — послухайте 🎧', trackIds[1], Date.now() - 5 * 3600_000,
+    );
   });
   return true;
 }

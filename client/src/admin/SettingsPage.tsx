@@ -15,6 +15,7 @@ const SECTIONS = {
   signup: ['Регистрация', 'Кто и как может присоединиться'],
   security: ['Защита и баны', 'Блокировки по email и IP, цензура, защита от подбора пароля'],
   appearance: ['Оформление', 'Фирменный цвет и фон для всех участников'],
+  integrations: ['Интеграции', 'Подключение внешних сервисов'],
 } as const;
 
 type Section = keyof typeof SECTIONS;
@@ -158,6 +159,31 @@ export default function SettingsPage() {
             </div>
           </div>
         </>
+      )}
+
+      {key === 'integrations' && (
+        <div className="card">
+          <div className="card-title">Spotify</div>
+          <div className="settings-form">
+            <div>
+              <label className="label">Client ID приложения Spotify</label>
+              <input
+                className="field"
+                value={s.spotifyClientId}
+                placeholder="например, 3f8c1a…"
+                onChange={(e) => set('spotifyClientId', e.target.value.trim())}
+                spellCheck={false}
+              />
+              <div className="hint">
+                Создайте приложение на developer.spotify.com (Dashboard → Create app, API: Web API и Web Playback SDK) и добавьте Redirect URI:
+                <br />
+                <code style={{ userSelect: 'all' }}>{`${location.origin}/spotify/callback`}</code>
+                <br />
+                Секрет не нужен — используется безопасная авторизация PKCE. Пока приложение в режиме разработки, добавьте email участников в User Management на сайте Spotify.
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {key === 'appearance' && (

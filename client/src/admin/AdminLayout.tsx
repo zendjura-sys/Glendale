@@ -9,6 +9,7 @@ import {
   Megaphone,
   MessagesSquare,
   Palette,
+  Plug,
   ScrollText,
   Settings2,
   ShieldCheck,
@@ -72,6 +73,9 @@ export function AdminLayout() {
               <NavLink to="/admin/settings/appearance">
                 <Palette size={20} /> Оформление
               </NavLink>
+              <NavLink to="/admin/settings/integrations">
+                <Plug size={20} /> Интеграции
+              </NavLink>
               <div className="nav-group">Аналитика</div>
               <NavLink to="/admin/stats">
                 <BarChart3 size={20} /> Статистика
@@ -99,6 +103,7 @@ export function AdminLayout() {
               ['/admin/settings/signup', 'Регистрация', full],
               ['/admin/settings/security', 'Защита', full],
               ['/admin/settings/appearance', 'Оформление', full],
+              ['/admin/settings/integrations', 'Интеграции', full],
               ['/admin/stats', 'Статистика', full],
               ['/admin/log', 'Журнал', full],
               ['/feed', 'На сайт', true],

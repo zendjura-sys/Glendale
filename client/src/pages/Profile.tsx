@@ -11,6 +11,7 @@ import { PostList } from '../components/Post';
 import { Avatar, Empty, Modal, PhotoTile, PhotoViewer, Spinner, pickFile } from '../components/ui';
 import { FriendButton } from '../components/People';
 import { ReportButton, Verified } from '../components/Moderation';
+import { SpotifyNowPlayingCard } from './Spotify';
 
 function StatusEditor({ value, onDone }: { value: string; onDone: () => void }) {
   const { setUser } = useAuth();
@@ -229,6 +230,10 @@ export default function ProfilePage() {
             <b>{user.counts.groups}</b>
             {plural(user.counts.groups, 'сообщество', 'сообщества', 'сообществ')}
           </Link>
+          <Link to={own ? '/music' : `/music?id=${user.id}`}>
+            <b>{user.counts.music}</b>
+            {plural(user.counts.music, 'трек', 'трека', 'треков')}
+          </Link>
           <Link to={`/id/${user.id}`}>
             <b>{user.counts.posts}</b>
             {plural(user.counts.posts, 'запись', 'записи', 'записей')}
@@ -269,6 +274,7 @@ export default function ProfilePage() {
         </div>
 
         <aside className="col-side static">
+          <SpotifyNowPlayingCard userId={user.id} />
           <div className="card">
             <div className="card-title">
               <Link to={`/friends?id=${user.id}`}>Друзья</Link> <span className="count">{user.counts.friends}</span>

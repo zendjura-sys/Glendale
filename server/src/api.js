@@ -1,9 +1,11 @@
 import express from 'express';
 import { q, tx, now } from './db.js';
 import { hashPassword, verifyPassword, createSession, requireAuth, levelOf, isStaff, clientIp } from './auth.js';
-import { fail, intParam, str, PAGE, beforeParam, page, errorHandler } from './http.js';
+import { fail, intParam, str, PAGE, beforeParam, page, errorHandler, need } from './http.js';
 import { getSetting, publicConfig, isEmailBanned, isIpBanned, censor } from './settings.js';
 import { upload, fileUrl } from './uploads.js';
+import { music, musicCount } from './music.js';
+import { spotify } from './spotify.js';
 import { send } from './realtime.js';
 import {
   userShort,
@@ -22,14 +24,12 @@ import {
   counters,
   pushCounters,
   meFull,
+  trackJson,
+  getTrack,
+  spotifyRef,
 } from './models.js';
 
 export const api = express.Router();
-
-/** Throws 403 unless the member level allows `flag` (can_post, can_comment, ...). */
-function need(req, flag, message) {
-  if (!req.level[flag]) fail(403, message || 'Ваш уровень доступа не позволяет это действие', 'forbidden');
-}
 
 /** Flood control: minimum pause between posts for the member's level. */
 function checkFlood(req) {
@@ -112,6 +112,8 @@ api.post('/auth/login', (req, res) => {
 });
 
 api.use(requireAuth);
+api.use(music);
+api.use(spotify);
 
 api.post('/auth/logout', (req, res) => {
   q('DELETE FROM sessions WHERE token = ?').run(req.token);
@@ -195,6 +197,7 @@ api.get('/users/:id', (req, res) => {
       photos: q('SELECT COUNT(*) AS c FROM photos WHERE user_id = ?').get(u.id).c,
       groups: q('SELECT COUNT(*) AS c FROM group_members WHERE user_id = ?').get(u.id).c,
       posts: q("SELECT COUNT(*) AS c FROM posts WHERE owner_type = 'user' AND owner_id = ?").get(u.id).c,
+      music: musicCount(u.id),
       mutual: u.id === me ? 0 : mutual,
     },
     friendsSample: friendsSample.map(userShort),
@@ -343,7 +346,10 @@ api.post('/posts', upload.single('image'), (req, res) => {
   checkFlood(req);
   const text = censor(str(req.body.text, 10000));
   const image = fileUrl(req.file);
-  if (!text && !image) fail(400, 'Запись не может быть пустой');
+  const audioId = intParam(req.body.audioId);
+  if (audioId && !getTrack(audioId)) fail(404, 'Аудиозапись не найдена');
+  const spotify = spotifyRef(str(req.body.spotify, 300)) ? str(req.body.spotify, 300) : '';
+  if (!text && !image && !audioId && !spotify) fail(400, 'Запись не может быть пустой');
   const ownerType = req.body.ownerType === 'group' ? 'group' : 'user';
   const ownerId = intParam(req.body.ownerId) ?? me;
   let fromGroup = 0;
@@ -359,8 +365,8 @@ api.post('/posts', upload.single('image'), (req, res) => {
 
   const t = now();
   const r = q(
-    'INSERT INTO posts (author_id, owner_type, owner_id, from_group, text, image, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-  ).run(me, ownerType, ownerId, fromGroup, text, image, t);
+    'INSERT INTO posts (author_id, owner_type, owner_id, from_group, text, image, audio_id, spotify, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+  ).run(me, ownerType, ownerId, fromGroup, text, image, audioId, spotify, t);
   const postId = Number(r.lastInsertRowid);
   if (image) q("INSERT INTO photos (user_id, url, album, created_at) VALUES (?, ?, 'wall', ?)").run(me, image, t);
   if (ownerType === 'user' && ownerId !== me) notify(ownerId, me, 'wall_post', { postId, text: text.slice(0, 120) });
@@ -486,12 +492,15 @@ api.post('/messages/:peerId', upload.single('image'), (req, res) => {
   if (req.file) need(req, 'can_upload', 'Загрузка фотографий недоступна для вашего уровня');
   const text = censor(str(req.body.text, 4000));
   const image = fileUrl(req.file);
-  if (!text && !image) fail(400, 'Сообщение не может быть пустым');
-  const r = q('INSERT INTO messages (from_id, to_id, text, image, is_read, created_at) VALUES (?, ?, ?, ?, ?, ?)').run(
+  const audioId = intParam(req.body.audioId);
+  if (audioId && !getTrack(audioId)) fail(404, 'Аудиозапись не найдена');
+  if (!text && !image && !audioId) fail(400, 'Сообщение не может быть пустым');
+  const r = q('INSERT INTO messages (from_id, to_id, text, image, audio_id, is_read, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
     me,
     peer,
     text,
     image,
+    audioId,
     peer === me ? 1 : 0,
     now(),
   );
@@ -682,7 +691,7 @@ api.post('/notifications/read', (req, res) => {
 
 api.get('/search', (req, res) => {
   const search = str(req.query.q, 100);
-  if (!search) return res.json({ users: [], groups: [], posts: [] });
+  if (!search) return res.json({ users: [], groups: [], posts: [], tracks: [] });
   const like = `%${search.toLowerCase()}%`;
   const users = q(
     `SELECT * FROM users WHERE ulower(first_name || ' ' || last_name) LIKE ? OR ulower(last_name || ' ' || first_name) LIKE ?
@@ -691,10 +700,12 @@ api.get('/search', (req, res) => {
   ).all(like, like, like);
   const groups = q('SELECT * FROM groups WHERE ulower(name) LIKE ? OR ulower(description) LIKE ? LIMIT 20').all(like, like);
   const posts = q('SELECT * FROM posts WHERE ulower(text) LIKE ? ORDER BY id DESC LIMIT 20').all(like);
+  const tracks = q('SELECT * FROM tracks WHERE ulower(title) LIKE ? OR ulower(artist) LIKE ? ORDER BY plays DESC LIMIT 20').all(like, like);
   res.json({
     users: users.map((u) => ({ ...userShort(u), city: u.city, friendship: friendshipStatus(req.user.id, u.id) })),
     groups: groups.map((g) => groupShort(g, req.user.id)),
     posts: hydratePosts(posts, req.user.id),
+    tracks: tracks.map((t) => trackJson(t, req.user.id)),
   });
 });
 

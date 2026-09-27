@@ -202,6 +202,50 @@ addColumn('users', 'last_ip', "TEXT NOT NULL DEFAULT ''");
 addColumn('users', 'failed_logins', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('users', 'locked_until', 'INTEGER NOT NULL DEFAULT 0');
 
+// ───────── music ─────────
+db.exec(`
+CREATE TABLE IF NOT EXISTS tracks (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  owner_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title      TEXT NOT NULL,
+  artist     TEXT NOT NULL DEFAULT '',
+  album      TEXT NOT NULL DEFAULT '',
+  duration   REAL NOT NULL DEFAULT 0,
+  file       TEXT NOT NULL,
+  cover      TEXT,
+  size       INTEGER NOT NULL DEFAULT 0,
+  plays      INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_tracks_owner ON tracks(owner_id, id);
+
+CREATE TABLE IF NOT EXISTS user_tracks (
+  user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  track_id INTEGER NOT NULL REFERENCES tracks(id) ON DELETE CASCADE,
+  added_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, track_id)
+);
+
+CREATE TABLE IF NOT EXISTS playlists (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  owner_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title       TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  created_at  INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS playlist_tracks (
+  playlist_id INTEGER NOT NULL REFERENCES playlists(id) ON DELETE CASCADE,
+  track_id    INTEGER NOT NULL REFERENCES tracks(id) ON DELETE CASCADE,
+  position    INTEGER NOT NULL,
+  added_at    INTEGER NOT NULL,
+  PRIMARY KEY (playlist_id, track_id)
+);
+`);
+addColumn('posts', 'audio_id', 'INTEGER REFERENCES tracks(id) ON DELETE SET NULL');
+addColumn('posts', 'spotify', "TEXT NOT NULL DEFAULT ''");
+addColumn('messages', 'audio_id', 'INTEGER REFERENCES tracks(id) ON DELETE SET NULL');
+
 // Default member levels (modelled on classic social-network admin panels).
 if (db.prepare('SELECT COUNT(*) AS c FROM levels').get().c === 0) {
   const ins = db.prepare(

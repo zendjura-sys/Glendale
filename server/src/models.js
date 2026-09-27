@@ -94,6 +94,31 @@ export function isGroupAdmin(groupId, userId) {
   return q("SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ? AND role = 'admin'").get(groupId, userId) != null;
 }
 
+export function trackJson(t, meId) {
+  if (!t) return null;
+  return {
+    id: t.id,
+    title: t.title,
+    artist: t.artist,
+    album: t.album,
+    duration: Math.round(t.duration),
+    url: t.file,
+    cover: t.cover,
+    plays: t.plays,
+    createdAt: t.created_at,
+    ownerId: t.owner_id,
+    added: meId ? !!q('SELECT 1 FROM user_tracks WHERE user_id = ? AND track_id = ?').get(meId, t.id) : false,
+  };
+}
+
+export const getTrack = (id) => (id ? q('SELECT * FROM tracks WHERE id = ?').get(id) : null);
+
+/** Parses an open.spotify.com link into an embeddable reference. */
+export function spotifyRef(value) {
+  const m = /open\.spotify\.com\/(?:intl-[a-z-]+\/)?(track|album|playlist|episode|show|artist)\/([A-Za-z0-9]{10,40})/.exec(value || '');
+  return m ? { type: m[1], id: m[2] } : null;
+}
+
 /** Turns raw post rows into API objects (author, counters, repost source). */
 export function hydratePosts(rows, meId, depth = 0) {
   return rows.map((p) => {
@@ -129,6 +154,8 @@ export function hydratePosts(rows, meId, depth = 0) {
       group,
       wallOwner,
       repost,
+      audio: trackJson(getTrack(p.audio_id), meId),
+      spotify: spotifyRef(p.spotify || p.text),
       likes,
       liked,
       comments,
@@ -150,6 +177,8 @@ export function hydrateMessage(m) {
     toId: m.to_id,
     text: m.text,
     image: m.image,
+    audio: trackJson(getTrack(m.audio_id)),
+    spotify: spotifyRef(m.text),
     isRead: !!m.is_read,
     createdAt: m.created_at,
   };

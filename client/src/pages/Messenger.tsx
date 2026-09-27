@@ -9,6 +9,7 @@ import type { Dialog, Message, Profile } from '../lib/types';
 import { formatDay, formatShort, formatTime, fullName, lastSeenText } from '../lib/utils';
 import { AutoTextarea, Avatar, Empty, PhotoViewer, Spinner, pickFile } from '../components/ui';
 import { SendButton, TypingDots } from '../components/uiverse';
+import { SpotifyEmbed, TrackRow } from '../components/Music';
 
 function DialogList({ activeId }: { activeId: number | null }) {
   const me = useMe();
@@ -241,6 +242,12 @@ function Chat({ peerId }: { peerId: number }) {
                 )}
                 <div className="bubble">
                   {m.image && <img src={m.image} alt="" onClick={() => setViewer(m.image)} />}
+                  {m.audio && (
+                    <div className="post-audio">
+                      <TrackRow track={m.audio} list={[m.audio]} index={0} />
+                    </div>
+                  )}
+                  {m.spotify && <SpotifyEmbed spotify={m.spotify} />}
                   {m.text}
                   <span className="time">
                     {formatTime(m.createdAt)}

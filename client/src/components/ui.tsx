@@ -205,11 +205,23 @@ export function useClickOutside<T extends HTMLElement>(open: boolean, onClose: (
 
 export function pickFile(accept = 'image/jpeg,image/png,image/gif,image/webp', multiple = false): Promise<File[]> {
   return new Promise((resolve) => {
+    // The input must live in the document: detached inputs don't reliably fire `change` (Safari, automation).
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = accept;
     input.multiple = multiple;
-    input.onchange = () => resolve(Array.from(input.files ?? []));
+    input.style.display = 'none';
+    document.body.appendChild(input);
+    let settled = false;
+    const done = (files: File[]) => {
+      if (settled) return;
+      settled = true;
+      input.remove();
+      resolve(files);
+    };
+    input.addEventListener('change', () => done(Array.from(input.files ?? [])));
+    // Some browsers fire `cancel` right before `change`; only treat it as a cancel if no files follow.
+    input.addEventListener('cancel', () => setTimeout(() => done(Array.from(input.files ?? [])), 500));
     input.click();
   });
 }

@@ -1,6 +1,9 @@
 import { lazy, Suspense, useState } from 'react';
 import { Wrench } from 'lucide-react';
 import { useConfig } from './lib/config';
+import { PlayerProvider } from './lib/player';
+import { SpotifyProvider } from './lib/spotify';
+import { PlayerBar } from './components/Music';
 import { isStaffLevel } from './lib/types';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './lib/auth';
@@ -22,6 +25,9 @@ const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const SettingsPage = lazy(() => import('./pages/Settings'));
 const PostPage = lazy(() => import('./pages/PostPage'));
 const AdminApp = lazy(() => import('./admin'));
+const MusicPage = lazy(() => import('./pages/Music'));
+const PlaylistPage = lazy(() => import('./pages/Music').then((m) => ({ default: m.PlaylistPage })));
+const SpotifyCallback = lazy(() => import('./pages/Spotify').then((m) => ({ default: m.SpotifyCallback })));
 
 function NotFound() {
   return (
@@ -84,6 +90,8 @@ export default function App() {
     );
   return (
     <RealtimeProvider>
+      <PlayerProvider>
+      <SpotifyProvider>
       <Aurora />
       <Routes>
         <Route
@@ -108,9 +116,15 @@ export default function App() {
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="wall/:id" element={<PostPage />} />
+          <Route path="music" element={<MusicPage />} />
+          <Route path="music/playlist/:id" element={<PlaylistPage />} />
+          <Route path="spotify/callback" element={<SpotifyCallback />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
+      <PlayerBar />
+      </SpotifyProvider>
+      </PlayerProvider>
     </RealtimeProvider>
   );
 }

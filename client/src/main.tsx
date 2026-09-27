@@ -11,6 +11,7 @@ import './styles.css';
 import './uiverse.css';
 import './glass.css';
 import './admin.css';
+import './music.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {

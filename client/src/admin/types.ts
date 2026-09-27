@@ -114,6 +114,7 @@ export interface Settings {
   accentColor: string;
   aurora: boolean;
   wallForFriendsOnly: boolean;
+  spotifyClientId: string;
 }
 
 export interface Stats {

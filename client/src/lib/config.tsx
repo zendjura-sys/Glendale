@@ -12,6 +12,7 @@ const FALLBACK: SiteConfig = {
   maintenanceMessage: '',
   accentColor: DEFAULT_ACCENT,
   aurora: true,
+  spotifyEnabled: false,
 };
 
 const ConfigContext = createContext<{ config: SiteConfig; ready: boolean; reload: () => void }>(null!);

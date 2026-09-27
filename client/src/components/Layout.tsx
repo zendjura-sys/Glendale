@@ -11,6 +11,7 @@ import {
   Moon,
   Newspaper,
   Search,
+  Music,
   Settings,
   Shield,
   Sun,
@@ -191,6 +192,9 @@ function Sidebar() {
       <NavLink to={`/photos/${me.id}`}>
         <ImageIcon size={20} /> Фотографии
       </NavLink>
+      <NavLink to="/music">
+        <Music size={20} /> Музыка
+      </NavLink>
       <NavLink to="/notifications">
         <Bell size={20} /> Уведомления
       </NavLink>
@@ -219,7 +223,7 @@ function TabBar() {
         <Newspaper size={24} /> Новости
       </NavLink>
       <NavLink to="/groups">
-        <UsersRound size={24} /> Сообщества
+        <UsersRound size={24} /> Группы
       </NavLink>
       <NavLink to="/im">
         <MessageCircle size={24} /> Мессенджер
@@ -228,6 +232,9 @@ function TabBar() {
       <NavLink to="/friends">
         <Users size={24} /> Друзья
         {counters.friends > 0 && <span className="badge">{counters.friends}</span>}
+      </NavLink>
+      <NavLink to="/music">
+        <Music size={24} /> Музыка
       </NavLink>
       <NavLink to={`/id/${me.id}`}>
         <CircleUserRound size={24} /> Профиль

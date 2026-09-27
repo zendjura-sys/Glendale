@@ -9,11 +9,14 @@
     "seed": "node --disable-warning=ExperimentalWarning src/seed.js",
     "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"
   },
-  "engines": { "node": ">=22.5" },
+  "engines": {
+    "node": ">=22.5"
+  },
   "dependencies": {
     "compression": "^1.8.0",
     "express": "^5.1.0",
     "multer": "^2.0.2",
+    "music-metadata": "^11.16.1",
     "ws": "^8.18.3"
   }
 }

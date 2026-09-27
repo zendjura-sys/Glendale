@@ -9,6 +9,7 @@ import { formatDate, fullName } from '../lib/utils';
 import { AutoTextarea, Avatar, Empty, Modal, PhotoViewer, PostSkeleton, Spinner, useClickOutside, useSentinel } from './ui';
 import { LikeBurst, SendButton } from './uiverse';
 import { ReportModal, Verified } from './Moderation';
+import { SpotifyEmbed, TrackRow } from './Music';
 
 type PostPages = InfiniteData<Page<Post>, number | undefined>;
 
@@ -98,6 +99,12 @@ function PostBody({ post, big }: { post: Post; big?: boolean }) {
           )}
         </div>
       )}
+      {post.audio && (
+        <div className="post-audio">
+          <TrackRow track={post.audio} list={[post.audio]} index={0} />
+        </div>
+      )}
+      {post.spotify && <SpotifyEmbed spotify={post.spotify} />}
       {post.image && (
         <div className="post-image" onClick={() => setViewer(true)}>
           <img src={post.image} alt="" loading="lazy" decoding="async" />
