@@ -5,7 +5,6 @@ import { Head, Link } from '@inertiajs/vue3';
 
 defineProps({
     memberCount: { type: Number, default: 0 },
-    telegramBotUrl: { type: String, default: null },
     bankCard: { type: Object, default: null },
     mobileAppDownloadUrl: { type: String, default: null },
 });
@@ -128,7 +127,7 @@ function fmtDate(iso) {
                     v-if="route().has('admin.dashboard') && (
                         $page.props.can?.manageAddons || $page.props.can?.manageReports ||
                         $page.props.can?.manageProgression || $page.props.can?.manageSettings ||
-                        $page.props.can?.manageRoles || $page.props.can?.manageUsers || $page.props.can?.manageMembers || $page.props.can?.manageGoals || $page.props.can?.manageBroadcasts || $page.props.can?.manageTelegram || $page.props.can?.manageEvents
+                        $page.props.can?.manageRoles || $page.props.can?.manageUsers || $page.props.can?.manageMembers || $page.props.can?.manageGoals || $page.props.can?.manageBroadcasts || $page.props.can?.manageEvents
                     )"
                     :href="route('admin.dashboard')"
                     v-reveal:240="'scale'"
@@ -136,26 +135,9 @@ function fmtDate(iso) {
                 >
                     <div class="glass-sheen"></div>
                     <h3 class="relative font-semibold text-white">Адмін-панель CMS</h3>
-                    <p class="relative mt-2 text-sm leading-relaxed text-white/60">Аддони, права доступу, учасники, Telegram і Discord — керування всім сайтом.</p>
+                    <p class="relative mt-2 text-sm leading-relaxed text-white/60">Аддони, права доступу, учасники, Discord — керування всім сайтом.</p>
                     <span class="relative mt-4 inline-block text-xs uppercase tracking-widest text-gold-300">Відкрити →</span>
                 </Link>
-
-                <!-- Поки бот не заведений у налаштуваннях, картки просто
-                     немає: учаснику кабінету пропонувати замість неї
-                     реєстрацію безглуздо, а мертве посилання — тим більше. -->
-                <a
-                    v-if="telegramBotUrl"
-                    :href="telegramBotUrl"
-                    target="_blank"
-                    rel="noopener"
-                    v-reveal:320="'scale'"
-                    v-glow class="group glass-panel relative overflow-hidden p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-gold"
-                >
-                    <div class="glass-sheen"></div>
-                    <h3 class="relative font-semibold text-white">Telegram родини</h3>
-                    <p class="relative mt-2 text-sm leading-relaxed text-white/50">Оновлення, оголошення та швидкий зв'язок — усе в одному боті.</p>
-                    <span class="relative mt-4 inline-block text-xs uppercase tracking-widest text-gold-300/80">Перейти →</span>
-                </a>
 
                 <!-- Посилання (Admin → Налаштування → Мобільний застосунок)
                      з'являється лише коли деплой-скрипт уже забрав свіжий

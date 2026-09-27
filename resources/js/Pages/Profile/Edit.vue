@@ -1,7 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import DeleteUserForm from './Partials/DeleteUserForm.vue';
-import TelegramLinkForm from './Partials/TelegramLinkForm.vue';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm.vue';
 import UpdateBirthdayForm from './Partials/UpdateBirthdayForm.vue';
 import UpdateGenderForm from './Partials/UpdateGenderForm.vue';
@@ -12,22 +11,13 @@ import TwoFactorAuthenticationForm from './Partials/TwoFactorAuthenticationForm.
 import PushNotificationsForm from './Partials/PushNotificationsForm.vue';
 import LogOutOtherSessionsForm from './Partials/LogOutOtherSessionsForm.vue';
 import { Head } from '@inertiajs/vue3';
-import { onMounted } from 'vue';
 
-const props = defineProps({
+defineProps({
     mustVerifyEmail: {
         type: Boolean,
     },
     status: {
         type: String,
-    },
-    telegramReady: {
-        type: Boolean,
-        default: false,
-    },
-    promptTelegramLink: {
-        type: Boolean,
-        default: false,
     },
     positions: {
         type: Array,
@@ -39,15 +29,6 @@ const props = defineProps({
     },
 });
 
-const highlightTelegram = props.promptTelegramLink && props.telegramReady;
-
-onMounted(() => {
-    if (highlightTelegram) {
-        document
-            .getElementById('telegram-link-section')
-            ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-});
 </script>
 
 <template>
@@ -67,21 +48,6 @@ onMounted(() => {
                     :status="status"
                     class="max-w-xl"
                 />
-            </div>
-
-            <div
-                v-if="telegramReady"
-                id="telegram-link-section"
-                v-reveal:100
-                v-glow
-                class="glass-panel p-6 sm:p-8"
-                :class="highlightTelegram && 'ring-2 ring-gold-400/60 shadow-gold'"
-            >
-                <p v-if="highlightTelegram" class="mb-4 text-sm font-medium text-gold-300">
-                    Пошту підтверджено! Залишився останній крок — привʼяжіть Telegram,
-                    щоб отримувати особисті сповіщення.
-                </p>
-                <TelegramLinkForm class="max-w-xl" />
             </div>
 
             <div v-reveal:125 v-glow class="glass-panel p-6 sm:p-8">

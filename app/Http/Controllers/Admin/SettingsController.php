@@ -17,12 +17,10 @@ class SettingsController extends Controller
         // Самі токени/ключі (секрети) звідси винесено в окрему вкладку
         // 'api_keys' нижче — тут лишається тільки не-секретна конфігурація
         // кожної інтеграції.
-        'telegram' => ['telegram_bot_username', 'telegram_webhook_url', 'telegram_bot_url', 'telegram_group_id'],
         'discord' => ['discord_client_id', 'discord_redirect_uri', 'discord_guild_id'],
         // Усі токени й ключі сайту в одному місці — замість того, щоб
         // шукати кожен у своїй тематичній вкладці.
         'api_keys' => [
-            'telegram_bot_token',
             'discord_client_secret',
             'discord_bot_token',
             'mistral_api_key',
@@ -33,7 +31,6 @@ class SettingsController extends Controller
             'ai_reports_analysis_enabled',
             'ai_rejection_advice_enabled',
             'ai_grade_advice_enabled',
-            'ai_applications_review_enabled',
             'ai_broadcast_assist_enabled',
             'ai_event_draft_enabled',
         ],
@@ -41,7 +38,6 @@ class SettingsController extends Controller
             'ai_reports_analysis_instructions',
             'ai_rejection_advice_instructions',
             'ai_grade_advice_instructions',
-            'ai_applications_review_instructions',
             'ai_broadcast_assist_instructions',
             'ai_event_draft_instructions',
         ],
@@ -81,7 +77,7 @@ class SettingsController extends Controller
      */
     private const LONG_TEXT_FIELDS = [
         'ai_reports_analysis_instructions', 'ai_rejection_advice_instructions', 'ai_grade_advice_instructions',
-        'ai_applications_review_instructions', 'ai_broadcast_assist_instructions', 'ai_event_draft_instructions',
+        'ai_broadcast_assist_instructions', 'ai_event_draft_instructions',
         'report_guide_bizwar', 'report_guide_contract', 'report_guide_investment', 'report_guide_other',
     ];
 
@@ -94,7 +90,7 @@ class SettingsController extends Controller
      */
     private const BOOLEAN_FIELDS = [
         'ai_reports_analysis_enabled', 'ai_rejection_advice_enabled', 'ai_grade_advice_enabled',
-        'ai_applications_review_enabled', 'ai_broadcast_assist_enabled', 'ai_event_draft_enabled',
+        'ai_broadcast_assist_enabled', 'ai_event_draft_enabled',
         'mobile_app_enabled', 'mobile_app_bank_enabled', 'mobile_app_leaderboard_enabled', 'mobile_app_reports_enabled',
     ];
 
@@ -115,11 +111,8 @@ class SettingsController extends Controller
     /**
      * Поля, куда можно положить только http(s)-адрес.
      *
-     * Без этого в telegram_bot_url принималась любая строка, а оттуда она
-     * уезжает прямо в href главной кнопки лендинга. Vue в :href ничего не
-     * санитайзит, поэтому значение вида javascript:… выполнялось бы в
-     * origin сайта у каждого, кто нажмёт «Подати заявку». Ограничение на
-     * стороне сервера, а не шаблона: потребителей у настройки несколько.
+     * Vue в :href ничего не санитайзит, поэтому значение вида javascript:…
+     * выполнялось бы в origin сайта у каждого, кто нажмёт ссылку.
      *
      * mobile_app_download_url свідомо НЕ тут — у нього окреме правило
      * нижче в update(), яке дозволяє ще й відносний шлях (/downloads/…).
@@ -127,7 +120,7 @@ class SettingsController extends Controller
      * @var array<int, string>
      */
     private const URL_FIELDS = [
-        'telegram_webhook_url', 'telegram_bot_url', 'discord_redirect_uri',
+        'discord_redirect_uri',
     ];
 
     public function index(): Response
@@ -175,8 +168,6 @@ class SettingsController extends Controller
         }
 
         $data = $request->validate($rules, [], [
-            'telegram_bot_url' => 'посилання на бота',
-            'telegram_webhook_url' => 'webhook URL',
             'discord_redirect_uri' => 'Redirect URI',
         ]);
 

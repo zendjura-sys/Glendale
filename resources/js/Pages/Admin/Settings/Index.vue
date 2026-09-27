@@ -18,16 +18,7 @@ const TABS = {
         fields: [
             { key: 'site_name', label: 'Назва сайту' },
             { key: 'site_tagline', label: 'Слоган' },
-            { key: 'support_contact', label: 'Контакт підтримки (email або Telegram)' },
-        ],
-    },
-    telegram: {
-        label: 'Telegram',
-        fields: [
-            { key: 'telegram_bot_username', label: 'Юзернейм бота (без @)' },
-            { key: 'telegram_webhook_url', label: 'Webhook URL' },
-            { key: 'telegram_bot_url', label: 'Посилання на бота для CTA (t.me/...)' },
-            { key: 'telegram_group_id', label: 'ID групи родини (напр. -1004369425235)' },
+            { key: 'support_contact', label: 'Контакт підтримки (email або Discord)' },
         ],
     },
     discord: {
@@ -41,7 +32,6 @@ const TABS = {
     api_keys: {
         label: 'API-ключі',
         fields: [
-            { key: 'telegram_bot_token', label: 'Telegram: Bot Token', secret: true },
             { key: 'discord_client_secret', label: 'Discord: Client Secret', secret: true },
             { key: 'discord_bot_token', label: 'Discord: Bot Token', secret: true },
             { key: 'mistral_api_key', label: 'AI (Mistral): API Key', secret: true },
@@ -65,7 +55,6 @@ const TABS = {
             { key: 'ai_reports_analysis_enabled', label: 'Аналіз фото-доказів звіту (дата на скріні, кількість)', type: 'checkbox' },
             { key: 'ai_rejection_advice_enabled', label: 'Кнопка "Згенерувати рекомендацію" при відхиленні звіту', type: 'checkbox' },
             { key: 'ai_grade_advice_enabled', label: 'Кнопка "Порекомендувати оцінку" при затвердженні звіту', type: 'checkbox' },
-            { key: 'ai_applications_review_enabled', label: 'Оцінка якості анкети при новій заявці на вступ', type: 'checkbox' },
             { key: 'ai_broadcast_assist_enabled', label: 'Кнопка "Покращити текст" у формі розсилки', type: 'checkbox' },
             { key: 'ai_event_draft_enabled', label: 'Кнопка "Згенерувати" у формі нової події родини', type: 'checkbox' },
         ],
@@ -90,12 +79,6 @@ const TABS = {
                 label: 'Рекомендація оцінки при затвердженні звіту',
                 type: 'textarea',
                 hint: 'Ваші критерії для оцінок S–G (наприклад, за яким відсотком перемог давати S, скільки контрактів вважати мало тощо). Без цього AI орієнтується лише на загальний здоровий глузд.',
-            },
-            {
-                key: 'ai_applications_review_instructions',
-                label: 'Оцінка якості анкети на вступ',
-                type: 'textarea',
-                hint: 'На що звертати увагу в анкеті кандидата понад стандартну перевірку на шаблонність.',
             },
             {
                 key: 'ai_broadcast_assist_instructions',
@@ -189,7 +172,6 @@ function makeForm(group) {
 
 const forms = {
     general: makeForm('general'),
-    telegram: makeForm('telegram'),
     discord: makeForm('discord'),
     api_keys: makeForm('api_keys'),
     ai: makeForm('ai'),

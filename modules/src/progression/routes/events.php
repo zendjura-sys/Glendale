@@ -1,10 +1,8 @@
 <?php
 
 use Addons\Progression\Listeners\AwardXpOnReportReviewed;
-use Addons\Progression\Listeners\UnlockAchievementOnAccountLinked;
 use Addons\Progression\Services\ProgressionService;
 use Addons\Reports\Events\ReportReviewed;
-use Addons\TelegramBot\Events\AccountLinked;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
 
@@ -14,10 +12,6 @@ use Illuminate\Support\Facades\Event;
 // listener просто никогда не сработает — без ошибок и без жёсткой связи
 // между пакетами.
 Event::listen(ReportReviewed::class, AwardXpOnReportReviewed::class);
-
-// Той самий принцип для Telegram-бота: якщо він не встановлений, AccountLinked
-// просто ніколи не диспатчиться.
-Event::listen(AccountLinked::class, UnlockAchievementOnAccountLinked::class);
 
 // Файл подключается на каждый boot (включая artisan schedule:run), поэтому
 // регистрация здесь безопасна и не требует отдельного entrypoint-типа.

@@ -51,7 +51,6 @@ const sections = [
     { name: 'admin.broadcasts.index', can: 'manageBroadcasts', title: 'Розсилки', text: 'Оголошення всім учасникам — кожен отримує особисте сповіщення.' },
     { name: 'admin.roles.index', can: 'manageRoles', title: 'Права доступу', text: 'Ролі та права: хто що бачить і чим керує в CMS.' },
     { name: 'admin.users.index', can: 'manageUsers', title: 'Учасники', text: 'Список учасників сайту та призначення їм ролей.' },
-    { name: 'admin.telegram.index', can: 'manageTelegram', title: 'Telegram-бот', text: 'Webhook, привʼязані акаунти та статус бота.' },
     { name: 'admin.settings.index', can: 'manageSettings', title: 'Налаштування', text: 'Загальні параметри, інтеграція з Telegram та Discord.' },
 ];
 </script>

@@ -12,7 +12,6 @@ const props = defineProps({
     canLogin: { type: Boolean, default: false },
     canRegister: { type: Boolean, default: false },
     memberCount: { type: Number, default: 0 },
-    telegramBotUrl: { type: String, default: null },
     stats: { type: Array, default: () => [] },
     // Содержание приходит из config/family.php — единый источник для сайта
     // и бота в Telegram. Здесь остаётся только отображение.
@@ -52,8 +51,8 @@ const directions = computed(() => props.directions);
 const leadership = computed(() => props.leadership);
 const promotionCriteria = computed(() => props.promotionCriteria);
 
-const applyUrl = computed(() => props.telegramBotUrl || route('register'));
-const applyExternal = computed(() => Boolean(props.telegramBotUrl));
+const applyUrl = computed(() => route('register'));
+const applyExternal = computed(() => false);
 
 function fmtStat(v) {
     return new Intl.NumberFormat('uk-UA').format(v ?? 0);
@@ -1028,15 +1027,6 @@ const benefits = [
 
                     <div class="flex flex-col items-center gap-3 text-sm text-white/40 sm:items-start">
                         <span class="text-[10px] uppercase tracking-[0.35em] text-gold-300/60">Звʼязок</span>
-                        <a
-                            v-if="telegramBotUrl"
-                            :href="telegramBotUrl"
-                            target="_blank"
-                            rel="noopener"
-                            class="transition-colors duration-300 hover:text-gold-300"
-                        >
-                            Telegram-бот
-                        </a>
                         <Link v-if="canLogin" :href="route('login')" class="transition-colors duration-300 hover:text-gold-300">
                             Вхід у кабінет
                         </Link>

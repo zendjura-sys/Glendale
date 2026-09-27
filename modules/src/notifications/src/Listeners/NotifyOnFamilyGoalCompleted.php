@@ -2,17 +2,13 @@
 
 namespace Addons\Notifications\Listeners;
 
-use Addons\TelegramBot\Services\FamilyGroup;
-use Addons\TelegramBot\Services\TelegramClient;
-use Addons\TelegramBot\Support\MessageFormat;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Спільна ціль родини — не особиста подія одного учасника, тому не через
  * NotificationService (він шле в ЛС), а fan-out усім web-сповіщенням
- * (як у BroadcastController::store) плюс ОДНЕ повідомлення в сімейний
- * груп-чат, а не N особистих.
+ * (як у BroadcastController::store) .
  */
 class NotifyOnFamilyGoalCompleted
 {
@@ -34,13 +30,5 @@ class NotifyOnFamilyGoalCompleted
                 'updated_at' => $now,
             ])->all());
         });
-
-        if (class_exists(FamilyGroup::class) && class_exists(TelegramClient::class)) {
-            $client = new TelegramClient();
-            $familyGroup = new FamilyGroup($client);
-            if ($familyGroup->isConfigured()) {
-                $client->sendMessage($familyGroup->id(), MessageFormat::card('🎯', $title, e($body)));
-            }
-        }
     }
 }

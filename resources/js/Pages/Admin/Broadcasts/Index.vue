@@ -156,12 +156,6 @@ function fmtDateTime(iso) {
                     <span>від {{ b.creator?.name }}</span>
                     <span>·</span>
                     <span>{{ audienceLabel(b) }} ({{ b.recipients_count }})</span>
-                    <template v-if="b.telegram.sent + b.telegram.failed + b.telegram.pending > 0">
-                        <span>·</span>
-                        <span class="text-emerald-400/70" v-if="b.telegram.sent">Telegram: {{ b.telegram.sent }} ✓</span>
-                        <span class="text-ember-500/70" v-if="b.telegram.failed">{{ b.telegram.failed }} ✗</span>
-                        <span class="text-white/30" v-if="b.telegram.pending">{{ b.telegram.pending }} в черзі</span>
-                    </template>
                 </div>
             </div>
             <div v-if="broadcasts.data.length === 0" class="px-6 py-12 text-center text-white/30">

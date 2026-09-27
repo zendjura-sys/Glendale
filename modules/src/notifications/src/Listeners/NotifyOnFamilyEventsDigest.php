@@ -3,9 +3,6 @@
 namespace Addons\Notifications\Listeners;
 
 use Addons\FamilyEvents\Models\FamilyEvent;
-use Addons\TelegramBot\Services\FamilyGroup;
-use Addons\TelegramBot\Services\TelegramClient;
-use Addons\TelegramBot\Support\MessageFormat;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -48,23 +45,5 @@ class NotifyOnFamilyEventsDigest
                 'updated_at' => $now,
             ])->all());
         });
-
-        if (class_exists(FamilyGroup::class) && class_exists(TelegramClient::class)) {
-            $client = new TelegramClient();
-            $familyGroup = new FamilyGroup($client);
-            if ($familyGroup->isConfigured()) {
-                $lines = $events->map(function (FamilyEvent $e) {
-                    $when = $e->starts_at->locale('uk')->isoFormat('D MMMM, HH:mm');
-                    $line = e($when).' — '.e($e->title);
-
-                    return $e->location ? $line.' ('.e($e->location).')' : $line;
-                });
-
-                $client->sendMessage(
-                    $familyGroup->id(),
-                    MessageFormat::card('📅', $title, $lines->implode("\n"))
-                );
-            }
-        }
     }
 }

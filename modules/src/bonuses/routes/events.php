@@ -2,14 +2,13 @@
 
 use Addons\Bonuses\Models\BonusPayout;
 use Addons\Bonuses\Services\BonusCalculator;
-use Addons\Bonuses\Services\BonusDigest;
 use Addons\Bonuses\Support\FinanceNotifier;
 use Illuminate\Console\Scheduling\Schedule;
 
 // Файл підключається на кожен boot (включно з artisan schedule:run), тому
 // реєстрація тут безпечна — той самий приём, що й у Progression.
 // Субота 23:00 Europe/Kyiv — рахує щойно завершений тиждень, одразу
-// зараховує премії на рахунки учасників (банк) і шле дайджест у сімейний чат.
+// зараховує премії на рахунки учасників (банк).
 // Кожна підтверджена родина рахується окремо, у своїх межах (FamilyContext).
 app(Schedule::class)
     ->call(fn () => \App\Families\FamilyContext::eachVerified(function () {
@@ -19,7 +18,6 @@ app(Schedule::class)
         $weekStart = $calculator->currentWeekStart()->subWeek();
 
         $credited = $calculator->runWeeklyPayouts($weekStart, credit: true);
-        app(BonusDigest::class)->sendFor($weekStart);
 
         $credited->each(fn (BonusPayout $payout) => FinanceNotifier::notify(
             $payout->user,

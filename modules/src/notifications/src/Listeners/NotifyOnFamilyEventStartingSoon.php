@@ -2,15 +2,12 @@
 
 namespace Addons\Notifications\Listeners;
 
-use Addons\TelegramBot\Services\FamilyGroup;
-use Addons\TelegramBot\Services\TelegramClient;
-use Addons\TelegramBot\Support\MessageFormat;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Нагадування "за 15 хвилин до початку" — друге, окреме від денного
- * (NotifyOnFamilyEventReminder), той самий fan-out + груп-чат приём.
+ * (NotifyOnFamilyEventReminder), той самий fan-out.
  * На відміну від денного, веб-сповіщення НЕ шле тим, хто явно відповів
  * "не піду" на RSVP — денне ще запрошує визначитись, а це вже фінальний
  * пінг для тих, хто (ймовірно) прийде.
@@ -39,13 +36,5 @@ class NotifyOnFamilyEventStartingSoon
                 'updated_at' => $now,
             ])->all());
         });
-
-        if (class_exists(FamilyGroup::class) && class_exists(TelegramClient::class)) {
-            $client = new TelegramClient();
-            $familyGroup = new FamilyGroup($client);
-            if ($familyGroup->isConfigured()) {
-                $client->sendMessage($familyGroup->id(), MessageFormat::card('⏳', $title, e($body)));
-            }
-        }
     }
 }

@@ -22,10 +22,6 @@ class VerifyEmailController extends Controller
             event(new Verified($request->user()));
         }
 
-        // Свіжопідтверджений email — саме той момент, коли варто одразу
-        // запропонувати прив'язати Telegram, а не лишати людину саму
-        // здогадуватись, що це є в профілі. Повторне підтвердження (гілка
-        // вище) на дашборд, без повтору цієї пропозиції щоразу.
-        return redirect()->intended(route('profile.edit', absolute: false).'?link_telegram=1');
+        return redirect()->intended('/feed?verified=1');
     }
 }

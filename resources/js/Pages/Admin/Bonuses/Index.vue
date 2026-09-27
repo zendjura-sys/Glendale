@@ -54,7 +54,6 @@ const settingsForm = useForm({
     streak_bonus_amount: props.settings.streak_bonus_amount,
     contracts_count_threshold: props.settings.contracts_count_threshold,
     contracts_count_bonus_amount: props.settings.contracts_count_bonus_amount,
-    min_digest_amount: props.settings.min_digest_amount,
 });
 
 function saveSettings() {
@@ -93,7 +92,7 @@ async function markPaid(payout) {
 
 const running = ref(false);
 async function runNow() {
-    if (!confirm('Порахувати поточний тиждень і надіслати дайджест у Telegram зараз?')) return;
+    if (!confirm('Порахувати премії за поточний тиждень зараз?')) return;
     running.value = true;
     try {
         await window.axios.post(route('admin.bonuses.run-now'));
@@ -268,11 +267,6 @@ async function cancelCashRequest(r) {
                 <div>
                     <label class="mb-1 block text-xs uppercase tracking-widest text-white/40">Бонус за к-сть контрактів — сума (₴)</label>
                     <input v-model.number="settingsForm.contracts_count_bonus_amount" type="number" min="0" class="w-full rounded-lg border border-white/10 bg-obsidian-900 px-3 py-2 text-white" />
-                </div>
-
-                <div>
-                    <label class="mb-1 block text-xs uppercase tracking-widest text-white/40">Мінімум для дайджесту в Telegram (₴)</label>
-                    <input v-model.number="settingsForm.min_digest_amount" type="number" min="0" class="w-full rounded-lg border border-white/10 bg-obsidian-900 px-3 py-2 text-white" />
                 </div>
 
                 <div class="sm:col-span-2">

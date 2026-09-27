@@ -10,7 +10,6 @@ use Addons\Bonuses\Models\CashRequest;
 use Addons\Bonuses\Models\InvestmentAchievementTier;
 use Addons\Bonuses\Models\ManualBonusAward;
 use Addons\Bonuses\Services\BonusCalculator;
-use Addons\Bonuses\Services\BonusDigest;
 use Addons\Bonuses\Support\FinanceNotifier;
 use App\Models\User;
 use App\Support\CsvExport;
@@ -176,7 +175,6 @@ class BonusAdminController
             'streak_bonus_amount' => ['required', 'integer', 'min:0'],
             'contracts_count_threshold' => ['nullable', 'integer', 'min:1'],
             'contracts_count_bonus_amount' => ['required', 'integer', 'min:0'],
-            'min_digest_amount' => ['required', 'integer', 'min:0'],
         ]);
 
         BonusSettings::current()->update($data);
@@ -369,9 +367,7 @@ class BonusAdminController
     public function runNow(): JsonResponse
     {
         $calculator = app(BonusCalculator::class);
-        $weekStart = $calculator->currentWeekStart();
         $calculator->runWeeklyPayouts();
-        app(BonusDigest::class)->sendFor($weekStart);
 
         return response()->json([
             'ok' => true,

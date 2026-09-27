@@ -27,8 +27,6 @@ class ProfileController extends Controller
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => session('status'),
-            'telegramReady' => $this->telegramReady(),
-            'promptTelegramLink' => $request->boolean('link_telegram'),
             // key+title — той самий порядок і текст, що на сайті й у боті
             // (FamilyContent — спільне джерело для позицій).
             'positions' => array_map(
@@ -58,19 +56,6 @@ class ProfileController extends Controller
             ->count();
     }
 
-    /**
-     * Блок привязки Telegram показываем, только если бот реально готов
-     * принять человека: модуль установлен И в настройках есть токен с
-     * юзернеймом. Раньше проверялось лишь наличие маршрута, поэтому на
-     * свежем сервере в профиле висела кнопка, которая упиралась в бота
-     * без токена.
-     */
-    private function telegramReady(): bool
-    {
-        return \Illuminate\Support\Facades\Route::has('telegram.status')
-            && trim((string) Setting::get('telegram_bot_token')) !== ''
-            && trim((string) Setting::get('telegram_bot_username')) !== '';
-    }
 
     /**
      * Update the user's profile information.
@@ -121,7 +106,7 @@ class ProfileController extends Controller
 
     /**
      * Дата народження — суто за бажанням: якщо не заповнено, ніхто про це
-     * ніде не дізнається. Якщо заповнено, TelegramBot (за наявності) щодня
+     * ніде не дізнається. Якщо заповнено,
      * перевіряє місяць+день і сам вітає в сімейному чаті — окремого запиту
      * від адміна на це не потрібно.
      */

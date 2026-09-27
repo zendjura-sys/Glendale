@@ -3,10 +3,7 @@
 namespace Addons\Notifications\Http\Controllers\Admin;
 
 use Addons\AiAssistant\Services\BroadcastTextAssistant;
-use Addons\Notifications\Jobs\SendBroadcastTelegramMessage;
 use Addons\Notifications\Models\Broadcast;
-use Addons\Notifications\Models\BroadcastDelivery;
-use Addons\TelegramBot\Models\TelegramLink;
 use App\Models\Setting;
 use App\Models\User;
 use App\Support\FamilyContent;
@@ -39,7 +36,6 @@ class BroadcastController
                 'recipients_count' => $b->recipients_count,
                 'created_at' => $b->created_at,
                 'creator' => $b->creator,
-                'telegram' => $b->deliveryStats(),
             ]);
 
         return Inertia::render('Admin/Broadcasts/Index', [
@@ -72,7 +68,7 @@ class BroadcastController
     /**
      * Спільне для веб-форми й мобільного API: рахує аудиторію, заводить
      * Broadcast, bulk-insert веб-копій у notifications і диспатчить
-     * Telegram-доставку тим, хто прив'язаний.
+     * мобільний push.
      */
     protected function publish(array $data, User $author): Broadcast
     {
@@ -107,7 +103,6 @@ class BroadcastController
             ])->all());
         });
 
-        $this->dispatchTelegramDeliveries($broadcast, $recipients);
         (new MobilePushSender())->sendToUserIds($recipients->pluck('id'), $broadcast->title, $broadcast->body);
 
         return $broadcast;
@@ -140,32 +135,5 @@ class BroadcastController
             'errors' => null,
             'redirect' => null,
         ], $text !== null ? 200 : 422);
-    }
-
-    /**
-     * Delivery-рядок і job заводимо тільки тим, хто реально прив'язав
-     * Telegram, — інакше довелось би тримати "skipped"-статус лише заради
-     * того, кому й так нема куди слати.
-     */
-    protected function dispatchTelegramDeliveries(Broadcast $broadcast, $recipients): void
-    {
-        if (! class_exists(TelegramLink::class) || $recipients->isEmpty()) {
-            return;
-        }
-
-        $linkedUserIds = TelegramLink::query()
-            ->whereIn('user_id', $recipients->pluck('id'))
-            ->whereNotNull('linked_at')
-            ->pluck('user_id');
-
-        foreach ($linkedUserIds as $userId) {
-            $delivery = BroadcastDelivery::create([
-                'broadcast_id' => $broadcast->id,
-                'user_id' => $userId,
-                'status' => 'pending',
-            ]);
-
-            SendBroadcastTelegramMessage::dispatch($delivery->id);
-        }
     }
 }

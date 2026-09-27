@@ -2,14 +2,11 @@
 
 namespace Addons\Notifications\Listeners;
 
-use Addons\TelegramBot\Services\FamilyGroup;
-use Addons\TelegramBot\Services\TelegramClient;
-use Addons\TelegramBot\Support\MessageFormat;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Нагадування за день до події — той самий fan-out + груп-чат приём, що й
+ * Нагадування за день до події — той самий fan-out, що й
  * при створенні події (NotifyOnFamilyEventCreated).
  */
 class NotifyOnFamilyEventReminder
@@ -34,13 +31,5 @@ class NotifyOnFamilyEventReminder
                 'updated_at' => $now,
             ])->all());
         });
-
-        if (class_exists(FamilyGroup::class) && class_exists(TelegramClient::class)) {
-            $client = new TelegramClient();
-            $familyGroup = new FamilyGroup($client);
-            if ($familyGroup->isConfigured()) {
-                $client->sendMessage($familyGroup->id(), MessageFormat::card('⏰', $title, e($body)));
-            }
-        }
     }
 }

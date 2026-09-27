@@ -102,7 +102,7 @@ class BonusAdminController
             'streak_bonus_amount' => ['required', 'integer', 'min:0'],
             'contracts_count_threshold' => ['nullable', 'integer', 'min:1'],
             'contracts_count_bonus_amount' => ['required', 'integer', 'min:0'],
-            'min_digest_amount' => ['required', 'integer', 'min:0'],
+            'min_digest_amount' => ['sometimes', 'integer', 'min:0'],
         ]);
 
         $settings = BonusSettings::current();

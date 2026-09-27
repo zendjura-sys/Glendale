@@ -30,7 +30,6 @@ declare -A ZIP_NAME=(
     [ai-assistant]='AiAssistant'
     [notifications]='Notifications'
     [bonuses]='Bonuses'
-    [telegram]='TelegramBot'
     [messenger]='Messenger'
 )
 

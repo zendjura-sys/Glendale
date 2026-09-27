@@ -32,7 +32,6 @@ use App\Support\DesignSettings;
 use App\Support\FamilyContent;
 use App\Support\FamilyStats;
 use App\Support\MemberCard;
-use App\Support\TelegramLink;
 use App\Support\UnionDomain;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -80,7 +79,6 @@ Route::get('/', function (Request $request) {
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
         'memberCount' => User::query()->count(),
-        'telegramBotUrl' => TelegramLink::url(),
         // Обране в адмінці (Панель CMS → Статистика родини) — реальні
         // числа з бази, не текст, вписаний уручну.
         'stats' => FamilyStats::selected(),
@@ -146,7 +144,6 @@ Route::get('/dashboard', function (Request $request) {
 
     return Inertia::render('Dashboard', [
         'memberCount' => User::query()->count(),
-        'telegramBotUrl' => TelegramLink::url(),
         'bankCard' => $bankCard,
         'mobileAppDownloadUrl' => Setting::get('mobile_app_download_url'),
     ]);
@@ -204,7 +201,7 @@ foreach (\App\Http\Controllers\Platform\SpaController::PAGES as $page) {
 // Старі посилання /social/... з першої версії.
 Route::get('/social/{any?}', fn (?string $any = null) => redirect('/'.($any ?: 'feed'), 301))->where('any', '.*');
 
-Route::middleware(['auth', 'verified', 'permission:addons.manage|reports.manage|progression.manage|settings.manage|roles.manage|users.manage|members.manage|goals.manage|broadcasts.manage|telegram.manage|bonuses.manage|events.manage|union.manage'])
+Route::middleware(['auth', 'verified', 'permission:addons.manage|reports.manage|progression.manage|settings.manage|roles.manage|users.manage|members.manage|goals.manage|broadcasts.manage|bonuses.manage|events.manage|union.manage'])
     ->get('/admin', [DashboardController::class, 'index'])
     ->name('admin.dashboard');
 
@@ -344,7 +341,7 @@ Route::middleware(['auth', 'verified', 'permission:settings.manage'])
     ->group(function () {
         Route::get('/', [SettingsController::class, 'index'])->name('index');
         Route::put('/{group}', [SettingsController::class, 'update'])
-            ->where('group', 'general|telegram|discord|api_keys|ai|ai_prompts|report_guides|mobile_app')
+            ->where('group', 'general|discord|api_keys|ai|ai_prompts|report_guides|mobile_app')
             ->name('update');
         Route::post('/mobile-app/apk', [SettingsController::class, 'uploadMobileApk'])->name('mobile-app.apk');
     });

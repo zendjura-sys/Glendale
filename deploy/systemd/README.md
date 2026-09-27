@@ -67,7 +67,7 @@ systemctl disable --now monsory-deploy.path
 
 `php artisan discord:bot` (app/Console/Commands/DiscordBotServe.php) —
 заготовка під майбутній проєкт, поки без команд/логіки. На відміну від
-Telegram (вебхук, живе всередині звичайного HTTP-запиту), DiscordPHP
+DiscordPHP
 тримає постійне WebSocket-з'єднання — тому це окремий довгоживучий
 процес, а не маршрут. Навмисно НЕ підключений до setup-vps.sh: без
 токена команда сама відмовляється стартувати, і тримати завжди

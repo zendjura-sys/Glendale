@@ -44,7 +44,6 @@ final class ShellNav
         ['Система', [
             ['admin.addons.index', 'Аддони', 'addons.manage', 'blocks'],
             ['admin.roles.index', 'Права доступу', 'roles.manage', 'shield'],
-            ['admin.telegram.index', 'Telegram-бот', 'telegram.manage', 'message'],
             ['admin.design.index', 'Оформлення', 'settings.manage', 'palette'],
             ['admin.changelog.index', 'Що нового', 'settings.manage', 'history'],
             ['admin.failed-jobs.index', 'Провалені задачі', 'settings.manage', 'alert'],

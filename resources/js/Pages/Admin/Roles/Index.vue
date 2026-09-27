@@ -29,7 +29,6 @@ const PERMISSION_META = {
     'reports.manage': { label: 'Звіти', description: 'Перевірка й оцінка (S–G) звітів родини (бізвар, контракти, інвестиції)' },
     'roles.manage': { label: 'Ролі й права', description: 'Створення ролей і призначення їм дозволів — ця сторінка' },
     'settings.manage': { label: 'Налаштування сайту', description: 'Загальні налаштування CMS, включно з ключами AI/Telegram/Discord' },
-    'telegram.manage': { label: 'Telegram-бот', description: 'Налаштування бота, привʼязка сімейного чату, перевірка підключення' },
     'users.manage': { label: 'Учасники', description: 'Акаунти учасників: ролі, посади, блокування' },
 };
 function permissionMeta(permission) {

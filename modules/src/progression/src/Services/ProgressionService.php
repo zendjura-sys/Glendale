@@ -227,16 +227,6 @@ class ProgressionService
         }
     }
 
-    /**
-     * Викликається слухачем AccountLinked від Telegram-бота (опційна
-     * залежність через string-літерал у events.php — той самий принцип,
-     * що й у решти міжмодульних подій).
-     */
-    public function handleAccountLinked(User $user): void
-    {
-        $this->unlock($user, 'telegram_linked');
-    }
-
     private function unlock(User $user, string $achievementCode): void
     {
         $achievement = Achievement::where('code', $achievementCode)->first();
