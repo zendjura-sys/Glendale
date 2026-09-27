@@ -41,5 +41,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const server = http.createServer(createApp());
   attachRealtime(server);
   const port = Number(process.env.PORT) || 3001;
-  server.listen(port, () => console.log(`Glendale server: http://localhost:${port}`));
+  // HOST=127.0.0.1 behind a reverse proxy keeps the app off the public interface.
+  const host = process.env.HOST || undefined;
+  server.listen(port, host, () => console.log(`Glendale server: http://${host || 'localhost'}:${port}`));
 }

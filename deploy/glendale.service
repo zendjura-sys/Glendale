@@ -1,0 +1,23 @@
+[Unit]
+Description=Glendale social network
+After=network.target
+
+[Service]
+Type=simple
+User=glendale
+Group=glendale
+WorkingDirectory=/opt/glendale
+EnvironmentFile=/etc/glendale.env
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning server/src/index.js
+Restart=always
+RestartSec=3
+
+# Hardening: the app only needs to write its database and uploads.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/glendale
+
+[Install]
+WantedBy=multi-user.target
