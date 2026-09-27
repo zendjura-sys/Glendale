@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class XpLedgerEntry extends Model
 {
+    use \App\Families\BelongsToFamily;
+
     protected $table = 'xp_ledger';
 
     public $timestamps = false; // только created_at, апенд-лог не обновляется

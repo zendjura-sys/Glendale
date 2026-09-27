@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserAchievement extends Model
 {
+    use \App\Families\BelongsToFamily;
+
     public $timestamps = false;
 
     protected $fillable = ['user_id', 'achievement_id', 'earned_at'];

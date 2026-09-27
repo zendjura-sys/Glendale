@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BonusPayout extends Model
 {
+    use \App\Families\BelongsToFamily;
+
     protected $table = 'bonus_payouts';
 
     protected $fillable = [

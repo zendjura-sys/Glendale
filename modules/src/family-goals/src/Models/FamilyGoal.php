@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FamilyGoal extends Model
 {
+    use \App\Families\BelongsToFamily;
+
     protected $table = 'family_goals';
 
     /** null — прогрес вручну (як і раніше); інакше рахується сам зі звітів. */

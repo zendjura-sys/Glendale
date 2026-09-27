@@ -54,6 +54,11 @@ final class CoreModules
                 $paths[] = $dir;
             }
         }
+        // Міграції ядра, що змінюють таблиці модулів (напр. family_id у
+        // кожній) — мусять іти після самих модулів.
+        if (is_dir($late = base_path('database/migrations/after-modules'))) {
+            $paths[] = $late;
+        }
 
         return $paths;
     }

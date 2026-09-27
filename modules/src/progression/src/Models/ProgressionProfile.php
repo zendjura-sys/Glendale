@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProgressionProfile extends Model
 {
+    use \App\Families\BelongsToFamily;
+
     protected $table = 'progression_profiles';
 
     protected $fillable = [

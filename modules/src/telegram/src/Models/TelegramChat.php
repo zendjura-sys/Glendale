@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class TelegramChat extends Model
 {
+    use \App\Families\BelongsToFamily;
+
     protected $table = 'telegram_chats';
 
     protected $fillable = [

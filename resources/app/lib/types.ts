@@ -19,6 +19,12 @@ export interface Me extends User {
   /** Родини, в яких людина (для меню «Моя родина»). */
   families: MyFamily[];
   canManageFamilies: boolean;
+  /** Активна родина: у ній відкриваються звіти, банк, цілі… */
+  activeFamilyId: number | null;
+  /** Учасник активної родини — бачить її інструменти. */
+  familyTools: boolean;
+  /** Лідер або заступник активної родини. */
+  familyManager: boolean;
 }
 
 // ───────────── Система управління родинами («Моя родина») ─────────────

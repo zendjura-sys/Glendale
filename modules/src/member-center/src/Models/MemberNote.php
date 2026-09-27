@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MemberNote extends Model
 {
+    use \App\Families\BelongsToFamily;
+
     protected $table = 'member_notes';
 
     protected $fillable = ['user_id', 'author_id', 'body'];

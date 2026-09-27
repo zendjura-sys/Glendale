@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CashRequest extends Model
 {
+    use \App\Families\BelongsToFamily;
+
     protected $table = 'bank_cash_requests';
 
     protected $fillable = ['user_id', 'amount', 'status', 'resolved_by', 'resolved_at'];

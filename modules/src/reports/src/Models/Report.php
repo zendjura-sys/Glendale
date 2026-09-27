@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Report extends Model
 {
+    use \App\Families\BelongsToFamily;
+
     use HasFactory;
 
     protected $table = 'reports';

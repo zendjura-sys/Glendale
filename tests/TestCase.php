@@ -14,5 +14,6 @@ abstract class TestCase extends BaseTestCase
         // RefreshDatabase откатывает данные, но статику процесса — нет, и
         // настройка, записанная в предыдущем тесте, протекала в следующий.
         Setting::flushMemo();
+        \App\Families\FamilyContext::flush();
     }
 }

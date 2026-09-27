@@ -54,6 +54,7 @@ final class DisciplineFines
     {
         return self::available()
             && DB::table('member_warnings')
+                ->when(\App\Families\FamilyContext::id(), fn ($q, $f) => $q->where('family_id', $f))
                 ->where('user_id', $userId)->where('type', 'reprimand')->where('status', 'active')
                 ->exists();
     }
@@ -61,6 +62,7 @@ final class DisciplineFines
     private static function query(int $userId)
     {
         return DB::table('member_warnings')
+            ->when(\App\Families\FamilyContext::id(), fn ($q, $f) => $q->where('family_id', $f))
             ->where('user_id', $userId)
             ->where('type', 'fine')
             ->where('status', 'paid')

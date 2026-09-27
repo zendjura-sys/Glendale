@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class BonusSettings extends Model
 {
+    use \App\Families\BelongsToFamily;
+
     protected $table = 'bonus_settings';
 
     protected $fillable = [

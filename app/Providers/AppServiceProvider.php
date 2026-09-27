@@ -28,6 +28,18 @@ class AppServiceProvider extends ServiceProvider
     {
         Vite::prefetch(concurrency: 3);
 
+        // Лідер і заступники керують інструментами СВОЄЇ активної родини
+        // (звіти, банк, покарання, цілі, події, прогрес, розсилки) без ролі
+        // адміністратора платформи.
+        \Illuminate\Support\Facades\Queue::after(fn () => \App\Families\FamilyContext::flushCache());
+        \Illuminate\Support\Facades\Gate::before(function ($user, string $ability) {
+            if (in_array($ability, \App\Families\FamilyAbilities::MANAGER, true) && \App\Families\FamilyContext::isManager($user)) {
+                return true;
+            }
+
+            return null;
+        });
+
         // Без App\Providers\EventServiceProvider (его нет в Laravel 12 по
         // умолчанию) фреймворк сам по себе НЕ подписывает этот листенер —
         // без этой строки письмо с подтверждением email при регистрации

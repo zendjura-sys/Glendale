@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class MemberWarning extends Model
 {
+    use \App\Families\BelongsToFamily;
+
     protected $table = 'member_warnings';
 
     protected $fillable = [

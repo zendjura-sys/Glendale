@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserInvestmentAchievement extends Model
 {
+    use \App\Families\BelongsToFamily;
+
     protected $table = 'user_investment_achievements';
 
     protected $fillable = ['user_id', 'tier_id', 'earned_at'];

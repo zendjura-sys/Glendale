@@ -223,6 +223,50 @@ const MONSORY_LINKS = () => [
   { href: '/rules', icon: BookOpen, label: tr('Правила') },
 ];
 
+/** Інструменти активної родини + перемикач, якщо людина в кількох родинах. */
+function FamilyTools({ pathname }: { pathname: string }) {
+  const me = useMe();
+  const verified = me.families.filter((f) => f.status === 'verified');
+  const active = verified.find((f) => f.id === me.activeFamilyId) ?? verified[0];
+  const [busy, setBusy] = useState(false);
+  const choose = async (id: number) => {
+    setBusy(true);
+    try {
+      await api('/me/active-family', { body: { familyId: id } });
+      window.location.reload();
+    } catch {
+      setBusy(false);
+    }
+  };
+  return (
+    <>
+      <div className="sidebar-sep" />
+      <div className="sidebar-title">{tr('Інструменти родини')}</div>
+      {verified.length > 1 ? (
+        <select className="family-switch" value={active?.id} disabled={busy} onChange={(e) => choose(Number(e.target.value))} aria-label={tr('Активна родина')}>
+          {verified.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.tag ? `[${f.tag}] ${f.name}` : f.name}
+            </option>
+          ))}
+        </select>
+      ) : (
+        active && <div className="family-switch static">{active.tag ? `[${active.tag}] ${active.name}` : active.name}</div>
+      )}
+      {MONSORY_LINKS().map(({ href, icon: Icon, label }) => (
+        <a key={href} href={href} className={pathname === href || pathname.startsWith(href + '/') ? 'active' : undefined}>
+          <Icon size={20} /> {label}
+        </a>
+      ))}
+      {me.familyManager && !isStaffLevel(me.level.type) && (
+        <a href="/admin" className={pathname.startsWith('/admin') ? 'active' : undefined}>
+          <Shield size={20} /> {tr('Керування родиною')}
+        </a>
+      )}
+    </>
+  );
+}
+
 export function Sidebar() {
   const me = useMe();
   const { pathname } = useLocation();
@@ -265,12 +309,7 @@ export function Sidebar() {
       <NavLink to="/unions">
         <Handshake size={20} /> {tr('Союзи')}
       </NavLink>
-      {me.verified &&
-        MONSORY_LINKS().map(({ href, icon: Icon, label }) => (
-          <a key={href} href={href} className={pathname === href || pathname.startsWith(href + '/') ? 'active' : undefined}>
-            <Icon size={20} /> {label}
-          </a>
-        ))}
+      {me.familyTools && <FamilyTools pathname={pathname} />}
       <div className="sidebar-sep" />
       <NavLink to="/settings">
         <Settings size={20} /> {tr('Настройки')}

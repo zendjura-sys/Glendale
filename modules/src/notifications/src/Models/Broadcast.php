@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Broadcast extends Model
 {
+    use \App\Families\BelongsToFamily;
+
     protected $table = 'broadcasts';
 
     protected $fillable = [

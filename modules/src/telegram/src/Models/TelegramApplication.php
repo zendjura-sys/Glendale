@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TelegramApplication extends Model
 {
+    use \App\Families\BelongsToFamily;
+
     protected $table = 'telegram_applications';
 
     public const STATUS_PENDING = 'pending';

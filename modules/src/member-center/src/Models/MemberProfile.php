@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MemberProfile extends Model
 {
+    use \App\Families\BelongsToFamily;
+
     protected $table = 'member_profiles';
 
     protected $fillable = ['user_id', 'hr_status'];

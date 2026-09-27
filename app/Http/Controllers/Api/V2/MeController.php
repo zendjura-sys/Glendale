@@ -20,6 +20,17 @@ class MeController extends Controller
         return response()->json(['user' => Presenter::me($user), 'counters' => Social::counters($user->id)]);
     }
 
+    /** Перемикач «Моя родина»: у якій родині відкривати інструменти. */
+    public function activeFamily(Request $request): JsonResponse
+    {
+        $id = (int) $request->input('familyId');
+        if (! \App\Families\FamilyContext::choose($request->user(), $id)) {
+            \App\Social\Social::fail(403, 'Ви не учасник цієї родини.');
+        }
+
+        return response()->json(['user' => \App\Social\Presenter::me($request->user()->fresh())]);
+    }
+
     public function counters(Request $request): JsonResponse
     {
         return response()->json(Social::counters($request->user()->id));

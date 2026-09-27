@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LeaveRequest extends Model
 {
+    use \App\Families\BelongsToFamily;
+
     protected $table = 'leave_requests';
 
     protected $fillable = [

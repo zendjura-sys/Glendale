@@ -22,7 +22,8 @@ Event::listen(AccountLinked::class, UnlockAchievementOnAccountLinked::class);
 // Файл подключается на каждый boot (включая artisan schedule:run), поэтому
 // регистрация здесь безопасна и не требует отдельного entrypoint-типа.
 app(Schedule::class)
-    ->call(fn () => app(ProgressionService::class)->runWeeklyBonuses())
+    // Кожна підтверджена родина — окремо, у своїх межах (FamilyContext).
+    ->call(fn () => \App\Families\FamilyContext::eachVerified(fn () => app(ProgressionService::class)->runWeeklyBonuses()))
     ->weeklyOn(0, '20:00')
     ->timezone('Europe/Kyiv')
     ->name('progression-weekly-bonuses')

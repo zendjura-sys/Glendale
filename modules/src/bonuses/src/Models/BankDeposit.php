@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BankDeposit extends Model
 {
+    use \App\Families\BelongsToFamily;
+
     protected $table = 'bank_deposits';
 
     protected $fillable = [

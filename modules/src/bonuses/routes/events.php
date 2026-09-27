@@ -10,8 +10,9 @@ use Illuminate\Console\Scheduling\Schedule;
 // реєстрація тут безпечна — той самий приём, що й у Progression.
 // Субота 23:00 Europe/Kyiv — рахує щойно завершений тиждень, одразу
 // зараховує премії на рахунки учасників (банк) і шле дайджест у сімейний чат.
+// Кожна підтверджена родина рахується окремо, у своїх межах (FamilyContext).
 app(Schedule::class)
-    ->call(function () {
+    ->call(fn () => \App\Families\FamilyContext::eachVerified(function () {
         $calculator = app(BonusCalculator::class);
         // Рівно о 23:00 currentWeekStart() — це вже початок НОВОГО тижня
         // (ще порожнього), тож тиждень, що щойно завершився, — на один назад.
@@ -28,7 +29,7 @@ app(Schedule::class)
             '+'.FinanceNotifier::money($payout->total_amount).' на ваш рахунок — премія за тиждень '
                 .$weekStart->format('d.m').'–'.$weekStart->copy()->addDays(6)->format('d.m.Y').'.',
         ));
-    })
+    }))
     ->name('bonuses-weekly-payouts')
     ->weeklyOn(6, '23:00')
     ->timezone('Europe/Kyiv')

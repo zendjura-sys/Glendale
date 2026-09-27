@@ -2,6 +2,7 @@
 
 namespace App\Social;
 
+use App\Families\FamilyContext;
 use App\Models\User;
 use App\Support\Presence;
 use Illuminate\Support\Collection;
@@ -75,6 +76,10 @@ final class Presenter
                 ->map(fn ($f) => ['id' => $f->id, 'name' => $f->name, 'tag' => $f->tag, 'status' => $f->status, 'role' => $f->role])
                 ->values()->all(),
             'canManageFamilies' => $u->can('families.manage'),
+            // Активна родина — у ній відкриваються інструменти; лідер і заступники нею керують.
+            'activeFamilyId' => FamilyContext::isMember($u) ? FamilyContext::id() : null,
+            'familyTools' => ! $u->is_shadow && FamilyContext::isMember($u),
+            'familyManager' => FamilyContext::isManager($u),
         ];
     }
 

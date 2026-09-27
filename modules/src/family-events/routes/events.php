@@ -33,7 +33,8 @@ app(Schedule::class)
 // ловить кожну подію рівно раз завдяки soon_reminder_sent_at — навіть
 // якщо прогін випаде трохи раніше чи пізніше самої точки "15 хв до".
 app(Schedule::class)
-    ->call(function () {
+    // Кожна підтверджена родина — окремо (FamilyContext): свої події, свої нагадування.
+    ->call(fn () => \App\Families\FamilyContext::eachVerified(function () {
         $now = FamilyEvent::nowAsStored();
         $soon = $now->copy()->addMinutes(15);
 
@@ -45,7 +46,7 @@ app(Schedule::class)
                 Event::dispatch(new FamilyEventStartingSoon($event));
                 $event->update(['soon_reminder_sent_at' => now()]);
             });
-    })
+    }))
     ->name('family-events-starting-soon')
     ->everyMinute()
     ->withoutOverlapping();

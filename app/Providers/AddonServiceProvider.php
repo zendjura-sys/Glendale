@@ -52,7 +52,8 @@ class AddonServiceProvider extends ServiceProvider
         // грузится всегда, до проверки runningInConsole().
         $autoloader->loadEntrypoint('events');
 
-        if ($this->app->runningInConsole()) {
+        // Тести (теж консоль) маршрути модулів бачать — вони частина ядра.
+        if ($this->app->runningInConsole() && ! $this->app->runningUnitTests()) {
             // bot-точки входа подключаются отдельной artisan-командой при
             // необходимости, а не на каждый CLI-вызов (миграции, tinker и т.п.)
             return;

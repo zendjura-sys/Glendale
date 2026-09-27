@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class FamilyEvent extends Model
 {
+    use \App\Families\BelongsToFamily;
+
     protected $table = 'family_events';
 
     protected $fillable = ['title', 'description', 'location', 'starts_at', 'created_by', 'reminder_sent_at', 'soon_reminder_sent_at'];

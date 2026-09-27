@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BankTransfer extends Model
 {
+    use \App\Families\BelongsToFamily;
+
     protected $table = 'bank_transfers';
 
     protected $fillable = ['from_user_id', 'to_user_id', 'amount', 'note', 'reversed_at', 'reversed_by'];

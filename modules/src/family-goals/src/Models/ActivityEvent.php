@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ActivityEvent extends Model
 {
+    use \App\Families\BelongsToFamily;
+
     protected $table = 'activity_events';
 
     protected $fillable = ['type', 'user_id', 'message'];

@@ -30,6 +30,7 @@ Route::middleware(['auth:sanctum', 'throttle:240,1,api-v2'])->group(function () 
     Route::get('/me', [MeController::class, 'show']);
     Route::patch('/me', [MeController::class, 'update']);
     Route::get('/counters', [MeController::class, 'counters']);
+    Route::post('/me/active-family', [MeController::class, 'activeFamily']);
     Route::post('/me/password', [MeController::class, 'password'])->middleware('throttle:6,1,me-password');
     Route::post('/me/avatar', [MeController::class, 'avatar']);
     Route::post('/me/cover', [MeController::class, 'cover']);
