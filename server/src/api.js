@@ -6,6 +6,7 @@ import { getSetting, publicConfig, isEmailBanned, isIpBanned, censor } from './s
 import { upload, fileUrl } from './uploads.js';
 import { music, musicCount } from './music.js';
 import { spotify } from './spotify.js';
+import { chats } from './chats.js';
 import { send } from './realtime.js';
 import {
   userShort,
@@ -114,6 +115,7 @@ api.post('/auth/login', (req, res) => {
 api.use(requireAuth);
 api.use(music);
 api.use(spotify);
+api.use(chats);
 
 api.post('/auth/logout', (req, res) => {
   q('DELETE FROM sessions WHERE token = ?').run(req.token);

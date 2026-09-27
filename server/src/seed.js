@@ -64,7 +64,7 @@ const DIALOG = [
 
 export function seed({ reset = false } = {}) {
   if (reset) {
-    for (const t of ['playlist_tracks', 'playlists', 'user_tracks', 'tracks', 'admin_log', 'reports', 'announcements', 'notifications', 'photos', 'messages', 'comments', 'likes', 'posts', 'group_members', 'groups', 'friend_requests', 'friends', 'sessions', 'users']) {
+    for (const t of ['chat_messages', 'chat_members', 'chats', 'playlist_tracks', 'playlists', 'user_tracks', 'tracks', 'admin_log', 'reports', 'announcements', 'notifications', 'photos', 'messages', 'comments', 'likes', 'posts', 'group_members', 'groups', 'friend_requests', 'friends', 'sessions', 'users']) {
       db.exec(`DELETE FROM ${t}`);
     }
     db.exec('DELETE FROM sqlite_sequence');
@@ -203,6 +203,25 @@ export function seed({ reset = false } = {}) {
     trackIds.forEach((id, i) => q('INSERT INTO user_tracks (user_id, track_id, added_at) VALUES (?, ?, ?)').run(demo, id, start + (i + 5) * DAY));
     const pl = Number(q('INSERT INTO playlists (owner_id, title, description, created_at) VALUES (?, ?, ?, ?)').run(demo, 'Для роботи', 'Спокійна музика без слів', start).lastInsertRowid);
     trackIds.forEach((id, i) => q('INSERT INTO playlist_tracks (playlist_id, track_id, position, added_at) VALUES (?, ?, ?, ?)').run(pl, id, i + 1, start));
+    // Demo group chat with the demo user and three friends.
+    const chatStart = Date.now() - 3 * 3600_000;
+    const chatId = Number(q('INSERT INTO chats (title, owner_id, created_at) VALUES (?, ?, ?)').run('Похід у Карпати 🏔', others[0], chatStart).lastInsertRowid);
+    q("INSERT INTO chat_members (chat_id, user_id, role, joined_at) VALUES (?, ?, 'owner', ?)").run(chatId, others[0], chatStart);
+    for (const uid of [demo, others[1], others[3]]) q('INSERT INTO chat_members (chat_id, user_id, joined_at) VALUES (?, ?, ?)').run(chatId, uid, chatStart);
+    const insChat = q('INSERT INTO chat_messages (chat_id, from_id, kind, text, created_at) VALUES (?, ?, ?, ?, ?)');
+    let ct = chatStart;
+    insChat.run(chatId, others[0], 'system', 'Алексей Смирнов создал(а) беседу «Похід у Карпати 🏔»', ct);
+    const chatLines = [
+      [others[0], 'Всім привіт! Пропоную в суботу виїхати о 7:00'],
+      [others[1], 'Я за! Беру термос і бутерброди ☕'],
+      [others[3], 'А хто за кермом?'],
+      [demo, 'Можу я, у мене 5 місць'],
+      [others[0], 'Супер, тоді зустрічаємось біля метро'],
+    ];
+    const chatIds = chatLines.map(([from, text]) => Number(insChat.run(chatId, from, 'text', text, (ct += 9 * 60_000)).lastInsertRowid));
+    q('UPDATE chat_members SET last_read_id = ? WHERE chat_id = ?').run(chatIds[chatIds.length - 1], chatId);
+    q('UPDATE chat_members SET last_read_id = ? WHERE chat_id = ? AND user_id = ?').run(chatIds[2], chatId, demo);
+
     q("INSERT INTO posts (author_id, owner_type, owner_id, text, audio_id, created_at) VALUES (?, 'user', ?, ?, ?, ?)").run(
       others[4], others[4], 'Записав новий трек — послухайте 🎧', trackIds[1], Date.now() - 5 * 3600_000,
     );

@@ -1,6 +1,7 @@
 import { q, now } from './db.js';
 import { isOnline, send } from './realtime.js';
 import { levelOf, isStaff } from './auth.js';
+import { unreadChats } from './chats.js';
 
 const ONLINE_WINDOW = 5 * 60 * 1000;
 
@@ -212,7 +213,7 @@ export function notify(userId, actorId, type, { postId = null, text = '' } = {})
 
 export function counters(userId) {
   return {
-    messages: q('SELECT COUNT(DISTINCT from_id) AS c FROM messages WHERE to_id = ? AND is_read = 0').get(userId).c,
+    messages: q('SELECT COUNT(DISTINCT from_id) AS c FROM messages WHERE to_id = ? AND is_read = 0').get(userId).c + unreadChats(userId),
     friends: q('SELECT COUNT(*) AS c FROM friend_requests WHERE to_id = ?').get(userId).c,
     notifications: q('SELECT COUNT(*) AS c FROM notifications WHERE user_id = ? AND is_read = 0').get(userId).c,
   };

@@ -148,6 +148,39 @@ export interface Message {
   createdAt: number;
 }
 
+export interface ChatMessage {
+  id: number;
+  chatId: number;
+  fromId: number | null;
+  author: UserShort | null;
+  kind: 'text' | 'system';
+  text: string;
+  image: string | null;
+  audio: Track | null;
+  spotify: SpotifyRef | null;
+  createdAt: number;
+}
+
+export interface ChatMember extends UserShort {
+  role: 'owner' | 'admin' | 'member';
+  lastReadId: number;
+}
+
+export interface Chat {
+  id: number;
+  title: string;
+  avatar: string | null;
+  ownerId: number | null;
+  createdAt: number;
+  membersCount: number;
+  myRole: 'owner' | 'admin' | 'member' | null;
+  lastMessage: ChatMessage | null;
+  unread: number;
+  readUpTo: number;
+  previewMembers: UserShort[];
+  members?: ChatMember[];
+}
+
 export interface Dialog {
   peer: UserShort;
   lastMessage: Message;

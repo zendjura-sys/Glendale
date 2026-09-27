@@ -109,6 +109,7 @@ export default function App() {
           <Route path="friends" element={<FriendsPage />} />
           <Route path="im" element={<MessengerPage />} />
           <Route path="im/:peerId" element={<MessengerPage />} />
+          <Route path="im/c/:chatId" element={<MessengerPage />} />
           <Route path="groups" element={<GroupsPage />} />
           <Route path="club/:id" element={<GroupPage />} />
           <Route path="photos/:id" element={<PhotosPage />} />

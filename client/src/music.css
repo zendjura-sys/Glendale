@@ -415,3 +415,47 @@ body.has-player .toasts {
   height: 10px;
   background: #1ed760;
 }
+
+/* ───────── Group chats ───────── */
+.chat-avatar {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.chat-avatar > .avatar {
+  position: absolute;
+  box-shadow: 0 0 0 2px var(--card-solid);
+  border-radius: 50%;
+}
+.chat-avatar > .avatar:first-child {
+  left: 0;
+  top: 0;
+}
+.chat-avatar > .avatar:last-child {
+  right: 0;
+  bottom: 0;
+}
+.system-msg {
+  align-self: center;
+  max-width: 80%;
+  margin: 6px 0;
+  padding: 4px 12px;
+  border-radius: 12px;
+  color: var(--text-2);
+  font-size: 12.5px;
+  text-align: center;
+}
+.bubble-avatar {
+  width: 30px;
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+.bubble-author {
+  margin-bottom: 2px;
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.bubble-row.first {
+  margin-top: 6px;
+}

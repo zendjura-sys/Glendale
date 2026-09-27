@@ -1,6 +1,7 @@
 import { WebSocketServer } from 'ws';
 import { q, now } from './db.js';
 import { userByToken } from './auth.js';
+import { chatTyping } from './chats.js';
 
 /** userId -> Set<WebSocket> */
 const sockets = new Map();
@@ -58,6 +59,7 @@ export function attachRealtime(server) {
       if (msg.type === 'typing' && Number.isInteger(msg.peerId)) {
         send(msg.peerId, 'typing', { userId: uid });
       }
+      if (msg.type === 'typing' && Number.isInteger(msg.chatId)) chatTyping(msg.chatId, uid);
     });
 
     ws.on('close', () => {
