@@ -255,20 +255,23 @@ class FamilyApiTest extends TestCase
         $verba = DB::table('game_projects')->where('name', 'Verba Online')->value('id');
 
         // Сервери вводяться вручну: номер 1–999 або назва кирилицею; решта пропускається.
-        $this->actingAs($admin)->post("/admin/families/projects/{$verba}/servers", ['names' => "1\n999\nЛьвів\nБіла Церква\n1000\n0\nServer 5\n7a"])
-            ->assertSessionHas('status', fn ($s) => str_starts_with($s, 'Додано серверів: 4. Пропущено некоректних: 4'));
-        $this->assertEqualsCanonicalizing(['1', '999', 'Львів', 'Біла Церква'], DB::table('game_servers')->where('project_id', $verba)->pluck('name')->all());
-        $this->actingAs($admin)->post("/admin/families/projects/{$verba}/servers", ['names' => "abc"])->assertSessionHasErrors('names');
+        $this->actingAs($admin)->post("/admin/families/projects/{$verba}/servers", ['names' => "1\n999\nЛьвів\nБіла Церква\nPhoenix\nRed-Rock\n1000\n0\nServer 5\n7a"])
+            ->assertSessionHas('status', fn ($s) => str_starts_with($s, 'Додано серверів: 6. Пропущено некоректних: 4'));
+        $this->assertEqualsCanonicalizing(['1', '999', 'Львів', 'Біла Церква', 'Phoenix', 'Red-Rock'], DB::table('game_servers')->where('project_id', $verba)->pluck('name')->all());
+        $this->actingAs($admin)->post("/admin/families/projects/{$verba}/servers", ['names' => "a1"])->assertSessionHasErrors('names');
+
+        $family0 = $this->register($this->user('Латиниця'), ['server' => 'Kyiv']);
+        $this->assertSame('Kyiv', $family0['server']);
 
         // У формі — так само; «999» — це наявний сервер, а не новий запис.
         $family = $this->register($this->user('Лідер'), ['server' => '999']);
         $this->assertSame('999', $family['server']);
         Sanctum::actingAs($this->user('Ще один'));
-        foreach (['Server 1', '1000', '07', 'Kyiv'] as $bad) {
+        foreach (['Server 1', '1000', '07', 'Kyiv!', 'a1'] as $bad) {
             $this->post('/api/v2/families', ['name' => 'X', 'project' => 'Verba Online', 'server' => $bad, 'proof' => UploadedFile::fake()->image('p.jpg')], ['Accept' => 'application/json'])
                 ->assertStatus(422);
         }
-        $this->assertSame(4, DB::table('game_servers')->where('project_id', $verba)->count());
+        $this->assertSame(7, DB::table('game_servers')->where('project_id', $verba)->count());
 
         // Новий проєкт — одразу з логотипом.
         $other = $this->register($this->user('Інший'), ['project' => 'Kyiv RP', 'server' => '1', 'projectLogo' => UploadedFile::fake()->image('logo.png', 128, 128)]);

@@ -153,7 +153,7 @@ class FamilyController extends Controller
         abort_unless(DB::table('game_projects')->where('id', $project)->exists(), 404);
         $data = $request->validate(['names' => ['required', 'string', 'max:5000']]);
 
-        // По одному на рядок, вручну: номер 1–999 або назва кирилицею.
+        // По одному на рядок, вручну: номер 1–999 або назва літерами.
         [$names, $invalid] = collect(preg_split('/\R/u', $data['names']))->map(fn ($n) => trim($n))->filter(fn ($n) => $n !== '')
             ->partition(fn ($n) => ProjectServers::valid($n));
         $names = $names->unique(fn ($n) => mb_strtolower($n));

@@ -73,15 +73,15 @@ export interface Place {
   projectLogo?: File | null;
 }
 
-/** Сервер вручну: номер 1–999 або назва кирилицею (як перевіряє сервер). */
-const SERVER_RE = /^(?:[1-9]\d{0,2}|[А-Яа-яЁёЇїІіЄєҐґ]+(?:[ '’-][А-Яа-яЁёЇїІіЄєҐґ]+)*)$/u;
+/** Сервер вручну: номер 1–999 або назва літерами (як перевіряє сервер). */
+const SERVER_RE = /^(?:[1-9]\d{0,2}|[A-Za-zА-Яа-яЁёЇїІіЄєҐґ]+(?:[ '’-][A-Za-zА-Яа-яЁёЇїІіЄєҐґ]+)*)$/u;
 export const serverValid = (s: string) => SERVER_RE.test(s.trim());
 
-/** Фільтр під час введення: з цифри — лише номер до 999, з літери — лише кирилиця. */
+/** Фільтр під час введення: з цифри — лише номер до 999, з літери — лише літери (кирилиця й латиниця). */
 function cleanServer(raw: string) {
   const v = raw.trimStart();
   if (/^\d/.test(v)) return v.replace(/\D/g, '').replace(/^0+/, '').slice(0, 3);
-  return v.replace(/[^А-Яа-яЁёЇїІіЄєҐґ '’-]/gu, '').replace(/^[ '’-]+/, '').replace(/([ '’-])[ '’-]+/g, '$1').slice(0, 40);
+  return v.replace(/[^A-Za-zА-Яа-яЁёЇїІіЄєҐґ '’-]/gu, '').replace(/^[ '’-]+/, '').replace(/([ '’-])[ '’-]+/g, '$1').slice(0, 40);
 }
 
 const placeReady = (p: Place) => (p.projectId !== null || !!p.project.trim()) && (p.serverId !== null || serverValid(p.server));
@@ -209,12 +209,12 @@ function PlacePicker({ value, onChange }: { value: Place; onChange: (p: Place) =
               <input
                 className="field"
                 maxLength={40}
-                placeholder={tr('Номер 1–999 або назва кирилицею')}
+                placeholder={tr('Номер 1–999 або назва літерами')}
                 value={value.server.trimStart()}
                 onChange={(e) => onChange({ ...value, serverId: null, server: cleanServer(e.target.value) || ' ' })}
               />
               <p className={`field-hint${value.server.trim() && !serverValid(value.server) ? ' bad' : ''}`}>
-                {tr('Лише номер від 1 до 999 або назва кирилицею (А–Я, а–я).')}
+                {tr('Лише номер від 1 до 999 або назва літерами (А–Я, а–я, A–Z, a–z).')}
               </p>
             </>
           )}
