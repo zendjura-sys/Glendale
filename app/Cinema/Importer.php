@@ -52,6 +52,7 @@ final class Importer
             $title->save();
 
             self::syncGenres($title, $data['genres'] ?? []);
+            $title->update(['category' => Title::categorize($type, array_map('intval', array_column($data['genres'] ?? [], 'id')), $data['original_language'] ?? null)]);
             self::syncCredits($title, $data);
             self::syncVideos($title, $data['videos']['results'] ?? []);
             if ($type === 'series') {

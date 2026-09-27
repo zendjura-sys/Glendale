@@ -24,8 +24,96 @@ final class CinemaPresenter
             'rating' => $t->vote_average ?: null,
             'localRating' => $t->local_rating,
             'hasPlayer' => $t->kodik_link !== null,
+            'quality' => self::quality($t),
+            'category' => $t->category,
+            'categoryLabel' => Title::CATEGORIES[$t->category][0] ?? null,
+            'badges' => self::badges($t),
+            'isNew' => self::isNew($t),
             'genres' => $t->relationLoaded('genres') ? $t->genres->pluck('name')->take(3)->values()->all() : [],
         ];
+    }
+
+    /** Якість першої озвучки коротко: «WEB-DL», «BDRip»… — бейдж на постері. */
+    private static function quality(Title $t): ?string
+    {
+        $q = (string) (($t->kodik_translations[0]['quality'] ?? null) ?: '');
+
+        return $q === '' ? null : mb_substr(strtok($q, ' '), 0, 12);
+    }
+
+    /**
+     * Бейджі постера з доступних озвучок Kodik: 4K / HDR / FHD / HD,
+     * DUB (є озвучка голосом), SUB (є субтитри).
+     *
+     * @return list<string>
+     */
+    private static function badges(Title $t): array
+    {
+        $tr = collect($t->kodik_translations ?? []);
+        if ($tr->isEmpty()) {
+            return [];
+        }
+        $q = strtoupper($tr->pluck('quality')->filter()->implode(' '));
+        $badges = [];
+        if (str_contains($q, '2160') || str_contains($q, '4K')) {
+            $badges[] = '4K';
+        }
+        if (str_contains($q, 'HDR')) {
+            $badges[] = 'HDR';
+        }
+        if (! $badges) {
+            if (str_contains($q, '1080')) {
+                $badges[] = 'FHD';
+            } elseif (str_contains($q, '720')) {
+                $badges[] = 'HD';
+            }
+        }
+        $types = $tr->pluck('type')->filter();
+        if ($types->contains('voice') || $types->isEmpty()) {
+            $badges[] = 'DUB';
+        }
+        if ($types->contains('subtitles')) {
+            $badges[] = 'SUB';
+        }
+
+        return array_slice($badges, 0, 3);
+    }
+
+    /** «Новинка»: вийшло нещодавно або щойно з'явилось у каталозі свіже кіно. */
+    private static function isNew(Title $t): bool
+    {
+        if ($t->release_date && $t->release_date->gte(now()->subDays(120))) {
+            return true;
+        }
+
+        return $t->created_at && $t->created_at->gte(now()->subDays(7)) && $t->year >= (int) now()->format('Y') - 1;
+    }
+
+    /**
+     * Розширена картка для героя головної: опис, актори, голоси.
+     *
+     * @param  iterable<Title>  $titles
+     */
+    public static function spotlights(iterable $titles, User $me): array
+    {
+        $titles = collect($titles);
+        if ($titles->isEmpty()) {
+            return [];
+        }
+        $ids = $titles->pluck('id');
+        $cast = Credit::query()->whereIn('title_id', $ids)->where('job', 'cast')->where('position', '<', 3)
+            ->with('person:id,name')->orderBy('position')->get()->groupBy('title_id');
+        $saved = DB::table('cinema_watchlist')->where('user_id', $me->id)->whereIn('title_id', $ids)->pluck('title_id')->flip();
+
+        return $titles->map(fn (Title $t) => self::card($t) + [
+            'overview' => \Illuminate\Support\Str::limit((string) $t->overview, 260),
+            'voteCount' => $t->vote_count,
+            'localRatingCount' => $t->local_rating_count,
+            'trailer' => $t->trailer_key,
+            'inWatchlist' => isset($saved[$t->id]),
+            'addedAt' => $t->created_at?->getTimestampMs(),
+            'cast' => ($cast[$t->id] ?? collect())->map(fn ($c) => ['personId' => $c->person_id, 'name' => $c->person->name ?? ''])->values()->all(),
+        ])->values()->all();
     }
 
     /** @param iterable<Title> $titles */
@@ -79,8 +167,18 @@ final class CinemaPresenter
             'progress' => $progress ? ['season' => $progress->season, 'episode' => $progress->episode, 'position' => (int) $progress->position, 'duration' => $progress->duration] : null,
             'translations' => collect($t->kodik_translations ?? [])->map(fn ($tr, $i) => ['index' => $i, 'title' => $tr['title'] ?? 'Озвучка', 'quality' => $tr['quality'] ?? null])->values()->all(),
             'social' => self::social($t, $me),
+            'interest' => self::interest($t),
             'isPublished' => $t->is_published,
         ];
+    }
+
+    /** «Інтерес користувачів»: частка оцінок 7+ серед усіх оцінок на сайті, %. */
+    private static function interest(Title $t): ?int
+    {
+        $row = DB::table('cinema_reviews')->where('title_id', $t->id)
+            ->selectRaw('COUNT(*) as c, SUM(CASE WHEN rating >= 7 THEN 1 ELSE 0 END) as good')->first();
+
+        return $row && $row->c ? (int) round($row->good * 100 / $row->c) : null;
     }
 
     private static function credit(Credit $c): array

@@ -97,6 +97,7 @@ Route::middleware(['auth:sanctum', 'throttle:240,1,api-v2'])->group(function () 
             Route::post('/titles/{id}/recommend', [\App\Http\Controllers\Api\V2\CinemaController::class, 'recommend'])->whereNumber('id')->middleware('throttle:20,1,cinema-recommend');
             Route::post('/titles/{id}/family-event', [\App\Http\Controllers\Api\V2\CinemaController::class, 'familyEvent'])->whereNumber('id');
             Route::get('/watchlist', [\App\Http\Controllers\Api\V2\CinemaController::class, 'watchlist']);
+            Route::get('/history', [\App\Http\Controllers\Api\V2\CinemaController::class, 'history']);
             Route::get('/people/{id}', [\App\Http\Controllers\Api\V2\CinemaController::class, 'person'])->whereNumber('id');
             Route::get('/users/{userId}', [\App\Http\Controllers\Api\V2\CinemaController::class, 'userCinema'])->whereNumber('userId');
         });

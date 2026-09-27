@@ -25,6 +25,8 @@ return new class extends Migration
             $t->id();
             $t->unsignedInteger('tmdb_id')->nullable();
             $t->string('type', 10); // movie | series
+            // Розділ вітрини: movie, series, anime, dorama, cartoon (мультфільми), toon (мультсеріали).
+            $t->string('category', 12)->default('movie')->index();
             $t->string('name', 255);
             $t->string('original_name', 255)->nullable();
             $t->unsignedSmallInteger('year')->nullable();
@@ -38,7 +40,6 @@ return new class extends Migration
             $t->unsignedInteger('vote_count')->default(0);
             $t->float('popularity')->default(0);
             $t->string('imdb_id', 20)->nullable()->index();
-            $t->unsignedInteger('kinopoisk_id')->nullable()->index();
             $t->string('original_language', 8)->nullable();
             $t->json('countries')->nullable();
             $t->string('status', 40)->nullable();

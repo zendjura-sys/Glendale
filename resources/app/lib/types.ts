@@ -362,6 +362,11 @@ export interface TitleCard {
   rating: number | null;
   localRating: number | null;
   hasPlayer: boolean;
+  quality?: string | null;
+  isNew?: boolean;
+  category?: CinemaCategory;
+  categoryLabel?: string | null;
+  badges?: string[];
   genres: string[];
   myRating?: number;
   role?: string | null;
@@ -400,11 +405,24 @@ export interface TitleFull extends TitleCard {
     wantToWatch: UserShort[];
   };
   isPublished: boolean;
+  interest: number | null;
   similar: TitleCard[];
 }
 
+export type CinemaCategory = 'movie' | 'series' | 'anime' | 'dorama' | 'cartoon' | 'toon';
+
+export interface CinemaSpotlight extends TitleCard {
+  overview: string;
+  voteCount: number;
+  localRatingCount: number;
+  trailer: string | null;
+  inWatchlist: boolean;
+  addedAt: number | null;
+  cast: { personId: number; name: string }[];
+}
+
 export interface CinemaHome {
-  featured: TitleCard[];
+  featured: CinemaSpotlight[];
   continue: TitleCard[];
   watchlist: TitleCard[];
   circle: TitleCard[];
@@ -413,6 +431,13 @@ export interface CinemaHome {
   top: TitleCard[];
   fresh: TitleCard[];
   genres: { id: number; name: string }[];
+  trending: TitleCard[];
+  categories: { key: CinemaCategory; name: string; caption: string; count: number; image: string | null }[];
+}
+
+export interface CinemaHistoryItem extends TitleCard {
+  progress: { position: number; duration: number | null; season: number | null; episode: number | null };
+  watchedAt: number;
 }
 
 export interface CinemaEpisode {

@@ -54,8 +54,8 @@ class CinemaController extends Controller
             ->orderByDesc('updated_at')->limit(30)->pluck('title_id')->unique()->take(12)->values();
 
         return response()->json([
-            'featured' => CinemaPresenter::cards($base()->where('is_featured', true)->orderByDesc('popularity')->limit(6)->get()
-                ->whenEmpty(fn () => $base()->whereNotNull('backdrop_path')->orderByDesc('popularity')->limit(5)->get())),
+            'featured' => CinemaPresenter::spotlights($base()->where('is_featured', true)->orderByDesc('popularity')->limit(10)->get()
+                ->whenEmpty(fn () => $base()->whereNotNull('backdrop_path')->orderByDesc('popularity')->limit(8)->get()), $me),
             'continue' => $byIds($continue),
             'watchlist' => $byIds($watchlist),
             'circle' => $byIds($circleTitles),
@@ -64,15 +64,66 @@ class CinemaController extends Controller
             'top' => CinemaPresenter::cards($base()->where('vote_count', '>=', 100)->orderByDesc('vote_average')->limit(18)->get()),
             'fresh' => CinemaPresenter::cards($base()->orderByDesc('created_at')->limit(18)->get()),
             'genres' => Genre::query()->orderBy('name')->get(['id', 'name'])->all(),
+            'trending' => CinemaPresenter::cards($this->trending(5)),
+            'categories' => $this->categories(),
         ]);
+    }
+
+    /** «Тренди сьогодні»: що найбільше дивились, додавали й оцінювали за 3 дні. */
+    private function trending(int $limit)
+    {
+        $since = now()->subDays(3);
+        $scores = DB::table('cinema_progress')->where('updated_at', '>=', $since)->select('title_id')
+            ->unionAll(DB::table('cinema_watchlist')->where('created_at', '>=', $since)->select('title_id'))
+            ->unionAll(DB::table('cinema_reviews')->where('updated_at', '>=', $since)->select('title_id'));
+        $ids = DB::query()->fromSub($scores, 'a')->select('title_id', DB::raw('COUNT(*) as n'))
+            ->groupBy('title_id')->orderByDesc('n')->limit($limit)->pluck('title_id');
+        $titles = Title::query()->published()->with('genres')->whereIn('id', $ids)->get()->sortBy(fn ($t) => $ids->search($t->id))->values();
+        if ($titles->count() < $limit) {
+            $titles = $titles->merge(Title::query()->published()->with('genres')->whereNotIn('id', $titles->pluck('id'))
+                ->orderByDesc('popularity')->limit($limit - $titles->count())->get());
+        }
+
+        return $titles;
+    }
+
+    /** Плитки розділів вітрини з кадром найпопулярнішого тайтлу. */
+    private function categories(): array
+    {
+        $counts = Title::query()->published()->selectRaw('category, COUNT(*) as n')->groupBy('category')->pluck('n', 'category');
+
+        return collect(Title::CATEGORIES)->map(function ($meta, $key) use ($counts) {
+            $top = Title::query()->published()->where('category', $key)->whereNotNull('backdrop_path')->orderByDesc('popularity')->first();
+
+            return [
+                'key' => $key,
+                'name' => $meta[0],
+                'caption' => $meta[1],
+                'count' => (int) ($counts[$key] ?? 0),
+                'image' => $top ? Tmdb::image($top->backdrop_path, 'w780') : null,
+            ];
+        })->values()->all();
+    }
+
+    /** Історія перегляду: усе, що людина починала дивитись. */
+    public function history(Request $request): JsonResponse
+    {
+        $rows = DB::table('cinema_progress')->where('user_id', $request->user()->id)->orderByDesc('updated_at')->limit(60)->get()->keyBy('title_id');
+        $titles = Title::query()->published()->with('genres')->whereIn('id', $rows->keys())->get()->keyBy('id');
+
+        return response()->json($rows->filter(fn ($r) => isset($titles[$r->title_id]))->map(fn ($r) => CinemaPresenter::card($titles[$r->title_id]) + [
+            'progress' => ['position' => (int) $r->position, 'duration' => $r->duration ? (int) $r->duration : null, 'season' => $r->season, 'episode' => $r->episode],
+            'watchedAt' => Presenter::ms($r->updated_at),
+        ])->values());
     }
 
     public function browse(Request $request): JsonResponse
     {
-        $request->validate(['type' => ['nullable', 'in:movie,series'], 'genre' => ['nullable', 'integer'], 'year' => ['nullable', 'integer'],
+        $request->validate(['type' => ['nullable', 'in:movie,series'], 'category' => ['nullable', 'in:'.implode(',', array_keys(Title::CATEGORIES))], 'genre' => ['nullable', 'integer'], 'year' => ['nullable', 'integer'],
             'sort' => ['nullable', 'in:popular,rating,new,year'], 'q' => ['nullable', 'string', 'max:100'], 'page' => ['nullable', 'integer', 'min:1']]);
         $q = Title::query()->published()->with('genres')
             ->when($request->query('type'), fn ($b, $t) => $b->where('type', $t))
+            ->when($request->query('category'), fn ($b, $c) => $b->where('category', $c))
             ->when($request->query('genre'), fn ($b, $g) => $b->whereHas('genres', fn ($h) => $h->where('cinema_genres.id', $g)))
             ->when($request->query('year'), fn ($b, $y) => $b->where('year', $y))
             ->when($request->query('q'), fn ($b, $s) => $b->where(fn ($w) => $w->where('name', 'like', "%{$s}%")->orWhere('original_name', 'like', "%{$s}%")));

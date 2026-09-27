@@ -13,6 +13,38 @@ class Title extends Model
 
     protected $guarded = ['id'];
 
+    /** Розділи вітрини: ключ → [назва, підпис на плитці]. */
+    public const CATEGORIES = [
+        'movie' => ['Кіно', 'Топ фільми'],
+        'series' => ['Серіали', 'Популярні серіали'],
+        'anime' => ['Аніме', 'Краще аніме'],
+        'dorama' => ['Дорами', 'Найкращі дорами'],
+        'cartoon' => ['Мультфільми', 'Для дітей і дорослих'],
+        'toon' => ['Мультсеріали', 'Популярні шоу'],
+    ];
+
+    /**
+     * Розділ за даними TMDB: анімація з Японії — аніме, інша анімація —
+     * мультфільми/мультсеріали, азійські серіали — дорами.
+     *
+     * @param  list<int>  $genreTmdbIds
+     */
+    public static function categorize(string $type, array $genreTmdbIds, ?string $language): string
+    {
+        $animation = in_array(16, $genreTmdbIds, true);
+        if ($animation && $language === 'ja') {
+            return 'anime';
+        }
+        if ($animation) {
+            return $type === 'series' ? 'toon' : 'cartoon';
+        }
+        if ($type === 'series' && in_array($language, ['ko', 'zh', 'th', 'ja', 'tw'], true)) {
+            return 'dorama';
+        }
+
+        return $type;
+    }
+
     protected function casts(): array
     {
         return [

@@ -34,6 +34,7 @@ const CinemaHomePage = lazy(() => import('./pages/Cinema'));
 const CinemaBrowsePage = lazy(() => import('./pages/Cinema').then((m) => ({ default: m.CinemaBrowsePage })));
 const CinemaTitlePage = lazy(() => import('./pages/Cinema').then((m) => ({ default: m.CinemaTitlePage })));
 const CinemaPersonPage = lazy(() => import('./pages/Cinema').then((m) => ({ default: m.CinemaPersonPage })));
+const CinemaHistoryPage = lazy(() => import('./pages/Cinema').then((m) => ({ default: m.CinemaHistoryPage })));
 const CinemaWatchlistPage = lazy(() => import('./pages/Cinema').then((m) => ({ default: m.CinemaWatchlistPage })));
 const SpotifyCallback = lazy(() => import('./pages/Spotify').then((m) => ({ default: m.SpotifyCallback })));
 
@@ -139,6 +140,7 @@ export default function App() {
           <Route path="cinema/title/:id" element={<CinemaTitlePage />} />
           <Route path="cinema/person/:id" element={<CinemaPersonPage />} />
           <Route path="cinema/watchlist" element={<CinemaWatchlistPage />} />
+          <Route path="cinema/history" element={<CinemaHistoryPage />} />
           <Route path="spotify/callback" element={<SpotifyCallback />} />
           <Route path="*" element={<NotFound />} />
         </Route>

@@ -272,4 +272,31 @@ class CinemaTest extends TestCase
         $this->actingAs(User::factory()->create());
         $this->get('/admin/cinema')->assertForbidden();
     }
+
+    public function test_categories_badges_trending_and_history(): void
+    {
+        $this->assertSame('anime', Title::categorize('series', [16, 18], 'ja'));
+        $this->assertSame('cartoon', Title::categorize('movie', [16], 'en'));
+        $this->assertSame('toon', Title::categorize('series', [16], 'en'));
+        $this->assertSame('dorama', Title::categorize('series', [18], 'ko'));
+        $this->assertSame('movie', Title::categorize('movie', [28], 'en'));
+
+        $matrix = Importer::import('movie', 603);
+        $got = Importer::import('series', 1399);
+        $this->assertSame('movie', $matrix->category);
+        $this->assertSame('series', $got->category);
+
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+        $this->postJson("/api/v2/cinema/titles/{$got->id}/progress", ['position' => 900, 'season' => 1, 'episode' => 2])->assertOk();
+
+        $home = $this->getJson('/api/v2/cinema/home')->assertOk();
+        $this->assertSame($got->id, $home->json('trending.0.id'), 'що дивились — у трендах першим');
+        $this->assertSame(['movie', 'series', 'anime', 'dorama', 'cartoon', 'toon'], array_column($home->json('categories'), 'key'));
+        $this->assertSame(1, $home->json('categories.0.count'));
+        $this->assertContains('DUB', $home->json('movies.0.badges'));
+
+        $this->getJson('/api/v2/cinema/titles?category=series')->assertOk()->assertJsonPath('total', 1)->assertJsonPath('items.0.id', $got->id);
+        $this->getJson('/api/v2/cinema/history')->assertOk()->assertJsonPath('0.id', $got->id)->assertJsonPath('0.progress.episode', 2);
+    }
 }

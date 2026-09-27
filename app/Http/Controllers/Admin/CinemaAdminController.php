@@ -31,6 +31,7 @@ class CinemaAdminController extends Controller
             ->through(fn (Title $t) => [
                 'id' => $t->id,
                 'type' => $t->type,
+                'category' => $t->category,
                 'name' => $t->name,
                 'year' => $t->year,
                 'poster' => Tmdb::image($t->poster_path, 'w92'),
@@ -50,6 +51,7 @@ class CinemaAdminController extends Controller
                 'kodikConfigured' => Kodik::configured(),
                 'language' => CinemaSettings::language(),
             ],
+            'categories' => collect(Title::CATEGORIES)->map(fn ($m, $k) => ['key' => $k, 'name' => $m[0]])->values(),
             'stats' => [
                 'movies' => Title::query()->where('type', 'movie')->count(),
                 'series' => Title::query()->where('type', 'series')->count(),
@@ -151,11 +153,12 @@ class CinemaAdminController extends Controller
 
     public function update(Request $request, int $id): RedirectResponse
     {
-        $data = $request->validate(['published' => ['sometimes', 'boolean'], 'featured' => ['sometimes', 'boolean']]);
+        $data = $request->validate(['published' => ['sometimes', 'boolean'], 'featured' => ['sometimes', 'boolean'], 'category' => ['sometimes', 'in:'.implode(',', array_keys(Title::CATEGORIES))]]);
         $title = Title::query()->findOrFail($id);
         $title->update(array_filter([
             'is_published' => $data['published'] ?? null,
             'is_featured' => $data['featured'] ?? null,
+            'category' => $data['category'] ?? null,
         ], fn ($v) => $v !== null));
 
         return back();

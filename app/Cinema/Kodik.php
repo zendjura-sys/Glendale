@@ -5,7 +5,7 @@ namespace App\Cinema;
 use Illuminate\Support\Facades\Http;
 
 /**
- * Плеєр Kodik: за imdb/kinopoisk id (або назвою й роком) знаходить
+ * Плеєр Kodik: за IMDb id (або назвою й роком) знаходить
  * посилання на iframe-плеєр і доступні озвучки. Токен — в адмінці,
  * зашифрований. Сам плеєр шле події postMessage (kodik_player_time_update
  * тощо) — на сторінці фільму з них зберігається прогрес перегляду.
@@ -63,9 +63,6 @@ final class Kodik
         $queries = [];
         if ($title->imdb_id) {
             $queries[] = ['imdb_id' => $title->imdb_id];
-        }
-        if ($title->kinopoisk_id) {
-            $queries[] = ['kinopoisk_id' => $title->kinopoisk_id];
         }
         $queries[] = array_filter(['title' => $title->original_name ?: $title->name, 'year' => $title->year]);
 

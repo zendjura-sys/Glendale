@@ -1,17 +1,20 @@
 import { tr } from '../lib/i18n';
+import '@fontsource-variable/oswald';
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { Link, NavLink, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  ArrowRight,
   Bookmark,
   BookmarkCheck,
   CalendarPlus,
-  ChevronLeft,
   ChevronRight,
   Clapperboard,
-  Clock,
   Crown,
   Film,
+  History,
+  Home,
+  Info,
   Play,
   Search,
   Send,
@@ -20,78 +23,124 @@ import {
   Trash2,
   Tv,
   Users,
+  Youtube,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useMe } from '../lib/auth';
-import type { CinemaEpisode, CinemaHome, CinemaPerson, TitleCard, TitleFull, UserShort } from '../lib/types';
-import { fullName } from '../lib/utils';
+import type { CinemaCategory, CinemaEpisode, CinemaHistoryItem, CinemaHome, CinemaPerson, CinemaSpotlight, TitleCard, TitleFull, UserShort } from '../lib/types';
+import { formatDate, fullName } from '../lib/utils';
 import { AutoTextarea, Avatar, Empty, Modal, Spinner, useSentinel } from '../components/ui';
+import { CINEMA_SECTIONS } from '../components/CinemaSidebar';
 
 /* ───────────── спільне ───────────── */
 
 const kindLabel = (t: { type: 'movie' | 'series' }) => (t.type === 'series' ? tr('Серіал') : tr('Фільм'));
 const runtimeLabel = (min: number | null) => (min ? (min >= 60 ? `${Math.floor(min / 60)} год${min % 60 ? ` ${min % 60} хв` : ''}` : `${min} хв`) : null);
+const votes = (n: number) => n.toLocaleString('uk-UA');
+const catLabel = (t: TitleCard) => t.categoryLabel ?? kindLabel(t);
 
-function CinemaNav() {
-  const navigate = useNavigate();
-  const [params] = useSearchParams();
-  const [q, setQ] = useState(params.get('q') ?? '');
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    navigate(q.trim() ? `/cinema/browse?q=${encodeURIComponent(q.trim())}` : '/cinema/browse');
-  };
+/**
+ * Режим кінотеатру: ширша сітка й завжди темна тема, поки людина в розділі
+ * «Кіно» (після виходу повертається обрана тема).
+ */
+function useCinemaMode() {
+  useEffect(() => {
+    const root = document.documentElement;
+    const prev = root.dataset.theme;
+    root.dataset.wide = 'cinema';
+    root.dataset.cinema = '1';
+    root.dataset.theme = 'dark';
+    return () => {
+      delete root.dataset.wide;
+      delete root.dataset.cinema;
+      if (prev) root.dataset.theme = prev;
+    };
+  }, []);
+}
+
+function Shell({ children }: { children: ReactNode }) {
+  useCinemaMode();
   return (
-    <div className="cinema-nav card">
-      <div className="cinema-brand">
-        <Clapperboard size={20} /> {tr('Кіно')}
-      </div>
-      <nav className="cinema-links">
-        <NavLink to="/cinema" end>
-          {tr('Головна')}
-        </NavLink>
-        <NavLink to="/cinema/browse?type=movie" className={() => (params.get('type') === 'movie' ? 'active' : '')}>
-          {tr('Фільми')}
-        </NavLink>
-        <NavLink to="/cinema/browse?type=series" className={() => (params.get('type') === 'series' ? 'active' : '')}>
-          {tr('Серіали')}
-        </NavLink>
-        <NavLink to="/cinema/watchlist">{tr('Хочу подивитись')}</NavLink>
-      </nav>
-      <form className="cinema-search" onSubmit={submit}>
-        <Search size={16} />
-        <input className="field" placeholder={tr('Назва фільму чи серіалу')} value={q} onChange={(e) => setQ(e.target.value)} />
-      </form>
+    <div className="cinema">
+      <CinemaTabs />
+      {children}
     </div>
   );
 }
 
-export function TitlePoster({ t, wide }: { t: TitleCard; wide?: boolean }) {
+function CinemaTabs() {
+  const navigate = useNavigate();
+  const { pathname, search } = useLocation();
+  const cat = pathname === '/cinema/browse' ? new URLSearchParams(search).get('category') : null;
+  const [q, setQ] = useState(new URLSearchParams(search).get('q') ?? '');
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    navigate(q.trim() ? `/cinema/browse?q=${encodeURIComponent(q.trim())}` : '/cinema/browse');
+  };
+  const tabs = CINEMA_SECTIONS.filter((s) => s.key !== 'toon');
+  return (
+    <header className="k-tabs-bar">
+      <nav className="k-tabs-nav">
+        <NavLink to="/cinema" end>
+          <Home size={17} /> {tr('Головна')}
+        </NavLink>
+        {tabs.map(({ key, label, icon: Icon }) => (
+          <Link key={key} to={`/cinema/browse?category=${key}`} className={cat === key ? 'active' : ''}>
+            <Icon size={17} /> {tr(label)}
+          </Link>
+        ))}
+      </nav>
+      <form className="k-search" onSubmit={submit}>
+        <Search size={18} />
+        <input placeholder={tr('Пошук фільмів, серіалів, аніме…')} value={q} onChange={(e) => setQ(e.target.value)} />
+      </form>
+    </header>
+  );
+}
+
+const BADGE_CLASS: Record<string, string> = { '4K': 'b4k', HDR: 'bhdr', DUB: 'bdub', SUB: 'bsub', FHD: 'b4k', HD: 'b4k' };
+
+function Badges({ list }: { list?: string[] }) {
+  if (!list?.length) return null;
+  return (
+    <div className="k-badges">
+      {list.map((b) => (
+        <span key={b} className={`k-badge ${BADGE_CLASS[b] ?? ''}`}>
+          {b}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+export function TitlePoster({ t, wide, progress }: { t: TitleCard; wide?: boolean; progress?: number | null }) {
   const rating = t.myRating ?? t.localRating ?? t.rating;
+  const img = wide ? (t.backdrop ?? t.poster) : t.poster;
   return (
     <Link to={`/cinema/title/${t.id}`} className={`title-poster${wide ? ' wide' : ''}`} title={t.name}>
-      <div className="tp-img">
-        {(wide ? t.backdrop : t.poster) ? (
-          <img src={(wide ? t.backdrop : t.poster)!} alt="" loading="lazy" decoding="async" />
-        ) : (
-          <div className="tp-blank">
-            <Clapperboard size={28} />
-          </div>
-        )}
-        {rating ? (
-          <span className={`tp-rate${t.myRating ? ' mine' : ''}`}>
-            <Star size={11} fill="currentColor" /> {Number(rating).toFixed(t.myRating ? 0 : 1)}
+      {img ? <img src={img} alt="" loading="lazy" decoding="async" /> : <span className="tp-blank"><Clapperboard size={28} /></span>}
+      <Badges list={t.badges} />
+      {t.hasPlayer && (
+        <span className="tp-play">
+          <Play size={18} fill="currentColor" />
+        </span>
+      )}
+      <span className="tp-foot">
+        <span className="tp-name">{t.name}</span>
+        <span className="tp-meta">
+          <span className="ellipsis">{[t.role ?? catLabel(t), t.year].filter(Boolean).join(' · ')}</span>
+          {rating ? (
+            <span className={`tp-rate${t.myRating ? ' mine' : ''}`}>
+              <Star size={12} fill="currentColor" /> {Number(rating).toFixed(t.myRating ? 0 : 1)}
+            </span>
+          ) : null}
+        </span>
+        {progress !== undefined && progress !== null && (
+          <span className="tp-progress">
+            <i style={{ width: `${Math.min(100, Math.max(3, progress))}%` }} />
           </span>
-        ) : null}
-        {t.hasPlayer && (
-          <span className="tp-play">
-            <Play size={18} fill="currentColor" />
-          </span>
         )}
-      </div>
-      <div className="tp-name ellipsis">{t.name}</div>
-      <div className="tp-sub ellipsis">
-        {[t.year, t.role ?? t.genres[0], t.type === 'series' ? tr('серіал') : null].filter(Boolean).join(' · ')}
-      </div>
+      </span>
     </Link>
   );
 }
@@ -106,79 +155,347 @@ export function TitleGrid({ items }: { items: TitleCard[] }) {
   );
 }
 
-function Row({ title, items, more, wide, icon }: { title: string; items: TitleCard[]; more?: string; wide?: boolean; icon?: ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null);
-  if (!items.length) return null;
-  const scroll = (d: number) => ref.current?.scrollBy({ left: d * ref.current.clientWidth * 0.8, behavior: 'smooth' });
+function SectionHead({ title, to, children, all }: { title: string; to?: string; children?: ReactNode; all?: string }) {
   return (
-    <section className="cinema-row">
-      <div className="cinema-row-head">
-        <h2>
-          {icon} {title}
-        </h2>
-        {more && (
-          <Link to={more} className="more-link">
-            {tr('Усі')}
-          </Link>
-        )}
-        <div className="cinema-row-arrows">
-          <button className="icon-btn" onClick={() => scroll(-1)} aria-label={tr('Назад')}>
-            <ChevronLeft size={18} />
-          </button>
-          <button className="icon-btn" onClick={() => scroll(1)} aria-label={tr('Далі')}>
-            <ChevronRight size={18} />
-          </button>
-        </div>
+    <div className="k-head">
+      <h2>{to ? <Link to={to}>{title} <ChevronRight size={20} /></Link> : title}</h2>
+      {children}
+      {all && (
+        <Link to={all} className="k-all">
+          {tr('Дивитися всі')} <ChevronRight size={16} />
+        </Link>
+      )}
+    </div>
+  );
+}
+
+/** Горизонтальна стрічка з кнопкою прокрутки праворуч, як на вітрині. */
+function Strip({ children, wide }: { children: ReactNode; wide?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [end, setEnd] = useState(false);
+  const scroll = () => {
+    const el = ref.current;
+    if (!el) return;
+    const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 8;
+    el.scrollTo({ left: atEnd ? 0 : el.scrollLeft + el.clientWidth * 0.8, behavior: 'smooth' });
+  };
+  return (
+    <div className="k-strip-wrap">
+      <div
+        className={`cinema-strip${wide ? ' wide' : ''}`}
+        ref={ref}
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          setEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 8);
+        }}
+      >
+        {children}
       </div>
-      <div className="cinema-strip" ref={ref}>
+      <button className={`k-strip-next${end ? ' back' : ''}`} onClick={scroll} aria-label={tr('Далі')}>
+        <ArrowRight size={20} />
+      </button>
+    </div>
+  );
+}
+
+function Row({ title, items, more, wide }: { title: string; items: TitleCard[]; more?: string; wide?: boolean }) {
+  if (!items.length) return null;
+  return (
+    <section className="k-section">
+      <SectionHead title={title} to={more} all={more} />
+      <Strip wide={wide}>
         {items.map((t) => (
           <TitlePoster key={t.id} t={t} wide={wide} />
         ))}
-      </div>
+      </Strip>
     </section>
   );
 }
 
-function Hero({ items }: { items: TitleCard[] }) {
-  const [i, setI] = useState(0);
-  useEffect(() => {
-    if (items.length < 2) return;
-    const t = setInterval(() => setI((x) => (x + 1) % items.length), 7000);
-    return () => clearInterval(t);
-  }, [items.length]);
-  const t = items[i];
-  if (!t) return null;
+/** «Популярне зараз» з перемикачем розділів. */
+function PopularRow() {
+  const [cat, setCat] = useState<CinemaCategory | ''>('');
+  const { data } = useQuery({
+    queryKey: ['cinema', 'browse', `category=${cat}&sort=popular`, 'row'],
+    queryFn: () => api<{ items: TitleCard[] }>(`/cinema/titles?sort=popular${cat ? `&category=${cat}` : ''}`),
+    placeholderData: (prev) => prev,
+  });
+  const all = `/cinema/browse?sort=popular${cat ? `&category=${cat}` : ''}`;
   return (
-    <div className="cinema-hero">
-      {items.map((x, k) => (
-        <div key={x.id} className={`cinema-hero-bg${k === i ? ' on' : ''}`} style={x.backdrop ? { backgroundImage: `url(${x.backdrop.replace('/w780/', '/w1280/')})` } : undefined} />
-      ))}
-      <div className="cinema-hero-body">
-        <div className="cinema-kicker">
-          {kindLabel(t)}
-          {t.year ? ` · ${t.year}` : ''}
-          {t.genres.length ? ` · ${t.genres.join(', ')}` : ''}
+    <section className="k-section">
+      <SectionHead title={tr('Популярне зараз')} to={all} all={all}>
+        <div className="k-pills">
+          <button className={cat === '' ? 'on' : ''} onClick={() => setCat('')}>
+            {tr('Усі')}
+          </button>
+          {CINEMA_SECTIONS.map((s) => (
+            <button key={s.key} className={cat === s.key ? 'on' : ''} onClick={() => setCat(s.key)}>
+              {tr(s.label)}
+            </button>
+          ))}
         </div>
-        <h1>{t.name}</h1>
-        {t.originalName && t.originalName !== t.name && <div className="cinema-original">{t.originalName}</div>}
-        <div className="cinema-hero-actions">
-          <Link to={`/cinema/title/${t.id}${t.hasPlayer ? '#watch' : ''}`} className="btn lg">
-            <Play size={18} fill="currentColor" /> {t.hasPlayer ? tr('Дивитися') : tr('Детальніше')}
-          </Link>
-          {t.rating ? (
-            <span className="cinema-score">
-              <Star size={16} fill="currentColor" /> {t.rating.toFixed(1)} <small>TMDB</small>
-            </span>
+      </SectionHead>
+      {data && !data.items.length ? (
+        <div className="k-empty-row">{tr('У цьому розділі поки порожньо')}</div>
+      ) : (
+        <Strip>{data?.items.map((t) => <TitlePoster key={t.id} t={t} />)}</Strip>
+      )}
+    </section>
+  );
+}
+
+/* ───────────── рейтинги й кнопки (банер і сторінка фільму) ───────────── */
+
+function Stars({ value }: { value: number }) {
+  const v = value / 2;
+  return (
+    <span className="k-stars" aria-label={`${value}/10`}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span key={n} className="k-star">
+          <Star size={18} />
+          <span className="k-star-fill" style={{ width: `${Math.max(0, Math.min(1, v - n + 1)) * 100}%` }}>
+            <Star size={18} fill="currentColor" />
+          </span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function Bar({ label, value, max = 10, note }: { label: string; value: number | null; max?: number; note?: string }) {
+  if (value === null || value === undefined) return null;
+  return (
+    <div className="k-bar">
+      <div className="k-bar-top">
+        <span>{label}</span>
+        <b>{max === 100 ? `${value}%` : value.toFixed(1)}</b>
+        {note && <span className="k-bar-note">{note}</span>}
+      </div>
+      <div className="k-bar-track">
+        <i style={{ width: `${Math.min(100, (value / max) * 100)}%` }} />
+      </div>
+    </div>
+  );
+}
+
+type SpotSource = TitleCard & {
+  overview: string;
+  voteCount: number;
+  localRatingCount: number;
+  cast: { personId: number; name: string }[];
+  interest?: number | null;
+};
+
+function SpotInfo({ t, actions, meta }: { t: SpotSource; actions: ReactNode; meta?: ReactNode }) {
+  const main = t.localRating ?? t.rating;
+  return (
+    <div className="k-info">
+      {meta}
+      <h1 className="k-title">{t.name}</h1>
+      {t.originalName && t.originalName !== t.name && <div className="k-original">{t.originalName}</div>}
+      <div className="k-scores">
+        <div className="k-scores-main">
+          {main ? (
+            <div className="k-big-rate">
+              <Stars value={main} />
+              <b>{main.toFixed(1)}</b>
+              <small>/10</small>
+              <span className="k-votes">{t.localRating ? `${votes(t.localRatingCount)} ${tr('голосів')}` : 'TMDB'}</span>
+            </div>
           ) : null}
+          <Bar label={tr('Інтерес глядачів')} value={t.interest ?? null} max={100} />
+        </div>
+        <div className="k-scores-side">
+          <Bar label="TMDB" value={t.rating} note={`${votes(t.voteCount)} ${tr('голосів')}`} />
+          <Bar label="GameCon" value={t.localRating} note={t.localRatingCount ? `${votes(t.localRatingCount)} ${tr('голосів')}` : undefined} />
         </div>
       </div>
+      {t.overview && <p className="k-overview">{t.overview}</p>}
+      {t.cast.length > 0 && (
+        <div className="k-cast-links">
+          {t.cast.slice(0, 4).map((c) => (
+            <Link key={c.personId} to={`/cinema/person/${c.personId}`}>
+              {c.name}
+            </Link>
+          ))}
+        </div>
+      )}
+      <div className="k-actions">{actions}</div>
+    </div>
+  );
+}
+
+/** Рядок-кікер: «АНІМЕ · 2024 · 4K DUB SUB». */
+function Kicker({ t, extra }: { t: TitleCard; extra?: ReactNode }) {
+  return (
+    <div className="k-kicker">
+      <b>{catLabel(t)}</b>
+      {t.year && <span>{t.year}</span>}
+      {t.genres.slice(0, 2).map((g) => (
+        <span key={g} className="k-kicker-genre">
+          {g}
+        </span>
+      ))}
+      <Badges list={t.badges} />
+      {extra}
+    </div>
+  );
+}
+
+function WatchButton({ label, onClick, to }: { label: string; onClick?: () => void; to?: string }) {
+  const inner = (
+    <>
+      <span className="k-play-box">
+        <Play size={18} fill="currentColor" />
+      </span>
+      <span className="k-btn-label">{label}</span>
+    </>
+  );
+  return to ? (
+    <Link to={to} className="k-btn k-btn-watch">
+      {inner}
+    </Link>
+  ) : (
+    <button className="k-btn k-btn-watch" onClick={onClick}>
+      {inner}
+    </button>
+  );
+}
+
+function TrailerButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button className="k-btn" onClick={onClick}>
+      <Youtube size={19} className="k-yt" /> {tr('Трейлер')}
+    </button>
+  );
+}
+
+function SaveButton({ saved, onClick }: { saved: boolean; onClick: () => void }) {
+  return (
+    <button className={`k-btn${saved ? ' on' : ''}`} onClick={onClick}>
+      {saved ? <BookmarkCheck size={18} /> : <Bookmark size={18} />} {saved ? tr('У закладках') : tr('У закладки')}
+    </button>
+  );
+}
+
+function TrailerModal({ id, onClose }: { id: string; onClose: () => void }) {
+  return (
+    <Modal title={tr('Трейлер')} onClose={onClose} wide>
+      <div className="cinema-trailer">
+        <iframe src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`} allow="autoplay; fullscreen; encrypted-media" allowFullScreen title={tr('Трейлер')} />
+      </div>
+    </Modal>
+  );
+}
+
+async function toggleSaved(qc: ReturnType<typeof useQueryClient>, id: number, saved: boolean) {
+  const r = await api<{ inWatchlist: boolean }>(`/cinema/titles/${id}/watchlist`, { method: saved ? 'DELETE' : 'POST' });
+  qc.invalidateQueries({ queryKey: ['cinema', 'watchlist'] });
+  return r.inWatchlist;
+}
+
+/* ───────────── банер головної ───────────── */
+
+function Hero({ items }: { items: CinemaSpotlight[] }) {
+  const qc = useQueryClient();
+  const [i, setI] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [saved, setSaved] = useState<Record<number, boolean>>({});
+  const [trailer, setTrailer] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (items.length < 2 || paused || trailer) return;
+    const t = setInterval(() => setI((x) => (x + 1) % items.length), 8000);
+    return () => clearInterval(t);
+  }, [items.length, paused, trailer]);
+
+  const t = items[i];
+  if (!t) return null;
+  const isSaved = saved[t.id] ?? t.inWatchlist;
+  const thumbs = items.length > 1 ? items : [];
+
+  return (
+    <div className="k-hero" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+      {items.map((x, k) => (
+        <div key={x.id} className={`k-hero-bg${k === i ? ' on' : ''}`} style={x.backdrop ? { backgroundImage: `url(${x.backdrop.replace('/w780/', '/original/')})` } : undefined} />
+      ))}
+      <div className="k-hero-body" key={t.id}>
+        <Kicker t={t} />
+        <h1 className="k-hero-name">{t.name}</h1>
+        {t.overview && <p className="k-hero-text">{t.overview}</p>}
+        <div className="k-actions">
+          <WatchButton label={tr('Дивитися')} to={`/cinema/title/${t.id}${t.hasPlayer ? '#watch' : ''}`} />
+          <Link to={`/cinema/title/${t.id}`} className="k-btn">
+            <Info size={18} /> {tr('Детальніше')}
+          </Link>
+          {t.trailer && <TrailerButton onClick={() => setTrailer(t.trailer)} />}
+          <button
+            className={`k-btn k-btn-icon${isSaved ? ' on' : ''}`}
+            onClick={async () => setSaved({ ...saved, [t.id]: await toggleSaved(qc, t.id, isSaved) })}
+            title={isSaved ? tr('У закладках') : tr('У закладки')}
+          >
+            {isSaved ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
+          </button>
+        </div>
+      </div>
+      {thumbs.length > 0 && (
+        <div className="k-hero-thumbs">
+          {thumbs.slice(0, 5).map((x, k) => (
+            <button key={x.id} className={k === i ? 'on' : ''} onClick={() => setI(k)} aria-label={x.name}>
+              {x.poster ? <img src={x.poster} alt="" /> : <Clapperboard size={18} />}
+            </button>
+          ))}
+        </div>
+      )}
       {items.length > 1 && (
-        <div className="cinema-hero-dots">
+        <div className="k-hero-dots">
           {items.map((x, k) => (
             <button key={x.id} className={k === i ? 'on' : ''} onClick={() => setI(k)} aria-label={x.name} />
           ))}
         </div>
       )}
+      {trailer && <TrailerModal id={trailer} onClose={() => setTrailer(null)} />}
+    </div>
+  );
+}
+
+function Trends({ items }: { items: TitleCard[] }) {
+  if (!items.length) return null;
+  return (
+    <aside className="k-trends">
+      <h3>{tr('Тренди сьогодні')}</h3>
+      {items.map((t, k) => (
+        <Link key={t.id} to={`/cinema/title/${t.id}`} className="k-trend">
+          <span className="k-trend-num">{k + 1}</span>
+          <span className="k-trend-img">{t.backdrop || t.poster ? <img src={(t.backdrop ?? t.poster)!} alt="" loading="lazy" /> : <Clapperboard size={16} />}</span>
+          <span className="k-trend-info">
+            <b className="ellipsis">{t.name}</b>
+            <small>
+              {catLabel(t)}
+              {t.year ? ` · ${t.year}` : ''}
+            </small>
+          </span>
+        </Link>
+      ))}
+    </aside>
+  );
+}
+
+function CategoryTiles({ items }: { items: CinemaHome['categories'] }) {
+  return (
+    <div className="k-cats">
+      {items.map((c) => (
+        <Link key={c.key} to={`/cinema/browse?category=${c.key}`} className={`k-cat k-cat-${c.key}`}>
+          {c.image && <img src={c.image} alt="" loading="lazy" />}
+          <span className="k-cat-text">
+            <b>{tr(c.name)}</b>
+            <small>{c.count ? tr(c.caption) : tr('Скоро')}</small>
+          </span>
+          <span className="k-cat-go">
+            <ArrowRight size={18} />
+          </span>
+        </Link>
+      ))}
     </div>
   );
 }
@@ -188,35 +505,36 @@ function Hero({ items }: { items: TitleCard[] }) {
 export default function CinemaHomePage() {
   const { data, isLoading } = useQuery({ queryKey: ['cinema', 'home'], queryFn: () => api<CinemaHome>('/cinema/home') });
   const me = useMe();
+  const empty = data && !data.movies.length && !data.series.length;
   return (
-    <div className="cinema">
-      <CinemaNav />
+    <Shell>
       {isLoading && <Spinner />}
-      {data && !data.movies.length && !data.series.length && (
-        <div className="card">
+      {empty && (
+        <div className="k-panel">
           <Empty icon={<Clapperboard size={48} />} title={tr('Каталог ще порожній')}>
             {me.level.type !== 'user' ? tr('Додайте фільми в адмінці: Кінопортал → Імпорт із TMDB.') : tr('Скоро тут з’являться фільми й серіали.')}
           </Empty>
         </div>
       )}
-      {data && (
+      {data && !empty && (
         <>
-          <Hero items={data.featured} />
-          <Row title={tr('Продовжити перегляд')} items={data.continue} wide icon={<Clock size={18} />} />
-          <Row title={tr('Дивляться друзі й родина')} items={data.circle} icon={<Users size={18} />} />
-          <Row title={tr('Хочу подивитись')} items={data.watchlist} more="/cinema/watchlist" icon={<Bookmark size={18} />} />
-          <Row title={tr('Популярні фільми')} items={data.movies} more="/cinema/browse?type=movie" icon={<Film size={18} />} />
-          <Row title={tr('Популярні серіали')} items={data.series} more="/cinema/browse?type=series" icon={<Tv size={18} />} />
-          <Row title={tr('Найвищий рейтинг')} items={data.top} more="/cinema/browse?sort=rating" icon={<Star size={18} />} />
-          <Row title={tr('Нове в каталозі')} items={data.fresh} more="/cinema/browse?sort=new" />
+          <div className="k-top">
+            <Hero items={data.featured} />
+            <Trends items={data.trending} />
+          </div>
+          <CategoryTiles items={data.categories} />
+          <PopularRow />
+          <Row title={tr('Новинки')} items={data.fresh} more="/cinema/browse?sort=new" />
+          <Row title={tr('Продовжити перегляд')} items={data.continue} more="/cinema/history" wide />
+          <Row title={tr('Дивляться друзі й родина')} items={data.circle} />
+          <Row title={tr('Мої закладки')} items={data.watchlist} more="/cinema/watchlist" />
+          <Row title={tr('Найвищий рейтинг')} items={data.top} more="/cinema/browse?sort=rating" />
           {data.genres.length > 0 && (
-            <section className="cinema-row">
-              <div className="cinema-row-head">
-                <h2>{tr('Жанри')}</h2>
-              </div>
+            <section className="k-section">
+              <SectionHead title={tr('Жанри')} />
               <div className="cinema-genres">
                 {data.genres.map((g) => (
-                  <Link key={g.id} to={`/cinema/browse?genre=${g.id}`} className="chip">
+                  <Link key={g.id} to={`/cinema/browse?genre=${g.id}`} className="k-genre">
                     {g.name}
                   </Link>
                 ))}
@@ -225,7 +543,31 @@ export default function CinemaHomePage() {
           )}
         </>
       )}
-    </div>
+    </Shell>
+  );
+}
+
+export function CinemaHistoryPage() {
+  const { data, isLoading } = useQuery({ queryKey: ['cinema', 'history'], queryFn: () => api<CinemaHistoryItem[]>('/cinema/history') });
+  return (
+    <Shell>
+      <SectionHead title={tr('Історія перегляду')} />
+      {isLoading && <Spinner />}
+      {data && !data.length && (
+        <div className="k-panel">
+          <Empty icon={<History size={44} />} title={tr('Ви ще нічого не дивились')}>
+            {tr('Тут з’являться фільми й серії, які ви почали дивитись, — з місцем, де зупинились.')}
+          </Empty>
+        </div>
+      )}
+      {data && data.length > 0 && (
+        <div className="title-grid wide">
+          {data.map((t) => (
+            <TitlePoster key={t.id} t={t} wide progress={t.progress.duration ? (t.progress.position / t.progress.duration) * 100 : null} />
+          ))}
+        </div>
+      )}
+    </Shell>
   );
 }
 
@@ -233,12 +575,12 @@ export default function CinemaHomePage() {
 
 export function CinemaBrowsePage() {
   const [params, setParams] = useSearchParams();
-  const type = params.get('type') ?? '';
+  const category = params.get('category') ?? '';
   const genre = params.get('genre') ?? '';
   const sort = params.get('sort') ?? 'popular';
   const q = params.get('q') ?? '';
   const { data: home } = useQuery({ queryKey: ['cinema', 'home'], queryFn: () => api<CinemaHome>('/cinema/home') });
-  const query = new URLSearchParams(Object.entries({ type, genre, sort, q }).filter(([, v]) => v)).toString();
+  const query = new URLSearchParams(Object.entries({ category, genre, sort, q }).filter(([, v]) => v)).toString();
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['cinema', 'browse', query],
     queryFn: ({ pageParam }) => api<{ items: TitleCard[]; hasMore: boolean; total: number }>(`/cinema/titles?${query}&page=${pageParam}`),
@@ -253,45 +595,54 @@ export function CinemaBrowsePage() {
     else next.delete(k);
     setParams(next, { replace: true });
   };
+  const section = CINEMA_SECTIONS.find((s) => s.key === category);
+  const genreName = home?.genres.find((g) => String(g.id) === genre)?.name;
+  const title = q
+    ? tr('Пошук: «{q}»', { q })
+    : section
+      ? tr(section.label)
+      : genreName ?? (sort === 'new' ? tr('Новинки') : sort === 'rating' ? tr('Найвищий рейтинг') : tr('Популярне'));
   return (
-    <div className="cinema">
-      <CinemaNav />
-      <div className="card cinema-filters">
-        <div className="chips">
-          {[
-            ['', tr('Усе')],
-            ['movie', tr('Фільми')],
-            ['series', tr('Серіали')],
-          ].map(([v, l]) => (
-            <button key={v} className={`chip${type === v ? ' on' : ''}`} onClick={() => set('type', v)}>
-              {l}
+    <Shell>
+      <SectionHead title={title}>
+        {data && <span className="k-total">{tr('Знайдено')}: {data.pages[0].total}</span>}
+      </SectionHead>
+      <div className="k-filters">
+        <div className="k-pills">
+          <button className={category === '' ? 'on' : ''} onClick={() => set('category', '')}>
+            {tr('Усі')}
+          </button>
+          {CINEMA_SECTIONS.map((s) => (
+            <button key={s.key} className={category === s.key ? 'on' : ''} onClick={() => set('category', s.key)}>
+              {tr(s.label)}
             </button>
           ))}
         </div>
-        <select className="field" value={genre} onChange={(e) => set('genre', e.target.value)}>
-          <option value="">{tr('Усі жанри')}</option>
-          {home?.genres.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.name}
-            </option>
-          ))}
-        </select>
-        <select className="field" value={sort} onChange={(e) => set('sort', e.target.value)}>
-          <option value="popular">{tr('Популярні')}</option>
-          <option value="rating">{tr('За рейтингом')}</option>
-          <option value="year">{tr('Новіші за роком')}</option>
-          <option value="new">{tr('Нещодавно додані')}</option>
-        </select>
-        {q && (
-          <button className="chip on" onClick={() => set('q', '')}>
-            «{q}» ✕
-          </button>
-        )}
-        {data && <span className="muted cinema-total">{tr('Знайдено')}: {data.pages[0].total}</span>}
+        <div className="k-filters-right">
+          <select className="k-select" value={genre} onChange={(e) => set('genre', e.target.value)}>
+            <option value="">{tr('Усі жанри')}</option>
+            {home?.genres.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+          </select>
+          <select className="k-select" value={sort} onChange={(e) => set('sort', e.target.value)}>
+            <option value="popular">{tr('Популярні')}</option>
+            <option value="rating">{tr('За рейтингом')}</option>
+            <option value="year">{tr('Новіші за роком')}</option>
+            <option value="new">{tr('Нещодавно додані')}</option>
+          </select>
+          {q && (
+            <button className="k-chip-x" onClick={() => set('q', '')}>
+              «{q}» ✕
+            </button>
+          )}
+        </div>
       </div>
       {isLoading && <Spinner />}
       {data && !items.length && (
-        <div className="card">
+        <div className="k-panel">
           <Empty icon={<Search size={44} />} title={tr('Нічого не знайдено')}>
             {tr('Спробуйте інший запит або фільтр')}
           </Empty>
@@ -300,30 +651,25 @@ export function CinemaBrowsePage() {
       <TitleGrid items={items} />
       <div ref={sentinel} />
       {isFetchingNextPage && <Spinner />}
-    </div>
+    </Shell>
   );
 }
 
 export function CinemaWatchlistPage() {
   const { data, isLoading } = useQuery({ queryKey: ['cinema', 'watchlist'], queryFn: () => api<TitleCard[]>('/cinema/watchlist') });
   return (
-    <div className="cinema">
-      <CinemaNav />
-      <div className="cinema-row-head">
-        <h2>
-          <Bookmark size={18} /> {tr('Хочу подивитись')}
-        </h2>
-      </div>
+    <Shell>
+      <SectionHead title={tr('Мої закладки')} />
       {isLoading && <Spinner />}
       {data && !data.length && (
-        <div className="card">
+        <div className="k-panel">
           <Empty icon={<Bookmark size={44} />} title={tr('Список порожній')}>
             {tr('Натисніть «Хочу подивитись» на сторінці фільму — він з’явиться тут, а друзі побачать, що ви його чекаєте.')}
           </Empty>
         </div>
       )}
       {data && <TitleGrid items={data} />}
-    </div>
+    </Shell>
   );
 }
 
@@ -400,14 +746,13 @@ function Player({ title, season, episode, onEpisode }: { title: TitleFull; seaso
       </div>
     );
   return (
-    <>
-      {title.translations.length > 1 && (
-        <div className="cinema-translations">
-          <span className="muted">{tr('Озвучка')}:</span>
+    <div className="k-player">
+      {title.translations.length > 0 && (
+        <div className="k-tabs">
           {title.translations.map((t) => (
-            <button key={t.index} className={`chip${translation === t.index ? ' on' : ''}`} onClick={() => setTranslation(t.index)}>
+            <button key={t.index} className={translation === t.index ? 'on' : ''} onClick={() => setTranslation(t.index)}>
               {t.title}
-              {t.quality ? <small> · {t.quality}</small> : null}
+              {t.quality ? <small>{t.quality}</small> : null}
             </button>
           ))}
         </div>
@@ -415,7 +760,7 @@ function Player({ title, season, episode, onEpisode }: { title: TitleFull; seaso
       <div className="cinema-player">
         <iframe key={src} src={src} allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowFullScreen title={title.name} />
       </div>
-    </>
+    </div>
   );
 }
 
@@ -431,12 +776,13 @@ function Seasons({ title, current, onPick }: { title: TitleFull; current: { seas
   });
   if (!title.seasons.length) return null;
   return (
-    <div className="card cinema-seasons">
-      <div className="card-title">{tr('Сезони й серії')}</div>
-      <div className="chips" style={{ padding: '0 16px' }}>
+    <section className="cinema-seasons">
+      <h2 className="k-subtitle">{tr('Сезони й серії')}</h2>
+      <div className="k-tabs">
         {title.seasons.map((s) => (
-          <button key={s.number} className={`chip${season === s.number ? ' on' : ''}`} onClick={() => setSeason(s.number)}>
+          <button key={s.number} className={season === s.number ? 'on' : ''} onClick={() => setSeason(s.number)}>
             {s.name || `${tr('Сезон')} ${s.number}`}
+            <small>{s.episodes} {tr('сер.')}</small>
           </button>
         ))}
       </div>
@@ -458,7 +804,7 @@ function Seasons({ title, current, onPick }: { title: TitleFull; current: { seas
           );
         })}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -732,37 +1078,41 @@ function ShareModal({ title, onClose }: { title: TitleFull; onClose: () => void 
   );
 }
 
-function Reviews({ titleId }: { titleId: number }) {
+function Reviews({ titleId, onWrite }: { titleId: number; onWrite: () => void }) {
   const { data } = useQuery({
     queryKey: ['cinema', 'reviews', titleId],
     queryFn: () => api<{ user: UserShort | null; rating: number; body: string; updatedAt: number }[]>(`/cinema/titles/${titleId}/reviews`),
   });
   const items = (data ?? []).filter((r) => r.user && r.body);
-  if (!items.length) return null;
   return (
-    <div className="card">
-      <div className="card-title">
-        {tr('Рецензії')} <span className="count">{items.length}</span>
+    <section className="k-comments">
+      <div className="k-comments-head">
+        <h2 className="k-subtitle">
+          {tr('Рецензії глядачів')} <span>{items.length}</span>
+        </h2>
+        <button className="k-pill accent" onClick={onWrite}>
+          <Star size={15} /> {tr('Написати рецензію')}
+        </button>
       </div>
+      {!items.length && <p className="k-muted">{tr('Поки що без рецензій. Поділіться враженнями першим — друзі побачать їх у стрічці.')}</p>}
       {items.map((r) => (
-        <div key={r.user!.id} className="cinema-review">
-          <Link to={`/id/${r.user!.id}`}>
-            <Avatar src={r.user!.avatar} name={fullName(r.user!)} id={r.user!.id} size={36} />
+        <article key={r.user!.id} className="k-comment">
+          <Link to={`/id/${r.user!.id}`} className="k-comment-ava">
+            <Avatar src={r.user!.avatar} name={fullName(r.user!)} id={r.user!.id} size={44} />
           </Link>
-          <div>
-            <div>
-              <Link to={`/id/${r.user!.id}`} className="name">
+          <div className="k-comment-body">
+            <div className="k-comment-meta">
+              <Link to={`/id/${r.user!.id}`} className="k-comment-name">
                 {fullName(r.user!)}
-              </Link>{' '}
-              <span className="cinema-mini-rate">
-                <Star size={12} fill="currentColor" /> {r.rating}/10
-              </span>
+              </Link>
+              <span className="k-comment-date">{formatDate(r.updatedAt)}</span>
+              <span className={`k-comment-rate${r.rating >= 7 ? ' good' : r.rating <= 4 ? ' bad' : ''}`}>{r.rating}/10</span>
             </div>
             <p>{r.body}</p>
           </div>
-        </div>
+        </article>
       ))}
-    </div>
+    </section>
   );
 }
 
@@ -774,7 +1124,7 @@ export function CinemaTitlePage() {
   const qc = useQueryClient();
   const key = ['cinema', 'title', Number(id)];
   const { data: t, isLoading, error } = useQuery({ queryKey: key, queryFn: () => api<TitleFull>(`/cinema/titles/${id}`) });
-  const [modal, setModal] = useState<'rate' | 'recommend' | 'night' | 'share' | 'trailer' | null>(null);
+  const [modal, setModal] = useState<'rate' | 'recommend' | 'night' | 'share' | null>(null);
   const [trailer, setTrailer] = useState<string | null>(null);
   const [ep, setEp] = useState<{ season: number | null; episode: number | null }>({ season: null, episode: null });
   const [watching, setWatching] = useState(false);
@@ -789,154 +1139,163 @@ export function CinemaTitlePage() {
     if (watching && t) playerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [watching, t]);
 
-  if (isLoading) return <Spinner />;
+  if (isLoading)
+    return (
+      <Shell>
+        <Spinner />
+      </Shell>
+    );
   if (error || !t)
     return (
-      <div className="cinema">
-        <CinemaNav />
-        <div className="card">
+      <Shell>
+        <div className="k-section">
           <Empty icon={<Clapperboard size={44} />} title={tr('Фільм не знайдено')}>
             {(error as Error)?.message}
           </Empty>
         </div>
-      </div>
+      </Shell>
     );
 
   const update = (next: TitleFull) => qc.setQueryData(key, { ...next, similar: t.similar });
   const toggleWatchlist = async () => {
-    const r = await api<{ inWatchlist: boolean }>(`/cinema/titles/${t.id}/watchlist`, { method: t.inWatchlist ? 'DELETE' : 'POST' });
-    qc.setQueryData(key, { ...t, inWatchlist: r.inWatchlist });
+    const saved = await toggleSaved(qc, t.id, t.inWatchlist);
+    qc.setQueryData(key, { ...t, inWatchlist: saved });
     qc.invalidateQueries({ queryKey: ['cinema', 'home'] });
-    qc.invalidateQueries({ queryKey: ['cinema', 'watchlist'] });
   };
   const canNight = me.families.some((f) => f.status === 'verified' && (f.role === 'leader' || f.role === 'deputy'));
   const pickEpisode = (season: number, episode: number) => {
     setEp({ season, episode });
     setWatching(true);
   };
-  const director = t.crew.find((c) => c.role === 'Режисер' || c.role === 'Творець');
+  const byRole = (role: string) => t.crew.filter((c) => c.role === role);
+  const people = (list: { personId: number; name: string }[]) =>
+    list.map((c, k) => (
+      <span key={c.personId}>
+        {k > 0 && ', '}
+        <Link to={`/cinema/person/${c.personId}`}>{c.name}</Link>
+      </span>
+    ));
+  const info: [string, ReactNode][] = [
+    [tr('Режисер'), byRole('Режисер').length ? people(byRole('Режисер')) : null],
+    [tr('Творці'), byRole('Творець').length ? people(byRole('Творець')) : null],
+    [tr('Жанр'), t.genres.join(', ') || null],
+    [tr('Країна'), t.countries.join(', ') || null],
+    [tr('Сценарист'), byRole('Сценарист').length ? people(byRole('Сценарист')) : null],
+    [tr('Актори'), t.cast.length ? people(t.cast.slice(0, 8)) : null],
+    [t.type === 'series' ? tr('Прем’єра') : tr('Дата виходу'), t.releaseDate ? new Date(t.releaseDate).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' }) : null],
+    [tr('Тривалість'), runtimeLabel(t.runtime)],
+    [tr('Сезонів / серій'), t.seasonsCount ? `${t.seasonsCount} / ${t.episodesCount ?? '—'}` : null],
+    [tr('Озвучка'), t.translations.length ? t.translations.map((x) => x.title).join(', ') : null],
+  ];
+  const spot: SpotSource = { ...t, overview: '', cast: [] };
 
   return (
-    <div className="cinema">
-      <CinemaNav />
-      <div className="title-hero" style={t.backdropLarge ? { backgroundImage: `url(${t.backdropLarge})` } : undefined}>
-        <div className="title-hero-inner">
-          <div className="title-poster-lg">{t.poster ? <img src={t.poster} alt="" /> : <Clapperboard size={48} />}</div>
-          <div className="title-main">
-            <div className="cinema-kicker">
-              {kindLabel(t)}
-              {t.year ? ` · ${t.year}` : ''}
-              {runtimeLabel(t.runtime) ? ` · ${runtimeLabel(t.runtime)}` : ''}
-              {t.seasonsCount ? ` · ${t.seasonsCount} ${tr('сез.')}` : ''}
-              {!t.isPublished && <span className="chip" style={{ marginLeft: 8 }}>{tr('Приховано')}</span>}
-            </div>
-            <h1>{t.name}</h1>
-            {t.originalName && t.originalName !== t.name && <div className="cinema-original">{t.originalName}</div>}
-            {t.tagline && <div className="title-tagline">«{t.tagline}»</div>}
-            <div className="title-scores">
-              {t.rating ? (
-                <span className="cinema-score">
-                  <Star size={16} fill="currentColor" /> {t.rating.toFixed(1)} <small>TMDB · {t.voteCount}</small>
-                </span>
-              ) : null}
-              {t.localRating ? (
-                <span className="cinema-score local">
-                  <Star size={16} fill="currentColor" /> {t.localRating.toFixed(1)} <small>{tr('GameCon')} · {t.localRatingCount}</small>
-                </span>
-              ) : null}
-              {t.myReview && (
-                <span className="cinema-score mine">
-                  {tr('Ваша')}: {t.myReview.rating}/10
-                </span>
-              )}
-            </div>
-            <div className="title-genres">
-              {t.genres.map((g) => (
-                <span key={g} className="chip">
-                  {g}
-                </span>
-              ))}
-            </div>
-            <div className="title-actions">
-              <button className="btn lg" onClick={() => setWatching(true)}>
-                <Play size={18} fill="currentColor" /> {t.progress && t.progress.position > 30 ? tr('Продовжити') : tr('Дивитися')}
-              </button>
-              {t.trailer && (
-                <button className="btn secondary lg" onClick={() => (setTrailer(t.trailer), setModal('trailer'))}>
-                  <Film size={18} /> {tr('Трейлер')}
-                </button>
-              )}
-              <button className={`btn secondary lg${t.inWatchlist ? ' on' : ''}`} onClick={toggleWatchlist}>
-                {t.inWatchlist ? <BookmarkCheck size={18} /> : <Bookmark size={18} />} {t.inWatchlist ? tr('У списку') : tr('Хочу подивитись')}
-              </button>
-              <button className="btn secondary lg" onClick={() => setModal('rate')}>
-                <Star size={18} /> {t.myReview ? tr('Змінити оцінку') : tr('Оцінити')}
-              </button>
-            </div>
-            <div className="title-actions small">
-              <button className="chip" onClick={() => setModal('recommend')}>
-                <Send size={14} /> {tr('Порадити другу')}
-              </button>
-              <button className="chip" onClick={() => setModal('share')}>
-                <Share2 size={14} /> {tr('Поділитися')}
-              </button>
-              {canNight && (
-                <button className="chip" onClick={() => setModal('night')}>
-                  <CalendarPlus size={14} /> {tr('Кіновечір з родиною')}
-                </button>
-              )}
-            </div>
+    <Shell>
+      <div className="k-hero k-hero-title">
+        <div className="k-hero-bg on" style={t.backdropLarge ? { backgroundImage: `url(${t.backdropLarge})` } : undefined} />
+        <div className="k-hero-grid">
+          <SpotInfo
+            t={spot}
+            meta={
+              <Kicker
+                t={t}
+                extra={
+                  <>
+                    {t.status && t.type === 'series' && <span>{t.status === 'Ended' ? tr('завершено') : tr('виходить')}</span>}
+                    {!t.isPublished && <span className="k-badge bdub">{tr('Приховано')}</span>}
+                  </>
+                }
+              />
+            }
+            actions={
+              <>
+                <WatchButton label={t.progress && t.progress.position > 30 ? tr('Продовжити') : tr('Дивитися')} onClick={() => setWatching(true)} />
+                {t.trailer && <TrailerButton onClick={() => setTrailer(t.trailer)} />}
+                <SaveButton saved={t.inWatchlist} onClick={toggleWatchlist} />
+              </>
+            }
+          />
+          <div className="k-title-poster">
+            {t.poster ? <img src={t.poster.replace('/w342/', '/w500/')} alt="" /> : <Clapperboard size={48} />}
+            <span className={`k-label ${t.type === 'series' ? 'red' : 'blue'}`}>
+              {t.type === 'series' ? <Tv size={14} /> : <Film size={14} />} {kindLabel(t)}
+            </span>
+            {t.type === 'series' && t.seasonsCount ? (
+              <span className="k-poster-series">
+                {t.seasonsCount} {tr('сезон')}, {t.episodesCount ?? '—'} {tr('серій')}
+              </span>
+            ) : null}
           </div>
         </div>
       </div>
 
-      <div className="columns">
-        <div className="col-main">
-          {watching && (
-            <div className="card cinema-watch" ref={playerRef} id="watch">
-              <Player title={t} season={ep.season} episode={ep.episode} onEpisode={(s, e) => setEp({ season: s, episode: e })} />
-            </div>
-          )}
-          {t.type === 'series' && <Seasons title={t} current={ep} onPick={pickEpisode} />}
+      <div className="k-body">
+        <div className="k-main">
+          <ul className="k-info-list">
+            {info
+              .filter(([, v]) => v)
+              .map(([label, v]) => (
+                <li key={label}>
+                  <span>{label}:</span> {v}
+                </li>
+              ))}
+          </ul>
+
           {t.overview && (
-            <div className="card" style={{ padding: 20 }}>
-              <div className="card-title" style={{ padding: '0 0 10px' }}>
-                {tr('Про що')}
-              </div>
-              <p className="title-overview">{t.overview}</p>
-              <dl className="title-facts">
-                {director && (
-                  <>
-                    <dt>{director.role}</dt>
-                    <dd>
-                      <Link to={`/cinema/person/${director.personId}`}>{director.name}</Link>
-                    </dd>
-                  </>
-                )}
-                {t.countries.length > 0 && (
-                  <>
-                    <dt>{tr('Країна')}</dt>
-                    <dd>{t.countries.join(', ')}</dd>
-                  </>
-                )}
-                {t.releaseDate && (
-                  <>
-                    <dt>{t.type === 'series' ? tr('Прем’єра') : tr('Вихід')}</dt>
-                    <dd>{new Date(t.releaseDate).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' })}</dd>
-                  </>
-                )}
-                {t.episodesCount ? (
-                  <>
-                    <dt>{tr('Серій')}</dt>
-                    <dd>{t.episodesCount}</dd>
-                  </>
-                ) : null}
-              </dl>
-            </div>
+            <section>
+              <h2 className="k-subtitle">
+                {tr('Про що')} {t.type === 'series' ? tr('серіал') : tr('фільм')} «{t.name}»
+              </h2>
+              <p className="k-text">{t.overview}</p>
+            </section>
           )}
+
+          <section ref={playerRef} id="watch" className="k-player-block">
+            <h2 className="k-subtitle center">
+              {tr('Дивитися онлайн')} «{t.name}»
+            </h2>
+            {watching ? (
+              <Player title={t} season={ep.season} episode={ep.episode} onEpisode={(s, e) => setEp({ season: s, episode: e })} />
+            ) : (
+              <button className="k-player-cover" onClick={() => setWatching(true)} style={t.backdropLarge ? { backgroundImage: `url(${t.backdropLarge})` } : undefined}>
+                <span className="k-play-big">
+                  <Play size={34} fill="currentColor" />
+                </span>
+                {t.progress && t.progress.position > 30 && (
+                  <span className="k-resume">
+                    {tr('Продовжити з')} {Math.floor(t.progress.position / 60)} {tr('хв')}
+                    {t.progress.season ? ` · S${t.progress.season}E${t.progress.episode}` : ''}
+                  </span>
+                )}
+              </button>
+            )}
+            <div className="k-player-bottom">
+              <div className="k-share-caption">{tr('Розкажи друзям і родині про свої враження:')}</div>
+              <div className="k-player-bottom-actions">
+                <button className="k-pill" onClick={() => setModal('rate')}>
+                  <Star size={15} /> {t.myReview ? `${tr('Ваша оцінка')}: ${t.myReview.rating}` : tr('Оцінити')}
+                </button>
+                <button className="k-pill" onClick={() => setModal('recommend')}>
+                  <Send size={15} /> {tr('Порадити')}
+                </button>
+                <button className="k-pill" onClick={() => setModal('share')}>
+                  <Share2 size={15} /> {tr('У стрічку')}
+                </button>
+                {canNight && (
+                  <button className="k-pill" onClick={() => setModal('night')}>
+                    <CalendarPlus size={15} /> {tr('Кіновечір')}
+                  </button>
+                )}
+              </div>
+              {t.localRating ? <div className="k-score-circle">{t.localRating.toFixed(1)}</div> : null}
+            </div>
+          </section>
+
+          {t.type === 'series' && <Seasons title={t} current={ep} onPick={pickEpisode} />}
+
           {t.cast.length > 0 && (
-            <div className="card">
-              <div className="card-title">{tr('У ролях')}</div>
+            <section>
+              <h2 className="k-subtitle">{tr('У ролях')}</h2>
               <div className="cinema-cast">
                 {t.cast.map((c) => (
                   <Link key={c.personId} to={`/cinema/person/${c.personId}`} className="cast-item">
@@ -946,35 +1305,37 @@ export function CinemaTitlePage() {
                   </Link>
                 ))}
               </div>
-            </div>
+            </section>
           )}
+
           {t.videos.length > 1 && (
-            <div className="card">
-              <div className="card-title">{tr('Відео')}</div>
+            <section>
+              <h2 className="k-subtitle">{tr('Відео')}</h2>
               <div className="cinema-videos">
                 {t.videos.map((v) => (
-                  <button key={v.key} className="cinema-video" onClick={() => (setTrailer(v.key), setModal('trailer'))}>
+                  <button key={v.key} className="cinema-video" onClick={() => setTrailer(v.key)}>
                     <img src={`https://i.ytimg.com/vi/${v.key}/mqdefault.jpg`} alt="" loading="lazy" />
                     <span className="ellipsis">{v.name}</span>
                   </button>
                 ))}
               </div>
-            </div>
+            </section>
           )}
-          <Reviews titleId={t.id} />
-          <Row title={tr('Схожі')} items={t.similar} />
+
+          <Reviews titleId={t.id} onWrite={() => setModal('rate')} />
         </div>
-        <aside className="col-side">
-          <div className="card">
-            <div className="card-title">{tr('Друзі й родина')}</div>
-            {!t.social.ratings.length && !t.social.wantToWatch.length && <div className="muted" style={{ padding: '0 16px 16px' }}>{tr('Ніхто з вашого кола ще не оцінював. Будьте першим!')}</div>}
+
+        <aside className="k-side">
+          <div className="k-side-block">
+            <h3>{tr('Друзі й родина')}</h3>
+            {!t.social.ratings.length && !t.social.wantToWatch.length && <p className="k-muted">{tr('Ніхто з вашого кола ще не оцінював. Будьте першим!')}</p>}
             {t.social.ratings.map((r) => (
-              <Link key={r.user.id} to={`/id/${r.user.id}`} className="row row-link">
+              <Link key={r.user.id} to={`/id/${r.user.id}`} className="k-person-row">
                 <Avatar src={r.user.avatar} name={fullName(r.user)} id={r.user.id} size={34} />
-                <div className="info">
-                  <div className="name ellipsis">{fullName(r.user)}</div>
-                  <div className="meta">{r.family ? tr('родина') : tr('друг')}</div>
-                </div>
+                <span className="k-person-name">
+                  {fullName(r.user)}
+                  <small>{r.family ? tr('родина') : tr('друг')}</small>
+                </span>
                 <span className="cinema-mini-rate">
                   <Star size={12} fill="currentColor" /> {r.rating}
                 </span>
@@ -982,7 +1343,7 @@ export function CinemaTitlePage() {
             ))}
             {t.social.wantToWatch.length > 0 && (
               <div className="cinema-want">
-                <div className="muted">{tr('Хочуть подивитись')}:</div>
+                <div className="k-muted">{tr('Хочуть подивитись')}:</div>
                 <div className="avatars">
                   {t.social.wantToWatch.map((u) => (
                     <Link key={u.id} to={`/id/${u.id}`} title={fullName(u)}>
@@ -993,6 +1354,25 @@ export function CinemaTitlePage() {
               </div>
             )}
           </div>
+          {t.similar.length > 0 && (
+            <div className="k-side-block">
+              <h3>{tr('Схожі')}</h3>
+              {t.similar.slice(0, 6).map((s) => (
+                <Link key={s.id} to={`/cinema/title/${s.id}`} className="k-side-title">
+                  <span className="k-side-poster">{s.poster ? <img src={s.poster} alt="" loading="lazy" /> : <Clapperboard size={18} />}</span>
+                  <span className="k-side-info">
+                    <b className="ellipsis">{s.name}</b>
+                    <small>{[s.year, s.genres[0]].filter(Boolean).join(' · ')}</small>
+                    {s.rating ? (
+                      <span className="cinema-mini-rate">
+                        <Star size={11} fill="currentColor" /> {s.rating.toFixed(1)}
+                      </span>
+                    ) : null}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
         </aside>
       </div>
 
@@ -1000,14 +1380,8 @@ export function CinemaTitlePage() {
       {modal === 'recommend' && <RecommendModal title={t} onClose={() => setModal(null)} />}
       {modal === 'night' && <FamilyNightModal title={t} onClose={() => setModal(null)} />}
       {modal === 'share' && <ShareModal title={t} onClose={() => setModal(null)} />}
-      {modal === 'trailer' && trailer && (
-        <Modal title={tr('Трейлер')} onClose={() => setModal(null)} wide>
-          <div className="cinema-trailer">
-            <iframe src={`https://www.youtube-nocookie.com/embed/${trailer}?autoplay=1&rel=0`} allow="autoplay; fullscreen; encrypted-media" allowFullScreen title={tr('Трейлер')} />
-          </div>
-        </Modal>
-      )}
-    </div>
+      {trailer && <TrailerModal id={trailer} onClose={() => setTrailer(null)} />}
+    </Shell>
   );
 }
 
@@ -1021,9 +1395,8 @@ export function CinemaPersonPage() {
   if (!p) return null;
   const long = p.biography.length > 600 && !more;
   return (
-    <div className="cinema">
-      <CinemaNav />
-      <div className="card person-card">
+    <Shell>
+      <div className="k-panel person-card">
         <div className="person-photo">{p.photo ? <img src={p.photo} alt="" /> : <Users size={48} />}</div>
         <div className="person-info">
           <h1>{p.name}</h1>
@@ -1042,11 +1415,9 @@ export function CinemaPersonPage() {
           )}
         </div>
       </div>
-      <div className="cinema-row-head">
-        <h2>{tr('Фільмографія на GameCon')}</h2>
-      </div>
-      {p.titles.length ? <TitleGrid items={p.titles} /> : <div className="card"><Empty title={tr('Поки що немає фільмів у каталозі')} /></div>}
-    </div>
+      <SectionHead title={tr('Фільмографія на GameCon')} />
+      {p.titles.length ? <TitleGrid items={p.titles} /> : <div className="k-panel"><Empty title={tr('Поки що немає фільмів у каталозі')} /></div>}
+    </Shell>
   );
 }
 

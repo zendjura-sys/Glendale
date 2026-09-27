@@ -1,4 +1,5 @@
 import { tr } from '../lib/i18n';
+import { CinemaSidebar } from './CinemaSidebar';
 import { Suspense, useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -269,6 +270,13 @@ function FamilyTools({ pathname }: { pathname: string }) {
 }
 
 export function Sidebar() {
+  const { pathname } = useLocation();
+  // Кінопортал — власні розділи в тому ж місці меню.
+  if (pathname.startsWith('/cinema')) return <CinemaSidebar />;
+  return <SiteSidebar />;
+}
+
+function SiteSidebar() {
   const me = useMe();
   const { pathname } = useLocation();
   const { config } = useConfig();
