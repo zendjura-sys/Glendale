@@ -67,6 +67,14 @@ final class Presenter
             'hasPassword' => true,
             'level' => Social::level($u),
             'permissions' => ['post' => true, 'comment' => true, 'message' => true, 'createGroups' => true, 'upload' => true],
+            // Для меню «Моя родина»: у яких родинах людина і з якою роллю.
+            'families' => DB::table('family_members as m')->join('families as f', 'f.id', '=', 'm.family_id')
+                ->where('m.user_id', $u->id)->where('f.status', '!=', 'rejected')
+                ->orderByRaw("CASE m.role WHEN 'leader' THEN 0 WHEN 'deputy' THEN 1 ELSE 2 END")
+                ->get(['f.id', 'f.name', 'f.tag', 'f.status', 'm.role'])
+                ->map(fn ($f) => ['id' => $f->id, 'name' => $f->name, 'tag' => $f->tag, 'status' => $f->status, 'role' => $f->role])
+                ->values()->all(),
+            'canManageFamilies' => $u->can('families.manage'),
         ];
     }
 
@@ -249,6 +257,8 @@ final class Presenter
                 'actor' => self::userShort($users[$n->actor_id] ?? null),
                 'post' => $post ? ['id' => $post->id, 'text' => mb_substr((string) $post->text, 0, 120), 'image' => Social::url($post->image_path)] : null,
                 'groupId' => $n->group_id,
+                'familyId' => $n->family_id ?? null,
+                'unionId' => $n->union_id ?? null,
             ];
         }, $rows);
     }

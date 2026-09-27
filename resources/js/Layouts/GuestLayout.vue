@@ -26,7 +26,7 @@ import { Link } from '@inertiajs/vue3';
         <Link href="/" class="group mb-8 flex items-center gap-3">
             <ApplicationLogo mark class="h-11 w-11 text-xl transition-transform duration-700 group-hover:rotate-[55deg]" />
             <div class="leading-tight">
-                <div class="font-display text-lg tracking-[0.25em] text-white">MONSORY</div>
+                <div class="font-display text-lg tracking-[0.25em] text-white">GAME</div>
                 <div class="text-[10px] tracking-[0.35em] text-gold-300/70">CONNECT</div>
             </div>
         </Link>

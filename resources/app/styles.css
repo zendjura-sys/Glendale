@@ -1822,3 +1822,253 @@ html,
 body {
   overflow-x: clip;
 }
+
+/* ───────────── Система управління родинами («Моя родина») ───────────── */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0 12px;
+}
+.btn.sm {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12.5px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 20px 12px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--hover);
+  color: var(--text-2);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.chip:hover {
+  text-decoration: none;
+  background: var(--active);
+}
+.chip.on {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.chip .n {
+  opacity: 0.7;
+  font-weight: 500;
+}
+.family-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  vertical-align: 1px;
+}
+.family-badge.verified {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.family-badge.pending {
+  background: rgba(234, 179, 8, 0.14);
+  color: #b7791f;
+}
+.family-badge.rejected {
+  background: rgba(229, 72, 77, 0.12);
+  color: var(--danger);
+}
+.family-check {
+  margin-left: 5px;
+  color: var(--accent);
+  vertical-align: -2px;
+}
+.family-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+  padding: 0 20px 18px;
+}
+.profile-header .family-head {
+  margin-top: -44px;
+}
+.family-avatar {
+  flex-shrink: 0;
+  border-radius: 22px;
+  box-shadow: 0 0 0 4px var(--card-solid);
+  cursor: pointer;
+}
+.family-title {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.family-title h1 {
+  font-size: 22px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.family-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.family-review {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 18px 20px;
+}
+.family-review.pending {
+  box-shadow: var(--card-border), inset 3px 0 0 #d69e2e;
+}
+.family-review.rejected {
+  box-shadow: var(--card-border), inset 3px 0 0 var(--danger);
+}
+.family-review .family-badge {
+  margin-left: 0;
+}
+.family-proof img {
+  max-width: 260px;
+  max-height: 160px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+.family-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.family-role {
+  color: var(--text-3);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.family-role.leader {
+  color: var(--accent);
+}
+.family-role.deputy {
+  color: var(--text-2);
+}
+
+/* Довідник проєктів з ілюстраціями. */
+.project-logo {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  object-fit: cover;
+}
+.project-logo.blank {
+  background: var(--gradient);
+  color: var(--btn-primary-text);
+  font-weight: 800;
+}
+.chip-online {
+  font-size: 11px;
+  font-weight: 700;
+  color: #3aa66a;
+}
+.chip-online::before {
+  content: '●';
+  margin-right: 3px;
+  font-size: 8px;
+  vertical-align: 1px;
+}
+.project-new {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.project-new .field {
+  flex: 1;
+  min-width: 0;
+}
+.project-new-logo {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  overflow: hidden;
+  border: 1.5px dashed var(--accent);
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.project-new-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 8px;
+}
+.project-strip {
+  display: flex;
+  gap: 8px;
+  padding: 8px 20px 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.project-strip .project-card {
+  flex: 0 0 124px;
+}
+.project-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  border: 0;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--hover);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: inset 0 0 0 1.5px transparent;
+  transition: box-shadow 0.15s, background 0.15s;
+}
+.project-card > span.ellipsis {
+  max-width: 100%;
+}
+.project-card:hover {
+  background: var(--active);
+}
+.project-card.on {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+.project-card .n {
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 600;
+}
+/* Сторінка родини: назва під обкладинкою, над нею — лише емблема. */
+.profile-header .family-head {
+  margin-top: 0;
+  padding-top: 12px;
+  align-items: flex-start;
+}
+.profile-header .family-avatar {
+  margin-top: -56px;
+}

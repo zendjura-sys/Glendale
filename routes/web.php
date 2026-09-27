@@ -347,6 +347,27 @@ Route::middleware(['auth', 'verified', 'permission:roles.manage'])
         Route::delete('/{role}', [RoleController::class, 'destroy'])->name('destroy');
     });
 
+// Система управління родинами — перевірка родин і союзів.
+Route::middleware(['auth', 'verified', 'permission:families.manage'])
+    ->prefix('admin/families')
+    ->name('admin.families.')
+    ->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\FamilyController::class, 'index'])->name('index');
+        Route::post('/{family}/verify', [\App\Http\Controllers\Admin\FamilyController::class, 'verifyFamily'])->whereNumber('family')->name('verify');
+        Route::post('/{family}/reject', [\App\Http\Controllers\Admin\FamilyController::class, 'rejectFamily'])->whereNumber('family')->name('reject');
+        Route::post('/unions/{union}/verify', [\App\Http\Controllers\Admin\FamilyController::class, 'verifyUnion'])->whereNumber('union')->name('unions.verify');
+        Route::post('/unions/{union}/reject', [\App\Http\Controllers\Admin\FamilyController::class, 'rejectUnion'])->whereNumber('union')->name('unions.reject');
+        Route::post('/projects', [\App\Http\Controllers\Admin\FamilyController::class, 'storeProject'])->name('projects.store');
+        Route::post('/projects/{project}/servers', [\App\Http\Controllers\Admin\FamilyController::class, 'storeServers'])->whereNumber('project')->name('projects.servers');
+        Route::post('/projects/{project}/logo', [\App\Http\Controllers\Admin\FamilyController::class, 'projectLogo'])->whereNumber('project')->name('projects.logo');
+        Route::post('/projects/{project}/website', [\App\Http\Controllers\Admin\FamilyController::class, 'projectWebsite'])->whereNumber('project')->name('projects.website');
+        Route::post('/projects/{project}/servers-source', [\App\Http\Controllers\Admin\FamilyController::class, 'projectServersSource'])->whereNumber('project')->name('projects.servers-source');
+        Route::post('/projects/{project}/approve', [\App\Http\Controllers\Admin\FamilyController::class, 'approveProject'])->whereNumber('project')->name('projects.approve');
+        Route::delete('/projects/{project}', [\App\Http\Controllers\Admin\FamilyController::class, 'destroyProject'])->whereNumber('project')->name('projects.destroy');
+        Route::post('/servers/{server}/approve', [\App\Http\Controllers\Admin\FamilyController::class, 'approveServer'])->whereNumber('server')->name('servers.approve');
+        Route::delete('/servers/{server}', [\App\Http\Controllers\Admin\FamilyController::class, 'destroyServer'])->whereNumber('server')->name('servers.destroy');
+    });
+
 Route::middleware(['auth', 'verified', 'permission:users.manage'])
     ->prefix('admin/users')
     ->name('admin.users.')

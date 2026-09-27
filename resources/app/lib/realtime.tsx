@@ -303,6 +303,14 @@ export const NOTIFICATION_TEXT = (): Record<Notification['type'], string> => ({
   friend_accept: tr('принял(а) вашу заявку в друзья'),
   group_request: tr('хочет вступить в сообщество'),
   group_accept: tr('одобрил(а) вашу заявку в сообщество'),
+  family_verified: tr('підтвердив(ла) вашу родину'),
+  family_rejected: tr('відхилив(ла) заявку вашої родини'),
+  family_join_request: tr('хоче вступити до родини'),
+  family_join_accepted: tr('прийняв(ла) вас до родини'),
+  union_verified: tr('підтвердив(ла) ваш союз'),
+  union_rejected: tr('відхилив(ла) заявку вашого союзу'),
+  union_join_request: tr('подав(ла) заявку родини до союзу'),
+  union_join_accepted: tr('прийняв(ла) вашу родину до союзу'),
 });
 
 export const useRealtime = () => useContext(RealtimeContext);

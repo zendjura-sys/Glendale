@@ -16,6 +16,96 @@ export interface Me extends User {
   hasPassword: boolean;
   level: { id: number; title: string; type: LevelType };
   permissions: { post: boolean; comment: boolean; message: boolean; createGroups: boolean; upload: boolean };
+  /** Родини, в яких людина (для меню «Моя родина»). */
+  families: MyFamily[];
+  canManageFamilies: boolean;
+}
+
+// ───────────── Система управління родинами («Моя родина») ─────────────
+
+export type FamilyStatus = 'pending' | 'verified' | 'rejected';
+export type FamilyRole = 'leader' | 'deputy' | 'member';
+
+export interface MyFamily {
+  id: number;
+  name: string;
+  tag: string | null;
+  status: FamilyStatus;
+  role: FamilyRole;
+}
+
+export interface GameProject {
+  id: number;
+  name: string;
+  logo: string | null;
+  approved: boolean;
+  families: number;
+  website: string | null;
+  serversSource: string | null;
+  servers: { id: number; name: string; approved: boolean; address: string | null; players: number | null; maxPlayers: number | null }[];
+}
+
+export interface Family {
+  id: number;
+  name: string;
+  tag: string | null;
+  project: string;
+  server: string;
+  projectId: number | null;
+  serverId: number | null;
+  description: string;
+  avatar: string | null;
+  cover: string | null;
+  status: FamilyStatus;
+  membersCount: number;
+  myRole: FamilyRole | null;
+  requested: boolean;
+  createdAt: number;
+}
+
+export interface FamilyFull extends Family {
+  discordUrl: string | null;
+  telegramUrl: string | null;
+  leader: UserShort | null;
+  reviewNote: string | null;
+  proof: string | null;
+  verifiedAt: number | null;
+  canManage: boolean;
+  isLeader: boolean;
+  requestsCount: number;
+  union: { id: number; name: string; tag: string | null; status: FamilyStatus; role: 'founder' | 'member' } | null;
+}
+
+export interface FamilyMember extends UserShort {
+  role: FamilyRole;
+  roleLabel: string;
+  joinedAt: number;
+}
+
+export interface FamilyRequest extends UserShort {
+  message: string;
+  requestedAt: number;
+}
+
+export interface FamilyUnion {
+  id: number;
+  name: string;
+  tag: string | null;
+  description: string;
+  avatar: string | null;
+  status: FamilyStatus;
+  familiesCount: number;
+  founder: Family | null;
+  createdAt: number;
+}
+
+export interface FamilyUnionFull extends FamilyUnion {
+  families: (Family & { unionRole: 'founder' | 'member' })[];
+  isFounder: boolean;
+  reviewNote: string | null;
+  requestsCount: number;
+  myFamilies: { id: number; name: string; status: FamilyStatus; inUnion: number | null; requested: boolean }[];
+  canJoin: boolean;
 }
 
 export interface SiteConfig {
@@ -211,13 +301,31 @@ export interface Photo {
 
 export interface Notification {
   id: number;
-  type: 'like' | 'comment' | 'repost' | 'wall_post' | 'friend_request' | 'friend_accept' | 'group_request' | 'group_accept';
+  type:
+    | 'like'
+    | 'comment'
+    | 'repost'
+    | 'wall_post'
+    | 'friend_request'
+    | 'friend_accept'
+    | 'group_request'
+    | 'group_accept'
+    | 'family_verified'
+    | 'family_rejected'
+    | 'family_join_request'
+    | 'family_join_accepted'
+    | 'union_verified'
+    | 'union_rejected'
+    | 'union_join_request'
+    | 'union_join_accepted';
   text: string;
   isRead: boolean;
   createdAt: number;
   actor: UserShort;
   post: { id: number; text: string; image: string | null } | null;
   groupId: number | null;
+  familyId?: number | null;
+  unionId?: number | null;
 }
 
 export interface Counters {

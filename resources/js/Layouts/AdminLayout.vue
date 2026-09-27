@@ -3,7 +3,7 @@ import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import AmbientBackground from '@/Components/AmbientBackground.vue';
 import { Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
-import { AlertTriangle, Blocks, CalendarDays, Handshake, History, IdCard, LayoutDashboard, Megaphone, Menu, MessageCircle, Palette, Scale, ScrollText, Settings, ShieldCheck, ShieldOff, Target, TrendingUp, Users, Wallet, X } from '@lucide/vue';
+import { AlertTriangle, Blocks, Crown, CalendarDays, Handshake, History, IdCard, LayoutDashboard, Megaphone, Menu, MessageCircle, Palette, Scale, ScrollText, Settings, ShieldCheck, ShieldOff, Target, TrendingUp, Users, Wallet, X } from '@lucide/vue';
 
 defineProps({
     title: { type: String, default: '' },
@@ -28,6 +28,7 @@ const navGroups = [
             { name: 'admin.broadcasts.index', label: 'Розсилки', can: 'manageBroadcasts', icon: Megaphone },
             { name: 'admin.bonuses.index', label: 'Банк', can: 'manageBonuses', icon: Wallet },
             { name: 'admin.users.index', label: 'Учасники', can: 'manageUsers', icon: Users },
+            { name: 'admin.families.index', label: 'Родини та союзи', can: 'manageFamilies', icon: Crown },
         ],
     },
     {
@@ -74,7 +75,7 @@ const mobileOpen = ref(false);
                     <Link href="/" class="flex items-center gap-3">
                         <ApplicationLogo mark class="h-9 w-9 text-lg" />
                         <div class="leading-tight">
-                            <div class="font-display text-sm tracking-[0.25em] text-white">MONSORY</div>
+                            <div class="font-display text-sm tracking-[0.25em] text-white">GAME</div>
                             <div class="text-[9px] tracking-[0.35em] text-gold-300/70">CONNECT CMS</div>
                         </div>
                     </Link>

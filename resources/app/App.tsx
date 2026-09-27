@@ -22,6 +22,10 @@ const GroupPage = lazy(() => import('./pages/Group'));
 const PhotosPage = lazy(() => import('./pages/Photos'));
 const SearchPage = lazy(() => import('./pages/Search'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
+const FamiliesPage = lazy(() => import('./pages/Families'));
+const FamilyPage = lazy(() => import('./pages/Families').then((m) => ({ default: m.FamilyPage })));
+const UnionsPage = lazy(() => import('./pages/Unions'));
+const UnionPage = lazy(() => import('./pages/Unions').then((m) => ({ default: m.UnionPage })));
 const SettingsPage = lazy(() => import('./pages/Settings'));
 const PostPage = lazy(() => import('./pages/PostPage'));
 const MusicPage = lazy(() => import('./pages/Music'));
@@ -117,6 +121,10 @@ export default function App() {
           <Route path="photos/:id" element={<PhotosPage />} />
           <Route path="search" element={<SearchPage />} />
           <Route path="activity" element={<NotificationsPage />} />
+          <Route path="families" element={<FamiliesPage />} />
+          <Route path="families/:id" element={<FamilyPage />} />
+          <Route path="unions" element={<UnionsPage />} />
+          <Route path="unions/:id" element={<UnionPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="wall/:id" element={<PostPage />} />
           <Route path="music" element={<MusicPage />} />

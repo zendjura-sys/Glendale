@@ -23,6 +23,7 @@ import {
   Target,
   Trophy,
   UserCog,
+  Handshake,
   Shield,
   Sun,
   Users,
@@ -207,11 +208,11 @@ function Counter({ n, hot }: { n: number; hot?: boolean }) {
 }
 
 /**
- * Розділи системи управління родинами (публічна назва в меню — «Моя
- * родина») — поки сторінки на Vue (Inertia),
- * тому звичайні посилання з повним переходом, а не NavLink.
+ * Інструменти родини Monsory (кабінет, звіти, банк…) — поки сторінки на
+ * Vue (Inertia), тому звичайні посилання з повним переходом. Бачать лише
+ * учасники Monsory: для інших родин ці інструменти з'являться окремо.
  */
-const FAMILY_LINKS = () => [
+const MONSORY_LINKS = () => [
   { href: '/dashboard', icon: LayoutDashboard, label: tr('Кабінет') },
   { href: '/reports', icon: ClipboardList, label: tr('Звіти') },
   { href: '/bonuses', icon: Landmark, label: tr('Банк') },
@@ -250,12 +251,25 @@ function Sidebar() {
         <Bell size={20} /> {tr('Уведомления')} <Counter n={counters.notifications} />
       </NavLink>
       <div className="sidebar-sep" />
+      {/* Система управління родинами — публічно «Моя родина». */}
       <div className="sidebar-title">{tr('Моя родина')}</div>
-      {FAMILY_LINKS().map(({ href, icon: Icon, label }) => (
-        <a key={href} href={href}>
-          <Icon size={20} /> {label}
-        </a>
+      {me.families.slice(0, 3).map((f) => (
+        <NavLink key={f.id} to={`/families/${f.id}`}>
+          <Crown size={20} /> <span className="ellipsis">{f.tag ? `[${f.tag}] ${f.name}` : f.name}</span>
+        </NavLink>
       ))}
+      <NavLink to="/families" end>
+        <UsersRound size={20} /> {me.families.length ? tr('Усі родини') : tr('Знайти чи створити родину')}
+      </NavLink>
+      <NavLink to="/unions">
+        <Handshake size={20} /> {tr('Союзи')}
+      </NavLink>
+      {me.verified &&
+        MONSORY_LINKS().map(({ href, icon: Icon, label }) => (
+          <a key={href} href={href}>
+            <Icon size={20} /> {label}
+          </a>
+        ))}
       <div className="sidebar-sep" />
       <NavLink to="/settings">
         <Settings size={20} /> {tr('Настройки')}
@@ -287,9 +301,9 @@ function TabBar() {
         <MessageCircle size={24} /> {tr('Мессенджер')}
         {counters.messages > 0 && <span className="badge">{counters.messages}</span>}
       </a>
-      <a href="/dashboard">
+      <NavLink to={me.families[0] ? `/families/${me.families[0].id}` : '/families'}>
         <Crown size={24} /> {tr('Родина')}
-      </a>
+      </NavLink>
       <NavLink to={`/id/${me.id}`}>
         <CircleUserRound size={24} /> {tr('Профиль')}
       </NavLink>
