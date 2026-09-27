@@ -46,10 +46,17 @@ import { ThemeSwitch } from './uiverse';
 
 function Logo() {
   const { config } = useConfig();
+  const [main, ...rest] = config.siteTitle.trim().split(/\s+/);
+  const sub = rest.join(' ');
   return (
     <Link to="/feed" className="logo" aria-label={config.siteTitle}>
-      <span className="logo-mark">M</span>
-      <span className="logo-text">{config.siteTitle}</span>
+      <span className="logo-mark">{main.charAt(0)}</span>
+      {/* Назва в два рядки: перше слово — головне, решта — підпис
+          («MONSORY» / «CONNECT»). Так вона вміщується й на телефоні. */}
+      <span className="logo-text">
+        <span className="logo-main">{main}</span>
+        {sub && <span className="logo-sub">{sub}</span>}
+      </span>
     </Link>
   );
 }

@@ -219,10 +219,24 @@ h3 {
 }
 .logo-text {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+.logo-main {
   font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.logo-sub {
+  margin-top: 3px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--accent);
 }
 .header-search {
   position: relative;
