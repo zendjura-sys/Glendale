@@ -14,7 +14,7 @@ export function InstallAppCard() {
   const { installed, available, ios } = useInstallState();
   return (
     <div className="install-card">
-      <img src="/icons/icon-192.png" alt="" width={56} height={56} />
+      <img src="/images/icons/icon-192.png" alt="" width={56} height={56} />
       <div className="install-card-body">
         {installed ? (
           <>

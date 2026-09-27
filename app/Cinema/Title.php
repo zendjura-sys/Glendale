@@ -52,6 +52,8 @@ class Title extends Model
             'countries' => 'array',
             'kodik_translations' => 'array',
             'kodik_checked_at' => 'datetime',
+            'flixcdn_translations' => 'array',
+            'flixcdn_checked_at' => 'datetime',
             'is_published' => 'boolean',
             'is_featured' => 'boolean',
             'vote_average' => 'float',

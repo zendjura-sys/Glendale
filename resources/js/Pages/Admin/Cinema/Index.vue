@@ -24,11 +24,19 @@ const tabs = [
 const tab = ref(props.settings.tmdbConfigured ? 'catalog' : 'settings');
 
 /* налаштування */
-const settingsForm = useForm({ tmdbKey: '', kodikToken: '', language: props.settings.language, clearTmdb: false, clearKodik: false });
+const settingsForm = useForm({
+    tmdbKey: '',
+    kodikToken: '',
+    flixcdnToken: '',
+    language: props.settings.language,
+    clearTmdb: false,
+    clearKodik: false,
+    clearFlixcdn: false,
+});
 const saveSettings = () =>
     settingsForm.put(route('admin.cinema.settings'), {
         preserveScroll: true,
-        onSuccess: () => settingsForm.reset('tmdbKey', 'kodikToken', 'clearTmdb', 'clearKodik'),
+        onSuccess: () => settingsForm.reset('tmdbKey', 'kodikToken', 'flixcdnToken', 'clearTmdb', 'clearKodik', 'clearFlixcdn'),
     });
 
 /* імпорт за посиланням */
@@ -104,6 +112,7 @@ function filter() {
 const toggle = (t, field) => router.patch(route('admin.cinema.update', t.id), { [field]: !t[field] }, { preserveScroll: true });
 const refresh = (t) => router.post(route('admin.cinema.refresh', t.id), {}, { preserveScroll: true });
 const kodik = (t) => router.post(route('admin.cinema.kodik', t.id), {}, { preserveScroll: true });
+const flixcdn = (t) => router.post(route('admin.cinema.flixcdn', t.id), {}, { preserveScroll: true });
 function destroy(t) {
     if (confirm(`Видалити «${t.name}» з каталогу? Оцінки й прогрес перегляду теж зникнуть.`)) router.delete(route('admin.cinema.destroy', t.id), { preserveScroll: true });
 }
@@ -182,7 +191,8 @@ const act = 'rounded-lg px-2 py-1 text-[11px] text-white/55 hover:bg-white/5 hov
                         </button>
                         <button :class="[act, t.featured ? 'text-gold-300' : '']" @click="toggle(t, 'featured')">{{ t.featured ? '★ На головній' : '☆ На головну' }}</button>
                         <button :class="act" @click="refresh(t)">Оновити</button>
-                        <button v-if="settings.kodikConfigured" :class="act" @click="kodik(t)">Шукати плеєр</button>
+                        <button v-if="settings.kodikConfigured" :class="act" @click="kodik(t)">Шукати Kodik</button>
+                        <button v-if="settings.flixcdnConfigured" :class="act" @click="flixcdn(t)">Шукати FlixCDN</button>
                         <button :class="act" class="hover:!text-red-300" @click="destroy(t)">Видалити</button>
                     </div>
                 </div>
@@ -279,6 +289,14 @@ const act = 'rounded-lg px-2 py-1 text-[11px] text-white/55 hover:bg-white/5 hov
                     <p class="mt-1 text-xs text-white/35">Потрібен для вбудованого плеєра. Без нього каталог працює, але дивитися можна лише трейлери.</p>
                     <label v-if="settings.kodikConfigured" class="mt-2 flex items-center gap-2 text-xs text-white/50">
                         <input v-model="settingsForm.clearKodik" type="checkbox" class="rounded border-white/20 bg-obsidian-900 text-gold-400" /> Видалити збережений токен
+                    </label>
+                </div>
+                <div>
+                    <label class="mb-1 block text-xs uppercase tracking-widest text-white/40">Токен FlixCDN</label>
+                    <input v-model="settingsForm.flixcdnToken" type="password" autocomplete="off" :class="field" :placeholder="settings.flixcdnConfigured ? '•••••••• збережено — залиште порожнім, щоб не змінювати' : 'Токен з кабінету uacdn.live'" />
+                    <p class="mt-1 text-xs text-white/35">Другий балансер плеєрів — працює паралельно з Kodik: якщо один не знайде фільм, спробує другий.</p>
+                    <label v-if="settings.flixcdnConfigured" class="mt-2 flex items-center gap-2 text-xs text-white/50">
+                        <input v-model="settingsForm.clearFlixcdn" type="checkbox" class="rounded border-white/20 bg-obsidian-900 text-gold-400" /> Видалити збережений токен
                     </label>
                 </div>
                 <div>

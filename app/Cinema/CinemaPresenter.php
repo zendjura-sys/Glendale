@@ -23,7 +23,7 @@ final class CinemaPresenter
             'backdrop' => Tmdb::image($t->backdrop_path, 'w780'),
             'rating' => $t->vote_average ?: null,
             'localRating' => $t->local_rating,
-            'hasPlayer' => $t->kodik_link !== null,
+            'hasPlayer' => PlayerSources::hasAny($t),
             'quality' => self::quality($t),
             'category' => $t->category,
             'categoryLabel' => Title::CATEGORIES[$t->category][0] ?? null,
@@ -42,7 +42,7 @@ final class CinemaPresenter
     }
 
     /**
-     * Бейджі постера з доступних озвучок Kodik: 4K / HDR / FHD / HD,
+     * Бейджі постера з доступних озвучок Kodik і FlixCDN: 4K / HDR / FHD / HD,
      * DUB (є озвучка голосом), SUB (є субтитри).
      *
      * @return list<string>
@@ -50,7 +50,7 @@ final class CinemaPresenter
     private static function badges(Title $t): array
     {
         $tr = collect($t->kodik_translations ?? []);
-        if ($tr->isEmpty()) {
+        if ($tr->isEmpty() && ! $t->flixcdn_link) {
             return [];
         }
         $q = strtoupper($tr->pluck('quality')->filter()->implode(' '));
@@ -69,7 +69,8 @@ final class CinemaPresenter
             }
         }
         $types = $tr->pluck('type')->filter();
-        if ($types->contains('voice') || $types->isEmpty()) {
+        // FlixCDN не дає типу озвучки окремо — вважаємо голосовою (так є в переважній більшості).
+        if ($types->contains('voice') || $types->isEmpty() || ($tr->isEmpty() && $t->flixcdn_link)) {
             $badges[] = 'DUB';
         }
         if ($types->contains('subtitles')) {
@@ -165,7 +166,7 @@ final class CinemaPresenter
             'inWatchlist' => DB::table('cinema_watchlist')->where('title_id', $t->id)->where('user_id', $me->id)->exists(),
             'myReview' => $review ? ['rating' => (int) $review->rating, 'body' => (string) $review->body] : null,
             'progress' => $progress ? ['season' => $progress->season, 'episode' => $progress->episode, 'position' => (int) $progress->position, 'duration' => $progress->duration] : null,
-            'translations' => collect($t->kodik_translations ?? [])->map(fn ($tr, $i) => ['index' => $i, 'title' => $tr['title'] ?? 'Озвучка', 'quality' => $tr['quality'] ?? null])->values()->all(),
+            'translations' => PlayerSources::list($t),
             'social' => self::social($t, $me),
             'interest' => self::interest($t),
             'isPublished' => $t->is_published,

@@ -1215,6 +1215,14 @@ select.k-select:focus {
 .k-tabs button.on small {
   color: rgba(255, 255, 255, 0.75);
 }
+.k-tab-flixcdn::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--k-gold, #e0b855);
+  align-self: center;
+}
 .cinema-player {
   position: relative;
   aspect-ratio: 16 / 9;

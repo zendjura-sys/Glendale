@@ -750,7 +750,11 @@ function Player({ title, season, episode, onEpisode }: { title: TitleFull; seaso
       {title.translations.length > 0 && (
         <div className="k-tabs">
           {title.translations.map((t) => (
-            <button key={t.index} className={translation === t.index ? 'on' : ''} onClick={() => setTranslation(t.index)}>
+            <button
+              key={t.index}
+              className={[translation === t.index ? 'on' : '', t.source === 'flixcdn' ? 'k-tab-flixcdn' : ''].filter(Boolean).join(' ')}
+              onClick={() => setTranslation(t.index)}
+            >
               {t.title}
               {t.quality ? <small>{t.quality}</small> : null}
             </button>

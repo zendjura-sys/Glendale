@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Cinema\CinemaSettings;
+use App\Cinema\FlixCdn;
 use App\Cinema\ImportTitleJob;
 use App\Cinema\Importer;
 use App\Cinema\Kodik;
+use App\Cinema\PlayerSources;
 use App\Cinema\Title;
 use App\Cinema\Tmdb;
 use App\Http\Controllers\Controller;
@@ -39,8 +41,9 @@ class CinemaAdminController extends Controller
                 'localRating' => $t->local_rating,
                 'published' => $t->is_published,
                 'featured' => $t->is_featured,
-                'hasPlayer' => $t->kodik_link !== null,
+                'hasPlayer' => PlayerSources::hasAny($t),
                 'kodikChecked' => $t->kodik_checked_at?->toIso8601String(),
+                'flixcdnChecked' => $t->flixcdn_checked_at?->toIso8601String(),
             ]);
 
         return Inertia::render('Admin/Cinema/Index', [
@@ -49,13 +52,14 @@ class CinemaAdminController extends Controller
             'settings' => [
                 'tmdbConfigured' => Tmdb::configured(),
                 'kodikConfigured' => Kodik::configured(),
+                'flixcdnConfigured' => FlixCdn::configured(),
                 'language' => CinemaSettings::language(),
             ],
             'categories' => collect(Title::CATEGORIES)->map(fn ($m, $k) => ['key' => $k, 'name' => $m[0]])->values(),
             'stats' => [
                 'movies' => Title::query()->where('type', 'movie')->count(),
                 'series' => Title::query()->where('type', 'series')->count(),
-                'withPlayer' => Title::query()->whereNotNull('kodik_link')->count(),
+                'withPlayer' => Title::query()->where(fn ($q) => $q->whereNotNull('kodik_link')->orWhereNotNull('flixcdn_link'))->count(),
                 'reviews' => DB::table('cinema_reviews')->count(),
                 'watchlist' => DB::table('cinema_watchlist')->count(),
             ],
@@ -67,9 +71,11 @@ class CinemaAdminController extends Controller
         $data = $request->validate([
             'tmdbKey' => ['nullable', 'string', 'max:400'],
             'kodikToken' => ['nullable', 'string', 'max:200'],
+            'flixcdnToken' => ['nullable', 'string', 'max:200'],
             'language' => ['required', 'string', 'regex:/^[a-z]{2}-[A-Z]{2}$/'],
             'clearTmdb' => ['nullable', 'boolean'],
             'clearKodik' => ['nullable', 'boolean'],
+            'clearFlixcdn' => ['nullable', 'boolean'],
         ]);
         // Порожнє поле — «не змінювати»: ключ не повертається у форму.
         if (! empty($data['clearTmdb'])) {
@@ -81,6 +87,11 @@ class CinemaAdminController extends Controller
             CinemaSettings::setSecret(CinemaSettings::KODIK_TOKEN, null);
         } elseif (! empty($data['kodikToken'])) {
             CinemaSettings::setSecret(CinemaSettings::KODIK_TOKEN, $data['kodikToken']);
+        }
+        if (! empty($data['clearFlixcdn'])) {
+            CinemaSettings::setSecret(CinemaSettings::FLIXCDN_TOKEN, null);
+        } elseif (! empty($data['flixcdnToken'])) {
+            CinemaSettings::setSecret(CinemaSettings::FLIXCDN_TOKEN, $data['flixcdnToken']);
         }
         Setting::set(CinemaSettings::LANGUAGE, $data['language'], 'cinema');
 
@@ -124,7 +135,7 @@ class CinemaAdminController extends Controller
 
         return $request->expectsJson() && ! $request->header('X-Inertia')
             ? response()->json(['id' => $title->id, 'name' => $title->name])
-            : back()->with('status', "Імпортовано: {$title->name}".($title->kodik_link ? ' (плеєр знайдено)' : ''));
+            : back()->with('status', "Імпортовано: {$title->name}".(PlayerSources::hasAny($title) ? ' (плеєр знайдено)' : ''));
     }
 
     /** Масовий імпорт списку TMDB — у черзі. */
@@ -186,6 +197,18 @@ class CinemaAdminController extends Controller
         return Kodik::attach($title)
             ? back()->with('status', "Плеєр знайдено: {$title->name}")
             : back()->withErrors(['reference' => "Kodik не знайшов «{$title->name}»."]);
+    }
+
+    public function flixcdn(int $id): RedirectResponse
+    {
+        $title = Title::query()->findOrFail($id);
+        if (! FlixCdn::configured()) {
+            return back()->withErrors(['reference' => 'Спершу вкажіть токен FlixCDN у налаштуваннях.']);
+        }
+
+        return FlixCdn::attach($title)
+            ? back()->with('status', "Плеєр FlixCDN знайдено: {$title->name}")
+            : back()->withErrors(['reference' => "FlixCDN не знайшов «{$title->name}»."]);
     }
 
     public function destroy(int $id): RedirectResponse

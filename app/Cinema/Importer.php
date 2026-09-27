@@ -17,7 +17,7 @@ final class Importer
     /** Скільки акторів зберігати на тайтл. */
     private const CAST = 20;
 
-    public static function import(string $type, int $tmdbId, bool $withKodik = true): Title
+    public static function import(string $type, int $tmdbId, bool $attachPlayers = true): Title
     {
         $type = $type === 'series' || $type === 'tv' ? 'series' : 'movie';
         $endpoint = $type === 'series' ? "tv/{$tmdbId}" : "movie/{$tmdbId}";
@@ -26,7 +26,7 @@ final class Importer
             'include_video_language' => 'uk,en,null',
         ]);
 
-        return DB::transaction(function () use ($type, $tmdbId, $data, $withKodik) {
+        return DB::transaction(function () use ($type, $tmdbId, $data, $attachPlayers) {
             $date = $data['release_date'] ?? $data['first_air_date'] ?? null;
             $title = Title::query()->firstOrNew(['tmdb_id' => $tmdbId, 'type' => $type]);
             $title->fill([
@@ -59,8 +59,21 @@ final class Importer
                 self::syncSeasons($title, $data['seasons'] ?? []);
             }
 
-            if ($withKodik && Kodik::configured()) {
+            // Обидва балансери — паралельно, кожен незалежно (якщо один не дав
+            // результату чи вимкнений, другий усе одно спробує).
+            if ($attachPlayers && Kodik::configured()) {
                 Kodik::attach($title);
+            }
+            if ($attachPlayers && FlixCdn::configured()) {
+                FlixCdn::attach($title);
+            }
+
+            // Постер/обкладинка — запасне джерело, коли в TMDB його нема
+            // (рідкість, але буває для свіжих чи нішевих тайтлів).
+            if (! $title->poster_path && FlixCdn::configured()) {
+                if ($poster = FlixCdn::poster($title)) {
+                    $title->update(['poster_path' => $poster]);
+                }
             }
 
             return $title->fresh();

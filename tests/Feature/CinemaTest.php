@@ -299,4 +299,80 @@ class CinemaTest extends TestCase
         $this->getJson('/api/v2/cinema/titles?category=series')->assertOk()->assertJsonPath('total', 1)->assertJsonPath('items.0.id', $got->id);
         $this->getJson('/api/v2/cinema/history')->assertOk()->assertJsonPath('0.id', $got->id)->assertJsonPath('0.progress.episode', 2);
     }
+
+    /** FlixCDN — другий балансер, працює паралельно з Kodik: обидва в одному списку джерел. */
+    public function test_flixcdn_works_alongside_kodik(): void
+    {
+        CinemaSettings::setSecret(CinemaSettings::FLIXCDN_TOKEN, 'test-flixcdn');
+        Http::fake([
+            'api0.uacdn.live/api/search*' => fn ($request) => Http::response(['result' => [
+                [
+                    'imdb_id' => 'tt0133093', 'iframe_url' => '//player.uacdn.live/embed/matrix',
+                    'title_rus' => 'Матриця', 'title_orig' => 'The Matrix', 'type' => 'movie',
+                    'translations' => [['title' => 'Дубляж Струдель'], ['title' => 'Багатоголосий']],
+                    'poster' => 'https://img.uacdn.live/matrix.jpg',
+                ],
+            ]]),
+        ]);
+
+        $title = Importer::import('movie', 603);
+
+        // Kodik (2 озвучки) + FlixCDN (1 пункт, обидва разом) — один список.
+        $this->assertSame('https://player.uacdn.live/embed/matrix', $title->flixcdn_link);
+        $this->assertCount(2, $title->flixcdn_translations);
+
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+        $full = $this->getJson("/api/v2/cinema/titles/{$title->id}")->assertOk()->json();
+        $this->assertCount(3, $full['translations']);
+        $this->assertSame('kodik', $full['translations'][0]['source']);
+        $this->assertSame('flixcdn', $full['translations'][2]['source']);
+        $this->assertStringContainsString('FlixCDN', $full['translations'][2]['title']);
+
+        // Індекс 2 (FlixCDN) у плеєрі веде саме на flixcdn_link.
+        $this->getJson("/api/v2/cinema/titles/{$title->id}/player?translation=2")->assertOk()
+            ->assertJsonPath('link', 'https://player.uacdn.live/embed/matrix');
+
+        // Якщо в Kodik немає нічого — FlixCDN сам по собі вже дає hasPlayer.
+        $title->update(['kodik_link' => null, 'kodik_translations' => null]);
+        $this->getJson('/api/v2/cinema/home')->assertOk()->assertJsonPath('movies.0.hasPlayer', true);
+    }
+
+    /** Постер FlixCDN — запасне джерело, коли TMDB свого не дав. */
+    public function test_flixcdn_poster_fills_in_when_tmdb_has_none(): void
+    {
+        CinemaSettings::setSecret(CinemaSettings::FLIXCDN_TOKEN, 'test-flixcdn');
+        Http::fake([
+            'api.themoviedb.org/3/movie/604*' => Http::response([
+                'id' => 604, 'title' => 'Матриця: Перезавантаження', 'release_date' => '2003-05-15',
+                'poster_path' => null, 'genres' => [],
+            ]),
+            'api0.uacdn.live/api/search*' => Http::response(['result' => [
+                ['iframe_url' => '', 'title_rus' => 'Матриця: Перезавантаження', 'type' => 'movie', 'poster' => 'https://img.uacdn.live/reloaded.jpg'],
+            ]]),
+        ]);
+
+        $title = Importer::import('movie', 604);
+
+        $this->assertSame('https://img.uacdn.live/reloaded.jpg', $title->poster_path);
+    }
+
+    public function test_admin_manages_flixcdn_token_and_manual_attach(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin);
+        $title = Importer::import('movie', 603, attachPlayers: false);
+        $this->assertNull($title->flixcdn_link);
+
+        $this->put('/admin/cinema/settings', ['flixcdnToken' => 'new-flixcdn-token', 'language' => 'uk-UA'])->assertRedirect();
+        $this->assertSame('new-flixcdn-token', CinemaSettings::flixcdnToken());
+
+        Http::fake([
+            'api0.uacdn.live/api/search*' => Http::response(['result' => [
+                ['iframe_url' => '//player.uacdn.live/embed/matrix', 'title_rus' => 'Матриця', 'type' => 'movie', 'translations' => []],
+            ]]),
+        ]);
+        $this->post("/admin/cinema/titles/{$title->id}/flixcdn")->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame('https://player.uacdn.live/embed/matrix', $title->fresh()->flixcdn_link);
+    }
 }

@@ -245,6 +245,7 @@ Route::middleware(['auth', 'verified', 'permission:cinema.manage'])
         Route::patch('/titles/{id}', [$c, 'update'])->whereNumber('id')->name('update');
         Route::post('/titles/{id}/refresh', [$c, 'refresh'])->whereNumber('id')->name('refresh');
         Route::post('/titles/{id}/kodik', [$c, 'kodik'])->whereNumber('id')->name('kodik');
+        Route::post('/titles/{id}/flixcdn', [$c, 'flixcdn'])->whereNumber('id')->name('flixcdn');
         Route::delete('/titles/{id}', [$c, 'destroy'])->whereNumber('id')->name('destroy');
     });
 

@@ -16,6 +16,9 @@ final class CinemaSettings
 
     public const KODIK_TOKEN = 'cinema_kodik_token';
 
+    /** Другий балансер плеєрів (uacdn.live) — працює паралельно з Kodik, не замість нього. */
+    public const FLIXCDN_TOKEN = 'cinema_flixcdn_token';
+
     public const LANGUAGE = 'cinema_language';
 
     public static function secret(string $key): ?string
@@ -45,6 +48,11 @@ final class CinemaSettings
     public static function kodikToken(): ?string
     {
         return self::secret(self::KODIK_TOKEN);
+    }
+
+    public static function flixcdnToken(): ?string
+    {
+        return self::secret(self::FLIXCDN_TOKEN);
     }
 
     public static function language(): string

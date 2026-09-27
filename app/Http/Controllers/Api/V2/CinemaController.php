@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api\V2;
 use App\Cinema\CinemaPresenter;
 use App\Cinema\Genre;
 use App\Cinema\Importer;
-use App\Cinema\Kodik;
 use App\Cinema\Person;
+use App\Cinema\PlayerSources;
 use App\Cinema\Season;
 use App\Cinema\Title;
 use App\Cinema\Tmdb;
@@ -173,16 +173,13 @@ class CinemaController extends Controller
         ])->values());
     }
 
-    /** Посилання на плеєр (Kodik) — з обраною озвучкою й місцем, де людина зупинилась. */
+    /** Посилання на плеєр (Kodik + FlixCDN паралельно) — з обраним джерелом і місцем, де людина зупинилась. */
     public function player(Request $request, int $id): JsonResponse
     {
         $title = $this->title($id);
-        if (! $title->kodik_link && Kodik::configured() && (! $title->kodik_checked_at || $title->kodik_checked_at->lt(now()->subDay()))) {
-            Kodik::attach($title);
-        }
-        $translations = collect($title->kodik_translations ?? []);
+        PlayerSources::autoAttach($title);
         $index = (int) $request->query('translation', 0);
-        $link = $translations[$index]['link'] ?? $title->kodik_link;
+        $link = PlayerSources::linkFor($title, $index);
         if (! $link) {
             Social::fail(404, 'Плеєр для цього фільму ще не знайдено', 'no_player');
         }

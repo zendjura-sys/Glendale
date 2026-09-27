@@ -399,7 +399,7 @@ export interface TitleFull extends TitleCard {
   inWatchlist: boolean;
   myReview: { rating: number; body: string } | null;
   progress: { season: number | null; episode: number | null; position: number; duration: number | null } | null;
-  translations: { index: number; title: string; quality: string | null }[];
+  translations: { index: number; title: string; quality: string | null; source: 'kodik' | 'flixcdn' }[];
   social: {
     ratings: { user: UserShort; rating: number; family: boolean }[];
     wantToWatch: UserShort[];

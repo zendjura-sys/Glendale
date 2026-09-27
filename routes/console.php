@@ -10,3 +10,7 @@ Artisan::command('inspire', function () {
 
 // Довідник проєктів: сервери RAGE MP-проєктів (назви, адреси, онлайн).
 Schedule::command('projects:sync-servers')->everyTenMinutes()->withoutOverlapping()->runInBackground();
+
+// Кінопортал: новинки з TMDB у чергу на імпорт + повторний пошук плеєра
+// (Kodik/FlixCDN) для тайтлів, яким досі нічого не підібрали.
+Schedule::command('cinema:auto-import')->hourly()->withoutOverlapping()->runInBackground();
