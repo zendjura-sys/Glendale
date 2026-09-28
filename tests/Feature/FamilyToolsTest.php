@@ -100,6 +100,31 @@ class FamilyToolsTest extends TestCase
         FamilyContext::run($a, fn () => $this->assertFalse($leaderB->can('reports.manage')));
     }
 
+    /**
+     * Те, що лідер родини реально БАЧИТЬ на /admin (плитки розділів,
+     * App\Support\ShellNav::tiles — та сама навігація, що й у бічному меню
+     * та чіпах на телефоні): лише інструменти своєї родини, жодного
+     * платформного розділу (Кінопортал, Родини та союзи, Права доступу…).
+     */
+    public function test_family_leader_only_sees_family_tools_on_admin_dashboard(): void
+    {
+        $this->seed(SystemPermissionsSeeder::class);
+        $monsory = $this->family('Monsory');
+        $corleone = $this->family('Corleone');
+        $leader = $this->member($corleone, 'leader');
+        $this->member($monsory, 'leader');
+
+        $labels = collect($this->actingAs($leader)->get('/admin')->assertOk()->viewData('page')['props']['groups'])
+            ->flatMap(fn ($g) => array_column($g['items'], 'label'));
+
+        foreach (['Банк', 'Прогресія', 'Цілі родини', 'Події', 'Розсилки', 'Покарання', 'Кадровий облік', 'Звіти'] as $familyTool) {
+            $this->assertTrue($labels->contains($familyTool), "лідер родини має бачити «{$familyTool}»");
+        }
+        foreach (['Кінопортал', 'Родини та союзи', 'Права доступу', 'Учасники', 'Налаштування', 'Аддони'] as $platformOnly) {
+            $this->assertFalse($labels->contains($platformOnly), "«{$platformOnly}» — не сімейний інструмент, лідер не повинен його бачити");
+        }
+    }
+
     public function test_switching_active_family(): void
     {
         $this->seed(SystemPermissionsSeeder::class);
