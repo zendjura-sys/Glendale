@@ -15,7 +15,7 @@
 
 
 
-    <!-- Фірмовий колір GameConnect (--gold-400 з веб-версії) замість оригінального червоного -->
+    <!-- Фірмовий колір GameConnect (токен gold 400 з веб-версії) замість оригінального червоного -->
     <color name="app_color">#D4AF37</color>
     <color name="stroke_color_red">#A9862C</color>
     <color name="app_color_50">#80D4AF37</color>

@@ -1,0 +1,57 @@
+name: WoWonder (соцмережа) — Build Android APK
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'mobile-wowonder/**'
+      - '.github/workflows/wowonder-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # Проєкт живе в zendjura-sys/Glendale. У форках і копіях job пропускається.
+    if: github.repository == 'zendjura-sys/Glendale'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile-wowonder
+    steps:
+      - uses: actions/checkout@v4
+
+      # WoWonder.csproj цільує net8.0-android — це сучасний .NET (не класичний
+      # Xamarin.Android з packages.config), тож збирається кросплатформно
+      # через dotnet CLI + android workload, без Visual Studio/Windows.
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install Android workload
+        run: dotnet workload install android
+
+      # google-services.json — секрет Firebase-проєкту GameConnect, у git
+      # не потрапляє (mobile-wowonder/.gitignore). Якщо секрет заведено —
+      # push-сповіщення увімкнені; без нього csproj сам пропускає цей
+      # item (Condition="Exists(...)") і APK все одно збирається.
+      - name: Decode google-services.json (якщо секрет заведено)
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.WOWONDER_GOOGLE_SERVICES_JSON_BASE64 }}
+        if: env.GOOGLE_SERVICES_JSON_BASE64 != ''
+        run: echo "$GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > WoWonder/google-services.json
+
+      # Дебаг-збірка (авто-підпис дебаг-ключем) — підтверджує, що проєкт
+      # компілюється після кожної зміни. Реліз під бойовим підписом
+      # (wowondertimelinechat.keystore) робиться на боці розробника вручну,
+      # поки не заведено секрети підпису.
+      - name: Build debug APK
+        run: dotnet build WoWonder.sln -c Debug -f net8.0-android
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wowonder-debug-apk
+          path: mobile-wowonder/WoWonder/bin/Debug/net8.0-android/*Signed.apk
+          retention-days: 30
+          if-no-files-found: warn

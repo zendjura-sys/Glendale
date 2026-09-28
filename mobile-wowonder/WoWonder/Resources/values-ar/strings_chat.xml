@@ -1,0 +1,276 @@
+﻿<?xml version="1.0" encoding="utf-8" ?> 
+<resources>
+	<string name="Lbl_ContactUs">اتصل بنا</string>
+	<string name="Lbl_RetryAgain">إعادة المحاولة مرة أخرى</string>
+	<string name="Lbl_Delivered">تم التسليم</string>
+	<string name="Lbl_TypeChat">نوع الدردشة</string>
+	<string name="Lbl_UnBlock">إلغاء الحظر</string>
+
+	<!--Tabbed_Main_Page-->
+	<string name="Lbl_Tab_Chats">الدردشات</string>
+	<string name="Lbl_Tab_GroupChats">المجموعات</string>
+	<string name="Lbl_Tab_Calls">المكالمات</string>
+	<string name="Lbl_Tab_PageChats">الصفحات</string>
+
+	<!--Toast Or Message-->
+	<string name="Lbl_Need_Camera">تحتاج إلى أذونات الكاميرا والميكروفون للاتصال.</string>
+	<string name="Lbl_Room_Disconnected">تم قطع اتصال المستخدم.</string>
+	<string name="Lbl_ChatNotAllowed">عذرًا، لا يُسمح بالدردشة مع هذا المستخدم في الوقت الحالي</string>
+	<string name="Lbl_ThereNoUserForThisCode">لا يوجد مستخدم لهذا الرمز</string>
+	<string name="Lbl_TextBlockedUser_BoxChat">"لا يمكنك إرسال رسالة إليه أو الاتصال به في هذه الدردشة لأنك حظرت هذا الحساب"</string>
+	<string name="Lbl_SlideToCancelAudio">تمرير للإلغاء</string>
+	<string name="Lbl_TextChatNotSupported">لا يتم دعم الرسائل في هذا الإصدار</string>
+	<string name="Lbl_PleaseSelectUser">يرجى تحديد مستخدم واحد على الأقل</string>
+	
+	<!--menu-->
+	<string name="Lbl_Clear_chat">مسح الدردشة</string>
+	<string name="Lbl_View_Profile">عرض الملف الشخصي</string>
+
+	<string name="Lbl_SendProductFile">تم إرسال المنتج إليك</string>
+	<string name="Lbl_SendImageFile">صورة</string>
+	<string name="Lbl_SendVideoFile">فيديو</string>
+	<string name="Lbl_SendStickerFile">ملصق</string>
+	<string name="Lbl_SendAudioFile">صوت</string>
+	<string name="Lbl_SendGifFile">صورة متحركة</string>
+	<string name="Lbl_SendFile">ملف</string>
+	<string name="Lbl_SendContactnumber">رقم الاتصال</string>
+	<string name="Lbl_SendMessage">إرسال رسالة إليك</string>
+	<string name="Lbl_SendLocationFile">الموقع</string>
+
+	<string name="Lbl_You">أنت</string>
+	<string name="Lbl_Sticker">ملصق</string>
+	<string name="Lbl_Product">المنتج</string>
+	<string name="Lbl_VoiceMessage">رسالة صوتية</string>
+	<string name="Lbl_Color">اللون</string>
+
+	<string name="Error_connectServer">"لا يمكن الاتصال بالخادم"</string>
+	<string name="Lbl_ChangeChatTheme">تغيير سمة الدردشة</string>
+	<string name="Lbl_SendingFileTo">إرسال ملف إلى</string>
+	<string name="Lbl_SendingFile">إرسال ملف...</string>
+
+	<string name="Lbl_Empty_Lastmessages">لا مزيد من الرسائل</string>
+	<string name="Lbl_Start_Lastmessages">ابدأ محادثات جديدة بالانتقال إلى >> جهات الاتصال</string>
+
+	<string name="Lbl_Select_contact">حدد جهة اتصال</string>
+	<string name="Lbl_Empty_usercontacts">لا توجد جهات اتصال</string>
+	<string name="Lbl_Start_usercontacts">ابدأ في إضافة جهات اتصال جديدة!</string>
+
+	<string name="Lbl_Empty_Page">لا توجد صفحات</string>
+	<string name="Lbl_NoMorePage">لم يتم العثور على المزيد من الصفحات</string>
+
+	<!--Group-->
+	<string name="Lbl_NewGroup">مجموعة جديدة</string>
+	<string name="Lbl_AddParticipants">إضافة مشاركين</string>
+	<string name="Lbl_GroupName">اسم المجموعة</string>
+	<string name="Lbl_CreateGroup">إنشاء مجموعة</string>
+	<string name="Lbl_Please_enter_name">خطأ، يُرجى إدخال الاسم</string>
+	<string name="Lbl_Please_select_Image">خطأ، يُرجى تحديد الصورة</string>
+	<string name="Lbl_GroupMembers">أعضاء المجموعة</string>
+	<string name="Lbl_ErrorLengthGroupName">يجب أن يكون اسم المجموعة بين 4 و15 حرفًا</string>
+	<string name="Lbl_EnterGroupName">أدخل اسم المجموعة</string>
+	<string name="Lbl_PeopleSelected">الأشخاص المحددون</string>
+
+	<string name="Lbl_NoMoreGroup">لا مزيد من المجموعات تم العثور عليها</string>
+	<string name="Lbl_Empty_Group">لا توجد مجموعات</string>
+	<string name="Lbl_Start_Group">ابدأ في إضافة مجموعات جديدة</string>
+
+	<string name="Lbl_ExitGroup">الخروج من المجموعة</string>
+	<string name="Lbl_GroupSuccessfullyDeleted">تم حذف المجموعة بنجاح</string>
+	<string name="Lbl_AreYouSureExitGroup">هل أنت متأكد من الخروج من المجموعة</string>
+	<string name="Lbl_AreYouSureDeleteGroup">هل أنت متأكد من رغبتك في حذف المجموعة</string>
+	<string name="Lbl_Exit">الخروج</string>
+	<string name="Lbl_DeleteGroup">حذف المجموعة</string>
+	<string name="Lbl_GroupSuccessfullyLeaved">لقد غادرت هذه المجموعة بنجاح</string>
+
+	<string name="Lbl_Group">المجموعة</string>
+	<string name="Lbl_MyGroups">مجموعاتي</string>
+	<string name="Lbl_InvitedToJoinGroup">لقد تمت دعوتك للانضمام إلى الدردشة الجماعية</string>
+	<string name="Lbl_NoAnyGroupRequest">لا توجد دعوات للانضمام إلى مجموعة الدردشة</string>
+	<string name="Lbl_GroupRequest">طلبات المجموعة</string>
+	<string name="Lbl_ViewAllInviteRequest">عرض جميع طلبات الدعوة</string>
+	<string name="Lbl_GroupInfo">معلومات المجموعة</string>
+	<string name="Lbl_CreateGroupChat">إنشاء دردشة جماعية</string>
+
+	<string name="Lbl_Group_Add_Description">اختر من قائمة جهات الاتصال الخاصة بك</string>
+	<string name="Lbl_Group_Chat_Description">انقر هنا للحصول على معلومات المجموعة</string>
+
+	<string name="Lbl_CreateNewGroup">إنشاء مجموعة جديدة</string>
+	<string name="Lbl_TapToSeeWhatsTrending">انقر لمعرفة ما هو رائج</string>
+
+	<!--Call-->
+	<string name="Lbl_Call">مكالمة</string>
+	<string name="Lbl_Select_Type_Call">حدد نوع المكالمة؟</string>
+	<string name="Lbl_Voice_call">مكالمة صوتية</string>
+	<string name="Lbl_Video_call">مكالمة فيديو</string>
+	<string name="Lbl_Calling">جارٍ الاتصال...</string>
+	<string name="Lbl_Calling_video">جارٍ الاتصال بالفيديو</string>
+	<string name="Lbl_Muted_his_video">كتم صوت مكالمته</string>
+	<string name="Lbl_The_user_declinde_your_call">رفض المستخدم مكالمتك</string>
+
+	<string name="Lbl_Dismiss">رفض</string>
+	<string name="Lbl_Answer">إجابة</string>
+	<string name="Lbl_Clear_call_log">مسح سجل المكالمات</string>
+	<string name="Lbl_Answered_call">تم الرد على المكالمة</string>
+	<string name="Lbl_Missed_call">مكالمة فائتة</string>
+	<string name="Lbl_Declined_call">مكالمة مرفوضة</string>
+	<string name="Lbl_Connected">متصل</string>
+	<string name="Lbl_User_Lost_Connection">المستخدم فقد الاتصال</string>
+	<string name="Lbl_is_calling_you">يتصل بك</string>
+	<string name="Lbl_Lost_his_connection">فقد اتصاله</string>
+	<string name="Lbl_Please_wait">الرجاء الانتظار</string>
+	<string name="Lbl_Lost_Connection">فقد الاتصال</string>
+	<string name="Lbl_Waiting_for_answer">في انتظار الرد</string>
+
+	<string name="Lbl_Empty_calls">لا توجد مكالمات</string>
+	<string name="Lbl_Start_calls">ابدأ مكالمة جديدة من قائمة أصدقائك، بالضغط على الزر الموجود أسفل الشاشة.</string>
+
+	<string name="Lbl_AreYouSureDeleteMessages">هل أنت متأكد من أنك تريد حذف الرسائل؟</string>
+	<string name="Lbl_MessageCall1">"لا يمكنني التحدث الآن، ما الأمر؟"</string>
+	<string name="Lbl_MessageCall2">"سأتصل بك فورًا"</string>
+	<string name="Lbl_MessageCall3">"سأتصل بك لاحقًا"</string>
+	<string name="Lbl_MessageCall4">"لا يمكنني التحدث الآن. اتصل بي لاحقًا"</string>
+	<string name="Lbl_MessageCall5">رسالة مخصصة..</string>
+	<string name="Lbl_NotAnswered_call">لم تتم الإجابة</string>
+
+	<string name="Lbl_ErrorCreatingCall">حدث خطأ عند إنشاء مكالمة.. يُرجى المحاولة مرة أخرى لاحقًا</string>
+	<string name="Lbl_CreateNewVideoCall">إنشاء مكالمة فيديو جديدة</string>
+
+	<string name="Lbl_call_swipe_up_to_answer">مرر لأعلى للإجابة</string>
+	<string name="Lbl_call_swipe_down_to_reject">مرر لأسفل للرفض</string>
+	<string name="Lbl_Empty_ArchivedChats">لا توجد محادثات مؤرشفة</string>
+	<string name="Lbl_Notification_of_Messages">إشعار بالرسائل</string>
+
+	<string name="Lbl_EndToEndEncrypted">مشفر من البداية إلى النهاية</string>
+	<string name="Lbl_Flip">قلب</string>
+	<string name="Lbl_StopVideo">إيقاف الفيديو</string>
+	<string name="Lbl_Mute">كتم الصوت</string>
+	<string name="Lbl_EndCall">إنهاء المكالمة</string>
+	<string name="Lbl_Speaker">مكبر الصوت</string>
+
+	<string name="Lbl_Incoming">وارد</string>
+	<string name="Lbl_Outgoing">صادر</string>
+	<string name="Lbl_Missing">مفقود</string>
+	<string name="Lbl_Decline">رفض</string>
+	<string name="Lbl_HangUp">إغلاق</string>
+
+	<string name="Lbl_ErrorCall_Message">كان هناك اتصال خطأ، يُرجى المحاولة مرة أخرى لاحقًا.</string>
+	<string name="Lbl_ErrorCall_Code">رمز الاتصال الخطأ:</string>
+	<string name="Lbl_BusyAnotherCall">مشغول، لديه مكالمة أخرى</string>
+
+	<string name="Lbl_Media">وسائط</string>
+	<string name="Lbl_NoAnyMedia">لا توجد أي وسائط</string>
+	<string name="Lbl_NoMedia">لا توجد وسائط</string>
+	<string name="Lbl_Download">تنزيل</string>
+	<string name="Lbl_MediaAutoDownload">تنزيل الوسائط تلقائيًا</string>
+	<string name="Lbl_StorageConnectedMobile">عند استخدام بيانات الجوال</string>
+	<string name="Lbl_StorageConnectedWiFi">عند الاتصال ببيانات Wi-Fi</string>
+
+	<string name="Lbl_Forwarded">تم إعادة توجيهها</string>
+	<string name="Lbl_Forward">إعادة توجيه</string>
+	<string name="Lbl_ForwardTo">إعادة توجيه إلى...</string>
+	<string name="Lbl_MessagesSent">الرسائل المرسلة</string>
+	<string name="Lbl_MessageInfo">معلومات الرسالة</string>
+	<string name="Lbl_DeleteMessage">حذف الرسالة</string>
+	<string name="Lbl_NewMessage">رسالة جديدة</string>
+
+	<string name="new_messages_notify">رسائل جديدة</string>
+	<string name="messages_from_notify">رسائل من</string>
+	<string name="chats_notify">دردشات</string>
+
+	<string name="Lbl_StartedMessages">الرسائل المفضلة</string>
+	<string name="Lbl_Favorite">مفضلة</string>
+	<string name="Lbl_UnFavorite">إلغاء المفضلة</string>
+	<string name="Lbl_Empty_StartedMessages">لا توجد رسائل مفضلة</string>
+
+	<string name="Lbl_Contact">جهة الاتصال</string>
+	<string name="Lbl_DeleteTheEntireConversation">حذف المحادثة بالكامل؟</string>
+	<string name="Lbl_OnceYouDeleteConversation">بمجرد حذف نسخة المحادثة، لا يمكن التراجع عن ذلك.</string>
+	<string name="Lbl_TheConversationHasBeenDeleted">تم حذف المحادثة</string>
+
+	<string name="Lbl_SeenBy">تمت مشاهدتها</string>
+	<string name="Lbl_PeopleLikeThis">أشخاص يحبون هذا</string>
+	<string name="Lbl_PeopleJoinThis">أشخاص ينضمون إلى هذا</string>
+
+	<string name="Lbl_ChatHeads">رؤساء الدردشة</string>
+	<string name="Lbl_ChatHead_Title">رؤساء الدردشة النشطون</string>
+	<string name="Lbl_ChatHead_Text">المحادثة</string>
+	<string name="Lbl_TurnOnChatHeads">قم بتشغيل رؤوس الدردشة</string>
+	<string name="Lbl_EnableChatHead_SubTitle1">تتيح لك رؤوس الدردشة التحدث</string>
+	<string name="Lbl_EnableChatHead_SubTitle2">حتى لو كنت تستخدم تطبيقات أخرى.</string>
+	<string name="Lbl_EnableChatHead_SubTitle3">قم بتشغيل السماح بالرسم على تطبيقات أخرى</string>
+	<string name="Lbl_GoToSettings">انتقل إلى الإعدادات</string>
+	<string name="Lbl_NotNow">ليس الآن</string>
+
+	<string name="Lbl_SayHiTo">قل مرحبًا</string>
+	<string name="Lbl_SuggestionMessages1">قل مرحبًا 🖐️</string>
+	<string name="Lbl_SuggestionRealMessages1">مرحبًا 🖐️</string>
+	<string name="Lbl_SuggestionMessages2">كيف حالك؟</string>
+	<string name="Lbl_SuggestionRealMessages2">كيف حالك؟</string>
+	<string name="Lbl_SuggestionMessages3">هل يمكننا التحدث؟</string>
+	<string name="Lbl_SuggestionRealMessages3">مرحبًا</string>
+	<string name="Lbl_SuggestionMessages4">أحب صورتك ❤️</string>
+	<string name="Lbl_SuggestionRealMessages4">أحب صورتك ❤️</string>
+
+	<string name="Lbl_Reply">الرد</string>
+
+	<string name="Lbl_Typping">جاري الكتابة...</string>
+	<string name="Lbl_Recording">جاري التسجيل...</string>
+	<string name="Lbl_Uploading">جاري التحميل</string>
+
+	<string name="Lbl_Wallpaper">خلفية</string>
+	<string name="Lbl_DefaultWallpaper">خلفية افتراضية</string>
+	<string name="Lbl_ColorPalette">لوحة الألوان</string>
+	<string name="Lbl_Wallpaper_Sub">تغيير لون خلفية المحادثة</string>
+
+	<string name="Lbl_Archive">أرشيف</string>
+	<string name="Lbl_UnArchive">إلغاء الأرشفة</string>
+	<string name="Lbl_Archived">مؤرشف</string>
+
+	<string name="Lbl_PinnedMessage">رسالة مثبتة</string>
+	<string name="Lbl_LastPinnedMessage">آخر رسالة مثبتة</string>
+	<string name="Lbl_Empty_PinnedMessages">لا توجد رسالة مثبتة</string>
+	<string name="Lbl_UnPin">إلغاء التثبيت</string>
+	<string name="Lbl_Pin">تثبيت</string>
+	<string name="Lbl_MessagePinned">رسالة مثبتة</string>
+	<string name="Lbl_MessageUnPinned">رسالة غير مثبتة</string>
+
+	<string name="Lbl_MarkAsReadAll">وضع علامة كمقروءة للجميع</string>
+	<string name="Lbl_MarkAsRead">وضع علامة كمقروءة</string>
+	<string name="Lbl_MarkAsUnRead">وضع علامة كغير مقروءة</string>
+
+	<string name="Lbl_MuteNotification">إسكات الإشعار</string>
+	<string name="Lbl_UnMuteNotification">إلغاء كتم الإشعار</string>
+	<string name="Lbl_AddedMute">تمت الإضافة إلى قائمة كتم الصوت</string>
+	<string name="Lbl_RemovedMute">تمت الإزالة من قائمة كتم الصوت</string>
+
+	<string name="Lbl_AddMembers">إضافة أعضاء</string>
+
+	<string name="Lbl_ImageAndVideo">الصور والفيديو</string>
+	<string name="Lbl_Gallery">المعرض</string>
+	<string name="Lbl_ChangeColor">تغيير اللون</string>
+
+	<string name="Lbl_Search_Conversation">البحث في المحادثة</string>
+
+	<string name="Lbl_urlEntry_Title">أدخل عنوان URL للارتباط التشعبي</string>
+
+	<string name="Lbl_Broadcast">البث</string>
+	<string name="Lbl_MyBroadcast">بثي</string>
+	<string name="Lbl_CreateBroadcast">إنشاء بث</string>
+	<string name="Lbl_CreateNewBroadcast">إنشاء بث جديد</string>
+	<string name="Lbl_EditBroadcast">تحرير البث</string>
+	<string name="Lbl_DeleteBroadcast">حذف البث</string>
+	<string name="Lbl_EnterBroadcastName">أدخل اسم البث</string>
+	<string name="Lbl_ErrorLengthBroadcastName">يجب أن يكون اسم البث بين 4 و15 حرف</string>
+	<string name="Lbl_Empty_BroadcastChats">لا توجد محادثات بث</string>
+	<string name="Lbl_BroadcastList">قائمة البث</string>
+	<string name="Lbl_No_more_broadcasts">لا مزيد من البث لعرضه</string>
+	<string name="Lbl_AreYouSureDeleteBroadcast">هل أنت متأكد من أنك تريد حذف البث</string>
+	<string name="Lbl_BroadcastSuccessfullyDeleted">تم حذف البث بنجاح</string>
+	<string name="Lbl_BroadcastInfo">معلومات البث</string>
+
+	<string name="Lbl_Recipients">المستلمون</string>
+	<string name="Lbl_AddRecipients">إضافة مستلمين</string>
+	<string name="Lbl_limit_recipients">الحد الأدنى لعدد المستلمين هو 2</string>
+
+
+</resources>
