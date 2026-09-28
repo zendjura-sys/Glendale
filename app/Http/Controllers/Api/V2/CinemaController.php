@@ -121,6 +121,23 @@ class CinemaController extends Controller
     {
         $request->validate(['type' => ['nullable', 'in:movie,series'], 'category' => ['nullable', 'in:'.implode(',', array_keys(Title::CATEGORIES))], 'genre' => ['nullable', 'integer'], 'year' => ['nullable', 'integer'],
             'sort' => ['nullable', 'in:popular,rating,new,year'], 'q' => ['nullable', 'string', 'max:100'], 'page' => ['nullable', 'integer', 'min:1']]);
+        $search = $request->query('q');
+        $page = $this->browseQuery($request)->paginate(30);
+
+        // Локально нічого не знайшлось за пошуковим запитом — пробуємо ті самі
+        // слова в TMDB й одразу підвантажуємо перші збіги (разом із плеєрами),
+        // щоб людина не бачила «нічого не знайдено» на тайтл, якого просто ще
+        // не було в каталозі.
+        if ($search && (int) $request->query('page', 1) === 1 && $page->total() === 0) {
+            $this->importFromTmdb((string) $search);
+            $page = $this->browseQuery($request)->paginate(30);
+        }
+
+        return response()->json(['items' => CinemaPresenter::cards($page->items()), 'hasMore' => $page->hasMorePages(), 'total' => $page->total()]);
+    }
+
+    private function browseQuery(Request $request)
+    {
         $q = Title::query()->published()->with('genres')
             ->when($request->query('type'), fn ($b, $t) => $b->where('type', $t))
             ->when($request->query('category'), fn ($b, $c) => $b->where('category', $c))
@@ -133,9 +150,29 @@ class CinemaController extends Controller
             'year' => $q->orderByDesc('release_date'),
             default => $q->orderByDesc('popularity'),
         };
-        $page = $q->paginate(30);
 
-        return response()->json(['items' => CinemaPresenter::cards($page->items()), 'hasMore' => $page->hasMorePages(), 'total' => $page->total()]);
+        return $q;
+    }
+
+    /** Каталог порожній за цим запитом — пробуємо кілька найкращих збігів із TMDB. */
+    private function importFromTmdb(string $query): void
+    {
+        if (! Tmdb::configured()) {
+            return;
+        }
+        try {
+            $results = Importer::browse('search', 1, $query);
+        } catch (\Throwable) {
+            return;
+        }
+        $new = array_values(array_filter($results, fn ($r) => ! $r['imported']));
+        foreach (array_slice($new, 0, 1) as $r) {
+            try {
+                Importer::import($r['type'], $r['tmdbId']);
+            } catch (\Throwable) {
+                // Одна невдала картка (мережа, рейт-ліміт) не повинна ламати решту пошуку.
+            }
+        }
     }
 
     public function show(Request $request, int $id): JsonResponse

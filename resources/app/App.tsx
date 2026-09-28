@@ -1,6 +1,7 @@
 import { tr } from './lib/i18n';
-import { lazy, useState } from 'react';
+import { useState } from 'react';
 import { RefreshCw, WifiOff, Wrench } from 'lucide-react';
+import { lazyRetry } from './lib/lazyRetry';
 import { useConfig } from './lib/config';
 import { PlayerProvider } from './lib/player';
 import { SpotifyProvider } from './lib/spotify';
@@ -15,28 +16,28 @@ import AuthPage from './pages/Auth';
 import FeedPage from './pages/Feed';
 
 // Rarely-first pages are split into separate chunks so the initial load stays small.
-const ProfilePage = lazy(() => import('./pages/Profile'));
-const FriendsPage = lazy(() => import('./pages/Friends'));
-const GroupsPage = lazy(() => import('./pages/Groups'));
-const GroupPage = lazy(() => import('./pages/Group'));
-const PhotosPage = lazy(() => import('./pages/Photos'));
-const SearchPage = lazy(() => import('./pages/Search'));
-const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
-const FamiliesPage = lazy(() => import('./pages/Families'));
-const FamilyPage = lazy(() => import('./pages/Families').then((m) => ({ default: m.FamilyPage })));
-const UnionsPage = lazy(() => import('./pages/Unions'));
-const UnionPage = lazy(() => import('./pages/Unions').then((m) => ({ default: m.UnionPage })));
-const SettingsPage = lazy(() => import('./pages/Settings'));
-const PostPage = lazy(() => import('./pages/PostPage'));
-const MusicPage = lazy(() => import('./pages/Music'));
-const PlaylistPage = lazy(() => import('./pages/Music').then((m) => ({ default: m.PlaylistPage })));
-const CinemaHomePage = lazy(() => import('./pages/Cinema'));
-const CinemaBrowsePage = lazy(() => import('./pages/Cinema').then((m) => ({ default: m.CinemaBrowsePage })));
-const CinemaTitlePage = lazy(() => import('./pages/Cinema').then((m) => ({ default: m.CinemaTitlePage })));
-const CinemaPersonPage = lazy(() => import('./pages/Cinema').then((m) => ({ default: m.CinemaPersonPage })));
-const CinemaHistoryPage = lazy(() => import('./pages/Cinema').then((m) => ({ default: m.CinemaHistoryPage })));
-const CinemaWatchlistPage = lazy(() => import('./pages/Cinema').then((m) => ({ default: m.CinemaWatchlistPage })));
-const SpotifyCallback = lazy(() => import('./pages/Spotify').then((m) => ({ default: m.SpotifyCallback })));
+const ProfilePage = lazyRetry(() => import('./pages/Profile'), 'Profile');
+const FriendsPage = lazyRetry(() => import('./pages/Friends'), 'Friends');
+const GroupsPage = lazyRetry(() => import('./pages/Groups'), 'Groups');
+const GroupPage = lazyRetry(() => import('./pages/Group'), 'Group');
+const PhotosPage = lazyRetry(() => import('./pages/Photos'), 'Photos');
+const SearchPage = lazyRetry(() => import('./pages/Search'), 'Search');
+const NotificationsPage = lazyRetry(() => import('./pages/NotificationsPage'), 'NotificationsPage');
+const FamiliesPage = lazyRetry(() => import('./pages/Families'), 'Families');
+const FamilyPage = lazyRetry(() => import('./pages/Families').then((m) => ({ default: m.FamilyPage })), 'FamilyPage');
+const UnionsPage = lazyRetry(() => import('./pages/Unions'), 'Unions');
+const UnionPage = lazyRetry(() => import('./pages/Unions').then((m) => ({ default: m.UnionPage })), 'UnionPage');
+const SettingsPage = lazyRetry(() => import('./pages/Settings'), 'Settings');
+const PostPage = lazyRetry(() => import('./pages/PostPage'), 'PostPage');
+const MusicPage = lazyRetry(() => import('./pages/Music'), 'Music');
+const PlaylistPage = lazyRetry(() => import('./pages/Music').then((m) => ({ default: m.PlaylistPage })), 'PlaylistPage');
+const CinemaHomePage = lazyRetry(() => import('./pages/Cinema'), 'CinemaHomePage');
+const CinemaBrowsePage = lazyRetry(() => import('./pages/Cinema').then((m) => ({ default: m.CinemaBrowsePage })), 'CinemaBrowsePage');
+const CinemaTitlePage = lazyRetry(() => import('./pages/Cinema').then((m) => ({ default: m.CinemaTitlePage })), 'CinemaTitlePage');
+const CinemaPersonPage = lazyRetry(() => import('./pages/Cinema').then((m) => ({ default: m.CinemaPersonPage })), 'CinemaPersonPage');
+const CinemaHistoryPage = lazyRetry(() => import('./pages/Cinema').then((m) => ({ default: m.CinemaHistoryPage })), 'CinemaHistoryPage');
+const CinemaWatchlistPage = lazyRetry(() => import('./pages/Cinema').then((m) => ({ default: m.CinemaWatchlistPage })), 'CinemaWatchlistPage');
+const SpotifyCallback = lazyRetry(() => import('./pages/Spotify').then((m) => ({ default: m.SpotifyCallback })), 'SpotifyCallback');
 
 function NotFound() {
   return (

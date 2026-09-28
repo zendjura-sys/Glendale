@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './lib/auth';
 import { ThemeProvider } from './lib/theme';
 import { ConfigProvider } from './lib/config';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import App from './App';
 import { getLang, loadLang, onLangChange } from './lib/i18n';
 import { registerServiceWorker } from './lib/install';
@@ -40,16 +41,18 @@ const root = createRoot(document.getElementById('root')!);
 // Render once the saved language's dictionary is in place, so the first paint is already translated.
 void loadLang(getLang()).finally(() => root.render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter basename={APP_BASE || undefined}>
-        <ThemeProvider>
-          <ConfigProvider>
-            <AuthProvider>
-              <LangRoot />
-            </AuthProvider>
-          </ConfigProvider>
-        </ThemeProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter basename={APP_BASE || undefined}>
+          <ThemeProvider>
+            <ConfigProvider>
+              <AuthProvider>
+                <LangRoot />
+              </AuthProvider>
+            </ConfigProvider>
+          </ThemeProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </ErrorBoundary>
   </StrictMode>,
 ));

@@ -1,5 +1,6 @@
 import { tr } from '../lib/i18n';
 import { CinemaSidebar } from './CinemaSidebar';
+import { ErrorBoundary } from './ErrorBoundary';
 import { Suspense, useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -389,11 +390,13 @@ export function Layout() {
       <div className="page">
         <Sidebar />
         <main className="main">
-          <Suspense fallback={<Spinner />}>
-            <div className="route-view" key={pathname.startsWith('/im') ? '/im' : pathname}>
-              <Outlet />
-            </div>
-          </Suspense>
+          <ErrorBoundary key={pathname.startsWith('/im') ? '/im' : pathname}>
+            <Suspense fallback={<Spinner />}>
+              <div className="route-view" key={pathname.startsWith('/im') ? '/im' : pathname}>
+                <Outlet />
+              </div>
+            </Suspense>
+          </ErrorBoundary>
         </main>
       </div>
       <TabBar />

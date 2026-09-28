@@ -362,6 +362,39 @@ class CinemaTest extends TestCase
         $this->getJson('/api/v2/cinema/history')->assertOk()->assertJsonPath('0.id', $got->id)->assertJsonPath('0.progress.episode', 2);
     }
 
+    /**
+     * Локальний каталог порожній за пошуковим запитом — має самостійно
+     * піти в TMDB, підвантажити перший збіг (разом із плеєром) і одразу
+     * віддати його в тій самій відповіді, без «нічого не знайдено».
+     */
+    public function test_browse_search_falls_back_to_tmdb_and_imports_the_match(): void
+    {
+        Http::fake([
+            'api.themoviedb.org/3/search/multi*' => Http::response(['results' => [
+                ['id' => 603, 'media_type' => 'movie', 'title' => 'Матриця', 'release_date' => '1999-03-30'],
+            ]]),
+        ]);
+        Sanctum::actingAs(User::factory()->create());
+
+        $res = $this->getJson('/api/v2/cinema/titles?q=Матриця')->assertOk();
+
+        $this->assertSame(1, $res->json('total'));
+        $this->assertSame('Матриця', $res->json('items.0.name'));
+        $title = Title::query()->where('tmdb_id', 603)->where('type', 'movie')->firstOrFail();
+        $this->assertNotNull($title->kodik_link, 'плеєр мав підтягнутись у той самий момент');
+    }
+
+    /** Пошук без збігів ні локально, ні в TMDB — звичайне «нічого не знайдено», без падіння. */
+    public function test_browse_search_with_no_tmdb_match_stays_empty(): void
+    {
+        Http::fake([
+            'api.themoviedb.org/3/search/multi*' => Http::response(['results' => []]),
+        ]);
+        Sanctum::actingAs(User::factory()->create());
+
+        $this->getJson('/api/v2/cinema/titles?q=Щосьнеіснуюче')->assertOk()->assertJsonPath('total', 0)->assertJsonPath('items', []);
+    }
+
     /** FlixCDN — другий балансер, працює паралельно з Kodik: обидва в одному списку джерел. */
     public function test_flixcdn_works_alongside_kodik(): void
     {

@@ -22,6 +22,7 @@ import { api } from '../lib/api';
 import { useMe } from '../lib/auth';
 import { isAdminLevel } from '../lib/types';
 import { Header, Toasts } from '../components/Layout';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Spinner } from '../components/ui';
 import type { Dashboard } from './types';
 
@@ -116,11 +117,13 @@ export function AdminLayout() {
                 </NavLink>
               ))}
           </nav>
-          <Suspense fallback={<Spinner />}>
-            <div className="route-view admin-page" key={pathname}>
-              <Outlet />
-            </div>
-          </Suspense>
+          <ErrorBoundary key={pathname}>
+            <Suspense fallback={<Spinner />}>
+              <div className="route-view admin-page" key={pathname}>
+                <Outlet />
+              </div>
+            </Suspense>
+          </ErrorBoundary>
         </main>
       </div>
       <Toasts />
