@@ -136,11 +136,18 @@ final class Importer
             'top_movies' => Tmdb::get('movie/top_rated', ['page' => $page]),
             'top_series' => Tmdb::get('tv/top_rated', ['page' => $page]),
             'now_playing' => Tmdb::get('movie/now_playing', ['page' => $page]),
+            // TMDB не має власного типу «аніме»/«дорама» — це мультик чи серіал
+            // певної мови/жанру (те саме, що визначає Title::categorize()),
+            // тож дістаємо їх напряму через discover, інакше вони рідко
+            // потрапляють у загальні топи/тренди.
+            'anime' => Tmdb::get('discover/tv', ['page' => $page, 'with_genres' => 16, 'with_original_language' => 'ja', 'sort_by' => 'popularity.desc']),
+            'dorama' => Tmdb::get('discover/tv', ['page' => $page, 'with_original_language' => 'ko', 'without_genres' => 16, 'sort_by' => 'popularity.desc']),
+            'cartoons' => Tmdb::get('discover/movie', ['page' => $page, 'with_genres' => 16, 'without_original_language' => 'ja', 'sort_by' => 'popularity.desc']),
             default => Tmdb::get('trending/all/week', ['page' => $page]),
         };
         $implicitType = match ($list) {
-            'popular_series', 'top_series' => 'series',
-            'popular_movies', 'top_movies', 'now_playing' => 'movie',
+            'popular_series', 'top_series', 'anime', 'dorama' => 'series',
+            'popular_movies', 'top_movies', 'now_playing', 'cartoons' => 'movie',
             default => null,
         };
 

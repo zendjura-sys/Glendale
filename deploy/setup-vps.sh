@@ -374,7 +374,12 @@ php artisan route:clear
 php artisan view:cache
 
 log "Публикую storage-симлинк"
-if [ ! -L "${APP_DIR}/public/storage" ]; then
+# Пересоздаём не только когда симлинка нет вовсе, но и когда он битый —
+# указывает на несуществующий путь (после переноса каталога проекта,
+# например). "-e" на самом симлинке проверяет именно ЦЕЛЬ, а не сам файл
+# ссылки: битый симлинк проваливает эту проверку.
+if [ ! -L "${APP_DIR}/public/storage" ] || [ ! -e "${APP_DIR}/public/storage" ]; then
+    rm -f "${APP_DIR}/public/storage"
     php artisan storage:link
 fi
 

@@ -375,4 +375,48 @@ class CinemaTest extends TestCase
         $this->post("/admin/cinema/titles/{$title->id}/flixcdn")->assertRedirect()->assertSessionHasNoErrors();
         $this->assertSame('https://player.uacdn.live/embed/matrix', $title->fresh()->flixcdn_link);
     }
+
+    public function test_browse_covers_anime_dorama_and_cartoons_via_discover(): void
+    {
+        Http::fake([
+            'api.themoviedb.org/3/discover/tv*' => fn ($request) => Http::response(['results' => [
+                str_contains((string) $request->url(), 'with_original_language=ja')
+                    ? ['id' => 900, 'name' => 'Атака титанів', 'first_air_date' => '2013-04-07']
+                    : ['id' => 901, 'name' => 'Гра в кальмара', 'first_air_date' => '2021-09-17'],
+            ]]),
+            'api.themoviedb.org/3/discover/movie*' => Http::response(['results' => [
+                ['id' => 902, 'title' => 'Історія іграшок', 'release_date' => '1995-11-22'],
+            ]]),
+        ]);
+
+        $anime = Importer::browse('anime', 1);
+        $this->assertSame('series', $anime[0]['type']);
+        $this->assertSame(900, $anime[0]['tmdbId']);
+
+        $dorama = Importer::browse('dorama', 1);
+        $this->assertSame('series', $dorama[0]['type']);
+        $this->assertSame(901, $dorama[0]['tmdbId']);
+
+        $cartoons = Importer::browse('cartoons', 1);
+        $this->assertSame('movie', $cartoons[0]['type']);
+        $this->assertSame(902, $cartoons[0]['tmdbId']);
+    }
+
+    public function test_auto_import_command_queues_from_rotating_list_and_retries_players(): void
+    {
+        // Тік = timestamp/3600 обирає список і сторінку — фіксуємо час на
+        // epoch, де tick=0 гарантовано дає перший список («trending»),
+        // інакше тест був би недетермінованим залежно від реального часу.
+        $this->travelTo(\Illuminate\Support\Carbon::createFromTimestamp(0));
+        \Illuminate\Support\Facades\Queue::fake();
+        Http::fake([
+            'api.themoviedb.org/3/trending/all/week*' => Http::response(['results' => [
+                ['id' => 950, 'media_type' => 'movie', 'title' => 'Новинка', 'release_date' => '2026-01-01'],
+            ]]),
+        ]);
+
+        $this->artisan('cinema:auto-import')->assertSuccessful();
+        \Illuminate\Support\Facades\Queue::assertPushed(\App\Cinema\ImportTitleJob::class);
+        $this->travelBack();
+    }
 }

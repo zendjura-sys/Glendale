@@ -51,6 +51,9 @@ const LISTS = [
     { key: 'top_movies', label: 'Топ фільмів' },
     { key: 'top_series', label: 'Топ серіалів' },
     { key: 'now_playing', label: 'Зараз у кіно' },
+    { key: 'anime', label: 'Аніме' },
+    { key: 'dorama', label: 'Дорами' },
+    { key: 'cartoons', label: 'Мультфільми' },
 ];
 const list = ref('trending');
 const tmdbQuery = ref('');

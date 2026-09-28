@@ -102,7 +102,7 @@ class CinemaAdminController extends Controller
     public function tmdb(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'list' => ['required', 'in:trending,popular_movies,popular_series,top_movies,top_series,now_playing,search'],
+            'list' => ['required', 'in:trending,popular_movies,popular_series,top_movies,top_series,now_playing,anime,dorama,cartoons,search'],
             'q' => ['nullable', 'string', 'max:100'],
             'page' => ['nullable', 'integer', 'min:1', 'max:50'],
         ]);
@@ -142,7 +142,7 @@ class CinemaAdminController extends Controller
     public function bulk(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'list' => ['required', 'in:trending,popular_movies,popular_series,top_movies,top_series,now_playing'],
+            'list' => ['required', 'in:trending,popular_movies,popular_series,top_movies,top_series,now_playing,anime,dorama,cartoons'],
             'pages' => ['required', 'integer', 'min:1', 'max:10'],
         ]);
         $queued = 0;

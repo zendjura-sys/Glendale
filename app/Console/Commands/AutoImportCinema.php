@@ -20,8 +20,14 @@ class AutoImportCinema extends Command
 
     protected $description = 'Поповнити каталог кінопорталу новинками з TMDB і дошукати плеєри для наявних тайтлів';
 
-    /** Списки TMDB, які обходимо по колу — по одному за запуск, щоб не бити ліміти API. */
-    private const LISTS = ['trending', 'now_playing', 'popular_movies', 'popular_series', 'top_movies', 'top_series'];
+    /**
+     * Списки TMDB, які обходимо по колу — по одному за запуск (команда в
+     * розкладі йде щогодини), щоб не бити ліміти API. Включно з аніме,
+     * дорамами й мультфільмами — вони рідко потрапляють у загальні
+     * тренди/топи, тож без окремих discover-списків не підбирались би
+     * самі собою.
+     */
+    private const LISTS = ['trending', 'now_playing', 'popular_movies', 'popular_series', 'top_movies', 'top_series', 'anime', 'dorama', 'cartoons'];
 
     private const QUEUE_LIMIT = 15;
 
@@ -35,10 +41,17 @@ class AutoImportCinema extends Command
             return self::SUCCESS;
         }
 
-        $list = self::LISTS[now()->dayOfYear % count(self::LISTS)];
+        // Погодинний тік: за одну добу проходимо весь список категорій
+        // (24 запуски на count(LISTS) списків), а сторінка зсувається на
+        // кожному новому колі — інакше з часом бралася б лише перша
+        // сторінка й нового контенту переставало б з'являтися.
+        $tick = intdiv(now()->timestamp, 3600);
+        $list = self::LISTS[$tick % count(self::LISTS)];
+        $page = 1 + intdiv($tick, count(self::LISTS)) % 20;
+
         $queued = 0;
         try {
-            foreach (Importer::browse($list, 1) as $row) {
+            foreach (Importer::browse($list, $page) as $row) {
                 if ($queued >= self::QUEUE_LIMIT) {
                     break;
                 }
@@ -48,9 +61,9 @@ class AutoImportCinema extends Command
                 }
             }
         } catch (\Throwable $e) {
-            $this->warn("TMDB ({$list}) недоступний: {$e->getMessage()}");
+            $this->warn("TMDB ({$list}, стор. {$page}) недоступний: {$e->getMessage()}");
         }
-        $this->info("У черзі на імпорт ({$list}): {$queued}");
+        $this->info("У черзі на імпорт ({$list}, стор. {$page}): {$queued}");
 
         $retried = 0;
         Title::query()
