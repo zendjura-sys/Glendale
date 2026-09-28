@@ -532,6 +532,42 @@ class CinemaTest extends TestCase
         $this->getJson('/api/v2/cinema/home')->assertOk()->assertJsonPath('movies.0.hasPlayer', true);
     }
 
+    /**
+     * Кнопка Kodik — завжди в списку джерел, навіть коли плеєра ще не
+     * знайдено: людина бачить джерело, просто неактивне, а не думає, що
+     * Kodik узагалі не пробували. FlixCDN (коли є) лишається робочим.
+     */
+    public function test_kodik_tab_always_present_but_marked_unavailable_without_a_link(): void
+    {
+        CinemaSettings::setSecret(CinemaSettings::FLIXCDN_TOKEN, 'test-flixcdn');
+        Http::fake(['api0.uacdn.live/api/search*' => Http::response(['result' => [
+            ['iframe_url' => '//player.uacdn.live/embed/matrix', 'title_rus' => 'Матриця', 'type' => 'movie', 'poster' => 'https://img.uacdn.live/matrix.jpg'],
+        ]])]);
+        CinemaSettings::setSecret(CinemaSettings::KODIK_TOKEN, null);
+
+        $title = Importer::import('movie', 603);
+        $this->assertNull($title->kodik_link);
+        $this->assertSame('https://player.uacdn.live/embed/matrix', $title->flixcdn_link);
+
+        Sanctum::actingAs(User::factory()->create());
+        $full = $this->getJson("/api/v2/cinema/titles/{$title->id}")->assertOk()->json();
+        $this->assertCount(2, $full['translations']);
+        $this->assertSame('kodik', $full['translations'][0]['source']);
+        $this->assertFalse($full['translations'][0]['available']);
+        $this->assertTrue($full['translations'][1]['available']);
+
+        $this->getJson("/api/v2/cinema/titles/{$title->id}/player?translation=0")->assertNotFound();
+        $this->getJson("/api/v2/cinema/titles/{$title->id}/player?translation=1")->assertOk()
+            ->assertJsonPath('link', 'https://player.uacdn.live/embed/matrix');
+
+        // Жодного плеєра взагалі — Kodik лишається єдиним пунктом, просто неактивним.
+        $title->update(['flixcdn_link' => null, 'flixcdn_translations' => null]);
+        $solo = $this->getJson("/api/v2/cinema/titles/{$title->id}")->assertOk()->json();
+        $this->assertCount(1, $solo['translations']);
+        $this->assertSame('kodik', $solo['translations'][0]['source']);
+        $this->assertFalse($solo['translations'][0]['available']);
+    }
+
     /** Постер FlixCDN — запасне джерело, коли TMDB свого не дав. */
     public function test_flixcdn_poster_fills_in_when_tmdb_has_none(): void
     {

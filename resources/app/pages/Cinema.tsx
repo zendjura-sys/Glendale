@@ -671,10 +671,13 @@ export function CinemaWatchlistPage() {
 type KodikMessage = { key?: string; value?: unknown };
 
 function Player({ title, season, episode, onEpisode }: { title: TitleFull; season: number | null; episode: number | null; onEpisode: (s: number, e: number) => void }) {
-  const [translation, setTranslation] = useState(0);
+  const [translation, setTranslation] = useState(() => title.translations.find((t) => t.available)?.index ?? title.translations[0]?.index ?? 0);
+  const active = title.translations.find((t) => t.index === translation);
+  const enabled = active?.available ?? false;
   const { data, error, isLoading } = useQuery({
     queryKey: ['cinema', 'player', title.id, translation],
     queryFn: () => api<{ link: string; progress: TitleFull['progress'] }>(`/cinema/titles/${title.id}/player?translation=${translation}`),
+    enabled,
     retry: false,
     staleTime: Infinity,
   });
@@ -729,15 +732,6 @@ function Player({ title, season, episode, onEpisode }: { title: TitleFull; seaso
     return url.toString();
   }, [data, season, episode, title.type]);
 
-  if (isLoading) return <div className="cinema-player loading"><Spinner /></div>;
-  if (error || !src)
-    return (
-      <div className="cinema-player empty">
-        <Clapperboard size={36} />
-        <div>{(error as Error)?.message || tr('Плеєр для цього фільму ще не знайдено')}</div>
-        {title.trailer && <div className="muted">{tr('Поки що можна переглянути трейлер.')}</div>}
-      </div>
-    );
   return (
     <div className="k-player">
       {title.translations.length > 0 && (
@@ -745,8 +739,9 @@ function Player({ title, season, episode, onEpisode }: { title: TitleFull; seaso
           {title.translations.map((t) => (
             <button
               key={t.index}
+              disabled={!t.available}
               className={[translation === t.index ? 'on' : '', t.source === 'flixcdn' ? 'k-tab-flixcdn' : ''].filter(Boolean).join(' ')}
-              onClick={() => setTranslation(t.index)}
+              onClick={() => t.available && setTranslation(t.index)}
             >
               {t.title}
               {t.quality ? <small>{t.quality}</small> : null}
@@ -754,9 +749,25 @@ function Player({ title, season, episode, onEpisode }: { title: TitleFull; seaso
           ))}
         </div>
       )}
-      <div className="cinema-player">
-        <iframe key={src} src={src} allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowFullScreen title={title.name} />
-      </div>
+      {!enabled ? (
+        <div className="cinema-player empty">
+          <Clapperboard size={36} />
+          <div>{tr('Плеєр Kodik для цього тайтлу ще не знайдено')}</div>
+          {title.trailer && <div className="muted">{tr('Поки що можна переглянути трейлер.')}</div>}
+        </div>
+      ) : isLoading ? (
+        <div className="cinema-player loading"><Spinner /></div>
+      ) : error || !src ? (
+        <div className="cinema-player empty">
+          <Clapperboard size={36} />
+          <div>{(error as Error)?.message || tr('Плеєр для цього фільму ще не знайдено')}</div>
+          {title.trailer && <div className="muted">{tr('Поки що можна переглянути трейлер.')}</div>}
+        </div>
+      ) : (
+        <div className="cinema-player">
+          <iframe key={src} src={src} allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowFullScreen title={title.name} />
+        </div>
+      )}
     </div>
   );
 }

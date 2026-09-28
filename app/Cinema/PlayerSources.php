@@ -11,20 +11,24 @@ use Illuminate\Support\Collection;
  * декілька) робить сам вбудований плеєр, а не наші таби. Kodik іде
  * першим (звична поведінка), FlixCDN — другим. Індекс у списку —
  * той самий, що приходить у query ?translation=N від фронтенду.
+ *
+ * Кнопка Kodik — завжди в списку (index 0), навіть коли плеєра ще не
+ * знайдено: людина бачить, що джерело є, просто зараз неактивне
+ * (available: false), а не що його взагалі нема на цьому тайтлі.
+ * FlixCDN — лише коли й справді знайдений (другого «завжди видимого»
+ * джерела без вбудованого плеєра тут не показуємо).
  */
 final class PlayerSources
 {
-    /** @return list<array{index:int, title:string, quality:?string, source:string}> */
+    /** @return list<array{index:int, title:string, quality:?string, source:string, available:bool}> */
     public static function list(Title $title): array
     {
-        $items = collect();
-
-        if ($title->kodik_link) {
-            $items->push(['index' => $items->count(), 'title' => 'Kodik', 'quality' => null, 'source' => 'kodik']);
-        }
+        $items = collect([
+            ['index' => 0, 'title' => 'Kodik', 'quality' => null, 'source' => 'kodik', 'available' => (bool) $title->kodik_link],
+        ]);
 
         if ($title->flixcdn_link) {
-            $items->push(['index' => $items->count(), 'title' => 'FlixCDN', 'quality' => null, 'source' => 'flixcdn']);
+            $items->push(['index' => $items->count(), 'title' => 'FlixCDN', 'quality' => null, 'source' => 'flixcdn', 'available' => true]);
         }
 
         return $items->values()->all();
@@ -35,12 +39,12 @@ final class PlayerSources
         return $title->kodik_link !== null || $title->flixcdn_link !== null;
     }
 
-    /** Посилання для конкретного індексу зі списку list(). */
+    /** Посилання для конкретного індексу зі списку list(): 0 — Kodik (може бути null), 1 — FlixCDN. */
     public static function linkFor(Title $title, int $index): ?string
     {
-        $links = collect([$title->kodik_link, $title->flixcdn_link])->filter()->values();
+        $links = [$title->kodik_link, $title->flixcdn_link];
 
-        return $links->get($index) ?? $links->first();
+        return $links[$index] ?? null;
     }
 
     /** Посилання «за замовчуванням» — перше в списку (для картки/бейджа). */

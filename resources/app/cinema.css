@@ -1216,6 +1216,15 @@ select.k-select:focus {
   background: rgba(255, 255, 255, 0.05);
   color: #fff;
 }
+.k-tabs button:disabled {
+  cursor: not-allowed;
+  color: #5a5f75;
+  opacity: 0.55;
+}
+.k-tabs button:disabled:hover {
+  background: transparent;
+  color: #5a5f75;
+}
 .k-tabs button.on {
   color: #fff;
   background: var(--k-accent-grad);
