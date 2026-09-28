@@ -141,6 +141,22 @@ class FamilyApiTest extends TestCase
         $this->patchJson("/api/v2/families/{$family['id']}", ['description' => 'Новий опис'])->assertJsonPath('description', 'Новий опис');
     }
 
+    public function test_leader_picks_a_family_color_from_the_preset_list(): void
+    {
+        $leader = $this->user('Лідер');
+        $family = $this->register($leader);
+        $this->actingAs($this->admin())->post("/admin/families/{$family['id']}/verify");
+
+        Sanctum::actingAs($leader);
+        // Навіть на верифікованій родині — колір не входить у "заблоковану"
+        // ідентичність (назва/проєкт/сервер), його можна міняти будь-коли.
+        $this->patchJson("/api/v2/families/{$family['id']}", ['color' => \App\Social\Families::COLORS[3]])
+            ->assertOk()->assertJsonPath('color', \App\Social\Families::COLORS[3]);
+        $this->patchJson("/api/v2/families/{$family['id']}", ['color' => '#123456'])->assertUnprocessable();
+        $this->patchJson("/api/v2/families/{$family['id']}", ['color' => null])
+            ->assertOk()->assertJsonPath('color', null);
+    }
+
     public function test_unions_flow(): void
     {
         $admin = $this->admin();

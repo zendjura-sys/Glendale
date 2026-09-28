@@ -19,6 +19,18 @@ final class Families
 
     public const ROLE_LABELS = ['leader' => 'Лідер', 'deputy' => 'Заступник', 'member' => 'Учасник'];
 
+    /**
+     * Фірмовий колір родини — 20 базових на вибір лідеру/заступнику.
+     * Сторінка родини (профіль, кнопки, бейдж) підлаштовується під нього;
+     * решта сайту лишається на золотому кольорі за замовчуванням.
+     */
+    public const COLORS = [
+        '#E4572E', '#F2A03D', '#EAC435', '#8BC34A', '#2E8B57',
+        '#16A085', '#00B8D9', '#2E86DE', '#3949AB', '#7B61FF',
+        '#9C27B0', '#D63384', '#E63946', '#C0392B', '#A0522D',
+        '#6D4C41', '#607D8B', '#4B5563', '#D4AF37', '#B0BEC5',
+    ];
+
     public static function find(int $id): ?object
     {
         return DB::table('families')->find($id);
@@ -88,6 +100,7 @@ final class Families
             'id' => $f->id,
             'name' => $f->name,
             'tag' => $f->tag,
+            'color' => $f->color,
             'project' => $f->project,
             'server' => $f->server,
             'projectId' => $f->project_id ?? null,

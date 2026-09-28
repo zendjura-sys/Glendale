@@ -33,6 +33,14 @@ import { Avatar, Empty, Modal, Spinner, pickFile } from '../components/ui';
  * Нова родина чекає перевірки адміністрацією (адмінка → Родини та союзи).
  */
 
+/** 20 базових кольорів на вибір — той самий список, що й Families::COLORS на бекенді. */
+export const FAMILY_COLORS = [
+  '#E4572E', '#F2A03D', '#EAC435', '#8BC34A', '#2E8B57',
+  '#16A085', '#00B8D9', '#2E86DE', '#3949AB', '#7B61FF',
+  '#9C27B0', '#D63384', '#E63946', '#C0392B', '#A0522D',
+  '#6D4C41', '#607D8B', '#4B5563', '#D4AF37', '#B0BEC5',
+];
+
 export function StatusBadge({ status }: { status: FamilyStatus }) {
   if (status === 'verified')
     return (
@@ -412,12 +420,14 @@ function EditFamilyModal({ family, onClose, onSaved }: { family: FamilyFull; onC
     discordUrl: family.discordUrl ?? '',
     telegramUrl: family.telegramUrl ?? '',
   });
+  const [color, setColor] = useState(family.color);
   const [error, setError] = useState('');
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
   const save = async () => {
     try {
       const body: Record<string, string | File | null | undefined> = {
         tag: f.tag || null,
+        color,
         description: f.description,
         discordUrl: f.discordUrl || null,
         telegramUrl: f.telegramUrl || null,
@@ -453,6 +463,29 @@ function EditFamilyModal({ family, onClose, onSaved }: { family: FamilyFull; onC
         ) : (
           <PlacePicker value={place} onChange={setPlace} />
         )}
+        <div className="form-row">
+          <label className="label">{tr('Колір родини')}</label>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {FAMILY_COLORS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setColor(color === c ? null : c)}
+                title={c}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: '50%',
+                  background: c,
+                  border: color === c ? '3px solid var(--text)' : '1px solid rgba(255,255,255,0.2)',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+              />
+            ))}
+          </div>
+          <p className="muted" style={{ marginTop: 6, fontSize: 12 }}>{tr('Сторінка родини підлаштується під цей колір — кнопки, значок верифікації.')}</p>
+        </div>
         <div className="form-row">
           <label className="label">{tr('Про родину')}</label>
           <textarea className="field" value={f.description} maxLength={3000} onChange={set('description')} />
@@ -641,8 +674,12 @@ export function FamilyPage() {
       update(await api<FamilyFull>(`/families/${f.id}/resubmit`, { method: 'POST' }));
     });
 
+  // Колір родини (адмін/лідер обирає з 20 базових) переозначає токени
+  // акценту лише в межах цієї сторінки — золота тема сайту лишається
+  // незмінною для всіх інших розділів.
+  const themeVars = f.color ? ({ '--accent': f.color, '--btn-primary': f.color, '--btn-primary-hover': f.color } as React.CSSProperties) : undefined;
   return (
-    <div className="col-main">
+    <div className="col-main" style={themeVars}>
       <div className="card profile-header">
         <div className="cover" style={f.cover ? { backgroundImage: `url(${f.cover})` } : undefined}>
           {f.canManage && (

@@ -139,6 +139,7 @@ class FamilyController extends Controller
         $data = $request->validate([
             'name' => ['sometimes', 'string', 'min:2', 'max:60'],
             'tag' => ['sometimes', 'nullable', 'string', 'max:8', 'regex:/^[\pL\pN_.-]+$/u'],
+            'color' => ['sometimes', 'nullable', 'string', 'in:'.implode(',', \App\Social\Families::COLORS)],
             'projectId' => ['sometimes', 'nullable', 'integer'],
             'project' => ['sometimes', 'nullable', 'string', 'max:60'],
             'serverId' => ['sometimes', 'nullable', 'integer'],
@@ -168,6 +169,9 @@ class FamilyController extends Controller
         }
         if (array_key_exists('tag', $data)) {
             $changes['tag'] = $data['tag'] ? mb_strtoupper(trim($data['tag'])) : null;
+        }
+        if (array_key_exists('color', $data)) {
+            $changes['color'] = $data['color'];
         }
         DB::table('families')->where('id', $family->id)->update($changes);
 

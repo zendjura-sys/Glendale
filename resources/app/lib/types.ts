@@ -55,6 +55,7 @@ export interface Family {
   id: number;
   name: string;
   tag: string | null;
+  color: string | null;
   project: string;
   server: string;
   projectId: number | null;
