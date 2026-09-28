@@ -6,33 +6,25 @@ use Illuminate\Support\Collection;
 
 /**
  * Об'єднує обидва балансери плеєра (Kodik і FlixCDN) в один список
- * джерел на сторінці фільму: Kodik дає окреме посилання на кожну
- * озвучку, FlixCDN — один плеєр, що сам перемикає озвучки всередині.
- * Kodik-озвучки йдуть першими (звична поведінка), FlixCDN — останнім
- * пунктом. Індекс у списку — той самий, що приходить у query
- * ?translation=N від фронтенду.
+ * джерел на сторінці фільму: по одній кнопці на джерело, підписаній
+ * лише його назвою — перемикання озвучок усередині джерела (якщо їх
+ * декілька) робить сам вбудований плеєр, а не наші таби. Kodik іде
+ * першим (звична поведінка), FlixCDN — другим. Індекс у списку —
+ * той самий, що приходить у query ?translation=N від фронтенду.
  */
 final class PlayerSources
 {
     /** @return list<array{index:int, title:string, quality:?string, source:string}> */
     public static function list(Title $title): array
     {
-        $kodik = collect($title->kodik_translations ?? []);
-        $items = $kodik->values()->map(fn ($t, $i) => [
-            'index' => $i,
-            'title' => $t['title'] ?? 'Озвучка',
-            'quality' => $t['quality'] ?? null,
-            'source' => 'kodik',
-        ]);
+        $items = collect();
+
+        if ($title->kodik_link) {
+            $items->push(['index' => $items->count(), 'title' => 'Kodik', 'quality' => null, 'source' => 'kodik']);
+        }
 
         if ($title->flixcdn_link) {
-            $names = collect($title->flixcdn_translations ?? [])->pluck('title')->filter()->implode(', ');
-            $items->push([
-                'index' => $kodik->count(),
-                'title' => $names !== '' ? "FlixCDN ({$names})" : 'FlixCDN',
-                'quality' => null,
-                'source' => 'flixcdn',
-            ]);
+            $items->push(['index' => $items->count(), 'title' => 'FlixCDN', 'quality' => null, 'source' => 'flixcdn']);
         }
 
         return $items->values()->all();
@@ -46,15 +38,9 @@ final class PlayerSources
     /** Посилання для конкретного індексу зі списку list(). */
     public static function linkFor(Title $title, int $index): ?string
     {
-        $kodik = collect($title->kodik_translations ?? []);
-        if ($index >= 0 && $index < $kodik->count()) {
-            return $kodik->values()->get($index)['link'] ?? $title->kodik_link;
-        }
-        if ($title->flixcdn_link) {
-            return $title->flixcdn_link;
-        }
+        $links = collect([$title->kodik_link, $title->flixcdn_link])->filter()->values();
 
-        return $title->kodik_link;
+        return $links->get($index) ?? $links->first();
     }
 
     /** Посилання «за замовчуванням» — перше в списку (для картки/бейджа). */

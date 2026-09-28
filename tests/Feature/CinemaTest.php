@@ -173,8 +173,8 @@ class CinemaTest extends TestCase
             ->assertJsonPath('translations.0.index', 0);
 
         $this->postJson("/api/v2/cinema/titles/{$title->id}/progress", ['position' => 600, 'duration' => 8160])->assertOk();
-        $this->getJson("/api/v2/cinema/titles/{$title->id}/player?translation=1")->assertOk()
-            ->assertJsonPath('link', 'https://kodik.info/video/1/aaa/720p')
+        $this->getJson("/api/v2/cinema/titles/{$title->id}/player?translation=0")->assertOk()
+            ->assertJsonPath('link', 'https://kodik.info/video/1/bbb/720p')
             ->assertJsonPath('progress.position', 600);
         $this->getJson('/api/v2/cinema/home')->assertJsonPath('continue.0.id', $title->id);
 
@@ -482,20 +482,21 @@ class CinemaTest extends TestCase
 
         $title = Importer::import('movie', 603);
 
-        // Kodik (2 озвучки) + FlixCDN (1 пункт, обидва разом) — один список.
+        // Kodik + FlixCDN — по одній кнопці на джерело (озвучки перемикає сам плеєр), один список.
         $this->assertSame('https://player.uacdn.live/embed/matrix', $title->flixcdn_link);
         $this->assertCount(2, $title->flixcdn_translations);
 
         $user = User::factory()->create();
         Sanctum::actingAs($user);
         $full = $this->getJson("/api/v2/cinema/titles/{$title->id}")->assertOk()->json();
-        $this->assertCount(3, $full['translations']);
+        $this->assertCount(2, $full['translations']);
         $this->assertSame('kodik', $full['translations'][0]['source']);
-        $this->assertSame('flixcdn', $full['translations'][2]['source']);
-        $this->assertStringContainsString('FlixCDN', $full['translations'][2]['title']);
+        $this->assertSame('Kodik', $full['translations'][0]['title']);
+        $this->assertSame('flixcdn', $full['translations'][1]['source']);
+        $this->assertSame('FlixCDN', $full['translations'][1]['title']);
 
-        // Індекс 2 (FlixCDN) у плеєрі веде саме на flixcdn_link.
-        $this->getJson("/api/v2/cinema/titles/{$title->id}/player?translation=2")->assertOk()
+        // Індекс 1 (FlixCDN) у плеєрі веде саме на flixcdn_link.
+        $this->getJson("/api/v2/cinema/titles/{$title->id}/player?translation=1")->assertOk()
             ->assertJsonPath('link', 'https://player.uacdn.live/embed/matrix');
 
         // Якщо в Kodik немає нічого — FlixCDN сам по собі вже дає hasPlayer.
