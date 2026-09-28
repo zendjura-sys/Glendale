@@ -23,6 +23,7 @@ const props = defineProps({
     memberPhotos: { type: Array, default: () => [] },
     galleryPhotos: { type: Array, default: () => [] },
     socialLinks: { type: Array, default: () => [] },
+    siteName: { type: String, default: 'GameConnect' },
 });
 
 const SOCIAL_LABELS = {
@@ -207,7 +208,7 @@ const benefits = [
 </script>
 
 <template>
-    <Head title="Monsory Family — закрита родина RP" />
+    <Head :title="`${siteName} — родини та спільноти`" />
 
     <!-- Умышленно БЕЗ bg-obsidian-950: непрозрачный фон на этой обёртке
          закрашивал собой все слои с отрицательным z-index — фото героя,
@@ -1053,7 +1054,7 @@ const benefits = [
                 <hr class="hairline my-10" />
 
                 <p class="text-center text-xs tracking-wide text-white/25">
-                    © {{ year }} Monsory Family
+                    © {{ year }} {{ siteName }}
                 </p>
             </div>
         </footer>

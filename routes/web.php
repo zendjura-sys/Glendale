@@ -78,6 +78,7 @@ Route::get('/', function (Request $request) {
     return Inertia::render('Home', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
+        'siteName' => DesignSettings::all()['siteName'],
         'memberCount' => User::query()->count(),
         // Обране в адмінці (Панель CMS → Статистика родини) — реальні
         // числа з бази, не текст, вписаний уручну.
