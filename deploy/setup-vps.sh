@@ -301,7 +301,9 @@ php -r '
     };
     $set("APP_LOCALE", "uk");
     $set("APP_FALLBACK_LOCALE", "en");
-    $set("APP_NAME", "\"Monsory Connect\"");
+    // APP_NAME навмисно НЕ перезаписуємо тут — .env.example уже містить
+    // актуальну назву («GameConnect»). Раніше цей рядок насильно вертав
+    // застарілу «Monsory Connect» на кожному першому деплої.
     // Laravel 13 змінив, як фреймворк САМ обчислює запасне значення
     // cache-префіксу і кукі сесії, коли ці ключі не задані явно в .env.
     // Без цього перший же деплой на 13-й гілці міг би тихо підмінити
@@ -574,8 +576,23 @@ if [ "$APP_DOMAIN" != "_" ] && [ -n "${HOSTINGER_API_TOKEN:-}" ]; then
         # продовження назавжди: наступне автопродовження (власний таймер
         # acme.sh, незалежний від деплоїв) саме перекладе сертифікат сюди
         # ж і сам перезавантажить nginx — точно як certbot.timer нижче.
-        if "$ACME_SH" --issue --dns dns_hostinger \
-                -d "${PRIMARY_DOMAIN}" -d "*.${PRIMARY_DOMAIN}" --server letsencrypt \
+        #
+        # acme.sh повертає код 2 (не 0), коли сертифікат УЖЕ випущено й
+        # термін оновлення ще не настав («Domains not changed. Skipping.») —
+        # це не помилка, а нормальний стан для будь-якого повторного
+        # деплою. Раніше `&&`-ланцюжок трактував будь-який ненульовий код
+        # як провал і НІКОЛИ не доходив до --install-cert, тож симлінк на
+        # ${CERT_DIR} не з'являвся, деплой щоразу «падав» на вже готовому
+        # сертифікаті, а сайт назавжди лишався на http.
+        # "|| ACME_ISSUE_CODE=$?" — не просто "$(...); ACME_ISSUE_CODE=$?":
+        # під set -e окрема команда з ненульовим кодом одразу вбиває
+        # скрипт, ДО того як ми встигнемо прочитати $?. Всередині "||"
+        # set -e код не спрацьовує — саме так тут ловиться код 2.
+        ACME_ISSUE_CODE=0
+        "$ACME_SH" --issue --dns dns_hostinger \
+            -d "${PRIMARY_DOMAIN}" -d "*.${PRIMARY_DOMAIN}" --server letsencrypt \
+            || ACME_ISSUE_CODE=$?
+        if { [ "$ACME_ISSUE_CODE" -eq 0 ] || [ "$ACME_ISSUE_CODE" -eq 2 ]; } \
             && "$ACME_SH" --install-cert -d "${PRIMARY_DOMAIN}" \
                 --fullchain-file "${CERT_DIR}/fullchain.pem" \
                 --key-file "${CERT_DIR}/privkey.pem" \
