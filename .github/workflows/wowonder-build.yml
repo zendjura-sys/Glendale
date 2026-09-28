@@ -49,18 +49,20 @@ jobs:
       # (wowondertimelinechat.keystore) робиться на боці розробника вручну,
       # поки не заведено секрети підпису.
       #
-      # -f net8.0-android34.0 обов'язково з версією API: csproj цільує
-      # неверсійний "net8.0-android" (SupportedOSPlatformVersion=21 — лише
-      # МІНІМАЛЬНА підтримувана версія), а без явної версії dotnet build
-      # резолвить TFM саме в 21.0, і кілька NuGet-пакетів (GoogleGson,
-      # Square.OkHttp3, Square.Retrofit2 та інші) відмовляються збиратись,
-      # бо підтримують лише android34.0 (NU1202).
+      # TFM у csproj — неверсійний "net8.0-android" (єдиний, тож -f зайвий:
+      # dotnet build -f вибирає МІЖ кількома вже оголошеними TFM, а не
+      # дописує версію API до одного оголошеного). Версію API дає
+      # TargetPlatformVersion=34.0 у самому csproj — без неї NuGet
+      # резолвив би net8.0-android до SupportedOSPlatformVersion=21
+      # (це лише мінімум для запуску, не ціль компіляції) і валив збірку
+      # на пакетах (GoogleGson, Square.OkHttp3/Retrofit2 та інших), які
+      # підтримують лише android34.0 (NU1202).
       - name: Build debug APK
-        run: dotnet build WoWonder.sln -c Debug -f net8.0-android34.0
+        run: dotnet build WoWonder.sln -c Debug
 
       - uses: actions/upload-artifact@v4
         with:
           name: wowonder-debug-apk
-          path: mobile-wowonder/WoWonder/bin/Debug/net8.0-android34.0/*Signed.apk
+          path: mobile-wowonder/WoWonder/bin/Debug/net8.0-android/*Signed.apk
           retention-days: 30
           if-no-files-found: warn

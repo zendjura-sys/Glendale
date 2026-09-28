@@ -1,6 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net8.0-android</TargetFramework>
+		<!-- TargetPlatformVersion — обов'язково окремо від SupportedOSPlatformVersion
+		     (те — лише МІНІМАЛЬНА версія API для запуску): без нього NuGet резолвить
+		     net8.0-android до 21.0 і валить збірку (NU1202) на пакетах, які підтримують
+		     лише 34.0 (GoogleGson, Square.OkHttp3/Retrofit2, Anjo.Android.Media3.*). -->
+		<TargetPlatformVersion>34.0</TargetPlatformVersion>
 		<SupportedOSPlatformVersion>21</SupportedOSPlatformVersion>
 		<OutputType>Exe</OutputType>
 		<Nullable>disable</Nullable>
