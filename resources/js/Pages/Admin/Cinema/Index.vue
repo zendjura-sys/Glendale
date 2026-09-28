@@ -224,76 +224,80 @@ const act = 'rounded-lg px-2 py-1 text-[11px] text-white/55 hover:bg-white/5 hov
                 Каталог порожній. <button class="text-gold-300 underline" @click="openImport">Імпортувати з TMDB</button>
             </div>
 
-            <div class="divide-y divide-white/5">
-                <div v-for="t in titles.data" :key="t.id" class="flex items-center gap-3 py-3">
-                    <img v-if="t.poster" :src="t.poster" class="h-16 w-11 shrink-0 rounded-md object-cover" alt="" loading="lazy" />
-                    <div v-else class="h-16 w-11 shrink-0 rounded-md bg-white/5"></div>
-                    <div class="min-w-0 flex-1">
-                        <a :href="`/cinema/title/${t.id}`" class="block truncate font-medium text-white hover:text-gold-200">{{ t.name }}</a>
-                        <div class="flex flex-wrap gap-x-3 text-xs text-white/45">
-                            <span>{{ t.type === 'series' ? 'Серіал' : 'Фільм' }}{{ t.year ? ' · ' + t.year : '' }}</span>
-                            <span v-if="t.rating">TMDB {{ t.rating }}</span>
-                            <span v-if="t.localRating" class="text-emerald-300/80">GameCon {{ t.localRating }}</span>
-                            <span :class="t.hasPlayer ? 'text-emerald-300/80' : 'text-red-300/80'">{{ t.hasPlayer ? '▶ плеєр є' : 'без плеєра' }}</span>
-                        </div>
-                        <div class="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-white/40">
-                            <label class="flex items-center gap-1">
-                                TMDB ID
-                                <input
-                                    type="number"
-                                    :value="t.tmdbId"
-                                    data-field="tmdb_id"
-                                    class="w-20 rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-white/80 focus:border-gold-400/40 focus:ring-0"
-                                    @change="saveExternalIds(t, $event)"
-                                />
-                            </label>
-                            <label class="flex items-center gap-1">
-                                Shikimori ID
-                                <input
-                                    type="number"
-                                    :value="t.shikimoriId"
-                                    data-field="shikimori_id"
-                                    placeholder="для аніме/дорам"
-                                    class="w-28 rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-white/80 placeholder:text-white/25 focus:border-gold-400/40 focus:ring-0"
-                                    @change="saveExternalIds(t, $event)"
-                                />
-                            </label>
-                            <label class="flex items-center gap-1">
-                                IMDb ID
-                                <input
-                                    type="text"
-                                    :value="t.imdbId"
-                                    data-field="imdb_id"
-                                    placeholder="tt0133093"
-                                    class="w-28 rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-white/80 placeholder:text-white/25 focus:border-gold-400/40 focus:ring-0"
-                                    @change="saveExternalIds(t, $event)"
-                                />
-                            </label>
-                            <label class="flex items-center gap-1">
-                                MyDramaList ID
-                                <input
-                                    type="number"
-                                    :value="t.mdlId"
-                                    data-field="mdl_id"
-                                    placeholder="для дорам"
-                                    class="w-24 rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-white/80 placeholder:text-white/25 focus:border-gold-400/40 focus:ring-0"
-                                    @change="saveExternalIds(t, $event)"
-                                />
-                            </label>
-                            <label class="flex items-center gap-1">
-                                WorldArt
-                                <input
-                                    type="text"
-                                    :value="t.worldartLink"
-                                    data-field="worldart_link"
-                                    placeholder="посилання"
-                                    class="w-36 rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-white/80 placeholder:text-white/25 focus:border-gold-400/40 focus:ring-0"
-                                    @change="saveExternalIds(t, $event)"
-                                />
-                            </label>
+            <div class="flex flex-col gap-3">
+                <div v-for="t in titles.data" :key="t.id" class="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+                    <div class="flex gap-3">
+                        <img v-if="t.poster" :src="t.poster" class="h-20 w-14 shrink-0 rounded-md object-cover sm:h-16 sm:w-11" alt="" loading="lazy" />
+                        <div v-else class="h-20 w-14 shrink-0 rounded-md bg-white/5 sm:h-16 sm:w-11"></div>
+                        <div class="min-w-0 flex-1">
+                            <a :href="`/cinema/title/${t.id}`" class="block truncate font-medium text-white hover:text-gold-200">{{ t.name }}</a>
+                            <div class="flex flex-wrap gap-x-3 text-xs text-white/45">
+                                <span>{{ t.type === 'series' ? 'Серіал' : 'Фільм' }}{{ t.year ? ' · ' + t.year : '' }}</span>
+                                <span v-if="t.rating">TMDB {{ t.rating }}</span>
+                                <span v-if="t.localRating" class="text-emerald-300/80">GameCon {{ t.localRating }}</span>
+                                <span :class="t.hasPlayer ? 'text-emerald-300/80' : 'text-red-300/80'">{{ t.hasPlayer ? '▶ плеєр є' : 'без плеєра' }}</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="flex shrink-0 flex-wrap items-center justify-end gap-1">
+
+                    <div class="mt-3 grid grid-cols-2 gap-2 border-t border-white/5 pt-3 text-[11px] text-white/40 sm:grid-cols-3 lg:grid-cols-5">
+                        <label class="block">
+                            <span class="block truncate">TMDB ID</span>
+                            <input
+                                type="number"
+                                :value="t.tmdbId"
+                                data-field="tmdb_id"
+                                class="mt-0.5 w-full rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-1 text-white/80 focus:border-gold-400/40 focus:ring-0"
+                                @change="saveExternalIds(t, $event)"
+                            />
+                        </label>
+                        <label class="block">
+                            <span class="block truncate">Shikimori ID</span>
+                            <input
+                                type="number"
+                                :value="t.shikimoriId"
+                                data-field="shikimori_id"
+                                placeholder="аніме/дорама"
+                                class="mt-0.5 w-full rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-1 text-white/80 placeholder:text-white/25 focus:border-gold-400/40 focus:ring-0"
+                                @change="saveExternalIds(t, $event)"
+                            />
+                        </label>
+                        <label class="block">
+                            <span class="block truncate">IMDb ID</span>
+                            <input
+                                type="text"
+                                :value="t.imdbId"
+                                data-field="imdb_id"
+                                placeholder="tt0133093"
+                                class="mt-0.5 w-full rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-1 text-white/80 placeholder:text-white/25 focus:border-gold-400/40 focus:ring-0"
+                                @change="saveExternalIds(t, $event)"
+                            />
+                        </label>
+                        <label class="block">
+                            <span class="block truncate">MyDramaList ID</span>
+                            <input
+                                type="number"
+                                :value="t.mdlId"
+                                data-field="mdl_id"
+                                placeholder="дорама"
+                                class="mt-0.5 w-full rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-1 text-white/80 placeholder:text-white/25 focus:border-gold-400/40 focus:ring-0"
+                                @change="saveExternalIds(t, $event)"
+                            />
+                        </label>
+                        <label class="block">
+                            <span class="block truncate">WorldArt</span>
+                            <input
+                                type="text"
+                                :value="t.worldartLink"
+                                data-field="worldart_link"
+                                placeholder="посилання"
+                                class="mt-0.5 w-full rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-1 text-white/80 placeholder:text-white/25 focus:border-gold-400/40 focus:ring-0"
+                                @change="saveExternalIds(t, $event)"
+                            />
+                        </label>
+                    </div>
+
+                    <div class="mt-3 flex flex-wrap items-center gap-1 border-t border-white/5 pt-2">
                         <button :class="[act, t.published ? 'text-emerald-300' : 'text-white/35']" :title="t.published ? 'Опубліковано' : 'Приховано'" @click="toggle(t, 'published')">
                             {{ t.published ? 'Опубліковано' : 'Приховано' }}
                         </button>

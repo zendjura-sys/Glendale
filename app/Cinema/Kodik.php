@@ -78,7 +78,17 @@ final class Kodik
             $queries[] = ['worldart_link' => $title->worldart_link];
         }
         $queries[] = array_filter(['title' => $title->original_name ?: $title->name, 'year' => $title->year]);
+        // Останній запас — сама назва без року: тривалі чи відновлені після
+        // перерви тайтли (наприклад, аніме, що повернулось за роки після
+        // оригінального релізу) у Kodik нерідко проіндексовані під іншим
+        // роком, і жорсткий фільтр за роком дає нуль збігів там, де плеєр
+        // насправді є.
+        if ($title->year) {
+            $queries[] = ['title' => $title->original_name ?: $title->name];
+        }
 
+        $wantSerial = $title->isSeries();
+        $fallback = [];
         foreach ($queries as $query) {
             try {
                 $response = Http::timeout(15)->connectTimeout(8)->acceptJson()
@@ -87,14 +97,20 @@ final class Kodik
                 continue;
             }
             $results = (array) ($response->json('results') ?? []);
-            $wantSerial = $title->isSeries();
-            $results = array_values(array_filter($results, fn ($r) => str_contains((string) ($r['type'] ?? ''), 'serial') === $wantSerial));
-            if ($results) {
-                return $results;
+            if (! $results) {
+                continue;
             }
+            $matched = array_values(array_filter($results, fn ($r) => str_contains((string) ($r['type'] ?? ''), 'serial') === $wantSerial));
+            if ($matched) {
+                return $matched;
+            }
+            // Тип не збігся (фільм/серіал плутається на межі — наприклад,
+            // повнометражне продовження серіалу) — тримаємо про запас: краще
+            // плеєр із сумнівним типом, ніж жодного.
+            $fallback = $fallback ?: $results;
         }
 
-        return [];
+        return $fallback;
     }
 
     public static function normalizeLink(string $link): string

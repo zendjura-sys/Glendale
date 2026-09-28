@@ -360,6 +360,44 @@ class CinemaTest extends TestCase
         Http::assertSent(fn ($request) => str_contains((string) $request->url(), 'mdl_id=5525'));
     }
 
+    /**
+     * Аніме, яке відновилось через роки після оригінального релізу (як
+     * Bleach: Thousand-Year Blood War), у Kodik нерідко проіндексоване під
+     * іншим роком — пошук «назва+рік» дає нуль, хоча плеєр насправді є.
+     * Запасний запит без року має його знайти.
+     */
+    public function test_kodik_falls_back_to_title_without_year(): void
+    {
+        $title = Title::create(['tmdb_id' => 9030, 'type' => 'series', 'name' => 'Bleach', 'year' => 2022]);
+        Http::fake([
+            'kodikapi.com/search*' => fn ($request) => str_contains((string) $request->url(), 'year=2022')
+                ? Http::response(['results' => []])
+                : Http::response(['results' => [
+                    ['type' => 'anime-serial', 'link' => '//kodik.info/serial/1/bleach/720p', 'translation' => ['id' => 1, 'title' => 'Аніма']],
+                ]]),
+        ]);
+
+        $results = \App\Cinema\Kodik::search($title);
+
+        $this->assertNotEmpty($results, 'запасний запит без року мав знайти плеєр');
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), 'title=Bleach') && ! str_contains((string) $request->url(), 'year='));
+    }
+
+    /** Тип не збігся в жодному запиті — краще плеєр із сумнівним типом, ніж жодного. */
+    public function test_kodik_returns_type_mismatched_result_as_last_resort(): void
+    {
+        $title = Title::create(['tmdb_id' => 9031, 'type' => 'series', 'name' => 'Гранична сутичка', 'year' => 2024]);
+        Http::fake([
+            'kodikapi.com/search*' => Http::response(['results' => [
+                ['type' => 'foreign-movie', 'link' => '//kodik.info/video/1/edge/720p', 'translation' => ['id' => 1, 'title' => 'Дубляж']],
+            ]]),
+        ]);
+
+        $results = \App\Cinema\Kodik::search($title);
+
+        $this->assertNotEmpty($results, 'без запасного варіанту тайтл лишився б зовсім без плеєра');
+    }
+
     public function test_regular_user_cannot_open_cinema_admin(): void
     {
         $this->seed(SystemPermissionsSeeder::class);
