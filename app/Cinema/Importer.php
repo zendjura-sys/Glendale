@@ -30,9 +30,11 @@ final class Importer
             $date = $data['release_date'] ?? $data['first_air_date'] ?? null;
             $title = Title::query()->firstOrNew(['tmdb_id' => $tmdbId, 'type' => $type]);
             $originalName = $data['original_title'] ?? $data['original_name'] ?? null;
+            $localizedName = self::localizedName($data, $type, $data['title'] ?? $data['name'] ?? 'Без назви', $originalName);
             $title->fill([
-                'name' => self::localizedName($data, $type, $data['title'] ?? $data['name'] ?? 'Без назви', $originalName),
+                'name' => $localizedName,
                 'original_name' => $originalName,
+                'alt_names' => self::altNames($data, $type, $localizedName, $originalName),
                 'release_date' => $date ?: null,
                 'year' => $date ? (int) substr($date, 0, 4) : null,
                 'runtime' => $data['runtime'] ?? ($data['episode_run_time'][0] ?? null),
@@ -111,6 +113,29 @@ final class Importer
         }
 
         return $primary;
+    }
+
+    /**
+     * Альтернативні назви для пошуку — українська й російська одночасно
+     * (не лише та, що стала основною), плюс англійська: людина може шукати
+     * тайтл будь-якою з цих мов, навіть якщо на сайті він підписаний іншою.
+     *
+     * @return list<string>
+     */
+    private static function altNames(array $data, string $type, string $primary, ?string $originalName): array
+    {
+        $field = $type === 'series' ? 'name' : 'title';
+        $taken = array_map('mb_strtolower', array_filter([$primary, $originalName]));
+
+        return collect($data['translations']['translations'] ?? [])
+            ->whereIn('iso_639_1', ['uk', 'ru', 'en'])
+            ->pluck("data.{$field}")
+            ->filter()
+            ->map(fn ($n) => trim((string) $n))
+            ->unique(fn ($n) => mb_strtolower($n))
+            ->reject(fn ($n) => $n === '' || in_array(mb_strtolower($n), $taken, true))
+            ->values()
+            ->all();
     }
 
     /** Серії сезону — з TMDB, коли сезон уперше відкривають. */

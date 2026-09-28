@@ -50,6 +50,7 @@ class Title extends Model
         return [
             'release_date' => 'date',
             'countries' => 'array',
+            'alt_names' => \App\Cinema\Casts\UnicodeArray::class,
             'kodik_translations' => 'array',
             'kodik_checked_at' => 'datetime',
             'flixcdn_translations' => 'array',

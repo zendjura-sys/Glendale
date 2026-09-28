@@ -91,7 +91,7 @@ class MiscController extends Controller
         $posts = Social::visiblePosts($postQuery, $me->id)->orderByDesc('id')->limit(20)->get()->all();
         // Один пошук на весь сайт: і фільми кінопорталу, і родини.
         $titles = \App\Cinema\Title::query()->published()->with('genres')
-            ->where(fn ($q) => $q->where('name', 'like', $like)->orWhere('original_name', 'like', $like))
+            ->where(fn ($q) => $q->where('name', 'like', $like)->orWhere('original_name', 'like', $like)->orWhere('alt_names', 'like', $like))
             ->orderByDesc('popularity')->limit(20)->get();
         $families = DB::table('families')->where('status', 'verified')
             ->where(fn ($q) => $q->where('name', 'like', $like)->orWhere('tag', 'like', $like))->limit(20)->get()->all();

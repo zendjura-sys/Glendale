@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Cinema\AttachPlayerJob;
 use App\Cinema\CinemaSettings;
+use App\Cinema\Episode;
 use App\Cinema\FlixCdn;
 use App\Cinema\ImportTitleJob;
 use App\Cinema\Importer;
 use App\Cinema\Kodik;
 use App\Cinema\PlayerSources;
+use App\Cinema\Season;
 use App\Cinema\Title;
 use App\Cinema\Tmdb;
 use App\Http\Controllers\Controller;
@@ -17,6 +19,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -28,7 +31,7 @@ class CinemaAdminController extends Controller
         $search = trim((string) $request->query('q', ''));
         $type = $request->query('type');
         $titles = Title::query()
-            ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w->where('name', 'like', "%{$search}%")->orWhere('original_name', 'like', "%{$search}%")))
+            ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w->where('name', 'like', "%{$search}%")->orWhere('original_name', 'like', "%{$search}%")->orWhere('alt_names', 'like', "%{$search}%")))
             ->when(in_array($type, ['movie', 'series'], true), fn ($q) => $q->where('type', $type))
             ->orderByDesc('created_at')->paginate(30)->withQueryString()
             ->through(fn (Title $t) => [
@@ -284,5 +287,90 @@ class CinemaAdminController extends Controller
         $title->delete();
 
         return back()->with('status', "Видалено: {$title->name}");
+    }
+
+    /**
+     * Ручне керування сезонами й серіями — для власних/ексклюзивних релізів,
+     * яких немає на TMDB (звичайний імпорт їх ніяк не підхопить). Номер, що
+     * збігається з реальним сезоном TMDB, згодом може перезаписатись
+     * автооновленням (cinema:auto-import) — це прийнятний компроміс, той
+     * самий, що й у сторонніх граберах з таким самим ручним режимом.
+     */
+    public function seasons(int $id): JsonResponse
+    {
+        $title = Title::query()->findOrFail($id);
+
+        return response()->json($title->seasons()->with('episodes')->orderBy('number')->get());
+    }
+
+    public function storeSeason(Request $request, int $id): RedirectResponse
+    {
+        $title = Title::query()->findOrFail($id);
+        $data = $request->validate([
+            'number' => ['required', 'integer', 'min:0', 'max:200', Rule::unique('cinema_seasons')->where('title_id', $title->id)],
+            'name' => ['nullable', 'string', 'max:200'],
+            'overview' => ['nullable', 'string', 'max:2000'],
+        ]);
+        $title->seasons()->create($data);
+
+        return back()->with('status', "Сезон {$data['number']} додано.");
+    }
+
+    public function updateSeason(Request $request, int $seasonId): RedirectResponse
+    {
+        $season = Season::query()->findOrFail($seasonId);
+        $data = $request->validate([
+            'name' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'overview' => ['sometimes', 'nullable', 'string', 'max:2000'],
+        ]);
+        $season->update($data);
+
+        return back();
+    }
+
+    public function destroySeason(int $seasonId): RedirectResponse
+    {
+        $season = Season::query()->findOrFail($seasonId);
+        $season->delete();
+
+        return back()->with('status', "Сезон {$season->number} видалено.");
+    }
+
+    public function storeEpisode(Request $request, int $seasonId): RedirectResponse
+    {
+        $season = Season::query()->findOrFail($seasonId);
+        $data = $request->validate([
+            'number' => ['required', 'integer', 'min:1', 'max:2000', Rule::unique('cinema_episodes')->where('season_id', $season->id)],
+            'name' => ['nullable', 'string', 'max:200'],
+            'overview' => ['nullable', 'string', 'max:2000'],
+            'air_date' => ['nullable', 'date'],
+            'runtime' => ['nullable', 'integer', 'min:1', 'max:600'],
+        ]);
+        $season->episodes()->create($data + ['title_id' => $season->title_id]);
+        $season->update(['episodes_count' => max($season->episodes_count, $data['number']), 'episodes_loaded_at' => now()]);
+
+        return back()->with('status', "Серію {$data['number']} додано.");
+    }
+
+    public function updateEpisode(Request $request, int $episodeId): RedirectResponse
+    {
+        $episode = Episode::query()->findOrFail($episodeId);
+        $data = $request->validate([
+            'name' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'overview' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'air_date' => ['sometimes', 'nullable', 'date'],
+            'runtime' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:600'],
+        ]);
+        $episode->update($data);
+
+        return back();
+    }
+
+    public function destroyEpisode(int $episodeId): RedirectResponse
+    {
+        $episode = Episode::query()->findOrFail($episodeId);
+        $episode->delete();
+
+        return back()->with('status', "Серію {$episode->number} видалено.");
     }
 }

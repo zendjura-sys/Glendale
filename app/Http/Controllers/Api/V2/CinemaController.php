@@ -143,7 +143,7 @@ class CinemaController extends Controller
             ->when($request->query('category'), fn ($b, $c) => $b->where('category', $c))
             ->when($request->query('genre'), fn ($b, $g) => $b->whereHas('genres', fn ($h) => $h->where('cinema_genres.id', $g)))
             ->when($request->query('year'), fn ($b, $y) => $b->where('year', $y))
-            ->when($request->query('q'), fn ($b, $s) => $b->where(fn ($w) => $w->where('name', 'like', "%{$s}%")->orWhere('original_name', 'like', "%{$s}%")));
+            ->when($request->query('q'), fn ($b, $s) => $b->where(fn ($w) => $w->where('name', 'like', "%{$s}%")->orWhere('original_name', 'like', "%{$s}%")->orWhere('alt_names', 'like', "%{$s}%")));
         match ($request->query('sort', 'popular')) {
             'rating' => $q->orderByDesc('vote_average'),
             'new' => $q->orderByDesc('created_at'),

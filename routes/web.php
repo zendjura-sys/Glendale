@@ -249,6 +249,14 @@ Route::middleware(['auth', 'verified', 'permission:cinema.manage'])
         Route::post('/titles/{id}/kodik', [$c, 'kodik'])->whereNumber('id')->name('kodik');
         Route::post('/titles/{id}/flixcdn', [$c, 'flixcdn'])->whereNumber('id')->name('flixcdn');
         Route::delete('/titles/{id}', [$c, 'destroy'])->whereNumber('id')->name('destroy');
+        // Ручне керування сезонами/серіями — для ексклюзивних релізів, яких немає на TMDB.
+        Route::get('/titles/{id}/seasons', [$c, 'seasons'])->whereNumber('id')->name('seasons.index');
+        Route::post('/titles/{id}/seasons', [$c, 'storeSeason'])->whereNumber('id')->name('seasons.store');
+        Route::put('/seasons/{seasonId}', [$c, 'updateSeason'])->whereNumber('seasonId')->name('seasons.update');
+        Route::delete('/seasons/{seasonId}', [$c, 'destroySeason'])->whereNumber('seasonId')->name('seasons.destroy');
+        Route::post('/seasons/{seasonId}/episodes', [$c, 'storeEpisode'])->whereNumber('seasonId')->name('episodes.store');
+        Route::put('/episodes/{episodeId}', [$c, 'updateEpisode'])->whereNumber('episodeId')->name('episodes.update');
+        Route::delete('/episodes/{episodeId}', [$c, 'destroyEpisode'])->whereNumber('episodeId')->name('episodes.destroy');
     });
 
 // Дизайн — обычный раздел настроек, а не аддон: см. DesignController.

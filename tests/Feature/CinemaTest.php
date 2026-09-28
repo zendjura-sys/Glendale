@@ -148,6 +148,34 @@ class CinemaTest extends TestCase
         $this->assertSame('Матриця', $title->name);
     }
 
+    /**
+     * Основна назва — лише одна мова (українська чи яка є), але шукати
+     * тайтл можна й іншою: обидва варіанти (укр+рос) зберігаються поряд,
+     * а не лише той, що переміг у localizedName().
+     */
+    public function test_alt_names_allow_searching_in_another_language(): void
+    {
+        Http::fake([
+            'api.themoviedb.org/3/movie/9200*' => Http::response([
+                'id' => 9200, 'title' => '愛情', 'original_title' => '愛情',
+                'original_language' => 'zh', 'release_date' => '2020-01-01', 'genres' => [],
+                'translations' => ['translations' => [
+                    ['iso_639_1' => 'uk', 'data' => ['title' => 'Кохання']],
+                    ['iso_639_1' => 'ru', 'data' => ['title' => 'Любовь']],
+                    ['iso_639_1' => 'en', 'data' => ['title' => 'Love']],
+                ]],
+            ]),
+        ]);
+
+        $title = Importer::import('movie', 9200);
+        $this->assertSame('Кохання', $title->name, 'основна — перша знайдена (укр)');
+        $this->assertSame(['Любовь', 'Love'], $title->alt_names, 'решта мов — окремо, для пошуку');
+
+        Sanctum::actingAs(User::factory()->create());
+        $this->getJson('/api/v2/cinema/titles?q=Любовь')->assertOk()->assertJsonPath('total', 1)->assertJsonPath('items.0.id', $title->id);
+        $this->getJson('/api/v2/cinema/titles?q=Love')->assertOk()->assertJsonPath('total', 1)->assertJsonPath('items.0.id', $title->id);
+    }
+
     public function test_series_seasons_and_episodes_load_lazily(): void
     {
         $title = Importer::import('series', 1399);
@@ -712,6 +740,50 @@ class CinemaTest extends TestCase
         \Illuminate\Support\Facades\Queue::assertNotPushed(fn (\App\Cinema\ImportTitleJob $j) => $j->tmdbId === 952);
         \Illuminate\Support\Facades\Queue::assertPushed(fn (\App\Cinema\ImportTitleJob $j) => $j->tmdbId === 953);
         $this->travelBack();
+    }
+
+    /**
+     * Ручне керування сезонами/серіями — для ексклюзивних релізів, яких
+     * немає на TMDB (звичайний імпорт їх не підхопить).
+     */
+    public function test_admin_manages_seasons_and_episodes_manually(): void
+    {
+        $this->actingAs($this->admin());
+        $this->withoutVite();
+        $title = Title::create(['tmdb_id' => 9040, 'type' => 'series', 'name' => 'Власний реліз']);
+
+        $this->post("/admin/cinema/titles/{$title->id}/seasons", ['number' => 1, 'name' => 'Сезон 1'])
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $season = $title->seasons()->firstOrFail();
+        $this->assertSame(1, $season->number);
+
+        // Той самий номер сезону вдруге — конфлікт.
+        $this->post("/admin/cinema/titles/{$title->id}/seasons", ['number' => 1])->assertSessionHasErrors('number');
+
+        $this->put("/admin/cinema/seasons/{$season->id}", ['name' => 'Перший сезон'])->assertRedirect();
+        $this->assertSame('Перший сезон', $season->fresh()->name);
+
+        $this->post("/admin/cinema/seasons/{$season->id}/episodes", [
+            'number' => 1, 'name' => 'Пілот', 'air_date' => '2026-01-01', 'runtime' => 42,
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $episode = $season->episodes()->firstOrFail();
+        $this->assertSame('Пілот', $episode->name);
+        $this->assertSame(1, $season->fresh()->episodes_count);
+
+        // Той самий номер серії в цьому сезоні вдруге — конфлікт.
+        $this->post("/admin/cinema/seasons/{$season->id}/episodes", ['number' => 1])->assertSessionHasErrors('number');
+
+        $this->put("/admin/cinema/episodes/{$episode->id}", ['name' => 'Перша серія'])->assertRedirect();
+        $this->assertSame('Перша серія', $episode->fresh()->name);
+
+        $this->getJson("/admin/cinema/titles/{$title->id}/seasons")->assertOk()
+            ->assertJsonPath('0.number', 1)->assertJsonPath('0.episodes.0.name', 'Перша серія');
+
+        $this->delete("/admin/cinema/episodes/{$episode->id}")->assertRedirect();
+        $this->assertSame(0, $season->episodes()->count());
+
+        $this->delete("/admin/cinema/seasons/{$season->id}")->assertRedirect();
+        $this->assertSame(0, $title->seasons()->count());
     }
 
     public function test_admin_saves_blacklist_and_min_year(): void
