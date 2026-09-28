@@ -65,10 +65,16 @@ class AutoImportCinema extends Command
         }
         $this->info("У черзі на імпорт ({$list}, стор. {$page}): {$queued}");
 
+        // Раніше вимагало відсутності ОБОХ посилань — тож щойно одне
+        // джерело (скажімо, FlixCDN) знаходилось, друге (Kodik) більше
+        // ніколи не перевірялось, і тайтл назавжди лишався з одним
+        // плеєром замість обох одночасно, де вони справді доступні.
         $retried = 0;
         Title::query()
-            ->whereNull('kodik_link')->whereNull('flixcdn_link')
-            ->where(fn ($q) => $q->whereNull('kodik_checked_at')->orWhere('kodik_checked_at', '<', now()->subDay()))
+            ->where(fn ($q) => $q->whereNull('kodik_link')->orWhereNull('flixcdn_link'))
+            ->where(fn ($q) => $q
+                ->whereNull('kodik_checked_at')->orWhere('kodik_checked_at', '<', now()->subDay())
+                ->orWhereNull('flixcdn_checked_at')->orWhere('flixcdn_checked_at', '<', now()->subDay()))
             ->orderBy('id')
             ->limit(self::RETRY_LIMIT)
             ->get()

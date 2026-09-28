@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Cinema\AttachPlayerJob;
 use App\Cinema\CinemaSettings;
 use App\Cinema\FlixCdn;
 use App\Cinema\ImportTitleJob;
@@ -162,6 +163,35 @@ class CinemaAdminController extends Controller
         }
 
         return back()->with('status', "У черзі на імпорт: {$queued}. Каталог поповниться за кілька хвилин.");
+    }
+
+    /**
+     * Кнопка «Проставити Kodik/FlixCDN на всі» — окрема для кожного
+     * джерела: у чергу йдуть лише тайтли, яким саме цього плеєра ще
+     * бракує (за раз до 500, щоб не покласти ліміти API одним кліком —
+     * повторний клік підхопить решту).
+     */
+    public function bulkAttachPlayers(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['source' => ['required', 'in:kodik,flixcdn']]);
+        $source = $data['source'];
+
+        if ($source === 'kodik' && ! Kodik::configured()) {
+            return back()->withErrors(['bulk' => 'Спершу вкажіть токен Kodik у налаштуваннях.']);
+        }
+        if ($source === 'flixcdn' && ! FlixCdn::configured()) {
+            return back()->withErrors(['bulk' => 'Спершу вкажіть токен FlixCDN у налаштуваннях.']);
+        }
+
+        $column = $source === 'kodik' ? 'kodik_link' : 'flixcdn_link';
+        $ids = Title::query()->whereNull($column)->orderBy('id')->limit(500)->pluck('id');
+        foreach ($ids as $id) {
+            AttachPlayerJob::dispatch($source, $id);
+        }
+
+        $label = $source === 'kodik' ? 'Kodik' : 'FlixCDN';
+
+        return back()->with('status', "У черзі на пошук {$label}: {$ids->count()}. Плеєри з'являться за кілька хвилин.");
     }
 
     public function update(Request $request, int $id): RedirectResponse

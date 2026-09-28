@@ -106,6 +106,18 @@ function openImport() {
 const bulkForm = useForm({ list: 'popular_movies', pages: 2 });
 const bulk = () => bulkForm.post(route('admin.cinema.bulk'), { preserveScroll: true });
 
+// «Проставити Kodik/FlixCDN на всі» — окремо, кожне джерело шукається
+// лише там, де його ще бракує (до 500 за клік, повторний клік — решта).
+const attachingPlayers = ref(null);
+function bulkAttachPlayers(source) {
+    attachingPlayers.value = source;
+    router.post(
+        route('admin.cinema.bulk-attach-players'),
+        { source },
+        { preserveScroll: true, onFinish: () => (attachingPlayers.value = null) },
+    );
+}
+
 /* каталог */
 const q = ref(props.filters.q ?? '');
 const type = ref(props.filters.type ?? '');
@@ -176,6 +188,25 @@ const act = 'rounded-lg px-2 py-1 text-[11px] text-white/55 hover:bg-white/5 hov
                 </select>
                 <button :class="btn">Знайти</button>
             </form>
+
+            <div v-if="settings.kodikConfigured || settings.flixcdnConfigured" class="mb-4 flex flex-wrap gap-2">
+                <button
+                    v-if="settings.kodikConfigured"
+                    :class="[pill, pillOff]"
+                    :disabled="attachingPlayers === 'kodik'"
+                    @click="bulkAttachPlayers('kodik')"
+                >
+                    {{ attachingPlayers === 'kodik' ? 'Ставлю в чергу…' : 'Проставити Kodik на всі' }}
+                </button>
+                <button
+                    v-if="settings.flixcdnConfigured"
+                    :class="[pill, pillOff]"
+                    :disabled="attachingPlayers === 'flixcdn'"
+                    @click="bulkAttachPlayers('flixcdn')"
+                >
+                    {{ attachingPlayers === 'flixcdn' ? 'Ставлю в чергу…' : 'Проставити FlixCDN на всі' }}
+                </button>
+            </div>
 
             <div v-if="!titles.data.length" class="py-12 text-center text-sm text-white/40">
                 Каталог порожній. <button class="text-gold-300 underline" @click="openImport">Імпортувати з TMDB</button>

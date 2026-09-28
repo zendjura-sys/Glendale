@@ -243,6 +243,7 @@ Route::middleware(['auth', 'verified', 'permission:cinema.manage'])
         Route::get('/tmdb', [$c, 'tmdb'])->name('tmdb');
         Route::post('/import', [$c, 'import'])->name('import');
         Route::post('/bulk', [$c, 'bulk'])->name('bulk');
+        Route::post('/bulk-attach-players', [$c, 'bulkAttachPlayers'])->name('bulk-attach-players');
         Route::patch('/titles/{id}', [$c, 'update'])->whereNumber('id')->name('update');
         Route::post('/titles/{id}/refresh', [$c, 'refresh'])->whereNumber('id')->name('refresh');
         Route::post('/titles/{id}/kodik', [$c, 'kodik'])->whereNumber('id')->name('kodik');

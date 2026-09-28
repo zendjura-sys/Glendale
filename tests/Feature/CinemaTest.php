@@ -399,6 +399,28 @@ class CinemaTest extends TestCase
         $this->assertSame('https://player.uacdn.live/embed/matrix', $title->fresh()->flixcdn_link);
     }
 
+    /** Кнопка «Проставити Kodik/FlixCDN на всі» — окрема черга для кожного джерела, лише де його бракує. */
+    public function test_admin_bulk_attaches_players_per_source(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin);
+        \Illuminate\Support\Facades\Queue::fake();
+
+        $needsBoth = Title::create(['tmdb_id' => 9010, 'type' => 'movie', 'name' => 'Без плеєра']);
+        $needsKodikOnly = Title::create(['tmdb_id' => 9011, 'type' => 'movie', 'name' => 'Вже є FlixCDN', 'flixcdn_link' => 'https://player.uacdn.live/embed/x']);
+        $hasKodik = Title::create(['tmdb_id' => 9012, 'type' => 'movie', 'name' => 'Вже є Kodik', 'kodik_link' => 'https://kodik.info/x']);
+
+        $this->post('/admin/cinema/bulk-attach-players', ['source' => 'kodik'])->assertRedirect()->assertSessionHasNoErrors();
+
+        \Illuminate\Support\Facades\Queue::assertPushed(\App\Cinema\AttachPlayerJob::class, 2);
+        \Illuminate\Support\Facades\Queue::assertPushed(fn (\App\Cinema\AttachPlayerJob $j) => $j->source === 'kodik' && $j->titleId === $needsBoth->id);
+        \Illuminate\Support\Facades\Queue::assertPushed(fn (\App\Cinema\AttachPlayerJob $j) => $j->source === 'kodik' && $j->titleId === $needsKodikOnly->id);
+        \Illuminate\Support\Facades\Queue::assertNotPushed(fn (\App\Cinema\AttachPlayerJob $j) => $j->titleId === $hasKodik->id);
+
+        // FlixCDN не налаштовано в цьому тесті — кнопка має відмовити з поясненням.
+        $this->post('/admin/cinema/bulk-attach-players', ['source' => 'flixcdn'])->assertRedirect()->assertSessionHasErrors('bulk');
+    }
+
     public function test_browse_covers_anime_dorama_and_cartoons_via_discover(): void
     {
         Http::fake([
@@ -472,6 +494,30 @@ class CinemaTest extends TestCase
 
         $this->artisan('cinema:auto-import')->assertSuccessful();
         \Illuminate\Support\Facades\Queue::assertPushed(\App\Cinema\ImportTitleJob::class);
+        $this->travelBack();
+    }
+
+    /**
+     * Раніше повторний пошук плеєра вимагав відсутності ОБОХ посилань —
+     * тайтл з уже знайденим FlixCDN назавжди лишався без спроб Kodik.
+     * Тепер має пробувати те джерело, якого справді бракує.
+     */
+    public function test_auto_import_retries_missing_source_even_when_the_other_already_found(): void
+    {
+        $this->travelTo(\Illuminate\Support\Carbon::createFromTimestamp(0));
+        CinemaSettings::setSecret(CinemaSettings::FLIXCDN_TOKEN, 'test-flixcdn');
+        \Illuminate\Support\Facades\Queue::fake();
+        Http::fake([
+            'api.themoviedb.org/3/trending/all/week*' => Http::response(['results' => []]),
+        ]);
+        $title = Title::create([
+            'tmdb_id' => 9003, 'type' => 'movie', 'name' => 'Бліч',
+            'flixcdn_link' => 'https://player.uacdn.live/embed/bleach', 'flixcdn_checked_at' => now(),
+        ]);
+
+        $this->artisan('cinema:auto-import')->assertSuccessful();
+
+        $this->assertNotNull($title->fresh()->kodik_link);
         $this->travelBack();
     }
 }
