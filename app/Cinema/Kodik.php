@@ -61,6 +61,11 @@ final class Kodik
             return [];
         }
         $queries = [];
+        // Shikimori id — найточніший збіг для аніме й дорам (TMDB часто
+        // не має точного відповідника чи IMDb id для азійського контенту).
+        if ($title->shikimori_id) {
+            $queries[] = ['shikimori_id' => $title->shikimori_id];
+        }
         if ($title->imdb_id) {
             $queries[] = ['imdb_id' => $title->imdb_id];
         }

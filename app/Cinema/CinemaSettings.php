@@ -21,6 +21,9 @@ final class CinemaSettings
 
     public const LANGUAGE = 'cinema_language';
 
+    /** Ключ доступу для мосту CineCon (нативний Android-клієнт, апikey-заголовок). */
+    public const FLIXY_API_KEY = 'cinema_flixy_api_key';
+
     public static function secret(string $key): ?string
     {
         $raw = Setting::get($key);
@@ -58,5 +61,16 @@ final class CinemaSettings
     public static function language(): string
     {
         return Setting::get(self::LANGUAGE) ?: 'uk-UA';
+    }
+
+    /**
+     * Значення за замовчуванням, як у самого CineCon (Const.API_KEY) —
+     * без цього значення застосунок і сервер не змогли б домовитись про
+     * ключ ще до першого запуску адмінки. Адмін може перевизначити його
+     * тут (тоді треба перезібрати застосунок із новим значенням).
+     */
+    public static function flixyApiKey(): string
+    {
+        return self::secret(self::FLIXY_API_KEY) ?? 'cinecon-bridge-2026';
     }
 }

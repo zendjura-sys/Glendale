@@ -67,13 +67,28 @@ final class PlayerSources
      * Автоматично шукає плеєр там, де його ще нема, не частіше ніж
      * раз на добу на джерело — щоб не бити по обох API щоразу, коли
      * хтось відкриває фільм без плеєра.
+     *
+     * Для аніме й дорам пріоритет — Kodik (там найкраще покриття для
+     * цих категорій): якщо він уже знайшов озвучку, FlixCDN того дня
+     * взагалі не чіпаємо — не витрачаємо його ліміт на дублювання.
      */
     public static function autoAttach(Title $title): void
     {
-        if (! $title->kodik_link && Kodik::configured() && (! $title->kodik_checked_at || $title->kodik_checked_at->lt(now()->subDay()))) {
-            Kodik::attach($title);
+        $kodikDue = ! $title->kodik_link && Kodik::configured()
+            && (! $title->kodik_checked_at || $title->kodik_checked_at->lt(now()->subDay()));
+        $flixCdnDue = ! $title->flixcdn_link && FlixCdn::configured()
+            && (! $title->flixcdn_checked_at || $title->flixcdn_checked_at->lt(now()->subDay()));
+
+        $kodikFound = false;
+        if ($kodikDue) {
+            $kodikFound = Kodik::attach($title);
         }
-        if (! $title->flixcdn_link && FlixCdn::configured() && (! $title->flixcdn_checked_at || $title->flixcdn_checked_at->lt(now()->subDay()))) {
+
+        if ($kodikFound && in_array($title->category, ['anime', 'dorama'], true)) {
+            return;
+        }
+
+        if ($flixCdnDue) {
             FlixCdn::attach($title);
         }
     }

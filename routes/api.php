@@ -62,3 +62,7 @@ Route::middleware(['auth:sanctum', SubstituteBindings::class, 'permission:users.
 
 // API платформи (соцмережа, родини, кіно) — спільний для SPA і застосунку.
 Route::prefix('v2')->group(base_path('routes/api_v2.php'));
+
+// Міст для нативного CineCon (переробленого Flixy) — окремий apikey-контур,
+// без Sanctum (застосунок про нього не знає), див. routes/flixy_api.php.
+Route::prefix('flixy')->group(base_path('routes/flixy_api.php'));

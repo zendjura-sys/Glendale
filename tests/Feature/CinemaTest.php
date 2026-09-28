@@ -266,6 +266,29 @@ class CinemaTest extends TestCase
         $this->assertSame(0, Title::query()->count());
     }
 
+    /**
+     * tmdb_id/shikimori_id — приховані поля лише для адмінки: керують
+     * тим, за яким id Kodik шукає плеєр (shikimori_id — пріоритетний,
+     * найточніший збіг для аніме й дорам).
+     */
+    public function test_admin_sets_shikimori_id_and_kodik_searches_by_it_first(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin);
+        $title = Importer::import('movie', 603, attachPlayers: false);
+
+        $this->patch("/admin/cinema/titles/{$title->id}", ['tmdb_id' => 603, 'shikimori_id' => 12345])->assertRedirect()->assertSessionHasNoErrors();
+        $title->refresh();
+        $this->assertSame(12345, $title->shikimori_id);
+
+        $this->post("/admin/cinema/titles/{$title->id}/kodik")->assertRedirect();
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), 'shikimori_id=12345'));
+
+        // Очищення (null) теж має проходити — не губиться в array_filter.
+        $this->patch("/admin/cinema/titles/{$title->id}", ['shikimori_id' => null])->assertRedirect();
+        $this->assertNull($title->fresh()->shikimori_id);
+    }
+
     public function test_regular_user_cannot_open_cinema_admin(): void
     {
         $this->seed(SystemPermissionsSeeder::class);
@@ -400,6 +423,38 @@ class CinemaTest extends TestCase
         $cartoons = Importer::browse('cartoons', 1);
         $this->assertSame('movie', $cartoons[0]['type']);
         $this->assertSame(902, $cartoons[0]['tmdbId']);
+    }
+
+    /**
+     * Аніме й дорами — пріоритет Kodik: якщо він уже знайшов озвучку,
+     * FlixCDN того дня взагалі не чіпаємо (немає фейку на uacdn.live —
+     * preventStrayRequests() зробить помилку, якби виклик усе ж стався).
+     */
+    public function test_kodik_priority_for_anime_skips_flixcdn_when_found(): void
+    {
+        CinemaSettings::setSecret(CinemaSettings::FLIXCDN_TOKEN, 'test-flixcdn');
+        $title = Title::create(['tmdb_id' => 9001, 'type' => 'movie', 'category' => 'anime', 'name' => 'Тестове аніме']);
+
+        \App\Cinema\PlayerSources::autoAttach($title);
+
+        $title->refresh();
+        $this->assertNotNull($title->kodik_link);
+        $this->assertNull($title->flixcdn_link);
+        $this->assertNull($title->flixcdn_checked_at);
+    }
+
+    /** Для фільмів/серіалів (не аніме/дорама) FlixCDN усе одно перевіряється, навіть якщо Kodik уже знайшов. */
+    public function test_flixcdn_still_checked_for_movies_even_when_kodik_found(): void
+    {
+        CinemaSettings::setSecret(CinemaSettings::FLIXCDN_TOKEN, 'test-flixcdn');
+        Http::fake(['api0.uacdn.live/api/search*' => Http::response(['result' => []])]);
+        $title = Title::create(['tmdb_id' => 9002, 'type' => 'movie', 'category' => 'movie', 'name' => 'Тестовий фільм']);
+
+        \App\Cinema\PlayerSources::autoAttach($title);
+
+        $title->refresh();
+        $this->assertNotNull($title->kodik_link);
+        $this->assertNotNull($title->flixcdn_checked_at);
     }
 
     public function test_auto_import_command_queues_from_rotating_list_and_retries_players(): void

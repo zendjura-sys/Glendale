@@ -113,6 +113,12 @@ function filter() {
     router.get(route('admin.cinema.index'), { q: q.value || undefined, type: type.value || undefined }, { preserveState: true, preserveScroll: true, replace: true });
 }
 const toggle = (t, field) => router.patch(route('admin.cinema.update', t.id), { [field]: !t[field] }, { preserveScroll: true });
+// tmdb_id/shikimori_id — приховані від користувачів, лише для адмінки:
+// Kodik шукає плеєр саме за ними (shikimori_id найточніший для аніме/дорам).
+function saveExternalIds(t, event) {
+    const value = event.target.value.trim();
+    router.patch(route('admin.cinema.update', t.id), { [event.target.dataset.field]: value === '' ? null : Number(value) }, { preserveScroll: true });
+}
 const refresh = (t) => router.post(route('admin.cinema.refresh', t.id), {}, { preserveScroll: true });
 const kodik = (t) => router.post(route('admin.cinema.kodik', t.id), {}, { preserveScroll: true });
 const flixcdn = (t) => router.post(route('admin.cinema.flixcdn', t.id), {}, { preserveScroll: true });
@@ -186,6 +192,29 @@ const act = 'rounded-lg px-2 py-1 text-[11px] text-white/55 hover:bg-white/5 hov
                             <span v-if="t.rating">TMDB {{ t.rating }}</span>
                             <span v-if="t.localRating" class="text-emerald-300/80">GameCon {{ t.localRating }}</span>
                             <span :class="t.hasPlayer ? 'text-emerald-300/80' : 'text-red-300/80'">{{ t.hasPlayer ? '▶ плеєр є' : 'без плеєра' }}</span>
+                        </div>
+                        <div class="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-white/40">
+                            <label class="flex items-center gap-1">
+                                TMDB ID
+                                <input
+                                    type="number"
+                                    :value="t.tmdbId"
+                                    data-field="tmdb_id"
+                                    class="w-20 rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-white/80 focus:border-gold-400/40 focus:ring-0"
+                                    @change="saveExternalIds(t, $event)"
+                                />
+                            </label>
+                            <label class="flex items-center gap-1">
+                                Shikimori ID
+                                <input
+                                    type="number"
+                                    :value="t.shikimoriId"
+                                    data-field="shikimori_id"
+                                    placeholder="для аніме/дорам"
+                                    class="w-28 rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-white/80 placeholder:text-white/25 focus:border-gold-400/40 focus:ring-0"
+                                    @change="saveExternalIds(t, $event)"
+                                />
+                            </label>
                         </div>
                     </div>
                     <div class="flex shrink-0 flex-wrap items-center justify-end gap-1">

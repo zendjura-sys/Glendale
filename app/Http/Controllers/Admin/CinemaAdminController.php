@@ -36,6 +36,8 @@ class CinemaAdminController extends Controller
                 'category' => $t->category,
                 'name' => $t->name,
                 'year' => $t->year,
+                'tmdbId' => $t->tmdb_id,
+                'shikimoriId' => $t->shikimori_id,
                 'poster' => Tmdb::image($t->poster_path, 'w92'),
                 'rating' => $t->vote_average,
                 'localRating' => $t->local_rating,
@@ -164,13 +166,31 @@ class CinemaAdminController extends Controller
 
     public function update(Request $request, int $id): RedirectResponse
     {
-        $data = $request->validate(['published' => ['sometimes', 'boolean'], 'featured' => ['sometimes', 'boolean'], 'category' => ['sometimes', 'in:'.implode(',', array_keys(Title::CATEGORIES))]]);
         $title = Title::query()->findOrFail($id);
-        $title->update(array_filter([
+        $data = $request->validate([
+            'published' => ['sometimes', 'boolean'],
+            'featured' => ['sometimes', 'boolean'],
+            'category' => ['sometimes', 'in:'.implode(',', array_keys(Title::CATEGORIES))],
+            // tmdb_id/shikimori_id — не для користувачів, лише в адмінці
+            // (звідси й керує ними Kodik::search — найточніший збіг для
+            // аніме й дорам саме через shikimori_id).
+            'tmdb_id' => ['sometimes', 'nullable', 'integer', 'unique:cinema_titles,tmdb_id,'.$title->id.',id,type,'.$title->type],
+            'shikimori_id' => ['sometimes', 'nullable', 'integer'],
+        ]);
+        // tmdb_id/shikimori_id можуть свідомо очищуватись (null) —
+        // на відміну від published/featured/category, array_filter тут
+        // не годиться, бо він прибрав би саме null-значення.
+        $updates = array_filter([
             'is_published' => $data['published'] ?? null,
             'is_featured' => $data['featured'] ?? null,
             'category' => $data['category'] ?? null,
-        ], fn ($v) => $v !== null));
+        ], fn ($v) => $v !== null);
+        foreach (['tmdb_id', 'shikimori_id'] as $key) {
+            if (array_key_exists($key, $data)) {
+                $updates[$key] = $data[$key];
+            }
+        }
+        $title->update($updates);
 
         return back();
     }

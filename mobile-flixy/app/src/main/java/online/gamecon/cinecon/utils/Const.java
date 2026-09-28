@@ -10,13 +10,14 @@ import org.jetbrains.annotations.Nullable;
 public class Const {
 
 
-    // TODO: ці ендпоінти (fetchSettings, fetchHomePageData, searchContent і т.д.)
-    // ще не реалізовані на боці gamecon.online — застосунок очікує бекенд
-    // формату Flixy (flixy_backend.zip), а не наш /api/v2/cinema (MTDb-формат).
-    // Це окрема задача — API-міст між Flixy-клієнтом і кінопорталом GameConnect.
-    public static final String BASE = "https://gamecon.online/";
-    public static final String API_KEY = "123";
-    public static final String BASE_URL = BASE + "api/";
+    // Міст на боці gamecon.online: app/Http/Controllers/Api/FlixyBridgeController.php,
+    // маршрути routes/flixy_api.php (/api/flixy/...). Дані — з нашого власного
+    // каталогу кінопорталу (cinema_titles), а не з оригінального Flixy-бекенду.
+    // API_KEY тут має збігатись із CinemaSettings::flixyApiKey() на сервері
+    // (за замовчуванням — те саме значення; адмін може перевизначити).
+    public static final String BASE = "https://gamecon.online/api/flixy/";
+    public static final String API_KEY = "cinecon-bridge-2026";
+    public static final String BASE_URL = BASE;
     public static final String IMAGE_URL = ""; //BASE + "public/storage/"
     public static final String PREF_NAME = BuildConfig.APPLICATION_ID;
     //do not change "_android"
