@@ -411,6 +411,44 @@ class CinemaTest extends TestCase
         Http::assertSent(fn ($request) => str_contains((string) $request->url(), 'title=Bleach') && ! str_contains((string) $request->url(), 'year='));
     }
 
+    /**
+     * TMDB може повернути оригінальну назву ієрогліфами, тоді як Kodik
+     * зберігає той самий тайтл під англійською або російською назвою.
+     * Усі вже збережені alt_names мають брати участь у пошуку плеєра.
+     */
+    public function test_kodik_searches_all_alternative_names(): void
+    {
+        $title = Title::create([
+            'tmdb_id' => 9032,
+            'type' => 'series',
+            'name' => 'Ван Піс',
+            'original_name' => 'ワンピース',
+            'alt_names' => ['One Piece', 'Ван-Пис'],
+            'year' => 1999,
+        ]);
+        Http::fake([
+            'kodikapi.com/search*' => function ($request) {
+                parse_str((string) parse_url((string) $request->url(), PHP_URL_QUERY), $query);
+
+                return ($query['title'] ?? null) === 'One Piece'
+                    ? Http::response(['results' => [[
+                        'type' => 'anime-serial',
+                        'link' => '//kodik.info/serial/1/one-piece/720p',
+                        'translation' => ['id' => 1, 'title' => 'Дубляж'],
+                    ]]])
+                    : Http::response(['results' => []]);
+            },
+        ]);
+
+        $this->assertTrue(\App\Cinema\Kodik::attach($title));
+        $this->assertSame('https://kodik.info/serial/1/one-piece/720p', $title->fresh()->kodik_link);
+        Http::assertSent(function ($request) {
+            parse_str((string) parse_url((string) $request->url(), PHP_URL_QUERY), $query);
+
+            return ($query['title'] ?? null) === 'One Piece';
+        });
+    }
+
     /** Тип не збігся в жодному запиті — краще плеєр із сумнівним типом, ніж жодного. */
     public function test_kodik_returns_type_mismatched_result_as_last_resort(): void
     {

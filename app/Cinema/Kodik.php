@@ -77,14 +77,24 @@ final class Kodik
         if ($title->worldart_link) {
             $queries[] = ['worldart_link' => $title->worldart_link];
         }
-        $queries[] = array_filter(['title' => $title->original_name ?: $title->name, 'year' => $title->year]);
-        // Останній запас — сама назва без року: тривалі чи відновлені після
-        // перерви тайтли (наприклад, аніме, що повернулось за роки після
-        // оригінального релізу) у Kodik нерідко проіндексовані під іншим
-        // роком, і жорсткий фільтр за роком дає нуль збігів там, де плеєр
-        // насправді є.
-        if ($title->year) {
-            $queries[] = ['title' => $title->original_name ?: $title->name];
+        // TMDB може віддати original_name ієрогліфами, тоді як Kodik
+        // індексує той самий тайтл англійською чи російською. alt_names
+        // вже містить ці варіанти, тож перебираємо їх усі, а не лише
+        // оригінальну назву. Кожну спочатку шукаємо з роком, потім без
+        // року — для тривалих та відновлених серіалів.
+        $names = collect([
+            $title->original_name,
+            $title->name,
+            ...($title->alt_names ?? []),
+        ])->filter(fn ($name) => is_string($name) && trim($name) !== '')
+            ->map(fn ($name) => trim($name))
+            ->unique(fn ($name) => mb_strtolower($name));
+
+        foreach ($names as $name) {
+            $queries[] = array_filter(['title' => $name, 'year' => $title->year]);
+            if ($title->year) {
+                $queries[] = ['title' => $name];
+            }
         }
 
         $wantSerial = $title->isSeries();
