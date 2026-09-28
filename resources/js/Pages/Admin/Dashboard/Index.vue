@@ -3,6 +3,7 @@ import AdminLayout from '@/Layouts/AdminLayout.vue';
 import StatsBarChart from '@/Components/StatsBarChart.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import { Blocks, Shield, Users } from '@lucide/vue';
 
 const props = defineProps({
     groups: { type: Array, default: () => [] },
@@ -71,17 +72,32 @@ const showTwoFactorNudge = computed(() => page.props.can?.manageRoles && !page.p
         </Link>
 
         <div class="mb-10 grid gap-6 sm:grid-cols-3">
-            <div v-reveal="'scale'" v-glow class="glass-panel-gold glass-panel p-6">
-                <p class="text-xs uppercase tracking-widest text-white/40">Учасників</p>
-                <p class="font-display mt-2 text-4xl text-gold-300">{{ stats.members }}</p>
+            <div v-reveal="'scale'" v-glow class="glass-panel-gold glass-panel flex items-start justify-between gap-4 p-6">
+                <div>
+                    <p class="text-xs uppercase tracking-widest text-white/40">Учасників</p>
+                    <p class="font-display mt-3 text-4xl text-gold-300">{{ stats.members }}</p>
+                </div>
+                <span class="stat-icon" style="background: rgb(129 140 248 / 0.18); color: #a5b4fc">
+                    <Users :size="20" />
+                </span>
             </div>
-            <div v-reveal:80="'scale'" v-glow class="glass-panel p-6">
-                <p class="text-xs uppercase tracking-widest text-white/40">Ролей у системі</p>
-                <p class="font-display mt-2 text-4xl text-white">{{ stats.roles }}</p>
+            <div v-reveal:80="'scale'" v-glow class="glass-panel flex items-start justify-between gap-4 p-6">
+                <div>
+                    <p class="text-xs uppercase tracking-widest text-white/40">Ролей у системі</p>
+                    <p class="font-display mt-3 text-4xl text-white">{{ stats.roles }}</p>
+                </div>
+                <span class="stat-icon" style="background: rgb(56 189 248 / 0.18); color: #7dd3fc">
+                    <Shield :size="20" />
+                </span>
             </div>
-            <div v-reveal:160="'scale'" v-glow class="glass-panel p-6">
-                <p class="text-xs uppercase tracking-widest text-white/40">Активних аддонів</p>
-                <p class="font-display mt-2 text-4xl text-white">{{ stats.activeAddons }}</p>
+            <div v-reveal:160="'scale'" v-glow class="glass-panel flex items-start justify-between gap-4 p-6">
+                <div>
+                    <p class="text-xs uppercase tracking-widest text-white/40">Активних аддонів</p>
+                    <p class="font-display mt-3 text-4xl text-white">{{ stats.activeAddons }}</p>
+                </div>
+                <span class="stat-icon" style="background: rgb(244 114 182 / 0.18); color: #f9a8d4">
+                    <Blocks :size="20" />
+                </span>
             </div>
         </div>
 

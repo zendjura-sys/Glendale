@@ -451,6 +451,18 @@
         0 10px 24px -10px rgba(0, 0, 0, 0.5);
 }
 
+/* Кольорове кружечко-іконка на плитках статистики адмінки (Дашборд) —
+   пастельний фон під колір іконки, як у класичній адмінці WoWonder. */
+.stat-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
 /* Блик, который "проезжает" по стеклу при наведении — тот самый liquid-эффект. */
 .glass-sheen {
     position: absolute;
