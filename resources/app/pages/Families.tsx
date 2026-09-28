@@ -550,8 +550,12 @@ function Members({ family }: { family: FamilyFull }) {
             <div className="actions" style={{ display: 'flex', gap: 4 }}>
               {family.isLeader && (
                 <>
-                  <button className="btn secondary sm" onClick={() => act(String(m.id), 'PATCH', { role: m.role === 'deputy' ? 'member' : 'deputy' })}>
-                    {m.role === 'deputy' ? tr('Зняти заступника') : tr('Зробити заступником')}
+                  <button
+                    className={`icon-btn${m.role === 'deputy' ? ' on' : ''}`}
+                    title={m.role === 'deputy' ? tr('Зняти заступника') : tr('Зробити заступником')}
+                    onClick={() => act(String(m.id), 'PATCH', { role: m.role === 'deputy' ? 'member' : 'deputy' })}
+                  >
+                    <Shield size={18} />
                   </button>
                   <button
                     className="icon-btn"

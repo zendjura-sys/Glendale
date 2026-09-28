@@ -482,6 +482,10 @@ h3 {
   background: var(--hover);
   color: var(--icon-accent);
 }
+.icon-btn.on {
+  background: var(--hover);
+  color: var(--icon-accent);
+}
 
 .field {
   display: block;
