@@ -775,8 +775,15 @@ function Player({ title, season, episode, onEpisode }: { title: TitleFull; seaso
 function Seasons({ title, current, onPick }: { title: TitleFull; current: { season: number | null; episode: number | null }; onPick: (s: number, e: number) => void }) {
   const [season, setSeason] = useState(current.season ?? title.progress?.season ?? title.seasons[0]?.number ?? 1);
   useEffect(() => {
-    if (current.season) setSeason(current.season);
+    if (current.season !== null) setSeason(current.season);
   }, [current.season]);
+  const pickSeason = (nextSeason: number) => {
+    if (nextSeason === season) return;
+    setSeason(nextSeason);
+    // Сезон і серія — одна вибрана позиція. Інакше список уже показує
+    // новий сезон, а iframe продовжує відтворювати серію зі старого.
+    onPick(nextSeason, 1);
+  };
   const { data, isLoading } = useQuery({
     queryKey: ['cinema', 'season', title.id, season],
     queryFn: () => api<CinemaEpisode[]>(`/cinema/titles/${title.id}/seasons/${season}`),
@@ -788,7 +795,7 @@ function Seasons({ title, current, onPick }: { title: TitleFull; current: { seas
       <h2 className="k-subtitle">{tr('Сезони й серії')}</h2>
       <div className="k-tabs">
         {title.seasons.map((s) => (
-          <button key={s.number} className={season === s.number ? 'on' : ''} onClick={() => setSeason(s.number)}>
+          <button key={s.number} className={season === s.number ? 'on' : ''} onClick={() => pickSeason(s.number)}>
             {s.name || `${tr('Сезон')} ${s.number}`}
             <small>{s.episodes} {tr('сер.')}</small>
           </button>
