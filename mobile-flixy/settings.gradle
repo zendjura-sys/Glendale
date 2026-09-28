@@ -17,4 +17,4 @@ dependencyResolutionManagement {
     }
 }
 include ':app'
-rootProject.name = "Flixy"
+rootProject.name = "CineCon"

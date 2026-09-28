@@ -7,7 +7,7 @@
 
         <variable
             name="model"
-            type="com.retry.flixy.model.ContentDetail.CastItem" />
+            type="online.gamecon.cinecon.model.ContentDetail.CastItem" />
     </data>
 
     <RelativeLayout

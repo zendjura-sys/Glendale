@@ -7,18 +7,18 @@
 
         <variable
             name="content"
-            type="com.retry.flixy.model.ContentDetail.SeasonItem.EpisodesItem" />
+            type="online.gamecon.cinecon.model.ContentDetail.SeasonItem.EpisodesItem" />
 
 
         <variable
             name="type"
             type="Integer" />
 
-        <import type="com.retry.flixy.utils.Const" />
+        <import type="online.gamecon.cinecon.utils.Const" />
 
-        <import type="com.retry.flixy.utils.Global" />
+        <import type="online.gamecon.cinecon.utils.Global" />
 
-        <import type="com.retry.flixy.utils.Const.ItemType" />
+        <import type="online.gamecon.cinecon.utils.Const.ItemType" />
 
         <import type="android.view.View" />
     </data>

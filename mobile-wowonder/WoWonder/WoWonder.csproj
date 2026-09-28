@@ -5,11 +5,11 @@
 		<OutputType>Exe</OutputType>
 		<Nullable>disable</Nullable>
 		<ImplicitUsings>disable</ImplicitUsings>
-		<ApplicationId>com.wowonder.combined</ApplicationId>
+		<ApplicationId>online.gamecon.app</ApplicationId>
 		<ApplicationVersion>1</ApplicationVersion>
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
 		<Copyright>Copyright © 2024</Copyright>
-		<Title>WoWonder</Title>
+		<Title>GameCon</Title>
 	</PropertyGroup>
 	<!--
 	Підпис релізу: keystore і пароль виключено з git (був у відкритому вигляді

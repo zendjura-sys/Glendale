@@ -7,7 +7,7 @@
 
         <variable
             name="model"
-            type="com.retry.flixy.model.history.MovieHistory" />
+            type="online.gamecon.cinecon.model.history.MovieHistory" />
     </data>
 
     <androidx.appcompat.widget.LinearLayoutCompat

@@ -7,7 +7,7 @@
 
         <variable
             name="content"
-            type="com.retry.flixy.model.ContentDetail.DataItem" />
+            type="online.gamecon.cinecon.model.ContentDetail.DataItem" />
     </data>
 
     <LinearLayout

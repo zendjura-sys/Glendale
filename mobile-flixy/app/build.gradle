@@ -20,14 +20,14 @@ android {
     compileSdk 35
 
     defaultConfig {
-        applicationId "com.retrytech.apps.flixy"
+        applicationId "online.gamecon.cinecon"
         minSdk 24
         targetSdk 35
         versionCode 2
         versionName "1.2"
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        setProperty("archivesBaseName", "Flixy")
+        setProperty("archivesBaseName", "CineCon")
 
 
         ndk {
@@ -46,7 +46,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    namespace 'com.retry.flixy'
+    namespace 'online.gamecon.cinecon'
     kotlinOptions {
         jvmTarget = '1.8'
     }

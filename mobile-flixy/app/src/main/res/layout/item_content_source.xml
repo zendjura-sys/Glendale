@@ -7,7 +7,7 @@
 
         <variable
             name="model"
-            type="com.retry.flixy.model.ContentDetail.SourceItem" />
+            type="online.gamecon.cinecon.model.ContentDetail.SourceItem" />
     </data>
 
 

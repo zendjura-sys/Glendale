@@ -9,11 +9,11 @@
 
         <variable
             name="videoData"
-            type="com.retry.flixy.model.ads.CustomAds.Sources" />
+            type="online.gamecon.cinecon.model.ads.CustomAds.Sources" />
 
         <variable
             name="model"
-            type="com.retry.flixy.model.ads.CustomAds.DataItem" />
+            type="online.gamecon.cinecon.model.ads.CustomAds.DataItem" />
     </data>
 
 

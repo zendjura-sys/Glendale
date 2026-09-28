@@ -5,13 +5,13 @@
 
     <data>
 
-        <import type="com.retry.flixy.utils.Global" />
+        <import type="online.gamecon.cinecon.utils.Global" />
 
         <import type="android.view.View" />
 
         <variable
             name="content"
-            type="com.retry.flixy.model.ContentDetail.DataItem" />
+            type="online.gamecon.cinecon.model.ContentDetail.DataItem" />
     </data>
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -704,7 +704,7 @@
                         </LinearLayout>
 
 
-                        <!--                    <com.retry.flixy.utils.adds.NativeAds-->
+                        <!--                    <online.gamecon.cinecon.utils.adds.NativeAds-->
                         <!--                        android:layout_width="match_parent"-->
                         <!--                        android:layout_height="wrap_content"-->
                         <!--                        app:type="small"-->

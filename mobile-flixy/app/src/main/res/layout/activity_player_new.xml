@@ -10,7 +10,7 @@
 
         <variable
             name="viewModel"
-            type="com.retry.flixy.viewmodel.PlayerViewModel" />
+            type="online.gamecon.cinecon.viewmodel.PlayerViewModel" />
     </data>
 
     <RelativeLayout
@@ -347,7 +347,7 @@
             layout="@layout/swipe_zoom_design" />
 
 
-        <com.retry.flixy.utils.custom_view.CustomAdsView
+        <online.gamecon.cinecon.utils.custom_view.CustomAdsView
             android:id="@+id/custom_ads_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"

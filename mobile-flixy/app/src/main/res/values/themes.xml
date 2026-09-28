@@ -1,6 +1,6 @@
 <resources>
     <!-- Base application theme. -->
-    <style name="Theme.Flixy" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="Theme.CineCon" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/app_black</item>
         <item name="colorPrimaryVariant">@color/app_black</item>

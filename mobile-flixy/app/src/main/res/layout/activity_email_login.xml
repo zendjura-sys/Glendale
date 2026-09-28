@@ -80,7 +80,7 @@
 
                             android:textSize="@dimen/_30sp" />
 
-                        <com.retry.flixy.utils.MyEditText
+                        <online.gamecon.cinecon.utils.MyEditText
                             style="@style/EditTextLocal"
                             android:id="@+id/et_email"
                             android:layout_width="match_parent"
@@ -106,7 +106,7 @@
                             android:orientation="horizontal"
                             android:paddingEnd="10dp">
 
-                            <com.retry.flixy.utils.MyEditText
+                            <online.gamecon.cinecon.utils.MyEditText
                                 android:id="@+id/et_pass"
                                 style="@style/EditTextLocal"
                                 android:layout_width="0dp"
@@ -211,7 +211,7 @@
                             android:textSize="@dimen/_30sp" />
 
 
-                        <com.retry.flixy.utils.MyEditText
+                        <online.gamecon.cinecon.utils.MyEditText
                             android:id="@+id/et_email_create_account"
                             android:layout_width="match_parent"
                             style="@style/EditTextLocal"
@@ -228,7 +228,7 @@
 
                             />
 
-                        <com.retry.flixy.utils.MyEditText
+                        <online.gamecon.cinecon.utils.MyEditText
                             android:id="@+id/et_fullname_create"
                             android:layout_width="match_parent"
                             style="@style/EditTextLocal"
@@ -256,7 +256,7 @@
                             android:orientation="horizontal"
                             android:paddingEnd="10dp">
 
-                            <com.retry.flixy.utils.MyEditText
+                            <online.gamecon.cinecon.utils.MyEditText
                                 android:id="@+id/et_pass_create"
                                 style="@style/EditTextLocal"
                                 android:layout_width="0dp"
@@ -284,7 +284,7 @@
 
                         </LinearLayout>
 
-                        <com.retry.flixy.utils.MyEditText
+                        <online.gamecon.cinecon.utils.MyEditText
                             android:id="@+id/et_confirm_pass_create"
                             android:layout_width="match_parent"
                             style="@style/EditTextLocal"
@@ -363,7 +363,7 @@
                             android:textColor="@color/text_color_light"
                             android:textSize="@dimen/_14sp" />
 
-                        <com.retry.flixy.utils.MyEditText
+                        <online.gamecon.cinecon.utils.MyEditText
                             android:id="@+id/et_email_forget"
                             android:layout_width="match_parent"
                             style="@style/EditTextLocal"
