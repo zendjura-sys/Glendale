@@ -662,4 +662,31 @@ class CinemaTest extends TestCase
         $this->assertNotNull($title->fresh()->kodik_link);
         $this->travelBack();
     }
+
+    /**
+     * Серіал, що ще триває, раз на добу перечитується з TMDB заново — інакше
+     * нові сезони й серії просто не з'являлись би в каталозі, доки хтось
+     * вручну не перезапустить імпорт.
+     */
+    public function test_auto_import_refreshes_ongoing_series_but_not_finished_ones(): void
+    {
+        $this->travelTo(\Illuminate\Support\Carbon::createFromTimestamp(0));
+        \Illuminate\Support\Facades\Queue::fake();
+        Http::fake([
+            'api.themoviedb.org/3/trending/all/week*' => Http::response(['results' => []]),
+        ]);
+
+        $ongoing = Title::create(['tmdb_id' => 1399, 'type' => 'series', 'name' => 'Стара назва', 'vote_average' => 1.0, 'status' => 'Returning Series']);
+        $finished = Title::create(['tmdb_id' => 1400, 'type' => 'series', 'name' => 'Завершений серіал', 'vote_average' => 1.0, 'status' => 'Ended']);
+
+        $this->artisan('cinema:auto-import')->assertSuccessful();
+
+        // tv/1399 у фікстурі setUp() повертає vote_average 8.4 — оновлення точно відбулось, а не просто торкнуло timestamp.
+        $this->assertSame(8.4, $ongoing->fresh()->vote_average);
+        $this->assertNotNull($ongoing->fresh()->tmdb_synced_at);
+        $this->assertSame(1.0, $finished->fresh()->vote_average, 'завершений серіал більше не чіпаємо');
+        $this->assertNull($finished->fresh()->tmdb_synced_at);
+        Http::assertNotSent(fn ($request) => str_contains((string) $request->url(), '/tv/1400'));
+        $this->travelBack();
+    }
 }

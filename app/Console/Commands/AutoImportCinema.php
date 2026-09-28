@@ -34,6 +34,9 @@ class AutoImportCinema extends Command
 
     private const RETRY_LIMIT = 30;
 
+    /** TMDB-статуси серіалу, які точно більше не зміняться — решта (Returning Series, In Production, Planned, Pilot, null…) ще можуть отримати нові сезони/серії. */
+    private const FINISHED_STATUSES = ['Ended', 'Canceled', 'Released'];
+
     public function handle(): int
     {
         if (! Tmdb::configured()) {
@@ -99,6 +102,37 @@ class AutoImportCinema extends Command
                 $shikimoriRetried++;
             });
         $this->info("Повторний пошук Shikimori ID: {$shikimoriRetried}");
+
+        // Серіали, що ще йдуть (чи щойно анонсовані) — раз на добу перечитуємо
+        // TMDB заново: новий сезон, нові серії в уже завантаженому сезоні,
+        // зміна статусу (Returning Series → Ended тощо). Завершені серіали
+        // й фільми більше не міняються — їх не чіпаємо.
+        $refreshed = 0;
+        Title::query()
+            ->where('type', 'series')
+            ->where(fn ($q) => $q->whereNull('status')->orWhereNotIn('status', self::FINISHED_STATUSES))
+            ->where(fn ($q) => $q->whereNull('tmdb_synced_at')->orWhere('tmdb_synced_at', '<', now()->subDay()))
+            ->orderBy('tmdb_synced_at')
+            ->limit(self::RETRY_LIMIT)
+            ->get()
+            ->each(function (Title $title) use (&$refreshed) {
+                try {
+                    $fresh = Importer::import('series', $title->tmdb_id, attachPlayers: false);
+                } catch (\Throwable) {
+                    $title->forceFill(['tmdb_synced_at' => now()])->save();
+
+                    return;
+                }
+                $fresh->forceFill(['tmdb_synced_at' => now()])->save();
+                $refreshed++;
+                // Сезони, які людина вже відкривала (episodes_loaded_at є) — теж
+                // освіжити, інакше нові серії поточного сезону не з'являться,
+                // доки хтось не відкриє його ще раз і не скине кеш вручну.
+                $fresh->seasons()->whereNotNull('episodes_loaded_at')
+                    ->where('episodes_loaded_at', '<', now()->subDay())
+                    ->each(fn ($season) => Importer::importSeason($fresh, $season));
+            });
+        $this->info("Оновлено серіалів, що тривають: {$refreshed}");
 
         return self::SUCCESS;
     }

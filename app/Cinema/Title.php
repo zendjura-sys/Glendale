@@ -55,6 +55,7 @@ class Title extends Model
             'flixcdn_translations' => 'array',
             'flixcdn_checked_at' => 'datetime',
             'shikimori_checked_at' => 'datetime',
+            'tmdb_synced_at' => 'datetime',
             'is_published' => 'boolean',
             'is_featured' => 'boolean',
             'vote_average' => 'float',
