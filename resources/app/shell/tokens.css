@@ -60,53 +60,57 @@
   --content-w: 1080px;
 }
 
+/* Темна тема — та сама палітра, що й кінопортал (resources/app/cinema.css,
+   .cinema { --k-* }): один синій акцент і один темний фон на весь сайт,
+   щоб звичайні картки/кнопки/модалки не «зіштовхувались» кольором зі
+   сторінками «Кіно», де раніше була своя, окрема синя тема. */
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #070605;
-  --card: rgba(30, 26, 20, 0.52);
-  --card-solid: #15120d;
-  --card-strong: rgba(34, 29, 22, 0.8);
+  --bg: #06070c;
+  --card: rgba(17, 19, 29, 0.78);
+  --card-solid: #11131d;
+  --card-strong: rgba(24, 27, 40, 0.85);
   --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-edge: rgba(255, 255, 255, 0.07);
+  --glass-edge: rgba(255, 255, 255, 0.08);
   --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0) 40%);
-  --header: rgba(22, 19, 14, 0.55);
+  --header: rgba(6, 7, 12, 0.86);
   --header-border: rgba(255, 255, 255, 0.08);
-  --field: rgba(255, 244, 220, 0.05);
-  --field-border: rgba(255, 244, 220, 0.08);
-  --separator: rgba(255, 244, 220, 0.07);
-  --hover: rgba(255, 244, 220, 0.05);
-  --active: rgba(227, 189, 106, 0.16);
-  --text: #f3ecdc;
-  --text-2: #a89c84;
-  --text-3: #766c59;
-  --accent: #e3bd6a;
-  --accent-2: #f0d08b;
-  --accent-soft: rgba(227, 189, 106, 0.16);
-  --gradient: linear-gradient(135deg, #a8792a 0%, #d9ad52 55%, #f3d68f 100%);
-  --link: #e8c67c;
-  --name: #f3ecdc;
-  --icon: #8a7f69;
-  --icon-accent: #e8c67c;
-  --btn-primary: #d4a843;
-  --btn-primary-hover: #e0b755;
-  --btn-primary-text: #140f05;
-  --btn-secondary: rgba(255, 244, 220, 0.07);
-  --btn-secondary-hover: rgba(255, 244, 220, 0.12);
-  --btn-secondary-text: #ecd297;
-  --bubble-in: rgba(255, 244, 220, 0.07);
-  --bubble-out: linear-gradient(135deg, #b98a2f 0%, #dcb259 100%);
+  --field: rgba(255, 255, 255, 0.05);
+  --field-border: rgba(255, 255, 255, 0.08);
+  --separator: rgba(255, 255, 255, 0.07);
+  --hover: rgba(91, 124, 255, 0.08);
+  --active: rgba(91, 124, 255, 0.16);
+  --text: #eef0f7;
+  --text-2: #8f96ab;
+  --text-3: #6b7086;
+  --accent: #5b7cff;
+  --accent-2: #3d5afe;
+  --accent-soft: rgba(91, 124, 255, 0.16);
+  --gradient: linear-gradient(135deg, #7b95ff 0%, #4f6dff 45%, #3a50e8 100%);
+  --link: #8ea2ff;
+  --name: #eef0f7;
+  --icon: #8f96ab;
+  --icon-accent: #8ea2ff;
+  --btn-primary: #5b7cff;
+  --btn-primary-hover: #7390ff;
+  --btn-primary-text: #ffffff;
+  --btn-secondary: rgba(255, 255, 255, 0.07);
+  --btn-secondary-hover: rgba(255, 255, 255, 0.12);
+  --btn-secondary-text: #c9d1ff;
+  --bubble-in: rgba(255, 255, 255, 0.07);
+  --bubble-out: linear-gradient(135deg, #3d5afe 0%, #5b7cff 100%);
   --im-bg: transparent;
   --overlay: rgba(0, 0, 0, 0.55);
   --shadow: 0 30px 70px rgba(0, 0, 0, 0.6), 0 6px 18px rgba(0, 0, 0, 0.35);
   --card-border: 0 1px 0 rgba(255, 255, 255, 0.07) inset, 0 0 0 1px var(--glass-edge), 0 18px 40px -18px rgba(0, 0, 0, 0.7);
   --lift: 0 1px 0 rgba(255, 255, 255, 0.1) inset, 0 0 0 1px rgba(255, 255, 255, 0.1), 0 28px 50px -18px rgba(0, 0, 0, 0.8),
-    0 0 40px -10px rgba(110, 100, 255, 0.25);
-  --aurora-1: #8a5a12;
-  --aurora-2: #c28a2c;
-  --aurora-3: #5a3a10;
-  --aurora-4: #3b2d6b;
+    0 0 40px -10px rgba(91, 124, 255, 0.25);
+  --aurora-1: #2b3a8f;
+  --aurora-2: #8a4d1f;
+  --aurora-3: #1c2454;
+  --aurora-4: #4a2ea8;
   --aurora-opacity: 0.3;
-  --bubble-out-text: #140f05;
-  --bubble-out-meta: rgba(20, 15, 5, 0.65);
+  --bubble-out-text: #ffffff;
+  --bubble-out-meta: rgba(255, 255, 255, 0.72);
 }
 

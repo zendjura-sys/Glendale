@@ -22,16 +22,17 @@ final class Importer
         $type = $type === 'series' || $type === 'tv' ? 'series' : 'movie';
         $endpoint = $type === 'series' ? "tv/{$tmdbId}" : "movie/{$tmdbId}";
         $data = Tmdb::get($endpoint, [
-            'append_to_response' => 'credits,videos,external_ids',
+            'append_to_response' => 'credits,videos,external_ids,translations',
             'include_video_language' => 'uk,en,null',
         ]);
 
         return DB::transaction(function () use ($type, $tmdbId, $data, $attachPlayers) {
             $date = $data['release_date'] ?? $data['first_air_date'] ?? null;
             $title = Title::query()->firstOrNew(['tmdb_id' => $tmdbId, 'type' => $type]);
+            $originalName = $data['original_title'] ?? $data['original_name'] ?? null;
             $title->fill([
-                'name' => $data['title'] ?? $data['name'] ?? 'Без назви',
-                'original_name' => $data['original_title'] ?? $data['original_name'] ?? null,
+                'name' => self::localizedName($data, $type, $data['title'] ?? $data['name'] ?? 'Без назви', $originalName),
+                'original_name' => $originalName,
                 'release_date' => $date ?: null,
                 'year' => $date ? (int) substr($date, 0, 4) : null,
                 'runtime' => $data['runtime'] ?? ($data['episode_run_time'][0] ?? null),
@@ -85,6 +86,31 @@ final class Importer
 
             return $title->fresh();
         });
+    }
+
+    /**
+     * TMDB не завжди має назву мовою сайту (uk-UA): якщо основне поле
+     * збіглося з оригінальною назвою (перекладу для запитаної мови нема —
+     * TMDB тоді просто повертає оригінал), пробуємо знайти назву в довіднику
+     * перекладів TMDB: спершу українську, потім російську (людина попросила
+     * саме такий порядок — «на украинский или русский»). Нема жодної —
+     * чесно лишаємо оригінал, а не вигадуємо переклад.
+     */
+    private static function localizedName(array $data, string $type, string $primary, ?string $originalName): string
+    {
+        if ($primary !== $originalName) {
+            return $primary;
+        }
+        $field = $type === 'series' ? 'name' : 'title';
+        foreach (['uk', 'ru'] as $lang) {
+            $translated = collect($data['translations']['translations'] ?? [])
+                ->first(fn ($t) => ($t['iso_639_1'] ?? null) === $lang && ! empty($t['data'][$field] ?? null));
+            if ($translated) {
+                return $translated['data'][$field];
+            }
+        }
+
+        return $primary;
     }
 
     /** Серії сезону — з TMDB, коли сезон уперше відкривають. */

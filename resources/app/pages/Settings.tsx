@@ -30,7 +30,7 @@ function ThemePicker() {
   return (
     <div className="theme-options">
       {option('light', tr('Светлая'), 'linear-gradient(135deg,#f6e3b4,#f3d9a4,#e9dcc0)', 'rgba(255,253,248,.7)', '#b08428')}
-      {option('dark', tr('Тёмная'), 'linear-gradient(135deg,#2a1d08,#4a3210,#1c1530)', 'rgba(30,26,20,.6)', '#e3bd6a')}
+      {option('dark', tr('Тёмная'), 'linear-gradient(135deg,#06070c,#11131d,#181b28)', 'rgba(17,19,29,.7)', '#5b7cff')}
     </div>
   );
 }

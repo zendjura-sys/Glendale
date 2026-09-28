@@ -116,6 +116,38 @@ class CinemaTest extends TestCase
         $this->assertSame(1, Title::query()->count());
     }
 
+    /**
+     * TMDB часто не має назви обкраїнською для нішевих азійських тайтлів —
+     * тоді основне поле збігається з оригінальною назвою. Маємо пробувати
+     * довідник перекладів TMDB: спершу uk, потім ru, а не показувати
+     * ієрогліфи, коли переклад насправді є, просто не в основному полі.
+     */
+    public function test_import_falls_back_to_tmdb_translations_when_no_ukrainian_title(): void
+    {
+        Http::fake([
+            'api.themoviedb.org/3/movie/9100*' => Http::response([
+                'id' => 9100, 'title' => '愛·回家之開心速遞', 'original_title' => '愛·回家之開心速遞',
+                'original_language' => 'zh', 'release_date' => '2017-01-01',
+                'translations' => ['translations' => [
+                    ['iso_639_1' => 'en', 'data' => ['title' => 'Come Home Love: Lo and Behold']],
+                    ['iso_639_1' => 'ru', 'data' => ['title' => 'Скандал']],
+                ]],
+            ]),
+        ]);
+
+        $title = Importer::import('movie', 9100);
+
+        $this->assertSame('Скандал', $title->name);
+        $this->assertSame('愛·回家之開心速遞', $title->original_name, 'оригінальну назву не чіпаємо');
+    }
+
+    /** Коли TMDB уже дав назву мовою сайту — довідник перекладів навіть не питаємо. */
+    public function test_import_keeps_tmdb_localized_title_as_is(): void
+    {
+        $title = Importer::import('movie', 603);
+        $this->assertSame('Матриця', $title->name);
+    }
+
     public function test_series_seasons_and_episodes_load_lazily(): void
     {
         $title = Importer::import('series', 1399);
