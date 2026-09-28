@@ -14,8 +14,8 @@
     $isUnionPage = App\Support\UnionDomain::matches(request());
     $pageTitle = $isUnionPage ? App\Support\DesignSettings::unionTitle() : ($design['siteName'] ?: config('app.name', 'Laravel'));
     $pageDescription = $isUnionPage
-        ? (App\Support\FamilyContent::unionAbout()[0] ?? 'Союз Monsory — окремий вхід для родин-партнерів.')
-        : (App\Support\FamilyContent::about()[0] ?? 'Monsory Family — закрита родина на RP-сервері.');
+        ? (App\Support\FamilyContent::unionAbout()[0] ?? (App\Support\DesignSettings::unionTitle().' — окремий вхід для родин-партнерів.'))
+        : (App\Support\FamilyContent::about()[0] ?? (($design['siteName'] ?: config('app.name', 'GameConnect')).' — родини та спільноти на RP-серверах.'));
     $ogImage = $design['logoUrl'] ?: asset('images/icons/icon-512.png');
 
     // Єдина оболонка (шапка, меню, нижня панель — ті самі, що в соцмережі).
