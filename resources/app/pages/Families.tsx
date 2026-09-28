@@ -314,7 +314,7 @@ function RegisterFamilyModal({ onClose }: { onClose: () => void }) {
 
 export function FamilyRow({ f }: { f: Family }) {
   return (
-    <div className="row">
+    <div className="row" style={f.color ? { boxShadow: `inset 3px 0 0 ${f.color}` } : undefined}>
       <Link to={`/families/${f.id}`}>
         <Avatar src={f.avatar} name={f.name} id={f.id + 300} square size={60} />
       </Link>
