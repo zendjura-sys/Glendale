@@ -83,6 +83,16 @@ export interface FamilyFull extends Family {
   union: { id: number; name: string; tag: string | null; status: FamilyStatus; role: 'founder' | 'member' } | null;
 }
 
+/** Профіль родини — опис, керівництво, посади, правила (керує лідер/заступник). */
+export interface FamilyProfile {
+  about: string[];
+  leadership: { title: string; text: string; nickname: string }[];
+  positions: { key: string; title: string; text: string; image: string }[];
+  promotionCriteria: string[];
+  rules: string;
+  members: { id: number; name: string; role: FamilyRole; positionKey: string | null }[];
+}
+
 export interface FamilyMember extends UserShort {
   role: FamilyRole;
   roleLabel: string;

@@ -121,6 +121,11 @@ Route::middleware(['auth:sanctum', 'throttle:240,1,api-v2'])->group(function () 
         Route::get('/families/{id}/members', [FamilyController::class, 'members']);
         Route::patch('/families/{id}/members/{userId}', [FamilyController::class, 'setRole']);
         Route::delete('/families/{id}/members/{userId}', [FamilyController::class, 'kick']);
+        // Профіль родини (опис, керівництво, посади, правила) — керує лідер/заступник, як і решта родини.
+        Route::get('/families/{id}/profile', [FamilyController::class, 'profile']);
+        Route::put('/families/{id}/profile', [FamilyController::class, 'updateProfile']);
+        Route::put('/families/{id}/profile/rules', [FamilyController::class, 'updateProfileRules']);
+        Route::put('/families/{id}/profile/members/{userId}/position', [FamilyController::class, 'updateMemberPosition']);
 
         // Союзи родин.
         Route::get('/unions', [UnionController::class, 'index']);

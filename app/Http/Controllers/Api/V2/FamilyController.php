@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers\Api\V2;
 
+use App\Families\FamilyContext;
+use App\Families\FamilyPositions;
 use App\Http\Controllers\Controller;
 use App\Social\Families;
 use App\Social\GameProjects;
 use App\Social\Presenter;
 use App\Social\Social;
+use App\Support\FamilyContent;
+use App\Support\FamilyRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -365,6 +369,97 @@ class FamilyController extends Controller
             Social::fail(403, 'Виключити заступника може лише лідер');
         }
         DB::table('family_members')->where('family_id', $family->id)->where('user_id', $userId)->delete();
+
+        return response()->json(['ok' => true]);
+    }
+
+    /**
+     * «Профіль родини» — опис, керівництво, посади, критерії підвищення,
+     * правила й посади учасників. Раніше жив лише в адмінці (окремим
+     * розділом, дивним для будь-якої родини, крім першої) — тепер це
+     * частина звичайної сторінки родини, як і решта керування нею.
+     * FamilyContent/FamilyRules/FamilyPositions читають активну родину з
+     * FamilyContext — тут її явно виставляємо на $id на час запиту.
+     */
+    public function profile(Request $request, int $id): JsonResponse
+    {
+        $family = $this->managed($id, $request);
+
+        return response()->json(FamilyContext::run($family->id, function () use ($family) {
+            $members = DB::table('family_members as m')->join('users as u', 'u.id', '=', 'm.user_id')
+                ->where('m.family_id', $family->id)
+                ->orderByRaw("CASE m.role WHEN 'leader' THEN 0 WHEN 'deputy' THEN 1 ELSE 2 END")->orderBy('u.name')
+                ->get(['u.id', 'u.name', 'm.role', 'm.position_key'])
+                ->map(fn ($m) => ['id' => $m->id, 'name' => $m->name, 'role' => $m->role, 'positionKey' => $m->position_key])->all();
+
+            return [
+                'about' => FamilyContent::about(),
+                'leadership' => FamilyContent::leadership(),
+                'positions' => FamilyContent::positions(),
+                'promotionCriteria' => FamilyContent::promotionCriteria(),
+                'rules' => FamilyRules::familyMarkdown(),
+                'members' => $members,
+            ];
+        }));
+    }
+
+    public function updateProfile(Request $request, int $id): JsonResponse
+    {
+        $family = $this->managed($id, $request);
+        $data = $request->validate([
+            'about' => ['present', 'array', 'max:10'],
+            'about.*' => ['nullable', 'string', 'max:600'],
+            'leadership' => ['present', 'array', 'max:24'],
+            'leadership.*.title' => ['required', 'string', 'max:80'],
+            'leadership.*.text' => ['nullable', 'string', 'max:400'],
+            'leadership.*.nickname' => ['nullable', 'string', 'max:40'],
+            'positions' => ['present', 'array', 'min:1', 'max:24'],
+            'positions.*.key' => ['nullable', 'string', 'max:80'],
+            'positions.*.title' => ['required', 'string', 'max:80'],
+            'positions.*.text' => ['nullable', 'string', 'max:400'],
+            'positions.*.image' => ['nullable', 'string', 'max:200'],
+            'promotionCriteria' => ['present', 'array', 'max:20'],
+            'promotionCriteria.*' => ['nullable', 'string', 'max:160'],
+        ]);
+
+        FamilyContext::run($family->id, function () use ($data, $family) {
+            foreach (['about', 'leadership', 'positions'] as $key) {
+                FamilyContent::save($key, $data[$key]);
+            }
+            FamilyContent::save('promotion_criteria', $data['promotionCriteria']);
+
+            // Посаду, якої більше немає, знімаємо з учасників — не лишаємо «висячий» ключ.
+            $keys = FamilyContent::positionKeys();
+            DB::table('family_members')->where('family_id', $family->id)
+                ->whereNotNull('position_key')->whereNotIn('position_key', $keys)->update(['position_key' => null]);
+            FamilyPositions::flush();
+        });
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function updateProfileRules(Request $request, int $id): JsonResponse
+    {
+        $family = $this->managed($id, $request);
+        $data = $request->validate(['rules' => ['nullable', 'string', 'max:60000']]);
+        FamilyContext::run($family->id, fn () => FamilyRules::saveFamilyMarkdown($data['rules'] ?? null));
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function updateMemberPosition(Request $request, int $id, int $userId): JsonResponse
+    {
+        $family = $this->managed($id, $request);
+        FamilyContext::run($family->id, function () use ($family, $userId, $request) {
+            $data = $request->validate(['positionKey' => ['nullable', 'string', 'in:'.implode(',', FamilyContent::positionKeys())]]);
+            abort_unless(DB::table('family_members')->where('family_id', $family->id)->where('user_id', $userId)->exists(), 404);
+
+            FamilyPositions::set($family->id, $userId, $data['positionKey'] ?? null);
+            // У першій родині (Monsory) стара колонка лишається синхронною.
+            if ($family->id === FamilyContext::defaultId()) {
+                DB::table('users')->where('id', $userId)->update(['position_key' => $data['positionKey'] ?? null]);
+            }
+        });
 
         return response()->json(['ok' => true]);
     }

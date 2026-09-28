@@ -32,7 +32,6 @@ final class ShellNav
             ['admin.discipline.index', 'Покарання', 'members.manage', 'scale', 'Догани, штрафи та інші дисциплінарні рішення.'],
         ]],
         ['Родина', [
-            ['admin.family-profile.index', 'Профіль родини', 'members.manage', 'crown', 'Опис, керівництво, посади й склад своєї родини.'],
             ['admin.progression.index', 'Прогресія', 'progression.manage', 'trending', 'Досвід, ранги, досягнення та тижневі бонуси родини.'],
             ['admin.family-goals.index', 'Цілі родини', 'goals.manage', 'target', 'Спільні цілі з прогресом та стрічка активності.'],
             ['admin.family-events.index', 'Події', 'events.manage', 'calendar', 'Календар родини й кіновечори.'],

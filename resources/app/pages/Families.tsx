@@ -8,6 +8,8 @@ import {
   BadgeCheck,
   Camera,
   Check,
+  ChevronDown,
+  ChevronUp,
   CircleX,
   Clock,
   Crown,
@@ -16,6 +18,7 @@ import {
   Pencil,
   Plus,
   Search,
+  Settings,
   Shield,
   Trash2,
   UserMinus,
@@ -23,7 +26,7 @@ import {
 } from 'lucide-react';
 import { api, form } from '../lib/api';
 import { useAuth, useMe } from '../lib/auth';
-import type { Family, FamilyFull, FamilyMember, FamilyRequest, FamilyStatus, GameProject, Me } from '../lib/types';
+import type { Family, FamilyFull, FamilyMember, FamilyProfile, FamilyRequest, FamilyStatus, GameProject, Me } from '../lib/types';
 import { countLabel, formatDate, fullName } from '../lib/utils';
 import { Avatar, Empty, Modal, Spinner, pickFile } from '../components/ui';
 
@@ -612,6 +615,208 @@ function Members({ family }: { family: FamilyFull }) {
   );
 }
 
+const PROFILE_ROLE_LABELS: Record<string, string> = { leader: 'Лідер', deputy: 'Заступник', member: 'Учасник' };
+
+const PROFILE_TABS = [
+  { key: 'about', label: 'Про родину' },
+  { key: 'positions', label: 'Посади' },
+  { key: 'members', label: 'Склад' },
+  { key: 'rules', label: 'Правила' },
+] as const;
+
+/**
+ * Профіль родини — опис, керівництво, посади, критерії підвищення й
+ * правила. Раніше жив лише в адмінці (окремим розділом, дивним для
+ * будь-якої родини, крім Monsory) — тепер частина сторінки родини, як і
+ * решта керування нею: розгортається тут же, для лідера й заступника.
+ */
+function FamilyManage({ family }: { family: FamilyFull }) {
+  const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<(typeof PROFILE_TABS)[number]['key']>('about');
+  const qc = useQueryClient();
+  const key = ['family', family.id, 'profile'];
+  const { data: p, isLoading } = useQuery({ queryKey: key, queryFn: () => api<FamilyProfile>(`/families/${family.id}/profile`), enabled: open });
+  const [form, setForm] = useState<FamilyProfile | null>(null);
+  const [rules, setRules] = useState('');
+  const [error, setError] = useState('');
+  if (p && form === null) {
+    setForm({ ...p, about: p.about.length ? [...p.about] : [''] });
+    setRules(p.rules);
+  }
+  const move = <T,>(list: T[], i: number, d: number): T[] => {
+    const rows = [...list];
+    const j = i + d;
+    if (j < 0 || j >= rows.length) return rows;
+    [rows[i], rows[j]] = [rows[j], rows[i]];
+    return rows;
+  };
+  const saveContent = async () => {
+    if (!form) return;
+    try {
+      await api(`/families/${family.id}/profile`, {
+        method: 'PUT',
+        body: { about: form.about, leadership: form.leadership, positions: form.positions, promotionCriteria: form.promotionCriteria },
+      });
+      qc.invalidateQueries({ queryKey: key });
+      setError('');
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+  const saveRules = async () => {
+    try {
+      await api(`/families/${family.id}/profile/rules`, { method: 'PUT', body: { rules } });
+      qc.invalidateQueries({ queryKey: key });
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+  const setPosition = async (userId: number, key_: string) => {
+    await api(`/families/${family.id}/profile/members/${userId}/position`, { method: 'PUT', body: { positionKey: key_ || null } });
+    qc.invalidateQueries({ queryKey: key });
+  };
+  const field = 'field';
+  return (
+    <div className="card" style={{ padding: 20 }}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', border: 0, color: 'inherit', cursor: 'pointer', font: 'inherit' }}
+      >
+        <Settings size={18} />
+        <b style={{ flex: 1, textAlign: 'left' }}>{tr('Керування родиною')}</b>
+        {open ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+      </button>
+      {open && (
+        <div style={{ marginTop: 16 }}>
+          {isLoading && <Spinner />}
+          {form && (
+            <>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+                {PROFILE_TABS.map((t) => (
+                  <button key={t.key} className={`chip${tab === t.key ? ' on' : ''}`} onClick={() => setTab(t.key)}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+
+              {tab === 'about' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div>
+                    <div className="label">{tr('Про родину')}</div>
+                    {form.about.map((v, i) => (
+                      <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                        <textarea className={field} rows={2} value={v} onChange={(e) => setForm({ ...form, about: form.about.map((x, j) => (j === i ? e.target.value : x)) })} />
+                        <button type="button" className="icon-btn" onClick={() => setForm({ ...form, about: form.about.filter((_, j) => j !== i) })}>
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ))}
+                    <button type="button" className="chip" onClick={() => setForm({ ...form, about: [...form.about, ''] })}>
+                      + {tr('Абзац')}
+                    </button>
+                  </div>
+                  <div>
+                    <div className="label">{tr('Структура керівництва')}</div>
+                    {form.leadership.map((u, i) => (
+                      <div key={i} className="card" style={{ padding: 12, marginBottom: 8 }}>
+                        <input className={field} placeholder={tr('Напрямок, напр. Бізвар')} value={u.title} onChange={(e) => setForm({ ...form, leadership: form.leadership.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)) })} />
+                        <input className={field} style={{ marginTop: 8 }} placeholder={tr('Нік у грі')} value={u.nickname} onChange={(e) => setForm({ ...form, leadership: form.leadership.map((x, j) => (j === i ? { ...x, nickname: e.target.value } : x)) })} />
+                        <textarea className={field} style={{ marginTop: 8 }} rows={2} placeholder={tr('Опис')} value={u.text} onChange={(e) => setForm({ ...form, leadership: form.leadership.map((x, j) => (j === i ? { ...x, text: e.target.value } : x)) })} />
+                        <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                          <button type="button" className="icon-btn" onClick={() => setForm({ ...form, leadership: move(form.leadership, i, -1) })}>↑</button>
+                          <button type="button" className="icon-btn" onClick={() => setForm({ ...form, leadership: move(form.leadership, i, 1) })}>↓</button>
+                          <button type="button" className="icon-btn" style={{ marginLeft: 'auto' }} onClick={() => setForm({ ...form, leadership: form.leadership.filter((_, j) => j !== i) })}>
+                            <X size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    <button type="button" className="chip" onClick={() => setForm({ ...form, leadership: [...form.leadership, { title: '', text: '', nickname: '' }] })}>
+                      + {tr('Напрямок')}
+                    </button>
+                  </div>
+                  {error && <div className="error-text">{error}</div>}
+                  <button className="btn" onClick={saveContent}>{tr('Зберегти')}</button>
+                </div>
+              )}
+
+              {tab === 'positions' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div>
+                    <div className="label">{tr('Посади')}</div>
+                    <p className="muted" style={{ fontSize: 12, marginBottom: 8 }}>{tr('Від нижчої до вищої. Видалену посаду буде знято з учасників.')}</p>
+                    {form.positions.map((pos, i) => (
+                      <div key={pos.key || i} className="card" style={{ padding: 12, marginBottom: 8 }}>
+                        <input className={field} placeholder={tr('Назва посади')} value={pos.title} onChange={(e) => setForm({ ...form, positions: form.positions.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)) })} />
+                        <textarea className={field} style={{ marginTop: 8 }} rows={2} placeholder={tr("Обов'язки / опис")} value={pos.text} onChange={(e) => setForm({ ...form, positions: form.positions.map((x, j) => (j === i ? { ...x, text: e.target.value } : x)) })} />
+                        <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                          <button type="button" className="icon-btn" onClick={() => setForm({ ...form, positions: move(form.positions, i, -1) })}>↑</button>
+                          <button type="button" className="icon-btn" onClick={() => setForm({ ...form, positions: move(form.positions, i, 1) })}>↓</button>
+                          <button type="button" className="icon-btn" style={{ marginLeft: 'auto' }} onClick={() => setForm({ ...form, positions: form.positions.filter((_, j) => j !== i) })}>
+                            <X size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    <button type="button" className="chip" onClick={() => setForm({ ...form, positions: [...form.positions, { key: '', title: '', text: '', image: '' }] })}>
+                      + {tr('Посада')}
+                    </button>
+                  </div>
+                  <div>
+                    <div className="label">{tr('Критерії підвищення')}</div>
+                    {form.promotionCriteria.map((v, i) => (
+                      <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                        <input className={field} value={v} onChange={(e) => setForm({ ...form, promotionCriteria: form.promotionCriteria.map((x, j) => (j === i ? e.target.value : x)) })} />
+                        <button type="button" className="icon-btn" onClick={() => setForm({ ...form, promotionCriteria: form.promotionCriteria.filter((_, j) => j !== i) })}>
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ))}
+                    <button type="button" className="chip" onClick={() => setForm({ ...form, promotionCriteria: [...form.promotionCriteria, ''] })}>
+                      + {tr('Критерій')}
+                    </button>
+                  </div>
+                  {error && <div className="error-text">{error}</div>}
+                  <button className="btn" onClick={saveContent}>{tr('Зберегти')}</button>
+                </div>
+              )}
+
+              {tab === 'members' && (
+                <div>
+                  <p className="muted" style={{ fontSize: 12, marginBottom: 12 }}>{tr('Посада учасника — у цій родині. Ролі (лідер, заступник) — вище, у складі родини.')}</p>
+                  {form.members.map((m) => (
+                    <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderTop: '1px solid var(--separator)' }}>
+                      <span style={{ flex: 1, minWidth: 0 }} className="ellipsis">{m.name}</span>
+                      <span className="muted" style={{ fontSize: 12 }}>{PROFILE_ROLE_LABELS[m.role]}</span>
+                      <select className="field" style={{ width: 'auto' }} value={m.positionKey ?? ''} onChange={(e) => setPosition(m.id, e.target.value)}>
+                        <option value="">{tr('— без посади —')}</option>
+                        {form.positions.map((pos) => (
+                          <option key={pos.key} value={pos.key}>{pos.title}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {tab === 'rules' && (
+                <div>
+                  <p className="muted" style={{ fontSize: 12, marginBottom: 12 }}>
+                    {tr('Формат, як у Discord: «# 1. Розділ», «**1.1 Текст пункту**», блоки ```diff з рядками «- покарання» і «! примітка». Показуються учасникам у «Правилах».')}
+                  </p>
+                  <textarea className={field} rows={20} style={{ fontFamily: 'monospace', fontSize: 12 }} value={rules} onChange={(e) => setRules(e.target.value)} />
+                  <button className="btn" style={{ marginTop: 12 }} onClick={saveRules}>{tr('Зберегти правила')}</button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function FamilyPage() {
   const { id } = useParams();
   const familyId = Number(id);
@@ -790,6 +995,7 @@ export function FamilyPage() {
         </div>
       )}
 
+      {f.canManage && <FamilyManage family={f} />}
       {f.canManage && f.requestsCount > 0 && <Requests family={f} />}
       <Members family={f} />
       {f.myRole && f.status === 'verified' && (

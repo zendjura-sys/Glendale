@@ -157,6 +157,64 @@ class FamilyApiTest extends TestCase
             ->assertOk()->assertJsonPath('color', null);
     }
 
+    /**
+     * «Профіль родини» (опис, керівництво, посади, правила) раніше жив
+     * лише в адмінці — тепер це звичайні ендпоінти родини, доступні
+     * лідеру/заступнику будь-якої родини (не лише першої).
+     */
+    public function test_leader_manages_family_profile_like_any_other_family_tool(): void
+    {
+        $leader = $this->user('Лідер');
+        $family = $this->register($leader);
+        $this->actingAs($this->admin())->post("/admin/families/{$family['id']}/verify");
+        $familyId = $family['id'];
+
+        $member = $this->user('Новачок');
+        Sanctum::actingAs($member);
+        $this->postJson("/api/v2/families/{$familyId}/join", ['message' => 'привіт'])->assertOk();
+        Sanctum::actingAs($leader);
+        $this->postJson("/api/v2/families/{$familyId}/requests/{$member->id}")->assertOk();
+
+        // Звичайний учасник (не лідер/заступник) до профілю не має доступу.
+        Sanctum::actingAs($member);
+        $this->getJson("/api/v2/families/{$familyId}/profile")->assertForbidden();
+
+        Sanctum::actingAs($leader);
+        $this->getJson("/api/v2/families/{$familyId}/profile")
+            ->assertOk()
+            ->assertJsonPath('members.0.name', fn ($v) => in_array($v, ['Лідер Test', 'Новачок Test'], true));
+
+        $this->putJson("/api/v2/families/{$familyId}/profile", [
+            'about' => ['Ми — сім\'я Corleone.'],
+            'leadership' => [['title' => 'Бізвар', 'text' => 'Керує заступник', 'nickname' => 'Deputy_Nick']],
+            'positions' => [
+                ['key' => 'newbie', 'title' => 'Новачок', 'text' => '', 'image' => ''],
+                ['key' => 'boss', 'title' => 'Бос', 'text' => '', 'image' => ''],
+            ],
+            'promotionCriteria' => ['Активність 2 тижні'],
+        ])->assertOk();
+
+        $profile = $this->getJson("/api/v2/families/{$familyId}/profile")->json();
+        $this->assertSame(['Ми — сім\'я Corleone.'], $profile['about']);
+        $this->assertSame('boss', $profile['positions'][1]['key']);
+
+        $this->putJson("/api/v2/families/{$familyId}/profile/rules", ['rules' => "# 1. Загальне\n**1.1 Текст**"])->assertOk();
+        $this->assertStringContainsString('1.1 Текст', $this->getJson("/api/v2/families/{$familyId}/profile")->json('rules'));
+
+        $this->putJson("/api/v2/families/{$familyId}/profile/members/{$member->id}/position", ['positionKey' => 'boss'])->assertOk();
+        $updated = collect($this->getJson("/api/v2/families/{$familyId}/profile")->json('members'))->firstWhere('id', $member->id);
+        $this->assertSame('boss', $updated['positionKey']);
+
+        // Прибрана посада знімається з учасників, а не лишається "висячим" ключем.
+        $this->putJson("/api/v2/families/{$familyId}/profile", [
+            'about' => [], 'leadership' => [],
+            'positions' => [['key' => 'newbie', 'title' => 'Новачок', 'text' => '', 'image' => '']],
+            'promotionCriteria' => [],
+        ])->assertOk();
+        $cleared = collect($this->getJson("/api/v2/families/{$familyId}/profile")->json('members'))->firstWhere('id', $member->id);
+        $this->assertNull($cleared['positionKey']);
+    }
+
     public function test_unions_flow(): void
     {
         $admin = $this->admin();
