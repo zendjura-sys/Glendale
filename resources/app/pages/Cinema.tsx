@@ -84,6 +84,9 @@ function CinemaTabs() {
         <NavLink to="/cinema" end>
           <Home size={17} /> {tr('Головна')}
         </NavLink>
+        <Link to="/cinema/browse" className={pathname === '/cinema/browse' && !cat ? 'active' : ''}>
+          <Clapperboard size={17} /> {tr('Усі')}
+        </Link>
         {tabs.map(({ key, label, icon: Icon }) => (
           <Link key={key} to={`/cinema/browse?category=${key}`} className={cat === key ? 'active' : ''}>
             <Icon size={17} /> {tr(label)}
@@ -608,16 +611,6 @@ export function CinemaBrowsePage() {
         {data && <span className="k-total">{tr('Знайдено')}: {data.pages[0].total}</span>}
       </SectionHead>
       <div className="k-filters">
-        <div className="k-pills">
-          <button className={category === '' ? 'on' : ''} onClick={() => set('category', '')}>
-            {tr('Усі')}
-          </button>
-          {CINEMA_SECTIONS.map((s) => (
-            <button key={s.key} className={category === s.key ? 'on' : ''} onClick={() => set('category', s.key)}>
-              {tr(s.label)}
-            </button>
-          ))}
-        </div>
         <div className="k-filters-right">
           <select className="k-select" value={genre} onChange={(e) => set('genre', e.target.value)}>
             <option value="">{tr('Усі жанри')}</option>
