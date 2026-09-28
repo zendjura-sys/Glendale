@@ -69,6 +69,14 @@ final class Kodik
         if ($title->imdb_id) {
             $queries[] = ['imdb_id' => $title->imdb_id];
         }
+        // MyDramaList — для азіатських дорам; WorldArt — рідше, теж для аніме.
+        // Обидва — лише вручну в адмінці (немає джерела для автопошуку).
+        if ($title->mdl_id) {
+            $queries[] = ['mdl_id' => $title->mdl_id];
+        }
+        if ($title->worldart_link) {
+            $queries[] = ['worldart_link' => $title->worldart_link];
+        }
         $queries[] = array_filter(['title' => $title->original_name ?: $title->name, 'year' => $title->year]);
 
         foreach ($queries as $query) {

@@ -32,6 +32,7 @@ class AttachPlayerJob implements ShouldQueue
         match ($this->source) {
             'kodik' => Kodik::attach($title),
             'flixcdn' => FlixCdn::attach($title),
+            'shikimori' => Shikimori::attach($title),
             default => null,
         };
     }

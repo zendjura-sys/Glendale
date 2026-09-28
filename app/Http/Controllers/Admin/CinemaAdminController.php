@@ -39,6 +39,9 @@ class CinemaAdminController extends Controller
                 'year' => $t->year,
                 'tmdbId' => $t->tmdb_id,
                 'shikimoriId' => $t->shikimori_id,
+                'imdbId' => $t->imdb_id,
+                'mdlId' => $t->mdl_id,
+                'worldartLink' => $t->worldart_link,
                 'poster' => Tmdb::image($t->poster_path, 'w92'),
                 'rating' => $t->vote_average,
                 'localRating' => $t->local_rating,
@@ -173,7 +176,7 @@ class CinemaAdminController extends Controller
      */
     public function bulkAttachPlayers(Request $request): RedirectResponse
     {
-        $data = $request->validate(['source' => ['required', 'in:kodik,flixcdn']]);
+        $data = $request->validate(['source' => ['required', 'in:kodik,flixcdn,shikimori']]);
         $source = $data['source'];
 
         if ($source === 'kodik' && ! Kodik::configured()) {
@@ -183,15 +186,20 @@ class CinemaAdminController extends Controller
             return back()->withErrors(['bulk' => 'Спершу вкажіть токен FlixCDN у налаштуваннях.']);
         }
 
-        $column = $source === 'kodik' ? 'kodik_link' : 'flixcdn_link';
-        $ids = Title::query()->whereNull($column)->orderBy('id')->limit(500)->pluck('id');
+        $query = match ($source) {
+            'kodik' => Title::query()->whereNull('kodik_link'),
+            'flixcdn' => Title::query()->whereNull('flixcdn_link'),
+            // Shikimori — лише каталог аніме, для решти категорій id не існує.
+            'shikimori' => Title::query()->where('category', 'anime')->whereNull('shikimori_id'),
+        };
+        $ids = $query->orderBy('id')->limit(500)->pluck('id');
         foreach ($ids as $id) {
             AttachPlayerJob::dispatch($source, $id);
         }
 
-        $label = $source === 'kodik' ? 'Kodik' : 'FlixCDN';
+        $label = ['kodik' => 'Kodik', 'flixcdn' => 'FlixCDN', 'shikimori' => 'Shikimori ID'][$source];
 
-        return back()->with('status', "У черзі на пошук {$label}: {$ids->count()}. Плеєри з'являться за кілька хвилин.");
+        return back()->with('status', "У черзі на пошук {$label}: {$ids->count()}. Результат з'явиться за кілька хвилин.");
     }
 
     public function update(Request $request, int $id): RedirectResponse
@@ -201,21 +209,24 @@ class CinemaAdminController extends Controller
             'published' => ['sometimes', 'boolean'],
             'featured' => ['sometimes', 'boolean'],
             'category' => ['sometimes', 'in:'.implode(',', array_keys(Title::CATEGORIES))],
-            // tmdb_id/shikimori_id — не для користувачів, лише в адмінці
-            // (звідси й керує ними Kodik::search — найточніший збіг для
-            // аніме й дорам саме через shikimori_id).
+            // Приховані від користувачів ідентифікатори — лише в адмінці:
+            // Kodik::search пробує їх у порядку точності (shikimori_id →
+            // imdb_id → mdl_id → worldart_link → назва/рік востаннє).
             'tmdb_id' => ['sometimes', 'nullable', 'integer', 'unique:cinema_titles,tmdb_id,'.$title->id.',id,type,'.$title->type],
             'shikimori_id' => ['sometimes', 'nullable', 'integer'],
+            'imdb_id' => ['sometimes', 'nullable', 'string', 'max:20'],
+            'mdl_id' => ['sometimes', 'nullable', 'integer'],
+            'worldart_link' => ['sometimes', 'nullable', 'string', 'max:255'],
         ]);
-        // tmdb_id/shikimori_id можуть свідомо очищуватись (null) —
-        // на відміну від published/featured/category, array_filter тут
-        // не годиться, бо він прибрав би саме null-значення.
+        // Ці поля можуть свідомо очищуватись (null) — на відміну від
+        // published/featured/category, array_filter тут не годиться, бо
+        // він прибрав би саме null-значення.
         $updates = array_filter([
             'is_published' => $data['published'] ?? null,
             'is_featured' => $data['featured'] ?? null,
             'category' => $data['category'] ?? null,
         ], fn ($v) => $v !== null);
-        foreach (['tmdb_id', 'shikimori_id'] as $key) {
+        foreach (['tmdb_id', 'shikimori_id', 'imdb_id', 'mdl_id', 'worldart_link'] as $key) {
             if (array_key_exists($key, $data)) {
                 $updates[$key] = $data[$key];
             }

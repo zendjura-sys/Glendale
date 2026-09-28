@@ -125,11 +125,15 @@ function filter() {
     router.get(route('admin.cinema.index'), { q: q.value || undefined, type: type.value || undefined }, { preserveState: true, preserveScroll: true, replace: true });
 }
 const toggle = (t, field) => router.patch(route('admin.cinema.update', t.id), { [field]: !t[field] }, { preserveScroll: true });
-// tmdb_id/shikimori_id — приховані від користувачів, лише для адмінки:
-// Kodik шукає плеєр саме за ними (shikimori_id найточніший для аніме/дорам).
+// Приховані від користувачів ідентифікатори, лише для адмінки: Kodik
+// шукає плеєр саме за ними, у порядку точності (shikimori_id найточніший
+// для аніме/дорам, mdl_id — теж для дорам, imdb_id/worldart_link — решта).
+const TEXT_FIELDS = ['imdb_id', 'worldart_link'];
 function saveExternalIds(t, event) {
     const value = event.target.value.trim();
-    router.patch(route('admin.cinema.update', t.id), { [event.target.dataset.field]: value === '' ? null : Number(value) }, { preserveScroll: true });
+    const field = event.target.dataset.field;
+    const parsed = value === '' ? null : TEXT_FIELDS.includes(field) ? value : Number(value);
+    router.patch(route('admin.cinema.update', t.id), { [field]: parsed }, { preserveScroll: true });
 }
 const refresh = (t) => router.post(route('admin.cinema.refresh', t.id), {}, { preserveScroll: true });
 const kodik = (t) => router.post(route('admin.cinema.kodik', t.id), {}, { preserveScroll: true });
@@ -189,7 +193,7 @@ const act = 'rounded-lg px-2 py-1 text-[11px] text-white/55 hover:bg-white/5 hov
                 <button :class="btn">Знайти</button>
             </form>
 
-            <div v-if="settings.kodikConfigured || settings.flixcdnConfigured" class="mb-4 flex flex-wrap gap-2">
+            <div class="mb-4 flex flex-wrap gap-2">
                 <button
                     v-if="settings.kodikConfigured"
                     :class="[pill, pillOff]"
@@ -205,6 +209,14 @@ const act = 'rounded-lg px-2 py-1 text-[11px] text-white/55 hover:bg-white/5 hov
                     @click="bulkAttachPlayers('flixcdn')"
                 >
                     {{ attachingPlayers === 'flixcdn' ? 'Ставлю в чергу…' : 'Проставити FlixCDN на всі' }}
+                </button>
+                <button
+                    :class="[pill, pillOff]"
+                    :disabled="attachingPlayers === 'shikimori'"
+                    title="Пошук за назвою в каталозі аніме shikimori.one — токен не потрібен"
+                    @click="bulkAttachPlayers('shikimori')"
+                >
+                    {{ attachingPlayers === 'shikimori' ? 'Ставлю в чергу…' : 'Проставити Shikimori ID на всі аніме' }}
                 </button>
             </div>
 
@@ -243,6 +255,39 @@ const act = 'rounded-lg px-2 py-1 text-[11px] text-white/55 hover:bg-white/5 hov
                                     data-field="shikimori_id"
                                     placeholder="для аніме/дорам"
                                     class="w-28 rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-white/80 placeholder:text-white/25 focus:border-gold-400/40 focus:ring-0"
+                                    @change="saveExternalIds(t, $event)"
+                                />
+                            </label>
+                            <label class="flex items-center gap-1">
+                                IMDb ID
+                                <input
+                                    type="text"
+                                    :value="t.imdbId"
+                                    data-field="imdb_id"
+                                    placeholder="tt0133093"
+                                    class="w-28 rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-white/80 placeholder:text-white/25 focus:border-gold-400/40 focus:ring-0"
+                                    @change="saveExternalIds(t, $event)"
+                                />
+                            </label>
+                            <label class="flex items-center gap-1">
+                                MyDramaList ID
+                                <input
+                                    type="number"
+                                    :value="t.mdlId"
+                                    data-field="mdl_id"
+                                    placeholder="для дорам"
+                                    class="w-24 rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-white/80 placeholder:text-white/25 focus:border-gold-400/40 focus:ring-0"
+                                    @change="saveExternalIds(t, $event)"
+                                />
+                            </label>
+                            <label class="flex items-center gap-1">
+                                WorldArt
+                                <input
+                                    type="text"
+                                    :value="t.worldartLink"
+                                    data-field="worldart_link"
+                                    placeholder="посилання"
+                                    class="w-36 rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-white/80 placeholder:text-white/25 focus:border-gold-400/40 focus:ring-0"
                                     @change="saveExternalIds(t, $event)"
                                 />
                             </label>

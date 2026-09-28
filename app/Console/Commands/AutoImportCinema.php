@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Cinema\Importer;
 use App\Cinema\ImportTitleJob;
 use App\Cinema\PlayerSources;
+use App\Cinema\Shikimori;
 use App\Cinema\Title;
 use App\Cinema\Tmdb;
 use Illuminate\Console\Command;
@@ -83,6 +84,21 @@ class AutoImportCinema extends Command
                 $retried++;
             });
         $this->info("Повторний пошук плеєра: {$retried}");
+
+        // Аніме без shikimori_id — заднім числом (імпортовані до появи цього
+        // поля, або перша спроба Importer::import не знайшла точний збіг).
+        $shikimoriRetried = 0;
+        Title::query()
+            ->where('category', 'anime')->whereNull('shikimori_id')
+            ->where(fn ($q) => $q->whereNull('shikimori_checked_at')->orWhere('shikimori_checked_at', '<', now()->subDay()))
+            ->orderBy('id')
+            ->limit(self::RETRY_LIMIT)
+            ->get()
+            ->each(function (Title $title) use (&$shikimoriRetried) {
+                Shikimori::attach($title);
+                $shikimoriRetried++;
+            });
+        $this->info("Повторний пошук Shikimori ID: {$shikimoriRetried}");
 
         return self::SUCCESS;
     }

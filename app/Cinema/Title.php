@@ -54,6 +54,7 @@ class Title extends Model
             'kodik_checked_at' => 'datetime',
             'flixcdn_translations' => 'array',
             'flixcdn_checked_at' => 'datetime',
+            'shikimori_checked_at' => 'datetime',
             'is_published' => 'boolean',
             'is_featured' => 'boolean',
             'vote_average' => 'float',

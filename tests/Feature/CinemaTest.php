@@ -289,6 +289,45 @@ class CinemaTest extends TestCase
         $this->assertNull($title->fresh()->shikimori_id);
     }
 
+    /** imdb_id/mdl_id/worldart_link — теж редаговані в адмінці й теж у пріоритетному ланцюжку Kodik::search. */
+    public function test_admin_sets_mdl_and_worldart_ids_and_kodik_uses_them_in_priority_order(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin);
+        $title = Importer::import('movie', 603, attachPlayers: false);
+
+        $this->patch("/admin/cinema/titles/{$title->id}", [
+            'imdb_id' => 'tt0133093',
+            'mdl_id' => 5525,
+            'worldart_link' => 'http://www.world-art.ru/animation/animation.php?id=123',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $title->refresh();
+        $this->assertSame('tt0133093', $title->imdb_id);
+        $this->assertSame(5525, $title->mdl_id);
+        $this->assertSame('http://www.world-art.ru/animation/animation.php?id=123', $title->worldart_link);
+
+        // Немає shikimori_id — Kodik іде одразу до imdb_id (наступного в ланцюжку).
+        $this->post("/admin/cinema/titles/{$title->id}/kodik")->assertRedirect();
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), 'imdb_id=tt0133093'));
+
+        // Текстові поля теж мають коректно очищуватись до null.
+        $this->patch("/admin/cinema/titles/{$title->id}", ['worldart_link' => null])->assertRedirect();
+        $this->assertNull($title->fresh()->worldart_link);
+    }
+
+    /** Без shikimori_id/imdb_id Kodik::search пробує mdl_id — наступний за пріоритетом. */
+    public function test_kodik_search_uses_mdl_id_when_no_shikimori_or_imdb(): void
+    {
+        $title = Title::create([
+            'tmdb_id' => 9020, 'type' => 'movie', 'name' => 'Дорама без Shikimori/IMDb',
+            'mdl_id' => 5525, 'worldart_link' => 'http://www.world-art.ru/animation/animation.php?id=123',
+        ]);
+
+        \App\Cinema\Kodik::search($title);
+
+        Http::assertSent(fn ($request) => str_contains((string) $request->url(), 'mdl_id=5525'));
+    }
+
     public function test_regular_user_cannot_open_cinema_admin(): void
     {
         $this->seed(SystemPermissionsSeeder::class);

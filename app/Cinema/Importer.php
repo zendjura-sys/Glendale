@@ -59,6 +59,13 @@ final class Importer
                 self::syncSeasons($title, $data['seasons'] ?? []);
             }
 
+            // Shikimori id — автоматично, ще до Kodik: аніме в TMDB часто без
+            // IMDb id чи з іншою назвою, тож Kodik::search() з цим id знайде
+            // точніше (одразу тут-таки, за той самий виклик).
+            if ($attachPlayers && $title->category === 'anime' && ! $title->shikimori_id) {
+                Shikimori::attach($title);
+            }
+
             // Обидва балансери — паралельно, кожен незалежно (якщо один не дав
             // результату чи вимкнений, другий усе одно спробує).
             if ($attachPlayers && Kodik::configured()) {
