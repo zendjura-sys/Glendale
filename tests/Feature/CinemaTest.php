@@ -689,4 +689,38 @@ class CinemaTest extends TestCase
         Http::assertNotSent(fn ($request) => str_contains((string) $request->url(), '/tv/1400'));
         $this->travelBack();
     }
+
+    /** Чорний список і мінімальний рік обмежують лише автозаповнення — ручний імпорт за посиланням ними не керується. */
+    public function test_auto_import_skips_blacklisted_and_too_old_titles(): void
+    {
+        $this->travelTo(\Illuminate\Support\Carbon::createFromTimestamp(0));
+        \Illuminate\Support\Facades\Queue::fake();
+        \App\Models\Setting::set(CinemaSettings::BLACKLIST, '950, 951', 'cinema');
+        \App\Models\Setting::set(CinemaSettings::MIN_YEAR, '2020', 'cinema');
+        Http::fake([
+            'api.themoviedb.org/3/trending/all/week*' => Http::response(['results' => [
+                ['id' => 950, 'media_type' => 'movie', 'title' => 'У чорному списку', 'release_date' => '2026-01-01'],
+                ['id' => 952, 'media_type' => 'movie', 'title' => 'Застарий', 'release_date' => '2015-01-01'],
+                ['id' => 953, 'media_type' => 'movie', 'title' => 'Норм', 'release_date' => '2026-01-01'],
+            ]]),
+        ]);
+
+        $this->artisan('cinema:auto-import')->assertSuccessful();
+
+        \Illuminate\Support\Facades\Queue::assertNotPushed(fn (\App\Cinema\ImportTitleJob $j) => $j->tmdbId === 950);
+        \Illuminate\Support\Facades\Queue::assertNotPushed(fn (\App\Cinema\ImportTitleJob $j) => $j->tmdbId === 952);
+        \Illuminate\Support\Facades\Queue::assertPushed(fn (\App\Cinema\ImportTitleJob $j) => $j->tmdbId === 953);
+        $this->travelBack();
+    }
+
+    public function test_admin_saves_blacklist_and_min_year(): void
+    {
+        $this->actingAs($this->admin());
+        $this->withoutVite();
+
+        $this->put('/admin/cinema/settings', ['blacklist' => "603\n1399", 'minYear' => 2015, 'language' => 'uk-UA'])->assertRedirect();
+
+        $this->assertSame([603, 1399], CinemaSettings::blacklist());
+        $this->assertSame(2015, CinemaSettings::minYear());
+    }
 }

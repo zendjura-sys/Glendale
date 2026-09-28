@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Cinema\CinemaSettings;
 use App\Cinema\Importer;
 use App\Cinema\ImportTitleJob;
 use App\Cinema\PlayerSources;
@@ -53,16 +54,22 @@ class AutoImportCinema extends Command
         $list = self::LISTS[$tick % count(self::LISTS)];
         $page = 1 + intdiv($tick, count(self::LISTS)) % 20;
 
+        $blacklist = CinemaSettings::blacklist();
+        $minYear = CinemaSettings::minYear();
         $queued = 0;
         try {
             foreach (Importer::browse($list, $page) as $row) {
                 if ($queued >= self::QUEUE_LIMIT) {
                     break;
                 }
-                if (! $row['imported']) {
-                    ImportTitleJob::dispatch($row['type'], $row['tmdbId']);
-                    $queued++;
+                if ($row['imported'] || in_array($row['tmdbId'], $blacklist, true)) {
+                    continue;
                 }
+                if ($minYear !== null && $row['year'] !== null && $row['year'] < $minYear) {
+                    continue;
+                }
+                ImportTitleJob::dispatch($row['type'], $row['tmdbId']);
+                $queued++;
             }
         } catch (\Throwable $e) {
             $this->warn("TMDB ({$list}, стор. {$page}) недоступний: {$e->getMessage()}");

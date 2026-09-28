@@ -32,6 +32,8 @@ const settingsForm = useForm({
     clearTmdb: false,
     clearKodik: false,
     clearFlixcdn: false,
+    blacklist: props.settings.blacklist,
+    minYear: props.settings.minYear,
 });
 const saveSettings = () =>
     settingsForm.put(route('admin.cinema.settings'), {
@@ -420,6 +422,16 @@ const act = 'rounded-lg px-2 py-1 text-[11px] text-white/55 hover:bg-white/5 hov
                         <option value="de-DE">Deutsch</option>
                         <option value="pl-PL">Polski</option>
                     </select>
+                </div>
+                <div>
+                    <label class="mb-1 block text-xs uppercase tracking-widest text-white/40">Мінімальний рік автоімпорту</label>
+                    <input v-model.number="settingsForm.minYear" type="number" :class="field" class="!w-auto" placeholder="без обмеження" />
+                    <p class="mt-1 text-xs text-white/35">Автозаповнення (cinema:auto-import) пропускає все старше за цей рік. Ручний імпорт це не обмежує.</p>
+                </div>
+                <div>
+                    <label class="mb-1 block text-xs uppercase tracking-widest text-white/40">Чорний список (TMDB ID)</label>
+                    <textarea v-model="settingsForm.blacklist" :class="field" rows="3" placeholder="603&#10;1399&#10;— по одному ID в рядку або через кому"></textarea>
+                    <p class="mt-1 text-xs text-white/35">Ці tmdb_id автозаповнення ніколи не бере в чергу. Ручний імпорт за посиланням це не обмежує.</p>
                 </div>
                 <p class="text-xs text-white/35">Ключі зберігаються в базі зашифрованими і після збереження не показуються.</p>
                 <button :class="btn" :disabled="settingsForm.processing">Зберегти</button>

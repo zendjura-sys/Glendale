@@ -60,6 +60,8 @@ class CinemaAdminController extends Controller
                 'kodikConfigured' => Kodik::configured(),
                 'flixcdnConfigured' => FlixCdn::configured(),
                 'language' => CinemaSettings::language(),
+                'blacklist' => CinemaSettings::blacklistText(),
+                'minYear' => CinemaSettings::minYear(),
             ],
             'categories' => collect(Title::CATEGORIES)->map(fn ($m, $k) => ['key' => $k, 'name' => $m[0]])->values(),
             'stats' => [
@@ -82,6 +84,8 @@ class CinemaAdminController extends Controller
             'clearTmdb' => ['nullable', 'boolean'],
             'clearKodik' => ['nullable', 'boolean'],
             'clearFlixcdn' => ['nullable', 'boolean'],
+            'blacklist' => ['nullable', 'string', 'max:4000'],
+            'minYear' => ['nullable', 'integer', 'min:1900', 'max:2100'],
         ]);
         // Порожнє поле — «не змінювати»: ключ не повертається у форму.
         if (! empty($data['clearTmdb'])) {
@@ -100,6 +104,8 @@ class CinemaAdminController extends Controller
             CinemaSettings::setSecret(CinemaSettings::FLIXCDN_TOKEN, $data['flixcdnToken']);
         }
         Setting::set(CinemaSettings::LANGUAGE, $data['language'], 'cinema');
+        Setting::set(CinemaSettings::BLACKLIST, trim((string) ($data['blacklist'] ?? '')) ?: null, 'cinema');
+        Setting::set(CinemaSettings::MIN_YEAR, isset($data['minYear']) ? (string) $data['minYear'] : null, 'cinema');
 
         return back()->with('status', 'Налаштування кінопорталу збережено.');
     }

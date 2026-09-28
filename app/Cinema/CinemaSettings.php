@@ -24,6 +24,12 @@ final class CinemaSettings
     /** Ключ доступу для мосту CineCon (нативний Android-клієнт, апikey-заголовок). */
     public const FLIXY_API_KEY = 'cinema_flixy_api_key';
 
+    /** tmdb_id, які cinema:auto-import ніколи не бере в чергу (ручний імпорт за посиланням це не обмежує). */
+    public const BLACKLIST = 'cinema_blacklist';
+
+    /** Молодший за цей рік — автоімпорт пропускає (ручний імпорт це не обмежує). */
+    public const MIN_YEAR = 'cinema_min_year';
+
     public static function secret(string $key): ?string
     {
         $raw = Setting::get($key);
@@ -72,5 +78,25 @@ final class CinemaSettings
     public static function flixyApiKey(): string
     {
         return self::secret(self::FLIXY_API_KEY) ?? 'cinecon-bridge-2026';
+    }
+
+    /** @return list<int> */
+    public static function blacklist(): array
+    {
+        $raw = (string) Setting::get(self::BLACKLIST, '');
+
+        return array_values(array_unique(array_filter(array_map('intval', preg_split('/[\s,]+/', $raw, -1, PREG_SPLIT_NO_EMPTY) ?: []))));
+    }
+
+    public static function blacklistText(): string
+    {
+        return (string) Setting::get(self::BLACKLIST, '');
+    }
+
+    public static function minYear(): ?int
+    {
+        $value = Setting::get(self::MIN_YEAR);
+
+        return $value !== null && $value !== '' ? (int) $value : null;
     }
 }
