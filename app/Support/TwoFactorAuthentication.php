@@ -41,7 +41,7 @@ class TwoFactorAuthentication
     public function qrCodeSvg(User $user, string $secret): string
     {
         $qrUrl = $this->engine->getQRCodeUrl(
-            config('app.name', 'Monsory Connect'),
+            config('app.name', 'GameConnect'),
             $user->email,
             $secret,
         );

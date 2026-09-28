@@ -57,7 +57,7 @@ class DesignSettings
     /** Заголовок і слоган union.gamecon.online — той самий Setting-патерн, що й siteName/siteTagline вище. */
     public static function unionTitle(): string
     {
-        return Setting::get('union_title') ?: 'Спільнота союзників Monsory';
+        return Setting::get('union_title') ?: 'Спільнота союзників GameConnect';
     }
 
     public static function unionTagline(): ?string

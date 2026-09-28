@@ -130,10 +130,19 @@
 }
 
 /* ───────────── вкладки й пошук ───────────── */
+/* Закріплені під головною шапкою сайту (--header-h) — а не просто
+   прокручуються разом зі сторінкою: інакше при скролі рядок вкладок
+   (Головна/Усі/Кіно…) частково ховався за шапкою, і виглядало неохайно. */
 .k-tabs-bar {
   display: flex;
   align-items: center;
   gap: 16px;
+  position: sticky;
+  top: var(--header-h);
+  z-index: 5;
+  padding: 14px 0;
+  background: var(--k-bg);
+  box-shadow: 0 1px 0 var(--k-line);
 }
 .k-tabs-nav {
   display: flex;
