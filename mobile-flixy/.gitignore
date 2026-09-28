@@ -1,0 +1,24 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+/.idea/sonarlint/issuestore
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+/app/release
+
+# Секрети — ніколи в git (є лише локально/у CI-секретах)
+app/google-services.json
+app/*.jks
+app/*.keystore
+app/*cred*.rtf
+keystore.properties

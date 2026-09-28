@@ -1,0 +1,20 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        google()
+        mavenCentral()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url "https://jitpack.io" }
+        // dl.bintray.com закрито ще 2021-го — раніше тут брався libvlc-all,
+        // але він уже й так є на mavenCentral() вище, тож окремий репозиторій
+        // не потрібен.
+    }
+}
+include ':app'
+rootProject.name = "Flixy"
