@@ -1,5 +1,8 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import KodikSync from './KodikSync.vue';
+import KodikLog from './KodikLog.vue';
+import KodikSettings from './KodikSettings.vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
@@ -20,6 +23,9 @@ const tabs = [
     { key: 'catalog', label: 'Каталог' },
     { key: 'import', label: 'Імпорт із TMDB' },
     { key: 'settings', label: 'Налаштування' },
+    { key: 'kodik-sync', label: 'Kodik · синхронізація' },
+    { key: 'kodik-log', label: 'Kodik · журнал' },
+    { key: 'kodik-settings', label: 'Kodik · фільтри' },
 ];
 const tab = ref(props.settings.tmdbConfigured ? 'catalog' : 'settings');
 
@@ -109,7 +115,7 @@ const bulkForm = useForm({ list: 'popular_movies', pages: 2 });
 const bulk = () => bulkForm.post(route('admin.cinema.bulk'), { preserveScroll: true });
 
 // «Проставити Kodik/FlixCDN на всі» — окремо, кожне джерело шукається
-// лише там, де його ще бракує (до 500 за клік, повторний клік — решта).
+// лише там, де його ще бракує. Kodik обробляє весь список фоновою чергою.
 const attachingPlayers = ref(null);
 function bulkAttachPlayers(source) {
     attachingPlayers.value = source;
@@ -182,6 +188,10 @@ const act = 'rounded-lg px-2 py-1 text-[11px] text-white/55 hover:bg-white/5 hov
             </button>
             <a href="/cinema" class="ml-auto rounded-xl border border-white/10 px-4 py-1.5 text-xs text-white/60 hover:bg-white/5">Відкрити кінопортал →</a>
         </div>
+
+        <KodikSync v-if="tab === 'kodik-sync'" />
+        <KodikLog v-if="tab === 'kodik-log'" />
+        <KodikSettings v-if="tab === 'kodik-settings'" />
 
         <!-- Каталог -->
         <section v-if="tab === 'catalog'" class="glass-panel p-4 sm:p-6">
