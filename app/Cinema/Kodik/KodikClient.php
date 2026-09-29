@@ -10,7 +10,7 @@ use JsonException;
 
 final class KodikClient
 {
-    public const API = 'https://kodikapi.com';
+    public const API = 'https://kodik-api.com';
 
     private const MAX_ATTEMPTS = 3;
 

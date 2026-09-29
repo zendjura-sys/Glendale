@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
  */
 final class Kodik
 {
-    public const API = 'https://kodikapi.com';
+    public const API = 'https://kodik-api.com';
 
     public static function configured(): bool
     {
