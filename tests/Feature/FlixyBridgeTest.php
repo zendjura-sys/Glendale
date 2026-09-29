@@ -17,6 +17,13 @@ class FlixyBridgeTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        CinemaSettings::setSecret(CinemaSettings::FLIXY_API_KEY, 'flixy-test-key');
+    }
+
     private function headers(): array
     {
         return ['apikey' => CinemaSettings::flixyApiKey()];
