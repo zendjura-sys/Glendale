@@ -728,6 +728,40 @@ class CinemaTest extends TestCase
         $this->assertNotNull($title->flixcdn_checked_at);
     }
 
+    /** Фоновий TMDB-імпорт не запускає застарілу точкову прив'язку Kodik: каталог Kodik синхронізується окремим scheduler. */
+    public function test_auto_import_job_leaves_kodik_to_catalog_synchronizer(): void
+    {
+        (new \App\Cinema\ImportTitleJob('movie', 603))->handle();
+
+        Http::assertNotSent(fn ($request) => str_contains((string) $request->url(), 'kodik-api.com'));
+        $this->assertNull(Title::query()->where('tmdb_id', 603)->firstOrFail()->kodik_link);
+    }
+
+    /** Технічна помилка Kodik не ставить добовий cooldown для тайтла без плеєра. */
+    public function test_auto_import_retries_kodik_after_technical_error_without_daily_block(): void
+    {
+        $this->travelTo(\Illuminate\Support\Carbon::createFromTimestamp(0));
+        \Illuminate\Support\Facades\Queue::fake();
+        Http::fake([
+            'api.themoviedb.org/3/trending/all/week*' => Http::response(['results' => []]),
+            'kodik-api.com/search*' => Http::response(['results' => [[
+                'type' => 'foreign-movie', 'link' => '//kodik.info/video/retry/720p',
+                'translation' => ['id' => 77, 'title' => 'Українська'],
+            ]]]),
+        ]);
+        $title = Title::create([
+            'tmdb_id' => 9004, 'type' => 'movie', 'name' => 'Повтор',
+            'flixcdn_link' => 'https://player.uacdn.live/embed/retry',
+            'kodik_sync_status' => 'failed', 'kodik_last_error' => 'server',
+            'kodik_checked_at' => null,
+        ]);
+
+        $this->artisan('cinema:auto-import')->assertSuccessful();
+
+        $this->assertSame('https://kodik.info/video/retry/720p', $title->fresh()->kodik_link);
+        $this->travelBack();
+    }
+
     public function test_auto_import_command_queues_from_rotating_list_and_retries_players(): void
     {
         // Тік = timestamp/3600 обирає список і сторінку — фіксуємо час на
