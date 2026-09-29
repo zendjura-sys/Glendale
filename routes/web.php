@@ -238,6 +238,13 @@ Route::middleware(['auth', 'verified', 'permission:cinema.manage'])
     ->name('admin.cinema.')
     ->group(function () {
         $c = \App\Http\Controllers\Admin\CinemaAdminController::class;
+        $kodik = \App\Http\Controllers\Admin\CinemaKodikController::class;
+        Route::get('/kodik/runs', [$kodik, 'runs'])->name('kodik.runs');
+        Route::get('/kodik/runs/{run}/events', [$kodik, 'events'])->whereNumber('run')->name('kodik.events');
+        Route::get('/kodik/settings', [$kodik, 'settings'])->name('kodik.settings');
+        Route::put('/kodik/settings', [$kodik, 'updateSettings'])->name('kodik.settings.update');
+        Route::post('/kodik/sync', [$kodik, 'sync'])->name('kodik.sync');
+        Route::post('/kodik/rebind', [$kodik, 'rebind'])->name('kodik.rebind');
         Route::get('/', [$c, 'index'])->name('index');
         Route::put('/settings', [$c, 'settings'])->name('settings');
         Route::get('/tmdb', [$c, 'tmdb'])->name('tmdb');
@@ -475,3 +482,4 @@ Route::any('/api/nfe/emitir', function (Request $request) {
     }
 })->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
 }
+
