@@ -38,7 +38,7 @@ class SyncKodikCinemaCommandTest extends TestCase
 
     public function test_dry_run_reads_preview_without_database_or_queue_writes(): void
     {
-        Http::fake(['kodikapi.com/list*' => Http::response(['results' => [['id' => 'preview']], 'next_page' => null])]);
+        Http::fake(['kodik-api.com/list*' => Http::response(['results' => [['id' => 'preview']], 'next_page' => null])]);
 
         $this->artisan('cinema:kodik-sync', ['--mode' => 'incremental', '--batch' => 25, '--dry-run' => true])
             ->assertSuccessful()

@@ -27,8 +27,8 @@ class KodikCatalogSynchronizerTest extends TestCase
 
     public function test_two_pages_are_queued_and_cursor_commits_after_each_page(): void
     {
-        Http::fakeSequence('kodikapi.com/list*')
-            ->push(['results' => [['id' => 'a'], ['id' => 'b']], 'next_page' => 'https://kodikapi.com/list?page=2', 'total' => 3])
+        Http::fakeSequence('kodik-api.com/list*')
+            ->push(['results' => [['id' => 'a'], ['id' => 'b']], 'next_page' => 'https://kodik-api.com/list?page=2', 'total' => 3])
             ->push(['results' => [['id' => 'c']], 'next_page' => null, 'total' => 3]);
 
         $run = app(KodikCatalogSynchronizer::class)->run('incremental', 2, null, 'cli');
@@ -46,7 +46,7 @@ class KodikCatalogSynchronizerTest extends TestCase
     public function test_failed_second_page_keeps_its_cursor_and_resume_does_not_skip_it(): void
     {
         $secondPageWorks = false;
-        Http::fake(['kodikapi.com/list*' => function ($request) use (&$secondPageWorks) {
+        Http::fake(['kodik-api.com/list*' => function ($request) use (&$secondPageWorks) {
             parse_str((string) parse_url((string) $request->url(), PHP_URL_QUERY), $query);
             if (($query['page'] ?? null) === '2') {
                 return $secondPageWorks
@@ -54,7 +54,7 @@ class KodikCatalogSynchronizerTest extends TestCase
                     : Http::response(['error' => 'temporary'], 503);
             }
 
-            return Http::response(['results' => [['id' => 'first']], 'next_page' => 'https://kodikapi.com/list?page=2']);
+            return Http::response(['results' => [['id' => 'first']], 'next_page' => 'https://kodik-api.com/list?page=2']);
         }]);
 
         try {
@@ -66,8 +66,8 @@ class KodikCatalogSynchronizerTest extends TestCase
 
         $failed = CinemaSyncRun::query()->latest('id')->firstOrFail();
         $this->assertSame('partial', $failed->status);
-        $this->assertSame('https://kodikapi.com/list?page=2', $failed->cursor_after);
-        $this->assertSame('https://kodikapi.com/list?page=2', CinemaSettings::kodikCursor());
+        $this->assertSame('https://kodik-api.com/list?page=2', $failed->cursor_after);
+        $this->assertSame('https://kodik-api.com/list?page=2', CinemaSettings::kodikCursor());
         Queue::assertPushed(fn (SyncKodikItemJob $job) => $job->item['id'] === 'first');
 
         $secondPageWorks = true;

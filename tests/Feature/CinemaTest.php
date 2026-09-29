@@ -56,7 +56,7 @@ class CinemaTest extends TestCase
                 ['id' => 603, 'title' => 'Матриця', 'release_date' => '1999-03-30'],
                 ['id' => 604, 'title' => 'Матриця: Перезавантаження', 'release_date' => '2003-05-15'],
             ]]),
-            'kodikapi.com/search*' => fn ($request) => Http::response(['results' => str_contains($request->url(), 'imdb_id=tt0944947')
+            'kodik-api.com/search*' => fn ($request) => Http::response(['results' => str_contains($request->url(), 'imdb_id=tt0944947')
                 ? [['type' => 'foreign-serial', 'link' => '//kodik.info/serial/1/abc/720p', 'translation' => ['id' => 1, 'title' => 'LostFilm'], 'last_season' => 8]]
                 : [
                     ['type' => 'foreign-movie', 'link' => '//kodik.info/video/1/aaa/720p', 'translation' => ['id' => 2, 'title' => 'Дубляж'], 'quality' => 'BDRip 720p'],
@@ -398,7 +398,7 @@ class CinemaTest extends TestCase
     {
         $title = Title::create(['tmdb_id' => 9030, 'type' => 'series', 'name' => 'Bleach', 'year' => 2022]);
         Http::fake([
-            'kodikapi.com/search*' => fn ($request) => str_contains((string) $request->url(), 'year=2022')
+            'kodik-api.com/search*' => fn ($request) => str_contains((string) $request->url(), 'year=2022')
                 ? Http::response(['results' => []])
                 : Http::response(['results' => [
                     ['type' => 'anime-serial', 'link' => '//kodik.info/serial/1/bleach/720p', 'translation' => ['id' => 1, 'title' => 'Аніма']],
@@ -431,7 +431,7 @@ class CinemaTest extends TestCase
         Http::swap(new \Illuminate\Http\Client\Factory);
         Http::preventStrayRequests();
         Http::fake([
-            'kodikapi.com/search*' => function ($request) {
+            'kodik-api.com/search*' => function ($request) {
                 parse_str((string) parse_url((string) $request->url(), PHP_URL_QUERY), $query);
 
                 return ($query['title'] ?? null) === 'One Piece'
@@ -458,7 +458,7 @@ class CinemaTest extends TestCase
     {
         $title = Title::create(['tmdb_id' => 9031, 'type' => 'series', 'name' => 'Гранична сутичка', 'year' => 2024]);
         Http::fake([
-            'kodikapi.com/search*' => Http::response(['results' => [
+            'kodik-api.com/search*' => Http::response(['results' => [
                 ['type' => 'foreign-movie', 'link' => '//kodik.info/video/1/edge/720p', 'translation' => ['id' => 1, 'title' => 'Дубляж']],
             ]]),
         ]);

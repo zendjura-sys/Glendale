@@ -24,7 +24,7 @@ class KodikAttachTest extends TestCase
 
     public function test_valid_result_attaches_iframe_and_marks_successful_check(): void
     {
-        Http::fake(['kodikapi.com/search*' => Http::response(['results' => [[
+        Http::fake(['kodik-api.com/search*' => Http::response(['results' => [[
             'type' => 'foreign-movie',
             'link' => '//kodik.info/video/42/player/720p',
             'translation' => ['id' => 7, 'title' => 'Українська'],
@@ -44,7 +44,7 @@ class KodikAttachTest extends TestCase
 
     public function test_valid_empty_result_marks_not_found_and_successful_check(): void
     {
-        Http::fake(['kodikapi.com/search*' => Http::response(['results' => []])]);
+        Http::fake(['kodik-api.com/search*' => Http::response(['results' => []])]);
         $title = Title::create(['tmdb_id' => 1002, 'imdb_id' => 'tt1002', 'type' => 'movie', 'name' => 'Порожньо']);
 
         $result = Kodik::attachResult($title);
@@ -59,7 +59,7 @@ class KodikAttachTest extends TestCase
 
     public function test_technical_failure_keeps_checked_at_unchanged_and_records_safe_reason(): void
     {
-        Http::fake(['kodikapi.com/search*' => Http::response(['error' => 'upstream'], 503)]);
+        Http::fake(['kodik-api.com/search*' => Http::response(['error' => 'upstream'], 503)]);
         $checkedAt = now()->subDay();
         $title = Title::create([
             'tmdb_id' => 1003,
@@ -82,7 +82,7 @@ class KodikAttachTest extends TestCase
 
     public function test_queue_rethrows_retryable_failure_after_recording_it(): void
     {
-        Http::fake(['kodikapi.com/search*' => Http::response([], 429)]);
+        Http::fake(['kodik-api.com/search*' => Http::response([], 429)]);
         $title = Title::create(['tmdb_id' => 1004, 'imdb_id' => 'tt1004', 'type' => 'movie', 'name' => 'Ліміт']);
 
         try {
@@ -100,7 +100,7 @@ class KodikAttachTest extends TestCase
 
     public function test_queue_does_not_retry_terminal_auth_failure(): void
     {
-        Http::fake(['kodikapi.com/search*' => Http::response([], 401)]);
+        Http::fake(['kodik-api.com/search*' => Http::response([], 401)]);
         $title = Title::create(['tmdb_id' => 1005, 'imdb_id' => 'tt1005', 'type' => 'movie', 'name' => 'Токен']);
 
         (new AttachPlayerJob('kodik', $title->id))->handle();
@@ -113,7 +113,7 @@ class KodikAttachTest extends TestCase
 
     public function test_search_tries_every_supported_identity_and_localized_name(): void
     {
-        Http::fake(['kodikapi.com/search*' => Http::response(['results' => []])]);
+        Http::fake(['kodik-api.com/search*' => Http::response(['results' => []])]);
         $title = Title::create([
             'tmdb_id' => 1006,
             'shikimori_id' => 11,

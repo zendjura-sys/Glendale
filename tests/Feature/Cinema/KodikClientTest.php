@@ -22,7 +22,7 @@ class KodikClientTest extends TestCase
     public function test_search_returns_a_valid_page_and_sends_the_token(): void
     {
         Http::fake([
-            'kodikapi.com/search*' => Http::response([
+            'kodik-api.com/search*' => Http::response([
                 'total' => 1,
                 'results' => [['id' => 'serial-1', 'link' => '//kodik.info/serial/1']],
                 'next_page' => 'cursor-2',
@@ -45,7 +45,7 @@ class KodikClientTest extends TestCase
     public function test_list_accepts_a_valid_empty_result(): void
     {
         Http::fake([
-            'kodikapi.com/list*' => Http::response(['total' => 0, 'results' => [], 'next_page' => null]),
+            'kodik-api.com/list*' => Http::response(['total' => 0, 'results' => [], 'next_page' => null]),
         ]);
 
         $page = (new KodikClient(self::TOKEN))->list(['limit' => 100]);
@@ -63,7 +63,7 @@ class KodikClientTest extends TestCase
     #[DataProvider('authenticationStatuses')]
     public function test_authentication_errors_are_terminal_and_redacted(int $status): void
     {
-        Http::fake(['kodikapi.com/search*' => Http::response(['error' => 'bad token'], $status)]);
+        Http::fake(['kodik-api.com/search*' => Http::response(['error' => 'bad token'], $status)]);
 
         try {
             (new KodikClient(self::TOKEN))->search(['title' => 'Bleach']);
@@ -80,7 +80,7 @@ class KodikClientTest extends TestCase
 
     public function test_rate_limit_is_retried_then_reported(): void
     {
-        Http::fake(['kodikapi.com/list*' => Http::response(['error' => 'slow down'], 429)]);
+        Http::fake(['kodik-api.com/list*' => Http::response(['error' => 'slow down'], 429)]);
 
         try {
             (new KodikClient(self::TOKEN))->list([]);
@@ -95,7 +95,7 @@ class KodikClientTest extends TestCase
 
     public function test_server_error_is_retried_then_reported(): void
     {
-        Http::fake(['kodikapi.com/search*' => Http::response('unavailable', 503)]);
+        Http::fake(['kodik-api.com/search*' => Http::response('unavailable', 503)]);
 
         try {
             (new KodikClient(self::TOKEN))->search([]);
@@ -130,7 +130,7 @@ class KodikClientTest extends TestCase
 
     public function test_invalid_json_is_a_terminal_contract_error(): void
     {
-        Http::fake(['kodikapi.com/search*' => Http::response('{broken', 200, ['Content-Type' => 'application/json'])]);
+        Http::fake(['kodik-api.com/search*' => Http::response('{broken', 200, ['Content-Type' => 'application/json'])]);
 
         $this->expectException(KodikApiException::class);
         $this->expectExceptionMessage('contract');
@@ -140,7 +140,7 @@ class KodikClientTest extends TestCase
 
     public function test_missing_results_is_a_terminal_contract_error(): void
     {
-        Http::fake(['kodikapi.com/list*' => Http::response(['total' => 1], 200)]);
+        Http::fake(['kodik-api.com/list*' => Http::response(['total' => 1], 200)]);
 
         try {
             (new KodikClient(self::TOKEN))->list([]);
