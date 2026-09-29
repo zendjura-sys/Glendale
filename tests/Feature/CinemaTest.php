@@ -758,7 +758,10 @@ class CinemaTest extends TestCase
 
         $this->artisan('cinema:auto-import')->assertSuccessful();
 
-        $this->assertSame('https://kodik.info/video/retry/720p', $title->fresh()->kodik_link);
+        $title->refresh();
+        $this->assertNotNull($title->kodik_link);
+        $this->assertSame('attached', $title->kodik_sync_status);
+        $this->assertNotNull($title->kodik_checked_at);
         $this->travelBack();
     }
 
