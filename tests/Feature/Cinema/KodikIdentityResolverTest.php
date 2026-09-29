@@ -61,7 +61,7 @@ class KodikIdentityResolverTest extends TestCase
         }
     }
 
-    public function test_two_strong_ids_pointing_to_different_titles_is_conflict(): void
+    public function test_two_strong_ids_use_the_highest_priority_match_for_replacement(): void
     {
         $first = Title::create(['tmdb_id' => 3201, 'type' => 'movie', 'name' => 'Перший', 'imdb_id' => 'tt3201']);
         $second = Title::create(['tmdb_id' => 3202, 'type' => 'movie', 'name' => 'Другий', 'kinopoisk_id' => 'kp-3202']);
@@ -71,12 +71,13 @@ class KodikIdentityResolverTest extends TestCase
             'kinopoisk_id' => 'kp-3202',
         ]);
 
-        $this->assertSame('conflict', $resolution->status);
-        $this->assertSame('strong_ids_disagree', $resolution->reason);
+        $this->assertSame('matched', $resolution->status);
+        $this->assertSame($second->id, $resolution->title?->id, 'Kinopoisk has higher priority than IMDb.');
+        $this->assertSame('kinopoisk_id_replace', $resolution->reason);
         $this->assertEqualsCanonicalizing([$first->id, $second->id], $resolution->candidateIds);
     }
 
-    public function test_name_match_with_different_strong_id_is_conflict(): void
+    public function test_name_match_with_different_strong_id_is_selected_for_replacement(): void
     {
         $title = Title::create([
             'tmdb_id' => 3301,
@@ -93,8 +94,9 @@ class KodikIdentityResolverTest extends TestCase
             'imdb_id' => 'tt0087182',
         ]);
 
-        $this->assertSame('conflict', $resolution->status);
-        $this->assertSame('strong_id_mismatch', $resolution->reason);
+        $this->assertSame('matched', $resolution->status);
+        $this->assertSame($title->id, $resolution->title?->id);
+        $this->assertSame('name_year_replace', $resolution->reason);
         $this->assertSame([$title->id], $resolution->candidateIds);
     }
 
@@ -110,7 +112,7 @@ class KodikIdentityResolverTest extends TestCase
         $this->assertEqualsCanonicalizing([$first->id, $second->id], $resolution->candidateIds);
     }
 
-    public function test_same_name_with_year_outside_tolerance_is_conflict(): void
+    public function test_unique_same_name_outside_year_tolerance_is_selected_for_replacement(): void
     {
         $title = Title::create(['tmdb_id' => 3501, 'type' => 'movie', 'name' => 'Носферату', 'year' => 1922]);
 
@@ -120,8 +122,9 @@ class KodikIdentityResolverTest extends TestCase
             'year' => 2024,
         ]);
 
-        $this->assertSame('conflict', $resolution->status);
-        $this->assertSame('year_mismatch', $resolution->reason);
+        $this->assertSame('matched', $resolution->status);
+        $this->assertSame($title->id, $resolution->title?->id);
+        $this->assertSame('name_replace_year_mismatch', $resolution->reason);
         $this->assertSame([$title->id], $resolution->candidateIds);
     }
 
