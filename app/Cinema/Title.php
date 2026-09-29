@@ -53,6 +53,7 @@ class Title extends Model
             'alt_names' => \App\Cinema\Casts\UnicodeArray::class,
             'kodik_translations' => 'array',
             'kodik_checked_at' => 'datetime',
+            'kodik_synced_at' => 'datetime',
             'flixcdn_translations' => 'array',
             'flixcdn_checked_at' => 'datetime',
             'shikimori_checked_at' => 'datetime',
@@ -82,6 +83,16 @@ class Title extends Model
     public function videos(): HasMany
     {
         return $this->hasMany(Video::class, 'title_id');
+    }
+
+    public function kodikSources(): HasMany
+    {
+        return $this->hasMany(KodikSource::class, 'title_id');
+    }
+
+    public function syncEvents(): HasMany
+    {
+        return $this->hasMany(CinemaSyncEvent::class, 'title_id')->latest('id');
     }
 
     public function isSeries(): bool
