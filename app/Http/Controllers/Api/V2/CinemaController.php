@@ -213,18 +213,39 @@ class CinemaController extends Controller
     /** Посилання на плеєр (Kodik + FlixCDN паралельно) — з обраним джерелом і місцем, де людина зупинилась. */
     public function player(Request $request, int $id): JsonResponse
     {
+        $selected = $request->validate([
+            'translation' => ['sometimes', 'integer', 'min:0', 'max:10'],
+            'season' => ['sometimes', 'integer', 'min:0', 'max:200'],
+            'episode' => ['sometimes', 'integer', 'min:1', 'max:5000'],
+        ]);
         $title = $this->title($id);
         PlayerSources::autoAttach($title);
-        $index = (int) $request->query('translation', 0);
+        $index = (int) ($selected['translation'] ?? 0);
         $link = PlayerSources::linkFor($title, $index);
         if (! $link) {
             Social::fail(404, 'Плеєр для цього фільму ще не знайдено', 'no_player');
         }
         $progress = DB::table('cinema_progress')->where('title_id', $title->id)->where('user_id', $request->user()->id)->first();
 
+        $seasonNumber = null;
+        $episodeNumber = null;
+        if ($title->isSeries()) {
+            $requestedSeason = $selected['season'] ?? $progress?->season;
+            $season = $title->seasons()->where('number', $requestedSeason)->first()
+                ?? $title->seasons()->orderBy('number')->first();
+            $seasonNumber = $season?->number ?? $requestedSeason;
+            $requestedEpisode = $selected['episode'] ?? ($requestedSeason === $progress?->season ? $progress?->episode : null);
+            $episodeNumber = $season
+                ? ($season->episodes()->where('number', $requestedEpisode)->first()?->number
+                    ?? $season->episodes()->orderBy('number')->first()?->number
+                    ?? $requestedEpisode ?? 1)
+                : ($requestedEpisode ?? ($seasonNumber !== null ? 1 : null));
+        }
+
         return response()->json([
             'link' => $link,
             'translation' => $index,
+            'selection' => ['season' => $seasonNumber, 'episode' => $episodeNumber],
             'progress' => $progress ? ['season' => $progress->season, 'episode' => $progress->episode, 'position' => (int) $progress->position] : null,
         ]);
     }

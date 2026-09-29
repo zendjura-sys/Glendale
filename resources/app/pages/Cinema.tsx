@@ -675,15 +675,15 @@ function Player({ title, season, episode, onEpisode }: { title: TitleFull; seaso
   const active = title.translations.find((t) => t.index === translation);
   const enabled = active?.available ?? false;
   const { data, error, isLoading } = useQuery({
-    queryKey: ['cinema', 'player', title.id, translation],
-    queryFn: () => api<{ link: string; progress: TitleFull['progress'] }>(`/cinema/titles/${title.id}/player?translation=${translation}`),
+    queryKey: ['cinema', 'player', title.id, translation, season, episode],
+    queryFn: () => api<{ link: string; progress: TitleFull['progress']; selection: { season: number | null; episode: number | null } }>(`/cinema/titles/${title.id}/player?translation=${translation}${season !== null ? `&season=${season}` : ''}${episode !== null ? `&episode=${episode}` : ''}`),
     enabled,
     retry: false,
     staleTime: Infinity,
   });
   const pos = useRef({ position: 0, duration: 0, season, episode, sent: 0 });
-  pos.current.season = season;
-  pos.current.episode = episode;
+  pos.current.season = data?.selection?.season ?? season;
+  pos.current.episode = data?.selection?.episode ?? episode;
 
   // Прогрес: плеєр шле postMessage — зберігаємо не частіше ніж раз на 15 с і при виході зі сторінки.
   useEffect(() => {
@@ -721,8 +721,8 @@ function Player({ title, season, episode, onEpisode }: { title: TitleFull; seaso
     if (!data?.link) return null;
     const url = new URL(data.link);
     const p = data.progress;
-    const s = season ?? p?.season ?? null;
-    const ep = episode ?? p?.episode ?? null;
+    const s = data.selection?.season ?? season ?? p?.season ?? null;
+    const ep = data.selection?.episode ?? episode ?? p?.episode ?? null;
     if (title.type === 'series' && s && ep) {
       url.searchParams.set('season', String(s));
       url.searchParams.set('episode', String(ep));
@@ -772,7 +772,7 @@ function Player({ title, season, episode, onEpisode }: { title: TitleFull; seaso
   );
 }
 
-function Seasons({ title, current, onPick }: { title: TitleFull; current: { season: number | null; episode: number | null }; onPick: (s: number, e: number) => void }) {
+function Seasons({ title, current, onPick }: { title: TitleFull; current: { season: number | null; episode: number | null }; onPick: (s: number, e: number | null) => void }) {
   const [season, setSeason] = useState(current.season ?? title.progress?.season ?? title.seasons[0]?.number ?? 1);
   useEffect(() => {
     if (current.season !== null) setSeason(current.season);
@@ -780,15 +780,20 @@ function Seasons({ title, current, onPick }: { title: TitleFull; current: { seas
   const pickSeason = (nextSeason: number) => {
     if (nextSeason === season) return;
     setSeason(nextSeason);
-    // Сезон і серія — одна вибрана позиція. Інакше список уже показує
-    // новий сезон, а iframe продовжує відтворювати серію зі старого.
-    onPick(nextSeason, 1);
+    // Очистити попередню серію одразу; першу доступну визначимо після завантаження сезону.
+    onPick(nextSeason, null);
   };
   const { data, isLoading } = useQuery({
     queryKey: ['cinema', 'season', title.id, season],
     queryFn: () => api<CinemaEpisode[]>(`/cinema/titles/${title.id}/seasons/${season}`),
     enabled: title.seasons.length > 0,
   });
+  useEffect(() => {
+    if (!data?.length) return;
+    const preferred = current.season === season ? current.episode : title.progress?.season === season ? title.progress.episode : null;
+    const resolved = data.find((item) => item.number === preferred)?.number ?? data[0].number;
+    if (current.season !== season || current.episode !== resolved) onPick(season, resolved);
+  }, [data, season, current.season, current.episode, title.progress?.season, title.progress?.episode, onPick]);
   if (!title.seasons.length) return null;
   return (
     <section className="cinema-seasons">
@@ -1178,7 +1183,7 @@ export function CinemaTitlePage() {
     qc.invalidateQueries({ queryKey: ['cinema', 'home'] });
   };
   const canNight = me.families.some((f) => f.status === 'verified' && (f.role === 'leader' || f.role === 'deputy'));
-  const pickEpisode = (season: number, episode: number) => {
+  const pickEpisode = (season: number, episode: number | null) => {
     setEp({ season, episode });
     setWatching(true);
   };
