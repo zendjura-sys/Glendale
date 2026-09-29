@@ -428,7 +428,7 @@ class CinemaTest extends TestCase
         ]);
         // setUp already registers a broad Kodik fallback. Replace the HTTP
         // factory so this regression controls the response for each title.
-        Http::swap(new \\Illuminate\\Http\\Client\\Factory);
+        Http::swap(new \Illuminate\Http\Client\Factory);
         Http::preventStrayRequests();
         Http::fake([
             'kodikapi.com/search*' => function ($request) {
