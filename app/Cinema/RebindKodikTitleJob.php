@@ -23,7 +23,12 @@ class RebindKodikTitleJob implements ShouldQueue
     {
         $run = CinemaSyncRun::find($this->runId);
         $title = Title::find($this->titleId);
-        if (! $run || ! $title) {
+        if (! $run || $this->completed()) {
+            return;
+        }
+        if (! $title) {
+            $this->finish('skipped');
+
             return;
         }
         if ($this->onlyMissing && $title->kodikSources()->where('is_available', true)->exists()) {
@@ -59,9 +64,16 @@ class RebindKodikTitleJob implements ShouldQueue
     {
         DB::transaction(function () use ($status): void {
             $run = CinemaSyncRun::query()->lockForUpdate()->find($this->runId);
-            if (! $run) {
+            if (! $run || $this->completed()) {
                 return;
             }
+            CinemaSyncEvent::create([
+                'run_id' => $run->id,
+                'title_id' => Title::find($this->titleId)?->id,
+                'action' => 'rebind_complete',
+                'status' => $status,
+                'identifiers' => ['title_id' => $this->titleId],
+            ]);
             $counters = $run->counters ?? [];
             $counters['completed'] = ($counters['completed'] ?? 0) + 1;
             $counters[$status] = ($counters[$status] ?? 0) + 1;
@@ -72,5 +84,14 @@ class RebindKodikTitleJob implements ShouldQueue
                 'finished_at' => $finished ? now() : null,
             ]);
         });
+    }
+
+    private function completed(): bool
+    {
+        return CinemaSyncEvent::query()
+            ->where('run_id', $this->runId)
+            ->where('action', 'rebind_complete')
+            ->where('identifiers->title_id', $this->titleId)
+            ->exists();
     }
 }
