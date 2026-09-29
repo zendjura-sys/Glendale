@@ -9,6 +9,7 @@ use App\Cinema\FlixCdn;
 use App\Cinema\ImportTitleJob;
 use App\Cinema\Importer;
 use App\Cinema\Kodik;
+use App\Cinema\Kodik\KodikRebindDispatcher;
 use App\Cinema\PlayerSources;
 use App\Cinema\Season;
 use App\Cinema\Title;
@@ -183,7 +184,7 @@ class CinemaAdminController extends Controller
      * бракує (за раз до 500, щоб не покласти ліміти API одним кліком —
      * повторний клік підхопить решту).
      */
-    public function bulkAttachPlayers(Request $request): RedirectResponse
+    public function bulkAttachPlayers(Request $request, KodikRebindDispatcher $kodikRebind): RedirectResponse
     {
         $data = $request->validate(['source' => ['required', 'in:kodik,flixcdn,shikimori']]);
         $source = $data['source'];
@@ -195,8 +196,13 @@ class CinemaAdminController extends Controller
             return back()->withErrors(['bulk' => 'Спершу вкажіть токен FlixCDN у налаштуваннях.']);
         }
 
+        if ($source === 'kodik') {
+            $run = $kodikRebind->dispatch(true, $request->user()->id);
+
+            return back()->with('status', "У черзі на пошук Kodik: {$run->counters['queued']}.");
+        }
+
         $query = match ($source) {
-            'kodik' => Title::query()->whereNull('kodik_link'),
             'flixcdn' => Title::query()->whereNull('flixcdn_link'),
             // Shikimori — лише каталог аніме, для решти категорій id не існує.
             'shikimori' => Title::query()->where('category', 'anime')->whereNull('shikimori_id'),

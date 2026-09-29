@@ -658,13 +658,17 @@ class CinemaTest extends TestCase
         $needsBoth = Title::create(['tmdb_id' => 9010, 'type' => 'movie', 'name' => 'Без плеєра']);
         $needsKodikOnly = Title::create(['tmdb_id' => 9011, 'type' => 'movie', 'name' => 'Вже є FlixCDN', 'flixcdn_link' => 'https://player.uacdn.live/embed/x']);
         $hasKodik = Title::create(['tmdb_id' => 9012, 'type' => 'movie', 'name' => 'Вже є Kodik', 'kodik_link' => 'https://kodik.info/x']);
+        \App\Cinema\KodikSource::create([
+            'title_id' => $hasKodik->id, 'kodik_id' => 'existing', 'translation_id' => '1',
+            'link' => 'https://kodik.info/x', 'is_available' => true,
+        ]);
 
         $this->post('/admin/cinema/bulk-attach-players', ['source' => 'kodik'])->assertRedirect()->assertSessionHasNoErrors();
 
-        \Illuminate\Support\Facades\Queue::assertPushed(\App\Cinema\AttachPlayerJob::class, 2);
-        \Illuminate\Support\Facades\Queue::assertPushed(fn (\App\Cinema\AttachPlayerJob $j) => $j->source === 'kodik' && $j->titleId === $needsBoth->id);
-        \Illuminate\Support\Facades\Queue::assertPushed(fn (\App\Cinema\AttachPlayerJob $j) => $j->source === 'kodik' && $j->titleId === $needsKodikOnly->id);
-        \Illuminate\Support\Facades\Queue::assertNotPushed(fn (\App\Cinema\AttachPlayerJob $j) => $j->titleId === $hasKodik->id);
+        \Illuminate\Support\Facades\Queue::assertPushed(\App\Cinema\RebindKodikTitleJob::class, 2);
+        \Illuminate\Support\Facades\Queue::assertPushed(fn (\App\Cinema\RebindKodikTitleJob $j) => $j->titleId === $needsBoth->id);
+        \Illuminate\Support\Facades\Queue::assertPushed(fn (\App\Cinema\RebindKodikTitleJob $j) => $j->titleId === $needsKodikOnly->id);
+        \Illuminate\Support\Facades\Queue::assertNotPushed(fn (\App\Cinema\RebindKodikTitleJob $j) => $j->titleId === $hasKodik->id);
 
         // FlixCDN не налаштовано в цьому тесті — кнопка має відмовити з поясненням.
         $this->post('/admin/cinema/bulk-attach-players', ['source' => 'flixcdn'])->assertRedirect()->assertSessionHasErrors('bulk');

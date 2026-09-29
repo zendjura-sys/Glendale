@@ -7,15 +7,13 @@ use App\Cinema\CinemaSyncEvent;
 use App\Cinema\CinemaSyncRun;
 use App\Cinema\Kodik;
 use App\Cinema\Kodik\KodikImportPolicy;
+use App\Cinema\Kodik\KodikRebindDispatcher;
 use App\Cinema\Kodik\SyncLogRedactor;
-use App\Cinema\RebindKodikTitleJob;
 use App\Cinema\RunKodikSyncJob;
-use App\Cinema\Title;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateCinemaKodikSettingsRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class CinemaKodikController extends Controller
 {
@@ -92,38 +90,13 @@ class CinemaKodikController extends Controller
         return response()->json(['status' => 'queued'], 202);
     }
 
-    public function rebind(Request $request): JsonResponse
+    public function rebind(Request $request, KodikRebindDispatcher $dispatcher): JsonResponse
     {
         $data = $request->validate([
             'scope' => ['required', 'in:all,missing'],
             'confirm' => ['exclude_unless:scope,all', 'required', 'accepted'],
         ]);
-        $onlyMissing = $data['scope'] === 'missing';
-        $run = DB::transaction(function () use ($request, $onlyMissing): CinemaSyncRun {
-            $query = Title::query()->when($onlyMissing, fn ($q) => $q->whereDoesntHave(
-                'kodikSources', fn ($sources) => $sources->where('is_available', true),
-            ));
-            $run = CinemaSyncRun::create([
-                'source' => 'kodik', 'mode' => $onlyMissing ? 'rebind_missing' : 'rebind_all',
-                'status' => 'queued', 'initiator' => 'admin',
-                'initiated_by' => $request->user()->id, 'started_at' => now(),
-                'counters' => ['queued' => 0, 'completed' => 0],
-            ]);
-            $queued = 0;
-            $query->select('id')->chunkById(200, function ($titles) use ($run, $onlyMissing, &$queued): void {
-                foreach ($titles as $title) {
-                    RebindKodikTitleJob::dispatch($run->id, $title->id, $onlyMissing)->afterCommit();
-                    $queued++;
-                }
-            });
-            $run->update([
-                'counters' => ['queued' => $queued, 'completed' => 0],
-                'status' => $queued ? 'queued' : 'succeeded',
-                'finished_at' => $queued ? null : now(),
-            ]);
-
-            return $run;
-        });
+        $run = $dispatcher->dispatch($data['scope'] === 'missing', $request->user()->id);
 
         return response()->json(['run_id' => $run->id, 'queued' => $run->counters['queued']], 202);
     }
