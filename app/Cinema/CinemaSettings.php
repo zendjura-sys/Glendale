@@ -16,6 +16,8 @@ final class CinemaSettings
 
     public const KODIK_TOKEN = 'cinema_kodik_token';
 
+    public const KODIK_CURSOR = 'cinema_kodik_cursor';
+
     /** Другий балансер плеєрів (uacdn.live) — працює паралельно з Kodik, не замість нього. */
     public const FLIXCDN_TOKEN = 'cinema_flixcdn_token';
 
@@ -59,6 +61,18 @@ final class CinemaSettings
         return self::secret(self::KODIK_TOKEN);
     }
 
+    public static function kodikCursor(): ?string
+    {
+        $value = Setting::get(self::KODIK_CURSOR);
+
+        return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    public static function setKodikCursor(?string $cursor): void
+    {
+        Setting::set(self::KODIK_CURSOR, $cursor ?: null, 'cinema');
+    }
+
     public static function flixcdnToken(): ?string
     {
         return self::secret(self::FLIXCDN_TOKEN);
@@ -69,15 +83,10 @@ final class CinemaSettings
         return Setting::get(self::LANGUAGE) ?: 'uk-UA';
     }
 
-    /**
-     * Значення за замовчуванням, як у самого CineCon (Const.API_KEY) —
-     * без цього значення застосунок і сервер не змогли б домовитись про
-     * ключ ще до першого запуску адмінки. Адмін може перевизначити його
-     * тут (тоді треба перезібрати застосунок із новим значенням).
-     */
+    /** Ключ задається в адмінці або через конфігурацію середовища. */
     public static function flixyApiKey(): string
     {
-        return self::secret(self::FLIXY_API_KEY) ?? 'cinecon-bridge-2026';
+        return self::secret(self::FLIXY_API_KEY) ?? (string) config('services.flixy.api_key', '');
     }
 
     /** @return list<int> */
