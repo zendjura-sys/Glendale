@@ -426,6 +426,10 @@ class CinemaTest extends TestCase
             'alt_names' => ['One Piece', 'Ван-Пис'],
             'year' => 1999,
         ]);
+        // setUp already registers a broad Kodik fallback. Replace the HTTP
+        // factory so this regression controls the response for each title.
+        Http::swap(new \\Illuminate\\Http\\Client\\Factory);
+        Http::preventStrayRequests();
         Http::fake([
             'kodikapi.com/search*' => function ($request) {
                 parse_str((string) parse_url((string) $request->url(), PHP_URL_QUERY), $query);
