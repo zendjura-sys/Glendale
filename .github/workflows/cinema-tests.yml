@@ -38,12 +38,6 @@ jobs:
           php artisan key:generate
           touch database/database.sqlite
 
-      - name: Run PHP tests
-        env:
-          DB_CONNECTION: sqlite
-          DB_DATABASE: database/database.sqlite
-        run: php artisan test
-
       - name: Install frontend dependencies
         run: npm ci
 
@@ -52,3 +46,9 @@ jobs:
 
       - name: Build frontend
         run: npm run build
+
+      - name: Run PHP tests
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+        run: php artisan test
