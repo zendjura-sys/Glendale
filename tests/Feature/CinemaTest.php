@@ -905,6 +905,28 @@ class CinemaTest extends TestCase
         $this->assertSame(0, $title->seasons()->count());
     }
 
+    public function test_admin_reorders_manual_seasons_and_episodes_and_updates_episode_count(): void
+    {
+        $this->actingAs($this->admin());
+        $title = Title::create(['tmdb_id' => 9041, 'type' => 'series', 'name' => 'Ручні серії']);
+        $first = $title->seasons()->create(['number' => 1, 'name' => 'Перший']);
+        $last = $title->seasons()->create(['number' => 3, 'name' => 'Третій']);
+
+        $this->put("/admin/cinema/seasons/{$last->id}", ['number' => 2])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame([1, 2], $title->seasons()->orderBy('number')->pluck('number')->all());
+        $this->put("/admin/cinema/seasons/{$last->id}", ['number' => 1])->assertSessionHasErrors('number');
+
+        $this->post("/admin/cinema/seasons/{$first->id}/episodes", ['number' => 1, 'name' => 'Пілот'])->assertSessionHasNoErrors();
+        $this->post("/admin/cinema/seasons/{$first->id}/episodes", ['number' => 3, 'name' => 'Фінал'])->assertSessionHasNoErrors();
+        $episode = $first->episodes()->where('number', 3)->firstOrFail();
+        $this->put("/admin/cinema/episodes/{$episode->id}", ['number' => 2])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame([1, 2], $first->episodes()->orderBy('number')->pluck('number')->all());
+        $this->put("/admin/cinema/episodes/{$episode->id}", ['number' => 1])->assertSessionHasErrors('number');
+
+        $this->delete("/admin/cinema/episodes/{$episode->id}")->assertRedirect();
+        $this->assertSame(1, $first->fresh()->episodes_count);
+    }
+
     public function test_admin_saves_blacklist_and_min_year(): void
     {
         $this->actingAs($this->admin());
