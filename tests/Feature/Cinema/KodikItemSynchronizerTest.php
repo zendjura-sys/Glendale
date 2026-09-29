@@ -14,7 +14,7 @@ class KodikItemSynchronizerTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function run(): CinemaSyncRun
+    private function syncRun(): CinemaSyncRun
     {
         return CinemaSyncRun::create([
             'source' => 'kodik',
@@ -44,7 +44,7 @@ class KodikItemSynchronizerTest extends TestCase
                 'poster_url' => 'https://img.example/anime-4001.jpg',
                 'countries' => ['Японія'],
             ],
-        ], $this->run());
+        ], $this->syncRun());
 
         $title = $result->title?->fresh();
         $this->assertSame('created', $result->status);
@@ -79,7 +79,7 @@ class KodikItemSynchronizerTest extends TestCase
             'link' => '//kodik.info/serial/4101/2/720p',
             'translation' => ['id' => 2, 'title' => 'Озвучка'],
             'material_data' => ['description' => 'Опис з API'],
-        ], $this->run());
+        ], $this->syncRun());
 
         $title->refresh();
         $this->assertSame('updated', $result->status);
@@ -112,7 +112,7 @@ class KodikItemSynchronizerTest extends TestCase
                     'quality' => '1080p', 'last_season' => 3, 'last_episode' => 24,
                 ],
             ],
-        ], $this->run());
+        ], $this->syncRun());
 
         $title = $result->title?->fresh();
         $this->assertCount(2, $title->kodikSources);
@@ -129,7 +129,7 @@ class KodikItemSynchronizerTest extends TestCase
                 'translation' => ['id' => 10, 'title' => 'Українська'],
                 'quality' => '1080p',
             ]],
-        ], $this->run());
+        ], $this->syncRun());
 
         $this->assertSame(2, $title->kodikSources()->count(), 'Repeated sync updates the source instead of duplicating it.');
         $this->assertSame('https://kodik.info/serial/4201/10/new-1080p', $title->fresh()->kodik_link);
@@ -148,7 +148,7 @@ class KodikItemSynchronizerTest extends TestCase
             'imdb_id' => 'tt4301',
             'link' => '//kodik.info/video/4302/1/720p',
             'translation' => ['id' => 1, 'title' => 'Дубляж'],
-        ], $this->run());
+        ], $this->syncRun());
 
         $this->assertSame('updated', $result->status);
         $this->assertSame($kinopoisk->id, $result->title?->id);
@@ -168,7 +168,7 @@ class KodikItemSynchronizerTest extends TestCase
             'year' => 2026,
             'link' => '//kodik.info/video/4400/1/720p',
             'translation' => ['id' => 1, 'title' => 'Дубляж'],
-        ], $this->run());
+        ], $this->syncRun());
 
         $this->assertSame('ambiguous', $result->status);
         $this->assertNull($result->title);
@@ -186,7 +186,7 @@ class KodikItemSynchronizerTest extends TestCase
             'year' => 2026,
             'link' => '',
             'translation' => ['id' => 1, 'title' => 'Дубляж'],
-        ], $this->run());
+        ], $this->syncRun());
 
         $this->assertSame('rejected', $result->status);
         $this->assertNull($result->title);
