@@ -89,7 +89,7 @@ class KodikAttachTest extends TestCase
             (new AttachPlayerJob('kodik', $title->id))->handle();
             $this->fail('Retryable Kodik failure must be returned to the queue.');
         } catch (KodikApiException $exception) {
-            $this->assertSame('rate_limit', $exception->kind);
+            $this->assertSame('rate_limit', $exception->kind());
         }
 
         $title->refresh();

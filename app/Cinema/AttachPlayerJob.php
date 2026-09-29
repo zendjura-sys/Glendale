@@ -29,11 +29,15 @@ class AttachPlayerJob implements ShouldQueue
             return;
         }
 
-        match ($this->source) {
-            'kodik' => Kodik::attach($title),
+        $result = match ($this->source) {
+            'kodik' => Kodik::attachResult($title),
             'flixcdn' => FlixCdn::attach($title),
             'shikimori' => Shikimori::attach($title),
             default => null,
         };
+
+        if ($this->source === 'kodik' && $result?->retryable() && $result->exception !== null) {
+            throw $result->exception;
+        }
     }
 }

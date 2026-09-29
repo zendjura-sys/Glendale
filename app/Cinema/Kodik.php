@@ -2,7 +2,10 @@
 
 namespace App\Cinema;
 
-use Illuminate\Support\Facades\Http;
+use App\Cinema\Kodik\KodikApiException;
+use App\Cinema\Kodik\KodikAttachResult;
+use App\Cinema\Kodik\KodikClient;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Плеєр Kodik: за IMDb id (або назвою й роком) знаходить
@@ -24,14 +27,39 @@ final class Kodik
      *
      * @return bool чи знайдено
      */
-    public static function attach(Title $title): bool
+    public static function attach(Title $title, bool $force = false): bool
     {
-        $results = self::search($title);
-        $title->kodik_checked_at = now();
-        if (! $results) {
-            $title->save();
+        return self::attachResult($title, $force)->status === 'attached';
+    }
 
-            return false;
+    public static function attachResult(Title $title, bool $force = false): KodikAttachResult
+    {
+        try {
+            $results = self::search($title);
+        } catch (KodikApiException $exception) {
+            $title->forceFill([
+                'kodik_sync_status' => 'failed',
+                'kodik_last_error' => $exception->kind(),
+            ])->save();
+
+            return KodikAttachResult::failed($exception);
+        }
+
+        if (! $results) {
+            DB::transaction(function () use ($title, $force): void {
+                $values = [
+                    'kodik_checked_at' => now(),
+                    'kodik_sync_status' => 'not_found',
+                    'kodik_last_error' => null,
+                ];
+                if ($force) {
+                    $values['kodik_link'] = null;
+                    $values['kodik_translations'] = null;
+                }
+                $title->forceFill($values)->save();
+            });
+
+            return KodikAttachResult::notFound();
         }
 
         $translations = collect($results)->map(fn ($r) => [
@@ -46,20 +74,23 @@ final class Kodik
 
         // Українська озвучка — першою, якщо є.
         $sorted = $translations->sortBy(fn ($t) => preg_match('/укр|ukr|україн/iu', (string) $t['title']) ? 0 : 1)->values();
-        $title->kodik_translations = $sorted->all();
-        $title->kodik_link = $sorted->first()['link'] ?? null;
-        $title->save();
+        DB::transaction(function () use ($title, $sorted): void {
+            $title->forceFill([
+                'kodik_translations' => $sorted->all(),
+                'kodik_link' => $sorted->first()['link'] ?? null,
+                'kodik_checked_at' => now(),
+                'kodik_sync_status' => 'attached',
+                'kodik_last_error' => null,
+            ])->save();
+        });
 
-        return $title->kodik_link !== null;
+        return KodikAttachResult::attached();
     }
 
     /** @return list<array<string, mixed>> */
     public static function search(Title $title): array
     {
-        $token = CinemaSettings::kodikToken();
-        if (! $token) {
-            return [];
-        }
+        $client = new KodikClient;
         $queries = [];
         // Shikimori id — найточніший збіг для аніме й дорам (TMDB часто
         // не має точного відповідника чи IMDb id для азійського контенту).
@@ -100,13 +131,10 @@ final class Kodik
         $wantSerial = $title->isSeries();
         $fallback = [];
         foreach ($queries as $query) {
-            try {
-                $response = Http::timeout(15)->connectTimeout(8)->acceptJson()
-                    ->get(self::API.'/search', $query + ['token' => $token, 'with_material_data' => 'true', 'limit' => 50]);
-            } catch (\Throwable) {
-                continue;
-            }
-            $results = (array) ($response->json('results') ?? []);
+            $results = $client->search($query + [
+                'with_material_data' => 'true',
+                'limit' => 50,
+            ])->results;
             if (! $results) {
                 continue;
             }
