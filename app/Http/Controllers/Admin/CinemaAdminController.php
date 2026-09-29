@@ -326,6 +326,7 @@ class CinemaAdminController extends Controller
     {
         $season = Season::query()->findOrFail($seasonId);
         $data = $request->validate([
+            'number' => ['sometimes', 'integer', 'min:0', 'max:200', Rule::unique('cinema_seasons', 'number')->where('title_id', $season->title_id)->ignore($season->id)],
             'name' => ['sometimes', 'nullable', 'string', 'max:200'],
             'overview' => ['sometimes', 'nullable', 'string', 'max:2000'],
         ]);
@@ -362,12 +363,18 @@ class CinemaAdminController extends Controller
     {
         $episode = Episode::query()->findOrFail($episodeId);
         $data = $request->validate([
+            'number' => ['sometimes', 'integer', 'min:1', 'max:2000', Rule::unique('cinema_episodes', 'number')->where('season_id', $episode->season_id)->ignore($episode->id)],
             'name' => ['sometimes', 'nullable', 'string', 'max:200'],
             'overview' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'air_date' => ['sometimes', 'nullable', 'date'],
             'runtime' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:600'],
         ]);
         $episode->update($data);
+        if (array_key_exists('number', $data)) {
+            Season::query()->whereKey($episode->season_id)->update([
+                'episodes_count' => Episode::query()->where('season_id', $episode->season_id)->max('number') ?? 0,
+            ]);
+        }
 
         return back();
     }
@@ -375,7 +382,11 @@ class CinemaAdminController extends Controller
     public function destroyEpisode(int $episodeId): RedirectResponse
     {
         $episode = Episode::query()->findOrFail($episodeId);
+        $seasonId = $episode->season_id;
         $episode->delete();
+        Season::query()->whereKey($seasonId)->update([
+            'episodes_count' => Episode::query()->where('season_id', $seasonId)->max('number') ?? 0,
+        ]);
 
         return back()->with('status', "Серію {$episode->number} видалено.");
     }

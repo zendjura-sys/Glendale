@@ -3,6 +3,7 @@ import AdminLayout from '@/Layouts/AdminLayout.vue';
 import KodikSync from './KodikSync.vue';
 import KodikLog from './KodikLog.vue';
 import KodikSettings from './KodikSettings.vue';
+import SeasonsModal from './SeasonsModal.vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
@@ -28,6 +29,7 @@ const tabs = [
     { key: 'kodik-settings', label: 'Kodik · фільтри' },
 ];
 const tab = ref(props.settings.tmdbConfigured ? 'catalog' : 'settings');
+const editingSeasons = ref(null);
 
 /* налаштування */
 const settingsForm = useForm({
@@ -315,6 +317,7 @@ const act = 'rounded-lg px-2 py-1 text-[11px] text-white/55 hover:bg-white/5 hov
                         </button>
                         <button :class="[act, t.featured ? 'text-gold-300' : '']" @click="toggle(t, 'featured')">{{ t.featured ? '★ На головній' : '☆ На головну' }}</button>
                         <button :class="act" @click="refresh(t)">Оновити</button>
+                        <button v-if="t.type === 'series'" :class="act" @click="editingSeasons = t">Сезони й серії</button>
                         <button v-if="settings.kodikConfigured" :class="act" @click="kodik(t)">Шукати Kodik</button>
                         <button v-if="settings.flixcdnConfigured" :class="act" @click="flixcdn(t)">Шукати FlixCDN</button>
                         <button :class="act" class="hover:!text-red-300" @click="destroy(t)">Видалити</button>
@@ -447,5 +450,6 @@ const act = 'rounded-lg px-2 py-1 text-[11px] text-white/55 hover:bg-white/5 hov
                 <button :class="btn" :disabled="settingsForm.processing">Зберегти</button>
             </form>
         </section>
+        <SeasonsModal v-if="editingSeasons" :title="editingSeasons" @close="editingSeasons = null" />
     </AdminLayout>
 </template>
