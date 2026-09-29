@@ -53,6 +53,33 @@ final class PlayerSources
         return $title->kodik_link ?: $title->flixcdn_link;
     }
 
+    /** Перебудувати сумісні поля тайтла з нормалізованих варіантів Kodik. */
+    public static function refreshKodikAggregate(Title $title): void
+    {
+        $sources = $title->kodikSources()->where('is_available', true)->get()->sort(function ($left, $right): int {
+            $leftUk = preg_match('/укр|ukr|україн/iu', (string) $left->translation_title) ? 0 : 1;
+            $rightUk = preg_match('/укр|ukr|україн/iu', (string) $right->translation_title) ? 0 : 1;
+
+            return [$leftUk, -(int) $left->last_season, -(int) $left->last_episode, -($left->source_updated_at?->timestamp ?? 0), $left->id]
+                <=> [$rightUk, -(int) $right->last_season, -(int) $right->last_episode, -($right->source_updated_at?->timestamp ?? 0), $right->id];
+        })->values();
+
+        $translations = $sources->map(fn ($source) => [
+            'id' => $source->translation_id,
+            'title' => $source->translation_title ?: 'Озвучка',
+            'type' => $source->translation_type,
+            'quality' => $source->quality,
+            'link' => $source->link,
+            'lastSeason' => $source->last_season,
+            'lastEpisode' => $source->last_episode,
+        ])->all();
+
+        $title->forceFill([
+            'kodik_link' => $sources->first()?->link,
+            'kodik_translations' => $translations ?: null,
+        ])->save();
+    }
+
     /**
      * Автоматично шукає плеєр там, де його ще нема, не частіше ніж
      * раз на добу на джерело — щоб не бити по обох API щоразу, коли
