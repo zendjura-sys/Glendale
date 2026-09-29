@@ -2,6 +2,7 @@
 
 namespace App\Cinema\Kodik;
 
+use App\Cinema\CinemaSettings;
 use App\Cinema\CinemaSyncEvent;
 use App\Cinema\CinemaSyncRun;
 use App\Cinema\Kodik;
@@ -14,11 +15,26 @@ use Illuminate\Support\Facades\DB;
 
 final class KodikItemSynchronizer
 {
-    public function __construct(private readonly KodikIdentityResolver $resolver) {}
+    private readonly KodikImportPolicy $policy;
+
+    public function __construct(
+        private readonly KodikIdentityResolver $resolver,
+        ?KodikImportPolicy $policy = null,
+    ) {
+        $this->policy = $policy ?? new KodikImportPolicy;
+    }
 
     /** @param array<string, mixed> $item */
     public function sync(array $item, CinemaSyncRun $run): KodikItemSyncResult
     {
+        $settings = $this->policy->normalize(CinemaSettings::kodikImportPolicy());
+        $decision = $this->policy->evaluate($item, $settings);
+        if (! $decision->accepted) {
+            $event = $this->event($run, null, 'skipped', 'rejected', $item, (string) $decision->reason);
+
+            return new KodikItemSyncResult('rejected', null, $event);
+        }
+
         $sources = $this->sourceRows($item);
         if ($sources === []) {
             $event = $this->event($run, null, 'skipped', 'rejected', $item, 'missing_iframe');
@@ -35,12 +51,18 @@ final class KodikItemSynchronizer
             return new KodikItemSyncResult('ambiguous', null, $event);
         }
 
-        return DB::transaction(function () use ($item, $run, $resolution, $sources): KodikItemSyncResult {
+        if ($resolution->title !== null && ! $settings['update_existing']) {
+            $event = $this->event($run, $resolution->title, 'skipped', 'rejected', $item, 'updates_disabled');
+
+            return new KodikItemSyncResult('rejected', $resolution->title, $event);
+        }
+
+        return DB::transaction(function () use ($item, $run, $resolution, $sources, $settings): KodikItemSyncResult {
             $created = $resolution->status === 'new';
             $title = $resolution->title ?? new Title;
 
             if ($created) {
-                $title->forceFill($this->newTitleAttributes($item));
+                $title->forceFill($this->newTitleAttributes($item, (bool) $settings['auto_publish']));
             }
             $title->forceFill($this->identityAttributes($item) + [
                 'kodik_sync_status' => 'attached',
@@ -112,7 +134,7 @@ final class KodikItemSynchronizer
     }
 
     /** @param array<string, mixed> $item @return array<string, mixed> */
-    private function newTitleAttributes(array $item): array
+    private function newTitleAttributes(array $item, bool $autoPublish): array
     {
         $material = is_array($item['material_data'] ?? null) ? $item['material_data'] : [];
         $type = str_contains((string) ($item['type'] ?? ''), 'serial') ? 'series' : 'movie';
@@ -139,7 +161,7 @@ final class KodikItemSynchronizer
             'status' => $material['status'] ?? null,
             'seasons_count' => $this->positiveInt($item['last_season'] ?? null),
             'episodes_count' => $this->positiveInt($item['last_episode'] ?? null),
-            'is_published' => true,
+            'is_published' => $autoPublish,
         ];
     }
 

@@ -94,7 +94,7 @@ final class KodikImportPolicy
         $settings = $this->normalize($settings);
         $material = is_array($item['material_data'] ?? null) ? $item['material_data'] : [];
 
-        if (! $this->validIframe((string) ($item['link'] ?? $item['iframe_url'] ?? ''))) {
+        if (! $this->hasValidIframe($item)) {
             return KodikImportDecision::rejected('missing_iframe');
         }
         if (! $this->allowed([(string) ($item['type'] ?? '')], $settings['types'])) {
@@ -250,8 +250,28 @@ final class KodikImportPolicy
 
     private function validIframe(string $link): bool
     {
+        if (str_starts_with($link, '//')) {
+            $link = 'https:'.$link;
+        }
+
         return filter_var($link, FILTER_VALIDATE_URL) !== false
             && in_array(parse_url($link, PHP_URL_SCHEME), ['http', 'https'], true);
+    }
+
+    /** @param array<string, mixed> $item */
+    private function hasValidIframe(array $item): bool
+    {
+        if ($this->validIframe((string) ($item['link'] ?? $item['iframe_url'] ?? ''))) {
+            return true;
+        }
+
+        foreach (is_array($item['translations'] ?? null) ? $item['translations'] : [] as $translation) {
+            if (is_array($translation) && $this->validIframe((string) ($translation['link'] ?? $translation['iframe_url'] ?? ''))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
 

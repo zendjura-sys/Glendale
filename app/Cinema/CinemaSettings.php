@@ -18,6 +18,8 @@ final class CinemaSettings
 
     public const KODIK_CURSOR = 'cinema_kodik_cursor';
 
+    public const KODIK_IMPORT_POLICY = 'cinema_kodik_import_policy';
+
     /** Другий балансер плеєрів (uacdn.live) — працює паралельно з Kodik, не замість нього. */
     public const FLIXCDN_TOKEN = 'cinema_flixcdn_token';
 
@@ -71,6 +73,24 @@ final class CinemaSettings
     public static function setKodikCursor(?string $cursor): void
     {
         Setting::set(self::KODIK_CURSOR, $cursor ?: null, 'cinema');
+    }
+
+    /** @return array<string, mixed> */
+    public static function kodikImportPolicy(): array
+    {
+        $decoded = json_decode((string) Setting::get(self::KODIK_IMPORT_POLICY, '{}'), true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    /** @param array<string, mixed> $settings */
+    public static function setKodikImportPolicy(array $settings): void
+    {
+        Setting::set(
+            self::KODIK_IMPORT_POLICY,
+            json_encode($settings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'cinema',
+        );
     }
 
     public static function flixcdnToken(): ?string
