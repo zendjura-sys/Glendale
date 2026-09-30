@@ -15,6 +15,7 @@ class RebindKodikTitleJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable;
 
     public int $tries = 3;
+    public int $timeout = 600;
     public int $backoff = 60;
 
     public function __construct(public int $runId, public int $titleId, public bool $onlyMissing = true) {}
@@ -43,7 +44,7 @@ class RebindKodikTitleJob implements ShouldQueue
             $before = $title->kodikSources()->pluck('id')->all();
             $accepted = [];
             foreach ($items as $item) {
-                $result = $synchronizer->sync($item, $run);
+                $result = $synchronizer->sync($item, $run, true);
                 if ($result->title?->id === $title->id && in_array($result->status, ['created', 'updated'], true)) {
                     $variants = is_array($item['translations'] ?? null) && array_is_list($item['translations'])
                         ? $item['translations'] : [$item];

@@ -75,6 +75,18 @@ final class CinemaSettings
         Setting::set(self::KODIK_CURSOR, $cursor ?: null, 'cinema');
     }
 
+    public static function kodikScanWatermark(): ?string
+    {
+        $value = Setting::get('cinema_kodik_scan_watermark');
+
+        return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    public static function setKodikScanWatermark(?string $value): void
+    {
+        Setting::set('cinema_kodik_scan_watermark', $value, 'cinema');
+    }
+
     public static function kodikWatermark(): ?string
     {
         $value = Setting::get('cinema_kodik_watermark');

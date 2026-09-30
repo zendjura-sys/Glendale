@@ -5,6 +5,7 @@ namespace App\Cinema\Kodik;
 use App\Cinema\CinemaSyncEvent;
 use App\Cinema\CinemaSettings;
 use App\Cinema\CinemaSyncRun;
+use Illuminate\Support\Carbon;
 
 final class KodikRunProgress
 {
@@ -25,6 +26,9 @@ final class KodikRunProgress
         $counters = $run->counters ?? [];
         $counters['completed'] = ($counters['completed'] ?? 0) + 1;
         $counters[$status] = ($counters[$status] ?? 0) + 1;
+        if ($status === 'failed' && $run->mode === 'incremental') {
+            CinemaSettings::setKodikCursor($run->cursor_before);
+        }
         $run->counters = $counters;
         self::finishIfReady($run);
         $run->save();
@@ -40,7 +44,17 @@ final class KodikRunProgress
             $run->finished_at = now();
             if ($run->status === 'succeeded' && $run->mode === 'incremental'
                 && ! empty($counters['watermark_after'])) {
-                CinemaSettings::setKodikWatermark($counters['watermark_after']);
+                $candidate = $counters['watermark_after'];
+                $pending = CinemaSettings::kodikScanWatermark();
+                if ($pending !== null && Carbon::parse($pending)->gt(Carbon::parse($candidate))) {
+                    $candidate = $pending;
+                }
+                if ($run->cursor_after !== null) {
+                    CinemaSettings::setKodikScanWatermark($candidate);
+                } else {
+                    CinemaSettings::setKodikWatermark($candidate);
+                    CinemaSettings::setKodikScanWatermark(null);
+                }
             }
         }
     }

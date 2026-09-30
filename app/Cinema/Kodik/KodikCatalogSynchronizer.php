@@ -13,7 +13,7 @@ use Throwable;
 
 final class KodikCatalogSynchronizer
 {
-    private const MAX_PAGES_PER_RUN = 10000;
+    private const MAX_PAGES_PER_RUN = 10;
 
     public function __construct(private readonly KodikClient $client) {}
 
@@ -59,12 +59,12 @@ final class KodikCatalogSynchronizer
         $visitedCursors = [];
         $queuedKeys = [];
         $watermark = CinemaSettings::kodikWatermark();
-        $highWatermark = $watermark;
+        $highWatermark = CinemaSettings::kodikScanWatermark() ?? $watermark;
 
         try {
             do {
                 if ($counters['pages'] >= self::MAX_PAGES_PER_RUN) {
-                    throw new RuntimeException('Kodik pagination exceeded the safety limit.');
+                    break;
                 }
 
                 $cursorKey = $requestCursor ?? '__first__';

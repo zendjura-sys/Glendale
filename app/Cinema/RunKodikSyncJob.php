@@ -14,6 +14,7 @@ class RunKodikSyncJob implements ShouldQueue, ShouldBeUnique
     use Dispatchable, InteractsWithQueue, Queueable;
 
     public int $tries = 3;
+    public int $timeout = 600;
     public int $backoff = 60;
     public int $uniqueFor = 7200;
 
@@ -41,3 +42,4 @@ class RunKodikSyncJob implements ShouldQueue, ShouldBeUnique
         $run->update(['initiated_by' => $this->initiatedBy]);
     }
 }
+

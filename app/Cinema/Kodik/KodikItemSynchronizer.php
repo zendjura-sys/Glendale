@@ -27,9 +27,9 @@ final class KodikItemSynchronizer
     }
 
     /** @param array<string, mixed> $item */
-    public function sync(array $item, CinemaSyncRun $run): KodikItemSyncResult
+    public function sync(array $item, CinemaSyncRun $run, bool $existingOnly = false): KodikItemSyncResult
     {
-        if ($this->resolver->resolve($item)->status === 'new') {
+        if (! $existingOnly && $this->resolver->resolve($item)->status === 'new') {
             $item = app(KodikMetadataEnricher::class)->enrich($item);
         }
         $settings = $this->policy->normalize(CinemaSettings::kodikImportPolicy());
@@ -54,6 +54,12 @@ final class KodikItemSynchronizer
             ]);
 
             return new KodikItemSyncResult('ambiguous', null, $event);
+        }
+
+        if ($existingOnly && $resolution->status === 'new') {
+            $event = $this->event($run, null, 'skipped', 'rejected', $item, 'unmatched_rebind');
+
+            return new KodikItemSyncResult('rejected', null, $event);
         }
 
         if ($resolution->title !== null && ! $settings['update_existing']) {
