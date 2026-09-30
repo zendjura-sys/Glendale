@@ -33,7 +33,7 @@ class KodikCatalogSynchronizerTest extends TestCase
 
         $run = app(KodikCatalogSynchronizer::class)->run('incremental', 2, null, 'cli');
 
-        $this->assertSame('succeeded', $run->status);
+        $this->assertSame('running', $run->status);
         $this->assertSame(3, $run->counters['seen']);
         $this->assertSame(2, $run->counters['pages']);
         $this->assertNull($run->cursor_after);
@@ -72,7 +72,7 @@ class KodikCatalogSynchronizerTest extends TestCase
 
         $secondPageWorks = true;
         $resumed = app(KodikCatalogSynchronizer::class)->run('incremental', 100, CinemaSettings::kodikCursor(), 'scheduler');
-        $this->assertSame('succeeded', $resumed->status);
+        $this->assertSame('running', $resumed->status);
         Queue::assertPushed(fn (SyncKodikItemJob $job) => $job->runId === $resumed->id && $job->item['id'] === 'second');
     }
 
@@ -88,3 +88,4 @@ class KodikCatalogSynchronizerTest extends TestCase
         app(KodikCatalogSynchronizer::class)->run('incremental', 100, null, 'scheduler');
     }
 }
+

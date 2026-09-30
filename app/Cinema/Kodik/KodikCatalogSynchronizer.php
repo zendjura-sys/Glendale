@@ -30,13 +30,14 @@ final class KodikCatalogSynchronizer
             'initiator' => $initiator,
             'cursor_before' => $cursor,
             'cursor_after' => $cursor,
-            'counters' => ['pages' => 0, 'seen' => 0, 'queued' => 0],
+            'counters' => ['pages' => 0, 'seen' => 0, 'queued' => 0, 'completed' => 0, 'catalog_complete' => false],
             'started_at' => now(),
         ]);
 
         $counters = $run->counters;
         $requestCursor = $cursor;
         $visitedCursors = [];
+        $queuedKeys = [];
 
         try {
             do {
@@ -51,35 +52,45 @@ final class KodikCatalogSynchronizer
                 $visitedCursors[$cursorKey] = true;
 
                 $page = $this->client->list($this->query($batch, $requestCursor));
-                $counters['pages']++;
-                $counters['seen'] += count($page->results);
-                $counters['queued'] += count($page->results);
-
-                DB::transaction(function () use ($run, $page, $counters): void {
-                    foreach ($page->results as $item) {
-                        SyncKodikItemJob::dispatch($run->id, $item);
+                $jobs = [];
+                foreach ($page->results as $item) {
+                    $job = new SyncKodikItemJob($run->id, $item);
+                    if (! isset($queuedKeys[$job->uniqueId()])) {
+                        $queuedKeys[$job->uniqueId()] = true;
+                        $jobs[] = $job;
                     }
+                }
 
-                    $run->update([
-                        'cursor_after' => $page->nextPage,
-                        'counters' => $counters,
-                    ]);
+                DB::transaction(function () use ($run, $page, $jobs): void {
+                    $locked = CinemaSyncRun::query()->lockForUpdate()->findOrFail($run->id);
+                    $counts = $locked->counters;
+                    $counts['pages']++;
+                    $counts['seen'] += count($page->results);
+                    $counts['queued'] += count($jobs);
+                    $locked->update(['cursor_after' => $page->nextPage, 'counters' => $counts]);
                     CinemaSettings::setKodikCursor($page->nextPage);
+                    foreach ($jobs as $job) {
+                        SyncKodikItemJob::dispatch($job->runId, $job->item)->afterCommit();
+                    }
                 });
+                $counters = $run->fresh()->counters;
 
                 $requestCursor = $page->nextPage;
             } while ($requestCursor !== null);
 
-            $run->update([
-                'status' => 'succeeded',
-                'finished_at' => now(),
-            ]);
+            DB::transaction(function () use ($run): void {
+                $locked = CinemaSyncRun::query()->lockForUpdate()->findOrFail($run->id);
+                $counts = $locked->counters;
+                $counts['catalog_complete'] = true;
+                $locked->counters = $counts;
+                KodikRunProgress::finishIfReady($locked);
+                $locked->save();
+            });
 
             return $run->fresh();
         } catch (Throwable $exception) {
             $run->update([
                 'status' => $counters['seen'] > 0 ? 'partial' : 'failed',
-                'counters' => $counters,
                 'error_summary' => $this->safeErrorSummary($exception),
                 'finished_at' => now(),
             ]);
@@ -146,3 +157,4 @@ final class KodikCatalogSynchronizer
         return 'Kodik synchronization failed: '.$exception::class;
     }
 }
+

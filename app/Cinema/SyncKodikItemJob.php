@@ -3,6 +3,8 @@
 namespace App\Cinema;
 
 use App\Cinema\Kodik\KodikItemSynchronizer;
+use App\Cinema\Kodik\KodikRunProgress;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -24,14 +26,32 @@ class SyncKodikItemJob implements ShouldBeUnique, ShouldQueue
     {
         $identity = $this->item['id'] ?? $this->item['kodik_id'] ?? hash('sha256', json_encode($this->item));
 
-        return $this->runId.':'.$identity;
+        $translation = $this->item['translation']['id'] ?? $this->item['translation_id'] ?? 0;
+
+        return $this->runId.':'.$identity.':'.$translation;
     }
 
     public function handle(KodikItemSynchronizer $synchronizer): void
     {
-        $run = CinemaSyncRun::query()->find($this->runId);
-        if ($run) {
-            $synchronizer->sync($this->item, $run);
-        }
+        DB::transaction(function () use ($synchronizer): void {
+            $run = CinemaSyncRun::query()->lockForUpdate()->find($this->runId);
+            if (! $run || KodikRunProgress::completed($run, $this->uniqueId())) {
+                return;
+            }
+
+            $result = $synchronizer->sync($this->item, $run);
+            KodikRunProgress::record($run, $this->uniqueId(), $result->status);
+        });
+    }
+
+    public function failed(?\Throwable $exception): void
+    {
+        DB::transaction(function (): void {
+            $run = CinemaSyncRun::query()->lockForUpdate()->find($this->runId);
+            if ($run && ! KodikRunProgress::completed($run, $this->uniqueId())) {
+                KodikRunProgress::record($run, $this->uniqueId(), 'failed');
+            }
+        });
     }
 }
+

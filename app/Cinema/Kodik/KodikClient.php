@@ -117,7 +117,9 @@ final class KodikClient
                 'status' => $response?->status(),
                 'attempts' => $attempts,
             ],
-            $previous,
+            // HTTP exceptions may include the authenticated URL in their message.
+            // Keep only the safe diagnostic context, never the original chain.
         );
     }
 }
+
