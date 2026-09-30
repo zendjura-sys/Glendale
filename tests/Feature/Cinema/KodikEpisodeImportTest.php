@@ -24,7 +24,7 @@ class KodikEpisodeImportTest extends TestCase
         Queue::fake();
         Http::fake(['kodik-api.com/list*' => Http::response(['results' => []])]);
         app(KodikCatalogSynchronizer::class)->run('incremental', 100);
-        Http::assertSent(fn ($request) => $request['with_episodes_data'] === 'true');
+        Http::assertSent(fn ($request) => ($request->data()['with_episodes_data'] ?? null) === 'true');
     }
 
     public function test_import_populates_episode_picker_and_preserves_manual_metadata(): void
@@ -56,4 +56,3 @@ class KodikEpisodeImportTest extends TestCase
         $this->assertSame(3, $title->fresh()->episodes_count);
     }
 }
-
