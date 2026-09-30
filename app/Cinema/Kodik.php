@@ -154,7 +154,7 @@ final class Kodik
 
     public static function hasWorkingPlayer(Title $title): bool
     {
-        $links = [$title->kodik_link];
+        $links = $title->kodikSources->isEmpty() ? [$title->kodik_link] : [];
         foreach ($title->kodikSources as $source) {
             if ($source->is_available) {
                 $links[] = $source->link;
@@ -181,4 +181,3 @@ final class Kodik
         return str_starts_with($link, '//') ? 'https:'.$link : $link;
     }
 }
-
