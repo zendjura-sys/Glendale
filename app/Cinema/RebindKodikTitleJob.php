@@ -39,9 +39,31 @@ class RebindKodikTitleJob implements ShouldQueue
 
         // Provider failures throw before any binding can be removed.
         $items = Kodik::search($title);
-        foreach ($items as $item) {
-            $synchronizer->sync($item, $run);
-        }
+        DB::transaction(function () use ($items, $synchronizer, $run, $title): void {
+            $before = $title->kodikSources()->pluck('id')->all();
+            $accepted = [];
+            foreach ($items as $item) {
+                $result = $synchronizer->sync($item, $run);
+                if ($result->title?->id === $title->id && in_array($result->status, ['created', 'updated'], true)) {
+                    $variants = is_array($item['translations'] ?? null) && array_is_list($item['translations'])
+                        ? $item['translations'] : [$item];
+                    foreach ($variants as $variant) {
+                        $translation = (string) ($variant['translation']['id'] ?? $variant['translation_id'] ?? 0);
+                        $kodikId = (string) ($item['kodik_id'] ?? $item['id'] ?? '');
+                        $id = $title->kodikSources()->where('kodik_id', $kodikId)
+                            ->where('translation_id', $translation)->value('id');
+                        if ($id !== null) {
+                            $accepted[] = $id;
+                        }
+                    }
+                }
+            }
+            if (! $this->onlyMissing && in_array($run->mode, ['full', 'rebind_all'], true) && $accepted !== []) {
+                $title->kodikSources()->whereIn('id', $before)->whereNotIn('id', $accepted)
+                    ->update(['is_available' => false]);
+                PlayerSources::refreshKodikAggregate($title);
+            }
+        });
         if ($items === []) {
             CinemaSyncEvent::create([
                 'run_id' => $run->id, 'title_id' => $title->id,

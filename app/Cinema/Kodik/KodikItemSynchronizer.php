@@ -29,6 +29,9 @@ final class KodikItemSynchronizer
     /** @param array<string, mixed> $item */
     public function sync(array $item, CinemaSyncRun $run): KodikItemSyncResult
     {
+        if ($this->resolver->resolve($item)->status === 'new') {
+            $item = app(KodikMetadataEnricher::class)->enrich($item);
+        }
         $settings = $this->policy->normalize(CinemaSettings::kodikImportPolicy());
         $decision = $this->policy->evaluate($item, $settings);
         if (! $decision->accepted) {
@@ -184,7 +187,7 @@ final class KodikItemSynchronizer
     {
         $material = is_array($item['material_data'] ?? null) ? $item['material_data'] : [];
         $type = str_contains((string) ($item['type'] ?? ''), 'serial') ? 'series' : 'movie';
-        $name = $item['title'] ?? $material['title'] ?? $item['title_orig'] ?? 'Без назви';
+        $name = $material['localized_name'] ?? $item['title'] ?? $material['title'] ?? $item['title_orig'] ?? 'Без назви';
         $original = $item['title_orig'] ?? $material['title_en'] ?? null;
         $altNames = collect([
             $item['other_title'] ?? null,
@@ -200,6 +203,7 @@ final class KodikItemSynchronizer
             'name' => (string) $name,
             'original_name' => $original,
             'alt_names' => $altNames,
+            'runtime' => $this->positiveInt($material['duration'] ?? null),
             'year' => $this->positiveInt($item['year'] ?? $material['year'] ?? null),
             'overview' => $material['description'] ?? $item['description'] ?? null,
             'poster_path' => $material['poster_url'] ?? $material['poster'] ?? $item['poster'] ?? null,
