@@ -50,6 +50,20 @@ class KodikOperationalRegressionTest extends TestCase
         $this->assertSame('2026-09-30T06:00:00+00:00', Setting::get('cinema_kodik_watermark'));
     }
 
+    public function test_failed_item_rewinds_the_segment_for_a_safe_retry(): void
+    {
+        CinemaSettings::setKodikCursor('https://kodik-api.com/list?page=3');
+        $run = CinemaSyncRun::create([
+            'source' => 'kodik', 'mode' => 'incremental', 'status' => 'running',
+            'cursor_before' => 'https://kodik-api.com/list?page=2',
+            'cursor_after' => 'https://kodik-api.com/list?page=3',
+            'counters' => ['queued' => 1, 'completed' => 0, 'catalog_complete' => true],
+        ]);
+        (new SyncKodikItemJob($run->id, ['id' => 'failed-item']))->failed(new \RuntimeException('Provider failure'));
+        $this->assertSame('partial', $run->fresh()->status);
+        $this->assertSame('https://kodik-api.com/list?page=2', CinemaSettings::kodikCursor());
+    }
+
     public function test_rebind_does_not_create_an_unrelated_title_from_fuzzy_search(): void
     {
         CinemaSettings::setSecret(CinemaSettings::KODIK_TOKEN, 'test-token');
@@ -64,4 +78,3 @@ class KodikOperationalRegressionTest extends TestCase
         $this->assertSame('https://kodik.info/video/old', $title->fresh()->kodik_link);
     }
 }
-
