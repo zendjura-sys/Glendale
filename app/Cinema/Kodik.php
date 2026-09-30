@@ -133,6 +133,7 @@ final class Kodik
         foreach ($queries as $query) {
             $results = $client->search($query + [
                 'with_material_data' => 'true',
+                'with_episodes_data' => 'true',
                 'limit' => 50,
             ])->results;
             if (! $results) {
@@ -161,3 +162,4 @@ final class Kodik
         return str_starts_with($link, '//') ? 'https:'.$link : $link;
     }
 }
+

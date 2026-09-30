@@ -110,6 +110,7 @@ final class KodikCatalogSynchronizer
         $query = [
             'limit' => $batch,
             'with_material_data' => 'true',
+            'with_episodes_data' => 'true',
         ];
 
         if ($cursor === null || $cursor === '') {

@@ -8,6 +8,8 @@ use App\Cinema\CinemaSyncRun;
 use App\Cinema\Kodik;
 use App\Cinema\KodikSource;
 use App\Cinema\PlayerSources;
+use App\Cinema\Season;
+use App\Cinema\Episode;
 use App\Cinema\Title;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
@@ -79,6 +81,7 @@ final class KodikItemSynchronizer
                 $model->forceFill($source + ['title_id' => $title->id])->save();
             }
 
+            $this->syncEpisodes($title, $item);
             PlayerSources::refreshKodikAggregate($title);
             $title->refresh();
             $action = $created ? 'created' : 'updated';
@@ -89,6 +92,49 @@ final class KodikItemSynchronizer
 
             return new KodikItemSyncResult($action, $title, $event);
         });
+    }
+
+    /** Add provider episodes while retaining manually entered and enriched fields. */
+    private function syncEpisodes(Title $title, array $item): void
+    {
+        if (! $title->isSeries() || ! is_array($item['seasons'] ?? null)) {
+            return;
+        }
+        foreach ($item['seasons'] as $seasonNumber => $data) {
+            if (! is_numeric($seasonNumber) || (int) $seasonNumber < 0 || (int) $seasonNumber > 200 || ! is_array($data)) {
+                continue;
+            }
+            $season = Season::query()->firstOrCreate(
+                ['title_id' => $title->id, 'number' => (int) $seasonNumber],
+                ['name' => 'Сезон '.$seasonNumber],
+            );
+            $episodes = is_array($data['episodes'] ?? null) ? $data['episodes'] : [];
+            foreach ($episodes as $number => $episodeData) {
+                if (! is_numeric($number) || (int) $number < 1 || (int) $number > 5000) {
+                    continue;
+                }
+                $episodeData = is_array($episodeData) ? $episodeData : ['link' => $episodeData];
+                $link = Kodik::normalizeLink((string) ($episodeData['link'] ?? ''));
+                if (! $this->validIframe($link)) {
+                    continue;
+                }
+                $episode = Episode::query()->firstOrNew(['season_id' => $season->id, 'number' => (int) $number]);
+                $episode->title_id = $title->id;
+                foreach (['name' => $episodeData['title'] ?? null,
+                    'still_path' => $episodeData['screenshots'][0] ?? null] as $field => $value) {
+                    if (! $episode->{$field} && is_string($value) && $value !== '') {
+                        $episode->{$field} = mb_substr($value, 0, 255);
+                    }
+                }
+                $episode->save();
+            }
+            $season->episodes_count = max((int) $season->episodes_count, (int) $season->episodes()->max('number'));
+            $season->save();
+        }
+        $title->forceFill([
+            'seasons_count' => $title->seasons()->count(),
+            'episodes_count' => Episode::query()->where('title_id', $title->id)->count(),
+        ])->save();
     }
 
     /** @param array<string, mixed> $item @return list<array<string, mixed>> */
@@ -236,3 +282,4 @@ final class KodikItemSynchronizer
         }
     }
 }
+
