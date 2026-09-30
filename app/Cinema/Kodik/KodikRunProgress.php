@@ -3,6 +3,7 @@
 namespace App\Cinema\Kodik;
 
 use App\Cinema\CinemaSyncEvent;
+use App\Cinema\CinemaSettings;
 use App\Cinema\CinemaSyncRun;
 
 final class KodikRunProgress
@@ -37,6 +38,10 @@ final class KodikRunProgress
             && $run->status === 'running') {
             $run->status = ($counters['failed'] ?? 0) > 0 ? 'partial' : 'succeeded';
             $run->finished_at = now();
+            if ($run->status === 'succeeded' && $run->mode === 'incremental'
+                && ! empty($counters['watermark_after'])) {
+                CinemaSettings::setKodikWatermark($counters['watermark_after']);
+            }
         }
     }
 }

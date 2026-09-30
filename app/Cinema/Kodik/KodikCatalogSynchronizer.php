@@ -6,6 +6,8 @@ use App\Cinema\CinemaSettings;
 use App\Cinema\CinemaSyncRun;
 use App\Cinema\SyncKodikItemJob;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Carbon;
 use RuntimeException;
 use Throwable;
 
@@ -15,7 +17,19 @@ final class KodikCatalogSynchronizer
 
     public function __construct(private readonly KodikClient $client) {}
 
-    public function run(
+    public function run(string $mode, int $batch, ?string $cursor = null, string $initiator = 'scheduler'): CinemaSyncRun
+    {
+        $result = Cache::lock('cinema:kodik:dispatch:'.$mode, 60)->get(
+            fn () => $this->runUnlocked($mode, $batch, $cursor, $initiator),
+        );
+        if ($result === false) {
+            throw new RuntimeException('Kodik synchronization is already running.');
+        }
+
+        return $result;
+    }
+
+    private function runUnlocked(
         string $mode,
         int $batch,
         ?string $cursor = null,
@@ -44,6 +58,8 @@ final class KodikCatalogSynchronizer
         $requestCursor = $cursor;
         $visitedCursors = [];
         $queuedKeys = [];
+        $watermark = CinemaSettings::kodikWatermark();
+        $highWatermark = $watermark;
 
         try {
             do {
@@ -58,6 +74,20 @@ final class KodikCatalogSynchronizer
                 $visitedCursors[$cursorKey] = true;
 
                 $page = $this->client->list($this->query($batch, $requestCursor));
+                $items = [];
+                $reachedWatermark = false;
+                foreach ($page->results as $item) {
+                    $updated = $this->updatedAt($item);
+                    if ($updated !== null && $watermark !== null && $updated->lt(Carbon::parse($watermark))) {
+                        $reachedWatermark = true;
+                        continue;
+                    }
+                    if ($updated !== null && ($highWatermark === null || $updated->gt(Carbon::parse($highWatermark)))) {
+                        $highWatermark = $updated->toIso8601String();
+                    }
+                    $items[] = $item;
+                }
+                $page = new KodikPage($items, $reachedWatermark ? null : $page->nextPage, $page->total);
                 $jobs = [];
                 foreach ($page->results as $item) {
                     $job = new SyncKodikItemJob($run->id, $item);
@@ -67,12 +97,13 @@ final class KodikCatalogSynchronizer
                     }
                 }
 
-                DB::transaction(function () use ($run, $page, $jobs): void {
+                DB::transaction(function () use ($run, $page, $jobs, $highWatermark): void {
                     $locked = CinemaSyncRun::query()->lockForUpdate()->findOrFail($run->id);
                     $counts = $locked->counters;
                     $counts['pages']++;
                     $counts['seen'] += count($page->results);
                     $counts['queued'] += count($jobs);
+                    $counts['watermark_after'] = $highWatermark;
                     $locked->update(['cursor_after' => $page->nextPage, 'counters' => $counts]);
                     CinemaSettings::setKodikCursor($page->nextPage);
                     foreach ($jobs as $job) {
@@ -115,6 +146,8 @@ final class KodikCatalogSynchronizer
     {
         $query = [
             'limit' => $batch,
+            'sort' => 'updated_at',
+            'order' => 'desc',
             'with_material_data' => 'true',
             'with_episodes_data' => 'true',
         ];
@@ -139,6 +172,19 @@ final class KodikCatalogSynchronizer
         $query['next'] = $cursor;
 
         return $query;
+    }
+
+    private function updatedAt(array $item): ?Carbon
+    {
+        $value = $item['updated_at'] ?? null;
+        if (! is_string($value) || $value === '') {
+            return null;
+        }
+        try {
+            return Carbon::parse($value);
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     private function guardAgainstOverlap(string $mode): void
