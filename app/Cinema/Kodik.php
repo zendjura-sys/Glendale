@@ -152,6 +152,25 @@ final class Kodik
         return $fallback;
     }
 
+    public static function hasWorkingPlayer(Title $title): bool
+    {
+        $links = [$title->kodik_link];
+        foreach ($title->kodikSources as $source) {
+            if ($source->is_available) {
+                $links[] = $source->link;
+            }
+        }
+        foreach ($links as $link) {
+            $link = self::normalizeLink((string) $link);
+            if (filter_var($link, FILTER_VALIDATE_URL)
+                && in_array(parse_url($link, PHP_URL_SCHEME), ['http', 'https'], true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static function normalizeLink(string $link): string
     {
         $link = trim($link);

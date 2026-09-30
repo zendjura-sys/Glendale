@@ -21,7 +21,13 @@ final class KodikCatalogSynchronizer
         ?string $cursor = null,
         string $initiator = 'scheduler',
     ): CinemaSyncRun {
+        if (! in_array($mode, ['incremental', 'missing', 'reconcile', 'full'], true) || $batch < 1 || $batch > 100) {
+            throw new \InvalidArgumentException('Invalid Kodik mode or page size.');
+        }
         $this->guardAgainstOverlap($mode);
+        if ($mode !== 'incremental') {
+            return app(KodikRebindDispatcher::class)->dispatch($mode === 'missing', null, $mode, $initiator);
+        }
 
         $run = CinemaSyncRun::create([
             'source' => 'kodik',
@@ -140,7 +146,7 @@ final class KodikCatalogSynchronizer
         $running = CinemaSyncRun::query()
             ->where('source', 'kodik')
             ->where('mode', $mode)
-            ->where('status', 'running')
+            ->whereIn('status', ['queued', 'running'])
             ->where('started_at', '>=', now()->subHours(2))
             ->exists();
 

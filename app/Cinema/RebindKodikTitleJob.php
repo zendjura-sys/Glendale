@@ -31,7 +31,7 @@ class RebindKodikTitleJob implements ShouldQueue
 
             return;
         }
-        if ($this->onlyMissing && $title->kodikSources()->where('is_available', true)->exists()) {
+        if ($this->onlyMissing && Kodik::hasWorkingPlayer($title)) {
             $this->finish('skipped');
 
             return;
@@ -95,3 +95,4 @@ class RebindKodikTitleJob implements ShouldQueue
             ->exists();
     }
 }
+

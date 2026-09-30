@@ -34,8 +34,8 @@ class SyncKodikCinema extends Command
             return self::FAILURE;
         }
 
-        if ($batch === false || $batch < 1 || $batch > 500) {
-            $this->error('Розмір сторінки має бути від 1 до 500.');
+        if ($batch === false || $batch < 1 || $batch > 100) {
+            $this->error('Розмір сторінки має бути від 1 до 100.');
 
             return self::FAILURE;
         }
@@ -61,7 +61,7 @@ class SyncKodikCinema extends Command
 
             $run = $synchronizer->run($mode, $batch, $cursor, 'cli');
             $this->info(sprintf(
-                'Kodik: синхронізацію завершено, сторінок %d, у чергу додано %d.',
+                'Kodik: завдання поставлено в чергу, сторінок %d, матеріалів %d. Завершення — у журналі.',
                 $run->counters['pages'] ?? 0,
                 $run->counters['queued'] ?? 0,
             ));
@@ -75,3 +75,4 @@ class SyncKodikCinema extends Command
         }
     }
 }
+
