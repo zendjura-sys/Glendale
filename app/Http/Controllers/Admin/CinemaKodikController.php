@@ -7,6 +7,8 @@ use App\Cinema\CinemaSyncEvent;
 use App\Cinema\CinemaSyncRun;
 use App\Cinema\Kodik;
 use App\Cinema\Kodik\KodikImportPolicy;
+use App\Cinema\Kodik\KodikCatalogSynchronizer;
+use App\Cinema\Kodik\KodikApiException;
 use App\Cinema\Kodik\KodikRebindDispatcher;
 use App\Cinema\Kodik\SyncLogRedactor;
 use App\Cinema\RunKodikSyncJob;
@@ -81,6 +83,27 @@ class CinemaKodikController extends Controller
             'dry_run' => ['sometimes', 'boolean'],
             'confirm_full' => ['exclude_unless:mode,full', 'required', 'accepted'],
         ]);
+        if ($data['dry_run'] ?? false) {
+            try {
+                $page = app(KodikCatalogSynchronizer::class)->preview($data['batch'] ?? 100);
+                return response()->json(['status' => 'preview', 'preview' => [
+                    'count' => count($page->results), 'total' => $page->total,
+                    'has_next_page' => $page->nextPage !== null,
+                ]]);
+            } catch (KodikApiException $exception) {
+                $messages = [
+                    'auth' => 'Kodik відхилив API-токен. Перевірте налаштування.',
+                    'rate_limit' => 'Перевищено ліміт запитів Kodik. Спробуйте пізніше.',
+                    'transport' => 'Не вдалося з’єднатися з Kodik. Спробуйте пізніше.',
+                    'server' => 'Сервіс Kodik тимчасово недоступний.',
+                    'contract' => 'Kodik повернув некоректну відповідь.',
+                ];
+                return response()->json([
+                    'message' => $messages[$exception->kind()] ?? 'Помилка перевірки Kodik.',
+                    'error_kind' => $exception->kind(), 'retryable' => $exception->retryable(),
+                ], 502);
+            }
+        }
         if (CinemaSyncRun::where('source', 'kodik')->where('mode', $data['mode'])
             ->whereIn('status', ['queued', 'running'])->exists()) {
             return response()->json(['message' => 'Цей режим синхронізації вже запущено.'], 409);
@@ -101,3 +124,4 @@ class CinemaKodikController extends Controller
         return response()->json(['run_id' => $run->id, 'queued' => $run->counters['queued']], 202);
     }
 }
+

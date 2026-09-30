@@ -41,6 +41,12 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Verify player message boundaries
+        run: node --experimental-strip-types tests/node/kodik-message.test.mjs
+
+      - name: Lint cinema PHP
+        run: find app/Cinema app/Http/Controllers/Admin app/Http/Controllers/Api/V2 tests/Feature/Cinema -name '*.php' -print0 | xargs -0 -n 1 php -l
+
       - name: Typecheck frontend
         run: npm run typecheck
 
@@ -52,3 +58,4 @@ jobs:
           DB_CONNECTION: sqlite
           DB_DATABASE: database/database.sqlite
         run: php artisan test
+

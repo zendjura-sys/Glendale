@@ -1,4 +1,5 @@
 import { tr } from '../lib/i18n';
+import { isTrustedPlayerMessage } from '../lib/kodikMessage';
 import '@fontsource-variable/oswald';
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, NavLink, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -681,6 +682,18 @@ function Player({ title, season, episode, onEpisode }: { title: TitleFull; seaso
     retry: false,
     staleTime: Infinity,
   });
+  const iframe = useRef<HTMLIFrameElement>(null);
+  const playerLink = useRef<string | null>(null);
+  playerLink.current = data?.link ?? null;
+  const onEpisodeRef = useRef(onEpisode);
+  onEpisodeRef.current = onEpisode;
+  useEffect(() => {
+    const selected = data?.selection;
+    if (selected?.season !== null && selected?.season !== undefined && selected?.episode !== null && selected?.episode !== undefined
+      && (selected.season !== season || selected.episode !== episode)) {
+      onEpisodeRef.current(selected.season, selected.episode);
+    }
+  }, [data?.selection?.season, data?.selection?.episode, season, episode]);
   const pos = useRef({ position: 0, duration: 0, season, episode, sent: 0 });
   pos.current.season = data?.selection?.season ?? season;
   pos.current.episode = data?.selection?.episode ?? episode;
@@ -696,6 +709,7 @@ function Player({ title, season, episode, onEpisode }: { title: TitleFull; seaso
       }).catch(() => {});
     };
     const onMessage = (e: MessageEvent<KodikMessage>) => {
+      if (!isTrustedPlayerMessage(e, iframe.current?.contentWindow ?? null, playerLink.current)) return;
       const m = e.data;
       if (!m || typeof m !== 'object' || typeof m.key !== 'string') return;
       if (m.key === 'kodik_player_time_update') {
@@ -705,7 +719,11 @@ function Player({ title, season, episode, onEpisode }: { title: TitleFull; seaso
         pos.current.duration = Number(m.value) || 0;
       } else if (m.key === 'kodik_player_current_episode') {
         const v = m.value as { season?: number | string; episode?: number | string };
-        if (v?.season && v?.episode) onEpisode(Number(v.season), Number(v.episode));
+        if (v?.season !== null && v?.season !== undefined && v?.episode !== null && v?.episode !== undefined
+          && Number.isInteger(Number(v.season)) && Number(v.season) >= 0 && Number(v.season) <= 200
+          && Number.isInteger(Number(v.episode)) && Number(v.episode) > 0 && Number(v.episode) <= 5000) {
+          onEpisodeRef.current(Number(v.season), Number(v.episode));
+        }
       } else if (m.key === 'kodik_player_pause' || m.key === 'kodik_player_video_ended') {
         save(true);
       }
@@ -723,7 +741,7 @@ function Player({ title, season, episode, onEpisode }: { title: TitleFull; seaso
     const p = data.progress;
     const s = data.selection?.season ?? season ?? p?.season ?? null;
     const ep = data.selection?.episode ?? episode ?? p?.episode ?? null;
-    if (title.type === 'series' && s && ep) {
+    if (title.type === 'series' && s !== null && ep !== null) {
       url.searchParams.set('season', String(s));
       url.searchParams.set('episode', String(ep));
     }
@@ -765,7 +783,7 @@ function Player({ title, season, episode, onEpisode }: { title: TitleFull; seaso
         </div>
       ) : (
         <div className="cinema-player">
-          <iframe key={src} src={src} allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowFullScreen title={title.name} />
+          <iframe ref={iframe} key={src} src={src} allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowFullScreen title={title.name} />
         </div>
       )}
     </div>
@@ -1476,3 +1494,4 @@ export function ProfileCinema({ userId }: { userId: number }) {
     </div>
   );
 }
+
