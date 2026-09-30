@@ -13,6 +13,7 @@ use App\Models\User;
 use Database\Seeders\SystemPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class CinemaKodikAdminTest extends TestCase
@@ -106,11 +107,36 @@ class CinemaKodikAdminTest extends TestCase
         $this->postJson('/admin/cinema/kodik/sync', [
             'mode' => 'incremental',
             'batch' => 75,
-            'dry_run' => true,
+            'dry_run' => false,
         ])->assertAccepted();
 
         Queue::assertPushed(RunKodikSyncJob::class, fn ($job) => $job->mode === 'incremental'
-            && $job->batch === 75 && $job->dryRun && $job->initiatedBy !== null);
+            && $job->batch === 75 && ! $job->dryRun && $job->initiatedBy !== null);
+    }
+
+    public function test_preview_returns_a_visible_result_without_database_or_queue_mutations(): void
+    {
+        $this->actingAs($this->admin());
+        Queue::fake();
+        CinemaSettings::setSecret(CinemaSettings::KODIK_TOKEN, 'private-test-token');
+        Http::fake(['kodik-api.com/list*' => Http::response(['results' => [['id' => 'preview']], 'total' => 100])]);
+        $this->postJson('/admin/cinema/kodik/sync', ['mode' => 'incremental', 'batch' => 1, 'dry_run' => true])
+            ->assertOk()->assertJsonPath('preview.count', 1)->assertJsonPath('preview.total', 100);
+        $this->assertSame(0, CinemaSyncRun::count());
+        $this->assertSame(0, CinemaSyncEvent::count());
+        Queue::assertNothingPushed();
+    }
+
+    public function test_preview_reports_safe_provider_failure_to_the_administrator(): void
+    {
+        $this->actingAs($this->admin());
+        Queue::fake();
+        CinemaSettings::setSecret(CinemaSettings::KODIK_TOKEN, 'private-test-token');
+        Http::fake(['kodik-api.com/list*' => Http::response([], 401)]);
+        $response = $this->postJson('/admin/cinema/kodik/sync', ['mode' => 'incremental', 'dry_run' => true])
+            ->assertStatus(502)->assertJsonPath('error_kind', 'auth')->assertJsonPath('retryable', false);
+        $this->assertStringNotContainsString('private-test-token', $response->getContent());
+        Queue::assertNothingPushed();
     }
 
     public function test_full_rebind_requires_confirmation_and_queues_entire_catalog_without_500_limit(): void
@@ -209,3 +235,4 @@ class CinemaKodikAdminTest extends TestCase
         ], $changes));
     }
 }
+
