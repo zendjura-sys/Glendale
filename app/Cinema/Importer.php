@@ -143,19 +143,27 @@ final class Importer
     {
         $data = Tmdb::get("tv/{$title->tmdb_id}/season/{$season->number}");
         foreach ($data['episodes'] ?? [] as $e) {
-            Episode::query()->updateOrCreate(
-                ['season_id' => $season->id, 'number' => (int) $e['episode_number']],
-                [
-                    'title_id' => $title->id,
-                    'name' => $e['name'] ?? null,
-                    'overview' => $e['overview'] ?? null,
-                    'still_path' => $e['still_path'] ?? null,
-                    'air_date' => ($e['air_date'] ?? null) ?: null,
-                    'runtime' => $e['runtime'] ?? null,
-                ],
-            );
+            $episode = Episode::query()->firstOrNew([
+                'season_id' => $season->id, 'number' => (int) $e['episode_number'],
+            ]);
+            $episode->title_id = $title->id;
+            foreach ([
+                'name' => $e['name'] ?? null,
+                'overview' => $e['overview'] ?? null,
+                'still_path' => $e['still_path'] ?? null,
+                'air_date' => ($e['air_date'] ?? null) ?: null,
+                'runtime' => $e['runtime'] ?? null,
+            ] as $field => $value) {
+                if ($episode->{$field} === null || $episode->{$field} === '') {
+                    $episode->{$field} = $value;
+                }
+            }
+            $episode->save();
         }
-        $season->update(['episodes_loaded_at' => now(), 'episodes_count' => count($data['episodes'] ?? []) ?: $season->episodes_count]);
+        $season->update([
+            'episodes_loaded_at' => now(),
+            'episodes_count' => max((int) $season->episodes_count, (int) $season->episodes()->max('number')),
+        ]);
 
         return $season->fresh();
     }
@@ -338,3 +346,4 @@ final class Importer
         }
     }
 }
+

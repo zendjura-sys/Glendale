@@ -53,6 +53,46 @@ final class PlayerSources
         return $title->kodik_link ?: $title->flixcdn_link;
     }
 
+    /** Resolve a playable variant while retaining the requested episode when supported. */
+    public static function kodikSelection(Title $title, ?int $season, ?int $episode): array
+    {
+        $sources = $title->kodikSources()->where('is_available', true)->get()
+            ->sortBy(fn ($source) => $source->link === $title->kodik_link ? 0 : 1);
+        $candidates = [];
+        $unknown = null;
+        foreach ($sources as $source) {
+            $seasons = $source->availability['seasons'] ?? null;
+            if (! is_array($seasons) || $seasons === []) {
+                $unknown ??= $source->link;
+                continue;
+            }
+            foreach ($seasons as $number => $data) {
+                $episodes = is_array($data) ? ($data['episodes'] ?? []) : [];
+                if (! is_numeric($number) || ! is_array($episodes)) {
+                    continue;
+                }
+                foreach ($episodes as $ep => $value) {
+                    if (! is_numeric($ep) || (int) $ep < 1) {
+                        continue;
+                    }
+                    $candidate = ['link' => $source->link, 'season' => (int) $number, 'episode' => (int) $ep];
+                    if ((int) $number === $season && (int) $ep === $episode) {
+                        return $candidate;
+                    }
+                    $candidates[] = $candidate;
+                }
+            }
+        }
+        if ($unknown !== null || $candidates === []) {
+            return ['link' => $unknown ?? $title->kodik_link, 'season' => $season, 'episode' => $episode];
+        }
+        usort($candidates, fn ($a, $b) =>
+            [abs($a['season'] - ($season ?? 1)), abs($a['episode'] - ($episode ?? 1)), $a['season'], $a['episode']]
+            <=> [abs($b['season'] - ($season ?? 1)), abs($b['episode'] - ($episode ?? 1)), $b['season'], $b['episode']]);
+
+        return $candidates[0];
+    }
+
     /** Перебудувати сумісні поля тайтла з нормалізованих варіантів Kodik. */
     public static function refreshKodikAggregate(Title $title): void
     {
@@ -110,3 +150,4 @@ final class PlayerSources
         }
     }
 }
+

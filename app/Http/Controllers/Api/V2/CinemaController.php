@@ -242,6 +242,13 @@ class CinemaController extends Controller
                 : ($requestedEpisode ?? ($seasonNumber !== null ? 1 : null));
         }
 
+        if ($index === 0 && $title->isSeries()) {
+            $resolved = PlayerSources::kodikSelection($title, $seasonNumber, $episodeNumber);
+            $link = $resolved['link'];
+            $seasonNumber = $resolved['season'];
+            $episodeNumber = $resolved['episode'];
+        }
+
         return response()->json([
             'link' => $link,
             'translation' => $index,
@@ -436,3 +443,4 @@ class CinemaController extends Controller
         $title->update(['local_rating' => $stats->c ? round((float) $stats->a, 1) : null, 'local_rating_count' => (int) $stats->c]);
     }
 }
+

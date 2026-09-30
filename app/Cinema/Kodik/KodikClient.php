@@ -94,6 +94,19 @@ final class KodikClient
             throw $this->failure('contract', $endpoint, $response, $attempt);
         }
 
+        if ($nextPage !== null && filter_var($nextPage, FILTER_VALIDATE_URL)) {
+            $parts = parse_url($nextPage);
+            parse_str($parts['query'] ?? '', $query);
+            foreach (array_keys($query) as $key) {
+                if (in_array(strtolower((string) $key), ['token', 'api_key', 'access_token', 'authorization'], true)) {
+                    unset($query[$key]);
+                }
+            }
+            $nextPage = ($parts['scheme'] ?? 'https').'://'.$parts['host']
+                .(isset($parts['port']) ? ':'.$parts['port'] : '').($parts['path'] ?? '')
+                .($query !== [] ? '?'.http_build_query($query) : '');
+        }
+
         $total = $payload['total'] ?? count($payload['results']);
         if (! is_numeric($total)) {
             throw $this->failure('contract', $endpoint, $response, $attempt);
