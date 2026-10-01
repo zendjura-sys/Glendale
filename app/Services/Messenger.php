@@ -410,6 +410,27 @@ class Messenger
     private function ensureGroup(Conversation $conversation): void
     {
         abort_unless($conversation->isGroup(), 422, 'Дія доступна лише в груповій бесіді.');
+        abort_if($conversation->isFamily(), 422, 'Учасниками чату сім’ї керує сама сім’я.');
+    }
+
+    /**
+     * Системне повідомлення без автора (бот сім’ї, тижневі звіти).
+     *
+     * @param  array<string, mixed>  $meta
+     */
+    public function announce(Conversation $conversation, string $text, array $meta = []): Message
+    {
+        $message = $conversation->messages()->create([
+            'user_id' => null,
+            'type' => Message::TYPE_SYSTEM,
+            'body' => $text,
+            'meta' => $meta ?: null,
+        ]);
+
+        $this->touch($conversation, $message);
+        DB::afterCommit(fn () => $this->broadcastNew($conversation, $message));
+
+        return $message;
     }
 
     private function system(Conversation $conversation, User $actor, string $text): Message

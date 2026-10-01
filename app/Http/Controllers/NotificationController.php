@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Community;
+use App\Models\Family;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,6 +22,10 @@ class NotificationController extends Controller
             ->whereIn('id', $notifications->pluck('data.community_id')->filter()->unique())
             ->get()
             ->keyBy('id');
+        $families = Family::query()
+            ->whereIn('id', $notifications->pluck('data.family_id')->filter()->unique())
+            ->get()
+            ->keyBy('id');
 
         return response()->json([
             'notifications' => $notifications->map(fn (DatabaseNotification $n) => [
@@ -31,6 +36,11 @@ class NotificationController extends Controller
                 'url' => $n->data['url'] ?? null,
                 'actor' => match (true) {
                     isset($n->data['actor_id'], $actors[$n->data['actor_id']]) => $actors[$n->data['actor_id']]->toCard(),
+                    isset($n->data['family_id'], $families[$n->data['family_id']]) => [
+                        'id' => $families[$n->data['family_id']]->id,
+                        'name' => '['.$families[$n->data['family_id']]->tag.']',
+                        'avatar_url' => $families[$n->data['family_id']]->logo_url,
+                    ],
                     isset($n->data['community_id'], $communities[$n->data['community_id']]) => [
                         'id' => $communities[$n->data['community_id']]->id,
                         'name' => '',

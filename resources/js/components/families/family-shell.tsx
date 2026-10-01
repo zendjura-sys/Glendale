@@ -1,0 +1,312 @@
+import { Head, Link, router } from '@inertiajs/react';
+import {
+    AlertTriangle,
+    BarChart3,
+    CalendarDays,
+    ClipboardCheck,
+    FilePlus2,
+    FileText,
+    Gavel,
+    LayoutDashboard,
+    MessagesSquare,
+    Package,
+    ScrollText,
+    Settings,
+    ShieldCheck,
+    Users,
+    Wallet,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { useRef } from 'react';
+import type { ReactNode } from 'react';
+import { ServerIcon } from '@/components/servers/server-icon';
+import { useRealtime } from '@/hooks/use-realtime';
+import { uah } from '@/lib/money';
+import { cn } from '@/lib/utils';
+import type { FamilySection, FamilyShellProps } from '@/types';
+import { FamilyLogo } from './family-logo';
+import { RankBadge } from './ui';
+
+type Tab = {
+    section: FamilySection;
+    label: string;
+    href: string;
+    icon: LucideIcon;
+    badge?: number;
+    visible: boolean;
+};
+
+export function FamilyShell({
+    family,
+    me,
+    can,
+    section,
+    badges,
+    title,
+    children,
+}: FamilyShellProps & { title: string; children: ReactNode }) {
+    const base = `/f/${family.slug}`;
+    const reload = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useRealtime(`family.${family.id}`, {
+        'family.updated': () => {
+            if (reload.current) clearTimeout(reload.current);
+            reload.current = setTimeout(() => router.reload(), 700);
+        },
+    });
+
+    const tabs: Tab[] = [
+        {
+            section: 'overview',
+            label: 'Огляд',
+            href: base,
+            icon: LayoutDashboard,
+            visible: true,
+        },
+        {
+            section: 'reports',
+            label: 'Звіти',
+            href: `${base}/reports`,
+            icon: FileText,
+            badge: badges?.my_pending,
+            visible: true,
+        },
+        {
+            section: 'queue',
+            label: 'Перевірка',
+            href: `${base}/queue`,
+            icon: ClipboardCheck,
+            badge: badges?.queue,
+            visible: can['reports.review'] || can['treasury.manage'],
+        },
+        {
+            section: 'bank',
+            label: 'Банк',
+            href: `${base}/bank`,
+            icon: Wallet,
+            visible: true,
+        },
+        {
+            section: 'warehouse',
+            label: 'Склад',
+            href: `${base}/warehouse`,
+            icon: Package,
+            badge: badges?.alerts,
+            visible: true,
+        },
+        {
+            section: 'members',
+            label: 'Учасники',
+            href: `${base}/members`,
+            icon: Users,
+            badge: badges?.applications,
+            visible: true,
+        },
+        {
+            section: 'discipline',
+            label: 'Дисципліна',
+            href: `${base}/discipline`,
+            icon: Gavel,
+            visible: true,
+        },
+        {
+            section: 'events',
+            label: 'Події',
+            href: `${base}/events`,
+            icon: CalendarDays,
+            visible: true,
+        },
+        {
+            section: 'rating',
+            label: 'Рейтинг',
+            href: `${base}/rating`,
+            icon: BarChart3,
+            visible: true,
+        },
+        {
+            section: 'audit',
+            label: 'Аудит',
+            href: `${base}/audit`,
+            icon: ScrollText,
+            visible: can['audit.view'],
+        },
+        {
+            section: 'settings',
+            label: 'Налаштування',
+            href: `${base}/settings`,
+            icon: Settings,
+            visible: can['settings.manage'],
+        },
+    ];
+
+    return (
+        <>
+            <Head title={`${title} · [${family.tag}] ${family.name}`} />
+            <div className="space-y-4 pb-20 lg:pb-0">
+                <header className="glass noise relative overflow-hidden rounded-3xl">
+                    <div className="relative h-28 sm:h-36">
+                        {family.cover_url ? (
+                            <img
+                                src={family.cover_url}
+                                alt=""
+                                className="size-full object-cover"
+                            />
+                        ) : (
+                            <div className="size-full bg-[radial-gradient(120%_120%_at_0%_0%,#f59e0b55,transparent_55%),radial-gradient(120%_120%_at_100%_0%,#6d5dfc66,transparent_60%),linear-gradient(135deg,#0b0f1d,#141a33)]" />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d18] via-[#0a0d18]/30 to-transparent" />
+                    </div>
+                    <div className="relative -mt-12 flex flex-wrap items-end gap-4 px-4 pb-4 sm:px-6">
+                        <FamilyLogo
+                            family={family}
+                            size="xl"
+                            className="shadow-[0_10px_40px_-10px_rgb(250_204_21/0.5)] ring-4 ring-[#0a0d18]"
+                        />
+                        <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <h1 className="font-display text-2xl font-bold text-white sm:text-3xl">
+                                    <span className="text-amber-300">
+                                        [{family.tag}]
+                                    </span>{' '}
+                                    {family.name}
+                                </h1>
+                                {family.status === 'verified' && (
+                                    <ShieldCheck
+                                        className="size-5 text-emerald-300"
+                                        aria-label="Верифіковано"
+                                    />
+                                )}
+                            </div>
+                            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-white/50">
+                                {family.server && (
+                                    <Link
+                                        href={`/servers/${family.server.slug}`}
+                                        className="flex items-center gap-1.5 hover:text-white"
+                                    >
+                                        <ServerIcon
+                                            name={family.server.name}
+                                            icon={family.server.icon}
+                                            className="size-4 rounded-md text-[7px]"
+                                        />
+                                        {family.server.name}
+                                    </Link>
+                                )}
+                                <span className="flex items-center gap-1">
+                                    <Users className="size-3.5" />
+                                    {family.members_count}
+                                </span>
+                                {can['treasury.manage'] && (
+                                    <span>
+                                        Скарбниця: {uah(family.treasury)}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+                            <div className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl bg-white/[0.05] px-3.5 py-2 ring-1 ring-white/[0.07] sm:flex-none">
+                                <div className="min-w-0">
+                                    <div className="truncate font-mono text-sm font-semibold text-white">
+                                        {me.display}
+                                    </div>
+                                    <RankBadge
+                                        rank={me.rank}
+                                        title={me.rank_title}
+                                        className="mt-0.5"
+                                    />
+                                </div>
+                                <div className="ml-auto border-l border-white/10 pl-3 text-right">
+                                    <div className="text-[10px] tracking-wide text-white/40 uppercase">
+                                        Баланс
+                                    </div>
+                                    <div
+                                        className={cn(
+                                            'font-display text-base font-bold whitespace-nowrap',
+                                            me.balance < 0
+                                                ? 'text-rose-300'
+                                                : 'text-emerald-300',
+                                        )}
+                                    >
+                                        {uah(me.balance)}
+                                    </div>
+                                </div>
+                            </div>
+                            {family.conversation_id && (
+                                <a
+                                    href={`${base}/chat`}
+                                    className="glass inline-flex h-12 items-center gap-2 rounded-2xl px-4 text-sm font-medium text-white/80 hover:text-white"
+                                >
+                                    <MessagesSquare className="size-4" /> Чат
+                                </a>
+                            )}
+                        </div>
+                    </div>
+                    <nav className="flex gap-1 overflow-x-auto border-t border-white/[0.06] px-2 py-1.5 sm:px-4">
+                        {tabs
+                            .filter((t) => t.visible)
+                            .map((t) => (
+                                <Link
+                                    key={t.section}
+                                    href={t.href}
+                                    preserveScroll
+                                    className={cn(
+                                        'relative inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-3 text-sm font-medium transition',
+                                        section === t.section
+                                            ? 'bg-white/[0.08] text-white'
+                                            : 'text-white/50 hover:text-white',
+                                    )}
+                                >
+                                    <t.icon className="size-4" />
+                                    {t.label}
+                                    {!!t.badge && (
+                                        <span className="rounded-full bg-rose-500 px-1.5 text-[10px] leading-4 font-semibold text-white">
+                                            {t.badge > 99 ? '99+' : t.badge}
+                                        </span>
+                                    )}
+                                    {section === t.section && (
+                                        <span className="absolute inset-x-3 -bottom-1.5 h-0.5 rounded-full bg-gradient-brand" />
+                                    )}
+                                </Link>
+                            ))}
+                    </nav>
+                </header>
+
+                {family.status !== 'verified' && (
+                    <div
+                        className={cn(
+                            'flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm',
+                            family.status === 'suspended'
+                                ? 'border-rose-400/30 bg-rose-500/10 text-rose-100'
+                                : 'border-amber-300/30 bg-amber-300/10 text-amber-100',
+                        )}
+                    >
+                        <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                        <div>
+                            <div className="font-semibold">
+                                {family.status === 'suspended'
+                                    ? 'Сім’ю призупинено платформою — зміни недоступні'
+                                    : 'Сім’я очікує верифікації'}
+                            </div>
+                            <div className="mt-0.5 text-xs opacity-80">
+                                {family.status === 'suspended'
+                                    ? family.status_reason ||
+                                      'Зверніться до адміністрації GameCon.'
+                                    : 'Панель уже працює. Після перевірки адміністрацією з’являться публічна сторінка, набір учасників і чат сім’ї.'}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {children}
+            </div>
+
+            {section !== 'reports' && (
+                <Link
+                    href={`${base}/reports?new=1`}
+                    className="btn-glow fixed right-4 bottom-20 z-30 inline-flex h-14 items-center gap-2 rounded-2xl px-5 text-sm font-semibold shadow-2xl lg:hidden"
+                >
+                    <FilePlus2 className="size-5" /> Звіт
+                </Link>
+            )}
+        </>
+    );
+}

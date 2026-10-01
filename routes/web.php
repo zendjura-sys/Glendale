@@ -5,6 +5,7 @@ use App\Http\Controllers\CinemaController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityMemberController;
+use App\Http\Controllers\Families;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\MessageController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ServerController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\WelcomeController;
@@ -164,6 +166,77 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('{movie}/comments', [CinemaController::class, 'comment'])->middleware('throttle:30,1')->name('comments.store');
     });
 
+    Route::prefix('servers')->name('servers.')->middleware('module:servers')->group(function () {
+        Route::get('/', [ServerController::class, 'index'])->name('index');
+        Route::post('suggest', [ServerController::class, 'suggest'])->middleware('throttle:5,10')->name('suggest');
+        Route::get('{server}', [ServerController::class, 'show'])->name('show');
+    });
+
+    Route::middleware('module:families')->group(function () {
+        Route::get('families', [Families\FamilyController::class, 'index'])->name('families.index');
+        Route::get('families/create', [Families\FamilyController::class, 'create'])->name('families.create');
+        Route::post('families', [Families\FamilyController::class, 'store'])->middleware('throttle:5,10')->name('families.store');
+
+        Route::prefix('f/{family}')->name('families.')->scopeBindings()->group(function () {
+            Route::get('/', [Families\FamilyController::class, 'show'])->name('show');
+            Route::post('apply', [Families\FamilyController::class, 'apply'])->middleware('throttle:10,10')->name('apply');
+            Route::delete('apply', [Families\FamilyController::class, 'withdraw'])->name('withdraw');
+            Route::post('leave', [Families\FamilyController::class, 'leave'])->name('leave');
+            Route::get('chat', [Families\FamilyController::class, 'chat'])->name('chat');
+
+            Route::get('reports', [Families\FamilyReportController::class, 'index'])->name('reports');
+            Route::post('reports', [Families\FamilyReportController::class, 'store'])->middleware('throttle:30,1')->name('reports.store');
+            Route::get('queue', [Families\FamilyReportController::class, 'queue'])->name('queue');
+            Route::post('reports/bulk', [Families\FamilyReportController::class, 'bulk'])->name('reports.bulk');
+            Route::post('reports/{report}/review', [Families\FamilyReportController::class, 'review'])->whereNumber('report')->name('reports.review');
+            Route::get('proofs/{proof}', [Families\FamilyReportController::class, 'proof'])->whereNumber('proof')->name('proofs.show');
+
+            Route::get('bank', [Families\FamilyBankController::class, 'index'])->name('bank');
+            Route::post('bank/cashouts', [Families\FamilyBankController::class, 'requestCashout'])->middleware('throttle:10,1')->name('cashouts.store');
+            Route::post('bank/cashouts/{cashout}/pay', [Families\FamilyBankController::class, 'payCashout'])->whereNumber('cashout')->name('cashouts.pay');
+            Route::post('bank/cashouts/{cashout}/cancel', [Families\FamilyBankController::class, 'cancelCashout'])->whereNumber('cashout')->name('cashouts.cancel');
+            Route::get('bank/cashouts/{cashout}/proof', [Families\FamilyBankController::class, 'cashoutProof'])->whereNumber('cashout')->name('cashouts.proof');
+            Route::post('bank/deposits', [Families\FamilyBankController::class, 'openDeposit'])->middleware('throttle:10,1')->name('deposits.store');
+            Route::post('bank/deposits/{deposit}/close', [Families\FamilyBankController::class, 'closeDeposit'])->whereNumber('deposit')->name('deposits.close');
+            Route::post('bank/manual', [Families\FamilyBankController::class, 'manual'])->middleware('throttle:30,1')->name('bank.manual');
+
+            Route::get('warehouse', [Families\FamilyWarehouseController::class, 'index'])->name('warehouse');
+            Route::post('warehouse/move', [Families\FamilyWarehouseController::class, 'move'])->middleware('throttle:60,1')->name('warehouse.move');
+            Route::post('warehouse/items', [Families\FamilyWarehouseController::class, 'storeItem'])->name('warehouse.items.store');
+            Route::patch('warehouse/items/{item}', [Families\FamilyWarehouseController::class, 'updateItem'])->whereNumber('item')->name('warehouse.items.update');
+            Route::get('warehouse/logs/{log}/proof', [Families\FamilyWarehouseController::class, 'proof'])->whereNumber('log')->name('warehouse.proof');
+
+            Route::get('members', [Families\FamilyMemberController::class, 'index'])->name('members');
+            Route::put('ranks', [Families\FamilyMemberController::class, 'ranks'])->name('ranks.update');
+            Route::whereNumber('member')->group(function () {
+                Route::post('members/{member}/accept', [Families\FamilyMemberController::class, 'accept'])->name('members.accept');
+                Route::post('members/{member}/decline', [Families\FamilyMemberController::class, 'decline'])->name('members.decline');
+                Route::patch('members/{member}', [Families\FamilyMemberController::class, 'update'])->name('members.update');
+                Route::post('members/{member}/kick', [Families\FamilyMemberController::class, 'kick'])->name('members.kick');
+                Route::post('members/{member}/transfer', [Families\FamilyMemberController::class, 'transfer'])->name('members.transfer');
+            });
+
+            Route::get('discipline', [Families\FamilyDisciplineController::class, 'index'])->name('discipline');
+            Route::post('discipline', [Families\FamilyDisciplineController::class, 'store'])->middleware('throttle:30,1')->name('discipline.store');
+            Route::post('discipline/{punishment}/revoke', [Families\FamilyDisciplineController::class, 'revoke'])->whereNumber('punishment')->name('discipline.revoke');
+
+            Route::get('events', [Families\FamilyEventController::class, 'index'])->name('events');
+            Route::post('events', [Families\FamilyEventController::class, 'store'])->middleware('throttle:20,1')->name('events.store');
+            Route::post('events/{event}/rsvp', [Families\FamilyEventController::class, 'rsvp'])->whereNumber('event')->name('events.rsvp');
+            Route::post('events/{event}/close', [Families\FamilyEventController::class, 'close'])->whereNumber('event')->name('events.close');
+            Route::get('rating', [Families\FamilyEventController::class, 'rating'])->name('rating');
+
+            Route::get('audit', [Families\FamilyAuditController::class, 'index'])->name('audit');
+
+            Route::get('settings', [Families\FamilySettingsController::class, 'index'])->name('settings');
+            Route::post('settings/profile', [Families\FamilySettingsController::class, 'profile'])->name('settings.profile');
+            Route::put('settings', [Families\FamilySettingsController::class, 'update'])->name('settings.update');
+            Route::put('settings/webhooks', [Families\FamilySettingsController::class, 'webhooks'])->name('settings.webhooks');
+            Route::post('settings/webhooks/test', [Families\FamilySettingsController::class, 'test'])->middleware('throttle:6,1')->name('settings.webhooks.test');
+            Route::post('settings/digest', [Families\FamilySettingsController::class, 'digest'])->middleware('throttle:3,10')->name('settings.digest');
+        });
+    });
+
     Route::get('people', [PeopleController::class, 'index'])->middleware('module:people')->name('people.index');
     Route::get('search/quick', [PeopleController::class, 'quick'])->middleware('throttle:120,1')->name('search.quick');
 
@@ -228,6 +301,21 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::patch('communities/{community:id}', [Admin\CommunityController::class, 'update'])->name('communities.update');
         Route::delete('communities/{community}', [Admin\CommunityController::class, 'destroy'])->whereNumber('community')->name('communities.destroy');
         Route::post('communities/{community}/restore', [Admin\CommunityController::class, 'restore'])->whereNumber('community')->name('communities.restore');
+        Route::prefix('servers')->name('servers.')->group(function () {
+            Route::get('/', [Admin\ServerController::class, 'index'])->name('index');
+            Route::post('/', [Admin\ServerController::class, 'store'])->name('store');
+            Route::post('sync', [Admin\ServerController::class, 'sync'])->middleware('throttle:10,1')->name('sync');
+            Route::put('settings', [Admin\ServerController::class, 'settings'])->name('settings');
+            Route::whereNumber('server')->group(function () {
+                Route::post('{server:id}', [Admin\ServerController::class, 'update'])->name('update');
+                Route::patch('{server:id}/moderate', [Admin\ServerController::class, 'moderate'])->name('moderate');
+                Route::post('{server:id}/refresh', [Admin\ServerController::class, 'refresh'])->middleware('throttle:30,1')->name('refresh');
+                Route::delete('{server:id}', [Admin\ServerController::class, 'destroy'])->name('destroy');
+                Route::post('{server}/restore', [Admin\ServerController::class, 'restore'])->name('restore');
+            });
+        });
+        Route::get('families', [Admin\FamilyController::class, 'index'])->name('families.index');
+        Route::patch('families/{family:id}', [Admin\FamilyController::class, 'update'])->whereNumber('family')->name('families.update');
         Route::get('modules', [Admin\ModuleController::class, 'index'])->name('modules.index');
         Route::patch('modules/{module}', [Admin\ModuleController::class, 'update'])->name('modules.update');
         Route::get('settings', [Admin\SettingsController::class, 'edit'])->name('settings.edit');

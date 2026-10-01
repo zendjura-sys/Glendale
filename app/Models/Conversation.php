@@ -17,12 +17,13 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $title
  * @property string|null $avatar_path
  * @property int|null $owner_id
+ * @property int|null $family_id
  * @property string|null $direct_key
  * @property int|null $last_message_id
  * @property Carbon|null $last_message_at
  * @property-read string|null $avatar_url
  */
-#[Fillable(['type', 'title', 'avatar_path', 'owner_id', 'direct_key', 'last_message_id', 'last_message_at'])]
+#[Fillable(['type', 'title', 'avatar_path', 'owner_id', 'family_id', 'direct_key', 'last_message_id', 'last_message_at'])]
 class Conversation extends Model
 {
     public const TYPE_DIRECT = 'direct';
@@ -84,6 +85,19 @@ class Conversation extends Model
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    /**
+     * @return BelongsTo<Family, $this>
+     */
+    public function family(): BelongsTo
+    {
+        return $this->belongsTo(Family::class);
+    }
+
+    public function isFamily(): bool
+    {
+        return $this->family_id !== null;
     }
 
     public function participantFor(User $user): ?ConversationParticipant

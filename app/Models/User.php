@@ -27,6 +27,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $last_name
  * @property string $name
  * @property string $email
+ * @property string|null $discord_id
+ * @property string|null $discord_username
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string $role
@@ -181,6 +183,14 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function conversationParticipants(): HasMany
     {
         return $this->hasMany(ConversationParticipant::class);
+    }
+
+    /**
+     * @return HasMany<FamilyMember, $this>
+     */
+    public function familyMemberships(): HasMany
+    {
+        return $this->hasMany(FamilyMember::class);
     }
 
     public function isAdmin(): bool

@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
+use App\Models\Family;
+use App\Models\FamilyMember;
 use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\User;
@@ -17,6 +19,9 @@ class MessengerPresenter
 
     /** @var array<int, User|null> */
     private array $contacts = [];
+
+    /** @var array<int, array{family: Family, members: Collection<int, FamilyMember>}|null> */
+    private array $families = [];
 
     public function load(Message $message): Message
     {
@@ -35,12 +40,12 @@ class MessengerPresenter
             'conversation_id' => $message->conversation_id,
             'type' => $message->type,
             'body' => $message->body,
-            'user' => $message->user?->toCard(),
+            'user' => $this->author($message->conversation_id, $message->user),
             'reply_to' => $reply ? [
                 'id' => $reply->id,
                 'body' => $reply->trashed() ? null : Str::limit((string) $reply->body, 120),
                 'preview' => $reply->trashed() ? null : $this->preview($reply),
-                'author' => $reply->user?->first_name,
+                'author' => $this->author($message->conversation_id, $reply->user)['first_name'] ?? null,
                 'has_attachments' => ! $reply->trashed() && $reply->attachments->isNotEmpty(),
                 'deleted' => $reply->trashed(),
             ] : null,
@@ -66,6 +71,50 @@ class MessengerPresenter
             'edited_at' => $message->edited_at?->toIso8601String(),
             'created_at' => $message->created_at->toIso8601String(),
         ];
+    }
+
+    /**
+     * Картка автора; у чаті сім’ї — RP-нікнейм [Static ID] і ранг замість справжнього імені.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function author(int $conversationId, ?User $user): ?array
+    {
+        if (! $user) {
+            return null;
+        }
+
+        $card = $user->toCard();
+        $context = $this->familyContext($conversationId);
+        $member = $context['members'][$user->id] ?? null;
+
+        if ($context && $member) {
+            $card['name'] = $member->displayName();
+            $card['first_name'] = $member->rp_nickname;
+            $card['family_rank'] = [
+                'rank' => $member->rank,
+                'title' => $context['family']->rankTitle($member->rank),
+                'tag' => $context['family']->tag,
+            ];
+        }
+
+        return $card;
+    }
+
+    /**
+     * @return array{family: Family, members: Collection<int, FamilyMember>}|null
+     */
+    private function familyContext(int $conversationId): ?array
+    {
+        if (! array_key_exists($conversationId, $this->families)) {
+            $family = Family::query()->where('conversation_id', $conversationId)->first();
+            $this->families[$conversationId] = $family ? [
+                'family' => $family,
+                'members' => FamilyMember::query()->where('family_id', $family->id)->get()->keyBy('user_id'),
+            ] : null;
+        }
+
+        return $this->families[$conversationId];
     }
 
     /**
@@ -203,7 +252,7 @@ class MessengerPresenter
                 'type' => $last->type,
                 'body' => $last->body !== null ? Str::limit($last->body, 90) : null,
                 'preview' => Str::limit($this->preview($last), 90),
-                'author' => $last->user?->first_name,
+                'author' => $conversation->family_id ? ($this->author($conversation->id, $last->user)['first_name'] ?? null) : $last->user?->first_name,
                 'is_own' => $last->user_id === $viewer->id,
                 'has_attachments' => $last->relationLoaded('attachments') ? $last->attachments->isNotEmpty() : $last->attachments()->exists(),
                 'created_at' => $last->created_at->toIso8601String(),
@@ -236,7 +285,7 @@ class MessengerPresenter
             'members' => $conversation->isGroup()
                 ? $participants
                     ->sortBy(fn (ConversationParticipant $p) => [$p->role === ConversationParticipant::ROLE_OWNER ? 0 : ($p->role === ConversationParticipant::ROLE_ADMIN ? 1 : 2), $p->user->name])
-                    ->map(fn (ConversationParticipant $p) => [...$p->user->toCard(), 'role' => $p->role])
+                    ->map(fn (ConversationParticipant $p) => [...($this->author($conversation->id, $p->user) ?? []), 'role' => $p->role])
                     ->values()
                     ->all()
                 : [],

@@ -37,10 +37,13 @@ class SiteSettings
         'cinema_auto' => [],
         'cinema_sync_last' => null,
         'maintenance_message' => null,
+        'servers_auto_publish' => false,
+        'discord_client_id' => null,
+        'discord_client_secret' => null,
     ];
 
     /** Ключі, які не можна віддавати у фронтенд. */
-    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'flixcdn_token', 'tmdb_token', 'omdb_key'];
+    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret'];
 
     /** @var array<string, mixed>|null */
     private ?array $values = null;

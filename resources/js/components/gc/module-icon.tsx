@@ -1,16 +1,15 @@
 import {
     Box,
     CalendarDays,
-    Clapperboard,
+    Crown,
     Film,
-    Gamepad2,
     Image,
     MessageCircle,
     Music,
     Newspaper,
     Search,
+    Server,
     Shield,
-    ShoppingBag,
     UserRound,
     UsersRound,
 } from 'lucide-react';
@@ -24,11 +23,10 @@ const icons: Record<string, LucideIcon> = {
     'message-circle': MessageCircle,
     shield: Shield,
     image: Image,
-    clapperboard: Clapperboard,
     music: Music,
     film: Film,
-    'gamepad-2': Gamepad2,
-    'shopping-bag': ShoppingBag,
+    server: Server,
+    crown: Crown,
     'calendar-days': CalendarDays,
 };
 

@@ -7,3 +7,4 @@ export type * from './community';
 export type * from './photos';
 export type * from './music';
 export type * from './cinema';
+export type * from './families';
