@@ -1,13 +1,23 @@
 export type User = {
     id: number;
+    username: string;
     name: string;
+    first_name: string;
+    last_name: string;
     email: string;
-    avatar?: string;
+    avatar_url: string | null;
+    cover_url: string | null;
+    is_online: boolean;
+    is_verified: boolean;
+    status: string | null;
+    role: 'user' | 'moderator' | 'admin';
+    is_admin: boolean;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;
     created_at: string;
     updated_at: string;
-    [key: string]: unknown;
+    /** Сумісність зі стартовими компонентами Laravel. */
+    avatar?: string;
 };
 
 export type Auth = {

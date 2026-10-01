@@ -1,4 +1,5 @@
 import type { Auth } from '@/types/auth';
+import type { NavEntry } from '@/types/social';
 
 declare module 'react' {
     interface InputHTMLAttributes<T> {
@@ -11,7 +12,16 @@ declare module '@inertiajs/core' {
         sharedPageProps: {
             name: string;
             auth: Auth;
-            sidebarOpen: boolean;
+            site: {
+                name: string;
+                tagline: string | null;
+                registration_open: boolean;
+                max_attachments: number;
+                announcement: string | null;
+            };
+            nav: NavEntry[];
+            modules: string[];
+            counters: { friend_requests: number; notifications: number } | null;
             [key: string]: unknown;
         };
     }

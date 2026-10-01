@@ -13,8 +13,14 @@ export default defineConfig({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
             refresh: true,
             fonts: [
-                bunny('Instrument Sans', {
-                    weights: [400, 500, 600],
+                bunny('Onest', {
+                    weights: [400, 500, 600, 700],
+                    subsets: ['latin', 'cyrillic'],
+                }),
+                bunny('Unbounded', {
+                    weights: [500, 600, 700, 800],
+                    subsets: ['latin', 'cyrillic'],
+                    preload: [{ weight: 700 }],
                 }),
             ],
         }),
