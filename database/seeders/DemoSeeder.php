@@ -11,6 +11,7 @@ use App\Models\Friendship;
 use App\Models\Like;
 use App\Models\Message;
 use App\Models\MessageAttachment;
+use App\Models\Movie;
 use App\Models\MusicStatus;
 use App\Models\PhotoAlbum;
 use App\Models\Post;
@@ -19,6 +20,7 @@ use App\Models\Sticker;
 use App\Models\StickerPack;
 use App\Models\Track;
 use App\Models\User;
+use App\Services\Cinema\CinemaService;
 use App\Services\CommunityService;
 use App\Services\MusicService;
 use App\Services\PhotoService;
@@ -247,6 +249,95 @@ SVG;
         Model::unguarded(fn () => $this->seedCommunities($users->values()->all()));
         Model::unguarded(fn () => $this->seedPhotos($users->values()->all()));
         Model::unguarded(fn () => $this->seedMusic($users->values()->all()));
+        Model::unguarded(fn () => $this->seedCinema($users->values()->all()));
+    }
+
+    /** Відкриті фільми Blender Studio (CC BY) з офіційними трейлерами/фільмами на YouTube. */
+    private const MOVIES = [
+        ['Sintel', 'Sintel', 2010, 'cartoon', 'eRsGyueVLvQ', 'tt1727587', 15, 'фентезі, пригоди, драма', 'Дівчина Сінтел шукає малого дракона, якого колись врятувала. Її подорож крізь сніги та пустелі веде до несподіваної та болючої зустрічі.', 7.4, true],
+        ['Сталеві сльози', 'Tears of Steel', 2012, 'movie', 'R6MlUcmOul8', 'tt2285752', 12, 'фантастика, бойовик', 'Амстердам майбутнього. Група вчених і воїнів намагається врятувати світ від гігантських роботів, відтворюючи один болісний момент минулого.', 6.2, true],
+        ['Великий кролик Бак', 'Big Buck Bunny', 2008, 'cartoon', 'aqz-KE-bpKQ', 'tt1254207', 10, 'комедія, сімейний', 'Добродушний велетенський кролик вирішує провчити трійцю нахабних гризунів, які псують життя мешканцям лісу.', 6.4, false],
+        ['Космічна пральня', 'Cosmos Laundromat', 2015, 'cartoon', 'Y-rmzh0PI3c', 'tt4957236', 12, 'фантастика, драма, комедія', 'Вівця Франк на безлюдному острові зустрічає дивного продавця, який пропонує їй прожити безліч життів.', 7.1, true],
+        ['Сни слона', 'Elephants Dream', 2006, 'cartoon', 'TLkA0RELQ1g', 'tt0807840', 11, 'фантастика, арт-хаус', 'Двоє героїв мандрують нескінченною механічною машиною, де реальність і уява переплітаються.', 6.0, false],
+        ['Агент 327: Операція «Перукарня»', 'Agent 327: Operation Barbershop', 2017, 'cartoon', 'mN0zPOpADL4', null, 4, 'бойовик, комедія, шпигунський', 'Найкращий агент таємної служби під прикриттям пробирається до перукарні, за фасадом якої ховається лігво злочинців.', 7.8, false],
+        ['Спрайт: Лісовий жах', 'Sprite Fright', 2021, 'cartoon', '_cMxraX_5RE', null, 10, 'жахи, комедія', 'Компанія підлітків вирушає в ліс на вечірку й зустрічає крихітних грибних духів, які зовсім не раді гостям.', 7.5, false],
+        ['Кавовий забіг', 'Coffee Run', 2020, 'cartoon', 'PVGeM40dABA', null, 3, 'комедія, драма', 'Ранок, кава і нестримний потік думок молодої жінки, яка поспішає на роботу.', 6.9, false],
+    ];
+
+    /**
+     * Каталог кіно: фільми з плеєрами YouTube, списки й оцінки користувачів, коментарі та запис-порада.
+     *
+     * @param  list<User>  $u
+     */
+    private function seedCinema(array $u): void
+    {
+        if (Movie::withTrashed()->exists()) {
+            return;
+        }
+
+        $cinema = app(CinemaService::class);
+        $movies = [];
+        foreach (self::MOVIES as $i => [$title, $original, $year, $type, $youtube, $imdb, $minutes, $genres, $description, $rating, $featured]) {
+            $backdrop = $this->download("https://picsum.photos/seed/gc-movie-{$i}/1600/900", "demo/cinema/backdrop-{$i}.jpg");
+            $movie = Movie::query()->create([
+                'user_id' => $u[0]->id,
+                'slug' => $cinema->uniqueSlug($original, $year),
+                'type' => $type,
+                'title' => $title,
+                'title_original' => $original,
+                'year' => $year,
+                'description' => $description,
+                'genres' => explode(', ', $genres),
+                'countries' => ['Нідерланди'],
+                'duration' => $minutes,
+                'age_rating' => $i === 6 ? '12+' : '6+',
+                'rating_imdb' => $rating,
+                'imdb_id' => $imdb,
+                'trailer_url' => "https://www.youtube-nocookie.com/embed/{$youtube}",
+                'is_featured' => $featured,
+                'origin' => 'manual',
+            ]);
+            $movie->forceFill(['backdrop_path' => $backdrop, 'views_count' => random_int(120, 5200), 'created_at' => now()->subDays(20 - $i)])->saveQuietly();
+            $movie->sources()->create([
+                'provider' => 'custom',
+                'external_id' => 'yt-'.$youtube,
+                'translation' => 'Оригінал (англ.)',
+                'quality' => '1080p',
+                'link' => "https://www.youtube-nocookie.com/embed/{$youtube}",
+            ]);
+            $movies[] = $movie;
+        }
+
+        $statuses = array_keys(Movie::STATUSES);
+        foreach ($u as $n => $user) {
+            foreach (collect($movies)->shuffle()->take($n === 0 ? 5 : random_int(2, 6)) as $movie) {
+                $cinema->setStatus($user, $movie, $n === 0 && $movie->is($movies[1]) ? 'watching' : $statuses[array_rand($statuses)]);
+                if (random_int(0, 2) > 0) {
+                    $cinema->rate($user, $movie, random_int(6, 10));
+                }
+            }
+        }
+        $cinema->setStatus($u[0], $movies[1], 'watching');
+        $cinema->setStatus($u[0], $movies[3], 'watching');
+
+        $lines = ['Візуал просто космос 🔥', 'Переглядав тричі, щоразу щось нове помічаю', 'Фінал вибив сльозу…', 'Хто ще чекає на продовження?', 'Саундтрек — окремий вид мистецтва'];
+        foreach ([$movies[0], $movies[1], $movies[3]] as $k => $movie) {
+            foreach (collect($u)->shuffle()->take(3) as $j => $author) {
+                $movie->comments()->create(['user_id' => $author->id, 'body' => $lines[($k + $j) % count($lines)], 'created_at' => now()->subHours(10 - $j)]);
+            }
+            $movie->forceFill(['comments_count' => $movie->comments()->count()])->saveQuietly();
+        }
+
+        Post::query()->create([
+            'author_id' => $u[1]->id,
+            'wall_type' => 'user',
+            'wall_id' => $u[1]->id,
+            'body' => 'Якщо ще не бачили «Sintel» — це must watch на вечір. Тільки готуйте серветки 🐉',
+            'visibility' => Post::VISIBILITY_PUBLIC,
+            'movie_id' => $movies[0]->id,
+            'views_count' => 412,
+            'created_at' => now()->subMinutes(25),
+        ]);
     }
 
     private const TRACKS = [
