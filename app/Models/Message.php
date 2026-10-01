@@ -29,6 +29,12 @@ class Message extends Model
 
     public const TYPE_SYSTEM = 'system';
 
+    public const TYPE_STICKER = 'sticker';
+
+    public const TYPE_VOICE = 'voice';
+
+    public const TYPE_CONTACT = 'contact';
+
     public const EDIT_WINDOW_HOURS = 24;
 
     protected function casts(): array

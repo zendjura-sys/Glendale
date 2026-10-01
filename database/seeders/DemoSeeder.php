@@ -13,12 +13,15 @@ use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\Post;
 use App\Models\PostAttachment;
+use App\Models\Sticker;
+use App\Models\StickerPack;
 use App\Models\User;
 use App\Services\CommunityService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
@@ -72,6 +75,65 @@ class DemoSeeder extends Seeder
         'Неймовірно красиво', 'Скинь посилання, будь ласка', 'Згоден, фінал був сильний', 'Плюсую, топ',
         'Коли стрім?', 'Це шедевр', 'Хочу так само 😍', 'Дякую за пораду, допомогло!',
     ];
+
+    private const NOTO_STICKERS = [
+        '1f60e' => '😎', '1f602' => '😂', '1f60d' => '😍', '1f973' => '🥳', '1f914' => '🤔', '1f62d' => '😭',
+        '1f621' => '😡', '1f631' => '😱', '1f44d' => '👍', '1f44f' => '👏', '1f525' => '🔥', '1f4af' => '💯',
+        '2764_fe0f' => '❤️', '1f389' => '🎉', '1f680' => '🚀', '1f47b' => '👻', '1f916' => '🤖', '1f929' => '🤩',
+        '1f3c6' => '🏆', '1f60f' => '😏', '1f644' => '🙄', '1f634' => '😴', '1f92f' => '🤯', '1f970' => '🥰',
+    ];
+
+    private const GAMER_STICKERS = [
+        ['GG', '🤝', '#4f8bff', '#a855f7'], ['EZ', '😎', '#22d3a6', '#38e1ff'], ['GL HF', '🍀', '#38e1ff', '#6d5dfc'],
+        ['AFK', '😴', '#64748b', '#a855f7'], ['RAGE', '😡', '#ff4d6d', '#f04fd8'], ['CLUTCH', '🔥', '#ff7a59', '#f04fd8'],
+        ['NOOB', '🙈', '#facc15', '#ff7a59'], ['1v1?', '⚔️', '#6d5dfc', '#f04fd8'], ['LOL', '😂', '#f04fd8', '#a855f7'],
+        ['WP', '👏', '#22d3a6', '#4f8bff'], ['LAG', '🐢', '#38e1ff', '#22d3a6'], ['GO!', '🚀', '#4f8bff', '#38e1ff'],
+    ];
+
+    private function seedStickers(): void
+    {
+        $noto = StickerPack::query()->firstOrCreate(['slug' => 'noto_animated'], ['name' => 'Емоції', 'author' => 'Google Noto Emoji (Apache 2.0)', 'position' => 1]);
+        if (! $noto->stickers()->exists()) {
+            $position = 0;
+            foreach (self::NOTO_STICKERS as $code => $emoji) {
+                $path = $this->download("https://fonts.gstatic.com/s/e/notoemoji/latest/{$code}/512.webp", "stickers/noto/{$code}.webp");
+                if ($path) {
+                    $noto->stickers()->create(['path' => $path, 'emoji' => $emoji, 'position' => $position++]);
+                }
+            }
+        }
+
+        $gamer = StickerPack::query()->firstOrCreate(['slug' => 'gamecon_gamer'], ['name' => 'GameCon Gamer', 'author' => 'GameCon', 'position' => 2]);
+        if (! $gamer->stickers()->exists()) {
+            foreach (self::GAMER_STICKERS as $position => [$label, $emoji, $from, $to]) {
+                $path = 'stickers/gamecon/'.Str::slug($label ?: 'x', '_').'-'.$position.'.svg';
+                Storage::disk('public')->put($path, $this->stickerSvg($label, $emoji, $from, $to, $position));
+                $gamer->stickers()->create(['path' => $path, 'emoji' => $emoji, 'position' => $position]);
+            }
+        }
+    }
+
+    private function stickerSvg(string $label, string $emoji, string $from, string $to, int $seed): string
+    {
+        $rotate = [-6, 4, -3, 5, -4, 3][$seed % 6];
+        $size = mb_strlen($label) > 4 ? 64 : 84;
+        $label = htmlspecialchars($label, ENT_XML1);
+
+        return <<<SVG
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="{$from}"/><stop offset="1" stop-color="{$to}"/></linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <g transform="rotate({$rotate} 128 128)">
+    <rect x="20" y="58" width="216" height="140" rx="42" fill="url(#g)" filter="url(#glow)" opacity="0.95"/>
+    <rect x="20" y="58" width="216" height="140" rx="42" fill="none" stroke="#fff" stroke-opacity="0.85" stroke-width="7"/>
+    <text x="128" y="128" dy="0.36em" text-anchor="middle" font-family="Unbounded, 'Arial Black', Impact, sans-serif" font-weight="900" font-size="{$size}" fill="#fff" stroke="#0b0f1f" stroke-opacity="0.25" stroke-width="2">{$label}</text>
+  </g>
+  <text x="206" y="74" text-anchor="middle" font-size="58" transform="rotate(12 206 60)">{$emoji}</text>
+</svg>
+SVG;
+    }
 
     public function run(): void
     {
@@ -175,6 +237,7 @@ class DemoSeeder extends Seeder
             ])->saveQuietly();
         }
 
+        $this->seedStickers();
         Model::unguarded(fn () => $this->seedMessages($users->values()->all()));
         Model::unguarded(fn () => $this->seedCommunities($users->values()->all()));
     }
@@ -293,8 +356,11 @@ class DemoSeeder extends Seeder
             [$olena, 'Я її з 47 спроби пройшла на стрімі, чат кричав 😂', 185],
             [$mark, 'Легенда. Скинь запис, гляну ввечері', 180],
             [$olena, 'Сьогодні о 21:00 стрімлю Hades II, заходь!', 6, 'reply' => 3],
+            [$mark, null, 170, 'sticker' => '😂'],
+            [$olena, null, 7, 'voice' => 9],
             [$olena, 'І ще: ми з командою шукаємо тестерів для нашої інді-гри. Хочеш спробувати?', 4],
-        ], readBy: [$mark->id => 4]);
+            [$olena, null, 3, 'sticker' => '🥰'],
+        ], readBy: [$mark->id => 5]);
 
         $cup = $this->conversation([$mark, $andriy, $dmytro, $ivan, $oleksandr], 'GameCon Cup · CS2');
         $this->chat($cup, [
@@ -307,7 +373,12 @@ class DemoSeeder extends Seeder
             [$mark, 'Середа ок. Сервер організую 👍', 118, 'reply' => 6],
             [$andriy, 'Скинув нову розкидку гранат на Mirage, гляньте', 25, 'images' => 1],
             [$ivan, 'Топ! Тоді в середу відпрацюємо', 20],
+            [$dmytro, 'Регламент турніру, гляньте до середи', 18, 'file' => 'Регламент GameCon Cup 2026.pdf'],
+            [$andriy, 'Додамо п’ятого в запас? Ось контакт', 15],
+            [$andriy, null, 15, 'contact' => $u[10]],
+            [$mark, null, 14, 'sticker' => 'GG'],
             [$oleksandr, 'Я буду трохи пізніше, на 15 хв', 12],
+            [$ivan, null, 11, 'voice' => 4],
         ], readBy: [$mark->id => 7]);
 
         $sofiaChat = $this->conversation([$mark, $sofia]);
@@ -316,7 +387,8 @@ class DemoSeeder extends Seeder
             [$mark, 'Вже скоро! Наступним етапом після повідомлень', 1490],
             [$sofia, 'Ура! Тоді я першою зроблю добірку «Фрірен» і «Магічна битва»', 1480],
             [$mark, 'Домовились. Зробимо тобі значок кураторки 😉', 50],
-        ], readBy: [$sofia->id => 4, $mark->id => 4]);
+            [$sofia, null, 48, 'sticker' => '🎉'],
+        ], readBy: [$sofia->id => 5, $mark->id => 5]);
 
         $club = $this->conversation([$mark, $nastia, $katia, $daryna], 'Кіноклуб 🎬');
         $this->chat($club, [
@@ -382,16 +454,59 @@ class DemoSeeder extends Seeder
             [$author, $body, $minutesAgo] = $line;
             $at = now()->subMinutes($minutesAgo);
 
+            $sticker = isset($line['sticker'])
+                ? Sticker::query()->where('path', ($code = array_search($line['sticker'], self::NOTO_STICKERS, true)) ? "stickers/noto/{$code}.webp" : '')->first()
+                    ?? Sticker::query()->where('path', 'like', 'stickers/gamecon/'.Str::slug($line['sticker'], '_').'-%')->first()
+                : null;
+
             $message = Message::query()->create([
                 'conversation_id' => $conversation->id,
                 'user_id' => $author?->id,
-                'type' => $author ? Message::TYPE_TEXT : Message::TYPE_SYSTEM,
+                'type' => match (true) {
+                    ! $author => Message::TYPE_SYSTEM,
+                    $sticker !== null => Message::TYPE_STICKER,
+                    isset($line['voice']) => Message::TYPE_VOICE,
+                    isset($line['contact']) => Message::TYPE_CONTACT,
+                    default => Message::TYPE_TEXT,
+                },
                 'body' => $body,
+                'meta' => match (true) {
+                    $sticker !== null => ['sticker' => ['id' => $sticker->id, 'path' => $sticker->path, 'emoji' => $sticker->emoji]],
+                    isset($line['contact']) => ['contact_id' => $line['contact']->id],
+                    default => null,
+                },
                 'reply_to_id' => isset($line['reply']) ? $ids[$line['reply'] - 1] : null,
                 'created_at' => $at,
                 'updated_at' => $at,
             ]);
             $ids[] = $message->id;
+
+            if (isset($line['voice'])) {
+                $path = $this->voiceSample((int) $line['voice'], $n);
+                if ($path) {
+                    $message->attachments()->create([
+                        'type' => MessageAttachment::TYPE_VOICE,
+                        'path' => $path,
+                        'mime' => 'audio/webm',
+                        'size' => Storage::disk('public')->size($path),
+                        'duration' => $line['voice'],
+                        'meta' => ['waveform' => $this->waveform($n)],
+                    ]);
+                }
+            }
+
+            if (isset($line['file'])) {
+                $path = 'message-files/demo/'.Str::random(16).'.txt';
+                Storage::disk(MessageAttachment::PRIVATE_DISK)->put($path, "GameCon Cup 2026\n\nФормат: 5×5, BO3, плей-оф BO5.\nРеєстрація до п'ятниці.\n");
+                $message->attachments()->create([
+                    'type' => MessageAttachment::TYPE_FILE,
+                    'disk' => MessageAttachment::PRIVATE_DISK,
+                    'path' => $path,
+                    'name' => $line['file'],
+                    'mime' => 'application/pdf',
+                    'size' => 248_331,
+                ]);
+            }
 
             for ($k = 0; $k < ($line['images'] ?? 0); $k++) {
                 $path = $this->download("https://picsum.photos/seed/gc-chat-{$conversation->id}-{$n}-{$k}/1200/800", "demo/messages/{$conversation->id}-{$n}-{$k}.jpg");
@@ -429,6 +544,40 @@ class DemoSeeder extends Seeder
         if ($mutedFor) {
             $conversation->participants()->whereIn('user_id', $mutedFor)->update(['is_muted' => true]);
         }
+    }
+
+    /**
+     * Синтетичний «голос» через ffmpeg, щоб у демо було що програвати.
+     */
+    private function voiceSample(int $seconds, int $seed): ?string
+    {
+        $path = "demo/voice/sample-{$seconds}-{$seed}.webm";
+        $disk = Storage::disk('public');
+
+        if ($disk->exists($path)) {
+            return $path;
+        }
+
+        $disk->makeDirectory('demo/voice');
+        $base = 150 + ($seed % 5) * 25;
+        $filter = sprintf(
+            'sine=f=%d:d=%d,vibrato=f=5.5:d=0.6,tremolo=f=3.2:d=0.85,volume=0.6[a];anoisesrc=d=%d:c=pink:a=0.04[n];[a][n]amix=inputs=2,afade=t=in:d=0.15,afade=t=out:st=%s:d=0.3',
+            $base, $seconds, $seconds, max(0, $seconds - 0.3),
+        );
+
+        $result = Process::run(['ffmpeg', '-y', '-loglevel', 'error', '-filter_complex', $filter, '-c:a', 'libopus', '-b:a', '32k', $disk->path($path)]);
+
+        return $result->successful() && $disk->exists($path) ? $path : null;
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function waveform(int $seed): array
+    {
+        mt_srand($seed + 7);
+
+        return array_map(fn (int $i) => (int) round(18 + 70 * abs(sin($i / 3.1 + $seed)) * (0.55 + mt_rand(0, 45) / 100)), range(0, 47));
     }
 
     private function befriend(User $a, User $b): void

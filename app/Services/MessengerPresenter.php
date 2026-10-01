@@ -8,11 +8,15 @@ use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class MessengerPresenter
 {
     public const PAGE = 40;
+
+    /** @var array<int, User|null> */
+    private array $contacts = [];
 
     public function load(Message $message): Message
     {
@@ -35,19 +39,95 @@ class MessengerPresenter
             'reply_to' => $reply ? [
                 'id' => $reply->id,
                 'body' => $reply->trashed() ? null : Str::limit((string) $reply->body, 120),
+                'preview' => $reply->trashed() ? null : $this->preview($reply),
                 'author' => $reply->user?->first_name,
                 'has_attachments' => ! $reply->trashed() && $reply->attachments->isNotEmpty(),
                 'deleted' => $reply->trashed(),
             ] : null,
+            'preview' => $this->preview($message),
             'attachments' => $message->attachments->map(fn (MessageAttachment $a) => [
                 'id' => $a->id,
+                'type' => $a->type,
                 'url' => $a->url,
                 'width' => $a->width,
                 'height' => $a->height,
+                'name' => $a->name,
+                'mime' => $a->mime,
+                'size' => $a->size,
+                'duration' => $a->duration,
+                'waveform' => $a->meta['waveform'] ?? null,
             ])->all(),
+            'sticker' => $message->type === Message::TYPE_STICKER && isset($message->meta['sticker']['path']) ? [
+                'id' => $message->meta['sticker']['id'] ?? null,
+                'url' => Storage::disk('public')->url($message->meta['sticker']['path']),
+                'emoji' => $message->meta['sticker']['emoji'] ?? null,
+            ] : null,
+            'contact' => $message->type === Message::TYPE_CONTACT ? $this->contact($message)?->toCard() : null,
             'edited_at' => $message->edited_at?->toIso8601String(),
             'created_at' => $message->created_at->toIso8601String(),
         ];
+    }
+
+    /**
+     * Короткий текст для списку бесід, відповідей і сповіщень.
+     */
+    public function preview(Message $message): string
+    {
+        return match ($message->type) {
+            Message::TYPE_STICKER => trim(($message->meta['sticker']['emoji'] ?? '').' Стікер'),
+            Message::TYPE_VOICE => 'Голосове повідомлення',
+            Message::TYPE_CONTACT => 'Контакт: '.($this->contact($message)?->name ?? 'видалений акаунт'),
+            default => $this->textPreview($message),
+        };
+    }
+
+    private function textPreview(Message $message): string
+    {
+        if ($message->body !== null && $message->body !== '') {
+            return $message->body;
+        }
+
+        $attachments = $message->attachments;
+        $file = $attachments->firstWhere('type', MessageAttachment::TYPE_FILE);
+
+        return match (true) {
+            $file !== null => 'Файл: '.$file->name,
+            $attachments->count() > 1 => 'Фотографії',
+            $attachments->isNotEmpty() => 'Фотографія',
+            default => 'Повідомлення',
+        };
+    }
+
+    private function contact(Message $message): ?User
+    {
+        $id = (int) ($message->meta['contact_id'] ?? 0);
+
+        if (! array_key_exists($id, $this->contacts)) {
+            $this->contacts[$id] = User::query()->find($id);
+        }
+
+        return $this->contacts[$id];
+    }
+
+    /**
+     * @param  iterable<Message>  $messages
+     */
+    private function preloadContacts(iterable $messages): void
+    {
+        $ids = collect($messages)
+            ->filter(fn (Message $m) => $m->type === Message::TYPE_CONTACT)
+            ->map(fn (Message $m) => (int) ($m->meta['contact_id'] ?? 0))
+            ->reject(fn (int $id) => array_key_exists($id, $this->contacts))
+            ->unique();
+
+        if ($ids->isEmpty()) {
+            return;
+        }
+
+        $found = User::query()->whereIn('id', $ids)->get()->keyBy('id');
+        foreach ($ids as $id) {
+            $this->contacts[$id] = $found[$id] ?? null;
+        }
     }
 
     /**
@@ -65,6 +145,7 @@ class MessengerPresenter
             ->get();
 
         $hasMore = $messages->count() > self::PAGE;
+        $this->preloadContacts($messages->concat($messages->pluck('replyTo')->filter()));
 
         return [
             'messages' => $messages->take(self::PAGE)->reverse()->map(fn (Message $m) => $this->message($m))->values()->all(),
@@ -88,7 +169,7 @@ class MessengerPresenter
             ->select('conversations.*', 'me.is_muted as my_muted', 'me.role as my_role')
             ->selectSub(fn ($q) => $messenger->unreadMessages($q->selectRaw('count(*)'), $viewer->id, 'me'), 'unread_count')
             ->withCount('activeParticipants as members_count')
-            ->with(['lastMessage' => fn ($q) => $q->with('user')->withCount('attachments')])
+            ->with(['lastMessage' => fn ($q) => $q->with(['user', 'attachments'])])
             ->where(fn ($q) => $q->whereNotNull('conversations.last_message_id')->when($includeId, fn ($q, int $id) => $q->orWhere('conversations.id', $id)))
             ->orderByDesc('conversations.last_message_at')
             ->orderByDesc('conversations.id')
@@ -96,6 +177,7 @@ class MessengerPresenter
             ->get();
 
         $peers = $this->peers($conversations, $viewer);
+        $this->preloadContacts($conversations->pluck('lastMessage')->filter());
 
         return $conversations->map(fn (Conversation $c) => $this->summary($c, $viewer, $peers[$c->id] ?? null))->values()->all();
     }
@@ -120,9 +202,10 @@ class MessengerPresenter
                 'id' => $last->id,
                 'type' => $last->type,
                 'body' => $last->body !== null ? Str::limit($last->body, 90) : null,
+                'preview' => Str::limit($this->preview($last), 90),
                 'author' => $last->user?->first_name,
                 'is_own' => $last->user_id === $viewer->id,
-                'has_attachments' => ($last->attachments_count ?? 0) > 0,
+                'has_attachments' => $last->relationLoaded('attachments') ? $last->attachments->isNotEmpty() : $last->attachments()->exists(),
                 'created_at' => $last->created_at->toIso8601String(),
             ] : null,
         ];
