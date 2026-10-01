@@ -60,6 +60,16 @@ class ProofHasher
     }
 
     /**
+     * Однотонні кадри (чорний екран, заливка) дають майже порожній dHash — такі порівнюємо лише за SHA-256.
+     */
+    public function informative(string $phash): bool
+    {
+        $bits = substr_count(decbin((int) hexdec(substr($phash, 0, 8))), '1') + substr_count(decbin((int) hexdec(substr($phash, 8, 8))), '1');
+
+        return $bits >= 6 && $bits <= 58;
+    }
+
+    /**
      * Шукає збіги серед доказів сім’ї (крім відхилених звітів) за останні 180 днів.
      *
      * @param  array{sha256: string, phash: string|null}  $hash

@@ -18,6 +18,7 @@ use App\Services\ImageStorage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -80,6 +81,7 @@ class FamilyController extends FamilyBaseController
 
     public function store(Request $request, FamilyService $families, ImageStorage $images): RedirectResponse
     {
+        $request->merge(['tag' => Str::upper(trim($request->string('tag')->toString()))]);
         $data = $request->validate([
             'server_id' => ['required', 'integer', Rule::exists('gta_servers', 'id')->where('status', GtaServer::STATUS_PUBLISHED)->whereNull('deleted_at')],
             'name' => ['required', 'string', 'min:2', 'max:60'],

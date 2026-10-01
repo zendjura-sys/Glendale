@@ -135,7 +135,7 @@ class FamilyMemberController extends FamilyBaseController
 
         $titles = [];
         foreach (range(1, 10) as $rank) {
-            $titles[$rank] = trim((string) ($data['titles'][$rank] ?? $data['titles'][$rank - 1] ?? Family::DEFAULT_RANKS[$rank]));
+            $titles[$rank] = trim((string) (array_values($data['titles'])[$rank - 1] ?? Family::DEFAULT_RANKS[$rank]));
         }
 
         $matrix = [];

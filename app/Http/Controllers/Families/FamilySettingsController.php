@@ -49,6 +49,7 @@ class FamilySettingsController extends FamilyBaseController
     public function profile(Request $request, Family $family, FamilyAudit $audit, ImageStorage $images, FamilyChat $chat): RedirectResponse
     {
         $member = $this->member($request, $family, 'settings.manage', write: true);
+        $request->merge(['tag' => Str::upper(trim($request->string('tag')->toString()))]);
         $data = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:60'],
             'tag' => ['required', 'string', 'min:2', 'max:8', 'regex:/^[A-Za-z0-9А-Яа-яІіЇїЄєҐґ]+$/u', Rule::unique('families', 'tag')->where('server_id', $family->server_id)->ignore($family->id)],
