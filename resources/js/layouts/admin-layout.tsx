@@ -7,6 +7,7 @@ import {
     Settings2,
     Shield,
     ShieldCheck,
+    Sticker,
     UsersRound,
 } from 'lucide-react';
 import type { PropsWithChildren } from 'react';
@@ -21,6 +22,7 @@ const items = [
     { label: 'Користувачі', href: '/admin/users', icon: UsersRound },
     { label: 'Записи', href: '/admin/posts', icon: FileText },
     { label: 'Спільноти', href: '/admin/communities', icon: Shield },
+    { label: 'Стікери', href: '/admin/stickers', icon: Sticker },
     { label: 'Модулі', href: '/admin/modules', icon: Blocks },
     { label: 'Налаштування', href: '/admin/settings', icon: Settings2 },
 ];

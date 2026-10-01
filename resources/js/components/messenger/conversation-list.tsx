@@ -28,11 +28,7 @@ function Preview({ conversation }: { conversation: ConversationSummary }) {
     return (
         <>
             {prefix && <span className="text-white/75">{prefix}: </span>}
-            <span
-                className={cn(
-                    !last.body && last.has_attachments && 'text-[#9fb0ff]',
-                )}
-            >
+            <span className={cn(!last.body && 'text-[#9fb0ff]')}>
                 {messagePreview(last)}
             </span>
         </>

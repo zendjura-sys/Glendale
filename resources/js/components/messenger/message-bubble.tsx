@@ -14,6 +14,11 @@ import { UserAvatar } from '@/components/gc/user-avatar';
 import { clockTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { ChatAttachment, ChatMessage } from '@/types';
+import {
+    ContactAttachment,
+    FileAttachment,
+    VoicePlayer,
+} from './message-media';
 
 export type BubbleActions = {
     onReply: (message: ChatMessage) => void;
@@ -125,8 +130,17 @@ export function MessageBubble({
     highlighted,
     actions,
 }: Props) {
-    const hasImages = message.attachments.length > 0;
-    const onlyImages = hasImages && !message.body && !message.reply_to;
+    const images = message.attachments.filter(
+        (a) => (a.type ?? 'image') === 'image',
+    );
+    const files = message.attachments.filter((a) => a.type === 'file');
+    const voice = message.attachments.find((a) => a.type === 'voice');
+    const isSticker = message.type === 'sticker' && !!message.sticker;
+    const hasImages = images.length > 0;
+    const bare = isSticker && !message.reply_to;
+    const onlyImages =
+        bare ||
+        (hasImages && !message.body && !message.reply_to && !files.length);
     const pending = message.pending;
 
     const meta = (
@@ -191,24 +205,29 @@ export function MessageBubble({
                 <div
                     className={cn(
                         'relative min-w-0 transition-shadow duration-500',
-                        onlyImages
-                            ? 'overflow-hidden rounded-[18px]'
-                            : cn(
-                                  'rounded-[20px] px-3.5 py-2',
-                                  own
-                                      ? 'bg-gradient-to-br from-[#4f6bff] via-[#6d5dfc] to-[#8b5cf6] text-white shadow-[0_8px_24px_-12px_rgb(109_93_252/0.9)]'
-                                      : 'border border-white/[0.07] bg-white/[0.06] text-white/90 backdrop-blur-xl',
-                                  own
-                                      ? groupEnd
-                                          ? 'rounded-br-md'
-                                          : 'rounded-tr-md rounded-br-md'
-                                      : groupEnd
-                                        ? 'rounded-bl-md'
-                                        : 'rounded-tl-md rounded-bl-md',
-                                  !groupStart &&
-                                      (own ? 'rounded-tr-md' : 'rounded-tl-md'),
-                              ),
+                        bare
+                            ? ''
+                            : onlyImages
+                              ? 'overflow-hidden rounded-[18px]'
+                              : cn(
+                                    'rounded-[20px] px-3.5 py-2',
+                                    own
+                                        ? 'bg-gradient-to-br from-[#4f6bff] via-[#6d5dfc] to-[#8b5cf6] text-white shadow-[0_8px_24px_-12px_rgb(109_93_252/0.9)]'
+                                        : 'border border-white/[0.07] bg-white/[0.06] text-white/90 backdrop-blur-xl',
+                                    own
+                                        ? groupEnd
+                                            ? 'rounded-br-md'
+                                            : 'rounded-tr-md rounded-br-md'
+                                        : groupEnd
+                                          ? 'rounded-bl-md'
+                                          : 'rounded-tl-md rounded-bl-md',
+                                    !groupStart &&
+                                        (own
+                                            ? 'rounded-tr-md'
+                                            : 'rounded-tl-md'),
+                                ),
                         hasImages && !onlyImages && 'pt-1.5 pr-1.5 pl-1.5',
+                        voice && 'py-2 pr-3 pl-2',
                         pending === 'sending' && 'opacity-80',
                         highlighted &&
                             'shadow-[0_0_30px_rgb(124_140_255/0.6)] ring-2 ring-[#8fa0ff]',
@@ -253,6 +272,7 @@ export function MessageBubble({
                                 {message.reply_to.deleted
                                     ? 'Повідомлення видалено'
                                     : message.reply_to.body ||
+                                      message.reply_to.preview ||
                                       (message.reply_to.has_attachments
                                           ? 'Фотографія'
                                           : '')}
@@ -260,15 +280,33 @@ export function MessageBubble({
                         </button>
                     )}
 
+                    {isSticker && message.sticker && (
+                        <div className="relative">
+                            <img
+                                src={message.sticker.url}
+                                alt={message.sticker.emoji ?? 'Стікер'}
+                                onLoad={actions.onMediaLoad}
+                                className="size-[148px] object-contain drop-shadow-[0_10px_24px_rgb(0_0_0/0.35)] sm:size-[164px]"
+                            />
+                            {bare && (
+                                <span
+                                    className={cn(
+                                        'absolute bottom-0',
+                                        own ? 'right-0' : 'left-0',
+                                    )}
+                                >
+                                    {meta}
+                                </span>
+                            )}
+                        </div>
+                    )}
+
                     {hasImages && (
                         <div className="relative">
                             <Images
-                                items={message.attachments}
+                                items={images}
                                 onOpen={(index) =>
-                                    actions.onOpenImage(
-                                        message.attachments,
-                                        index,
-                                    )
+                                    actions.onOpenImage(images, index)
                                 }
                                 onLoad={actions.onMediaLoad}
                             />
@@ -278,6 +316,32 @@ export function MessageBubble({
                                 </span>
                             )}
                         </div>
+                    )}
+
+                    {files.length > 0 && (
+                        <div
+                            className={cn(
+                                'grid gap-0.5',
+                                hasImages ? 'mt-1' : '-mx-1.5 -mt-0.5',
+                            )}
+                        >
+                            {files.map((file) => (
+                                <FileAttachment
+                                    key={file.id}
+                                    attachment={file}
+                                    own={own}
+                                />
+                            ))}
+                        </div>
+                    )}
+
+                    {voice && <VoicePlayer attachment={voice} own={own} />}
+
+                    {message.type === 'contact' && (
+                        <ContactAttachment
+                            contact={message.contact}
+                            own={own}
+                        />
                     )}
 
                     {!onlyImages && (

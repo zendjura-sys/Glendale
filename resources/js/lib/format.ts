@@ -145,3 +145,21 @@ export function initials(name: string): string {
         .map((part) => part[0]?.toUpperCase())
         .join('');
 }
+
+export function formatBytes(bytes: number | null | undefined): string {
+    if (!bytes) return '0 Б';
+    const units = ['Б', 'КБ', 'МБ', 'ГБ'];
+    const power = Math.min(
+        units.length - 1,
+        Math.floor(Math.log(bytes) / Math.log(1024)),
+    );
+    const value = bytes / 1024 ** power;
+
+    return `${value >= 10 || power === 0 ? Math.round(value) : value.toFixed(1).replace('.', ',')} ${units[power]}`;
+}
+
+export function formatDuration(seconds: number): string {
+    const safe = Math.max(0, Math.floor(seconds));
+
+    return `${Math.floor(safe / 60)}:${String(safe % 60).padStart(2, '0')}`;
+}

@@ -17,6 +17,7 @@ type Settings = {
     max_post_length: number;
     max_attachments: number;
     max_upload_mb: number;
+    max_message_file_mb: number;
     maintenance_message: string;
 };
 
@@ -147,7 +148,7 @@ export default function AdminSettings({ settings }: { settings: Settings }) {
                     title="Записи та файли"
                     description="Обмеження для публікацій і завантажень."
                 >
-                    <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <div className="grid gap-2">
                             <Label htmlFor="max_post_length">
                                 Довжина запису
@@ -204,6 +205,25 @@ export default function AdminSettings({ settings }: { settings: Settings }) {
                                 }
                             />
                             <InputError message={errors.max_upload_mb} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="max_message_file_mb">
+                                Файли в повідомленнях, МБ
+                            </Label>
+                            <Input
+                                id="max_message_file_mb"
+                                type="number"
+                                min={1}
+                                max={500}
+                                value={data.max_message_file_mb}
+                                onChange={(e) =>
+                                    setData(
+                                        'max_message_file_mb',
+                                        Number(e.target.value),
+                                    )
+                                }
+                            />
+                            <InputError message={errors.max_message_file_mb} />
                         </div>
                     </div>
                 </Section>
