@@ -48,6 +48,15 @@ class PostController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $this->publish($request);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Запис опубліковано.']);
+
+        return back();
+    }
+
+    public function publish(Request $request): Post
+    {
         $user = $request->user();
         $maxFiles = (int) $this->settings->get('max_attachments');
         $maxKb = (int) $this->settings->get('max_upload_mb') * 1024;
@@ -134,9 +143,7 @@ class PostController extends Controller
             $wallOwner->notify(new PostInteraction(PostInteraction::WALL, $user, $post, Str::limit((string) $post->body, 80)));
         }
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Запис опубліковано.']);
-
-        return back();
+        return $post;
     }
 
     /**

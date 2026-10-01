@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GameCon</string>
+    <string name="google_web_client_id" translatable="false">142512043248-9aa67rq1ki4lucintlei0fena6hm98iq.apps.googleusercontent.com</string>
+</resources>
