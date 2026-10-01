@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Community;
 use App\Models\CommunityMember;
+use App\Models\Photo;
 use App\Models\User;
 use App\Services\CommunityService;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
+use App\Services\PhotoService;
 use App\Services\PostPresenter;
+use App\Support\Modules\ModuleManager;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
@@ -87,7 +90,7 @@ class CommunityController extends Controller
         return to_route('communities.show', $community);
     }
 
-    public function show(Request $request, Community $community): Response
+    public function show(Request $request, Community $community, ModuleManager $modules, PhotoService $photoService): Response
     {
         $viewer = $request->user();
         $membership = $community->membershipFor($viewer);
@@ -117,6 +120,18 @@ class CommunityController extends Controller
             ->limit(5)
             ->get();
 
+        $photos = null;
+        if ($canView && $modules->enabled('photos')) {
+            $albumIds = $photoService->visibleAlbums($community, $viewer)->select('id');
+            $photos = [
+                'count' => Photo::query()->whereIn('album_id', $albumIds)->count(),
+                'items' => Photo::query()->whereIn('album_id', $albumIds)->latest('id')->limit(6)->get()
+                    ->map(fn (Photo $p) => ['id' => $p->id, 'url' => $p->url, 'href' => '/albums/'.$p->album_id.'?photo='.$p->id])
+                    ->all(),
+                'can_create' => $photoService->canCreateAlbum($community, $viewer),
+            ];
+        }
+
         return Inertia::render('communities/show', [
             'community' => $this->details($community),
             'membership' => $membership ? ['status' => $membership->status, 'role' => $membership->role] : null,
@@ -134,6 +149,7 @@ class CommunityController extends Controller
             ],
             'members' => $canView ? $preview->map->toCard()->all() : [],
             'managers' => $managers->map(fn (CommunityMember $m) => [...$m->user->toCard(), 'role' => $m->role])->all(),
+            'photos' => $photos,
             'posts' => Inertia::scroll(fn () => $posts->setCollection(collect($items))),
         ]);
     }

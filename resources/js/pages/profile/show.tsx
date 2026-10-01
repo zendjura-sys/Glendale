@@ -44,14 +44,15 @@ type Props = {
     canSeeContent: boolean;
     canPost: boolean;
     canMessage: boolean;
-    counters: {
+    stats: {
         friends: number;
         posts: number;
         photos: number;
         mutual: number;
     };
     friends: UserCard[];
-    photos: { id: number; url: string; post_id: number }[];
+    photos: { id: number; url: string; href: string }[];
+    photosHref: string | null;
     posts: ScrollData<PostItem>;
 };
 
@@ -132,9 +133,10 @@ export default function ProfileShow({
     canSeeContent,
     canPost,
     canMessage,
-    counters,
+    stats,
     friends,
     photos,
+    photosHref,
     posts,
 }: Props) {
     const { modules } = usePage().props;
@@ -291,8 +293,8 @@ export default function ProfileShow({
                         </div>
                         <div className="flex">
                             <Counter
-                                value={counters.friends}
-                                label={plural(counters.friends, [
+                                value={stats.friends}
+                                label={plural(stats.friends, [
                                     'друг',
                                     'друзі',
                                     'друзів',
@@ -300,14 +302,18 @@ export default function ProfileShow({
                                 href={isSelf ? '/friends' : undefined}
                             />
                             <Counter
-                                value={counters.posts}
-                                label={plural(counters.posts, [
+                                value={stats.posts}
+                                label={plural(stats.posts, [
                                     'запис',
                                     'записи',
                                     'записів',
                                 ])}
                             />
-                            <Counter value={counters.photos} label="фото" />
+                            <Counter
+                                value={stats.photos}
+                                label="фото"
+                                href={photosHref ?? undefined}
+                            />
                         </div>
                     </div>
                 </div>
@@ -336,10 +342,10 @@ export default function ProfileShow({
                             title="Друзі"
                             icon={UsersRound}
                             action={
-                                counters.mutual > 0 ? (
+                                stats.mutual > 0 ? (
                                     <span className="text-xs text-white/45">
-                                        {counters.mutual}{' '}
-                                        {plural(counters.mutual, [
+                                        {stats.mutual}{' '}
+                                        {plural(stats.mutual, [
                                             'спільний',
                                             'спільні',
                                             'спільних',
@@ -374,12 +380,25 @@ export default function ProfileShow({
                         </Widget>
 
                         {photos.length > 0 && (
-                            <Widget title="Фото" icon={ImageIcon}>
+                            <Widget
+                                title="Фото"
+                                icon={ImageIcon}
+                                action={
+                                    photosHref ? (
+                                        <Link
+                                            href={photosHref}
+                                            className="text-xs text-cyan-300/80 transition hover:text-cyan-200"
+                                        >
+                                            Усі {stats.photos}
+                                        </Link>
+                                    ) : undefined
+                                }
+                            >
                                 <div className="grid grid-cols-3 gap-1.5 overflow-hidden rounded-2xl">
                                     {photos.map((photo) => (
                                         <Link
                                             key={photo.id}
-                                            href={`/posts/${photo.post_id}`}
+                                            href={photo.href}
                                             className="group aspect-square overflow-hidden bg-white/5"
                                         >
                                             <img

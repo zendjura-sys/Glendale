@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Photo;
+use App\Models\PhotoAlbum;
 use App\Models\Post;
 use App\Models\PostAttachment;
 use App\Models\User;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
 use App\Services\Messenger;
+use App\Services\PhotoService;
 use App\Services\PostPresenter;
+use App\Support\Modules\ModuleManager;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,7 +37,7 @@ class ProfileController extends Controller
         return to_route('profile.show', User::query()->findOrFail($id), 301);
     }
 
-    public function show(Request $request, User $user, Messenger $messenger): Response
+    public function show(Request $request, User $user, Messenger $messenger, ModuleManager $modules, PhotoService $photoService): Response
     {
         $viewer = $request->user();
         $relation = $this->friendships->status($viewer, $user);
@@ -51,9 +55,17 @@ class ProfileController extends Controller
 
         $items = $canSeeContent ? $this->presenter->many(new Collection($posts->items()), $viewer) : [];
 
-        $photos = PostAttachment::query()
-            ->where('type', PostAttachment::TYPE_IMAGE)
-            ->whereHas('post', fn ($q) => $q->where('author_id', $user->id)->where('visibility', Post::VISIBILITY_PUBLIC));
+        if ($modules->enabled('photos')) {
+            $photos = Photo::query()->whereIn('album_id', $viewer
+                ? $photoService->visibleAlbums($user, $viewer)->select('id')
+                : PhotoAlbum::query()->whereMorphedTo('owner', $user)->where('privacy', PhotoAlbum::PRIVACY_PUBLIC)->select('id'));
+            $mapPhoto = fn (Photo $p) => ['id' => $p->id, 'url' => $p->url, 'href' => '/albums/'.$p->album_id.'?photo='.$p->id];
+        } else {
+            $photos = PostAttachment::query()
+                ->where('type', PostAttachment::TYPE_IMAGE)
+                ->whereHas('post', fn ($q) => $q->where('author_id', $user->id)->where('visibility', Post::VISIBILITY_PUBLIC));
+            $mapPhoto = fn (PostAttachment $a) => ['id' => $a->id, 'url' => $a->url, 'href' => '/posts/'.$a->post_id];
+        }
 
         return Inertia::render('profile/show', [
             'profile' => [
@@ -74,7 +86,7 @@ class ProfileController extends Controller
             'canSeeContent' => $canSeeContent,
             'canMessage' => $viewer !== null && $messenger->canMessage($viewer, $user),
             'canPost' => $viewer !== null && in_array($relation, [FriendshipService::SELF, FriendshipService::FRIENDS], true),
-            'counters' => [
+            'stats' => [
                 'friends' => count($friendIds),
                 'posts' => $user->posts()->count(),
                 'photos' => (clone $photos)->count(),
@@ -87,9 +99,8 @@ class ProfileController extends Controller
                 ->get()
                 ->map->toCard()
                 ->all() : [],
-            'photos' => $canSeeContent ? $photos->latest('id')->limit(6)->get()
-                ->map(fn (PostAttachment $a) => ['id' => $a->id, 'url' => $a->url, 'post_id' => $a->post_id])
-                ->all() : [],
+            'photos' => $canSeeContent ? $photos->latest('id')->limit(6)->get()->map($mapPhoto)->all() : [],
+            'photosHref' => $modules->enabled('photos') ? '/photos/u/'.$user->username : null,
             'posts' => Inertia::scroll(fn () => $posts->setCollection(collect($items))),
         ]);
     }
