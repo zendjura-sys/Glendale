@@ -1,0 +1,14 @@
+[Unit]
+Description=GameCon scheduler
+After=network.target redis-server.service mariadb.service
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/gamecon
+ExecStart=/usr/bin/php artisan schedule:work
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
