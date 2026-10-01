@@ -1,0 +1,702 @@
+import { useSyncExternalStore } from 'react';
+import { toast } from 'sonner';
+import { api } from '@/lib/api';
+import type { SpotifyTrack, TrackCard } from '@/types';
+
+/**
+ * Глобальний плеєр GameCon. Живе поза React-деревом, тому музика не зупиняється
+ * під час переходів між сторінками Inertia.
+ *
+ * Рушії: власні треки — HTMLAudioElement; Spotify — Web Playback SDK (Premium)
+ * або офіційний iFrame-плеєр Spotify для всіх інших.
+ */
+
+export type Engine = 'audio' | 'sdk' | 'embed';
+export type RepeatMode = 'off' | 'all' | 'one';
+
+export type PlayerState = {
+    queue: TrackCard[];
+    index: number;
+    current: TrackCard | null;
+    playing: boolean;
+    loading: boolean;
+    position: number;
+    duration: number;
+    volume: number;
+    muted: boolean;
+    shuffle: boolean;
+    repeat: RepeatMode;
+    engine: Engine | null;
+};
+
+type SpotifyAuth = { connected: boolean; premium: boolean };
+
+const STORAGE_KEY = 'gc.player';
+const saved = (() => {
+    try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') as {
+            volume?: number;
+            shuffle?: boolean;
+            repeat?: RepeatMode;
+        };
+    } catch {
+        return {};
+    }
+})();
+
+let state: PlayerState = {
+    queue: [],
+    index: -1,
+    current: null,
+    playing: false,
+    loading: false,
+    position: 0,
+    duration: 0,
+    volume: saved.volume ?? 0.8,
+    muted: false,
+    shuffle: saved.shuffle ?? false,
+    repeat: saved.repeat ?? 'off',
+    engine: null,
+};
+
+const listeners = new Set<() => void>();
+let spotifyAuth: SpotifyAuth = { connected: false, premium: false };
+let reportTimer: ReturnType<typeof setTimeout> | undefined;
+let ticker: ReturnType<typeof setInterval> | undefined;
+let history: number[] = [];
+let endedFor: string | null = null;
+
+function set(patch: Partial<PlayerState>) {
+    state = { ...state, ...patch };
+    listeners.forEach((listener) => listener());
+
+    if ('volume' in patch || 'shuffle' in patch || 'repeat' in patch) {
+        localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify({
+                volume: state.volume,
+                shuffle: state.shuffle,
+                repeat: state.repeat,
+            }),
+        );
+    }
+}
+
+function subscribe(listener: () => void) {
+    listeners.add(listener);
+
+    return () => listeners.delete(listener);
+}
+
+export function usePlayer(): PlayerState {
+    return useSyncExternalStore(subscribe, () => state);
+}
+
+export function getPlayerState(): PlayerState {
+    return state;
+}
+
+const effectiveVolume = () => (state.muted ? 0 : state.volume);
+
+/* ------------------------------------------------------------------ */
+/* Рушій HTMLAudioElement                                              */
+/* ------------------------------------------------------------------ */
+
+let audio: HTMLAudioElement | null = null;
+
+function audioEl(): HTMLAudioElement {
+    if (audio) return audio;
+
+    audio = new Audio();
+    audio.preload = 'auto';
+    audio.addEventListener('timeupdate', () => {
+        if (state.engine === 'audio') set({ position: audio!.currentTime });
+    });
+    audio.addEventListener('loadedmetadata', () => {
+        if (state.engine === 'audio' && Number.isFinite(audio!.duration))
+            set({ duration: audio!.duration });
+    });
+    audio.addEventListener('playing', () => {
+        if (state.engine === 'audio') set({ playing: true, loading: false });
+    });
+    audio.addEventListener('pause', () => {
+        if (state.engine === 'audio') set({ playing: false });
+    });
+    audio.addEventListener('waiting', () => {
+        if (state.engine === 'audio') set({ loading: true });
+    });
+    audio.addEventListener('ended', () => {
+        if (state.engine === 'audio') onEnded();
+    });
+    audio.addEventListener('error', () => {
+        if (state.engine !== 'audio' || !audio!.src) return;
+        set({ playing: false, loading: false });
+        toast.error('Не вдалося відтворити трек.');
+    });
+
+    return audio;
+}
+
+/* ------------------------------------------------------------------ */
+/* Spotify Web Playback SDK (Premium)                                  */
+/* ------------------------------------------------------------------ */
+
+type SdkState = {
+    paused: boolean;
+    position: number;
+    duration: number;
+    loading?: boolean;
+    track_window: {
+        current_track: { id: string | null } | null;
+        previous_tracks: { id: string | null }[];
+    };
+};
+
+type SdkPlayer = {
+    connect(): Promise<boolean>;
+    disconnect(): void;
+    addListener(event: string, cb: (payload: never) => void): void;
+    togglePlay(): Promise<void>;
+    pause(): Promise<void>;
+    resume(): Promise<void>;
+    seek(ms: number): Promise<void>;
+    setVolume(volume: number): Promise<void>;
+    activateElement?(): Promise<void>;
+};
+
+declare global {
+    interface Window {
+        onSpotifyWebPlaybackSDKReady?: () => void;
+        onSpotifyIframeApiReady?: (api: EmbedApi) => void;
+        Spotify?: {
+            Player: new (options: {
+                name: string;
+                getOAuthToken: (cb: (token: string) => void) => void;
+                volume?: number;
+            }) => SdkPlayer;
+        };
+    }
+}
+
+let sdkPlayer: SdkPlayer | null = null;
+let sdkDevice: Promise<string> | null = null;
+let sdkFailed = false;
+
+function injectScript(src: string) {
+    if (document.querySelector(`script[src="${src}"]`)) return;
+    const script = document.createElement('script');
+    script.src = src;
+    script.async = true;
+    document.body.appendChild(script);
+}
+
+function loadSdk(): Promise<string> {
+    if (sdkDevice) return sdkDevice;
+
+    sdkDevice = new Promise<string>((resolve, reject) => {
+        const timeout = setTimeout(
+            () => reject(new Error('Spotify SDK не відповідає.')),
+            15000,
+        );
+
+        window.onSpotifyWebPlaybackSDKReady = () => {
+            const player = new window.Spotify!.Player({
+                name: 'GameCon Web Player',
+                volume: effectiveVolume(),
+                getOAuthToken: (cb) => {
+                    api<{ access_token: string }>('GET', '/music/spotify/token')
+                        .then((r) => cb(r.access_token))
+                        .catch(() => reject(new Error('Немає токена.')));
+                },
+            });
+
+            player.addListener('ready', (({
+                device_id,
+            }: {
+                device_id: string;
+            }) => {
+                clearTimeout(timeout);
+                resolve(device_id);
+            }) as never);
+            for (const event of [
+                'initialization_error',
+                'authentication_error',
+                'account_error',
+            ]) {
+                player.addListener(event, (({
+                    message,
+                }: {
+                    message: string;
+                }) => {
+                    clearTimeout(timeout);
+                    reject(new Error(message));
+                }) as never);
+            }
+            player.addListener('player_state_changed', ((
+                sdk: SdkState | null,
+            ) => {
+                if (!sdk || state.engine !== 'sdk') return;
+                const current = state.current;
+                const finished =
+                    sdk.paused &&
+                    sdk.position === 0 &&
+                    current?.source === 'spotify' &&
+                    sdk.track_window.previous_tracks.some(
+                        (t) => t.id === current.id,
+                    );
+
+                set({
+                    playing: !sdk.paused,
+                    loading: !!sdk.loading,
+                    position: sdk.position / 1000,
+                    duration: sdk.duration / 1000 || state.duration,
+                });
+                if (finished) onEnded();
+            }) as never);
+
+            void player.connect();
+            sdkPlayer = player;
+        };
+
+        injectScript('https://sdk.scdn.co/spotify-player.js');
+    });
+
+    sdkDevice.catch(() => {
+        sdkFailed = true;
+        sdkDevice = null;
+    });
+
+    return sdkDevice;
+}
+
+async function playViaSdk(track: SpotifyTrack): Promise<void> {
+    const deviceId = await loadSdk();
+    await sdkPlayer?.activateElement?.();
+    await api('PUT', '/music/spotify/play', {
+        device_id: deviceId,
+        uris: [track.uri],
+    });
+    set({ engine: 'sdk', duration: track.duration });
+}
+
+/* ------------------------------------------------------------------ */
+/* Spotify iFrame API (без Premium / без акаунта)                      */
+/* ------------------------------------------------------------------ */
+
+type EmbedController = {
+    loadUri(uri: string): void;
+    play(): void;
+    pause(): void;
+    resume(): void;
+    togglePlay(): void;
+    seek(seconds: number): void;
+    destroy(): void;
+    addListener(
+        event: 'playback_update' | 'ready',
+        cb: (e: {
+            data: {
+                isPaused: boolean;
+                isBuffering: boolean;
+                duration: number;
+                position: number;
+            };
+        }) => void,
+    ): void;
+};
+
+type EmbedApi = {
+    createController(
+        element: HTMLElement,
+        options: { uri: string; width?: string | number; height?: number },
+        callback: (controller: EmbedController) => void,
+    ): void;
+};
+
+let embedApi: Promise<EmbedApi> | null = null;
+let embed: EmbedController | null = null;
+let embedHost: HTMLDivElement | null = null;
+
+export const EMBED_HOST_ID = 'gc-spotify-embed';
+
+function loadEmbedApi(): Promise<EmbedApi> {
+    embedApi ??= new Promise<EmbedApi>((resolve) => {
+        window.onSpotifyIframeApiReady = resolve;
+        injectScript('https://open.spotify.com/embed/iframe-api/v1');
+    });
+
+    return embedApi;
+}
+
+function ensureEmbedHost(): HTMLDivElement {
+    if (embedHost?.isConnected) return embedHost;
+
+    embedHost = document.createElement('div');
+    embedHost.id = EMBED_HOST_ID;
+    embedHost.className =
+        'fixed right-3 bottom-[148px] z-40 hidden w-[min(360px,calc(100vw-1.5rem))] overflow-hidden rounded-2xl shadow-[0_20px_60px_-15px_rgb(30_215_96/0.45)] ring-1 ring-white/10 lg:bottom-[92px]';
+    const target = document.createElement('div');
+    embedHost.appendChild(target);
+    document.body.appendChild(embedHost);
+
+    return embedHost;
+}
+
+function showEmbed(visible: boolean) {
+    embedHost?.classList.toggle('hidden', !visible);
+}
+
+async function playViaEmbed(track: SpotifyTrack): Promise<void> {
+    const host = ensureEmbedHost();
+    set({ engine: 'embed', duration: track.duration });
+    showEmbed(true);
+
+    if (embed) {
+        embed.loadUri(track.uri);
+        embed.play();
+
+        return;
+    }
+
+    const IFrameAPI = await loadEmbedApi();
+    await new Promise<void>((resolve) => {
+        IFrameAPI.createController(
+            host.firstElementChild as HTMLElement,
+            { uri: track.uri, width: '100%', height: 80 },
+            (controller) => {
+                embed = controller;
+                controller.addListener('playback_update', (e) => {
+                    if (state.engine !== 'embed') return;
+                    const { isPaused, isBuffering, duration, position } =
+                        e.data;
+                    set({
+                        playing: !isPaused,
+                        loading: isBuffering,
+                        position: position / 1000,
+                        duration: duration / 1000 || state.duration,
+                    });
+                    if (
+                        isPaused &&
+                        duration > 0 &&
+                        position > 0 &&
+                        duration - position < 600
+                    )
+                        onEnded();
+                });
+                controller.addListener('ready', () => {
+                    controller.play();
+                    resolve();
+                });
+            },
+        );
+    });
+}
+
+/* ------------------------------------------------------------------ */
+/* Керування                                                           */
+/* ------------------------------------------------------------------ */
+
+function stopEngines(except?: Engine) {
+    if (except !== 'audio' && audio && !audio.paused) audio.pause();
+    if (except !== 'sdk' && sdkPlayer && state.engine === 'sdk')
+        void sdkPlayer.pause();
+    if (except !== 'embed' && embed && state.engine === 'embed') embed.pause();
+    if (except !== 'embed') showEmbed(false);
+}
+
+function report(track: TrackCard) {
+    clearTimeout(reportTimer);
+    reportTimer = setTimeout(() => {
+        const body =
+            track.source === 'local'
+                ? { source: 'local', track_id: track.id }
+                : {
+                      source: 'spotify',
+                      track: {
+                          id: track.id,
+                          title: track.title,
+                          artist: track.artist,
+                          album: track.album,
+                          duration: track.duration,
+                          cover_url: track.cover_url,
+                      },
+                  };
+        void api('POST', '/music/now-playing', body).catch(() => {});
+    }, 1500);
+}
+
+function mediaSession(track: TrackCard) {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.metadata = new MediaMetadata({
+        title: track.title,
+        artist: track.artist,
+        album: track.album ?? 'GameCon',
+        artwork: track.cover_url
+            ? [{ src: track.cover_url, sizes: '600x600' }]
+            : [],
+    });
+    navigator.mediaSession.setActionHandler('play', () => toggle());
+    navigator.mediaSession.setActionHandler('pause', () => toggle());
+    navigator.mediaSession.setActionHandler('nexttrack', () => next());
+    navigator.mediaSession.setActionHandler('previoustrack', () => prev());
+}
+
+function startTicker() {
+    clearInterval(ticker);
+    ticker = setInterval(() => {
+        if (state.engine === 'sdk' && state.playing)
+            set({ position: Math.min(state.position + 0.5, state.duration) });
+    }, 500);
+}
+
+async function start(index: number) {
+    const track = state.queue[index];
+    if (!track) return;
+    endedFor = null;
+
+    set({
+        index,
+        current: track,
+        position: 0,
+        duration: track.duration,
+        loading: true,
+        playing: false,
+    });
+    mediaSession(track);
+    report(track);
+
+    try {
+        if (track.source === 'local') {
+            stopEngines('audio');
+            const el = audioEl();
+            set({ engine: 'audio' });
+            el.src = track.url;
+            el.volume = effectiveVolume();
+            await el.play();
+
+            return;
+        }
+
+        if (spotifyAuth.premium && !sdkFailed) {
+            stopEngines('sdk');
+            try {
+                await playViaSdk(track);
+                startTicker();
+
+                return;
+            } catch (error) {
+                toast.message(
+                    'Повне відтворення Spotify недоступне — вмикаємо вбудований плеєр.',
+                    {
+                        description:
+                            error instanceof Error ? error.message : undefined,
+                    },
+                );
+            }
+        }
+
+        stopEngines('embed');
+        await playViaEmbed(track);
+    } catch (error) {
+        set({ loading: false, playing: false });
+        if (error instanceof DOMException && error.name === 'NotAllowedError')
+            return;
+        toast.error(
+            error instanceof Error && error.message
+                ? error.message
+                : 'Не вдалося відтворити трек.',
+        );
+    }
+}
+
+function onEnded() {
+    const marker = `${state.index}:${state.current?.key}`;
+    if (endedFor === marker) return;
+    endedFor = marker;
+
+    if (state.repeat === 'one') {
+        void start(state.index);
+
+        return;
+    }
+
+    const hasNext = state.shuffle
+        ? state.queue.length > 1
+        : state.index < state.queue.length - 1;
+    if (hasNext || state.repeat === 'all') next();
+    else set({ playing: false, position: 0 });
+}
+
+export function setSpotifyAuth(auth: SpotifyAuth) {
+    if (auth.premium !== spotifyAuth.premium) sdkFailed = false;
+    spotifyAuth = auth;
+}
+
+export function playQueue(tracks: TrackCard[], index = 0) {
+    if (tracks.length === 0) return;
+    const current = state.current;
+    const target = tracks[index];
+
+    if (current && target && current.key === target.key) {
+        set({ queue: tracks, index });
+        toggle();
+
+        return;
+    }
+
+    history = [];
+    set({ queue: tracks, index });
+    void start(index);
+}
+
+export function shuffled<T>(items: T[]): T[] {
+    const copy = [...items];
+    for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+
+    return copy;
+}
+
+export function playTrack(track: TrackCard) {
+    playQueue([track], 0);
+}
+
+export function playNext(track: TrackCard) {
+    if (!state.current) {
+        playTrack(track);
+
+        return;
+    }
+
+    const queue = state.queue.filter((t) => t.key !== track.key);
+    const at = queue.findIndex((t) => t.key === state.current!.key) + 1;
+    queue.splice(at, 0, track);
+    set({ queue, index: at - 1 });
+    toast.success('Трек буде наступним.');
+}
+
+export function jumpTo(index: number) {
+    history.push(state.index);
+    void start(index);
+}
+
+export function removeFromQueue(index: number) {
+    if (index === state.index) return;
+    const queue = state.queue.filter((_, i) => i !== index);
+    set({ queue, index: index < state.index ? state.index - 1 : state.index });
+}
+
+export function toggle() {
+    if (!state.current) return;
+
+    switch (state.engine) {
+        case 'audio': {
+            const el = audioEl();
+            if (el.paused) void el.play().catch(() => {});
+            else el.pause();
+            break;
+        }
+        case 'sdk':
+            void sdkPlayer?.togglePlay();
+            break;
+        case 'embed':
+            embed?.togglePlay();
+            break;
+        default:
+            void start(state.index);
+    }
+}
+
+export function next() {
+    if (state.queue.length === 0) return;
+    history.push(state.index);
+
+    let index = state.index + 1;
+    if (state.shuffle && state.queue.length > 1) {
+        do index = Math.floor(Math.random() * state.queue.length);
+        while (index === state.index);
+    }
+    void start(index % state.queue.length);
+}
+
+export function prev() {
+    if (state.position > 4) {
+        seek(0);
+
+        return;
+    }
+
+    const previous = history.pop();
+    const index = previous ?? Math.max(state.index - 1, 0);
+    void start(index);
+}
+
+export function seek(seconds: number) {
+    const position = Math.max(0, Math.min(seconds, state.duration || seconds));
+    set({ position });
+
+    if (state.engine === 'audio') audioEl().currentTime = position;
+    if (state.engine === 'sdk') void sdkPlayer?.seek(position * 1000);
+    if (state.engine === 'embed') embed?.seek(position);
+}
+
+export function setVolume(volume: number) {
+    set({ volume: Math.max(0, Math.min(1, volume)), muted: false });
+    applyVolume();
+}
+
+export function toggleMute() {
+    set({ muted: !state.muted });
+    applyVolume();
+}
+
+function applyVolume() {
+    if (audio) audio.volume = effectiveVolume();
+    void sdkPlayer?.setVolume(Math.max(effectiveVolume(), 0.0001));
+}
+
+export function toggleShuffle() {
+    set({ shuffle: !state.shuffle });
+}
+
+export function cycleRepeat() {
+    set({
+        repeat:
+            state.repeat === 'off'
+                ? 'all'
+                : state.repeat === 'all'
+                  ? 'one'
+                  : 'off',
+    });
+}
+
+export function patchTrack(key: string, patch: Partial<TrackCard>) {
+    const apply = (t: TrackCard) =>
+        t.key === key ? ({ ...t, ...patch } as TrackCard) : t;
+    set({
+        queue: state.queue.map(apply),
+        current: state.current ? apply(state.current) : null,
+    });
+}
+
+export function closePlayer() {
+    stopEngines();
+    clearInterval(ticker);
+    if (audio) audio.removeAttribute('src');
+    set({
+        queue: [],
+        index: -1,
+        current: null,
+        playing: false,
+        loading: false,
+        position: 0,
+        duration: 0,
+        engine: null,
+    });
+    void api('DELETE', '/music/now-playing').catch(() => {});
+}
+
+export function isCurrent(track: { key: string }): boolean {
+    return state.current?.key === track.key;
+}

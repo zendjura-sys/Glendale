@@ -80,11 +80,12 @@ return [
     ],
     'music' => [
         'name' => 'Музика',
-        'description' => 'Аудіозаписи, плейлисти, плеєр у шапці.',
+        'description' => 'Аудіозаписи, плейлисти, глобальний плеєр і повна інтеграція зі Spotify.',
         'icon' => 'music',
         'core' => false,
-        'available' => false,
-        'nav' => ['label' => 'Музика', 'position' => 80],
+        'available' => true,
+        'default' => true,
+        'nav' => ['label' => 'Музика', 'route' => 'music.index', 'position' => 80],
     ],
     'cinema' => [
         'name' => 'Кінопортал',

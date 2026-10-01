@@ -11,13 +11,16 @@ use App\Models\Friendship;
 use App\Models\Like;
 use App\Models\Message;
 use App\Models\MessageAttachment;
+use App\Models\MusicStatus;
 use App\Models\PhotoAlbum;
 use App\Models\Post;
 use App\Models\PostAttachment;
 use App\Models\Sticker;
 use App\Models\StickerPack;
+use App\Models\Track;
 use App\Models\User;
 use App\Services\CommunityService;
+use App\Services\MusicService;
 use App\Services\PhotoService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
@@ -243,6 +246,124 @@ SVG;
         Model::unguarded(fn () => $this->seedMessages($users->values()->all()));
         Model::unguarded(fn () => $this->seedCommunities($users->values()->all()));
         Model::unguarded(fn () => $this->seedPhotos($users->values()->all()));
+        Model::unguarded(fn () => $this->seedMusic($users->values()->all()));
+    }
+
+    private const TRACKS = [
+        ['Neon Skyline', 'Nightdrive Kyiv', 'Midnight Run', 'Synthwave', [220, 277.18, 329.63], 92],
+        ['Pixel Heart', '8-Bit Kozak', 'Retro Love', 'Chiptune', [261.63, 329.63, 392.0], 128],
+        ['Respawn', 'Lag Spike', 'GG Only', 'Electronic', [196.0, 246.94, 293.66], 110],
+        ['Danube Lights', 'Vira Echo', 'City of Rain', 'Lo-fi', [174.61, 220.0, 261.63], 76],
+        ['Clutch Moment', 'Headshot Orchestra', 'Final Round', 'Epic', [146.83, 220.0, 293.66], 140],
+        ['Cyber Lviv', 'Nightdrive Kyiv', 'Midnight Run', 'Synthwave', [233.08, 293.66, 349.23], 96],
+        ['Mana Potion', 'Arcane Loop', 'Dungeon Tapes', 'Ambient', [164.81, 207.65, 246.94], 64],
+        ['Speedrun', '8-Bit Kozak', 'Retro Love', 'Chiptune', [293.66, 369.99, 440.0], 150],
+        ['Afterglow', 'Vira Echo', 'City of Rain', 'Lo-fi', [207.65, 261.63, 311.13], 80],
+        ['Boss Fight', 'Headshot Orchestra', 'Final Round', 'Epic', [130.81, 196.0, 261.63], 132],
+        ['Starlight Arcade', 'Arcane Loop', 'Dungeon Tapes', 'Ambient', [185.0, 233.08, 277.18], 70],
+        ['Карпатський дрифт', 'Тарас Гончаренко', 'Synth Ukraine', 'Synthwave', [246.94, 311.13, 369.99], 100],
+    ];
+
+    /**
+     * Синтезовані демо-треки (ffmpeg), бібліотеки, плейлисти, запис із треком і «Зараз грає».
+     *
+     * @param  list<User>  $u
+     */
+    private function seedMusic(array $u): void
+    {
+        if (Track::query()->exists()) {
+            return;
+        }
+
+        $disk = Storage::disk('public');
+        $disk->makeDirectory('demo/music');
+        $tracks = [];
+
+        foreach (self::TRACKS as $i => [$title, $artist, $album, $genre, $chord, $bpm]) {
+            $path = "demo/music/track-{$i}.mp3";
+            $duration = 36 + ($i % 4) * 8;
+
+            if (! $disk->exists($path)) {
+                [$a, $b, $c] = $chord;
+                $beat = 60 / $bpm;
+                $expr = sprintf(
+                    '0.22*sin(2*PI*%1$s*t)*(0.7+0.3*sin(2*PI*0.25*t))+0.16*sin(2*PI*%2$s*t)+0.12*sin(2*PI*%3$s*t+sin(2*PI*3*t))'
+                    .'+0.35*sin(2*PI*%4$s*t)*exp(-mod(t,%5$s)*9)+0.08*sin(2*PI*%6$s*t)*exp(-mod(t+%7$s,%5$s)*14)',
+                    $a, $b, $c, $a / 4, $beat, $c * 2, $beat / 2,
+                );
+                $result = Process::timeout(60)->run([
+                    'ffmpeg', '-y', '-loglevel', 'error', '-f', 'lavfi', '-i', "aevalsrc='{$expr}':s=44100:d={$duration}",
+                    '-af', 'afade=t=in:d=2,afade=t=out:st='.($duration - 3).':d=3,aecho=0.8:0.6:'.round($beat * 500).':0.35',
+                    '-ac', '2', '-b:a', '128k', $disk->path($path),
+                ]);
+                if (! $result->successful()) {
+                    continue;
+                }
+            }
+
+            $cover = $this->download("https://picsum.photos/seed/gc-music-{$i}/600/600", "demo/music/cover-{$i}.jpg");
+            $owner = $u[[0, 13, 2, 1, 2, 0, 3, 13, 1, 4, 3, 13][$i] ?? 0];
+
+            $track = Track::query()->create([
+                'user_id' => $owner->id,
+                'title' => $title,
+                'artist' => $artist,
+                'album' => $album,
+                'genre' => $genre,
+                'duration' => $duration,
+                'path' => $path,
+                'cover_path' => $cover,
+                'mime' => 'audio/mpeg',
+                'size' => $disk->size($path),
+            ]);
+            $track->forceFill(['plays_count' => random_int(40, 2400), 'created_at' => now()->subDays(12 - $i)])->saveQuietly();
+            $tracks[] = $track;
+        }
+
+        if ($tracks === []) {
+            return;
+        }
+
+        $music = app(MusicService::class);
+        foreach ($u as $n => $user) {
+            $picked = $n === 0 ? $tracks : collect($tracks)->shuffle()->take(random_int(3, 8))->all();
+            foreach ($picked as $track) {
+                $music->add($user, $track);
+            }
+        }
+
+        $playlists = [
+            [$u[0], 'Нічний кодинг', 'Synthwave і lo-fi для глибокої концентрації 🌙', [0, 5, 3, 8, 11, 6]],
+            [$u[0], 'Перед каткою', 'Заряджає перед турніром', [4, 9, 2, 7, 1]],
+            [$u[0], 'Чил', null, [6, 10, 3]],
+            [$u[1], 'Стрім-фон', 'Те, що грає на моїх стрімах', [3, 8, 6, 10, 0]],
+        ];
+        foreach ($playlists as [$owner, $title, $description, $items]) {
+            $playlist = $music->createPlaylist($owner, ['title' => $title, 'description' => $description, 'is_public' => true]);
+            foreach ($items as $index) {
+                if (isset($tracks[$index])) {
+                    $music->attach($playlist, $tracks[$index]);
+                }
+            }
+        }
+
+        $post = Post::query()->create([
+            'author_id' => $u[13]->id,
+            'wall_type' => 'user',
+            'wall_id' => $u[13]->id,
+            'body' => 'Записав новий трек у стилі synthwave — «Карпатський дрифт». Вмикайте на повну й пишіть, як вам 🎧',
+            'visibility' => Post::VISIBILITY_PUBLIC,
+            'music' => ['source' => 'local', 'id' => end($tracks)->id],
+            'views_count' => 860,
+            'created_at' => now()->subMinutes(40),
+        ]);
+        foreach (collect($u)->shuffle()->take(7) as $liker) {
+            Like::query()->firstOrCreate(['user_id' => $liker->id, 'likeable_type' => 'post', 'likeable_id' => $post->id]);
+        }
+        $post->forceFill(['likes_count' => $post->likes()->count()])->saveQuietly();
+
+        $music->nowPlaying($u[1], $tracks[3]);
+        MusicStatus::query()->whereKey($u[1]->id)->update(['expires_at' => now()->addHours(12)]);
     }
 
     /**

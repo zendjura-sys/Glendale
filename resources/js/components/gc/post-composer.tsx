@@ -4,13 +4,17 @@ import {
     ImagePlus,
     Lock,
     Megaphone,
+    Music2,
     Sparkles,
     UsersRound,
     X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { MusicCard } from '@/components/music/music-card';
+import { MusicPicker } from '@/components/music/music-picker';
+import { musicPayload } from '@/components/music/share-track-dialog';
 import { cn } from '@/lib/utils';
-import type { Visibility } from '@/types';
+import type { TrackCard, Visibility } from '@/types';
 import { CommunityAvatar } from './community-avatar';
 import { UserAvatar } from './user-avatar';
 
@@ -42,8 +46,10 @@ export function PostComposer({
     community = null,
     className,
 }: Props) {
-    const { auth, site } = usePage().props;
+    const { auth, site, modules } = usePage().props;
     const [focused, setFocused] = useState(false);
+    const [picking, setPicking] = useState(false);
+    const [track, setTrack] = useState<TrackCard | null>(null);
     const fileRef = useRef<HTMLInputElement>(null);
     const form = useForm<{
         body: string;
@@ -74,9 +80,14 @@ export function PostComposer({
     );
 
     const expanded =
-        focused || form.data.body.length > 0 || form.data.images.length > 0;
+        focused ||
+        form.data.body.length > 0 ||
+        form.data.images.length > 0 ||
+        track !== null;
     const canSubmit =
-        (form.data.body.trim().length > 0 || form.data.images.length > 0) &&
+        (form.data.body.trim().length > 0 ||
+            form.data.images.length > 0 ||
+            track !== null) &&
         !form.processing;
 
     const addFiles = (files: FileList | null) => {
@@ -93,11 +104,16 @@ export function PostComposer({
     const submit = () => {
         if (!canSubmit) return;
 
+        form.transform((data) => ({
+            ...data,
+            ...(track ? { music: musicPayload(track) } : {}),
+        }));
         form.post('/posts', {
             forceFormData: true,
             preserveScroll: true,
             onSuccess: () => {
                 form.reset('body', 'images');
+                setTrack(null);
                 setFocused(false);
             },
         });
@@ -200,6 +216,28 @@ export function PostComposer({
                 </div>
             )}
 
+            {track && (
+                <div className="relative mt-3 flex items-center gap-2">
+                    <MusicCard track={track} compact className="flex-1" />
+                    <button
+                        type="button"
+                        onClick={() => setTrack(null)}
+                        className="flex size-8 shrink-0 items-center justify-center rounded-full text-white/50 transition hover:bg-white/10 hover:text-white"
+                        aria-label="Прибрати трек"
+                    >
+                        <X className="size-4" />
+                    </button>
+                </div>
+            )}
+            {Object.entries(form.errors)
+                .filter(([key]) => key.startsWith('music'))
+                .slice(0, 1)
+                .map(([key, message]) => (
+                    <p key={key} className="mt-1 text-xs text-rose-300">
+                        {message}
+                    </p>
+                ))}
+
             {form.progress && (
                 <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/5">
                     <div
@@ -231,6 +269,16 @@ export function PostComposer({
                     <ImagePlus className="size-[18px] text-[#6fa2ff]" />
                     <span className="hidden sm:inline">Фото</span>
                 </button>
+                {modules.includes('music') && (
+                    <button
+                        type="button"
+                        onClick={() => setPicking(true)}
+                        className="inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white"
+                    >
+                        <Music2 className="size-[18px] text-[#c58bff]" />
+                        <span className="hidden sm:inline">Музика</span>
+                    </button>
+                )}
 
                 {community &&
                     community.type === 'group' &&
@@ -273,7 +321,14 @@ export function PostComposer({
                                 )}
                             >
                                 <option.icon className="size-3.5" />
-                                <span className="hidden md:inline">
+                                <span
+                                    className={cn(
+                                        'whitespace-nowrap',
+                                        form.data.visibility === option.value
+                                            ? 'hidden md:inline'
+                                            : 'hidden',
+                                    )}
+                                >
                                     {option.label}
                                 </span>
                             </button>
@@ -291,6 +346,17 @@ export function PostComposer({
                     Опублікувати
                 </button>
             </div>
+
+            {modules.includes('music') && (
+                <MusicPicker
+                    open={picking}
+                    onOpenChange={setPicking}
+                    onPick={(picked) => {
+                        setTrack(picked);
+                        setFocused(true);
+                    }}
+                />
+            )}
         </section>
     );
 }

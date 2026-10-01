@@ -19,6 +19,7 @@ import { NotificationsMenu } from '@/components/gc/notifications-menu';
 import { QuickSearch } from '@/components/gc/quick-search';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
+import { PlayerBar } from '@/components/music/player-bar';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -28,6 +29,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useUnreadMessages } from '@/lib/inbox';
+import { usePlayer } from '@/lib/player';
 import { cn } from '@/lib/utils';
 
 function useIsActive() {
@@ -331,6 +333,7 @@ function Announcement() {
 
 export default function SocialLayout({ children }: PropsWithChildren) {
     const { auth, modules } = usePage().props;
+    const { current } = usePlayer();
 
     return (
         <div className="relative min-h-dvh">
@@ -339,13 +342,19 @@ export default function SocialLayout({ children }: PropsWithChildren) {
             )}
             <Aurora />
             <Topbar />
-            <div className="mx-auto flex max-w-[1320px] gap-5 px-3 pt-[76px] pb-24 sm:px-5 lg:pb-10">
+            <div
+                className={cn(
+                    'mx-auto flex max-w-[1320px] gap-5 px-3 pt-[76px] sm:px-5',
+                    current ? 'pb-44 lg:pb-28' : 'pb-24 lg:pb-10',
+                )}
+            >
                 <Sidebar />
                 <main className="min-w-0 flex-1">
                     <Announcement />
                     {children}
                 </main>
             </div>
+            {modules.includes('music') && <PlayerBar />}
             <MobileNav />
         </div>
     );

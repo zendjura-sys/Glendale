@@ -1,3 +1,5 @@
+import type { TrackCard } from './music';
+
 export type UserCard = {
     id: number;
     username: string;
@@ -59,6 +61,7 @@ export type PostItem = {
     } | null;
     wall: { name: string; href: string } | null;
     attachments: Attachment[];
+    music: TrackCard | null;
     liked: boolean;
     comments: CommentItem[];
     can: { delete: boolean; pin: boolean; comment: boolean };
