@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
 use App\Services\Messenger;
+use App\Services\MusicService;
 use App\Services\PhotoService;
 use App\Services\PostPresenter;
 use App\Support\Modules\ModuleManager;
@@ -101,6 +102,11 @@ class ProfileController extends Controller
                 ->all() : [],
             'photos' => $canSeeContent ? $photos->latest('id')->limit(6)->get()->map($mapPhoto)->all() : [],
             'photosHref' => $modules->enabled('photos') ? '/photos/u/'.$user->username : null,
+            'music' => $modules->enabled('music') && $canSeeContent ? [
+                'href' => '/music/u/'.$user->username,
+                'tracks' => $user->library()->count(),
+            ] : null,
+            'nowPlaying' => $modules->enabled('music') && $canSeeContent ? Inertia::defer(fn () => app(MusicService::class)->currentFor($user)) : null,
             'posts' => Inertia::scroll(fn () => $posts->setCollection(collect($items))),
         ]);
     }

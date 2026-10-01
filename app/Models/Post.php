@@ -21,6 +21,7 @@ use Illuminate\Support\Carbon;
  * @property int $wall_id
  * @property bool $as_community
  * @property string|null $body
+ * @property array<string, mixed>|null $music
  * @property string $visibility
  * @property bool $is_pinned
  * @property bool $comments_enabled
@@ -30,7 +31,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
-#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'visibility', 'is_pinned', 'comments_enabled'])]
+#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'visibility', 'is_pinned', 'comments_enabled'])]
 class Post extends Model
 {
     /** @use HasFactory<PostFactory> */
@@ -50,6 +51,7 @@ class Post extends Model
             'is_pinned' => 'boolean',
             'comments_enabled' => 'boolean',
             'as_community' => 'boolean',
+            'music' => 'array',
         ];
     }
 

@@ -16,7 +16,7 @@ class SettingsController extends Controller
     public function edit(): Response
     {
         return Inertia::render('admin/settings', [
-            'settings' => $this->settings->all(),
+            'settings' => $this->settings->public(),
         ]);
     }
 
@@ -31,6 +31,7 @@ class SettingsController extends Controller
             'max_attachments' => ['required', 'integer', 'min:1', 'max:30'],
             'max_upload_mb' => ['required', 'integer', 'min:1', 'max:200'],
             'max_message_file_mb' => ['required', 'integer', 'min:1', 'max:500'],
+            'music_max_track_mb' => ['required', 'integer', 'min:1', 'max:500'],
             'maintenance_message' => ['nullable', 'string', 'max:500'],
         ]);
 

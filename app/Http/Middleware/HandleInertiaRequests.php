@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use App\Services\FriendshipService;
 use App\Services\Messenger;
 use App\Support\Modules\ModuleManager;
@@ -74,11 +75,26 @@ class HandleInertiaRequests extends Middleware
             ],
             'nav' => $user ? fn () => $this->modules->navigation() : [],
             'modules' => fn () => $this->modules->enabledKeys(),
+            'music' => $user ? fn () => $this->musicProps($user) : null,
             'counters' => $user ? fn () => [
                 'friend_requests' => $this->friendships->incomingCount($user),
                 'notifications' => $user->unreadNotifications()->count(),
                 'messages' => $this->modules->enabled('messages') ? app(Messenger::class)->unreadConversations($user) : 0,
             ] : null,
         ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function musicProps(User $user): ?array
+    {
+        if (! $this->modules->enabled('music')) {
+            return null;
+        }
+
+        $account = $user->spotifyAccount;
+
+        return ['spotify' => ['connected' => $account !== null, 'premium' => (bool) $account?->isPremium()]];
     }
 }

@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -99,6 +101,38 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function getRouteKeyName(): string
     {
         return 'username';
+    }
+
+    /**
+     * @return BelongsToMany<Track, $this>
+     */
+    public function library(): BelongsToMany
+    {
+        return $this->belongsToMany(Track::class, 'music_library')->withPivot('created_at');
+    }
+
+    /**
+     * @return HasMany<Playlist, $this>
+     */
+    public function playlists(): HasMany
+    {
+        return $this->hasMany(Playlist::class);
+    }
+
+    /**
+     * @return HasOne<SpotifyAccount, $this>
+     */
+    public function spotifyAccount(): HasOne
+    {
+        return $this->hasOne(SpotifyAccount::class);
+    }
+
+    /**
+     * @return HasOne<MusicStatus, $this>
+     */
+    public function musicStatus(): HasOne
+    {
+        return $this->hasOne(MusicStatus::class);
     }
 
     /**

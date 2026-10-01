@@ -113,6 +113,7 @@ class AdminTest extends TestCase
             'max_attachments' => 6,
             'max_upload_mb' => 15,
             'max_message_file_mb' => 40,
+            'music_max_track_mb' => 25,
             'maintenance_message' => 'Технічні роботи о 03:00',
         ])->assertSessionHasNoErrors();
 

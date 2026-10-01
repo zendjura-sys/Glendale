@@ -7,12 +7,16 @@ use App\Models\Community;
 use App\Models\Like;
 use App\Models\Post;
 use App\Models\PostAttachment;
+use App\Models\Track;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 
 class PostPresenter
 {
     public const PREVIEW_COMMENTS = 2;
+
+    /** @var array<int, array<string, mixed>> */
+    private array $tracks = [];
 
     /**
      * Готує записи до показу: автор, стіна, вкладення, останні коментарі, лайки глядача.
@@ -49,6 +53,11 @@ class PostPresenter
             ->pluck('likeable_id')
             ->flip()
             ->all() : [];
+
+        $localTrackIds = $posts->map(fn (Post $p) => ($p->music['source'] ?? null) === 'local' ? (int) $p->music['id'] : null)->filter()->unique();
+        $tracks = $localTrackIds->isNotEmpty() ? Track::query()->whereIn('id', $localTrackIds)->get()->keyBy('id') : collect();
+        $ownedTracks = $viewer && $tracks->isNotEmpty() ? app(MusicService::class)->libraryIds($viewer, $tracks->keys()) : [];
+        $this->tracks = $tracks->map(fn (Track $t) => $t->toCard(isset($ownedTracks[$t->id])))->all();
 
         $managed = $viewer && $posts->contains('wall_type', 'community')
             ? array_flip(app(CommunityService::class)->managedIds($viewer))
@@ -118,6 +127,7 @@ class PostPresenter
                 'width' => $a->width,
                 'height' => $a->height,
             ])->values()->all(),
+            'music' => $this->music($post),
             'liked' => $liked,
             'comments' => $comments,
             'can' => [
@@ -126,6 +136,20 @@ class PostPresenter
                 'comment' => $viewer !== null && $post->comments_enabled,
             ],
         ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function music(Post $post): ?array
+    {
+        $music = $post->music;
+
+        return match ($music['source'] ?? null) {
+            'local' => $this->tracks[(int) $music['id']] ?? null,
+            'spotify' => $music,
+            default => null,
+        };
     }
 
     /**

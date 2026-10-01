@@ -8,12 +8,17 @@ use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
+use App\Http\Controllers\MusicController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\NowPlayingController;
 use App\Http\Controllers\PeopleController;
 use App\Http\Controllers\PhotoAlbumController;
 use App\Http\Controllers\PhotoController;
+use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SpotifyController;
+use App\Http\Controllers\TrackController;
 use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
 
@@ -107,6 +112,45 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         });
     });
 
+    Route::prefix('music')->middleware('module:music')->group(function () {
+        Route::get('/', [MusicController::class, 'index'])->name('music.index');
+        Route::get('u/{user}', [MusicController::class, 'user'])->name('music.user');
+        Route::get('search', [MusicController::class, 'search'])->middleware('throttle:120,1')->name('music.search');
+        Route::post('now-playing', [NowPlayingController::class, 'store'])->middleware('throttle:60,1')->name('music.now-playing');
+        Route::delete('now-playing', [NowPlayingController::class, 'destroy'])->name('music.now-playing.destroy');
+
+        Route::post('tracks', [TrackController::class, 'store'])->middleware('throttle:60,1')->name('tracks.store');
+        Route::post('playlists', [PlaylistController::class, 'store'])->middleware('throttle:20,1')->name('playlists.store');
+
+        Route::whereNumber(['track', 'playlist'])->group(function () {
+            Route::patch('tracks/{track}', [TrackController::class, 'update'])->name('tracks.update');
+            Route::delete('tracks/{track}', [TrackController::class, 'destroy'])->name('tracks.destroy');
+            Route::get('tracks/{track}/download', [TrackController::class, 'download'])->name('tracks.download');
+            Route::post('tracks/{track}/library', [TrackController::class, 'add'])->name('tracks.add');
+            Route::delete('tracks/{track}/library', [TrackController::class, 'remove'])->name('tracks.remove');
+
+            Route::get('playlists/{playlist}', [PlaylistController::class, 'show'])->name('playlists.show');
+            Route::post('playlists/{playlist}', [PlaylistController::class, 'update'])->name('playlists.update');
+            Route::delete('playlists/{playlist}', [PlaylistController::class, 'destroy'])->name('playlists.destroy');
+            Route::post('playlists/{playlist}/tracks/{track}', [PlaylistController::class, 'attach'])->name('playlists.attach');
+            Route::delete('playlists/{playlist}/tracks/{track}', [PlaylistController::class, 'detach'])->name('playlists.detach');
+        });
+
+        Route::prefix('spotify')->name('spotify.')->group(function () {
+            Route::get('connect', [SpotifyController::class, 'connect'])->name('connect');
+            Route::get('callback', [SpotifyController::class, 'callback'])->name('callback');
+            Route::patch('/', [SpotifyController::class, 'update'])->name('update');
+            Route::delete('/', [SpotifyController::class, 'disconnect'])->name('disconnect');
+            Route::middleware('throttle:120,1')->group(function () {
+                Route::get('token', [SpotifyController::class, 'token'])->name('token');
+                Route::get('search', [SpotifyController::class, 'search'])->name('search');
+                Route::get('library/{section}', [SpotifyController::class, 'library'])->name('library');
+                Route::get('playlists/{playlist}', [SpotifyController::class, 'playlist'])->name('playlist');
+                Route::put('play', [SpotifyController::class, 'play'])->name('play');
+            });
+        });
+    });
+
     Route::get('people', [PeopleController::class, 'index'])->middleware('module:people')->name('people.index');
     Route::get('search/quick', [PeopleController::class, 'quick'])->middleware('throttle:120,1')->name('search.quick');
 
@@ -129,6 +173,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('photos', [Admin\PhotoController::class, 'index'])->name('photos.index');
         Route::delete('photos/{photo}', [Admin\PhotoController::class, 'destroy'])->whereNumber('photo')->name('photos.destroy');
         Route::post('photos/{photo}/restore', [Admin\PhotoController::class, 'restore'])->whereNumber('photo')->name('photos.restore');
+        Route::get('music', [Admin\MusicController::class, 'index'])->name('music.index');
+        Route::delete('music/{track}', [Admin\MusicController::class, 'destroy'])->whereNumber('track')->name('music.destroy');
+        Route::post('music/{track}/restore', [Admin\MusicController::class, 'restore'])->whereNumber('track')->name('music.restore');
+        Route::get('integrations', [Admin\IntegrationController::class, 'index'])->name('integrations.index');
+        Route::put('integrations/spotify', [Admin\IntegrationController::class, 'updateSpotify'])->name('integrations.spotify');
+        Route::post('integrations/spotify/test', [Admin\IntegrationController::class, 'testSpotify'])->middleware('throttle:10,1')->name('integrations.spotify.test');
         Route::get('stickers', [Admin\StickerController::class, 'index'])->name('stickers.index');
         Route::post('stickers', [Admin\StickerController::class, 'store'])->name('stickers.store');
         Route::patch('stickers/{pack}', [Admin\StickerController::class, 'update'])->name('stickers.update');

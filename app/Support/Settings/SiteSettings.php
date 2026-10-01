@@ -2,7 +2,9 @@
 
 namespace App\Support\Settings;
 
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
 class SiteSettings
@@ -19,8 +21,14 @@ class SiteSettings
         'max_attachments' => 10,
         'max_upload_mb' => 20,
         'max_message_file_mb' => 50,
+        'music_max_track_mb' => 30,
+        'spotify_client_id' => null,
+        'spotify_client_secret' => null,
         'maintenance_message' => null,
     ];
+
+    /** Ключі, які не можна віддавати у фронтенд. */
+    public const SECRETS = ['spotify_client_secret'];
 
     /** @var array<string, mixed>|null */
     private ?array $values = null;
@@ -43,6 +51,30 @@ class SiteSettings
                 ->map(fn ($value) => json_decode((string) $value, true))
                 ->all(),
         ));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function public(): array
+    {
+        return array_diff_key($this->all(), array_flip(self::SECRETS));
+    }
+
+    public function secret(string $key): ?string
+    {
+        $value = $this->get($key);
+
+        try {
+            return is_string($value) && $value !== '' ? Crypt::decryptString($value) : null;
+        } catch (DecryptException) {
+            return null;
+        }
+    }
+
+    public function putSecret(string $key, ?string $value): void
+    {
+        $this->put([$key => $value === null || $value === '' ? null : Crypt::encryptString($value)]);
     }
 
     /**
