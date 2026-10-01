@@ -208,7 +208,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
 
             <div
                 className={cn(
-                    'fixed inset-x-0 z-40 px-2 pb-2 lg:bottom-0 lg:px-0 lg:pb-0',
+                    'fixed inset-x-0 z-40 px-2 pb-2 [view-transition-name:gc-player] lg:bottom-0 lg:px-0 lg:pb-0',
                     standalone
                         ? 'bottom-[env(safe-area-inset-bottom)] lg:left-[256px]'
                         : 'bottom-[calc(57px+env(safe-area-inset-bottom))]',

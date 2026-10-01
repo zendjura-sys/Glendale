@@ -10,6 +10,7 @@ import {
     X,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { DiscordIcon } from '@/components/auth/brand-icons';
 import { FamilyShell } from '@/components/families/family-shell';
 import {
     Empty,
@@ -70,7 +71,7 @@ export default function FamilyMembers(props: Props) {
     const filtered = useMemo(
         () =>
             members.filter((m) =>
-                `${m.display} ${m.duties ?? ''}`
+                `${m.display} ${m.duties ?? ''} ${m.discord ?? ''}`
                     .toLowerCase()
                     .includes(q.toLowerCase()),
             ),
@@ -243,6 +244,12 @@ export default function FamilyMembers(props: Props) {
                                             {m.duties && (
                                                 <span className="text-[#c4b5fd]">
                                                     {m.duties} ·{' '}
+                                                </span>
+                                            )}
+                                            {m.discord && (
+                                                <span className="text-[#aab2ff]">
+                                                    <DiscordIcon className="mr-1 inline size-3 align-[-1px]" />
+                                                    {m.discord} ·{' '}
                                                 </span>
                                             )}
                                             {m.is_online

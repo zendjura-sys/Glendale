@@ -3,6 +3,8 @@
 namespace App\Http\Middleware;
 
 use App\Models\User;
+use App\Services\Auth\DiscordOAuth;
+use App\Services\Auth\FirebaseAuth;
 use App\Services\FriendshipService;
 use App\Services\Messenger;
 use App\Services\Spotify\SpotifyClient;
@@ -59,6 +61,10 @@ class HandleInertiaRequests extends Middleware
                 'max_attachments' => (int) $this->settings->get('max_attachments'),
                 'max_message_file_mb' => (int) $this->settings->get('max_message_file_mb'),
                 'announcement' => $this->settings->get('maintenance_message'),
+                'social' => [
+                    'discord' => app(DiscordOAuth::class)->configured(),
+                    'google' => app(FirebaseAuth::class)->clientConfig(),
+                ],
             ],
             'auth' => [
                 'user' => $user ? [

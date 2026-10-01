@@ -62,6 +62,7 @@ export type MemberCard = {
     avatar_url: string | null;
     username: string | null;
     is_online: boolean;
+    discord: string | null;
 };
 
 export type RosterEntry = { id: number; display: string; rank: number };

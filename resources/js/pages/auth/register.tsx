@@ -1,4 +1,5 @@
 import { Form, Head } from '@inertiajs/react';
+import { SocialLogin } from '@/components/auth/social-login';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -17,6 +18,9 @@ export default function Register({ passwordRules }: Props) {
     return (
         <>
             <Head title="Реєстрація" />
+            <div className="mb-6">
+                <SocialLogin mode="register" />
+            </div>
             <Form
                 {...store.form()}
                 resetOnSuccess={['password', 'password_confirmation']}

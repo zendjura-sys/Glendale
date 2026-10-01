@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
+use App\Services\Auth\DiscordOAuth;
+use App\Services\Auth\FirebaseAuth;
+use App\Services\Auth\SocialLogin;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,7 +20,7 @@ class ProfileController extends Controller
     /**
      * Show the user's profile settings page.
      */
-    public function edit(Request $request): Response
+    public function edit(Request $request, SocialLogin $social, DiscordOAuth $discord, FirebaseAuth $firebase): Response
     {
         $user = $request->user();
 
@@ -38,6 +41,10 @@ class ProfileController extends Controller
                 'is_private' => $user->is_private,
                 'message_privacy' => $user->message_privacy,
             ],
+            'connections' => $social->connections($user, [
+                'discord' => $discord->configured(),
+                'google' => $firebase->configured(),
+            ]),
         ]);
     }
 

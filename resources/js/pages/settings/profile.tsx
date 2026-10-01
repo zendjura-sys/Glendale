@@ -2,6 +2,7 @@ import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { AtSign, Globe, Lock, MapPin, MessageCircle } from 'lucide-react';
 import type { FormEvent } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
+import { ConnectedAccounts } from '@/components/auth/connected-accounts';
 import DeleteUser from '@/components/delete-user';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { SettingsCard } from '@/layouts/settings/layout';
 import { cn } from '@/lib/utils';
 import { send } from '@/routes/verification';
+import type { SocialConnection } from '@/types/auth';
 
 type ProfileForm = {
     first_name: string;
@@ -31,12 +33,18 @@ type Props = {
     mustVerifyEmail: boolean;
     status?: string;
     profile: { [K in keyof ProfileForm]: ProfileForm[K] | null };
+    connections: SocialConnection[];
 };
 
 const fieldClass =
     'input-glass w-full rounded-xl px-3.5 text-sm text-white placeholder:text-white/30';
 
-export default function Profile({ mustVerifyEmail, status, profile }: Props) {
+export default function Profile({
+    mustVerifyEmail,
+    status,
+    profile,
+    connections,
+}: Props) {
     const { auth } = usePage().props;
     const form = useForm<ProfileForm>({
         first_name: profile.first_name ?? '',
@@ -356,6 +364,10 @@ export default function Profile({ mustVerifyEmail, status, profile }: Props) {
                     </Button>
                 </div>
             </form>
+
+            <div className="mt-5">
+                <ConnectedAccounts connections={connections} />
+            </div>
 
             <DeleteUser />
         </>

@@ -5,6 +5,7 @@ import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
 import { edit } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
+import { PageTransition } from '@/components/gc/page-transition';
 
 const items = [
     {
@@ -25,7 +26,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
 
     return (
-        <div className="mx-auto max-w-[980px] animate-rise">
+        <div className="mx-auto max-w-[980px]">
             <div className="mb-5">
                 <h1 className="font-display text-2xl font-bold text-white">
                     Налаштування
@@ -79,9 +80,9 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                     </nav>
                 </aside>
 
-                <section className="min-w-0 flex-1 space-y-5">
+                <PageTransition nested className="min-w-0 flex-1 space-y-5">
                     {children}
-                </section>
+                </PageTransition>
             </div>
         </div>
     );

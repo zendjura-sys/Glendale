@@ -185,8 +185,8 @@ export function UploadTracksDialog({
 
     return (
         <Dialog open={open} onOpenChange={close}>
-            <DialogContent className="glass-strong flex max-h-[90vh] flex-col gap-0 rounded-3xl border-white/10 p-6 text-white sm:max-w-2xl">
-                <DialogTitle className="font-display text-xl">
+            <DialogContent className="glass-strong flex max-h-[min(92dvh,calc(100dvh-env(safe-area-inset-bottom)-0.75rem))] w-[calc(100%-1rem)] flex-col gap-0 overflow-hidden rounded-3xl border-white/10 p-4 text-white sm:max-w-2xl sm:p-6">
+                <DialogTitle className="pr-8 font-display text-xl leading-tight">
                     Завантаження музики
                 </DialogTitle>
                 <DialogDescription className="mt-1 text-sm text-white/50">
@@ -208,7 +208,7 @@ export function UploadTracksDialog({
                         void addFiles(event.dataTransfer.files);
                     }}
                     className={cn(
-                        'mt-5 flex flex-col items-center rounded-2xl border-2 border-dashed px-6 py-7 text-center transition',
+                        'mt-4 flex flex-col items-center rounded-2xl border-2 border-dashed px-4 py-6 text-center transition sm:mt-5 sm:px-6 sm:py-7',
                         dragging
                             ? 'border-[#7c8cff] bg-[#6d5dfc]/10'
                             : 'border-white/10 hover:border-white/25',
@@ -254,42 +254,76 @@ export function UploadTracksDialog({
                                         style={{ width: `${item.progress}%` }}
                                     />
                                 )}
-                                <div className="relative flex items-center gap-3">
+                                <div className="relative flex items-start gap-3">
                                     <TrackCover
                                         url={item.coverUrl}
                                         seed={item.file.name}
-                                        className="size-12 rounded-xl"
+                                        className="size-12 shrink-0 rounded-xl"
                                     />
-                                    <div className="grid min-w-0 flex-1 gap-1.5 sm:grid-cols-2">
-                                        <input
-                                            value={item.title}
-                                            onChange={(event) =>
-                                                update(item.id, {
-                                                    title: event.target.value,
-                                                })
-                                            }
-                                            disabled={
-                                                item.status === 'done' || busy
-                                            }
-                                            placeholder="Назва"
-                                            maxLength={150}
-                                            className="input-glass h-9 rounded-lg px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
-                                        />
-                                        <input
-                                            value={item.artist}
-                                            onChange={(event) =>
-                                                update(item.id, {
-                                                    artist: event.target.value,
-                                                })
-                                            }
-                                            disabled={
-                                                item.status === 'done' || busy
-                                            }
-                                            placeholder="Виконавець"
-                                            maxLength={150}
-                                            className="input-glass h-9 rounded-lg px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
-                                        />
-                                        <p className="truncate text-[11px] text-white/40 sm:col-span-2">
+                                    <div className="@container min-w-0 flex-1">
+                                        <div className="flex items-start gap-2">
+                                            <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 @md:grid-cols-2">
+                                                <input
+                                                    value={item.title}
+                                                    onChange={(event) =>
+                                                        update(item.id, {
+                                                            title: event.target
+                                                                .value,
+                                                        })
+                                                    }
+                                                    disabled={
+                                                        item.status ===
+                                                            'done' || busy
+                                                    }
+                                                    placeholder="Назва"
+                                                    maxLength={150}
+                                                    className="input-glass h-10 w-full min-w-0 rounded-lg px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
+                                                />
+                                                <input
+                                                    value={item.artist}
+                                                    onChange={(event) =>
+                                                        update(item.id, {
+                                                            artist: event.target
+                                                                .value,
+                                                        })
+                                                    }
+                                                    disabled={
+                                                        item.status ===
+                                                            'done' || busy
+                                                    }
+                                                    placeholder="Виконавець"
+                                                    maxLength={150}
+                                                    className="input-glass h-10 w-full min-w-0 rounded-lg px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
+                                                />
+                                            </div>
+                                            <span className="flex size-10 shrink-0 items-center justify-center">
+                                                {item.status === 'uploading' ? (
+                                                    <Loader2 className="size-5 animate-spin text-[#9aa8ff]" />
+                                                ) : item.status === 'done' ? (
+                                                    <CheckCircle2 className="size-5 text-emerald-400" />
+                                                ) : item.status === 'error' ? (
+                                                    <AlertCircle className="size-5 text-rose-300" />
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setItems((all) =>
+                                                                all.filter(
+                                                                    (i) =>
+                                                                        i.id !==
+                                                                        item.id,
+                                                                ),
+                                                            )
+                                                        }
+                                                        className="rounded-full p-1.5 text-white/40 hover:bg-white/10 hover:text-white"
+                                                        aria-label="Прибрати"
+                                                    >
+                                                        <X className="size-4" />
+                                                    </button>
+                                                )}
+                                            </span>
+                                        </div>
+                                        <p className="mt-1.5 truncate text-[11px] leading-4 text-white/40">
                                             {item.file.name} ·{' '}
                                             {formatBytes(item.file.size)}
                                             {item.duration > 0 &&
@@ -303,39 +337,13 @@ export function UploadTracksDialog({
                                             )}
                                         </p>
                                     </div>
-                                    <span className="flex w-8 justify-center">
-                                        {item.status === 'uploading' ? (
-                                            <Loader2 className="size-5 animate-spin text-[#9aa8ff]" />
-                                        ) : item.status === 'done' ? (
-                                            <CheckCircle2 className="size-5 text-emerald-400" />
-                                        ) : item.status === 'error' ? (
-                                            <AlertCircle className="size-5 text-rose-300" />
-                                        ) : (
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    setItems((all) =>
-                                                        all.filter(
-                                                            (i) =>
-                                                                i.id !==
-                                                                item.id,
-                                                        ),
-                                                    )
-                                                }
-                                                className="rounded-full p-1 text-white/40 hover:bg-white/10 hover:text-white"
-                                                aria-label="Прибрати"
-                                            >
-                                                <X className="size-4" />
-                                            </button>
-                                        )}
-                                    </span>
                                 </div>
                             </li>
                         ))}
                     </ul>
                 )}
 
-                <div className="mt-5 flex items-center justify-end gap-2">
+                <div className="mt-4 flex flex-wrap items-center justify-end gap-2 sm:mt-5">
                     <button
                         type="button"
                         onClick={() => close(false)}

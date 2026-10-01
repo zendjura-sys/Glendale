@@ -124,6 +124,7 @@ class FamilyMember extends Model
             'avatar_url' => $this->relationLoaded('user') ? $this->user->avatar_url : null,
             'username' => $this->relationLoaded('user') ? $this->user->username : null,
             'is_online' => $this->relationLoaded('user') && $this->user->is_online,
+            'discord' => $this->relationLoaded('user') ? $this->user->discord_username : null,
         ];
     }
 }

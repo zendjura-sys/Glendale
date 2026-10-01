@@ -40,6 +40,10 @@ class SiteSettings
         'servers_auto_publish' => false,
         'discord_client_id' => null,
         'discord_client_secret' => null,
+        'firebase_api_key' => null,
+        'firebase_auth_domain' => null,
+        'firebase_project_id' => null,
+        'firebase_app_id' => null,
     ];
 
     /** Ключі, які не можна віддавати у фронтенд. */

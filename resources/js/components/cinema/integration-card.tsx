@@ -165,6 +165,24 @@ export function IntegrationCard({
                                         </option>
                                     ))}
                                 </select>
+                            ) : f.type === 'url' ? (
+                                <textarea
+                                    id={id}
+                                    value={String(form.data[f.name])}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            f.name,
+                                            e.target.value.replace(/\s+/g, ''),
+                                        )
+                                    }
+                                    placeholder={f.placeholder ?? ''}
+                                    rows={2}
+                                    inputMode="url"
+                                    autoComplete="off"
+                                    autoCapitalize="off"
+                                    spellCheck={false}
+                                    className="input-glass [field-sizing:content] min-h-[4.25rem] w-full resize-y rounded-xl px-3.5 py-2.5 font-mono text-[13px] leading-relaxed break-all text-white outline-none placeholder:text-white/35"
+                                />
                             ) : (
                                 <div className="relative">
                                     <Input
