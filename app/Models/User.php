@@ -120,6 +120,14 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     }
 
     /**
+     * @return BelongsToMany<Movie, $this>
+     */
+    public function movies(): BelongsToMany
+    {
+        return $this->belongsToMany(Movie::class)->withPivot(['status', 'rating', 'watched_at'])->withTimestamps();
+    }
+
+    /**
      * @return HasOne<SpotifyAccount, $this>
      */
     public function spotifyAccount(): HasOne

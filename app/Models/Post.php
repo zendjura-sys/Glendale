@@ -22,6 +22,7 @@ use Illuminate\Support\Carbon;
  * @property bool $as_community
  * @property string|null $body
  * @property array<string, mixed>|null $music
+ * @property int|null $movie_id
  * @property string $visibility
  * @property bool $is_pinned
  * @property bool $comments_enabled
@@ -31,7 +32,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
-#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'visibility', 'is_pinned', 'comments_enabled'])]
+#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'visibility', 'is_pinned', 'comments_enabled'])]
 class Post extends Model
 {
     /** @use HasFactory<PostFactory> */
@@ -61,6 +62,14 @@ class Post extends Model
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'author_id');
+    }
+
+    /**
+     * @return BelongsTo<Movie, $this>
+     */
+    public function movie(): BelongsTo
+    {
+        return $this->belongsTo(Movie::class);
     }
 
     /**

@@ -24,11 +24,14 @@ class SiteSettings
         'music_max_track_mb' => 30,
         'spotify_client_id' => null,
         'spotify_client_secret' => null,
+        'kodik_token' => null,
+        'flixcdn_token' => null,
+        'flixcdn_template' => null,
         'maintenance_message' => null,
     ];
 
     /** Ключі, які не можна віддавати у фронтенд. */
-    public const SECRETS = ['spotify_client_secret'];
+    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'flixcdn_token'];
 
     /** @var array<string, mixed>|null */
     private ?array $values = null;

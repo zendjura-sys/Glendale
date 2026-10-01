@@ -43,4 +43,14 @@ return [
         'api_url' => env('SPOTIFY_API_URL', 'https://api.spotify.com/v1'),
     ],
 
+    'kodik' => [
+        'token' => env('KODIK_TOKEN'),
+        'api_url' => env('KODIK_API_URL', 'https://kodik-api.com'),
+    ],
+
+    'flixcdn' => [
+        'token' => env('FLIXCDN_TOKEN'),
+        'template' => env('FLIXCDN_TEMPLATE'),
+    ],
+
 ];
