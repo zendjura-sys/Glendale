@@ -12,6 +12,7 @@ REVISION="$(git rev-parse --short "$REF") $(git log -1 --format=%s "$REF")"
 
 echo "→ Синхронізація $REVISION"
 TMP="$(mktemp -d)"
+chmod 2775 "$TMP"
 git archive "$REF" | tar -x -C "$TMP"
 echo "$REVISION" > "$TMP/REVISION"
 
