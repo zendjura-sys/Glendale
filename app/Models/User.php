@@ -38,6 +38,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $website
  * @property bool $is_verified
  * @property bool $is_private
+ * @property string $message_privacy
  * @property Carbon|null $last_seen_at
  * @property Carbon|null $banned_at
  * @property string|null $ban_reason
@@ -50,7 +51,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  */
 #[Fillable([
     'username', 'first_name', 'last_name', 'email', 'password',
-    'status', 'about', 'city', 'birthday', 'gender', 'website', 'is_private',
+    'status', 'about', 'city', 'birthday', 'gender', 'website', 'is_private', 'message_privacy',
 ])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'email', 'ban_reason'])]
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
@@ -65,6 +66,12 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public const ROLE_ADMIN = 'admin';
 
     public const ROLES = [self::ROLE_USER, self::ROLE_MODERATOR, self::ROLE_ADMIN];
+
+    public const MESSAGES_EVERYONE = 'everyone';
+
+    public const MESSAGES_FRIENDS = 'friends';
+
+    public const MESSAGE_PRIVACY = [self::MESSAGES_EVERYONE, self::MESSAGES_FRIENDS];
 
     protected $appends = ['avatar_url', 'cover_url', 'is_online'];
 
@@ -124,6 +131,14 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function receivedFriendRequests(): HasMany
     {
         return $this->hasMany(Friendship::class, 'addressee_id');
+    }
+
+    /**
+     * @return HasMany<ConversationParticipant, $this>
+     */
+    public function conversationParticipants(): HasMany
+    {
+        return $this->hasMany(ConversationParticipant::class);
     }
 
     public function isAdmin(): bool

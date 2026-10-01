@@ -7,6 +7,7 @@ use App\Models\PostAttachment;
 use App\Models\User;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
+use App\Services\Messenger;
 use App\Services\PostPresenter;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
@@ -32,7 +33,7 @@ class ProfileController extends Controller
         return to_route('profile.show', User::query()->findOrFail($id), 301);
     }
 
-    public function show(Request $request, User $user): Response
+    public function show(Request $request, User $user, Messenger $messenger): Response
     {
         $viewer = $request->user();
         $relation = $this->friendships->status($viewer, $user);
@@ -71,6 +72,7 @@ class ProfileController extends Controller
             ],
             'relation' => $relation,
             'canSeeContent' => $canSeeContent,
+            'canMessage' => $viewer !== null && $messenger->canMessage($viewer, $user),
             'canPost' => $viewer !== null && in_array($relation, [FriendshipService::SELF, FriendshipService::FRIENDS], true),
             'counters' => [
                 'friends' => count($friendIds),

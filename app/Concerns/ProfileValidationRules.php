@@ -38,6 +38,7 @@ trait ProfileValidationRules
             'gender' => ['nullable', Rule::in(['male', 'female'])],
             'website' => ['nullable', 'url:http,https', 'max:255'],
             'is_private' => ['boolean'],
+            'message_privacy' => ['sometimes', Rule::in(User::MESSAGE_PRIVACY)],
         ];
     }
 

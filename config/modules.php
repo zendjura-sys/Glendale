@@ -48,8 +48,9 @@ return [
         'description' => 'Особисті та групові чати в реальному часі.',
         'icon' => 'message-circle',
         'core' => false,
-        'available' => false,
-        'nav' => ['label' => 'Повідомлення', 'position' => 30],
+        'available' => true,
+        'default' => true,
+        'nav' => ['label' => 'Повідомлення', 'route' => 'messages.index', 'position' => 30],
     ],
     'communities' => [
         'name' => 'Спільноти',
