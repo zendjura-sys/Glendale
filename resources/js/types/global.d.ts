@@ -17,6 +17,7 @@ declare module '@inertiajs/core' {
                 tagline: string | null;
                 registration_open: boolean;
                 max_attachments: number;
+                max_message_file_mb: number;
                 announcement: string | null;
             };
             nav: NavEntry[];

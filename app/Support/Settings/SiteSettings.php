@@ -18,6 +18,7 @@ class SiteSettings
         'max_post_length' => 5000,
         'max_attachments' => 10,
         'max_upload_mb' => 20,
+        'max_message_file_mb' => 50,
         'maintenance_message' => null,
     ];
 

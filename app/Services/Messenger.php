@@ -12,11 +12,13 @@ use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Message;
 use App\Models\MessageAttachment;
+use App\Models\Sticker;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class Messenger
@@ -193,35 +195,104 @@ class Messenger
     }
 
     /**
-     * @param  list<UploadedFile>  $files
+     * @param  list<UploadedFile>  $images
+     * @param  list<UploadedFile>  $documents
      */
-    public function send(Conversation $conversation, User $sender, ?string $body, array $files = [], ?int $replyToId = null): Message
+    public function send(Conversation $conversation, User $sender, ?string $body, array $images = [], ?int $replyToId = null, array $documents = []): Message
     {
         $body = $body !== null ? trim($body) : null;
 
-        if (($body === null || $body === '') && $files === []) {
+        if (($body === null || $body === '') && $images === [] && $documents === []) {
             throw ValidationException::withMessages(['body' => 'Повідомлення порожнє.']);
         }
 
+        return $this->deliver($conversation, $sender, [
+            'type' => Message::TYPE_TEXT,
+            'body' => $body === '' ? null : $body,
+        ], $replyToId, function (Message $message) use ($images, $documents) {
+            $position = 0;
+
+            foreach (array_values($images) as $file) {
+                $message->attachments()->create([
+                    'type' => MessageAttachment::TYPE_IMAGE,
+                    ...$this->images->store($file, 'messages'),
+                    'position' => $position++,
+                ]);
+            }
+
+            foreach (array_values($documents) as $file) {
+                $message->attachments()->create([
+                    'type' => MessageAttachment::TYPE_FILE,
+                    'disk' => MessageAttachment::PRIVATE_DISK,
+                    'path' => $file->store('message-files/'.now()->format('Y/m'), MessageAttachment::PRIVATE_DISK),
+                    'name' => Str::limit($this->cleanName($file->getClientOriginalName()), 180, ''),
+                    'mime' => Str::limit((string) $file->getClientMimeType(), 64, ''),
+                    'size' => $file->getSize(),
+                    'position' => $position++,
+                ]);
+            }
+        });
+    }
+
+    public function sendSticker(Conversation $conversation, User $sender, Sticker $sticker, ?int $replyToId = null): Message
+    {
+        return $this->deliver($conversation, $sender, [
+            'type' => Message::TYPE_STICKER,
+            'meta' => ['sticker' => ['id' => $sticker->id, 'path' => $sticker->path, 'emoji' => $sticker->emoji]],
+        ], $replyToId);
+    }
+
+    /**
+     * @param  list<int>  $waveform  Нормалізовані піки 0–100 для відмальовування хвилі.
+     */
+    public function sendVoice(Conversation $conversation, User $sender, UploadedFile $audio, int $duration, array $waveform, ?int $replyToId = null): Message
+    {
+        $extension = match (true) {
+            str_contains((string) $audio->getMimeType(), 'ogg') => 'ogg',
+            str_contains((string) $audio->getMimeType(), 'mp4'), str_contains((string) $audio->getMimeType(), 'm4a') => 'm4a',
+            str_contains((string) $audio->getMimeType(), 'mpeg') => 'mp3',
+            default => 'webm',
+        };
+
+        return $this->deliver($conversation, $sender, ['type' => Message::TYPE_VOICE], $replyToId, function (Message $message) use ($audio, $duration, $waveform, $extension) {
+            $message->attachments()->create([
+                'type' => MessageAttachment::TYPE_VOICE,
+                'path' => $audio->storeAs('voice/'.now()->format('Y/m'), Str::random(32).'.'.$extension, 'public'),
+                'mime' => Str::limit((string) $audio->getMimeType(), 64, ''),
+                'size' => $audio->getSize(),
+                'duration' => $duration,
+                'meta' => ['waveform' => array_values(array_map(fn ($v) => max(0, min(100, (int) $v)), array_slice($waveform, 0, 64)))],
+            ]);
+        });
+    }
+
+    public function sendContact(Conversation $conversation, User $sender, User $contact, ?int $replyToId = null): Message
+    {
+        return $this->deliver($conversation, $sender, [
+            'type' => Message::TYPE_CONTACT,
+            'meta' => ['contact_id' => $contact->id],
+        ], $replyToId);
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @param  (callable(Message): void)|null  $attach
+     */
+    private function deliver(Conversation $conversation, User $sender, array $attributes, ?int $replyToId, ?callable $attach = null): Message
+    {
         if ($replyToId !== null && ! $conversation->messages()->whereKey($replyToId)->exists()) {
             $replyToId = null;
         }
 
-        $message = DB::transaction(function () use ($conversation, $sender, $body, $files, $replyToId) {
+        $message = DB::transaction(function () use ($conversation, $sender, $attributes, $replyToId, $attach) {
             $message = $conversation->messages()->create([
+                ...$attributes,
                 'user_id' => $sender->id,
-                'type' => Message::TYPE_TEXT,
-                'body' => $body === '' ? null : $body,
                 'reply_to_id' => $replyToId,
             ]);
 
-            foreach (array_values($files) as $position => $file) {
-                $stored = $this->images->store($file, 'messages');
-                $message->attachments()->create([
-                    'type' => MessageAttachment::TYPE_IMAGE,
-                    ...$stored,
-                    'position' => $position,
-                ]);
+            if ($attach) {
+                $attach($message);
             }
 
             $this->touch($conversation, $message);
@@ -233,6 +304,13 @@ class Messenger
         $this->broadcastNew($conversation, $message);
 
         return $message;
+    }
+
+    private function cleanName(string $name): string
+    {
+        $name = preg_replace('/[\x00-\x1F\x7F\/\\\\]+/u', '', $name) ?? '';
+
+        return trim($name) !== '' ? trim($name) : 'file';
     }
 
     public function edit(Message $message, User $user, string $body): Message
@@ -253,7 +331,7 @@ class Messenger
         $row = $conversation->participantFor($user);
 
         abort_unless(
-            $message->type === Message::TYPE_TEXT && ($message->user_id === $user->id || ($conversation->isGroup() && $row?->canManage())),
+            $message->type !== Message::TYPE_SYSTEM && ($message->user_id === $user->id || ($conversation->isGroup() && $row?->canManage())),
             403,
         );
 

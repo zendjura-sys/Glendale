@@ -3,22 +3,26 @@ import { useEffect, useState } from 'react';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import type { UserCard } from '@/types';
+import type { ContactCard } from '@/types';
 
-export function useContacts(query: string, enabled: boolean) {
-    const [users, setUsers] = useState<UserCard[] | null>(null);
+export function useContacts(
+    query: string,
+    enabled: boolean,
+    scope: 'friends' | 'site' = 'friends',
+) {
+    const [users, setUsers] = useState<ContactCard[] | null>(null);
 
     useEffect(() => {
         if (!enabled) return;
         const timer = window.setTimeout(() => {
-            void api<{ users: UserCard[] }>(
+            void api<{ users: ContactCard[] }>(
                 'GET',
-                `/messages/contacts?q=${encodeURIComponent(query.trim())}`,
+                `/messages/contacts?scope=${scope}&q=${encodeURIComponent(query.trim())}`,
             ).then((response) => setUsers(response.users));
         }, 180);
 
         return () => window.clearTimeout(timer);
-    }, [query, enabled]);
+    }, [query, enabled, scope]);
 
     return users;
 }
@@ -34,7 +38,7 @@ export function ContactPicker({
     multiple: boolean;
     selected: number[];
     exclude?: number[];
-    onPick: (user: UserCard) => void;
+    onPick: (user: ContactCard) => void;
 }) {
     const [query, setQuery] = useState('');
     const users = useContacts(query, open)?.filter(

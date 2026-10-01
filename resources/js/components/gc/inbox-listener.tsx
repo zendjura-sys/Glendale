@@ -8,10 +8,12 @@ import { UserAvatar } from './user-avatar';
 
 export function messagePreview(message: {
     body: string | null;
+    preview?: string | null;
     has_attachments?: boolean;
     attachments?: unknown[];
 }): string {
     if (message.body) return message.body;
+    if (message.preview) return message.preview;
 
     return message.has_attachments || message.attachments?.length
         ? 'Фотографія'
@@ -66,7 +68,7 @@ export function InboxListener({ userId }: { userId: number }) {
 
             if (
                 message &&
-                message.type === 'text' &&
+                message.type !== 'system' &&
                 message.user?.id !== userId &&
                 !event.is_muted &&
                 inbox.active() !== event.conversation_id

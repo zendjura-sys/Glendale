@@ -3,22 +3,55 @@ import type { UserCard } from './social';
 export type ConversationType = 'direct' | 'group';
 export type MemberRole = 'owner' | 'admin' | 'member';
 
+export type MessageType = 'text' | 'system' | 'sticker' | 'voice' | 'contact';
+
 export type ChatAttachment = {
     id: number;
+    type: 'image' | 'file' | 'voice';
     url: string;
     width: number | null;
     height: number | null;
+    name?: string | null;
+    mime?: string | null;
+    size?: number | null;
+    duration?: number | null;
+    waveform?: number[] | null;
 };
+
+export type StickerItem = {
+    id: number;
+    url: string;
+    emoji: string | null;
+};
+
+export type StickerPackItem = {
+    id: number;
+    slug: string;
+    name: string;
+    stickers: StickerItem[];
+};
+
+export type ContactCard = UserCard & { is_friend?: boolean };
+
+export type OutgoingMessage =
+    | { kind: 'text'; body: string; images: File[]; files: File[] }
+    | { kind: 'sticker'; sticker: StickerItem }
+    | { kind: 'voice'; blob: Blob; duration: number; waveform: number[] }
+    | { kind: 'contact'; contact: ContactCard };
 
 export type ChatMessage = {
     id: number;
     conversation_id: number;
-    type: 'text' | 'system';
+    type: MessageType;
     body: string | null;
+    preview?: string;
     user: UserCard | null;
+    sticker?: StickerItem | null;
+    contact?: ContactCard | null;
     reply_to: {
         id: number;
         body: string | null;
+        preview?: string | null;
         author: string | null;
         has_attachments: boolean;
         deleted: boolean;
@@ -42,8 +75,9 @@ export type ConversationSummary = {
     is_muted: boolean;
     last_message: {
         id: number;
-        type: 'text' | 'system';
+        type: MessageType;
         body: string | null;
+        preview?: string;
         author: string | null;
         is_own: boolean;
         has_attachments: boolean;

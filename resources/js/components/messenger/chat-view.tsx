@@ -29,6 +29,7 @@ import type {
     ChatHistory,
     ChatMessage,
     ConversationDetails,
+    OutgoingMessage,
 } from '@/types';
 import { Composer } from './composer';
 import { ConversationAvatar } from './conversation-avatar';
@@ -47,7 +48,7 @@ type Props = {
     onTypingChange: (name: string | null) => void;
 };
 
-type Pending = { body: string; files: File[]; replyTo: number | null };
+type Pending = { message: OutgoingMessage; replyTo: number | null };
 
 function TypingDots() {
     return (
@@ -318,10 +319,38 @@ export function ChatView({
         if (!payload) return;
 
         const form = new FormData();
-        if (payload.body) form.append('body', payload.body);
+        const outgoing = payload.message;
         if (payload.replyTo)
             form.append('reply_to_id', String(payload.replyTo));
-        payload.files.forEach((file) => form.append('images[]', file));
+        switch (outgoing.kind) {
+            case 'text':
+                if (outgoing.body) form.append('body', outgoing.body);
+                outgoing.images.forEach((file) =>
+                    form.append('images[]', file),
+                );
+                outgoing.files.forEach((file) => form.append('files[]', file));
+                break;
+            case 'sticker':
+                form.append('sticker_id', String(outgoing.sticker.id));
+                break;
+            case 'voice': {
+                const ext = outgoing.blob.type.includes('mp4')
+                    ? 'm4a'
+                    : outgoing.blob.type.includes('ogg')
+                      ? 'ogg'
+                      : 'webm';
+                form.append('voice', outgoing.blob, `voice.${ext}`);
+                form.append('voice_duration', String(outgoing.duration));
+                form.append(
+                    'voice_waveform',
+                    JSON.stringify(outgoing.waveform),
+                );
+                break;
+            }
+            case 'contact':
+                form.append('contact_id', String(outgoing.contact.id));
+                break;
+        }
 
         setMessages((current) =>
             current.map((m) =>
@@ -362,13 +391,29 @@ export function ChatView({
             });
     };
 
-    const send = (body: string, files: File[]) => {
+    const send = (outgoing: OutgoingMessage) => {
         const localId = `local-${Date.now()}-${Math.random().toString(36).slice(2)}`;
         const reply = replyTo;
         pendingRef.current.set(localId, {
-            body,
-            files,
+            message: outgoing,
             replyTo: reply?.id ?? null,
+        });
+
+        let attachmentIndex = 0;
+        const localAttachment = (
+            file: File | Blob,
+            type: ChatAttachment['type'],
+            extra: Partial<ChatAttachment> = {},
+        ): ChatAttachment => ({
+            id: -++attachmentIndex,
+            type,
+            url: URL.createObjectURL(file),
+            width: null,
+            height: null,
+            name: file instanceof File ? file.name : null,
+            mime: file.type,
+            size: file.size,
+            ...extra,
         });
 
         const optimistic: ChatMessage = {
@@ -376,24 +421,39 @@ export function ChatView({
             local_id: localId,
             pending: 'sending',
             conversation_id: active.id,
-            type: 'text',
-            body: body || null,
+            type: outgoing.kind,
+            body: outgoing.kind === 'text' ? outgoing.body || null : null,
             user: me,
+            sticker: outgoing.kind === 'sticker' ? outgoing.sticker : null,
+            contact: outgoing.kind === 'contact' ? outgoing.contact : null,
             reply_to: reply
                 ? {
                       id: reply.id,
                       body: reply.body,
+                      preview: reply.preview ?? null,
                       author: reply.user?.first_name ?? null,
                       has_attachments: reply.attachments.length > 0,
                       deleted: false,
                   }
                 : null,
-            attachments: files.map((file, index) => ({
-                id: -index - 1,
-                url: URL.createObjectURL(file),
-                width: null,
-                height: null,
-            })),
+            attachments:
+                outgoing.kind === 'text'
+                    ? [
+                          ...outgoing.images.map((file) =>
+                              localAttachment(file, 'image'),
+                          ),
+                          ...outgoing.files.map((file) =>
+                              localAttachment(file, 'file'),
+                          ),
+                      ]
+                    : outgoing.kind === 'voice'
+                      ? [
+                            localAttachment(outgoing.blob, 'voice', {
+                                duration: outgoing.duration,
+                                waveform: outgoing.waveform,
+                            }),
+                        ]
+                      : [],
             edited_at: null,
             created_at: new Date().toISOString(),
         };
@@ -648,7 +708,14 @@ export function ChatView({
                             {active.can_write && (
                                 <button
                                     type="button"
-                                    onClick={() => send('👋', [])}
+                                    onClick={() =>
+                                        send({
+                                            kind: 'text',
+                                            body: '👋',
+                                            images: [],
+                                            files: [],
+                                        })
+                                    }
                                     className="glass mt-5 inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-medium text-white transition hover:border-white/20"
                                 >
                                     <Sparkles className="size-4 text-[#ffd36b]" />
@@ -681,8 +748,8 @@ export function ChatView({
 
                         const sameAsPrev =
                             !newDay &&
-                            prev?.type === 'text' &&
-                            prev.user?.id === message.user?.id &&
+                            prev?.type !== 'system' &&
+                            prev?.user?.id === message.user?.id &&
                             new Date(message.created_at).getTime() -
                                 new Date(prev.created_at).getTime() <
                                 GROUP_GAP_MS;
@@ -692,8 +759,8 @@ export function ChatView({
                                 new Date(message.created_at).toDateString();
                         const sameAsNext =
                             !nextNewDay &&
-                            next?.type === 'text' &&
-                            next.user?.id === message.user?.id &&
+                            next?.type !== 'system' &&
+                            next?.user?.id === message.user?.id &&
                             new Date(next.created_at).getTime() -
                                 new Date(message.created_at).getTime() <
                                 GROUP_GAP_MS;

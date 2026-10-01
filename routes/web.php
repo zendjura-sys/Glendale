@@ -43,6 +43,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::prefix('messages')->name('messages.')->middleware('module:messages')->group(function () {
         Route::get('/', [MessengerController::class, 'index'])->name('index');
         Route::get('contacts', [MessengerController::class, 'contacts'])->name('contacts');
+        Route::get('stickers', [MessageController::class, 'stickers'])->name('stickers');
+        Route::get('attachments/{attachment}', [MessageController::class, 'download'])->whereNumber('attachment')->name('attachments.download');
         Route::get('with/{user}', [MessengerController::class, 'direct'])->name('direct');
         Route::post('groups', [MessengerController::class, 'storeGroup'])->middleware('throttle:10,1')->name('groups.store');
 
@@ -100,6 +102,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('posts', [Admin\PostController::class, 'index'])->name('posts.index');
         Route::delete('posts/{post}', [Admin\PostController::class, 'destroy'])->name('posts.destroy');
         Route::post('posts/{post}/restore', [Admin\PostController::class, 'restore'])->name('posts.restore');
+        Route::get('stickers', [Admin\StickerController::class, 'index'])->name('stickers.index');
+        Route::post('stickers', [Admin\StickerController::class, 'store'])->name('stickers.store');
+        Route::patch('stickers/{pack}', [Admin\StickerController::class, 'update'])->name('stickers.update');
+        Route::delete('stickers/{pack}', [Admin\StickerController::class, 'destroy'])->name('stickers.destroy');
+        Route::post('stickers/{pack}/items', [Admin\StickerController::class, 'upload'])->name('stickers.upload');
+        Route::delete('stickers/{pack}/items/{sticker}', [Admin\StickerController::class, 'destroySticker'])->scopeBindings()->name('stickers.items.destroy');
         Route::get('communities', [Admin\CommunityController::class, 'index'])->name('communities.index');
         Route::patch('communities/{community:id}', [Admin\CommunityController::class, 'update'])->name('communities.update');
         Route::delete('communities/{community}', [Admin\CommunityController::class, 'destroy'])->whereNumber('community')->name('communities.destroy');

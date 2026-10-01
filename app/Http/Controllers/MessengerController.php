@@ -147,15 +147,19 @@ class MessengerController extends Controller
     {
         $viewer = $request->user();
         $term = trim((string) $request->query('q', ''));
+        $site = $request->query('scope') === 'site' && mb_strlen($term) >= 2;
+        $friendIds = $this->friendships->friendIds($viewer);
 
-        $users = $this->friendships->friendsQuery($viewer)
+        $users = ($site ? User::query()->whereNull('banned_at')->whereKeyNot($viewer->id) : $this->friendships->friendsQuery($viewer))
             ->when($term !== '', fn (Builder $q) => $q->where(fn (Builder $w) => $w
                 ->where('name', 'like', "%{$term}%")
                 ->orWhere('username', 'like', "%{$term}%")))
             ->orderByDesc('last_seen_at')
             ->limit(30)
             ->get()
-            ->map(fn (User $u) => $u->toCard());
+            ->sortByDesc(fn (User $u) => in_array($u->id, $friendIds))
+            ->map(fn (User $u) => [...$u->toCard(), 'is_friend' => in_array($u->id, $friendIds)])
+            ->values();
 
         return response()->json(['users' => $users]);
     }

@@ -1,69 +1,28 @@
 import { usePage } from '@inertiajs/react';
 import {
+    FileUp,
     ImagePlus,
     Lock,
+    Mic,
+    Paperclip,
     Pencil,
     Reply,
     SendHorizonal,
     Smile,
+    Trash2,
+    UserRound,
     X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import { useVoiceRecorder } from '@/hooks/use-voice-recorder';
+import { formatBytes, formatDuration } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import type { ChatMessage } from '@/types';
+import type { ChatMessage, OutgoingMessage } from '@/types';
+import { ContactShareDialog } from './contact-share-dialog';
+import { EmojiPanel } from './emoji-panel';
 
-const EMOJI = [
-    '😀',
-    '😂',
-    '🤣',
-    '😊',
-    '😍',
-    '🥰',
-    '😘',
-    '😎',
-    '🤩',
-    '🥳',
-    '😏',
-    '🤔',
-    '🙄',
-    '😴',
-    '😢',
-    '😭',
-    '😡',
-    '🤯',
-    '😱',
-    '🤗',
-    '🙏',
-    '👍',
-    '👎',
-    '👏',
-    '🙌',
-    '💪',
-    '🤝',
-    '✌️',
-    '👀',
-    '🔥',
-    '✨',
-    '⚡',
-    '💯',
-    '❤️',
-    '💜',
-    '💙',
-    '💔',
-    '🎮',
-    '🕹️',
-    '🏆',
-    '🎉',
-    '🎁',
-    '🍕',
-    '☕',
-    '🚀',
-    '🌙',
-    '⭐',
-    '🌈',
-];
-
-const MAX_IMAGES = 10;
+const MAX_ATTACHMENTS = 10;
 const MAX_LENGTH = 4096;
 
 type Props = {
@@ -71,11 +30,27 @@ type Props = {
     replyTo: ChatMessage | null;
     editing: ChatMessage | null;
     onCancel: () => void;
-    onSend: (body: string, files: File[]) => void;
+    onSend: (message: OutgoingMessage) => void;
     onEdit: (message: ChatMessage, body: string) => void;
     onTyping: () => void;
     onEditLast: () => void;
 };
+
+function useOutsideClose(
+    open: boolean,
+    ref: React.RefObject<HTMLElement | null>,
+    close: () => void,
+) {
+    useEffect(() => {
+        if (!open) return;
+        const onClick = (event: MouseEvent) => {
+            if (!ref.current?.contains(event.target as Node)) close();
+        };
+        window.addEventListener('mousedown', onClick);
+
+        return () => window.removeEventListener('mousedown', onClick);
+    }, [open, ref, close]);
+}
 
 export function Composer({
     canWrite,
@@ -89,16 +64,29 @@ export function Composer({
 }: Props) {
     const { site } = usePage().props;
     const [body, setBody] = useState('');
-    const [files, setFiles] = useState<File[]>([]);
+    const [images, setImages] = useState<File[]>([]);
+    const [docs, setDocs] = useState<File[]>([]);
     const [emojiOpen, setEmojiOpen] = useState(false);
+    const [attachOpen, setAttachOpen] = useState(false);
+    const [contactOpen, setContactOpen] = useState(false);
     const textRef = useRef<HTMLTextAreaElement>(null);
-    const fileRef = useRef<HTMLInputElement>(null);
+    const imageRef = useRef<HTMLInputElement>(null);
+    const docRef = useRef<HTMLInputElement>(null);
     const emojiRef = useRef<HTMLDivElement>(null);
-    const maxImages = Math.min(MAX_IMAGES, site.max_attachments || MAX_IMAGES);
+    const attachRef = useRef<HTMLDivElement>(null);
+    const maxAttachments = Math.min(
+        MAX_ATTACHMENTS,
+        site.max_attachments || MAX_ATTACHMENTS,
+    );
+    const maxFileBytes = (site.max_message_file_mb || 50) * 1024 * 1024;
+
+    const voice = useVoiceRecorder((recording) =>
+        onSend({ kind: 'voice', ...recording }),
+    );
 
     const previews = useMemo(
-        () => files.map((file) => URL.createObjectURL(file)),
-        [files],
+        () => images.map((file) => URL.createObjectURL(file)),
+        [images],
     );
     useEffect(
         () => () => previews.forEach((url) => URL.revokeObjectURL(url)),
@@ -116,7 +104,8 @@ export function Composer({
     useEffect(() => {
         if (editingId === undefined) return;
         setBody(editing?.body ?? '');
-        setFiles([]);
+        setImages([]);
+        setDocs([]);
         requestAnimationFrame(() => {
             resize();
             textRef.current?.focus();
@@ -129,36 +118,51 @@ export function Composer({
         if (replyId !== undefined) textRef.current?.focus();
     }, [replyId]);
 
-    useEffect(() => {
-        if (!emojiOpen) return;
-        const onClick = (event: MouseEvent) => {
-            if (!emojiRef.current?.contains(event.target as Node)) {
-                setEmojiOpen(false);
-            }
-        };
-        window.addEventListener('mousedown', onClick);
+    useOutsideClose(emojiOpen, emojiRef, () => setEmojiOpen(false));
+    useOutsideClose(attachOpen, attachRef, () => setAttachOpen(false));
 
-        return () => window.removeEventListener('mousedown', onClick);
-    }, [emojiOpen]);
-
-    const addFiles = (list: FileList | File[] | null) => {
+    const addFiles = (
+        list: FileList | File[] | null,
+        mode: 'auto' | 'document' = 'auto',
+    ) => {
         if (!list || editing) return;
-        const images = Array.from(list).filter((file) =>
-            file.type.startsWith('image/'),
-        );
-        if (images.length) {
-            setFiles((current) => [...current, ...images].slice(0, maxImages));
+        const incoming = Array.from(list);
+        const tooBig = incoming.filter((file) => file.size > maxFileBytes);
+        if (tooBig.length) {
+            toast.error(
+                `Файл «${tooBig[0].name}» завеликий. Максимум — ${site.max_message_file_mb || 50} МБ.`,
+            );
         }
+        const accepted = incoming.filter((file) => file.size <= maxFileBytes);
+        const asImage = (file: File) =>
+            mode === 'auto' &&
+            /^image\/(jpeg|png|webp|gif)$/.test(file.type) &&
+            file.size <= 20 * 1024 * 1024;
+        const free = maxAttachments - images.length - docs.length;
+        if (accepted.length > free) {
+            toast(
+                `Не більше ${maxAttachments} вкладень в одному повідомленні.`,
+            );
+        }
+        const taken = accepted.slice(0, Math.max(0, free));
+        const nextImages = taken.filter(asImage);
+        const nextDocs = taken.filter((file) => !asImage(file));
+        if (nextImages.length) setImages((c) => [...c, ...nextImages]);
+        if (nextDocs.length) setDocs((c) => [...c, ...nextDocs]);
+        textRef.current?.focus();
     };
 
     const trimmed = body.trim();
+    const hasAttachments = images.length > 0 || docs.length > 0;
     const canSubmit = editing
         ? trimmed.length > 0 && trimmed !== editing.body
-        : trimmed.length > 0 || files.length > 0;
+        : trimmed.length > 0 || hasAttachments;
+    const showMic = !editing && !canSubmit && voice.supported;
 
     const reset = () => {
         setBody('');
-        setFiles([]);
+        setImages([]);
+        setDocs([]);
         requestAnimationFrame(resize);
     };
 
@@ -175,7 +179,7 @@ export function Composer({
         if (editing) {
             onEdit(editing, trimmed);
         } else {
-            onSend(trimmed, files);
+            onSend({ kind: 'text', body: trimmed, images, files: docs });
         }
 
         reset();
@@ -194,6 +198,26 @@ export function Composer({
         });
     };
 
+    const startRecording = () => {
+        voice.start().catch((error: unknown) => {
+            const denied =
+                error instanceof DOMException &&
+                (error.name === 'NotAllowedError' ||
+                    error.name === 'SecurityError');
+            toast.error(
+                denied
+                    ? 'Дозвольте доступ до мікрофона в налаштуваннях браузера.'
+                    : 'Не вдалося увімкнути мікрофон.',
+            );
+        });
+    };
+
+    const sendRecording = () => {
+        void voice.stop().then((recording) => {
+            if (recording) onSend({ kind: 'voice', ...recording });
+        });
+    };
+
     if (!canWrite) {
         return (
             <div className="border-t border-white/[0.06] px-4 py-4">
@@ -207,6 +231,8 @@ export function Composer({
     }
 
     const context = editing ?? replyTo;
+    const iconButton =
+        'flex size-10 shrink-0 items-center justify-center rounded-xl text-white/55 transition hover:bg-white/[0.07] hover:text-white disabled:opacity-40';
 
     return (
         <div
@@ -232,6 +258,7 @@ export function Composer({
                         </span>
                         <span className="block truncate text-white/55">
                             {context.body ||
+                                context.preview ||
                                 (context.attachments.length
                                     ? 'Фотографія'
                                     : '')}
@@ -251,7 +278,7 @@ export function Composer({
                 </div>
             )}
 
-            {previews.length > 0 && (
+            {(previews.length > 0 || docs.length > 0) && (
                 <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
                     {previews.map((url, index) => (
                         <div
@@ -266,7 +293,7 @@ export function Composer({
                             <button
                                 type="button"
                                 onClick={() =>
-                                    setFiles((current) =>
+                                    setImages((current) =>
                                         current.filter((_, i) => i !== index),
                                     )
                                 }
@@ -277,120 +304,285 @@ export function Composer({
                             </button>
                         </div>
                     ))}
+                    {docs.map((file, index) => (
+                        <div
+                            key={`${file.name}-${index}`}
+                            className="relative flex h-[72px] w-[188px] shrink-0 animate-in items-center gap-2.5 rounded-xl bg-white/[0.05] pr-7 pl-2.5 ring-1 ring-white/10 zoom-in-90"
+                        >
+                            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#4f8bff] to-[#6d5dfc] text-white">
+                                <FileUp className="size-5" />
+                            </span>
+                            <span className="min-w-0">
+                                <span className="block truncate text-[13px] font-medium text-white">
+                                    {file.name}
+                                </span>
+                                <span className="block text-[11px] text-white/45">
+                                    {formatBytes(file.size)}
+                                </span>
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setDocs((current) =>
+                                        current.filter((_, i) => i !== index),
+                                    )
+                                }
+                                className="absolute top-1 right-1 rounded-full bg-black/40 p-0.5 text-white hover:bg-black/70"
+                                aria-label="Прибрати"
+                            >
+                                <X className="size-3.5" />
+                            </button>
+                        </div>
+                    ))}
                 </div>
             )}
 
-            <div className="flex items-end gap-1.5">
-                {!editing && (
+            <input
+                ref={imageRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                multiple
+                hidden
+                onChange={(event) => {
+                    addFiles(event.target.files);
+                    event.target.value = '';
+                }}
+            />
+            <input
+                ref={docRef}
+                type="file"
+                multiple
+                hidden
+                onChange={(event) => {
+                    addFiles(event.target.files, 'document');
+                    event.target.value = '';
+                }}
+            />
+
+            {voice.recording ? (
+                <div className="flex animate-in items-center gap-2 fade-in">
                     <button
                         type="button"
-                        onClick={() => fileRef.current?.click()}
-                        disabled={files.length >= maxImages}
-                        className="mb-0.5 flex size-10 shrink-0 items-center justify-center rounded-xl text-white/55 transition hover:bg-white/[0.07] hover:text-white disabled:opacity-40"
-                        aria-label="Додати фото"
-                        title="Додати фото"
+                        onClick={voice.cancel}
+                        className={cn(iconButton, 'hover:text-rose-300')}
+                        aria-label="Скасувати запис"
+                        title="Скасувати"
                     >
-                        <ImagePlus className="size-5" />
+                        <Trash2 className="size-5" />
                     </button>
-                )}
-                <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    hidden
-                    onChange={(event) => {
-                        addFiles(event.target.files);
-                        event.target.value = '';
-                    }}
-                />
+                    <div className="input-glass flex h-11 min-w-0 flex-1 items-center gap-3 rounded-[22px] px-4">
+                        <span className="relative flex size-2.5 shrink-0">
+                            <span className="absolute inset-0 animate-ping rounded-full bg-rose-500/70" />
+                            <span className="relative size-2.5 rounded-full bg-rose-500" />
+                        </span>
+                        <span className="w-10 shrink-0 text-sm font-medium text-white tabular-nums">
+                            {formatDuration(voice.elapsed)}
+                        </span>
+                        <span className="flex h-7 min-w-0 flex-1 items-center justify-end gap-[3px] overflow-hidden">
+                            {voice.live.map((level, index) => (
+                                <span
+                                    key={index}
+                                    className="w-[3px] shrink-0 rounded-full bg-gradient-to-t from-[#6d5dfc] to-[#38e1ff] transition-[height] duration-100"
+                                    style={{ height: `${level}%` }}
+                                />
+                            ))}
+                        </span>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={sendRecording}
+                        className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-brand text-white shadow-[0_0_24px_-2px_rgb(124_92_255/0.9)] transition hover:brightness-110"
+                        aria-label="Надіслати голосове"
+                    >
+                        <SendHorizonal className="size-5" />
+                    </button>
+                </div>
+            ) : (
+                <div className="flex items-end gap-1.5">
+                    {!editing && (
+                        <div ref={attachRef} className="relative mb-0.5">
+                            <button
+                                type="button"
+                                onClick={() => setAttachOpen((v) => !v)}
+                                className={cn(
+                                    iconButton,
+                                    attachOpen && 'bg-white/[0.07] text-white',
+                                )}
+                                aria-label="Прикріпити"
+                                title="Прикріпити"
+                            >
+                                <Paperclip
+                                    className={cn(
+                                        'size-5 transition',
+                                        attachOpen && 'rotate-45',
+                                    )}
+                                />
+                            </button>
+                            {attachOpen && (
+                                <div className="glass-strong absolute bottom-12 left-0 z-30 w-52 animate-rise rounded-2xl p-1.5">
+                                    {[
+                                        {
+                                            label: 'Фото',
+                                            hint: 'JPG, PNG, WebP, GIF',
+                                            icon: ImagePlus,
+                                            tone: 'from-[#4f8bff] to-[#38e1ff]',
+                                            run: () =>
+                                                imageRef.current?.click(),
+                                        },
+                                        {
+                                            label: 'Файл',
+                                            hint: `до ${site.max_message_file_mb || 50} МБ`,
+                                            icon: FileUp,
+                                            tone: 'from-[#6d5dfc] to-[#a855f7]',
+                                            run: () => docRef.current?.click(),
+                                        },
+                                        {
+                                            label: 'Контакт',
+                                            hint: 'Пошук на GameCon',
+                                            icon: UserRound,
+                                            tone: 'from-[#22d3a6] to-[#38e1ff]',
+                                            run: () => setContactOpen(true),
+                                        },
+                                    ].map((item) => (
+                                        <button
+                                            key={item.label}
+                                            type="button"
+                                            onClick={() => {
+                                                setAttachOpen(false);
+                                                item.run();
+                                            }}
+                                            className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition hover:bg-white/[0.06]"
+                                        >
+                                            <span
+                                                className={cn(
+                                                    'flex size-8 items-center justify-center rounded-lg bg-gradient-to-br text-white',
+                                                    item.tone,
+                                                )}
+                                            >
+                                                <item.icon className="size-4" />
+                                            </span>
+                                            <span>
+                                                <span className="block text-sm font-medium text-white">
+                                                    {item.label}
+                                                </span>
+                                                <span className="block text-[11px] text-white/40">
+                                                    {item.hint}
+                                                </span>
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
-                <div className="input-glass flex min-w-0 flex-1 items-end rounded-[22px] pr-1">
-                    <textarea
-                        ref={textRef}
-                        value={body}
-                        rows={1}
-                        maxLength={MAX_LENGTH}
-                        onChange={(event) => {
-                            setBody(event.target.value);
-                            resize();
-                            if (event.target.value) onTyping();
-                        }}
-                        onPaste={(event) => {
-                            const pasted = Array.from(
-                                event.clipboardData.files,
-                            );
-                            if (pasted.length) {
-                                event.preventDefault();
-                                addFiles(pasted);
-                            }
-                        }}
-                        onKeyDown={(event) => {
-                            if (
-                                event.key === 'Enter' &&
-                                !event.shiftKey &&
-                                !event.nativeEvent.isComposing
-                            ) {
-                                event.preventDefault();
-                                submit();
-                            } else if (event.key === 'Escape' && context) {
-                                if (editing) reset();
-                                onCancel();
-                            } else if (
-                                event.key === 'ArrowUp' &&
-                                !body &&
-                                !editing
-                            ) {
-                                onEditLast();
-                            }
-                        }}
-                        placeholder="Напишіть повідомлення…"
-                        className="max-h-[180px] min-h-11 min-w-0 flex-1 resize-none bg-transparent py-[11px] pl-4 text-[14.5px] leading-[1.45] text-white placeholder:text-white/35 focus:outline-none"
-                    />
-                    <div ref={emojiRef} className="relative mb-1">
+                    <div className="input-glass flex min-w-0 flex-1 items-end rounded-[22px] pr-1">
+                        <textarea
+                            ref={textRef}
+                            value={body}
+                            rows={1}
+                            maxLength={MAX_LENGTH}
+                            onChange={(event) => {
+                                setBody(event.target.value);
+                                resize();
+                                if (event.target.value) onTyping();
+                            }}
+                            onPaste={(event) => {
+                                const pasted = Array.from(
+                                    event.clipboardData.files,
+                                );
+                                if (pasted.length) {
+                                    event.preventDefault();
+                                    addFiles(pasted);
+                                }
+                            }}
+                            onKeyDown={(event) => {
+                                if (
+                                    event.key === 'Enter' &&
+                                    !event.shiftKey &&
+                                    !event.nativeEvent.isComposing
+                                ) {
+                                    event.preventDefault();
+                                    submit();
+                                } else if (event.key === 'Escape' && context) {
+                                    if (editing) reset();
+                                    onCancel();
+                                } else if (
+                                    event.key === 'ArrowUp' &&
+                                    !body &&
+                                    !editing
+                                ) {
+                                    onEditLast();
+                                }
+                            }}
+                            placeholder="Напишіть повідомлення…"
+                            className="max-h-[180px] min-h-11 min-w-0 flex-1 resize-none bg-transparent py-[11px] pl-4 text-[14.5px] leading-[1.45] text-white placeholder:text-white/35 focus:outline-none"
+                        />
+                        <div ref={emojiRef} className="relative mb-1">
+                            <button
+                                type="button"
+                                onClick={() => setEmojiOpen((value) => !value)}
+                                className={cn(
+                                    'flex size-9 items-center justify-center rounded-full text-white/50 transition hover:text-white',
+                                    emojiOpen && 'text-[#ffd36b]',
+                                )}
+                                aria-label="Емодзі та стікери"
+                                title="Емодзі та стікери"
+                            >
+                                <Smile className="size-5" />
+                            </button>
+                            {emojiOpen && (
+                                <div className="absolute right-0 bottom-12 z-30">
+                                    <EmojiPanel
+                                        allowStickers={!editing}
+                                        onEmoji={insertEmoji}
+                                        onSticker={(sticker) => {
+                                            setEmojiOpen(false);
+                                            onSend({
+                                                kind: 'sticker',
+                                                sticker,
+                                            });
+                                        }}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {showMic ? (
                         <button
                             type="button"
-                            onClick={() => setEmojiOpen((value) => !value)}
-                            className={cn(
-                                'flex size-9 items-center justify-center rounded-full text-white/50 transition hover:text-white',
-                                emojiOpen && 'text-[#ffd36b]',
-                            )}
-                            aria-label="Емодзі"
+                            onClick={startRecording}
+                            className="mb-0.5 flex size-11 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-white/70 transition hover:bg-gradient-brand hover:text-white hover:shadow-[0_0_24px_-2px_rgb(124_92_255/0.9)]"
+                            aria-label="Записати голосове"
+                            title="Голосове повідомлення"
                         >
-                            <Smile className="size-5" />
+                            <Mic className="size-5" />
                         </button>
-                        {emojiOpen && (
-                            <div className="glass-strong absolute right-0 bottom-12 z-30 grid w-[296px] animate-rise grid-cols-8 gap-0.5 rounded-2xl p-2">
-                                {EMOJI.map((emoji) => (
-                                    <button
-                                        key={emoji}
-                                        type="button"
-                                        onClick={() => insertEmoji(emoji)}
-                                        className="flex size-8 items-center justify-center rounded-lg text-xl transition hover:scale-110 hover:bg-white/10"
-                                    >
-                                        {emoji}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <button
-                    type="button"
-                    onClick={submit}
-                    disabled={!canSubmit}
-                    className={cn(
-                        'mb-0.5 flex size-11 shrink-0 items-center justify-center rounded-full text-white transition duration-300',
-                        canSubmit
-                            ? 'scale-100 bg-gradient-brand shadow-[0_0_24px_-2px_rgb(124_92_255/0.9)] hover:brightness-110'
-                            : 'scale-95 bg-white/[0.06] text-white/35',
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={submit}
+                            disabled={!canSubmit}
+                            className={cn(
+                                'mb-0.5 flex size-11 shrink-0 items-center justify-center rounded-full text-white transition duration-300',
+                                canSubmit
+                                    ? 'scale-100 bg-gradient-brand shadow-[0_0_24px_-2px_rgb(124_92_255/0.9)] hover:brightness-110'
+                                    : 'scale-95 bg-white/[0.06] text-white/35',
+                            )}
+                            aria-label={editing ? 'Зберегти' : 'Надіслати'}
+                        >
+                            <SendHorizonal className="size-5" />
+                        </button>
                     )}
-                    aria-label={editing ? 'Зберегти' : 'Надіслати'}
-                >
-                    <SendHorizonal className="size-5" />
-                </button>
-            </div>
+                </div>
+            )}
+
+            <ContactShareDialog
+                open={contactOpen}
+                onOpenChange={setContactOpen}
+                onShare={(contact) => onSend({ kind: 'contact', contact })}
+            />
         </div>
     );
 }

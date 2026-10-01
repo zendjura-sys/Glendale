@@ -55,6 +55,7 @@ class HandleInertiaRequests extends Middleware
                 'tagline' => $this->settings->get('tagline'),
                 'registration_open' => (bool) $this->settings->get('registration_open'),
                 'max_attachments' => (int) $this->settings->get('max_attachments'),
+                'max_message_file_mb' => (int) $this->settings->get('max_message_file_mb'),
                 'announcement' => $this->settings->get('maintenance_message'),
             ],
             'auth' => [

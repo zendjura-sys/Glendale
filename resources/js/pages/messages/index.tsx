@@ -77,13 +77,14 @@ export default function Messages({ conversations, active, history }: Props) {
                             unread:
                                 isOwn || isOpen
                                     ? 0
-                                    : message.type === 'text'
+                                    : message.type !== 'system'
                                       ? item.unread + 1
                                       : item.unread,
                             last_message: {
                                 id: message.id,
                                 type: message.type,
                                 body: message.body,
+                                preview: message.preview,
                                 author: message.user?.first_name ?? null,
                                 is_own: isOwn,
                                 has_attachments: message.attachments.length > 0,
