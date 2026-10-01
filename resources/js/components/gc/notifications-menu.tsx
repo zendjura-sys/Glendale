@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     Bell,
     Heart,
+    ImageIcon,
     MessageSquare,
     PenSquare,
     Shield,
@@ -24,6 +25,8 @@ const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
     friend_accepted: { icon: UserCheck, className: 'bg-emerald-500' },
     community_request: { icon: Shield, className: 'bg-[#6d5dfc]' },
     community_approved: { icon: ShieldCheck, className: 'bg-[#6d5dfc]' },
+    photo_like: { icon: Heart, className: 'bg-rose-500' },
+    photo_comment: { icon: ImageIcon, className: 'bg-[#38bdf8]' },
 };
 
 export function NotificationsMenu() {

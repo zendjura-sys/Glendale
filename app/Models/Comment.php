@@ -11,14 +11,15 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
- * @property int $post_id
+ * @property int|null $post_id
+ * @property int|null $photo_id
  * @property int $user_id
  * @property int|null $parent_id
  * @property string $body
  * @property int $likes_count
  * @property Carbon $created_at
  */
-#[Fillable(['post_id', 'user_id', 'parent_id', 'body'])]
+#[Fillable(['post_id', 'photo_id', 'user_id', 'parent_id', 'body'])]
 class Comment extends Model
 {
     use SoftDeletes;
@@ -34,6 +35,14 @@ class Comment extends Model
     /**
      * @return BelongsTo<User, $this>
      */
+    /**
+     * @return BelongsTo<Photo, $this>
+     */
+    public function photo(): BelongsTo
+    {
+        return $this->belongsTo(Photo::class);
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

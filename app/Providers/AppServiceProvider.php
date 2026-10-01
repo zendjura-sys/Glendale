@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Comment;
 use App\Models\Community;
+use App\Models\Photo;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\CommunityService;
@@ -43,6 +44,7 @@ class AppServiceProvider extends ServiceProvider
             'post' => Post::class,
             'comment' => Comment::class,
             'community' => Community::class,
+            'photo' => Photo::class,
         ]);
 
         Model::preventLazyLoading(! app()->isProduction());

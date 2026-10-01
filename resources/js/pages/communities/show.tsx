@@ -4,6 +4,7 @@ import {
     Camera,
     Crown,
     Globe,
+    ImageIcon,
     Info,
     Lock,
     MapPin,
@@ -53,6 +54,11 @@ type Props = {
     };
     members: UserCard[];
     managers: (UserCard & { role: CommunityRole })[];
+    photos: {
+        count: number;
+        items: { id: number; url: string; href: string }[];
+        can_create: boolean;
+    } | null;
     posts: ScrollData<PostItem>;
 };
 
@@ -106,6 +112,7 @@ export default function CommunityShow({
     stats,
     members,
     managers,
+    photos,
     posts,
 }: Props) {
     const isPublic = community.type === 'public';
@@ -287,6 +294,19 @@ export default function CommunityShow({
                                     ])}
                                 </span>
                             </div>
+                            {photos && (
+                                <Link
+                                    href={`/c/${community.slug}/photos`}
+                                    className="flex flex-col items-center rounded-2xl px-4 py-2 transition hover:bg-white/[0.05]"
+                                >
+                                    <span className="font-display text-xl font-bold text-white tabular-nums">
+                                        {compactNumber(photos.count)}
+                                    </span>
+                                    <span className="text-xs text-white/45">
+                                        фото
+                                    </span>
+                                </Link>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -308,6 +328,46 @@ export default function CommunityShow({
                                 <p className="px-1 text-sm leading-relaxed whitespace-pre-line text-white/75">
                                     {community.description}
                                 </p>
+                            </Widget>
+                        )}
+
+                        {photos && (photos.count > 0 || photos.can_create) && (
+                            <Widget
+                                title="Фотографії"
+                                icon={ImageIcon}
+                                action={
+                                    <Link
+                                        href={`/c/${community.slug}/photos`}
+                                        className="text-xs text-[#9aa8ff] hover:text-white"
+                                    >
+                                        {photos.count > 0
+                                            ? `Усі ${photos.count}`
+                                            : 'Створити альбом'}
+                                    </Link>
+                                }
+                            >
+                                {photos.items.length > 0 ? (
+                                    <div className="grid grid-cols-3 gap-1.5 overflow-hidden rounded-2xl">
+                                        {photos.items.map((photo) => (
+                                            <Link
+                                                key={photo.id}
+                                                href={photo.href}
+                                                className="group aspect-square overflow-hidden bg-white/5"
+                                            >
+                                                <img
+                                                    src={photo.url}
+                                                    alt=""
+                                                    loading="lazy"
+                                                    className="size-full object-cover transition duration-500 group-hover:scale-110"
+                                                />
+                                            </Link>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="px-1 text-sm text-white/45">
+                                        Додайте перший альбом спільноти.
+                                    </p>
+                                )}
                             </Widget>
                         )}
 

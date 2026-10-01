@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Comment;
 use App\Models\Like;
+use App\Models\Photo;
 use App\Models\Post;
 use App\Notifications\PostInteraction;
 use App\Services\FriendshipService;
+use App\Services\PhotoService;
 use App\Services\PostPresenter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,6 +20,7 @@ class CommentController extends Controller
     public function __construct(
         private readonly FriendshipService $friendships,
         private readonly PostPresenter $presenter,
+        private readonly PhotoService $photos,
     ) {}
 
     public function index(Request $request, Post $post): JsonResponse
@@ -77,23 +80,31 @@ class CommentController extends Controller
     public function destroy(Request $request, Comment $comment): JsonResponse
     {
         $user = $request->user();
-        $post = $comment->post;
-        $onOwnWall = $post && $post->wall_type === $user->getMorphClass() && $post->wall_id === $user->id;
+        $subject = $comment->post ?? $comment->photo;
+        $ownsSubject = match (true) {
+            $subject instanceof Post => $subject->wall_type === $user->getMorphClass() && $subject->wall_id === $user->id,
+            $subject instanceof Photo => $subject->user_id === $user->id || $this->photos->canManage($subject->album, $user),
+            default => false,
+        };
 
-        abort_unless($comment->user_id === $user->id || $onOwnWall || $user->isStaff(), 403);
+        abort_unless($comment->user_id === $user->id || $ownsSubject || $user->isStaff(), 403);
 
-        DB::transaction(function () use ($comment, $post) {
+        DB::transaction(function () use ($comment, $subject) {
             $comment->delete();
-            $post?->decrement('comments_count');
+            $subject?->decrement('comments_count');
         });
 
-        return response()->json(['comments_count' => $post?->fresh()->comments_count ?? 0]);
+        return response()->json(['comments_count' => $subject?->fresh()->comments_count ?? 0]);
     }
 
     public function like(Request $request, Comment $comment): JsonResponse
     {
         $user = $request->user();
-        $this->authorizeView($request, $comment->post);
+        if ($comment->photo_id !== null) {
+            abort_unless($comment->photo && $this->photos->canView($comment->photo->album, $user), 404);
+        } else {
+            $this->authorizeView($request, $comment->post);
+        }
 
         $liked = DB::transaction(function () use ($user, $comment) {
             $deleted = Like::query()

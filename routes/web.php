@@ -10,6 +10,8 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PeopleController;
+use App\Http\Controllers\PhotoAlbumController;
+use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WelcomeController;
@@ -75,11 +77,33 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('join', [CommunityController::class, 'join'])->middleware('throttle:60,1')->name('join');
             Route::delete('join', [CommunityController::class, 'leave'])->name('leave');
 
+            Route::get('photos', [PhotoController::class, 'community'])->middleware('module:photos')->name('photos');
             Route::get('members', [CommunityMemberController::class, 'index'])->name('members');
             Route::post('members/{user}/approve', [CommunityMemberController::class, 'approve'])->name('members.approve');
             Route::delete('members/{user}/request', [CommunityMemberController::class, 'decline'])->name('members.decline');
             Route::patch('members/{user}', [CommunityMemberController::class, 'role'])->name('members.role');
             Route::delete('members/{user}', [CommunityMemberController::class, 'destroy'])->name('members.destroy');
+        });
+    });
+
+    Route::middleware('module:photos')->group(function () {
+        Route::get('photos', [PhotoController::class, 'index'])->name('photos.index');
+        Route::get('photos/u/{user}', [PhotoController::class, 'user'])->name('photos.user');
+        Route::post('albums', [PhotoAlbumController::class, 'store'])->middleware('throttle:20,1')->name('albums.store');
+
+        Route::whereNumber(['album', 'photo'])->group(function () {
+            Route::get('albums/{album}', [PhotoAlbumController::class, 'show'])->name('albums.show');
+            Route::patch('albums/{album}', [PhotoAlbumController::class, 'update'])->name('albums.update');
+            Route::delete('albums/{album}', [PhotoAlbumController::class, 'destroy'])->name('albums.destroy');
+            Route::post('albums/{album}/photos', [PhotoAlbumController::class, 'upload'])->middleware('throttle:30,1')->name('albums.upload');
+
+            Route::get('photos/{photo}', [PhotoController::class, 'show'])->name('photos.show');
+            Route::patch('photos/{photo}', [PhotoController::class, 'update'])->name('photos.update');
+            Route::delete('photos/{photo}', [PhotoController::class, 'destroy'])->name('photos.destroy');
+            Route::post('photos/{photo}/cover', [PhotoController::class, 'cover'])->name('photos.cover');
+            Route::post('photos/{photo}/like', [PhotoController::class, 'like'])->middleware('throttle:120,1')->name('photos.like');
+            Route::get('photos/{photo}/comments', [PhotoController::class, 'comments'])->name('photos.comments.index');
+            Route::post('photos/{photo}/comments', [PhotoController::class, 'comment'])->middleware('throttle:30,1')->name('photos.comments.store');
         });
     });
 
@@ -102,6 +126,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('posts', [Admin\PostController::class, 'index'])->name('posts.index');
         Route::delete('posts/{post}', [Admin\PostController::class, 'destroy'])->name('posts.destroy');
         Route::post('posts/{post}/restore', [Admin\PostController::class, 'restore'])->name('posts.restore');
+        Route::get('photos', [Admin\PhotoController::class, 'index'])->name('photos.index');
+        Route::delete('photos/{photo}', [Admin\PhotoController::class, 'destroy'])->whereNumber('photo')->name('photos.destroy');
+        Route::post('photos/{photo}/restore', [Admin\PhotoController::class, 'restore'])->whereNumber('photo')->name('photos.restore');
         Route::get('stickers', [Admin\StickerController::class, 'index'])->name('stickers.index');
         Route::post('stickers', [Admin\StickerController::class, 'store'])->name('stickers.store');
         Route::patch('stickers/{pack}', [Admin\StickerController::class, 'update'])->name('stickers.update');
