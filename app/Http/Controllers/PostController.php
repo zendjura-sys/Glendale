@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Community;
 use App\Models\Like;
+use App\Models\Movie;
 use App\Models\Post;
 use App\Models\PostAttachment;
 use App\Models\Track;
@@ -52,7 +53,7 @@ class PostController extends Controller
         $maxKb = (int) $this->settings->get('max_upload_mb') * 1024;
 
         $data = $request->validate([
-            'body' => ['nullable', 'string', 'max:'.(int) $this->settings->get('max_post_length'), 'required_without_all:images,music'],
+            'body' => ['nullable', 'string', 'max:'.(int) $this->settings->get('max_post_length'), 'required_without_all:images,music,movie_id'],
             'visibility' => ['required', Rule::in(Post::VISIBILITIES)],
             'wall' => ['nullable', 'string', 'exists:users,username'],
             'community' => ['nullable', 'string'],
@@ -67,9 +68,18 @@ class PostController extends Controller
             'music.album' => ['nullable', 'string', 'max:200'],
             'music.duration' => ['nullable', 'integer', 'min:0', 'max:7200'],
             'music.cover_url' => ['nullable', 'string', 'max:500'],
+            'movie_id' => ['nullable', 'integer'],
         ], [
-            'body.required_without_all' => 'Напишіть щось, додайте фото або музику.',
+            'body.required_without_all' => 'Напишіть щось, додайте фото, музику або фільм.',
         ]);
+
+        $movieId = null;
+        if (isset($data['movie_id'])) {
+            $movieId = Movie::query()->published()->whereKey($data['movie_id'])->value('id');
+            if (! $movieId) {
+                throw ValidationException::withMessages(['movie_id' => 'Фільм не знайдено.']);
+            }
+        }
 
         $music = isset($data['music']) ? $this->music($data['music']) : null;
         $asCommunity = false;
@@ -92,7 +102,7 @@ class PostController extends Controller
             );
         }
 
-        $post = DB::transaction(function () use ($request, $user, $wallOwner, $data, $asCommunity, $music) {
+        $post = DB::transaction(function () use ($request, $user, $wallOwner, $data, $asCommunity, $music, $movieId) {
             $post = Post::query()->create([
                 'author_id' => $user->id,
                 'wall_type' => $wallOwner->getMorphClass(),
@@ -100,6 +110,7 @@ class PostController extends Controller
                 'as_community' => $asCommunity,
                 'body' => isset($data['body']) ? trim($data['body']) : null,
                 'music' => $music,
+                'movie_id' => $movieId,
                 'visibility' => $data['visibility'],
             ]);
 

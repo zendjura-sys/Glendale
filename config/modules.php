@@ -89,11 +89,12 @@ return [
     ],
     'cinema' => [
         'name' => 'Кінопортал',
-        'description' => 'Фільми, серіали, аніме з плеєрами Kodik і FlixCDN.',
+        'description' => 'Фільми, серіали та аніме з плеєрами Kodik, FlixCDN і власними; списки, оцінки, коментарі.',
         'icon' => 'film',
         'core' => false,
-        'available' => false,
-        'nav' => ['label' => 'Кіно', 'position' => 90],
+        'available' => true,
+        'default' => true,
+        'nav' => ['label' => 'Кіно', 'route' => 'cinema.index', 'position' => 90],
     ],
     'games' => [
         'name' => 'Ігри',
