@@ -11,12 +11,14 @@ use App\Models\Friendship;
 use App\Models\Like;
 use App\Models\Message;
 use App\Models\MessageAttachment;
+use App\Models\PhotoAlbum;
 use App\Models\Post;
 use App\Models\PostAttachment;
 use App\Models\Sticker;
 use App\Models\StickerPack;
 use App\Models\User;
 use App\Services\CommunityService;
+use App\Services\PhotoService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -240,6 +242,82 @@ SVG;
         $this->seedStickers();
         Model::unguarded(fn () => $this->seedMessages($users->values()->all()));
         Model::unguarded(fn () => $this->seedCommunities($users->values()->all()));
+        Model::unguarded(fn () => $this->seedPhotos($users->values()->all()));
+    }
+
+    /**
+     * Альбоми з фото, лайками й коментарями для людей та спільнот.
+     *
+     * @param  list<User>  $u
+     */
+    private function seedPhotos(array $u): void
+    {
+        $sizes = [[1600, 1067], [1200, 1500], [1600, 900], [1400, 1400], [1080, 1350]];
+        $captions = [
+            'Найкращий момент вечора 🔥', 'Нічне місто з вікна', null, 'Ця локація неймовірна', null,
+            'LAN-паті минулих вихідних', 'Скріншот із фінального раунду', null, 'Коли всі нарешті онлайн 😄', 'Атмосфера 💜',
+        ];
+        $comments = ['Вау, дуже круто!', 'Де це?', 'Атмосферно 😍', 'Треба повторити!', 'Топ кадр', 'Хочу так само 🙌'];
+
+        $albums = [
+            [$u[0], 'Кіберспортивні турніри', 'Фото з LAN-фіналів і зустрічей команди', PhotoAlbum::PRIVACY_PUBLIC, 12],
+            [$u[0], 'Мій сетап', 'Як змінювалося робоче місце', PhotoAlbum::PRIVACY_PUBLIC, 6],
+            [$u[0], 'Подорожі', null, PhotoAlbum::PRIVACY_FRIENDS, 8],
+            [$u[0], 'Особисте', null, PhotoAlbum::PRIVACY_PRIVATE, 3],
+            [$u[1], 'Косплей фест 2026', 'Найкращі образи фестивалю', PhotoAlbum::PRIVACY_PUBLIC, 9],
+            [$u[1], 'Котики 🐈', null, PhotoAlbum::PRIVACY_PUBLIC, 5],
+            [$u[2], 'Скріншоти', 'Красиві кадри з ігор', PhotoAlbum::PRIVACY_PUBLIC, 10],
+            [$u[3], 'Арт', 'Мої малюнки та концепти', PhotoAlbum::PRIVACY_PUBLIC, 7],
+            [$u[4], 'Природа', null, PhotoAlbum::PRIVACY_PUBLIC, 6],
+        ];
+
+        foreach (['gamecon' => ['Події GameCon', 10], 'cs2_ukraine' => ['Хайлайти турнірів', 8], 'anime_club' => ['Арти учасників', 6], 'retro_pixels' => ['Колекція консолей', 6]] as $slug => [$title, $count]) {
+            if ($community = Community::query()->where('slug', $slug)->first()) {
+                $albums[] = [$community, $title, null, PhotoAlbum::PRIVACY_PUBLIC, $count];
+            }
+        }
+
+        $service = app(PhotoService::class);
+        foreach ($albums as $a => [$owner, $title, $description, $privacy, $count]) {
+            if (PhotoAlbum::query()->whereMorphedTo('owner', $owner)->where('title', $title)->exists()) {
+                continue;
+            }
+
+            $album = $service->createAlbum($owner, ['title' => $title, 'description' => $description, 'privacy' => $privacy]);
+            $author = $owner instanceof User ? $owner : $u[$a % count($u)];
+
+            for ($n = 0; $n < $count; $n++) {
+                [$w, $h] = $sizes[($a + $n) % count($sizes)];
+                $path = $this->download("https://picsum.photos/seed/gc-photo-{$a}-{$n}/{$w}/{$h}", "demo/photos/{$a}-{$n}.jpg");
+                if (! $path) {
+                    continue;
+                }
+
+                $photo = $album->photos()->create([
+                    'user_id' => $author->id,
+                    'path' => $path,
+                    'width' => $w,
+                    'height' => $h,
+                    'size' => Storage::disk('public')->size($path),
+                    'caption' => $captions[($a * 3 + $n) % count($captions)],
+                ]);
+                $photo->forceFill(['created_at' => now()->subDays($count - $n)->subHours($a), 'views_count' => random_int(20, 1500)])->saveQuietly();
+
+                foreach (collect($u)->shuffle()->take(random_int(0, 9)) as $liker) {
+                    Like::query()->firstOrCreate(['user_id' => $liker->id, 'likeable_type' => 'photo', 'likeable_id' => $photo->id]);
+                }
+
+                if ($n % 3 === 0) {
+                    foreach (collect($u)->reject(fn (User $user) => $user->is($author))->shuffle()->take(random_int(1, 3)) as $k => $commenter) {
+                        $photo->comments()->create(['user_id' => $commenter->id, 'body' => $comments[($a + $n + $k) % count($comments)]]);
+                    }
+                }
+
+                $photo->forceFill(['likes_count' => $photo->likes()->count(), 'comments_count' => $photo->comments()->count()])->saveQuietly();
+            }
+
+            $album->recount();
+        }
     }
 
     /**
