@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\CommunityController;
+use App\Http\Controllers\CommunityMemberController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\MessageController;
@@ -58,6 +60,27 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         });
     });
 
+    Route::middleware('module:communities')->group(function () {
+        Route::get('communities', [CommunityController::class, 'index'])->name('communities.index');
+        Route::post('communities', [CommunityController::class, 'store'])->middleware('throttle:10,1')->name('communities.store');
+
+        Route::prefix('c/{community}')->name('communities.')->group(function () {
+            Route::get('/', [CommunityController::class, 'show'])->name('show');
+            Route::delete('/', [CommunityController::class, 'destroy'])->name('destroy');
+            Route::get('settings', [CommunityController::class, 'edit'])->name('edit');
+            Route::patch('settings', [CommunityController::class, 'update'])->name('update');
+            Route::post('images/{field}', [CommunityController::class, 'updateImage'])->whereIn('field', ['avatar', 'cover'])->name('image');
+            Route::post('join', [CommunityController::class, 'join'])->middleware('throttle:60,1')->name('join');
+            Route::delete('join', [CommunityController::class, 'leave'])->name('leave');
+
+            Route::get('members', [CommunityMemberController::class, 'index'])->name('members');
+            Route::post('members/{user}/approve', [CommunityMemberController::class, 'approve'])->name('members.approve');
+            Route::delete('members/{user}/request', [CommunityMemberController::class, 'decline'])->name('members.decline');
+            Route::patch('members/{user}', [CommunityMemberController::class, 'role'])->name('members.role');
+            Route::delete('members/{user}', [CommunityMemberController::class, 'destroy'])->name('members.destroy');
+        });
+    });
+
     Route::get('people', [PeopleController::class, 'index'])->middleware('module:people')->name('people.index');
     Route::get('search/quick', [PeopleController::class, 'quick'])->middleware('throttle:120,1')->name('search.quick');
 
@@ -77,6 +100,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('posts', [Admin\PostController::class, 'index'])->name('posts.index');
         Route::delete('posts/{post}', [Admin\PostController::class, 'destroy'])->name('posts.destroy');
         Route::post('posts/{post}/restore', [Admin\PostController::class, 'restore'])->name('posts.restore');
+        Route::get('communities', [Admin\CommunityController::class, 'index'])->name('communities.index');
+        Route::patch('communities/{community:id}', [Admin\CommunityController::class, 'update'])->name('communities.update');
+        Route::delete('communities/{community}', [Admin\CommunityController::class, 'destroy'])->whereNumber('community')->name('communities.destroy');
+        Route::post('communities/{community}/restore', [Admin\CommunityController::class, 'restore'])->whereNumber('community')->name('communities.restore');
         Route::get('modules', [Admin\ModuleController::class, 'index'])->name('modules.index');
         Route::patch('modules/{module}', [Admin\ModuleController::class, 'update'])->name('modules.update');
         Route::get('settings', [Admin\SettingsController::class, 'edit'])->name('settings.edit');
