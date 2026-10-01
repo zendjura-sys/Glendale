@@ -1,0 +1,351 @@
+import { Head, Link, useForm } from '@inertiajs/react';
+import { ArrowLeft, Globe2, Lock, Megaphone, UsersRound } from 'lucide-react';
+import type { FormEvent } from 'react';
+import { selectClass } from '@/components/gc/admin';
+import { CommunityAvatar } from '@/components/gc/community-avatar';
+import { SettingsCard } from '@/layouts/settings/layout';
+import { cn } from '@/lib/utils';
+import type { CommunityDetails } from '@/types';
+
+type Props = {
+    community: CommunityDetails;
+    categories: Record<string, string>;
+    isOwner: boolean;
+};
+
+const field =
+    'input-glass w-full rounded-xl px-3.5 text-sm text-white placeholder:text-white/30 focus:outline-none';
+
+function Error({ message }: { message?: string }) {
+    return message ? (
+        <p className="mt-1 text-xs text-rose-300">{message}</p>
+    ) : null;
+}
+
+function Segmented<T extends string>({
+    value,
+    onChange,
+    options,
+}: {
+    value: T;
+    onChange: (value: T) => void;
+    options: { value: T; label: string; icon: typeof Lock; hint: string }[];
+}) {
+    return (
+        <div className="grid gap-2 sm:grid-cols-2">
+            {options.map((option) => (
+                <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => onChange(option.value)}
+                    className={cn(
+                        'flex items-start gap-3 rounded-2xl border p-3.5 text-left transition',
+                        value === option.value
+                            ? 'border-[#7c8cff]/60 bg-[#6d5dfc]/15'
+                            : 'border-white/[0.07] bg-white/[0.02] hover:border-white/15',
+                    )}
+                >
+                    <option.icon
+                        className={cn(
+                            'mt-0.5 size-4 shrink-0',
+                            value === option.value
+                                ? 'text-[#a9b6ff]'
+                                : 'text-white/40',
+                        )}
+                    />
+                    <span>
+                        <span className="block text-sm font-medium text-white">
+                            {option.label}
+                        </span>
+                        <span className="block text-xs text-white/45">
+                            {option.hint}
+                        </span>
+                    </span>
+                </button>
+            ))}
+        </div>
+    );
+}
+
+export default function CommunitySettings({
+    community,
+    categories,
+    isOwner,
+}: Props) {
+    const form = useForm({
+        name: community.name,
+        slug: community.slug,
+        type: community.type,
+        privacy: community.privacy,
+        wall: community.wall,
+        category: community.category ?? 'other',
+        status: community.status ?? '',
+        description: community.description ?? '',
+        website: community.website ?? '',
+        city: community.city ?? '',
+    });
+    const remove = useForm({ confirm: '' });
+    const { data, setData, errors } = form;
+
+    const submit = (event: FormEvent) => {
+        event.preventDefault();
+        form.patch(`/c/${community.slug}/settings`, { preserveScroll: true });
+    };
+
+    return (
+        <>
+            <Head title={`Керування — ${community.name}`} />
+            <div className="mx-auto max-w-3xl space-y-5">
+                <div className="flex items-center gap-4">
+                    <Link
+                        href={`/c/${community.slug}`}
+                        className="flex size-10 items-center justify-center rounded-xl bg-white/[0.05] text-white/70 transition hover:bg-white/10 hover:text-white"
+                        aria-label="Назад"
+                    >
+                        <ArrowLeft className="size-5" />
+                    </Link>
+                    <CommunityAvatar community={community} size="md" />
+                    <div>
+                        <h1 className="font-display text-xl font-bold text-white">
+                            Керування спільнотою
+                        </h1>
+                        <p className="text-sm text-white/50">
+                            {community.name}
+                        </p>
+                    </div>
+                </div>
+
+                <form onSubmit={submit} className="space-y-5">
+                    <SettingsCard
+                        title="Основна інформація"
+                        description="Назва, адреса та опис спільноти"
+                    >
+                        <div className="grid gap-4">
+                            <label className="text-sm font-medium text-white/80">
+                                Назва
+                                <input
+                                    value={data.name}
+                                    onChange={(e) =>
+                                        setData('name', e.target.value)
+                                    }
+                                    maxLength={100}
+                                    className={cn(field, 'mt-1.5 h-11')}
+                                />
+                                <Error message={errors.name} />
+                            </label>
+                            <label className="text-sm font-medium text-white/80">
+                                Адреса сторінки
+                                <div className="input-glass mt-1.5 flex h-11 items-center rounded-xl pl-3.5 text-sm">
+                                    <span className="text-white/35">
+                                        gamecon.online/c/
+                                    </span>
+                                    <input
+                                        value={data.slug}
+                                        onChange={(e) =>
+                                            setData(
+                                                'slug',
+                                                e.target.value.toLowerCase(),
+                                            )
+                                        }
+                                        maxLength={32}
+                                        className="h-full min-w-0 flex-1 bg-transparent pr-3.5 text-white focus:outline-none"
+                                    />
+                                </div>
+                                <Error message={errors.slug} />
+                            </label>
+                            <label className="text-sm font-medium text-white/80">
+                                Статус
+                                <input
+                                    value={data.status}
+                                    onChange={(e) =>
+                                        setData('status', e.target.value)
+                                    }
+                                    maxLength={140}
+                                    placeholder="Коротко про головне"
+                                    className={cn(field, 'mt-1.5 h-11')}
+                                />
+                                <Error message={errors.status} />
+                            </label>
+                            <label className="text-sm font-medium text-white/80">
+                                Опис
+                                <textarea
+                                    value={data.description}
+                                    onChange={(e) =>
+                                        setData('description', e.target.value)
+                                    }
+                                    rows={5}
+                                    maxLength={4000}
+                                    className={cn(
+                                        field,
+                                        'mt-1.5 resize-y py-3',
+                                    )}
+                                />
+                                <Error message={errors.description} />
+                            </label>
+                            <div className="grid gap-4 sm:grid-cols-3">
+                                <label className="text-sm font-medium text-white/80">
+                                    Тематика
+                                    <select
+                                        value={data.category}
+                                        onChange={(e) =>
+                                            setData('category', e.target.value)
+                                        }
+                                        className={cn(
+                                            selectClass,
+                                            'mt-1.5 h-11 w-full',
+                                        )}
+                                    >
+                                        {Object.entries(categories).map(
+                                            ([key, label]) => (
+                                                <option key={key} value={key}>
+                                                    {label}
+                                                </option>
+                                            ),
+                                        )}
+                                    </select>
+                                </label>
+                                <label className="text-sm font-medium text-white/80">
+                                    Місто
+                                    <input
+                                        value={data.city}
+                                        onChange={(e) =>
+                                            setData('city', e.target.value)
+                                        }
+                                        className={cn(field, 'mt-1.5 h-11')}
+                                    />
+                                </label>
+                                <label className="text-sm font-medium text-white/80">
+                                    Сайт
+                                    <input
+                                        value={data.website}
+                                        onChange={(e) =>
+                                            setData('website', e.target.value)
+                                        }
+                                        placeholder="https://"
+                                        className={cn(field, 'mt-1.5 h-11')}
+                                    />
+                                    <Error message={errors.website} />
+                                </label>
+                            </div>
+                        </div>
+                    </SettingsCard>
+
+                    <SettingsCard
+                        title="Тип і доступ"
+                        description="Хто може бачити й публікувати"
+                    >
+                        <div className="space-y-5">
+                            <Segmented
+                                value={data.type}
+                                onChange={(value) => setData('type', value)}
+                                options={[
+                                    {
+                                        value: 'group',
+                                        label: 'Група',
+                                        icon: UsersRound,
+                                        hint: 'Обговорення та стіна для учасників',
+                                    },
+                                    {
+                                        value: 'public',
+                                        label: 'Публічна сторінка',
+                                        icon: Megaphone,
+                                        hint: 'Новини від імені сторінки',
+                                    },
+                                ]}
+                            />
+                            {data.type === 'group' && (
+                                <>
+                                    <Segmented
+                                        value={data.privacy}
+                                        onChange={(value) =>
+                                            setData('privacy', value)
+                                        }
+                                        options={[
+                                            {
+                                                value: 'open',
+                                                label: 'Відкрита',
+                                                icon: Globe2,
+                                                hint: 'Вступити може будь-хто',
+                                            },
+                                            {
+                                                value: 'closed',
+                                                label: 'Закрита',
+                                                icon: Lock,
+                                                hint: 'Вступ за заявкою, записи лише для учасників',
+                                            },
+                                        ]}
+                                    />
+                                    <Segmented
+                                        value={data.wall}
+                                        onChange={(value) =>
+                                            setData('wall', value)
+                                        }
+                                        options={[
+                                            {
+                                                value: 'open',
+                                                label: 'Відкрита стіна',
+                                                icon: UsersRound,
+                                                hint: 'Учасники можуть публікувати записи',
+                                            },
+                                            {
+                                                value: 'closed',
+                                                label: 'Обмежена стіна',
+                                                icon: Megaphone,
+                                                hint: 'Публікують лише керівники',
+                                            },
+                                        ]}
+                                    />
+                                </>
+                            )}
+                        </div>
+                    </SettingsCard>
+
+                    <div className="flex justify-end">
+                        <button
+                            type="submit"
+                            disabled={form.processing || !form.isDirty}
+                            className="btn-glow rounded-xl px-6 py-2.5 text-sm font-semibold disabled:opacity-50"
+                        >
+                            Зберегти зміни
+                        </button>
+                    </div>
+                </form>
+
+                {isOwner && (
+                    <SettingsCard
+                        title="Видалення спільноти"
+                        description="Спільнота й усі записи зникнуть для всіх учасників"
+                        tone="danger"
+                    >
+                        <form
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                remove.delete(`/c/${community.slug}`);
+                            }}
+                            className="flex flex-col gap-3 sm:flex-row"
+                        >
+                            <input
+                                value={remove.data.confirm}
+                                onChange={(e) =>
+                                    remove.setData('confirm', e.target.value)
+                                }
+                                placeholder={`Введіть «${community.slug}» для підтвердження`}
+                                className={cn(field, 'h-11 flex-1')}
+                            />
+                            <button
+                                type="submit"
+                                disabled={
+                                    remove.data.confirm !== community.slug
+                                }
+                                className="h-11 rounded-xl bg-rose-500/80 px-5 text-sm font-semibold text-white transition hover:bg-rose-500 disabled:opacity-40"
+                            >
+                                Видалити
+                            </button>
+                        </form>
+                        <Error message={remove.errors.confirm} />
+                    </SettingsCard>
+                )}
+            </div>
+        </>
+    );
+}

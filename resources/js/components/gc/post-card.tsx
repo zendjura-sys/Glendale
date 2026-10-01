@@ -26,6 +26,7 @@ import { compactNumber, timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { PostItem } from '@/types';
 import { Comments } from './comments';
+import { CommunityAvatar } from './community-avatar';
 import { LikeButton } from './like-button';
 import { MediaGrid } from './media-grid';
 import { UserAvatar } from './user-avatar';
@@ -57,6 +58,7 @@ export function PostCard({
     const [deleted, setDeleted] = useState(false);
 
     const Visibility = visibilityMeta[post.visibility].icon;
+    const publisherHref = post.publisher?.href ?? `/${post.author.username}`;
     const body = post.body ?? '';
     const isLong = body.length > LONG_TEXT;
 
@@ -91,23 +93,29 @@ export function PostCard({
     return (
         <article className="glass animate-rise rounded-3xl p-4 sm:p-5">
             <header className="flex items-start gap-3">
-                <Link href={`/${post.author.username}`} className="shrink-0">
-                    <UserAvatar user={post.author} size="md" />
+                <Link href={publisherHref} className="shrink-0">
+                    {post.publisher ? (
+                        <CommunityAvatar community={post.publisher} size="md" />
+                    ) : (
+                        <UserAvatar user={post.author} size="md" />
+                    )}
                 </Link>
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-x-1.5 text-[15px] leading-tight">
                         <Link
-                            href={`/${post.author.username}`}
+                            href={publisherHref}
                             className="flex items-center gap-1 font-semibold text-white hover:underline"
                         >
-                            {post.author.name}
-                            {post.author.is_verified && <VerifiedBadge />}
+                            {post.publisher?.name ?? post.author.name}
+                            {(post.publisher ?? post.author).is_verified && (
+                                <VerifiedBadge />
+                            )}
                         </Link>
                         {post.wall && (
                             <>
                                 <ChevronRight className="size-3.5 text-white/30" />
                                 <Link
-                                    href={`/${post.wall.username}`}
+                                    href={post.wall.href}
                                     className="font-semibold text-white/80 hover:underline"
                                 >
                                     {post.wall.name}

@@ -49,7 +49,15 @@ export type PostItem = {
     views_count: number;
     created_at: string;
     author: UserCard;
-    wall: UserCard | null;
+    publisher: {
+        id: number;
+        name: string;
+        slug: string;
+        href: string;
+        avatar_url: string | null;
+        is_verified: boolean;
+    } | null;
+    wall: { name: string; href: string } | null;
     attachments: Attachment[];
     liked: boolean;
     comments: CommentItem[];
