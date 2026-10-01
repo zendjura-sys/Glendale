@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\Comment;
+use App\Models\Community;
+use App\Models\CommunityMember;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Friendship;
@@ -12,6 +14,7 @@ use App\Models\MessageAttachment;
 use App\Models\Post;
 use App\Models\PostAttachment;
 use App\Models\User;
+use App\Services\CommunityService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -173,6 +176,104 @@ class DemoSeeder extends Seeder
         }
 
         Model::unguarded(fn () => $this->seedMessages($users->values()->all()));
+        Model::unguarded(fn () => $this->seedCommunities($users->values()->all()));
+    }
+
+    /**
+     * @param  list<User>  $u
+     */
+    private function seedCommunities(array $u): void
+    {
+        $service = app(CommunityService::class);
+
+        $communities = [
+            ['gamecon', 'GameCon Official', Community::TYPE_PUBLIC, Community::PRIVACY_OPEN, 'games', 'Офіційна сторінка мережі GameCon', 0, true, [
+                'Ласкаво просимо до GameCon! Тут — новини платформи, турніри та оновлення. Підписуйтеся, щоб нічого не пропустити 🚀',
+                'Оновлення: у месенджері тепер працюють індикатор набору тексту, статуси прочитання та групові чати.',
+            ]],
+            ['cs2_ukraine', 'CS2 Україна', Community::TYPE_GROUP, Community::PRIVACY_OPEN, 'esports', 'Пошук тіммейтів, турніри та хайлайти', 2, true, [
+                'Щотижневий мікс 5×5 у суботу о 19:00. Записуйтеся в коментарях!',
+                'Хто вже бачив новий патч? Мувмент знову змінили 😅',
+            ]],
+            ['anime_club', 'Аніме-клуб «Сакура»', Community::TYPE_GROUP, Community::PRIVACY_OPEN, 'anime', 'Обговорюємо онгоінги та класику', 3, false, [
+                'Голосуємо: яке аніме дивимося разом у п’ятницю — «Фрірен» чи «Магічна битва»?',
+            ]],
+            ['kino_nights', 'Кіноночі', Community::TYPE_PUBLIC, Community::PRIVACY_OPEN, 'cinema', 'Добірки, рецензії та спільні перегляди', 5, false, [
+                'Топ-5 фільмів жовтня, які варто подивитися на вихідних 🎬',
+            ]],
+            ['indie_dev', 'Інді-розробники UA', Community::TYPE_GROUP, Community::PRIVACY_CLOSED, 'it', 'Закрита спільнота для тих, хто робить ігри', 4, false, [
+                'Ділимося білдами на джем. Дедлайн — неділя, 23:59.',
+            ]],
+            ['synthwave', 'Synthwave Radio', Community::TYPE_PUBLIC, Community::PRIVACY_OPEN, 'music', 'Неонова музика для нічних сесій', 14, false, [
+                'Новий плейлист для нічного кодингу вже тут. Вмикайте гучніше 🌆',
+            ]],
+            ['retro_pixels', 'Ретро та пікселі', Community::TYPE_GROUP, Community::PRIVACY_OPEN, 'games', 'Консолі, картриджі та ностальгія', 6, false, []],
+            ['dnd_kyiv', 'D&D Київ', Community::TYPE_GROUP, Community::PRIVACY_CLOSED, 'other', 'Настолки, кампанії та пошук майстрів', 11, false, []],
+        ];
+
+        foreach ($communities as $i => [$slug, $name, $type, $privacy, $category, $status, $ownerIndex, $verified, $posts]) {
+            $community = Community::query()->where('slug', $slug)->first() ?? $service->create($u[$ownerIndex], [
+                'slug' => $slug,
+                'name' => $name,
+                'type' => $type,
+                'privacy' => $privacy,
+                'wall' => $type === Community::TYPE_GROUP ? Community::WALL_OPEN : Community::WALL_CLOSED,
+                'category' => $category,
+                'status' => $status,
+                'description' => $status.'. Тут ми ділимося новинами, допомагаємо одне одному та просто гарно проводимо час.',
+                'city' => $u[$ownerIndex]->city,
+                'is_verified' => $verified,
+            ]);
+
+            $avatar = $this->download("https://picsum.photos/seed/gc-community-{$slug}/400/400", "demo/communities/{$slug}.jpg");
+            $cover = $this->download("https://picsum.photos/seed/gc-community-cover-{$slug}/1920/560", "demo/communities/{$slug}-cover.jpg");
+            $community->forceFill(['avatar_path' => $avatar, 'cover_path' => $cover])->saveQuietly();
+
+            foreach ($u as $k => $member) {
+                if ($k === $ownerIndex || ($k + $i) % 3 === 0) {
+                    continue;
+                }
+
+                $community->memberships()->firstOrCreate(['user_id' => $member->id], [
+                    'role' => $k === ($ownerIndex + 1) % count($u) ? CommunityMember::ROLE_ADMIN : CommunityMember::ROLE_MEMBER,
+                    'status' => $privacy === Community::PRIVACY_CLOSED && $k % 4 === 0 ? CommunityMember::STATUS_PENDING : CommunityMember::STATUS_ACTIVE,
+                    'created_at' => now()->subDays(random_int(1, 25)),
+                ]);
+            }
+
+            if ($slug !== 'gamecon' && ! $community->membershipFor($u[0])) {
+                $community->memberships()->create(['user_id' => $u[0]->id, 'role' => CommunityMember::ROLE_MEMBER, 'status' => CommunityMember::STATUS_ACTIVE]);
+            }
+
+            $service->recount($community);
+
+            foreach ($posts as $n => $body) {
+                $post = Post::query()->create([
+                    'author_id' => $u[$ownerIndex]->id,
+                    'wall_type' => 'community',
+                    'wall_id' => $community->id,
+                    'as_community' => true,
+                    'body' => $body,
+                    'visibility' => Post::VISIBILITY_PUBLIC,
+                    'is_pinned' => $n === 0 && $slug === 'gamecon',
+                    'views_count' => random_int(300, 9000),
+                    'created_at' => now()->subHours($i * 3 + $n * 7 + 1),
+                ]);
+
+                if ($n === 0) {
+                    $path = $this->download("https://picsum.photos/seed/gc-cpost-{$slug}/1280/720", "demo/communities/post-{$slug}.jpg");
+                    if ($path) {
+                        $post->attachments()->create(['type' => PostAttachment::TYPE_IMAGE, 'path' => $path, 'mime' => 'image/jpeg', 'width' => 1280, 'height' => 720, 'position' => 0]);
+                    }
+                }
+
+                foreach (collect($u)->shuffle()->take(random_int(3, 12)) as $liker) {
+                    Like::query()->firstOrCreate(['user_id' => $liker->id, 'likeable_type' => 'post', 'likeable_id' => $post->id]);
+                }
+
+                $post->forceFill(['likes_count' => $post->likes()->count()])->saveQuietly();
+            }
+        }
     }
 
     /**
