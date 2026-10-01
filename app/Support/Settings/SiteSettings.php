@@ -27,11 +27,21 @@ class SiteSettings
         'kodik_token' => null,
         'flixcdn_token' => null,
         'flixcdn_template' => null,
+        'flixcdn_api_search' => null,
+        'flixcdn_api_updates' => null,
+        'tmdb_token' => null,
+        'tmdb_language' => 'uk-UA',
+        'omdb_key' => null,
+        'kinopoisk_key' => null,
+        'shikimori_enabled' => true,
+        'shikimori_url' => null,
+        'cinema_auto' => [],
+        'cinema_sync_last' => null,
         'maintenance_message' => null,
     ];
 
     /** Ключі, які не можна віддавати у фронтенд. */
-    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'flixcdn_token'];
+    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'kinopoisk_key'];
 
     /** @var array<string, mixed>|null */
     private ?array $values = null;

@@ -11,20 +11,36 @@ use Illuminate\Support\Str;
 
 class CinemaService
 {
+    public const PROVIDERS = ['kodik', 'flixcdn'];
+
     public function __construct(
         private readonly KodikClient $kodik,
         private readonly FlixcdnPlayer $flixcdn,
+        private readonly FlixcdnClient $flixcdnApi,
     ) {}
 
     /**
-     * Імпортує кандидата з Kodik: створює фільм або оновлює наявний за зовнішніми ID.
+     * Імпортує кандидата з Kodik/FlixCDN: створює фільм або оновлює наявний за зовнішніми ID.
+     * Плеєри провайдера синхронізуються повністю; метадані наявного фільму лише доповнюються.
      *
      * @param  array<string, mixed>  $candidate
      */
-    public function import(array $candidate, ?User $by = null): Movie
+    public function import(array $candidate, ?User $by = null, string $provider = 'kodik', ?bool $publish = null, bool $restoreTrashed = true): ?Movie
     {
-        return DB::transaction(function () use ($candidate, $by) {
-            $movie = $this->findExisting($candidate) ?? new Movie(['user_id' => $by?->id]);
+        return DB::transaction(function () use ($candidate, $by, $provider, $publish, $restoreTrashed) {
+            $existing = $this->findExisting($candidate);
+            if ($existing?->trashed()) {
+                if (! $restoreTrashed) {
+                    return null;
+                }
+                $existing->restore();
+            }
+
+            $movie = $existing ?? new Movie([
+                'user_id' => $by?->id,
+                'origin' => $provider,
+                'is_published' => $publish ?? true,
+            ]);
             $fresh = ! $movie->exists;
 
             $meta = collect($candidate)->only([
@@ -35,12 +51,57 @@ class CinemaService
             $movie->fill($fresh ? $meta : array_filter($meta, fn ($v, $k) => blank($movie->getAttribute($k)), ARRAY_FILTER_USE_BOTH));
             $movie->title = Str::limit((string) ($movie->title ?: 'Без назви'), 200, '');
             $movie->slug ??= $this->uniqueSlug($movie->title, $movie->year);
+            $movie->synced_at = now();
             $movie->save();
 
-            $this->syncSources($movie, 'kodik', $candidate['sources'] ?? []);
+            $this->syncSources($movie, $provider, $candidate['sources'] ?? []);
+            $movie->wasRecentlyCreated = $fresh;
 
             return $movie;
         });
+    }
+
+    /**
+     * Оновлює плеєри з усіх налаштованих провайдерів.
+     *
+     * @return array<string, int> кількість озвучок за провайдером
+     */
+    public function refresh(Movie $movie): array
+    {
+        $result = [];
+        if ($this->kodik->configured()) {
+            $result['kodik'] = $this->refreshKodik($movie);
+        }
+        if ($this->flixcdnApi->searchTemplate() && ($movie->kinopoisk_id || $movie->imdb_id || $movie->title)) {
+            $sources = collect($this->flixcdnApi->search([
+                'kinopoisk_id' => $movie->kinopoisk_id,
+                'imdb_id' => $movie->imdb_id,
+                'title' => $movie->title,
+            ]))->filter(fn (array $c) => $this->matches($movie, $c))->flatMap(fn (array $c) => $c['sources'])->all();
+            $this->syncSources($movie, 'flixcdn', $sources);
+            $result['flixcdn'] = count($sources);
+        }
+        if ($result === []) {
+            throw new CinemaException('Жоден провайдер плеєрів не налаштований.', 422);
+        }
+        $movie->forceFill(['synced_at' => now()])->saveQuietly();
+
+        return $result;
+    }
+
+    /**
+     * @param  array<string, mixed>  $candidate
+     */
+    private function matches(Movie $movie, array $candidate): bool
+    {
+        foreach (['kinopoisk_id', 'imdb_id'] as $field) {
+            if ($movie->{$field} && filled($candidate[$field] ?? null)) {
+                return $movie->{$field} === $candidate[$field];
+            }
+        }
+
+        return mb_strtolower((string) $candidate['title']) === mb_strtolower($movie->title)
+            && (! $movie->year || ! $candidate['year'] || $movie->year === $candidate['year']);
     }
 
     /**
@@ -89,10 +150,6 @@ class CinemaService
             if (filled($candidate[$field] ?? null)) {
                 $movie = Movie::withTrashed()->where($field, $candidate[$field])->first();
                 if ($movie) {
-                    if ($movie->trashed()) {
-                        $movie->restore();
-                    }
-
                     return $movie;
                 }
             }
@@ -122,7 +179,7 @@ class CinemaService
     {
         $players = $movie->sources->map(fn (MovieSource $s) => $s->toPlayer())->all();
 
-        if ($link = $this->flixcdn->link($movie)) {
+        if (! $movie->sources->contains('provider', 'flixcdn') && $link = $this->flixcdn->link($movie)) {
             $players[] = [
                 'key' => 'flixcdn',
                 'id' => null,

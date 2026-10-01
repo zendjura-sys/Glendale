@@ -16,7 +16,9 @@ return new class extends Migration
             $table->string('title', 200);
             $table->string('title_original', 200)->nullable();
             $table->unsignedSmallInteger('year')->nullable();
+            $table->string('tagline', 300)->nullable();
             $table->text('description')->nullable();
+            $table->string('trailer_url', 500)->nullable();
             $table->string('poster_url', 500)->nullable();
             $table->string('backdrop_url', 500)->nullable();
             $table->string('poster_path')->nullable();
@@ -28,10 +30,15 @@ return new class extends Migration
             $table->decimal('rating_kp', 3, 1)->nullable();
             $table->decimal('rating_imdb', 3, 1)->nullable();
             $table->decimal('rating_shikimori', 3, 1)->nullable();
+            $table->decimal('rating_tmdb', 3, 1)->nullable();
             $table->string('kinopoisk_id', 20)->nullable()->index();
+            $table->string('tmdb_id', 30)->nullable()->index();
             $table->string('imdb_id', 20)->nullable()->index();
             $table->string('shikimori_id', 20)->nullable()->index();
             $table->unsignedSmallInteger('episodes_count')->nullable();
+            $table->string('origin', 20)->default('manual');
+            $table->timestamp('enriched_at')->nullable();
+            $table->timestamp('synced_at')->nullable();
             $table->boolean('is_published')->default(true);
             $table->boolean('is_featured')->default(false);
             $table->boolean('comments_enabled')->default(true);
@@ -87,7 +94,9 @@ return new class extends Migration
             $table->dropConstrainedForeignId('movie_id');
         });
         Schema::table('comments', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('movie_id');
+            $table->dropForeign(['movie_id']);
+            $table->dropIndex(['movie_id', 'created_at']);
+            $table->dropColumn('movie_id');
         });
 
         Schema::dropIfExists('movie_user');

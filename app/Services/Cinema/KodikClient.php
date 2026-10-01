@@ -71,6 +71,34 @@ class KodikClient
         ]))['results'] ?? []);
     }
 
+    /**
+     * Оновлення каталогу Kodik сторінками по 100 (через next_page).
+     *
+     * @return \Generator<int, list<array<string, mixed>>>
+     */
+    public function updates(?string $types, int $pages): \Generator
+    {
+        $next = null;
+        for ($i = 0; $i < $pages; $i++) {
+            $json = $next
+                ? $this->request($next, [])
+                : $this->request('/list', array_filter([
+                    'limit' => 100,
+                    'sort' => 'updated_at',
+                    'order' => 'desc',
+                    'types' => $types,
+                    'with_material_data' => 'true',
+                ]));
+
+            yield self::group($json['results'] ?? []);
+
+            $next = is_string($json['next_page'] ?? null) && self::trustedHost($json['next_page']) ? $json['next_page'] : null;
+            if (! $next) {
+                return;
+            }
+        }
+    }
+
     public function test(): bool
     {
         try {
@@ -170,6 +198,13 @@ class KodikClient
         ];
     }
 
+    private static function trustedHost(string $url): bool
+    {
+        $host = parse_url($url, PHP_URL_HOST);
+
+        return is_string($host) && ($host === parse_url((string) config('services.kodik.api_url'), PHP_URL_HOST) || str_contains($host, 'kodik'));
+    }
+
     private static function str(mixed $value): ?string
     {
         return is_scalar($value) && trim((string) $value) !== '' ? trim((string) $value) : null;
@@ -198,9 +233,13 @@ class KodikClient
             throw new CinemaException('Kodik не налаштовано адміністратором.', 503);
         }
 
+        $url = preg_match('#^https?://#', $path) ? $path : rtrim((string) config('services.kodik.api_url'), '/').$path;
+        if (! str_contains($url, 'token=')) {
+            $params['token'] = $this->token();
+        }
+
         try {
-            $response = Http::acceptJson()->timeout(15)
-                ->get(rtrim((string) config('services.kodik.api_url'), '/').$path, [...$params, 'token' => $this->token()]);
+            $response = Http::acceptJson()->timeout(20)->get($url, $params);
         } catch (ConnectionException) {
             throw new CinemaException('Kodik не відповідає. Спробуйте пізніше.');
         }

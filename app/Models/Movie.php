@@ -33,6 +33,13 @@ use Illuminate\Support\Facades\Storage;
  * @property float|null $rating_kp
  * @property float|null $rating_imdb
  * @property float|null $rating_shikimori
+ * @property float|null $rating_tmdb
+ * @property string|null $tagline
+ * @property string|null $trailer_url
+ * @property string|null $tmdb_id
+ * @property string $origin
+ * @property Carbon|null $enriched_at
+ * @property Carbon|null $synced_at
  * @property string|null $kinopoisk_id
  * @property string|null $imdb_id
  * @property string|null $shikimori_id
@@ -54,6 +61,7 @@ use Illuminate\Support\Facades\Storage;
     'user_id', 'slug', 'type', 'title', 'title_original', 'year', 'description', 'poster_url', 'backdrop_url',
     'genres', 'countries', 'duration', 'age_rating', 'rating_kp', 'rating_imdb', 'rating_shikimori',
     'kinopoisk_id', 'imdb_id', 'shikimori_id', 'episodes_count', 'is_published', 'is_featured', 'comments_enabled',
+    'tagline', 'trailer_url', 'rating_tmdb', 'tmdb_id', 'origin', 'enriched_at', 'synced_at',
 ])]
 class Movie extends Model
 {
@@ -65,6 +73,12 @@ class Movie extends Model
         'anime' => 'Аніме',
         'cartoon' => 'Мультфільм',
         'documentary' => 'Документальне',
+    ];
+
+    public const ORIGINS = [
+        'manual' => 'Вручну',
+        'kodik' => 'Kodik',
+        'flixcdn' => 'FlixCDN',
     ];
 
     public const STATUSES = [
@@ -82,6 +96,9 @@ class Movie extends Model
             'rating_kp' => 'float',
             'rating_imdb' => 'float',
             'rating_shikimori' => 'float',
+            'rating_tmdb' => 'float',
+            'enriched_at' => 'datetime',
+            'synced_at' => 'datetime',
             'is_published' => 'boolean',
             'is_featured' => 'boolean',
             'comments_enabled' => 'boolean',
@@ -185,7 +202,7 @@ class Movie extends Model
             'poster' => $this->poster,
             'backdrop' => $this->backdrop,
             'genres' => array_slice($this->genres ?? [], 0, 3),
-            'rating' => $this->rating_kp ?? $this->rating_imdb ?? $this->rating_shikimori ?? $this->userRating(),
+            'rating' => $this->rating_kp ?? $this->rating_imdb ?? $this->rating_tmdb ?? $this->rating_shikimori ?? $this->userRating(),
             'age_rating' => $this->age_rating,
             'episodes_count' => $this->episodes_count,
         ];

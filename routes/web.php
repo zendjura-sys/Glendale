@@ -194,10 +194,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::get('create', [Admin\CinemaController::class, 'create'])->name('create');
             Route::post('/', [Admin\CinemaController::class, 'store'])->name('store');
             Route::get('import', [Admin\CinemaController::class, 'import'])->name('import');
+            Route::put('auto', [Admin\CinemaController::class, 'updateAuto'])->name('auto.update');
+            Route::post('auto/run', [Admin\CinemaController::class, 'runAuto'])->middleware('throttle:10,1')->name('auto.run');
             Route::middleware('throttle:60,1')->group(function () {
-                Route::get('kodik/search', [Admin\CinemaController::class, 'kodikSearch'])->name('kodik.search');
-                Route::get('kodik/latest', [Admin\CinemaController::class, 'kodikLatest'])->name('kodik.latest');
-                Route::post('kodik/import', [Admin\CinemaController::class, 'kodikImport'])->name('kodik.import');
+                Route::get('remote/{provider}/search', [Admin\CinemaController::class, 'remoteSearch'])->whereIn('provider', ['kodik', 'flixcdn'])->name('remote.search');
+                Route::get('remote/{provider}/latest', [Admin\CinemaController::class, 'remoteLatest'])->whereIn('provider', ['kodik', 'flixcdn'])->name('remote.latest');
+                Route::post('remote/import', [Admin\CinemaController::class, 'remoteImport'])->name('remote.import');
             });
             Route::whereNumber(['movie', 'source'])->group(function () {
                 Route::get('{movie}/edit', [Admin\CinemaController::class, 'edit'])->name('edit');
@@ -206,14 +208,14 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
                 Route::delete('{movie}', [Admin\CinemaController::class, 'destroy'])->name('destroy');
                 Route::post('{movie}/restore', [Admin\CinemaController::class, 'restore'])->name('restore');
                 Route::post('{movie}/refresh', [Admin\CinemaController::class, 'refresh'])->middleware('throttle:20,1')->name('refresh');
+                Route::post('{movie}/enrich', [Admin\CinemaController::class, 'enrich'])->middleware('throttle:30,1')->name('enrich');
                 Route::post('{movie}/sources', [Admin\CinemaController::class, 'storeSource'])->name('sources.store');
                 Route::delete('{movie}/sources/{source}', [Admin\CinemaController::class, 'destroySource'])->name('sources.destroy');
             });
         });
         Route::get('integrations', [Admin\IntegrationController::class, 'index'])->name('integrations.index');
-        Route::put('integrations/kodik', [Admin\IntegrationController::class, 'updateKodik'])->name('integrations.kodik');
-        Route::post('integrations/kodik/test', [Admin\IntegrationController::class, 'testKodik'])->middleware('throttle:10,1')->name('integrations.kodik.test');
-        Route::put('integrations/flixcdn', [Admin\IntegrationController::class, 'updateFlixcdn'])->name('integrations.flixcdn');
+        Route::put('integrations/cinema/{provider}', [Admin\IntegrationController::class, 'updateCinema'])->name('integrations.cinema');
+        Route::post('integrations/cinema/{provider}/test', [Admin\IntegrationController::class, 'testCinema'])->middleware('throttle:20,1')->name('integrations.cinema.test');
         Route::put('integrations/spotify', [Admin\IntegrationController::class, 'updateSpotify'])->name('integrations.spotify');
         Route::post('integrations/spotify/test', [Admin\IntegrationController::class, 'testSpotify'])->middleware('throttle:10,1')->name('integrations.spotify.test');
         Route::get('stickers', [Admin\StickerController::class, 'index'])->name('stickers.index');

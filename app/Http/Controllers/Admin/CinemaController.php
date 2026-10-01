@@ -3,12 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SyncCinemaCatalog;
 use App\Models\Movie;
 use App\Models\MovieSource;
+use App\Services\Cinema\CinemaAutoImport;
 use App\Services\Cinema\CinemaException;
 use App\Services\Cinema\CinemaService;
+use App\Services\Cinema\FlixcdnClient;
 use App\Services\Cinema\FlixcdnPlayer;
 use App\Services\Cinema\KodikClient;
+use App\Services\Cinema\Metadata\MetadataEnricher;
+use App\Services\Cinema\Metadata\MetadataProvider;
 use App\Services\ImageStorage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -23,13 +28,16 @@ use Inertia\Response;
 
 class CinemaController extends Controller
 {
-    public const FILTERS = ['all', 'published', 'hidden', 'featured', 'no_sources', 'trashed'];
+    public const FILTERS = ['all', 'published', 'hidden', 'featured', 'no_sources', 'not_enriched', 'trashed'];
 
     public function __construct(
         private readonly CinemaService $cinema,
         private readonly KodikClient $kodik,
         private readonly FlixcdnPlayer $flixcdn,
+        private readonly FlixcdnClient $flixcdnApi,
         private readonly ImageStorage $images,
+        private readonly MetadataEnricher $enricher,
+        private readonly CinemaAutoImport $autoImport,
     ) {}
 
     public function index(Request $request): Response
@@ -50,6 +58,7 @@ class CinemaController extends Controller
                 'hidden' => $q->where('is_published', false),
                 'featured' => $q->where('is_featured', true),
                 'no_sources' => $q->doesntHave('sources'),
+                'not_enriched' => $q->whereNull('enriched_at'),
                 'trashed' => $q->onlyTrashed(),
                 default => $q,
             })
@@ -67,6 +76,9 @@ class CinemaController extends Controller
                 'kinopoisk_id' => $m->kinopoisk_id,
                 'imdb_id' => $m->imdb_id,
                 'shikimori_id' => $m->shikimori_id,
+                'tmdb_id' => $m->tmdb_id,
+                'origin' => $m->origin,
+                'enriched_at' => $m->enriched_at?->toIso8601String(),
                 'created_at' => $m->created_at->toIso8601String(),
                 'deleted_at' => $m->deleted_at?->toIso8601String(),
             ]);
@@ -83,9 +95,71 @@ class CinemaController extends Controller
                 'views' => (int) Movie::query()->sum('views_count'),
                 'watchers' => DB::table('movie_user')->whereNotNull('status')->count(),
                 'trashed' => Movie::onlyTrashed()->count(),
+                'not_enriched' => Movie::query()->whereNull('enriched_at')->count(),
+                'auto' => Movie::query()->where('origin', '!=', 'manual')->count(),
             ],
             'providers' => $this->providers(),
+            'auto' => [
+                'config' => $this->autoImport->config(),
+                'last' => $this->autoImport->lastRun(),
+                'running' => ! Cache::lock('cinema.sync')->get(fn () => true),
+                'kodik_types' => collect(CinemaAutoImport::KODIK_TYPES)->map(fn ($label, $key) => ['key' => $key, 'label' => $label])->values(),
+                'intervals' => CinemaAutoImport::INTERVALS,
+            ],
         ]);
+    }
+
+    public function updateAuto(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'enabled' => ['required', 'boolean'],
+            'providers' => ['array'],
+            'providers.*' => [Rule::in(CinemaService::PROVIDERS)],
+            'kodik_types' => ['array'],
+            'kodik_types.*' => [Rule::in(array_keys(CinemaAutoImport::KODIK_TYPES))],
+            'pages' => ['required', 'integer', 'between:1,20'],
+            'interval' => ['required', Rule::in(CinemaAutoImport::INTERVALS)],
+            'publish' => ['required', 'boolean'],
+            'enrich' => ['required', 'boolean'],
+            'enrich_limit' => ['required', 'integer', 'between:1,500'],
+            'min_year' => ['nullable', 'integer', 'between:1900,2100'],
+            'only_with_ids' => ['required', 'boolean'],
+        ]);
+
+        $this->autoImport->save([...$data, 'providers' => array_values($data['providers'] ?? []), 'kodik_types' => array_values($data['kodik_types'] ?? [])]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => $data['enabled'] ? 'Автонаповнення увімкнено.' : 'Налаштування збережено.']);
+
+        return back();
+    }
+
+    public function runAuto(Request $request): RedirectResponse
+    {
+        $enrichOnly = $request->boolean('enrich_only');
+        SyncCinemaCatalog::dispatch($enrichOnly);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => $enrichOnly
+            ? 'Збагачення метаданими запущено у фоні.'
+            : 'Синхронізацію запущено у фоні — нові тайтли з’являться за кілька хвилин.']);
+
+        return back();
+    }
+
+    public function enrich(int $movie): RedirectResponse
+    {
+        if (! $this->enricher->available()) {
+            throw new CinemaException('Підключіть TMDB, Shikimori, OMDb або КіноПошук в інтеграціях.', 422);
+        }
+
+        $result = $this->enricher->enrich(Movie::withTrashed()->findOrFail($movie));
+        Cache::forget('cinema.genres');
+
+        Inertia::flash('toast', match (true) {
+            $result['providers'] === [] && $result['errors'] !== [] => ['type' => 'error', 'message' => $result['errors'][0]],
+            $result['providers'] === [] => ['type' => 'error', 'message' => 'Жодне джерело не знайшло цей фільм. Додайте ID КіноПошуку, IMDb чи TMDB.'],
+            default => ['type' => 'success', 'message' => 'Дані з '.implode(', ', $result['providers']).': оновлено полів — '.count($result['changed']).'.'],
+        });
+
+        return back();
     }
 
     public function create(): Response
@@ -192,8 +266,9 @@ class CinemaController extends Controller
 
     public function refresh(int $movie): RedirectResponse
     {
-        $count = $this->cinema->refreshKodik(Movie::withTrashed()->findOrFail($movie));
-        Inertia::flash('toast', ['type' => 'success', 'message' => "Kodik: оновлено озвучок — {$count}."]);
+        $result = $this->cinema->refresh(Movie::withTrashed()->findOrFail($movie));
+        $summary = collect($result)->map(fn (int $n, string $p) => ($p === 'kodik' ? 'Kodik' : 'FlixCDN').": {$n}")->implode(', ');
+        Inertia::flash('toast', ['type' => 'success', 'message' => "Плеєри оновлено ({$summary})."]);
 
         return back();
     }
@@ -201,35 +276,46 @@ class CinemaController extends Controller
     public function import(): Response
     {
         return Inertia::render('admin/cinema-import', [
-            'configured' => $this->kodik->configured(),
+            'providers' => [
+                'kodik' => ['configured' => $this->kodik->configured(), 'search' => $this->kodik->configured(), 'latest' => $this->kodik->configured()],
+                'flixcdn' => ['configured' => $this->flixcdnApi->configured(), 'search' => filled($this->flixcdnApi->searchTemplate()), 'latest' => filled($this->flixcdnApi->updatesTemplate())],
+            ],
             'types' => $this->typeOptions(),
         ]);
     }
 
-    public function kodikSearch(Request $request): JsonResponse
+    public function remoteSearch(Request $request, string $provider): JsonResponse
     {
         $data = $request->validate([
             'q' => ['required', 'string', 'max:150'],
             'by' => ['nullable', Rule::in(['title', 'kinopoisk_id', 'imdb_id', 'shikimori_id'])],
         ]);
+        $criteria = [($data['by'] ?? 'title') => trim($data['q'])];
 
-        return $this->candidatesResponse($this->kodik->search([($data['by'] ?? 'title') => trim($data['q'])]));
+        return $this->candidatesResponse($provider === 'kodik' ? $this->kodik->search($criteria) : $this->flixcdnApi->search($criteria));
     }
 
-    public function kodikLatest(Request $request): JsonResponse
-    {
-        $data = $request->validate(['types' => ['nullable', 'string', 'max:200']]);
-
-        return $this->candidatesResponse($this->kodik->latest($data['types'] ?? null, 60));
-    }
-
-    public function kodikImport(Request $request): JsonResponse
+    public function remoteLatest(Request $request, string $provider): JsonResponse
     {
         $data = $request->validate([
+            'types' => ['nullable', 'string', 'max:200'],
+            'page' => ['nullable', 'integer', 'between:1,50'],
+        ]);
+
+        return $this->candidatesResponse($provider === 'kodik'
+            ? $this->kodik->latest($data['types'] ?? null, 60)
+            : $this->flixcdnApi->updates((int) ($data['page'] ?? 1))['candidates']);
+    }
+
+    public function remoteImport(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'provider' => ['required', Rule::in(CinemaService::PROVIDERS)],
             'key' => ['required', 'string', 'max:200'],
             'q' => ['nullable', 'string', 'max:150'],
             'type' => ['nullable', Rule::in(array_keys(Movie::TYPES))],
             'publish' => ['sometimes', 'boolean'],
+            'enrich' => ['sometimes', 'boolean'],
         ]);
 
         [$kind, $value] = array_pad(explode(':', $data['key'], 2), 2, '');
@@ -240,24 +326,26 @@ class CinemaController extends Controller
             default => ['title' => (string) ($data['q'] ?? '')],
         };
 
-        $candidate = collect($this->kodik->search($criteria))->firstWhere('key', $data['key']);
+        $results = $data['provider'] === 'kodik' ? $this->kodik->search($criteria) : $this->flixcdnApi->search($criteria);
+        $candidate = collect($results)->firstWhere('key', $data['key']);
         if (! $candidate) {
-            throw new CinemaException('Kodik більше не віддає цей матеріал. Оновіть пошук.', 404);
+            throw new CinemaException('Провайдер більше не віддає цей матеріал. Оновіть пошук.', 404);
         }
         if (isset($data['type'])) {
             $candidate['type'] = $data['type'];
         }
 
-        $movie = $this->cinema->import($candidate, $request->user());
-        if ($request->has('publish')) {
-            $movie->update(['is_published' => $request->boolean('publish')]);
+        $movie = $this->cinema->import($candidate, $request->user(), $data['provider'], $request->has('publish') ? $request->boolean('publish') : null);
+        $enriched = null;
+        if ($request->boolean('enrich', true) && $this->enricher->available()) {
+            $enriched = $this->enricher->enrich($movie)['providers'];
         }
         Cache::forget('cinema.genres');
 
         return response()->json([
-            'movie' => [...$movie->toCard(), 'admin_href' => '/admin/cinema/'.$movie->id.'/edit'],
+            'movie' => [...$movie->fresh()->toCard(), 'admin_href' => '/admin/cinema/'.$movie->id.'/edit'],
             'sources' => $movie->sources()->count(),
-            'message' => "«{$movie->title}» імпортовано: озвучок — ".count($candidate['sources']).'.',
+            'message' => "«{$movie->title}» імпортовано: озвучок — ".count($candidate['sources']).($enriched ? '; метадані: '.implode(', ', $enriched) : '').'.',
         ]);
     }
 
@@ -302,7 +390,7 @@ class CinemaController extends Controller
             'movie' => $movie ? [
                 ...$movie->toCard(),
                 ...$movie->only([
-                    'description', 'poster_url', 'backdrop_url', 'countries', 'duration', 'age_rating', 'rating_kp', 'rating_imdb', 'rating_shikimori',
+                    'tagline', 'trailer_url', 'rating_tmdb', 'tmdb_id', 'origin', 'description', 'poster_url', 'backdrop_url', 'countries', 'duration', 'age_rating', 'rating_kp', 'rating_imdb', 'rating_shikimori',
                     'kinopoisk_id', 'imdb_id', 'shikimori_id', 'is_published', 'is_featured', 'comments_enabled', 'views_count', 'watchers_count',
                     'comments_count', 'ratings_count',
                 ]),
@@ -312,11 +400,14 @@ class CinemaController extends Controller
                 'has_backdrop_file' => $movie->backdrop_path !== null,
                 'user_rating' => $movie->userRating(),
                 'deleted_at' => $movie->deleted_at?->toIso8601String(),
+                'enriched_at' => $movie->enriched_at?->toIso8601String(),
+                'synced_at' => $movie->synced_at?->toIso8601String(),
                 'sources' => $movie->sources->map(fn (MovieSource $s) => $s->toPlayer())->values(),
                 'flixcdn_link' => $this->flixcdn->link($movie),
             ] : null,
             'types' => $this->typeOptions(),
             'providers' => $this->providers(),
+            'metadata' => collect($this->enricher->providers())->map(fn (MetadataProvider $p) => ['key' => $p->key(), 'label' => $p->label(), 'configured' => $p->configured()])->values(),
         ]);
     }
 
@@ -337,6 +428,10 @@ class CinemaController extends Controller
             'rating_kp' => ['nullable', 'numeric', 'between:0,10'],
             'rating_imdb' => ['nullable', 'numeric', 'between:0,10'],
             'rating_shikimori' => ['nullable', 'numeric', 'between:0,10'],
+            'rating_tmdb' => ['nullable', 'numeric', 'between:0,10'],
+            'tagline' => ['nullable', 'string', 'max:300'],
+            'trailer_url' => ['nullable', 'url:https', 'max:500'],
+            'tmdb_id' => ['nullable', 'string', 'max:30', 'regex:/^(movie|tv):\d+$/'],
             'kinopoisk_id' => ['nullable', 'string', 'max:20', 'regex:/^\d+$/'],
             'imdb_id' => ['nullable', 'string', 'max:20', 'regex:/^tt\d+$/'],
             'shikimori_id' => ['nullable', 'string', 'max:20', 'regex:/^\d+$/'],
@@ -353,6 +448,7 @@ class CinemaController extends Controller
             'imdb_id.regex' => 'IMDb ID має вигляд tt0111161.',
             'kinopoisk_id.regex' => 'ID КіноПошуку — лише цифри.',
             'shikimori_id.regex' => 'ID Shikimori — лише цифри.',
+            'tmdb_id.regex' => 'TMDB ID має вигляд movie:603 або tv:1399.',
         ]);
 
         $clean = fn (?array $list) => array_values(array_unique(array_filter(array_map(fn ($v) => trim((string) $v), $list ?? []))));
@@ -363,6 +459,9 @@ class CinemaController extends Controller
             'countries' => $clean($data['countries'] ?? null) ?: null,
         ]);
         $movie->slug ??= $this->cinema->uniqueSlug($movie->title, $movie->year);
+        if (filled($data['trailer_url'] ?? null)) {
+            $movie->trailer_url = $this->embedLink($data['trailer_url']);
+        }
 
         foreach (['poster' => 1000, 'backdrop' => 2400] as $field => $side) {
             $column = $field.'_path';
@@ -403,10 +502,15 @@ class CinemaController extends Controller
     }
 
     /**
-     * @return array{kodik: bool, flixcdn: bool}
+     * @return array{kodik: bool, flixcdn: bool, flixcdn_api: bool, metadata: bool}
      */
     private function providers(): array
     {
-        return ['kodik' => $this->kodik->configured(), 'flixcdn' => $this->flixcdn->configured()];
+        return [
+            'kodik' => $this->kodik->configured(),
+            'flixcdn' => $this->flixcdn->configured() || $this->flixcdnApi->configured(),
+            'flixcdn_api' => $this->flixcdnApi->configured(),
+            'metadata' => $this->enricher->available(),
+        ];
     }
 }

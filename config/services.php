@@ -51,6 +51,28 @@ return [
     'flixcdn' => [
         'token' => env('FLIXCDN_TOKEN'),
         'template' => env('FLIXCDN_TEMPLATE'),
+        'api_search' => env('FLIXCDN_API_SEARCH'),
+        'api_updates' => env('FLIXCDN_API_UPDATES'),
+    ],
+
+    'tmdb' => [
+        'token' => env('TMDB_TOKEN'),
+        'api_url' => env('TMDB_API_URL', 'https://api.themoviedb.org/3'),
+        'image_url' => env('TMDB_IMAGE_URL', 'https://image.tmdb.org/t/p'),
+    ],
+
+    'omdb' => [
+        'key' => env('OMDB_KEY'),
+        'api_url' => env('OMDB_API_URL', 'https://www.omdbapi.com'),
+    ],
+
+    'kinopoisk' => [
+        'key' => env('KINOPOISK_KEY'),
+        'api_url' => env('KINOPOISK_API_URL', 'https://kinopoiskapiunofficial.tech'),
+    ],
+
+    'shikimori' => [
+        'url' => env('SHIKIMORI_URL', 'https://shikimori.one'),
     ],
 
 ];

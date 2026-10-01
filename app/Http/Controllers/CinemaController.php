@@ -342,8 +342,8 @@ class CinemaController extends Controller
         return [
             'users' => $rows->filter(fn ($r) => $users->has($r->user_id))->map(fn ($r) => [
                 ...$users[$r->user_id]->toCard(),
-                'status' => $r->status,
-                'rating' => $r->rating !== null ? (int) $r->rating : null,
+                'movie_status' => $r->status,
+                'movie_rating' => $r->rating !== null ? (int) $r->rating : null,
             ])->values()->all(),
             'total' => $query->count(),
         ];
