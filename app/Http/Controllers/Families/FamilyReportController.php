@@ -110,7 +110,7 @@ class FamilyReportController extends FamilyBaseController
         $types = collect(array_keys(FamilyReport::TYPES))->filter(fn ($t) => $can['reports.'.$t])->values()->all();
 
         $pending = FamilyReport::query()
-            ->with(['submitter.user', 'beneficiary.user', 'proofs'])
+            ->with(['submitter.user', 'beneficiary.user', 'reviewer', 'proofs'])
             ->where('family_id', $family->id)
             ->where('status', FamilyReport::STATUS_PENDING)
             ->whereIn('type', $types ?: ['-'])

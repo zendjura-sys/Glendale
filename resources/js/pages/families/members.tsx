@@ -85,7 +85,7 @@ export default function FamilyMembers(props: Props) {
         );
 
     return (
-        <FamilyShell {...props} title="Склад сім’ї">
+        <FamilyShell {...props} title="Учасники">
             <div className="flex flex-wrap items-center gap-2">
                 {can['members.manage'] && (
                     <Segmented
@@ -389,33 +389,34 @@ function MemberDialog({
                 </div>
             )}
 
-            {(manage || (isSelf && can['ranks.manage'])) && (
-                <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-                    <Field
-                        label="Обов’язки"
-                        hint="Напр. «Казначей», «Відповідальний за склад»"
-                        error={form.errors.duties}
-                    >
-                        <input
-                            value={form.data.duties}
-                            onChange={(e) =>
-                                form.setData('duties', e.target.value)
-                            }
-                            maxLength={160}
-                            className={inputClass}
-                        />
-                    </Field>
-                    <div className="flex items-end">
-                        <button
-                            type="button"
-                            onClick={() => save(['duties'])}
-                            className={cn(btnGhost, 'h-11')}
+            {member.rank === 9 &&
+                (manage || (isSelf && can['ranks.manage'])) && (
+                    <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                        <Field
+                            label="Обов’язки"
+                            hint="Напр. «Казначей», «Відповідальний за склад»"
+                            error={form.errors.duties}
                         >
-                            Зберегти
-                        </button>
+                            <input
+                                value={form.data.duties}
+                                onChange={(e) =>
+                                    form.setData('duties', e.target.value)
+                                }
+                                maxLength={160}
+                                className={inputClass}
+                            />
+                        </Field>
+                        <div className="flex items-end">
+                            <button
+                                type="button"
+                                onClick={() => save(['duties'])}
+                                className={cn(btnGhost, 'h-11')}
+                            >
+                                Зберегти
+                            </button>
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
 
             {can['members.manage'] && (manage || isSelf) && (
                 <div className="grid gap-3 rounded-2xl bg-white/[0.03] p-3 sm:grid-cols-[1fr_140px_auto]">

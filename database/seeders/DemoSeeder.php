@@ -7,7 +7,9 @@ use App\Models\Community;
 use App\Models\CommunityMember;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
+use App\Models\Family;
 use App\Models\Friendship;
+use App\Models\GtaServer;
 use App\Models\Like;
 use App\Models\Message;
 use App\Models\MessageAttachment;
@@ -22,10 +24,20 @@ use App\Models\Track;
 use App\Models\User;
 use App\Services\Cinema\CinemaService;
 use App\Services\CommunityService;
+use App\Services\Families\Discipline;
+use App\Services\Families\FamilyBank;
+use App\Services\Families\FamilyEvents;
+use App\Services\Families\FamilyService;
+use App\Services\Families\ReportService;
+use App\Services\Families\Warehouse;
 use App\Services\MusicService;
 use App\Services\PhotoService;
+use App\Services\Servers\ServerCatalog;
+use App\Services\Servers\ServerDirectory;
+use App\Services\Servers\ServerIconFetcher;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
@@ -250,6 +262,156 @@ SVG;
         Model::unguarded(fn () => $this->seedPhotos($users->values()->all()));
         Model::unguarded(fn () => $this->seedMusic($users->values()->all()));
         Model::unguarded(fn () => $this->seedCinema($users->values()->all()));
+        $this->seedFamilies($users->values()->all());
+    }
+
+    private const FAMILY_ROSTER = [
+        ['Marco_Scaletta', '10001', 10, null],
+        ['Elena_Moretti', '20417', 9, 'Казначей · виплати й депозити'],
+        ['Andrew_Bonucci', '31852', 8, null],
+        ['Sofia_Ricci', '18834', 7, null],
+        ['Dmitry_Torres', '44120', 6, null],
+        ['Anastasia_Greco', '27766', 5, null],
+        ['Max_Oliver', '39001', 4, null],
+        ['Victoria_Shade', '51290', 3, null],
+        ['Ivan_Polar', '60212', 2, null],
+        ['Kate_Boyko', '73345', 1, null],
+    ];
+
+    /**
+     * @param  list<User>  $u
+     */
+    private function seedFamilies(array $u): void
+    {
+        $created = app(ServerCatalog::class)->import();
+        foreach ($created as $server) {
+            rescue(fn () => app(ServerIconFetcher::class)->fetch($server), report: false);
+        }
+        rescue(fn () => app(ServerDirectory::class)->refreshStats(), report: false);
+
+        $server = GtaServer::query()->published()->where('slug', 'quant-rp')->first() ?? GtaServer::query()->published()->first();
+        if (! $server || Family::query()->where('tag', 'SCL')->exists()) {
+            return;
+        }
+
+        $families = app(FamilyService::class);
+        $reports = app(ReportService::class);
+        $bank = app(FamilyBank::class);
+
+        [$nick, $static] = self::FAMILY_ROSTER[0];
+        $family = $families->create($u[0], [
+            'server_id' => $server->id,
+            'name' => 'Scaletta Family',
+            'tag' => 'SCL',
+            'description' => "Сім’я з 2023 року. Бізвари щодня з 18:00, контракти, власний бізнес на Вайнвуді.\nШукаємо адекватних гравців 16+ з мікрофоном.",
+            'rp_nickname' => $nick,
+            'static_id' => $static,
+        ]);
+        $cover = $this->download('https://picsum.photos/seed/gc-family-scl/1920/480', 'demo/families/scl-cover.jpg');
+        $family->forceFill(['cover_path' => $cover])->save();
+        $families->setStatus($family, $u[0], Family::STATUS_VERIFIED, null);
+        $family->refresh();
+
+        $leader = $family->members()->where('user_id', $u[0]->id)->firstOrFail();
+        $members = [0 => $leader];
+        foreach (array_slice(self::FAMILY_ROSTER, 1) as $i => [$nick, $static, $rank, $duties]) {
+            $member = $families->apply($family, $u[$i + 1], ['rp_nickname' => $nick, 'static_id' => $static, 'note' => null]);
+            $families->accept($family, $leader, $member);
+            if ($rank > 1) {
+                $families->setRank($family, $leader, $member->refresh(), $rank);
+            }
+            if ($duties) {
+                $families->setDuties($family, $leader, $member->refresh(), $duties);
+            }
+            $members[$i + 1] = $member->refresh();
+        }
+        foreach ([['Oleg_Hunter', '81020', 'Грав у Corleone 2 місяці, є мікрофон, онлайн 4+ год.'], ['Yulia_Frost', '82244', 'Хочу в бізвари, маю досвід.']] as $j => [$nick, $static, $note]) {
+            $families->apply($family, $u[11 + $j], ['rp_nickname' => $nick, 'static_id' => $static, 'note' => $note]);
+        }
+
+        $bank->treasury($family, $leader, 2_500_000_00, 'Стартовий капітал сім’ї');
+
+        $proof = function (int $n): UploadedFile {
+            $path = $this->download("https://picsum.photos/seed/gc-proof-{$n}/1280/720", "demo/proofs/{$n}.jpg");
+
+            return $path
+                ? new UploadedFile(Storage::disk('public')->path($path), "proof-{$n}.jpg", 'image/jpeg', null, true)
+                : UploadedFile::fake()->image("proof-{$n}.jpg", 1280 + $n, 720);
+        };
+
+        $today = ReportService::today();
+        $yesterday = $today->subDay()->toDateString();
+        $approved = [
+            [1, ['type' => 'bizwar', 'wins' => 3, 'losses' => 1, 'hours' => [18, 19, 20, 21]], $yesterday],
+            [2, ['type' => 'bizwar', 'wins' => 2, 'losses' => 2, 'hours' => [18, 20, 21, 22]], $yesterday],
+            [3, ['type' => 'contract', 'tier' => 'heavy', 'count' => 4], $yesterday],
+            [4, ['type' => 'contract', 'tier' => 'medium', 'count' => 6], $yesterday],
+            [5, ['type' => 'bizwar', 'wins' => 4, 'losses' => 0, 'hours' => [17, 18, 19, 20]], $yesterday],
+            [6, ['type' => 'investment', 'amount' => 150000], $yesterday],
+            [2, ['type' => 'contract', 'tier' => 'light', 'count' => 8], $today->toDateString()],
+            [7, ['type' => 'contract', 'tier' => 'heavy', 'count' => 2], $today->toDateString()],
+        ];
+        $n = 0;
+        foreach ($approved as [$who, $input, $date]) {
+            $report = $reports->submit($family, $members[$who], ['for' => 'self', 'event_date' => $date, ...$input], [$proof(++$n)]);
+            $reports->review($family, $report, $leader, true, null);
+        }
+
+        $pending = [
+            [3, ['type' => 'bizwar', 'wins' => 2, 'losses' => 1, 'hours' => [19, 20, 21], 'description' => 'Вайнвуд, 3 точки'], 'self'],
+            [4, ['type' => 'contract', 'tier' => 'heavy', 'count' => 3], 'self'],
+            [5, ['type' => 'bizwar', 'wins' => 1, 'losses' => 2, 'hours' => [18, 21, 22]], 'friend'],
+            [8, ['type' => 'contract', 'tier' => 'medium', 'count' => 5], 'self'],
+            [9, ['type' => 'other', 'description' => 'Привіз 40 аптечок на склад з власних грошей'], 'self'],
+        ];
+        foreach ($pending as [$who, $input, $for]) {
+            $reports->submit($family, $members[$who], [
+                'for' => $for,
+                'beneficiary_id' => $for === 'friend' ? $members[8]->id : null,
+                'event_date' => $today->toDateString(),
+                ...$input,
+            ], [$proof(++$n)]);
+        }
+        $rejected = $reports->submit($family, $members[6], ['for' => 'self', 'event_date' => $yesterday, 'type' => 'contract', 'tier' => 'heavy', 'count' => 5], [$proof(++$n)]);
+        $reports->review($family, $rejected, $members[1], false, 'На скріншоті лише 2 контракти');
+
+        $members[3]->refresh();
+        $bank->requestCashout($family, $members[3], 2000_00, 'Після 20:00 біля маєтку');
+        $bank->openDeposit($family, $members[1]->refresh(), 1000_00, 'weekly', 2);
+
+        $warehouse = app(Warehouse::class);
+        $items = $family->items()->orderBy('id')->get()->values();
+        foreach ($items as $i => $item) {
+            if ($i === 2) {
+                $item->update(['min_stock' => 10]);
+            }
+            $warehouse->adjust($family, $leader, $item, [12, 340, 260, 180, 90, 6, 14, 3][$i] ?? 50, 'Інвентаризація при відкритті складу');
+        }
+        foreach ([[4, 0, 'take', 2], [5, 1, 'take', 60], [6, 1, 'put', 120], [7, 5, 'take', 3], [8, 1, 'take', 150]] as [$who, $index, $action, $qty]) {
+            if ($item = $items[$index] ?? null) {
+                rescue(fn () => $warehouse->move($family, $members[$who], $item->refresh(), $action, $qty, $action === 'put' ? 'Закупівля на бізвар' : null), report: false);
+            }
+        }
+
+        app(Discipline::class)->issue($family, $members[2], $members[9], 'warn', 'Запізнення на бізвар без попередження');
+
+        $events = app(FamilyEvents::class);
+        $events->create($family, $leader, [
+            'title' => 'Тижневі збори сім’ї',
+            'type' => 'meeting',
+            'description' => 'Підсумки тижня, розподіл обов’язків, план бізварів.',
+            'starts_at' => $today->addDay()->setTime(20, 0)->utc(),
+            'points' => 5,
+            'reward' => 500_00,
+        ]);
+        $events->create($family, $members[3], [
+            'title' => 'Тренування стрільби',
+            'type' => 'training',
+            'description' => null,
+            'starts_at' => $today->addDays(2)->setTime(19, 0)->utc(),
+            'points' => 3,
+            'reward' => 0,
+        ]);
     }
 
     /** Відкриті фільми Blender Studio (CC BY) з офіційними трейлерами/фільмами на YouTube. */

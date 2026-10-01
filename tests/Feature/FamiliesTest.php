@@ -17,6 +17,8 @@ use App\Models\FamilyTransaction;
 use App\Models\GtaServer;
 use App\Models\Message;
 use App\Models\User;
+use App\Services\Families\FamilyBank;
+use App\Services\Families\FamilyNotifier;
 use App\Services\Families\FamilyRating;
 use App\Services\Families\FamilyService;
 use App\Services\Families\WeeklyDigest;
@@ -195,6 +197,47 @@ class FamiliesTest extends TestCase
         $this->assertSame(1, $soldier->user->notifications()->count());
     }
 
+    public function test_every_family_page_renders_with_data(): void
+    {
+        $soldier = $this->member();
+        foreach (range(1, 3) as $i) {
+            $this->bizwar($soldier)->assertSessionHasNoErrors();
+        }
+        $this->actingAs($this->leaderUser)->post(route('families.reports.review', [$this->family, FamilyReport::query()->firstOrFail()]), ['decision' => 'approve']);
+        $this->actingAs($soldier->user)->post(route('families.cashouts.store', $this->family), ['amount' => 200])->assertSessionHasNoErrors();
+        $this->actingAs($this->leaderUser)->post(route('families.discipline.store', $this->family), ['member_id' => $soldier->id, 'type' => 'warn', 'reason' => 'Тест'])->assertSessionHasNoErrors();
+        $this->actingAs($this->leaderUser)->post(route('families.events.store', $this->family), ['title' => 'Збори', 'type' => 'meeting', 'starts_at' => now()->addDay()->format('Y-m-d\TH:i')])->assertSessionHasNoErrors();
+
+        $pages = [
+            'families.show' => 'families/overview',
+            'families.reports' => 'families/reports',
+            'families.queue' => 'families/queue',
+            'families.bank' => 'families/bank',
+            'families.warehouse' => 'families/warehouse',
+            'families.members' => 'families/members',
+            'families.discipline' => 'families/discipline',
+            'families.events' => 'families/events',
+            'families.rating' => 'families/rating',
+            'families.audit' => 'families/audit',
+            'families.settings' => 'families/settings',
+        ];
+        foreach ($pages as $route => $component) {
+            $this->actingAs($this->leaderUser)->get(route($route, $this->family))
+                ->assertOk()
+                ->assertInertia(fn (Assert $page) => $page->component($component)->has('family')->has('can'));
+        }
+
+        $this->actingAs($this->leaderUser)->get(route('families.bank', [$this->family, 'scope' => 'family']))->assertOk();
+        $this->actingAs($this->leaderUser)->get(route('families.warehouse', [$this->family, 'tab' => 'log']))->assertOk();
+        $this->actingAs($this->leaderUser)->get(route('families.members', [$this->family, 'tab' => 'applications']))->assertOk();
+        $this->actingAs($this->leaderUser)->get(route('families.queue', [$this->family, 'tab' => 'cashouts']))
+            ->assertInertia(fn (Assert $page) => $page->has('reports', 2)->has('cashouts', 1));
+        $this->actingAs($this->leaderUser)->get(route('families.index'))->assertInertia(fn (Assert $page) => $page->component('families/index')->has('mine', 1));
+        $this->actingAs($this->leaderUser)->get(route('families.create'))->assertInertia(fn (Assert $page) => $page->component('families/create'));
+        $this->actingAs(User::factory()->create())->get(route('families.show', $this->family))
+            ->assertInertia(fn (Assert $page) => $page->component('families/public')->has('leaders', 1));
+    }
+
     public function test_officer_cannot_review_own_report_and_rejection_needs_reason(): void
     {
         $officer = $this->member(7, 'Paulie_Gatto', '30003');
@@ -284,8 +327,8 @@ class FamiliesTest extends TestCase
     public function test_cashout_holds_funds_and_officer_pays_in_game(): void
     {
         $soldier = $this->member();
-        app(\App\Services\Families\FamilyBank::class)->post($this->family, $soldier, 'manual_credit', 500000, 0, $this->leader, 'Премія');
-        app(\App\Services\Families\FamilyBank::class)->post($this->family, null, 'treasury_in', 0, 10_000_000, $this->leader, 'Старт');
+        app(FamilyBank::class)->post($this->family, $soldier, 'manual_credit', 500000, 0, $this->leader, 'Премія');
+        app(FamilyBank::class)->post($this->family, null, 'treasury_in', 0, 10_000_000, $this->leader, 'Старт');
 
         $this->actingAs($soldier->user)->post(route('families.cashouts.store', $this->family), ['amount' => 6000])->assertSessionHasErrors('amount');
         $this->actingAs($soldier->user)->post(route('families.cashouts.store', $this->family), ['amount' => 3000, 'note' => 'На авто'])->assertSessionHasNoErrors();
@@ -311,7 +354,7 @@ class FamiliesTest extends TestCase
     public function test_deposit_matures_with_interest(): void
     {
         $soldier = $this->member();
-        app(\App\Services\Families\FamilyBank::class)->post($this->family, $soldier, 'manual_credit', 500000, 0, $this->leader, 'Премія');
+        app(FamilyBank::class)->post($this->family, $soldier, 'manual_credit', 500000, 0, $this->leader, 'Премія');
 
         $this->actingAs($soldier->user)->post(route('families.deposits.store', $this->family), ['amount' => 2000, 'period' => 'weekly', 'periods' => 2])
             ->assertSessionHasNoErrors();
@@ -420,7 +463,7 @@ class FamiliesTest extends TestCase
         Http::fake(['discord.com/api/webhooks/*' => Http::response(null, 204)]);
         $rich = $this->member();
         $poor = $this->member(2, 'Sal_Tessio', '40004');
-        $bank = app(\App\Services\Families\FamilyBank::class);
+        $bank = app(FamilyBank::class);
         $bank->post($this->family, $rich, 'report_reward', 450000, 0, $this->leader, 'Бізвар');
         $bank->post($this->family, $poor, 'report_reward', 100, 0, $this->leader, 'Копійки');
         $this->family->update(['webhooks' => ['discord' => 'https://discord.com/api/webhooks/123/abc']]);
@@ -448,7 +491,7 @@ class FamiliesTest extends TestCase
         $this->assertSame(2 * 10 + 3, $board->firstWhere('id', $soldier->id)['points']);
 
         $this->family->update(['settings' => [...($this->family->settings ?? []), 'rating' => ['bizwar' => false]]]);
-        app(\App\Services\Families\FamilyNotifier::class)->refresh($this->family, 'settings');
+        app(FamilyNotifier::class)->refresh($this->family, 'settings');
         $board = collect($rating->leaderboard($this->family->fresh(), 'week'));
         $this->assertSame(0, $board->firstWhere('id', $soldier->id)['points']);
         $this->assertSame(2, $board->firstWhere('id', $soldier->id)['bizwar_wins']);

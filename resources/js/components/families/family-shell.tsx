@@ -96,7 +96,7 @@ export function FamilyShell({
         },
         {
             section: 'members',
-            label: 'Склад сім’ї',
+            label: 'Учасники',
             href: `${base}/members`,
             icon: Users,
             badge: badges?.applications,
