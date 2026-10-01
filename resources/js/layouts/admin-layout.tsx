@@ -24,6 +24,7 @@ import { PlayerBar } from '@/components/music/player-bar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { usePlayer } from '@/lib/player';
 import { cn } from '@/lib/utils';
+import { PageTransition } from '@/components/gc/page-transition';
 
 const items = [
     { label: 'Огляд', href: '/admin', icon: LayoutDashboard, exact: true },
@@ -61,7 +62,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
         <div className="relative min-h-dvh">
             <Aurora className="opacity-70" />
 
-            <aside className="fixed inset-y-0 left-0 z-40 hidden w-[256px] flex-col border-r border-white/[0.06] bg-[#060915]/80 p-4 backdrop-blur-2xl lg:flex">
+            <aside className="fixed inset-y-0 left-0 z-40 hidden w-[256px] flex-col border-r border-white/[0.06] bg-[#060915]/80 p-4 backdrop-blur-2xl [view-transition-name:gc-sidebar] lg:flex">
                 <Link
                     href="/admin"
                     className="mb-6 flex items-center gap-3 px-2 pt-1"
@@ -132,7 +133,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                 </div>
             </aside>
 
-            <header className="sticky top-0 z-30 scrollbar-none flex items-center gap-2 overflow-x-auto border-b border-white/[0.06] bg-[#060915]/85 px-3 py-2 backdrop-blur-2xl lg:hidden">
+            <header className="sticky top-0 z-30 scrollbar-none flex items-center gap-2 overflow-x-auto border-b border-white/[0.06] bg-[#060915]/85 px-3 py-2 backdrop-blur-2xl [view-transition-name:gc-topbar] lg:hidden">
                 <Link href="/feed" className="mr-1 shrink-0">
                     <LogoMark className="size-8" />
                 </Link>
@@ -158,7 +159,9 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                     current && 'pb-28 lg:pb-28',
                 )}
             >
-                <div className="mx-auto max-w-[1280px]">{children}</div>
+                <PageTransition className="mx-auto max-w-[1280px] [view-transition-name:gc-main]">
+                    {children}
+                </PageTransition>
             </main>
             {modules.includes('music') && <PlayerBar standalone />}
         </div>

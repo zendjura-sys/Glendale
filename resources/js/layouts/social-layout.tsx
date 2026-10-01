@@ -2,6 +2,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import {
     ChevronDown,
     LayoutDashboard,
+    LayoutGrid,
     LogOut,
     Megaphone,
     MessageCircle,
@@ -9,7 +10,9 @@ import {
     ShieldCheck,
     UserRound,
     UsersRound,
+    X,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import type { PropsWithChildren } from 'react';
 import { Aurora } from '@/components/gc/aurora';
 import { InboxListener } from '@/components/gc/inbox-listener';
@@ -31,6 +34,7 @@ import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useUnreadMessages } from '@/lib/inbox';
 import { usePlayer } from '@/lib/player';
 import { cn } from '@/lib/utils';
+import { PageTransition } from '@/components/gc/page-transition';
 
 function useIsActive() {
     const { currentUrl } = useCurrentUrl();
@@ -56,7 +60,7 @@ function Sidebar() {
     const user = auth.user;
 
     return (
-        <aside className="sticky top-[76px] hidden h-[calc(100dvh-92px)] w-[232px] shrink-0 flex-col lg:flex">
+        <aside className="sticky top-[76px] hidden h-[calc(100dvh-92px)] w-[232px] shrink-0 flex-col [view-transition-name:gc-sidebar] lg:flex">
             <Link
                 href={`/${user.username}`}
                 className="glass group mb-3 flex items-center gap-3 rounded-2xl p-3 transition hover:border-white/15"
@@ -223,7 +227,7 @@ function Topbar() {
     const unreadMessages = useUnreadMessages();
 
     return (
-        <header className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.06] bg-[#05070f]/70 backdrop-blur-2xl">
+        <header className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.06] bg-[#05070f]/70 backdrop-blur-2xl [view-transition-name:gc-topbar]">
             <div className="mx-auto flex h-16 max-w-[1320px] items-center gap-4 px-3 sm:px-5">
                 <Link href="/feed" className="shrink-0 lg:w-[232px]">
                     <Logo className="hidden sm:inline-flex" />
@@ -268,49 +272,226 @@ function Topbar() {
     );
 }
 
-function MobileNav() {
-    const { nav, auth } = usePage().props;
-    const isActive = useIsActive();
+const PRIMARY_MOBILE = ['feed', 'messages', 'friends', 'profile'];
+
+function useNavItems() {
+    const { nav, auth, counters } = usePage().props;
     const unreadMessages = useUnreadMessages();
 
-    return (
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.07] bg-[#070a16]/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl lg:hidden">
-            <div className="flex items-stretch justify-around">
-                {nav.slice(0, 5).map((item) => {
-                    const href =
-                        item.key === 'profile'
-                            ? `/${auth.user.username}`
-                            : item.href;
-                    const active = isActive(href, item.key);
+    return nav.map((item) => ({
+        ...item,
+        href: item.key === 'profile' ? `/${auth.user.username}` : item.href,
+        badge:
+            item.key === 'friends'
+                ? (counters?.friend_requests ?? 0)
+                : item.key === 'messages'
+                  ? unreadMessages
+                  : 0,
+    }));
+}
 
-                    return (
-                        <Link
-                            key={item.key}
-                            href={href}
-                            className={cn(
-                                'relative flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium transition',
-                                active ? 'text-white' : 'text-white/45',
-                            )}
-                        >
-                            {item.key === 'messages' && unreadMessages > 0 && (
-                                <span className="absolute top-1 left-1/2 ml-1.5 min-w-4 rounded-full bg-gradient-brand px-1 text-center text-[10px] leading-4 font-bold text-white">
-                                    {unreadMessages}
-                                </span>
-                            )}
-                            <ModuleIcon
-                                name={item.icon}
+function MobileNav() {
+    const isActive = useIsActive();
+    const items = useNavItems();
+    const [open, setOpen] = useState(false);
+
+    const primary = [
+        ...items.filter((i) => PRIMARY_MOBILE.includes(i.key)),
+        ...items.filter((i) => !PRIMARY_MOBILE.includes(i.key)),
+    ].slice(0, 4);
+    const rest = items.filter((i) => !primary.includes(i));
+    const restActive = rest.some((i) => isActive(i.href, i.key));
+    const restBadge = rest.reduce((sum, i) => sum + i.badge, 0);
+
+    return (
+        <>
+            <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.07] bg-[#070a16]/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl [view-transition-name:gc-tabbar] lg:hidden">
+                <div className="flex items-stretch justify-around">
+                    {primary.map((item) => {
+                        const active = isActive(item.href, item.key);
+
+                        return (
+                            <Link
+                                key={item.key}
+                                href={item.href}
                                 className={cn(
-                                    'size-5',
-                                    active &&
-                                        'text-[#8fa0ff] drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]',
+                                    'relative flex min-w-0 flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium transition active:scale-95',
+                                    active ? 'text-white' : 'text-white/45',
                                 )}
-                            />
-                            {item.label}
+                            >
+                                {item.badge > 0 && (
+                                    <span className="absolute top-1 left-1/2 ml-1.5 min-w-4 rounded-full bg-gradient-brand px-1 text-center text-[10px] leading-4 font-bold text-white">
+                                        {item.badge > 99 ? '99+' : item.badge}
+                                    </span>
+                                )}
+                                <ModuleIcon
+                                    name={item.icon}
+                                    className={cn(
+                                        'size-5',
+                                        active &&
+                                            'text-[#8fa0ff] drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]',
+                                    )}
+                                />
+                                <span className="max-w-full truncate px-0.5">
+                                    {item.label}
+                                </span>
+                            </Link>
+                        );
+                    })}
+                    <button
+                        type="button"
+                        onClick={() => setOpen(true)}
+                        aria-expanded={open}
+                        data-test="mobile-menu"
+                        className={cn(
+                            'relative flex min-w-0 flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium transition active:scale-95',
+                            open || restActive ? 'text-white' : 'text-white/45',
+                        )}
+                    >
+                        {restBadge > 0 && (
+                            <span className="absolute top-1 left-1/2 ml-1.5 min-w-4 rounded-full bg-gradient-brand px-1 text-center text-[10px] leading-4 font-bold text-white">
+                                {restBadge}
+                            </span>
+                        )}
+                        <LayoutGrid
+                            className={cn(
+                                'size-5',
+                                (open || restActive) &&
+                                    'text-[#8fa0ff] drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]',
+                            )}
+                        />
+                        Меню
+                    </button>
+                </div>
+            </nav>
+            {open && <MobileMenu onClose={() => setOpen(false)} />}
+        </>
+    );
+}
+
+function MobileMenu({ onClose }: { onClose: () => void }) {
+    const { auth } = usePage().props;
+    const user = auth.user;
+    const isActive = useIsActive();
+    const items = useNavItems();
+
+    useEffect(() => {
+        const offNavigate = router.on('start', onClose);
+        const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+        const overflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        window.addEventListener('keydown', onKey);
+
+        return () => {
+            offNavigate();
+            window.removeEventListener('keydown', onKey);
+            document.body.style.overflow = overflow;
+        };
+    }, [onClose]);
+
+    const extra = [
+        { href: '/settings/profile', label: 'Налаштування', icon: Settings },
+        ...(user.is_admin
+            ? [{ href: '/admin', label: 'Адмін-панель', icon: ShieldCheck }]
+            : []),
+    ];
+
+    return (
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal>
+            <button
+                type="button"
+                aria-label="Закрити меню"
+                onClick={onClose}
+                className="absolute inset-0 animate-in bg-black/60 backdrop-blur-sm fade-in-0"
+            />
+            <div className="glass-strong absolute inset-x-0 bottom-0 max-h-[88dvh] animate-in overflow-y-auto overscroll-contain rounded-t-3xl border-t border-white/10 px-4 pt-2 pb-[calc(env(safe-area-inset-bottom)+1rem)] duration-200 slide-in-from-bottom">
+                <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+
+                <div className="mb-4 flex items-center gap-3">
+                    <Link
+                        href={`/${user.username}`}
+                        className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl bg-white/[0.04] p-3"
+                    >
+                        <UserAvatar user={user} size="md" ring />
+                        <span className="min-w-0">
+                            <span className="flex items-center gap-1 truncate text-sm font-semibold text-white">
+                                {user.name}
+                                {user.is_verified && (
+                                    <VerifiedBadge className="size-3.5" />
+                                )}
+                            </span>
+                            <span className="block truncate text-xs text-white/45">
+                                @{user.username}
+                            </span>
+                        </span>
+                    </Link>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        aria-label="Закрити"
+                        className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/[0.04] text-white/60"
+                    >
+                        <X className="size-5" />
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 min-[420px]:grid-cols-4">
+                    {items.map((item) => {
+                        const active = isActive(item.href, item.key);
+
+                        return (
+                            <Link
+                                key={item.key}
+                                href={item.href}
+                                className={cn(
+                                    'relative flex aspect-[1/0.9] flex-col items-center justify-center gap-2 rounded-2xl border p-2 text-center text-[12px] leading-tight font-medium transition active:scale-[0.97]',
+                                    active
+                                        ? 'nav-active border-[#8fa0ff]/30 text-white'
+                                        : 'border-white/[0.06] bg-white/[0.03] text-white/75 active:bg-white/[0.08]',
+                                )}
+                            >
+                                {item.badge > 0 && (
+                                    <span className="absolute top-2 right-2 min-w-5 rounded-full bg-gradient-brand px-1.5 text-[11px] leading-5 font-bold text-white">
+                                        {item.badge}
+                                    </span>
+                                )}
+                                <ModuleIcon
+                                    name={item.icon}
+                                    className={cn(
+                                        'size-6',
+                                        active
+                                            ? 'text-[#8fa0ff] drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]'
+                                            : 'text-[#a9b4ff]',
+                                    )}
+                                />
+                                {item.label}
+                            </Link>
+                        );
+                    })}
+                </div>
+
+                <div className="mt-4 grid gap-1 rounded-2xl bg-white/[0.03] p-1.5">
+                    {extra.map((link) => (
+                        <Link
+                            key={link.href}
+                            href={link.href}
+                            className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-white/80 active:bg-white/[0.06]"
+                        >
+                            <link.icon className="size-[18px] text-white/50" />
+                            {link.label}
                         </Link>
-                    );
-                })}
+                    ))}
+                    <button
+                        type="button"
+                        onClick={() => router.post('/logout')}
+                        className="flex items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-rose-300 active:bg-rose-500/10"
+                    >
+                        <LogOut className="size-[18px]" />
+                        Вийти
+                    </button>
+                </div>
             </div>
-        </nav>
+        </div>
     );
 }
 
@@ -349,9 +530,9 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 )}
             >
                 <Sidebar />
-                <main className="min-w-0 flex-1">
+                <main className="min-w-0 flex-1 [view-transition-name:gc-main]">
                     <Announcement />
-                    {children}
+                    <PageTransition>{children}</PageTransition>
                 </main>
             </div>
             {modules.includes('music') && <PlayerBar />}

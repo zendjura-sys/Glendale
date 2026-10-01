@@ -264,7 +264,7 @@ export function PostComposer({
                 <button
                     type="button"
                     onClick={() => fileRef.current?.click()}
-                    className="inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white"
+                    className="inline-flex h-9 items-center gap-2 rounded-xl px-2.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white sm:px-3"
                 >
                     <ImagePlus className="size-[18px] text-[#6fa2ff]" />
                     <span className="hidden sm:inline">Фото</span>
@@ -273,7 +273,7 @@ export function PostComposer({
                     <button
                         type="button"
                         onClick={() => setPicking(true)}
-                        className="inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white"
+                        className="inline-flex h-9 items-center gap-2 rounded-xl px-2.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white sm:px-3"
                     >
                         <Music2 className="size-[18px] text-[#c58bff]" />
                         <span className="hidden sm:inline">Музика</span>
@@ -340,10 +340,14 @@ export function PostComposer({
                     type="button"
                     onClick={submit}
                     disabled={!canSubmit}
-                    className="btn-glow ml-auto inline-flex h-10 items-center gap-2 rounded-xl px-5 text-sm font-semibold disabled:pointer-events-none disabled:opacity-40"
+                    aria-label="Опублікувати"
+                    className="btn-glow ml-auto inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold disabled:pointer-events-none disabled:opacity-40 sm:px-5"
                 >
                     <Sparkles className="size-4" />
-                    Опублікувати
+                    <span className="hidden min-[440px]:inline">
+                        Опублікувати
+                    </span>
+                    <span className="min-[440px]:hidden">Пост</span>
                 </button>
             </div>
 

@@ -482,6 +482,134 @@
     }
 }
 
+/* Каскад появи блоків сторінки. Під час переходу клас gc-page-settled
+   лишає контент видимим для знімка View Transition. */
+.gc-page:not(.gc-page-settled) > * {
+    --i: 8;
+    animation: rise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: calc(var(--i) * 42ms);
+}
+.gc-page:not(.gc-page-settled) > *:nth-child(1) {
+    --i: 0;
+}
+.gc-page:not(.gc-page-settled) > *:nth-child(2) {
+    --i: 1;
+}
+.gc-page:not(.gc-page-settled) > *:nth-child(3) {
+    --i: 2;
+}
+.gc-page:not(.gc-page-settled) > *:nth-child(4) {
+    --i: 3;
+}
+.gc-page:not(.gc-page-settled) > *:nth-child(5) {
+    --i: 4;
+}
+.gc-page:not(.gc-page-settled) > *:nth-child(6) {
+    --i: 5;
+}
+.gc-page:not(.gc-page-settled) > *:nth-child(7) {
+    --i: 6;
+}
+.gc-page:not(.gc-page-settled) > *:nth-child(8) {
+    --i: 7;
+}
+
+@keyframes gc-vt-out {
+    to {
+        opacity: 0;
+        transform: translateY(-12px) scale(0.985);
+    }
+}
+
+@keyframes gc-vt-in {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+::view-transition-old(*),
+::view-transition-new(*) {
+    mix-blend-mode: normal;
+}
+
+::view-transition-old(root),
+::view-transition-old(gc-main) {
+    animation: gc-vt-out 0.28s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+::view-transition-new(root),
+::view-transition-new(gc-main) {
+    animation: gc-vt-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+::view-transition-group(gc-main) {
+    animation-duration: 0.45s;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Шапка, меню, плеєр лишаються на місці. */
+::view-transition-group(gc-topbar) {
+    z-index: 40;
+    animation: none;
+}
+::view-transition-group(gc-tabbar) {
+    z-index: 40;
+    animation: none;
+}
+::view-transition-group(gc-player) {
+    z-index: 35;
+    animation: none;
+}
+::view-transition-group(gc-sidebar) {
+    z-index: 20;
+    animation: none;
+}
+
+::view-transition-old(gc-topbar),
+::view-transition-new(gc-topbar),
+::view-transition-old(gc-sidebar),
+::view-transition-new(gc-sidebar),
+::view-transition-old(gc-tabbar),
+::view-transition-new(gc-tabbar),
+::view-transition-old(gc-player),
+::view-transition-new(gc-player) {
+    animation: none;
+}
+
+::view-transition-old(gc-topbar):only-child,
+::view-transition-old(gc-sidebar):only-child,
+::view-transition-old(gc-tabbar):only-child,
+::view-transition-old(gc-player):only-child {
+    animation: gc-vt-out 0.28s ease both;
+}
+
+::view-transition-new(gc-topbar):only-child,
+::view-transition-new(gc-sidebar):only-child,
+::view-transition-new(gc-tabbar):only-child,
+::view-transition-new(gc-player):only-child {
+    animation: gc-vt-in 0.4s ease both;
+}
+
+@media (hover: hover) {
+    .gc-page a.glass {
+        transition:
+            transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+            box-shadow 0.3s ease,
+            background-color 0.25s ease,
+            border-color 0.25s ease;
+    }
+
+    .gc-page a.glass:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 18px 44px -28px rgb(109 93 252 / 0.95);
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -489,5 +617,11 @@
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
+    }
+
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+        animation: none !important;
     }
 }
