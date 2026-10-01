@@ -231,7 +231,8 @@ class IntegrationController extends Controller
                     ['name' => 'project_id', 'setting' => 'firebase_project_id', 'type' => 'text', 'label' => 'projectId', 'placeholder' => 'gamecon-ua',
                         'rules' => ['nullable', 'string', 'regex:/^[a-z0-9\-]{4,40}$/'], 'message' => 'projectId — малі латинські літери, цифри й дефіс.'],
                     ['name' => 'app_id', 'setting' => 'firebase_app_id', 'type' => 'text', 'label' => 'appId', 'placeholder' => '1:1234567890:web:abc123',
-                        'rules' => ['nullable', 'string', 'max:100', 'regex:/^[0-9a-z:]+$/'], 'message' => 'appId має вигляд 1:123…:web:…'],
+                        'help' => 'Обов’язково: з номера проєкту в appId сервер перевіряє, що токен Google виданий саме вашому сайту.',
+                        'rules' => ['nullable', 'string', 'max:100', 'regex:/^\d+:\d+:web:[0-9a-f]+$/'], 'message' => 'appId має вигляд 1:123…:web:…'],
                 ],
             ],
             'kodik' => [

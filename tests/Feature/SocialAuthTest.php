@@ -23,6 +23,9 @@ class SocialAuthTest extends TestCase
     /** @var array<string, mixed> */
     private array $discordMe = [];
 
+    /** @var array<string, array<string, mixed>> */
+    private array $tokeninfo = [];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -32,6 +35,7 @@ class SocialAuthTest extends TestCase
             'discord_client_id' => '123456789012345678',
             'firebase_api_key' => 'AIzaSyTestTestTestTestTestTestTestTest',
             'firebase_project_id' => self::PROJECT,
+            'firebase_app_id' => '1:142512043248:web:283f94b85f0c3ffc',
         ]);
         $settings->putSecret('discord_client_secret', 'discord-secret-value-123456');
 
@@ -43,6 +47,13 @@ class SocialAuthTest extends TestCase
         Http::fake([
             'discord.com/api/oauth2/token' => Http::response(['access_token' => 'tok', 'token_type' => 'Bearer']),
             'discord.com/api/users/@me' => fn () => Http::response($this->discordMe),
+            'oauth2.googleapis.com/tokeninfo*' => function ($request) {
+                parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
+                $claims = $this->tokeninfo[$query['id_token'] ?? ''] ?? null;
+
+                return $claims ? Http::response($claims) : Http::response(['error' => 'invalid_token'], 400);
+            },
+            'identitytoolkit.googleapis.com/*' => Http::response('<html>403 robot</html>', 403, ['Content-Type' => 'text/html']),
             'www.googleapis.com/robot/*' => Http::response([self::KID => $cert], 200, ['Cache-Control' => 'public, max-age=3600']),
             'cdn.discordapp.com/*' => Http::response($this->png(), 200, ['Content-Type' => 'image/png']),
             'lh3.googleusercontent.com/*' => Http::response($this->png(), 200, ['Content-Type' => 'image/png']),
@@ -229,6 +240,50 @@ class SocialAuthTest extends TestCase
         $this->assertNotSame('olena@gmail.com', $user->email);
     }
 
+    public function test_google_token_is_verified_via_tokeninfo(): void
+    {
+        $claims = [
+            'iss' => 'https://accounts.google.com',
+            'aud' => '142512043248-abc123.apps.googleusercontent.com',
+            'sub' => '108777666555',
+            'email' => 'Taras@Gmail.com',
+            'email_verified' => 'true',
+            'name' => 'Тарас Бойко',
+            'exp' => (string) (time() + 3000),
+        ];
+        $this->tokeninfo = [
+            'good' => $claims,
+            'other-project' => [...$claims, 'aud' => '999999999-abc.apps.googleusercontent.com'],
+            'expired' => [...$claims, 'exp' => (string) (time() - 10)],
+            'bad-issuer' => [...$claims, 'iss' => 'evil.example'],
+        ];
+
+        foreach (['other-project', 'expired', 'bad-issuer', 'unknown'] as $token) {
+            $this->post('/auth/firebase', ['id_token' => 'ignored', 'google_token' => $token])->assertRedirect('/login');
+        }
+        $this->assertGuest();
+        $this->assertSame(0, User::query()->count());
+
+        $this->post('/auth/firebase', ['id_token' => 'ignored', 'google_token' => 'good'])->assertRedirect('/feed');
+        $user = User::query()->where('google_id', '108777666555')->firstOrFail();
+        $this->assertAuthenticatedAs($user);
+        $this->assertSame(['taras@gmail.com', 'Тарас', 'Бойко'], [$user->email, $user->first_name, $user->last_name]);
+        $this->assertNotNull($user->email_verified_at);
+
+        $this->post('/auth/firebase', [])->assertSessionHasErrors('id_token');
+    }
+
+    public function test_firebase_check_works_when_googleapis_blocks_the_server(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+
+        $this->actingAs($admin)->post('/admin/integrations/cinema/firebase/test')->assertRedirect();
+        $this->assertSame('success', session('inertia.flash_data.toast.type'));
+
+        app(SiteSettings::class)->put(['firebase_app_id' => null]);
+        $this->get('/settings/profile')->assertInertia(fn (Assert $page) => $page->where('site.social.google', null));
+    }
+
     public function test_admin_can_configure_social_providers(): void
     {
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
@@ -239,7 +294,7 @@ class SocialAuthTest extends TestCase
             ->where('cinema.1.key', 'firebase'));
 
         $this->put('/admin/integrations/cinema/discord', ['client_id' => 'abc'])->assertSessionHasErrors('client_id');
-        $this->put('/admin/integrations/cinema/firebase', ['api_key' => 'AIzaSyNewNewNewNewNewNewNewNewNewNewNew', 'project_id' => 'my-project', 'auth_domain' => 'auth.gamecon.online'])
+        $this->put('/admin/integrations/cinema/firebase', ['api_key' => 'AIzaSyNewNewNewNewNewNewNewNewNewNewNew', 'project_id' => 'my-project', 'auth_domain' => 'auth.gamecon.online', 'app_id' => '1:555:web:abc'])
             ->assertSessionHasNoErrors();
 
         auth()->logout();

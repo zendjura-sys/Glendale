@@ -15,10 +15,15 @@ const messages: Record<string, string> = {
 };
 
 /**
- * Відкриває вікно Google через Firebase і повертає одноразовий ID-токен для бекенду.
+ * Відкриває вікно Google через Firebase і повертає токени для бекенду: Firebase ID-токен
+ * і Google ID-токен (його сервер перевіряє через tokeninfo, якщо *.googleapis.com йому недоступні).
  * SDK завантажується лише після натискання кнопки, щоб не роздувати основний бандл.
  */
-export async function googleIdToken(config: FirebaseConfig): Promise<string> {
+export type GoogleTokens = { idToken: string; googleToken: string | null };
+
+export async function googleIdToken(
+    config: FirebaseConfig,
+): Promise<GoogleTokens> {
     const [{ getApps, initializeApp }, firebaseAuth] = await Promise.all([
         import('firebase/app'),
         import('firebase/auth'),
@@ -44,10 +49,13 @@ export async function googleIdToken(config: FirebaseConfig): Promise<string> {
 
     try {
         const result = await firebaseAuth.signInWithPopup(auth, provider);
-        const token = await result.user.getIdToken();
+        const idToken = await result.user.getIdToken();
+        const googleToken =
+            firebaseAuth.GoogleAuthProvider.credentialFromResult(result)
+                ?.idToken ?? null;
         await firebaseAuth.signOut(auth);
 
-        return token;
+        return { idToken, googleToken };
     } catch (error) {
         const code = (error as { code?: string }).code ?? '';
 

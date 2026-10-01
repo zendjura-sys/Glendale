@@ -53,14 +53,21 @@ class SocialAuthController extends Controller
 
     public function firebase(Request $request): RedirectResponse
     {
-        $data = $request->validate(['id_token' => ['required', 'string', 'max:8192']]);
+        $data = $request->validate([
+            'id_token' => ['required_without:google_token', 'nullable', 'string', 'max:8192'],
+            'google_token' => ['nullable', 'string', 'max:8192'],
+        ]);
 
         if (! $this->firebase->configured()) {
             return $this->fail($request, 'Вхід через Google ще не налаштовано.');
         }
 
         try {
-            return $this->complete($request, $this->firebase->verify($data['id_token']));
+            $profile = filled($data['google_token'] ?? null)
+                ? $this->firebase->verifyGoogleToken($data['google_token'])
+                : $this->firebase->verify((string) $data['id_token']);
+
+            return $this->complete($request, $profile);
         } catch (SocialAuthException $e) {
             return $this->fail($request, $e->getMessage());
         }

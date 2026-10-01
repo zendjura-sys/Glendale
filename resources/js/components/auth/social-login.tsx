@@ -18,10 +18,10 @@ export function useGoogleSignIn() {
         setPending(true);
 
         try {
-            const token = await googleIdToken(config);
+            const tokens = await googleIdToken(config);
             router.post(
                 '/auth/firebase',
-                { id_token: token },
+                { id_token: tokens.idToken, google_token: tokens.googleToken },
                 { onFinish: () => setPending(false) },
             );
         } catch (error) {

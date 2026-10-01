@@ -15,7 +15,7 @@ class FirebaseAuth
 
     public function configured(): bool
     {
-        return filled($this->value('api_key')) && filled($this->value('project_id'));
+        return filled($this->value('api_key')) && filled($this->value('project_id')) && $this->projectNumber() !== null;
     }
 
     /**
@@ -95,15 +95,70 @@ class FirebaseAuth
      */
     public function testCredentials(): bool
     {
-        try {
-            $response = Http::timeout(10)->get('https://www.googleapis.com/identitytoolkit/v3/relyingparty/getProjectConfig', [
-                'key' => $this->value('api_key'),
-            ]);
-        } catch (ConnectionException) {
+        $number = $this->projectNumber();
+        if ($number === null) {
             return false;
         }
 
-        return $response->successful() && $response->json('projectId') === $this->value('project_id');
+        try {
+            $project = Http::timeout(10)->get('https://identitytoolkit.googleapis.com/v1/projects', ['key' => $this->value('api_key')]);
+            if ($project->header('Content-Type') !== '' && str_contains((string) $project->header('Content-Type'), 'json')) {
+                return $project->successful() && (string) $project->json('projectId') === $number;
+            }
+
+            // Частина IP дата-центрів отримує від *.googleapis.com HTML-403; тоді перевіряємо лише доступність tokeninfo.
+            return Http::timeout(10)->get((string) config('services.firebase.tokeninfo_url'), ['id_token' => 'probe'])->status() === 400;
+        } catch (ConnectionException) {
+            return false;
+        }
+    }
+
+    /**
+     * Перевіряє Google ID-токен (OAuth-облікові дані з Firebase popup) через tokeninfo:
+     * він має бути виданий OAuth-клієнту цього Firebase-проєкту.
+     */
+    public function verifyGoogleToken(string $token): SocialProfile
+    {
+        $number = $this->projectNumber();
+        if ($number === null) {
+            throw new SocialAuthException('Вкажіть appId Firebase в адмінці, щоб увімкнути вхід через Google.');
+        }
+
+        try {
+            $response = Http::timeout(10)->get((string) config('services.firebase.tokeninfo_url'), ['id_token' => $token]);
+        } catch (ConnectionException) {
+            throw new SocialAuthException('Google не відповідає. Спробуйте пізніше.');
+        }
+
+        $claims = $response->json();
+        if (! $response->successful() || ! is_array($claims)) {
+            throw new SocialAuthException('Сесія Google застаріла. Спробуйте ще раз.');
+        }
+
+        $audience = (string) ($claims['aud'] ?? '');
+        $valid = str_starts_with($audience, $number.'-') && str_ends_with($audience, '.apps.googleusercontent.com')
+            && in_array($claims['iss'] ?? null, ['accounts.google.com', 'https://accounts.google.com'], true)
+            && (int) ($claims['exp'] ?? 0) > time()
+            && is_string($claims['sub'] ?? null) && $claims['sub'] !== '';
+
+        if (! $valid) {
+            throw new SocialAuthException('Токен Google видано не для цього сайту.');
+        }
+
+        return new SocialProfile(
+            provider: 'google',
+            id: (string) $claims['sub'],
+            email: isset($claims['email']) ? mb_strtolower((string) $claims['email']) : null,
+            emailVerified: in_array($claims['email_verified'] ?? false, [true, 'true'], true),
+            name: (string) ($claims['name'] ?? ''),
+            avatarUrl: isset($claims['picture']) ? preg_replace('/=s\d+-c$/', '=s512-c', (string) $claims['picture']) : null,
+        );
+    }
+
+    /** Номер проєкту з appId виду «1:142512043248:web:…» — ним починаються ID його OAuth-клієнтів. */
+    private function projectNumber(): ?string
+    {
+        return preg_match('/^\d+:(\d+):web:/', (string) $this->value('app_id'), $m) ? $m[1] : null;
     }
 
     /**
