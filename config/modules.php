@@ -63,11 +63,12 @@ return [
     ],
     'photos' => [
         'name' => 'Фото',
-        'description' => 'Альбоми, відмітки, перегляд у лайтбоксі.',
+        'description' => 'Альбоми користувачів і спільнот, перегляд у лайтбоксі, лайки та коментарі.',
         'icon' => 'image',
         'core' => false,
-        'available' => false,
-        'nav' => ['label' => 'Фото', 'position' => 60],
+        'available' => true,
+        'default' => true,
+        'nav' => ['label' => 'Фотографії', 'route' => 'photos.index', 'position' => 60],
     ],
     'videos' => [
         'name' => 'Відео',
