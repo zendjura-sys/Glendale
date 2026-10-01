@@ -228,7 +228,7 @@ function Topbar() {
 
     return (
         <header className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.06] bg-[#05070f]/70 backdrop-blur-2xl [view-transition-name:gc-topbar]">
-            <div className="mx-auto flex h-16 max-w-[1320px] items-center gap-4 px-3 sm:px-5">
+            <div className="mx-auto flex h-16 max-w-[1320px] items-center gap-2 px-3 sm:gap-4 sm:px-5">
                 <Link href="/feed" className="shrink-0 lg:w-[232px]">
                     <Logo className="hidden sm:inline-flex" />
                     <LogoMark className="sm:hidden" />
@@ -237,7 +237,7 @@ function Topbar() {
                 <div className="ml-auto flex items-center gap-1">
                     <Link
                         href="/friends?tab=requests"
-                        className="relative flex size-10 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white"
+                        className="relative hidden size-10 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white sm:flex"
                         aria-label="Заявки в друзі"
                     >
                         <UsersRound className="size-[19px]" />
@@ -250,7 +250,7 @@ function Topbar() {
                     {modules.includes('messages') && (
                         <Link
                             href="/messages"
-                            className="relative flex size-10 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white"
+                            className="relative hidden size-10 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white sm:flex"
                             aria-label="Повідомлення"
                         >
                             <MessageCircle className="size-[19px]" />
@@ -273,6 +273,13 @@ function Topbar() {
 }
 
 const PRIMARY_MOBILE = ['feed', 'messages', 'friends', 'profile'];
+
+const MOBILE_LABEL: Record<string, string> = {
+    profile: 'Сторінка',
+    messages: 'Чати',
+    friends: 'Друзі',
+    feed: 'Новини',
+};
 
 function useNavItems() {
     const { nav, auth, counters } = usePage().props;
@@ -333,7 +340,7 @@ function MobileNav() {
                                     )}
                                 />
                                 <span className="max-w-full truncate px-0.5">
-                                    {item.label}
+                                    {MOBILE_LABEL[item.key] ?? item.label}
                                 </span>
                             </Link>
                         );
