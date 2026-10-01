@@ -1,8 +1,17 @@
 import { useForm, usePage } from '@inertiajs/react';
-import { Earth, ImagePlus, Lock, Sparkles, UsersRound, X } from 'lucide-react';
+import {
+    Earth,
+    ImagePlus,
+    Lock,
+    Megaphone,
+    Sparkles,
+    UsersRound,
+    X,
+} from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import type { Visibility } from '@/types';
+import { CommunityAvatar } from './community-avatar';
 import { UserAvatar } from './user-avatar';
 
 const visibilityOptions: {
@@ -17,10 +26,22 @@ const visibilityOptions: {
 
 type Props = {
     wall?: { username: string; first_name: string } | null;
+    community?: {
+        id: number;
+        slug: string;
+        name: string;
+        avatar_url: string | null;
+        type: 'group' | 'public';
+        canPostAsCommunity: boolean;
+    } | null;
     className?: string;
 };
 
-export function PostComposer({ wall = null, className }: Props) {
+export function PostComposer({
+    wall = null,
+    community = null,
+    className,
+}: Props) {
     const { auth, site } = usePage().props;
     const [focused, setFocused] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
@@ -28,13 +49,20 @@ export function PostComposer({ wall = null, className }: Props) {
         body: string;
         visibility: Visibility;
         wall: string | null;
+        community: string | null;
+        as_community: boolean;
         images: File[];
     }>({
         body: '',
         visibility: 'public',
         wall: wall?.username ?? null,
+        community: community?.slug ?? null,
+        as_community:
+            community?.type === 'public' ||
+            (community?.canPostAsCommunity ?? false),
         images: [],
     });
+    const asCommunity = !!community && form.data.as_community;
 
     const previews = useMemo(
         () => form.data.images.map((file) => URL.createObjectURL(file)),
@@ -75,9 +103,13 @@ export function PostComposer({ wall = null, className }: Props) {
         });
     };
 
-    const placeholder = wall
-        ? `Напишіть щось ${wall.first_name}…`
-        : `Що нового, ${auth.user.first_name}?`;
+    const placeholder = community
+        ? asCommunity
+            ? `Новина від імені «${community.name}»…`
+            : 'Напишіть щось у спільноті…'
+        : wall
+          ? `Напишіть щось ${wall.first_name}…`
+          : `Що нового, ${auth.user.first_name}?`;
 
     return (
         <section
@@ -95,7 +127,11 @@ export function PostComposer({ wall = null, className }: Props) {
         >
             <div className="pointer-events-none absolute -top-24 -right-24 size-56 rounded-full bg-[#6d5dfc]/20 blur-3xl" />
             <div className="relative flex gap-3">
-                <UserAvatar user={auth.user} size="md" showOnline={false} />
+                {asCommunity && community ? (
+                    <CommunityAvatar community={community} size="md" />
+                ) : (
+                    <UserAvatar user={auth.user} size="md" showOnline={false} />
+                )}
                 <div className="min-w-0 flex-1">
                     <textarea
                         value={form.data.body}
@@ -196,7 +232,30 @@ export function PostComposer({ wall = null, className }: Props) {
                     <span className="hidden sm:inline">Фото</span>
                 </button>
 
-                {!wall && (
+                {community &&
+                    community.type === 'group' &&
+                    community.canPostAsCommunity && (
+                        <button
+                            type="button"
+                            onClick={() =>
+                                form.setData(
+                                    'as_community',
+                                    !form.data.as_community,
+                                )
+                            }
+                            className={cn(
+                                'inline-flex h-9 items-center gap-2 rounded-xl px-3 text-xs font-medium transition',
+                                form.data.as_community
+                                    ? 'bg-[#6d5dfc]/20 text-white'
+                                    : 'text-white/50 hover:bg-white/[0.06] hover:text-white',
+                            )}
+                        >
+                            <Megaphone className="size-4 text-[#a58bff]" />
+                            Від імені спільноти
+                        </button>
+                    )}
+
+                {!wall && !community && (
                     <div className="flex rounded-xl bg-white/[0.04] p-0.5">
                         {visibilityOptions.map((option) => (
                             <button

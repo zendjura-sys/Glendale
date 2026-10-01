@@ -4,6 +4,8 @@ import {
     Heart,
     MessageSquare,
     PenSquare,
+    Shield,
+    ShieldCheck,
     UserCheck,
     UserPlus,
 } from 'lucide-react';
@@ -20,6 +22,8 @@ const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
     wall_post: { icon: PenSquare, className: 'bg-[#a855f7]' },
     friend_request: { icon: UserPlus, className: 'bg-emerald-500' },
     friend_accepted: { icon: UserCheck, className: 'bg-emerald-500' },
+    community_request: { icon: Shield, className: 'bg-[#6d5dfc]' },
+    community_approved: { icon: ShieldCheck, className: 'bg-[#6d5dfc]' },
 };
 
 export function NotificationsMenu() {

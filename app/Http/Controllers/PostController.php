@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Community;
 use App\Models\Like;
 use App\Models\Post;
 use App\Models\PostAttachment;
 use App\Models\User;
 use App\Notifications\PostInteraction;
+use App\Services\CommunityService;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
 use App\Services\PostPresenter;
@@ -27,6 +29,7 @@ class PostController extends Controller
         private readonly PostPresenter $presenter,
         private readonly ImageStorage $images,
         private readonly SiteSettings $settings,
+        private readonly CommunityService $communities,
     ) {}
 
     public function show(Request $request, Post $post): Response
@@ -49,15 +52,27 @@ class PostController extends Controller
             'body' => ['nullable', 'string', 'max:'.(int) $this->settings->get('max_post_length'), 'required_without:images'],
             'visibility' => ['required', Rule::in(Post::VISIBILITIES)],
             'wall' => ['nullable', 'string', 'exists:users,username'],
+            'community' => ['nullable', 'string'],
+            'as_community' => ['nullable', 'boolean'],
             'images' => ['nullable', 'array', 'max:'.$maxFiles],
             'images.*' => ['image', 'mimes:jpg,jpeg,png,webp,gif', 'max:'.$maxKb],
         ], [
             'body.required_without' => 'Напишіть щось або додайте фото.',
         ]);
 
-        $wallOwner = isset($data['wall']) ? User::query()->where('username', $data['wall'])->firstOrFail() : $user;
+        $asCommunity = false;
 
-        if ($wallOwner->isNot($user)) {
+        if (isset($data['community'])) {
+            $wallOwner = Community::query()->where('slug', $data['community'])->firstOrFail();
+            $membership = $wallOwner->membershipFor($user);
+            abort_unless($this->communities->canPost($wallOwner, $membership), 403, 'Публікувати в цій спільноті можуть лише її керівники.');
+            $asCommunity = $wallOwner->isPublic() ? true : (bool) ($data['as_community'] ?? false) && $membership->isManager();
+            $data['visibility'] = Post::VISIBILITY_PUBLIC;
+        } else {
+            $wallOwner = isset($data['wall']) ? User::query()->where('username', $data['wall'])->firstOrFail() : $user;
+        }
+
+        if ($wallOwner instanceof User && $wallOwner->isNot($user)) {
             abort_unless(
                 $this->friendships->status($user, $wallOwner) === FriendshipService::FRIENDS,
                 403,
@@ -65,11 +80,12 @@ class PostController extends Controller
             );
         }
 
-        $post = DB::transaction(function () use ($request, $user, $wallOwner, $data) {
+        $post = DB::transaction(function () use ($request, $user, $wallOwner, $data, $asCommunity) {
             $post = Post::query()->create([
                 'author_id' => $user->id,
                 'wall_type' => $wallOwner->getMorphClass(),
                 'wall_id' => $wallOwner->id,
+                'as_community' => $asCommunity,
                 'body' => isset($data['body']) ? trim($data['body']) : null,
                 'visibility' => $data['visibility'],
             ]);
@@ -90,7 +106,7 @@ class PostController extends Controller
             return $post;
         });
 
-        if ($wallOwner->isNot($user)) {
+        if ($wallOwner instanceof User && $wallOwner->isNot($user)) {
             $wallOwner->notify(new PostInteraction(PostInteraction::WALL, $user, $post, Str::limit((string) $post->body, 80)));
         }
 
@@ -104,7 +120,7 @@ class PostController extends Controller
         $user = $request->user();
         $onOwnWall = $post->wall_type === $user->getMorphClass() && $post->wall_id === $user->id;
 
-        abort_unless($post->author_id === $user->id || $onOwnWall || $user->isStaff(), 403);
+        abort_unless($post->author_id === $user->id || $onOwnWall || $this->managesWall($user, $post) || $user->isStaff(), 403);
 
         $post->delete();
 
@@ -116,7 +132,7 @@ class PostController extends Controller
     public function pin(Request $request, Post $post): RedirectResponse
     {
         $user = $request->user();
-        abort_unless($post->wall_type === $user->getMorphClass() && $post->wall_id === $user->id, 403);
+        abort_unless(($post->wall_type === $user->getMorphClass() && $post->wall_id === $user->id) || $this->managesWall($user, $post), 403);
 
         DB::transaction(function () use ($post) {
             $pin = ! $post->is_pinned;
@@ -164,6 +180,12 @@ class PostController extends Controller
         }
 
         return response()->json(['liked' => $liked, 'likes_count' => $post->fresh()->likes_count]);
+    }
+
+    private function managesWall(User $user, Post $post): bool
+    {
+        return $post->wall_type === 'community'
+            && in_array($post->wall_id, $this->communities->managedIds($user));
     }
 
     private function authorizeView(?User $viewer, Post $post): void

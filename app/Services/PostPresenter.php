@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Comment;
+use App\Models\Community;
 use App\Models\Like;
 use App\Models\Post;
 use App\Models\PostAttachment;
@@ -49,6 +50,10 @@ class PostPresenter
             ->flip()
             ->all() : [];
 
+        $managed = $viewer && $posts->contains('wall_type', 'community')
+            ? array_flip(app(CommunityService::class)->managedIds($viewer))
+            : [];
+
         $commentIds = $previewComments->flatten()->pluck('id')->all();
         $likedCommentIds = $viewer && $commentIds ? Like::query()
             ->where('user_id', $viewer->id)
@@ -62,6 +67,7 @@ class PostPresenter
             $post,
             $viewer,
             isset($likedPostIds[$post->id]),
+            $post->wall instanceof Community && isset($managed[$post->wall_id]),
             ($previewComments[$post->id] ?? collect())->map(fn (Comment $c) => $this->comment($c, $viewer, isset($likedCommentIds[$c->id])))->values()->all(),
         ))->values()->all();
     }
@@ -78,10 +84,19 @@ class PostPresenter
      * @param  list<array<string, mixed>>  $comments
      * @return array<string, mixed>
      */
-    private function present(Post $post, ?User $viewer, bool $liked, array $comments): array
+    private function present(Post $post, ?User $viewer, bool $liked, bool $managesWall, array $comments): array
     {
         $wall = $post->wall;
-        $onForeignWall = $wall instanceof User && $wall->id !== $post->author_id;
+        $community = $wall instanceof Community ? $wall : null;
+        $ownWall = $viewer !== null && $wall instanceof User && $wall->id === $viewer->id;
+        $publisher = $community && $post->as_community ? $community : null;
+
+        $wallCard = match (true) {
+            $publisher !== null => null,
+            $community !== null => ['name' => $community->name, 'href' => '/c/'.$community->slug],
+            $wall instanceof User && $wall->id !== $post->author_id => ['name' => $wall->name, 'href' => '/'.$wall->username],
+            default => null,
+        };
 
         return [
             'id' => $post->id,
@@ -94,7 +109,8 @@ class PostPresenter
             'views_count' => $post->views_count,
             'created_at' => $post->created_at->toIso8601String(),
             'author' => $post->author->toCard(),
-            'wall' => $onForeignWall ? $wall->toCard() : null,
+            'publisher' => $publisher ? [...$publisher->toCard(), 'href' => '/c/'.$publisher->slug] : null,
+            'wall' => $wallCard,
             'attachments' => $post->attachments->map(fn (PostAttachment $a) => [
                 'id' => $a->id,
                 'type' => $a->type,
@@ -105,8 +121,8 @@ class PostPresenter
             'liked' => $liked,
             'comments' => $comments,
             'can' => [
-                'delete' => $viewer !== null && ($viewer->id === $post->author_id || ($wall instanceof User && $wall->id === $viewer->id) || $viewer->isStaff()),
-                'pin' => $viewer !== null && $wall instanceof User && $wall->id === $viewer->id,
+                'delete' => $viewer !== null && ($viewer->id === $post->author_id || $ownWall || $managesWall || $viewer->isStaff()),
+                'pin' => $ownWall || $managesWall,
                 'comment' => $viewer !== null && $post->comments_enabled,
             ],
         ];

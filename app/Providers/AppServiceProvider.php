@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use App\Models\Comment;
+use App\Models\Community;
 use App\Models\Post;
 use App\Models\User;
+use App\Services\CommunityService;
 use App\Services\FriendshipService;
 use App\Support\Modules\ModuleManager;
 use App\Support\Settings\SiteSettings;
@@ -26,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(ModuleManager::class, fn () => new ModuleManager(config('modules')));
         $this->app->singleton(SiteSettings::class);
         $this->app->scoped(FriendshipService::class);
+        $this->app->scoped(CommunityService::class);
     }
 
     /**
@@ -39,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
             'user' => User::class,
             'post' => Post::class,
             'comment' => Comment::class,
+            'community' => Community::class,
         ]);
 
         Model::preventLazyLoading(! app()->isProduction());

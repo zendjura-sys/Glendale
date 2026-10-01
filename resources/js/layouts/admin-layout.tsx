@@ -5,6 +5,7 @@ import {
     FileText,
     LayoutDashboard,
     Settings2,
+    Shield,
     ShieldCheck,
     UsersRound,
 } from 'lucide-react';
@@ -19,6 +20,7 @@ const items = [
     { label: 'Огляд', href: '/admin', icon: LayoutDashboard, exact: true },
     { label: 'Користувачі', href: '/admin/users', icon: UsersRound },
     { label: 'Записи', href: '/admin/posts', icon: FileText },
+    { label: 'Спільноти', href: '/admin/communities', icon: Shield },
     { label: 'Модулі', href: '/admin/modules', icon: Blocks },
     { label: 'Налаштування', href: '/admin/settings', icon: Settings2 },
 ];

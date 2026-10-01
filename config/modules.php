@@ -57,8 +57,9 @@ return [
         'description' => 'Групи та публічні сторінки з власною стіною й адмінами.',
         'icon' => 'shield',
         'core' => false,
-        'available' => false,
-        'nav' => ['label' => 'Спільноти', 'position' => 50],
+        'available' => true,
+        'default' => true,
+        'nav' => ['label' => 'Спільноти', 'route' => 'communities.index', 'position' => 50],
     ],
     'photos' => [
         'name' => 'Фото',

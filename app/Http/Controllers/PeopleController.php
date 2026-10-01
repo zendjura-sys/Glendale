@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Community;
 use App\Models\User;
 use App\Services\FriendshipService;
+use App\Support\Modules\ModuleManager;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -56,11 +58,14 @@ class PeopleController extends Controller
         $q = trim((string) $request->query('q', ''));
 
         if (mb_strlen($q) < 2) {
-            return response()->json(['users' => []]);
+            return response()->json(['users' => [], 'communities' => []]);
         }
 
         return response()->json([
             'users' => $this->search(['q' => $q])->limit(8)->get()->map->toCard()->values(),
+            'communities' => app(ModuleManager::class)->enabled('communities')
+                ? Community::query()->search($q)->orderByDesc('members_count')->limit(4)->get()->map->toCard()->values()
+                : [],
         ]);
     }
 
