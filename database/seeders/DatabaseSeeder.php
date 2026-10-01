@@ -2,24 +2,24 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Module;
+use App\Support\Modules\ModuleManager;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
-     * Seed the application's database.
+     * Базове наповнення: стан модулів за замовчуванням. Демо-дані — окремо через DemoSeeder.
      */
-    public function run(): void
+    public function run(ModuleManager $modules): void
     {
-        // User::factory(10)->create();
+        foreach ($modules->all() as $module) {
+            Module::query()->firstOrCreate(
+                ['key' => $module['key']],
+                ['enabled' => $module['enabled'], 'position' => $module['nav']['position'] ?? 0],
+            );
+        }
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        $modules->flush();
     }
 }

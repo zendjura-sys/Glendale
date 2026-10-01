@@ -2,7 +2,15 @@
 
 namespace App\Providers;
 
+use App\Models\Comment;
+use App\Models\Post;
+use App\Models\User;
+use App\Services\FriendshipService;
+use App\Support\Modules\ModuleManager;
+use App\Support\Settings\SiteSettings;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -15,7 +23,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(ModuleManager::class, fn () => new ModuleManager(config('modules')));
+        $this->app->singleton(SiteSettings::class);
+        $this->app->scoped(FriendshipService::class);
     }
 
     /**
@@ -24,6 +34,14 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        Relation::enforceMorphMap([
+            'user' => User::class,
+            'post' => Post::class,
+            'comment' => Comment::class,
+        ]);
+
+        Model::preventLazyLoading(! app()->isProduction());
     }
 
     /**
@@ -38,11 +56,9 @@ class AppServiceProvider extends ServiceProvider
         );
 
         Password::defaults(fn (): ?Password => app()->isProduction()
-            ? Password::min(12)
-                ->mixedCase()
+            ? Password::min(10)
                 ->letters()
                 ->numbers()
-                ->symbols()
                 ->uncompromised()
             : null,
         );

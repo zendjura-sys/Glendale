@@ -2,6 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\FriendshipService;
+use App\Support\Modules\ModuleManager;
+use App\Support\Settings\SiteSettings;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -15,6 +18,12 @@ class HandleInertiaRequests extends Middleware
      * @var string
      */
     protected $rootView = 'app';
+
+    public function __construct(
+        private readonly ModuleManager $modules,
+        private readonly SiteSettings $settings,
+        private readonly FriendshipService $friendships,
+    ) {}
 
     /**
      * Determines the current asset version.
@@ -35,13 +44,38 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
         return [
             ...parent::share($request),
-            'name' => config('app.name'),
-            'auth' => [
-                'user' => $request->user(),
+            'name' => $this->settings->get('site_name'),
+            'site' => [
+                'name' => $this->settings->get('site_name'),
+                'tagline' => $this->settings->get('tagline'),
+                'registration_open' => (bool) $this->settings->get('registration_open'),
+                'max_attachments' => (int) $this->settings->get('max_attachments'),
+                'announcement' => $this->settings->get('maintenance_message'),
             ],
-            'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'auth' => [
+                'user' => $user ? [
+                    ...$user->toCard(),
+                    'last_name' => $user->last_name,
+                    'email' => $user->email,
+                    'email_verified_at' => $user->email_verified_at,
+                    'two_factor_enabled' => $user->two_factor_confirmed_at !== null,
+                    'role' => $user->role,
+                    'is_admin' => $user->isAdmin(),
+                    'cover_url' => $user->cover_url,
+                    'created_at' => $user->created_at,
+                    'updated_at' => $user->updated_at,
+                ] : null,
+            ],
+            'nav' => $user ? fn () => $this->modules->navigation() : [],
+            'modules' => fn () => $this->modules->enabledKeys(),
+            'counters' => $user ? fn () => [
+                'friend_requests' => $this->friendships->incomingCount($user),
+                'notifications' => $user->unreadNotifications()->count(),
+            ] : null,
         ];
     }
 }

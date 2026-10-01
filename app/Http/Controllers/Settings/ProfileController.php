@@ -19,9 +19,24 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+
         return Inertia::render('settings/profile', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
+            'profile' => [
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'username' => $user->username,
+                'email' => $user->email,
+                'status' => $user->status,
+                'about' => $user->about,
+                'city' => $user->city,
+                'birthday' => $user->birthday?->toDateString(),
+                'gender' => $user->gender,
+                'website' => $user->website,
+                'is_private' => $user->is_private,
+            ],
         ]);
     }
 
@@ -38,7 +53,7 @@ class ProfileController extends Controller
 
         $request->user()->save();
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Profile updated.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Профіль оновлено.']);
 
         return to_route('profile.edit');
     }

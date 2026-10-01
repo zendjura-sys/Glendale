@@ -17,6 +17,14 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
-        return $this->profileRules($this->user()->id);
+        return [
+            ...$this->profileRules($this->user()->id),
+            ...$this->aboutRules($this->user()->id),
+        ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge(['is_private' => $this->boolean('is_private')]);
     }
 }

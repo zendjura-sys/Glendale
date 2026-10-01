@@ -24,8 +24,16 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        $gender = fake()->randomElement(['male', 'female']);
+        $first = fake()->firstName($gender);
+        $last = fake()->lastName($gender);
+
         return [
-            'name' => fake()->name(),
+            'username' => 'u'.Str::lower(Str::random(10)),
+            'first_name' => $first,
+            'last_name' => $last,
+            'name' => $first.' '.$last,
+            'gender' => $gender,
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
@@ -34,6 +42,16 @@ class UserFactory extends Factory
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
         ];
+    }
+
+    public function admin(): static
+    {
+        return $this->state(fn () => ['role' => User::ROLE_ADMIN]);
+    }
+
+    public function banned(): static
+    {
+        return $this->state(fn () => ['banned_at' => now(), 'ban_reason' => 'Спам']);
     }
 
     /**

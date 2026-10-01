@@ -1,7 +1,10 @@
 <?php
 
-use App\Http\Middleware\HandleAppearance;
+use App\Http\Middleware\EnsureEmailVerifiedWhenRequired;
+use App\Http\Middleware\EnsureModuleEnabled;
+use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\TrackUserActivity;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,12 +18,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
-
         $middleware->web(append: [
-            HandleAppearance::class,
+            TrackUserActivity::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
+        ]);
+
+        $middleware->alias([
+            'module' => EnsureModuleEnabled::class,
+            'admin' => EnsureUserIsAdmin::class,
+            'verified.site' => EnsureEmailVerifiedWhenRequired::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
