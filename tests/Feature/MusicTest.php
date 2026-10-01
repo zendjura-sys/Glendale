@@ -30,6 +30,13 @@ class MusicTest extends TestCase
     {
         parent::setUp();
         Storage::fake('public');
+        config([
+            'services.spotify.accounts_url' => 'https://accounts.spotify.com',
+            'services.spotify.api_url' => 'https://api.spotify.com/v1',
+            'services.spotify.client_id' => null,
+            'services.spotify.client_secret' => null,
+            'services.spotify.redirect' => null,
+        ]);
     }
 
     private function track(?User $owner = null, array $attributes = []): Track

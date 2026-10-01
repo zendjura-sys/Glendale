@@ -97,7 +97,7 @@ export default function MusicUser({
                     </div>
                 </section>
 
-                <Deferred data="nowPlaying" fallback={null}>
+                <Deferred data="nowPlaying" fallback={<span hidden />}>
                     {nowPlaying ? <NowPlayingCard track={nowPlaying} /> : null}
                 </Deferred>
 

@@ -364,6 +364,44 @@ export default function ProfileShow({
                             </Widget>
                         )}
 
+                        {audio && (
+                            <Deferred
+                                data="nowPlaying"
+                                fallback={<span hidden />}
+                            >
+                                {nowPlaying ? (
+                                    <NowPlayingCard track={nowPlaying} />
+                                ) : null}
+                            </Deferred>
+                        )}
+
+                        {audio && audio.tracks > 0 && (
+                            <Link
+                                href={audio.href}
+                                className="glass group flex items-center gap-3 rounded-3xl p-4 transition hover:border-white/15"
+                            >
+                                <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#a855f7] to-[#4f8bff] shadow-[0_10px_30px_-10px_rgb(168_85_247/0.9)]">
+                                    <Music2 className="size-5 text-white" />
+                                </span>
+                                <span className="min-w-0 flex-1">
+                                    <span className="block text-sm font-semibold text-white">
+                                        Аудіозаписи
+                                    </span>
+                                    <span className="block text-xs text-white/45">
+                                        {audio.tracks}{' '}
+                                        {plural(audio.tracks, [
+                                            'трек',
+                                            'треки',
+                                            'треків',
+                                        ])}
+                                    </span>
+                                </span>
+                                <span className="text-xs text-white/40 transition group-hover:text-white">
+                                    Слухати →
+                                </span>
+                            </Link>
+                        )}
+
                         <Widget
                             title="Друзі"
                             icon={UsersRound}
@@ -404,41 +442,6 @@ export default function ProfileShow({
                                 </div>
                             )}
                         </Widget>
-
-                        {audio && (
-                            <Deferred data="nowPlaying" fallback={null}>
-                                {nowPlaying ? (
-                                    <NowPlayingCard track={nowPlaying} />
-                                ) : null}
-                            </Deferred>
-                        )}
-
-                        {audio && audio.tracks > 0 && (
-                            <Link
-                                href={audio.href}
-                                className="glass group flex items-center gap-3 rounded-3xl p-4 transition hover:border-white/15"
-                            >
-                                <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#a855f7] to-[#4f8bff] shadow-[0_10px_30px_-10px_rgb(168_85_247/0.9)]">
-                                    <Music2 className="size-5 text-white" />
-                                </span>
-                                <span className="min-w-0 flex-1">
-                                    <span className="block text-sm font-semibold text-white">
-                                        Аудіозаписи
-                                    </span>
-                                    <span className="block text-xs text-white/45">
-                                        {audio.tracks}{' '}
-                                        {plural(audio.tracks, [
-                                            'трек',
-                                            'треки',
-                                            'треків',
-                                        ])}
-                                    </span>
-                                </span>
-                                <span className="text-xs text-white/40 transition group-hover:text-white">
-                                    Слухати →
-                                </span>
-                            </Link>
-                        )}
 
                         {photos.length > 0 && (
                             <Widget

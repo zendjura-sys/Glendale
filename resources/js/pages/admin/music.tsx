@@ -176,7 +176,7 @@ export default function AdminMusic({ tracks, filters, stats }: Props) {
                                     Завантажив
                                 </th>
                                 <th className="px-3 py-3 text-right font-medium">
-                                    ▶
+                                    Слухали
                                 </th>
                                 <th className="px-3 py-3 text-right font-medium">
                                     Додали

@@ -321,7 +321,14 @@ export function PostComposer({
                                 )}
                             >
                                 <option.icon className="size-3.5" />
-                                <span className="hidden md:inline">
+                                <span
+                                    className={cn(
+                                        'whitespace-nowrap',
+                                        form.data.visibility === option.value
+                                            ? 'hidden md:inline'
+                                            : 'hidden',
+                                    )}
+                                >
                                     {option.label}
                                 </span>
                             </button>

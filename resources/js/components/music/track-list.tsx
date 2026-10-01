@@ -2,6 +2,7 @@ import {
     Check,
     Download,
     ExternalLink,
+    Headphones,
     ListEnd,
     ListPlus,
     MoreHorizontal,
@@ -212,7 +213,8 @@ export function TrackList({
                             )}
                             {showPlays && track.source === 'local' && (
                                 <span className="hidden w-16 text-right text-xs text-white/35 tabular-nums sm:block">
-                                    {compactNumber(track.plays_count)} ▶
+                                    <Headphones className="mr-1 inline size-3 align-[-1px]" />
+                                    {compactNumber(track.plays_count)}
                                 </span>
                             )}
 

@@ -158,7 +158,7 @@ export default function AdminIntegrations({ spotify }: Props) {
                                     }
                                     placeholder={
                                         spotify.secret_hint
-                                            ? `Збережено: ${spotify.secret_hint} — залиште порожнім, щоб не змінювати`
+                                            ? `Збережено ${spotify.secret_hint}`
                                             : 'Вставте Client Secret'
                                     }
                                     autoComplete="new-password"
@@ -183,6 +183,13 @@ export default function AdminIntegrations({ spotify }: Props) {
                                     {form.errors.client_secret}
                                 </p>
                             )}
+                            {spotify.secret_hint &&
+                                !form.errors.client_secret && (
+                                    <p className="text-xs text-white/40">
+                                        Залиште поле порожнім, щоб не змінювати
+                                        збережений секрет.
+                                    </p>
+                                )}
                         </div>
 
                         <div className="flex flex-wrap gap-2 pt-1">
