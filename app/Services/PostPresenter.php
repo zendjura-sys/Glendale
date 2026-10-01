@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Comment;
 use App\Models\Community;
 use App\Models\Like;
+use App\Models\Movie;
 use App\Models\Post;
 use App\Models\PostAttachment;
 use App\Models\Track;
@@ -17,6 +18,9 @@ class PostPresenter
 
     /** @var array<int, array<string, mixed>> */
     private array $tracks = [];
+
+    /** @var array<int, array<string, mixed>> */
+    private array $movies = [];
 
     /**
      * Готує записи до показу: автор, стіна, вкладення, останні коментарі, лайки глядача.
@@ -58,6 +62,15 @@ class PostPresenter
         $tracks = $localTrackIds->isNotEmpty() ? Track::query()->whereIn('id', $localTrackIds)->get()->keyBy('id') : collect();
         $ownedTracks = $viewer && $tracks->isNotEmpty() ? app(MusicService::class)->libraryIds($viewer, $tracks->keys()) : [];
         $this->tracks = $tracks->map(fn (Track $t) => $t->toCard(isset($ownedTracks[$t->id])))->all();
+
+        $movieIds = $posts->pluck('movie_id')->filter()->unique();
+        $this->movies = $movieIds->isNotEmpty()
+            ? Movie::query()->whereIn('id', $movieIds)->get()->mapWithKeys(fn (Movie $m) => [$m->id => [
+                ...$m->toCard(),
+                'description' => $m->description,
+                'available' => $m->is_published,
+            ]])->all()
+            : [];
 
         $managed = $viewer && $posts->contains('wall_type', 'community')
             ? array_flip(app(CommunityService::class)->managedIds($viewer))
@@ -128,6 +141,7 @@ class PostPresenter
                 'height' => $a->height,
             ])->values()->all(),
             'music' => $this->music($post),
+            'movie' => $post->movie_id ? $this->movies[$post->movie_id] ?? null : null,
             'liked' => $liked,
             'comments' => $comments,
             'can' => [

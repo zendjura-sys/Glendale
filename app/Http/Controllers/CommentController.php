@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Comment;
 use App\Models\Like;
+use App\Models\Movie;
 use App\Models\Photo;
 use App\Models\Post;
 use App\Notifications\PostInteraction;
@@ -80,7 +81,7 @@ class CommentController extends Controller
     public function destroy(Request $request, Comment $comment): JsonResponse
     {
         $user = $request->user();
-        $subject = $comment->post ?? $comment->photo;
+        $subject = $comment->post ?? $comment->photo ?? $comment->movie;
         $ownsSubject = match (true) {
             $subject instanceof Post => $subject->wall_type === $user->getMorphClass() && $subject->wall_id === $user->id,
             $subject instanceof Photo => $subject->user_id === $user->id || $this->photos->canManage($subject->album, $user),
@@ -102,6 +103,8 @@ class CommentController extends Controller
         $user = $request->user();
         if ($comment->photo_id !== null) {
             abort_unless($comment->photo && $this->photos->canView($comment->photo->album, $user), 404);
+        } elseif ($comment->movie_id !== null) {
+            abort_unless($comment->movie instanceof Movie && ($comment->movie->is_published || $user->isStaff()), 404);
         } else {
             $this->authorizeView($request, $comment->post);
         }

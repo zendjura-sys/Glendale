@@ -21,6 +21,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { MovieCardEmbed } from '@/components/cinema/movie-card';
 import { MusicCard } from '@/components/music/music-card';
 import { api } from '@/lib/api';
 import { compactNumber, timeAgo } from '@/lib/format';
@@ -218,6 +219,10 @@ export function PostCard({
             )}
 
             {post.music && <MusicCard track={post.music} className="mt-3.5" />}
+
+            {post.movie && (
+                <MovieCardEmbed movie={post.movie} className="mt-3.5" />
+            )}
 
             <footer className="mt-4 flex items-center gap-2">
                 <LikeButton liked={liked} count={likes} onToggle={toggleLike} />

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\CinemaController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityMemberController;
@@ -151,6 +152,18 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         });
     });
 
+    Route::prefix('cinema')->name('cinema.')->middleware('module:cinema')->group(function () {
+        Route::get('/', [CinemaController::class, 'index'])->name('index');
+        Route::get('my', [CinemaController::class, 'my'])->name('my');
+        Route::get('search', [CinemaController::class, 'search'])->middleware('throttle:120,1')->name('search');
+        Route::get('{movie}', [CinemaController::class, 'show'])->name('show');
+        Route::patch('{movie}/status', [CinemaController::class, 'status'])->middleware('throttle:60,1')->name('status');
+        Route::put('{movie}/rating', [CinemaController::class, 'rate'])->middleware('throttle:60,1')->name('rate');
+        Route::post('{movie}/started', [CinemaController::class, 'started'])->middleware('throttle:30,1')->name('started');
+        Route::get('{movie}/comments', [CinemaController::class, 'comments'])->name('comments.index');
+        Route::post('{movie}/comments', [CinemaController::class, 'comment'])->middleware('throttle:30,1')->name('comments.store');
+    });
+
     Route::get('people', [PeopleController::class, 'index'])->middleware('module:people')->name('people.index');
     Route::get('search/quick', [PeopleController::class, 'quick'])->middleware('throttle:120,1')->name('search.quick');
 
@@ -176,7 +189,33 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('music', [Admin\MusicController::class, 'index'])->name('music.index');
         Route::delete('music/{track}', [Admin\MusicController::class, 'destroy'])->whereNumber('track')->name('music.destroy');
         Route::post('music/{track}/restore', [Admin\MusicController::class, 'restore'])->whereNumber('track')->name('music.restore');
+        Route::prefix('cinema')->name('cinema.')->group(function () {
+            Route::get('/', [Admin\CinemaController::class, 'index'])->name('index');
+            Route::get('create', [Admin\CinemaController::class, 'create'])->name('create');
+            Route::post('/', [Admin\CinemaController::class, 'store'])->name('store');
+            Route::get('import', [Admin\CinemaController::class, 'import'])->name('import');
+            Route::put('auto', [Admin\CinemaController::class, 'updateAuto'])->name('auto.update');
+            Route::post('auto/run', [Admin\CinemaController::class, 'runAuto'])->middleware('throttle:10,1')->name('auto.run');
+            Route::middleware('throttle:60,1')->group(function () {
+                Route::get('remote/{provider}/search', [Admin\CinemaController::class, 'remoteSearch'])->whereIn('provider', ['kodik', 'flixcdn'])->name('remote.search');
+                Route::get('remote/{provider}/latest', [Admin\CinemaController::class, 'remoteLatest'])->whereIn('provider', ['kodik', 'flixcdn'])->name('remote.latest');
+                Route::post('remote/import', [Admin\CinemaController::class, 'remoteImport'])->name('remote.import');
+            });
+            Route::whereNumber(['movie', 'source'])->group(function () {
+                Route::get('{movie}/edit', [Admin\CinemaController::class, 'edit'])->name('edit');
+                Route::post('{movie}', [Admin\CinemaController::class, 'update'])->name('update');
+                Route::patch('{movie}/flags', [Admin\CinemaController::class, 'flags'])->name('flags');
+                Route::delete('{movie}', [Admin\CinemaController::class, 'destroy'])->name('destroy');
+                Route::post('{movie}/restore', [Admin\CinemaController::class, 'restore'])->name('restore');
+                Route::post('{movie}/refresh', [Admin\CinemaController::class, 'refresh'])->middleware('throttle:20,1')->name('refresh');
+                Route::post('{movie}/enrich', [Admin\CinemaController::class, 'enrich'])->middleware('throttle:30,1')->name('enrich');
+                Route::post('{movie}/sources', [Admin\CinemaController::class, 'storeSource'])->name('sources.store');
+                Route::delete('{movie}/sources/{source}', [Admin\CinemaController::class, 'destroySource'])->name('sources.destroy');
+            });
+        });
         Route::get('integrations', [Admin\IntegrationController::class, 'index'])->name('integrations.index');
+        Route::put('integrations/cinema/{provider}', [Admin\IntegrationController::class, 'updateCinema'])->name('integrations.cinema');
+        Route::post('integrations/cinema/{provider}/test', [Admin\IntegrationController::class, 'testCinema'])->middleware('throttle:20,1')->name('integrations.cinema.test');
         Route::put('integrations/spotify', [Admin\IntegrationController::class, 'updateSpotify'])->name('integrations.spotify');
         Route::post('integrations/spotify/test', [Admin\IntegrationController::class, 'testSpotify'])->middleware('throttle:10,1')->name('integrations.spotify.test');
         Route::get('stickers', [Admin\StickerController::class, 'index'])->name('stickers.index');

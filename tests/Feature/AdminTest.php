@@ -45,7 +45,7 @@ class AdminTest extends TestCase
         $admin = User::factory()->admin()->create();
 
         $this->actingAs($admin)->patch(route('admin.modules.update', 'feed'), ['enabled' => false])->assertStatus(422);
-        $this->actingAs($admin)->patch(route('admin.modules.update', 'cinema'), ['enabled' => true])->assertStatus(422);
+        $this->actingAs($admin)->patch(route('admin.modules.update', 'games'), ['enabled' => true])->assertStatus(422);
     }
 
     public function test_banned_user_is_logged_out(): void

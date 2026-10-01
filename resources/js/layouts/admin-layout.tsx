@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
     Blocks,
+    Clapperboard,
     FileText,
     Images,
     LayoutDashboard,
@@ -29,6 +30,7 @@ const items = [
     { label: 'Спільноти', href: '/admin/communities', icon: Shield },
     { label: 'Фото', href: '/admin/photos', icon: Images },
     { label: 'Музика', href: '/admin/music', icon: Music2 },
+    { label: 'Кіно', href: '/admin/cinema', icon: Clapperboard },
     { label: 'Стікери', href: '/admin/stickers', icon: Sticker },
     { label: 'Модулі', href: '/admin/modules', icon: Blocks },
     { label: 'Інтеграції', href: '/admin/integrations', icon: PlugZap },
