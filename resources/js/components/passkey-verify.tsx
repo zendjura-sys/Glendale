@@ -31,7 +31,7 @@ export default function PasskeyVerify({
             },
         }),
         onSuccess: (response) => {
-            router.visit(response.redirect ?? '/dashboard');
+            router.visit(response.redirect ?? '/feed');
         },
     });
 
@@ -51,8 +51,8 @@ export default function PasskeyVerify({
                 >
                     {isLoading ? <Spinner /> : <KeyRound className="h-4 w-4" />}
                     {isLoading
-                        ? (loadingLabel ?? 'Authenticating...')
-                        : (label ?? 'Sign in with a passkey')}
+                        ? (loadingLabel ?? 'Перевірка…')
+                        : (label ?? 'Увійти з ключем доступу')}
                 </Button>
                 {error && (
                     <InputError message={error} className="text-center" />
@@ -61,11 +61,11 @@ export default function PasskeyVerify({
 
             <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
-                    <Separator className="w-full" />
+                    <Separator className="w-full bg-white/10" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
-                        {separator ?? 'Or continue with email'}
+                    <span className="rounded-full bg-[#0c1024] px-3 text-[11px] tracking-wider text-white/35">
+                        {separator ?? 'або через пошту'}
                     </span>
                 </div>
             </div>

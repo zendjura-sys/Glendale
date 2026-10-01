@@ -6,7 +6,6 @@ import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { edit } from '@/routes/security';
 import type { Props as ManagePasskeysProps } from '@/components/manage-passkeys';
 import ManagePasskeys from '@/components/manage-passkeys';
 import type { Props as ManageTwoFactorProps } from '@/components/manage-two-factor';
@@ -24,15 +23,15 @@ export default function Security(props: Props) {
 
     return (
         <>
-            <Head title="Security settings" />
+            <Head title="Безпека" />
 
-            <h1 className="sr-only">Security settings</h1>
+            <h1 className="sr-only">Безпека</h1>
 
-            <div className="space-y-6">
+            <div className="glass space-y-6 rounded-3xl p-6 sm:p-7">
                 <Heading
                     variant="small"
-                    title="Update password"
-                    description="Ensure your account is using a long, random password to stay secure"
+                    title="Зміна пароля"
+                    description="Використовуйте довгий унікальний пароль"
                 />
 
                 <Form
@@ -61,7 +60,7 @@ export default function Security(props: Props) {
                         <>
                             <div className="grid gap-2">
                                 <Label htmlFor="current_password">
-                                    Current password
+                                    Поточний пароль
                                 </Label>
 
                                 <PasswordInput
@@ -70,14 +69,14 @@ export default function Security(props: Props) {
                                     name="current_password"
                                     className="mt-1 block w-full"
                                     autoComplete="current-password"
-                                    placeholder="Current password"
+                                    placeholder="••••••••"
                                 />
 
                                 <InputError message={errors.current_password} />
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="password">New password</Label>
+                                <Label htmlFor="password">Новий пароль</Label>
 
                                 <PasswordInput
                                     id="password"
@@ -85,7 +84,7 @@ export default function Security(props: Props) {
                                     name="password"
                                     className="mt-1 block w-full"
                                     autoComplete="new-password"
-                                    placeholder="New password"
+                                    placeholder="Мінімум 8 символів"
                                     passwordrules={props.passwordRules}
                                 />
 
@@ -94,7 +93,7 @@ export default function Security(props: Props) {
 
                             <div className="grid gap-2">
                                 <Label htmlFor="password_confirmation">
-                                    Confirm password
+                                    Повторіть пароль
                                 </Label>
 
                                 <PasswordInput
@@ -102,7 +101,7 @@ export default function Security(props: Props) {
                                     name="password_confirmation"
                                     className="mt-1 block w-full"
                                     autoComplete="new-password"
-                                    placeholder="Confirm password"
+                                    placeholder="••••••••"
                                     passwordrules={props.passwordRules}
                                 />
 
@@ -116,7 +115,7 @@ export default function Security(props: Props) {
                                     disabled={processing}
                                     data-test="update-password-button"
                                 >
-                                    Save
+                                    Оновити пароль
                                 </Button>
                             </div>
                         </>
@@ -137,12 +136,3 @@ export default function Security(props: Props) {
         </>
     );
 }
-
-Security.layout = {
-    breadcrumbs: [
-        {
-            title: 'Security settings',
-            href: edit(),
-        },
-    ],
-};

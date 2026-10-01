@@ -1,138 +1,321 @@
-import { Form, Head, usePage } from '@inertiajs/react';
-import { Link } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { AtSign, Globe, Lock, MapPin } from 'lucide-react';
+import type { FormEvent } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/delete-user';
-import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { edit } from '@/routes/profile';
-import type { Auth } from '@/types';
+import { Spinner } from '@/components/ui/spinner';
+import { SettingsCard } from '@/layouts/settings/layout';
+import { cn } from '@/lib/utils';
 import { send } from '@/routes/verification';
 
-type PageProps = {
-    auth: Auth;
+type ProfileForm = {
+    first_name: string;
+    last_name: string;
+    username: string;
+    email: string;
+    status: string;
+    about: string;
+    city: string;
+    birthday: string;
+    gender: string;
+    website: string;
+    is_private: boolean;
 };
 
-export default function Profile({
-    mustVerifyEmail,
-    status,
-}: {
+type Props = {
     mustVerifyEmail: boolean;
     status?: string;
-}) {
-    const { auth } = usePage<PageProps>().props;
+    profile: { [K in keyof ProfileForm]: ProfileForm[K] | null };
+};
+
+const fieldClass =
+    'input-glass w-full rounded-xl px-3.5 text-sm text-white placeholder:text-white/30';
+
+export default function Profile({ mustVerifyEmail, status, profile }: Props) {
+    const { auth } = usePage().props;
+    const form = useForm<ProfileForm>({
+        first_name: profile.first_name ?? '',
+        last_name: profile.last_name ?? '',
+        username: profile.username ?? '',
+        email: profile.email ?? '',
+        status: profile.status ?? '',
+        about: profile.about ?? '',
+        city: profile.city ?? '',
+        birthday: profile.birthday ?? '',
+        gender: profile.gender ?? '',
+        website: profile.website ?? '',
+        is_private: !!profile.is_private,
+    });
+    const { data, setData, errors, processing } = form;
+
+    const submit = (e: FormEvent) => {
+        e.preventDefault();
+        form.submit(ProfileController.update(), {
+            preserveScroll: true,
+            onSuccess: () => form.setDefaults(),
+        });
+    };
 
     return (
         <>
-            <Head title="Profile settings" />
+            <Head title="Налаштування профілю" />
 
-            <h1 className="sr-only">Profile settings</h1>
-
-            <div className="space-y-6">
-                <Heading
-                    variant="small"
-                    title="Profile"
-                    description="Update your name and email address"
-                />
-
-                <Form
-                    {...ProfileController.update.form()}
-                    options={{
-                        preserveScroll: true,
-                    }}
-                    className="space-y-6"
+            <form onSubmit={submit} className="space-y-5">
+                <SettingsCard
+                    title="Основне"
+                    description="Так вас бачать інші учасники"
                 >
-                    {({ processing, errors }) => (
-                        <>
+                    <div className="grid gap-5">
+                        <div className="grid gap-4 sm:grid-cols-2">
                             <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
-
+                                <Label htmlFor="first_name">Ім'я</Label>
                                 <Input
-                                    id="name"
-                                    className="mt-1 block w-full"
-                                    defaultValue={auth.user.name}
-                                    name="name"
+                                    id="first_name"
+                                    value={data.first_name}
+                                    onChange={(e) =>
+                                        setData('first_name', e.target.value)
+                                    }
                                     required
-                                    autoComplete="name"
-                                    placeholder="Full name"
+                                    autoComplete="given-name"
                                 />
+                                <InputError message={errors.first_name} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="last_name">Прізвище</Label>
+                                <Input
+                                    id="last_name"
+                                    value={data.last_name}
+                                    onChange={(e) =>
+                                        setData('last_name', e.target.value)
+                                    }
+                                    autoComplete="family-name"
+                                />
+                                <InputError message={errors.last_name} />
+                            </div>
+                        </div>
 
-                                <InputError
-                                    className="mt-2"
-                                    message={errors.name}
+                        <div className="grid gap-2">
+                            <Label htmlFor="username">Адреса сторінки</Label>
+                            <div className="input-glass flex h-11 items-center rounded-xl pl-3.5 text-sm">
+                                <span className="shrink-0 text-white/35">
+                                    gamecon.online/
+                                </span>
+                                <input
+                                    id="username"
+                                    value={data.username}
+                                    onChange={(e) =>
+                                        setData(
+                                            'username',
+                                            e.target.value.toLowerCase(),
+                                        )
+                                    }
+                                    className="h-full min-w-0 flex-1 bg-transparent pr-3 text-white outline-none"
+                                    required
+                                    maxLength={32}
+                                />
+                                <AtSign className="mr-3 size-4 text-white/25" />
+                            </div>
+                            <p className="text-[11px] text-white/35">
+                                Латиниця, цифри, крапка та підкреслення. 3–32
+                                символи.
+                            </p>
+                            <InputError message={errors.username} />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="status">Статус</Label>
+                            <Input
+                                id="status"
+                                value={data.status}
+                                onChange={(e) =>
+                                    setData('status', e.target.value)
+                                }
+                                maxLength={140}
+                                placeholder="Що у вас нового?"
+                            />
+                            <div className="flex justify-between">
+                                <InputError message={errors.status} />
+                                <span className="ml-auto text-[11px] text-white/30">
+                                    {data.status.length}/140
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="about">Про себе</Label>
+                            <textarea
+                                id="about"
+                                value={data.about}
+                                onChange={(e) =>
+                                    setData('about', e.target.value)
+                                }
+                                rows={4}
+                                maxLength={2000}
+                                placeholder="Розкажіть про свої захоплення, улюблені ігри та фільми"
+                                className={cn(
+                                    fieldClass,
+                                    'resize-y py-3 leading-relaxed',
+                                )}
+                            />
+                            <InputError message={errors.about} />
+                        </div>
+                    </div>
+                </SettingsCard>
+
+                <SettingsCard title="Особиста інформація">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="grid gap-2">
+                            <Label htmlFor="city">Місто</Label>
+                            <div className="relative">
+                                <MapPin className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-white/30" />
+                                <Input
+                                    id="city"
+                                    value={data.city}
+                                    onChange={(e) =>
+                                        setData('city', e.target.value)
+                                    }
+                                    className="pl-10"
+                                    placeholder="Київ"
                                 />
                             </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
-
+                            <InputError message={errors.city} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="birthday">Дата народження</Label>
+                            <Input
+                                id="birthday"
+                                type="date"
+                                value={data.birthday}
+                                onChange={(e) =>
+                                    setData('birthday', e.target.value)
+                                }
+                                className="[color-scheme:dark]"
+                            />
+                            <InputError message={errors.birthday} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="gender">Стать</Label>
+                            <select
+                                id="gender"
+                                value={data.gender}
+                                onChange={(e) =>
+                                    setData('gender', e.target.value)
+                                }
+                                className={cn(
+                                    fieldClass,
+                                    'h-11 [color-scheme:dark]',
+                                )}
+                            >
+                                <option value="">Не вказано</option>
+                                <option value="male">Чоловіча</option>
+                                <option value="female">Жіноча</option>
+                            </select>
+                            <InputError message={errors.gender} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="website">Вебсайт</Label>
+                            <div className="relative">
+                                <Globe className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-white/30" />
                                 <Input
-                                    id="email"
-                                    type="email"
-                                    className="mt-1 block w-full"
-                                    defaultValue={auth.user.email}
-                                    name="email"
-                                    required
-                                    autoComplete="username"
-                                    placeholder="Email address"
-                                />
-
-                                <InputError
-                                    className="mt-2"
-                                    message={errors.email}
+                                    id="website"
+                                    type="url"
+                                    value={data.website}
+                                    onChange={(e) =>
+                                        setData('website', e.target.value)
+                                    }
+                                    className="pl-10"
+                                    placeholder="https://"
                                 />
                             </div>
+                            <InputError message={errors.website} />
+                        </div>
+                    </div>
+                </SettingsCard>
+
+                <SettingsCard title="Акаунт і приватність">
+                    <div className="grid gap-5">
+                        <div className="grid gap-2">
+                            <Label htmlFor="email">Електронна пошта</Label>
+                            <Input
+                                id="email"
+                                type="email"
+                                value={data.email}
+                                onChange={(e) =>
+                                    setData('email', e.target.value)
+                                }
+                                required
+                                autoComplete="username"
+                            />
+                            <InputError message={errors.email} />
 
                             {mustVerifyEmail &&
                                 auth.user.email_verified_at === null && (
-                                    <div>
-                                        <p className="-mt-4 text-sm text-muted-foreground">
-                                            Your email address is unverified.{' '}
-                                            <Link
-                                                href={send()}
-                                                as="button"
-                                                className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
-                                            >
-                                                Click here to re-send the
-                                                verification email.
-                                            </Link>
-                                        </p>
-
+                                    <p className="text-xs text-amber-200/80">
+                                        Пошту не підтверджено.{' '}
+                                        <Link
+                                            href={send()}
+                                            as="button"
+                                            className="text-[#9aa8ff] underline underline-offset-4"
+                                        >
+                                            Надіслати лист ще раз
+                                        </Link>
                                         {status ===
                                             'verification-link-sent' && (
-                                            <div className="mt-2 text-sm font-medium text-green-600">
-                                                A new verification link has been
-                                                sent to your email address.
-                                            </div>
+                                            <span className="ml-1 text-emerald-300">
+                                                Посилання надіслано.
+                                            </span>
                                         )}
-                                    </div>
+                                    </p>
                                 )}
+                        </div>
 
-                            <div className="flex items-center gap-4">
-                                <Button
-                                    disabled={processing}
-                                    data-test="update-profile-button"
-                                >
-                                    Save
-                                </Button>
-                            </div>
-                        </>
+                        <label className="flex cursor-pointer items-start gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 transition hover:border-white/15">
+                            <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.05]">
+                                <Lock className="size-[18px] text-[#a58bff]" />
+                            </span>
+                            <span className="flex-1">
+                                <span className="block text-sm font-semibold text-white">
+                                    Закритий профіль
+                                </span>
+                                <span className="mt-0.5 block text-xs leading-relaxed text-white/45">
+                                    Записи, друзів і фото бачитимуть лише ваші
+                                    друзі.
+                                </span>
+                            </span>
+                            <input
+                                type="checkbox"
+                                checked={data.is_private}
+                                onChange={(e) =>
+                                    setData('is_private', e.target.checked)
+                                }
+                                className="peer sr-only"
+                            />
+                            <span className="peer-checked:bg-gradient-brand relative mt-2 h-6 w-11 shrink-0 rounded-full bg-white/10 transition after:absolute after:top-0.5 after:left-0.5 after:size-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5" />
+                        </label>
+                    </div>
+                </SettingsCard>
+
+                <div className="glass-strong sticky bottom-20 z-10 flex items-center justify-end gap-3 rounded-2xl p-3 lg:bottom-4">
+                    {form.recentlySuccessful && (
+                        <span className="text-sm text-emerald-300">
+                            Збережено
+                        </span>
                     )}
-                </Form>
-            </div>
+                    <Button
+                        disabled={processing || !form.isDirty}
+                        data-test="update-profile-button"
+                    >
+                        {processing && <Spinner />}
+                        Зберегти зміни
+                    </Button>
+                </div>
+            </form>
 
             <DeleteUser />
         </>
     );
 }
-
-Profile.layout = {
-    breadcrumbs: [
-        {
-            title: 'Profile settings',
-            href: edit(),
-        },
-    ],
-};

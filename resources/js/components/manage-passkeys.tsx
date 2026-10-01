@@ -14,12 +14,12 @@ export type Props = {
 const EmptyState = () => {
     return (
         <div className="p-8 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
-                <KeyRound className="h-7 w-7 text-muted-foreground" />
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.05]">
+                <KeyRound className="h-7 w-7 text-white/45" />
             </div>
-            <p className="font-medium">No passkeys yet</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-                Add a passkey to sign in without a password
+            <p className="font-medium">Ключів ще немає</p>
+            <p className="mt-1 text-sm text-white/45">
+                Додайте ключ, щоб входити без пароля
             </p>
         </div>
     );
@@ -44,14 +44,14 @@ export default function ManagePasskeys(props: Props) {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="glass space-y-6 rounded-3xl p-6 sm:p-7">
             <Heading
                 variant="small"
-                title="Passkeys"
-                description="Manage your passkeys for passwordless sign-in"
+                title="Ключі доступу"
+                description="Вхід без пароля — відбитком пальця, Face ID або ключем безпеки"
             />
 
-            <div className="overflow-hidden rounded-lg border border-border">
+            <div className="overflow-hidden rounded-2xl border border-white/[0.07]">
                 {passkeys.length > 0 ? (
                     passkeys.map((passkey) => (
                         <PasskeyItem
