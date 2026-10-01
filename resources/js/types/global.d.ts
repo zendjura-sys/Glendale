@@ -21,7 +21,11 @@ declare module '@inertiajs/core' {
             };
             nav: NavEntry[];
             modules: string[];
-            counters: { friend_requests: number; notifications: number } | null;
+            counters: {
+                friend_requests: number;
+                notifications: number;
+                messages: number;
+            } | null;
             [key: string]: unknown;
         };
     }

@@ -278,10 +278,6 @@
         color: transparent;
     }
 
-    .bg-gradient-brand {
-        background-image: var(--gc-gradient);
-    }
-
     .btn-glow {
         position: relative;
         isolation: isolate;
@@ -399,6 +395,10 @@
         opacity: 0;
         transform: rotate(var(--r)) translateY(-17px) scale(0);
     }
+}
+
+@utility bg-gradient-brand {
+    background-image: var(--gc-gradient);
 }
 
 @utility scrollbar-none {

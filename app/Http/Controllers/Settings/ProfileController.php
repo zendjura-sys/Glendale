@@ -36,6 +36,7 @@ class ProfileController extends Controller
                 'gender' => $user->gender,
                 'website' => $user->website,
                 'is_private' => $user->is_private,
+                'message_privacy' => $user->message_privacy,
             ],
         ]);
     }

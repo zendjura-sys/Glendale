@@ -4,6 +4,7 @@ import {
     LayoutDashboard,
     LogOut,
     Megaphone,
+    MessageCircle,
     Settings,
     ShieldCheck,
     UserRound,
@@ -11,6 +12,7 @@ import {
 } from 'lucide-react';
 import type { PropsWithChildren } from 'react';
 import { Aurora } from '@/components/gc/aurora';
+import { InboxListener } from '@/components/gc/inbox-listener';
 import { Logo, LogoMark } from '@/components/gc/logo';
 import { ModuleIcon } from '@/components/gc/module-icon';
 import { NotificationsMenu } from '@/components/gc/notifications-menu';
@@ -25,6 +27,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useCurrentUrl } from '@/hooks/use-current-url';
+import { useUnreadMessages } from '@/lib/inbox';
 import { cn } from '@/lib/utils';
 
 function useIsActive() {
@@ -47,6 +50,7 @@ function useIsActive() {
 function Sidebar() {
     const { nav, auth, counters } = usePage().props;
     const isActive = useIsActive();
+    const unreadMessages = useUnreadMessages();
     const user = auth.user;
 
     return (
@@ -77,7 +81,11 @@ function Sidebar() {
                             : item.href;
                     const active = isActive(href, item.key);
                     const badge =
-                        item.key === 'friends' ? counters?.friend_requests : 0;
+                        item.key === 'friends'
+                            ? counters?.friend_requests
+                            : item.key === 'messages'
+                              ? unreadMessages
+                              : 0;
 
                     return (
                         <Link
@@ -102,7 +110,7 @@ function Sidebar() {
                             />
                             <span className="flex-1">{item.label}</span>
                             {!!badge && (
-                                <span className="bg-gradient-brand rounded-full px-1.5 text-[11px] leading-5 font-bold text-white">
+                                <span className="rounded-full bg-gradient-brand px-1.5 text-[11px] leading-5 font-bold text-white">
                                     {badge}
                                 </span>
                             )}
@@ -209,7 +217,8 @@ function UserMenu() {
 }
 
 function Topbar() {
-    const { counters } = usePage().props;
+    const { counters, modules } = usePage().props;
+    const unreadMessages = useUnreadMessages();
 
     return (
         <header className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.06] bg-[#05070f]/70 backdrop-blur-2xl">
@@ -227,11 +236,27 @@ function Topbar() {
                     >
                         <UsersRound className="size-[19px]" />
                         {!!counters?.friend_requests && (
-                            <span className="bg-gradient-brand absolute top-1.5 right-1.5 flex min-w-4 items-center justify-center rounded-full px-1 text-[10px] leading-4 font-bold text-white">
+                            <span className="absolute top-1.5 right-1.5 flex min-w-4 items-center justify-center rounded-full bg-gradient-brand px-1 text-[10px] leading-4 font-bold text-white">
                                 {counters.friend_requests}
                             </span>
                         )}
                     </Link>
+                    {modules.includes('messages') && (
+                        <Link
+                            href="/messages"
+                            className="relative flex size-10 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white"
+                            aria-label="Повідомлення"
+                        >
+                            <MessageCircle className="size-[19px]" />
+                            {unreadMessages > 0 && (
+                                <span className="absolute top-1.5 right-1.5 flex min-w-4 animate-in items-center justify-center rounded-full bg-gradient-brand px-1 text-[10px] leading-4 font-bold text-white shadow-[0_0_12px_rgb(124_140_255/0.9)] zoom-in-50">
+                                    {unreadMessages > 99
+                                        ? '99+'
+                                        : unreadMessages}
+                                </span>
+                            )}
+                        </Link>
+                    )}
                     <NotificationsMenu />
                     <span className="mx-1 hidden h-6 w-px bg-white/10 sm:block" />
                     <UserMenu />
@@ -244,6 +269,7 @@ function Topbar() {
 function MobileNav() {
     const { nav, auth } = usePage().props;
     const isActive = useIsActive();
+    const unreadMessages = useUnreadMessages();
 
     return (
         <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.07] bg-[#070a16]/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl lg:hidden">
@@ -260,10 +286,15 @@ function MobileNav() {
                             key={item.key}
                             href={href}
                             className={cn(
-                                'flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium transition',
+                                'relative flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium transition',
                                 active ? 'text-white' : 'text-white/45',
                             )}
                         >
+                            {item.key === 'messages' && unreadMessages > 0 && (
+                                <span className="absolute top-1 left-1/2 ml-1.5 min-w-4 rounded-full bg-gradient-brand px-1 text-center text-[10px] leading-4 font-bold text-white">
+                                    {unreadMessages}
+                                </span>
+                            )}
                             <ModuleIcon
                                 name={item.icon}
                                 className={cn(
@@ -299,8 +330,13 @@ function Announcement() {
 }
 
 export default function SocialLayout({ children }: PropsWithChildren) {
+    const { auth, modules } = usePage().props;
+
     return (
         <div className="relative min-h-dvh">
+            {modules.includes('messages') && (
+                <InboxListener userId={auth.user.id} />
+            )}
             <Aurora />
             <Topbar />
             <div className="mx-auto flex max-w-[1320px] gap-5 px-3 pt-[76px] pb-24 sm:px-5 lg:pb-10">

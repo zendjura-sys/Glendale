@@ -4,6 +4,8 @@ use App\Http\Controllers\Admin;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FriendController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\MessengerController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PeopleController;
 use App\Http\Controllers\PostController;
@@ -34,6 +36,26 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('friends/{user}', [FriendController::class, 'store'])->middleware('throttle:60,1')->name('friends.store');
         Route::post('friends/{user}/accept', [FriendController::class, 'accept'])->name('friends.accept');
         Route::delete('friends/{user}', [FriendController::class, 'destroy'])->name('friends.destroy');
+    });
+
+    Route::prefix('messages')->name('messages.')->middleware('module:messages')->group(function () {
+        Route::get('/', [MessengerController::class, 'index'])->name('index');
+        Route::get('contacts', [MessengerController::class, 'contacts'])->name('contacts');
+        Route::get('with/{user}', [MessengerController::class, 'direct'])->name('direct');
+        Route::post('groups', [MessengerController::class, 'storeGroup'])->middleware('throttle:10,1')->name('groups.store');
+
+        Route::whereNumber(['conversation', 'message'])->group(function () {
+            Route::get('{conversation}', [MessengerController::class, 'show'])->name('show');
+            Route::get('{conversation}/history', [MessengerController::class, 'history'])->name('history');
+            Route::post('{conversation}', [MessageController::class, 'store'])->middleware('throttle:60,1')->name('store');
+            Route::post('{conversation}/settings', [MessengerController::class, 'update'])->name('update');
+            Route::post('{conversation}/read', [MessengerController::class, 'read'])->name('read');
+            Route::post('{conversation}/mute', [MessengerController::class, 'mute'])->name('mute');
+            Route::post('{conversation}/members', [MessengerController::class, 'addMembers'])->name('members.store');
+            Route::delete('{conversation}/members/{user}', [MessengerController::class, 'removeMember'])->name('members.destroy');
+            Route::patch('{conversation}/messages/{message}', [MessageController::class, 'update'])->name('messages.update');
+            Route::delete('{conversation}/messages/{message}', [MessageController::class, 'destroy'])->name('messages.destroy');
+        });
     });
 
     Route::get('people', [PeopleController::class, 'index'])->middleware('module:people')->name('people.index');

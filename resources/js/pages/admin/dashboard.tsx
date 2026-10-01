@@ -364,7 +364,7 @@ export default function AdminDashboard({
                         </div>
                         <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
                             <div
-                                className="bg-gradient-brand h-full rounded-full"
+                                className="h-full rounded-full bg-gradient-brand"
                                 style={{
                                     width: `${(stats.modules_enabled / Math.max(1, stats.modules_total)) * 100}%`,
                                 }}

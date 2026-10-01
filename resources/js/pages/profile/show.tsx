@@ -43,6 +43,7 @@ type Props = {
     relation: Relation;
     canSeeContent: boolean;
     canPost: boolean;
+    canMessage: boolean;
     counters: {
         friends: number;
         posts: number;
@@ -130,6 +131,7 @@ export default function ProfileShow({
     relation,
     canSeeContent,
     canPost,
+    canMessage,
     counters,
     friends,
     photos,
@@ -237,15 +239,16 @@ export default function ProfileShow({
                                         username={profile.username}
                                         relation={relation}
                                     />
-                                    {modules.includes('messages') && (
-                                        <button
-                                            type="button"
-                                            className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"
-                                        >
-                                            <MessageCircle className="size-4" />{' '}
-                                            Написати
-                                        </button>
-                                    )}
+                                    {modules.includes('messages') &&
+                                        canMessage && (
+                                            <Link
+                                                href={`/messages/with/${profile.username}`}
+                                                className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"
+                                            >
+                                                <MessageCircle className="size-4" />{' '}
+                                                Написати
+                                            </Link>
+                                        )}
                                 </>
                             )}
                         </div>

@@ -167,7 +167,7 @@ export function PostComposer({ wall = null, className }: Props) {
             {form.progress && (
                 <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/5">
                     <div
-                        className="bg-gradient-brand h-full transition-all"
+                        className="h-full bg-gradient-brand transition-all"
                         style={{ width: `${form.progress.percentage}%` }}
                     />
                 </div>

@@ -3,11 +3,16 @@
 namespace Database\Seeders;
 
 use App\Models\Comment;
+use App\Models\Conversation;
+use App\Models\ConversationParticipant;
 use App\Models\Friendship;
 use App\Models\Like;
+use App\Models\Message;
+use App\Models\MessageAttachment;
 use App\Models\Post;
 use App\Models\PostAttachment;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
@@ -165,6 +170,163 @@ class DemoSeeder extends Seeder
                 'likes_count' => $post->likes()->count(),
                 'comments_count' => $post->comments()->count(),
             ])->saveQuietly();
+        }
+
+        Model::unguarded(fn () => $this->seedMessages($users->values()->all()));
+    }
+
+    /**
+     * Демо-бесіди для Марка: особисті, групові, з фото, відповідями та непрочитаними.
+     *
+     * @param  list<User>  $u
+     */
+    private function seedMessages(array $u): void
+    {
+        [$mark, $olena, $andriy, $sofia, $dmytro, $nastia, $maksym, $vika, $ivan, $katia, $oleksandr] = $u;
+        $daryna = $u[13];
+
+        $olenaChat = $this->conversation([$mark, $olena]);
+        $this->chat($olenaChat, [
+            [$olena, 'Привіт! Бачила твій пост про Elden Ring 🔥', 190],
+            [$mark, 'Привіт! Так, нарешті закрив на 100%. Malenia — це біль 😅', 186],
+            [$olena, 'Я її з 47 спроби пройшла на стрімі, чат кричав 😂', 185],
+            [$mark, 'Легенда. Скинь запис, гляну ввечері', 180],
+            [$olena, 'Сьогодні о 21:00 стрімлю Hades II, заходь!', 6, 'reply' => 3],
+            [$olena, 'І ще: ми з командою шукаємо тестерів для нашої інді-гри. Хочеш спробувати?', 4],
+        ], readBy: [$mark->id => 4]);
+
+        $cup = $this->conversation([$mark, $andriy, $dmytro, $ivan, $oleksandr], 'GameCon Cup · CS2');
+        $this->chat($cup, [
+            [null, 'Марк Шевченко створив бесіду «GameCon Cup · CS2»', 300],
+            [$mark, 'Всім привіт! Збираємо склад на турнір. Реєстрація до п’ятниці', 299],
+            [$andriy, 'Я в ділі. Беру AWP, як завжди 😎', 290],
+            [$ivan, 'Можу на entry. Мій ранг — 18к Premier', 288],
+            [$dmytro, 'Я на підтримці, флешки поставлю як в кіно', 287],
+            [$oleksandr, 'А тренування коли? Пропоную середу та четвер о 20:00', 120],
+            [$mark, 'Середа ок. Сервер організую 👍', 118, 'reply' => 6],
+            [$andriy, 'Скинув нову розкидку гранат на Mirage, гляньте', 25, 'images' => 1],
+            [$ivan, 'Топ! Тоді в середу відпрацюємо', 20],
+            [$oleksandr, 'Я буду трохи пізніше, на 15 хв', 12],
+        ], readBy: [$mark->id => 7]);
+
+        $sofiaChat = $this->conversation([$mark, $sofia]);
+        $this->chat($sofiaChat, [
+            [$sofia, 'Марк, а коли модуль кіно запустите? Хочу дивитися аніме прямо тут 🥺', 1500],
+            [$mark, 'Вже скоро! Наступним етапом після повідомлень', 1490],
+            [$sofia, 'Ура! Тоді я першою зроблю добірку «Фрірен» і «Магічна битва»', 1480],
+            [$mark, 'Домовились. Зробимо тобі значок кураторки 😉', 50],
+        ], readBy: [$sofia->id => 4, $mark->id => 4]);
+
+        $club = $this->conversation([$mark, $nastia, $katia, $daryna], 'Кіноклуб 🎬');
+        $this->chat($club, [
+            [null, 'Анастасія Кравченко створила бесіду «Кіноклуб 🎬»', 4000],
+            [$nastia, 'Кіно-вечір у суботу: голосуємо! «Дюна 2» чи «Інтерстеллар»?', 300],
+            [$katia, 'Дюна! Звук там неймовірний', 295],
+            [$daryna, 'А я б щось корейське запропонувала 🙈', 290],
+            [$nastia, 'Даринко, наступного разу — обіцяю 😄', 40],
+        ], readBy: [$mark->id => 2], mutedFor: [$mark->id], ownerIndex: 1);
+
+        $vikaChat = $this->conversation([$mark, $vika]);
+        $this->chat($vikaChat, [
+            [$vika, 'Привіт! Намалювала концепт для заставки GameCon', 3000],
+            [$vika, null, 2999, 'images' => 2],
+            [$mark, 'Вау, це неймовірно! Можна використати на головній?', 2990],
+            [$vika, 'Звісно, буду рада 💜', 2980],
+        ], readBy: [$mark->id => 4, $vika->id => 3]);
+
+        $maksymChat = $this->conversation([$mark, $maksym]);
+        $this->chat($maksymChat, [
+            [$maksym, 'Знайшов на OLX Sega Saturn у ідеальному стані', 9000],
+            [$mark, 'Бери не думаючи! Panzer Dragoon того вартий', 8990],
+        ], readBy: [$mark->id => 2, $maksym->id => 2]);
+    }
+
+    /**
+     * @param  list<User>  $members
+     */
+    private function conversation(array $members, ?string $title = null): Conversation
+    {
+        $owner = $members[0];
+
+        $conversation = Conversation::query()->create([
+            'type' => $title ? Conversation::TYPE_GROUP : Conversation::TYPE_DIRECT,
+            'title' => $title,
+            'owner_id' => $title ? $owner->id : null,
+            'direct_key' => $title ? null : Conversation::directKey($members[0]->id, $members[1]->id),
+        ]);
+
+        foreach ($members as $member) {
+            $conversation->participants()->create([
+                'user_id' => $member->id,
+                'role' => $title && $member->is($owner) ? ConversationParticipant::ROLE_OWNER : ConversationParticipant::ROLE_MEMBER,
+                'joined_at' => now()->subDays(10),
+            ]);
+        }
+
+        return $conversation;
+    }
+
+    /**
+     * Рядки: [автор|null (системне), текст|null, хвилин тому, 'reply' => № рядка (з 1), 'images' => к-сть].
+     *
+     * @param  list<array<int|string, mixed>>  $lines
+     * @param  array<int, int>  $readBy  user_id => № останнього прочитаного рядка
+     * @param  list<int>  $mutedFor
+     */
+    private function chat(Conversation $conversation, array $lines, array $readBy = [], array $mutedFor = [], int $ownerIndex = 0): void
+    {
+        $ids = [];
+
+        foreach ($lines as $n => $line) {
+            [$author, $body, $minutesAgo] = $line;
+            $at = now()->subMinutes($minutesAgo);
+
+            $message = Message::query()->create([
+                'conversation_id' => $conversation->id,
+                'user_id' => $author?->id,
+                'type' => $author ? Message::TYPE_TEXT : Message::TYPE_SYSTEM,
+                'body' => $body,
+                'reply_to_id' => isset($line['reply']) ? $ids[$line['reply'] - 1] : null,
+                'created_at' => $at,
+                'updated_at' => $at,
+            ]);
+            $ids[] = $message->id;
+
+            for ($k = 0; $k < ($line['images'] ?? 0); $k++) {
+                $path = $this->download("https://picsum.photos/seed/gc-chat-{$conversation->id}-{$n}-{$k}/1200/800", "demo/messages/{$conversation->id}-{$n}-{$k}.jpg");
+                if ($path) {
+                    $message->attachments()->create([
+                        'type' => MessageAttachment::TYPE_IMAGE,
+                        'path' => $path,
+                        'mime' => 'image/jpeg',
+                        'width' => 1200,
+                        'height' => 800,
+                        'position' => $k,
+                    ]);
+                }
+            }
+
+            if ($author) {
+                $readBy[$author->id] = max($readBy[$author->id] ?? 0, $n + 1);
+            }
+        }
+
+        $last = Message::query()->find(end($ids));
+        $conversation->forceFill(['last_message_id' => $last->id, 'last_message_at' => $last->created_at])->save();
+
+        if ($conversation->isGroup() && $ownerIndex > 0) {
+            $members = $conversation->participants()->orderBy('id')->get();
+            $members->each->update(['role' => ConversationParticipant::ROLE_MEMBER]);
+            $members[$ownerIndex]->update(['role' => ConversationParticipant::ROLE_OWNER]);
+            $conversation->update(['owner_id' => $members[$ownerIndex]->user_id]);
+        }
+
+        foreach ($readBy as $userId => $line) {
+            $conversation->participants()->where('user_id', $userId)->update(['last_read_message_id' => $ids[$line - 1]]);
+        }
+
+        if ($mutedFor) {
+            $conversation->participants()->whereIn('user_id', $mutedFor)->update(['is_muted' => true]);
         }
     }
 

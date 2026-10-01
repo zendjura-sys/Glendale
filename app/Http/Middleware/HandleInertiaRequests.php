@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Services\FriendshipService;
+use App\Services\Messenger;
 use App\Support\Modules\ModuleManager;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\Request;
@@ -75,6 +76,7 @@ class HandleInertiaRequests extends Middleware
             'counters' => $user ? fn () => [
                 'friend_requests' => $this->friendships->incomingCount($user),
                 'notifications' => $user->unreadNotifications()->count(),
+                'messages' => $this->modules->enabled('messages') ? app(Messenger::class)->unreadConversations($user) : 0,
             ] : null,
         ];
     }

@@ -116,7 +116,7 @@ function MockChat() {
                 <div className="w-fit max-w-[85%] rounded-2xl rounded-bl-md bg-white/[0.07] px-3 py-2 text-white/80">
                     Збираємось о 20:00?
                 </div>
-                <div className="bg-gradient-brand ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md px-3 py-2 text-white">
+                <div className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-gradient-brand px-3 py-2 text-white">
                     Так! Я вже в лобі 🎮
                 </div>
                 <div className="w-fit max-w-[85%] rounded-2xl rounded-bl-md bg-white/[0.07] px-3 py-2 text-white/80">
@@ -259,7 +259,7 @@ export default function Welcome({
                     </div>
 
                     <div className="relative hidden h-[560px] lg:block">
-                        <div className="bg-gradient-brand absolute inset-0 m-auto size-[460px] rounded-full opacity-25 blur-[90px]" />
+                        <div className="absolute inset-0 m-auto size-[460px] rounded-full bg-gradient-brand opacity-25 blur-[90px]" />
                         <div className="absolute top-6 left-8 z-10">
                             <MockPost />
                         </div>
@@ -364,7 +364,7 @@ export default function Welcome({
 
                 <section className="mx-auto max-w-[1240px] px-5 pb-24">
                     <div className="gradient-border glass-strong relative overflow-hidden rounded-[32px] px-8 py-14 text-center sm:px-16">
-                        <div className="bg-gradient-brand absolute inset-0 opacity-[0.12]" />
+                        <div className="absolute inset-0 bg-gradient-brand opacity-[0.12]" />
                         <h2 className="relative font-display text-[clamp(1.8rem,3.4vw,2.6rem)] font-bold text-white">
                             Твоя команда вже тут
                         </h2>

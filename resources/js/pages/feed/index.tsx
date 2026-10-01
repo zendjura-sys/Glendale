@@ -107,7 +107,7 @@ export default function Feed({
 
                     {tab === 'discover' && !hasFriends && (
                         <div className="gradient-border glass flex items-center gap-4 rounded-3xl p-5">
-                            <span className="bg-gradient-brand flex size-12 shrink-0 items-center justify-center rounded-2xl shadow-[0_10px_30px_-8px_rgb(109_93_252/0.9)]">
+                            <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-brand shadow-[0_10px_30px_-8px_rgb(109_93_252/0.9)]">
                                 <Sparkles className="size-6 text-white" />
                             </span>
                             <div className="text-sm">

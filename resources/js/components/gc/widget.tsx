@@ -73,7 +73,7 @@ export function EmptyState({
     return (
         <div className="glass flex flex-col items-center rounded-3xl px-6 py-14 text-center">
             <span className="relative mb-5 flex size-16 items-center justify-center rounded-2xl bg-white/[0.04] ring-1 ring-white/10">
-                <span className="bg-gradient-brand absolute inset-0 rounded-2xl opacity-20 blur-xl" />
+                <span className="absolute inset-0 rounded-2xl bg-gradient-brand opacity-20 blur-xl" />
                 <Icon className="relative size-7 text-[#9aa8ff]" />
             </span>
             <h3 className="font-display text-lg font-semibold text-white">

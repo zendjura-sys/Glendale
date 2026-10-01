@@ -1,4 +1,4 @@
-function xsrfToken(): string {
+export function xsrfToken(): string {
     const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
 
     return match ? decodeURIComponent(match[1]) : '';
@@ -20,18 +20,19 @@ export class ApiError extends Error {
 export async function api<T>(
     method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
     url: string,
-    body?: Record<string, unknown>,
+    body?: Record<string, unknown> | FormData,
 ): Promise<T> {
+    const isForm = body instanceof FormData;
     const response = await fetch(url, {
         method,
         credentials: 'same-origin',
         headers: {
             Accept: 'application/json',
-            'Content-Type': 'application/json',
+            ...(isForm ? {} : { 'Content-Type': 'application/json' }),
             'X-Requested-With': 'XMLHttpRequest',
             'X-XSRF-TOKEN': xsrfToken(),
         },
-        body: body ? JSON.stringify(body) : undefined,
+        body: isForm ? body : body ? JSON.stringify(body) : undefined,
     });
 
     if (!response.ok) {
