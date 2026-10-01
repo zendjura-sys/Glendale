@@ -133,7 +133,7 @@ class FlixcdnClient
                 'description' => self::str(self::pick($item, ['description', 'overview', 'plot'])),
                 'poster_url' => self::url(self::pick($item, ['poster', 'poster_url', 'cover', 'image'])),
                 'backdrop_url' => self::url(self::pick($item, ['backdrop', 'backdrop_url', 'background'])),
-                'genres' => self::names(self::pick($item, ['genres', 'genre'])),
+                'genres' => array_map(mb_strtolower(...), self::names(self::pick($item, ['genres', 'genre']))),
                 'countries' => self::names(self::pick($item, ['countries', 'country'])),
                 'duration' => null,
                 'age_rating' => null,
@@ -292,7 +292,7 @@ class FlixcdnClient
         return collect($value)
             ->map(fn ($v) => is_array($v) ? ($v['title'] ?? $v['name'] ?? null) : $v)
             ->filter(fn ($v) => is_scalar($v) && trim((string) $v) !== '')
-            ->map(fn ($v) => mb_strtolower(trim((string) $v)))
+            ->map(fn ($v) => trim((string) $v))
             ->unique()->take(8)->values()->all();
     }
 
