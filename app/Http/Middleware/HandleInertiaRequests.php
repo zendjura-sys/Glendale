@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\User;
 use App\Services\FriendshipService;
 use App\Services\Messenger;
+use App\Services\Spotify\SpotifyClient;
 use App\Support\Modules\ModuleManager;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\Request;
@@ -95,6 +96,10 @@ class HandleInertiaRequests extends Middleware
 
         $account = $user->spotifyAccount;
 
-        return ['spotify' => ['connected' => $account !== null, 'premium' => (bool) $account?->isPremium()]];
+        return ['spotify' => [
+            'connected' => $account !== null,
+            'premium' => (bool) $account?->isPremium(),
+            'configured' => app(SpotifyClient::class)->configured(),
+        ]];
     }
 }

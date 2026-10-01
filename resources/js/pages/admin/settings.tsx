@@ -18,6 +18,7 @@ type Settings = {
     max_attachments: number;
     max_upload_mb: number;
     max_message_file_mb: number;
+    music_max_track_mb: number;
     maintenance_message: string;
 };
 
@@ -148,7 +149,7 @@ export default function AdminSettings({ settings }: { settings: Settings }) {
                     title="Записи та файли"
                     description="Обмеження для публікацій і завантажень."
                 >
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         <div className="grid gap-2">
                             <Label htmlFor="max_post_length">
                                 Довжина запису
@@ -224,6 +225,25 @@ export default function AdminSettings({ settings }: { settings: Settings }) {
                                 }
                             />
                             <InputError message={errors.max_message_file_mb} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="music_max_track_mb">
+                                Аудіотреки, МБ
+                            </Label>
+                            <Input
+                                id="music_max_track_mb"
+                                type="number"
+                                min={1}
+                                max={500}
+                                value={data.music_max_track_mb}
+                                onChange={(e) =>
+                                    setData(
+                                        'music_max_track_mb',
+                                        Number(e.target.value),
+                                    )
+                                }
+                            />
+                            <InputError message={errors.music_max_track_mb} />
                         </div>
                     </div>
                 </Section>

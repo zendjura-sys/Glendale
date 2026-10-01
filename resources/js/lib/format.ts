@@ -163,3 +163,14 @@ export function formatDuration(seconds: number): string {
 
     return `${Math.floor(safe / 60)}:${String(safe % 60).padStart(2, '0')}`;
 }
+
+export function formatLength(seconds: number): string {
+    const minutes = Math.round(Math.max(0, seconds) / 60);
+    const hours = Math.floor(minutes / 60);
+
+    if (hours === 0) return `${minutes} хв`;
+
+    return minutes % 60 === 0
+        ? `${hours} год`
+        : `${hours} год ${minutes % 60} хв`;
+}

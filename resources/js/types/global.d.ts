@@ -1,4 +1,5 @@
 import type { Auth } from '@/types/auth';
+import type { SharedMusic } from '@/types/music';
 import type { NavEntry } from '@/types/social';
 
 declare module 'react' {
@@ -22,6 +23,7 @@ declare module '@inertiajs/core' {
             };
             nav: NavEntry[];
             modules: string[];
+            music: SharedMusic;
             counters: {
                 friend_requests: number;
                 notifications: number;

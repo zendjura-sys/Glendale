@@ -1,0 +1,111 @@
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { api, ApiError } from '@/lib/api';
+import type { LocalTrack } from '@/types';
+
+const fields = [
+    ['title', 'Назва'],
+    ['artist', 'Виконавець'],
+    ['album', 'Альбом'],
+    ['genre', 'Жанр'],
+] as const;
+
+export function EditTrackDialog({
+    track,
+    onOpenChange,
+    onSaved,
+}: {
+    track: LocalTrack | null;
+    onOpenChange: (open: boolean) => void;
+    onSaved: (track: LocalTrack) => void;
+}) {
+    const [data, setData] = useState({
+        title: '',
+        artist: '',
+        album: '',
+        genre: '',
+    });
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        if (track)
+            setData({
+                title: track.title,
+                artist: track.artist,
+                album: track.album ?? '',
+                genre: track.genre ?? '',
+            });
+    }, [track]);
+
+    const save = async () => {
+        if (!track) return;
+        setSaving(true);
+        try {
+            const response = await api<{ track: LocalTrack }>(
+                'PATCH',
+                `/music/tracks/${track.id}`,
+                data,
+            );
+            onSaved(response.track);
+            onOpenChange(false);
+            toast.success('Трек оновлено.');
+        } catch (error) {
+            toast.error(
+                error instanceof ApiError ? error.message : 'Не вдалося.',
+            );
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <Dialog open={track !== null} onOpenChange={onOpenChange}>
+            <DialogContent className="glass-strong gap-0 rounded-3xl border-white/10 p-6 text-white sm:max-w-md">
+                <DialogTitle className="font-display text-xl">
+                    Редагування треку
+                </DialogTitle>
+                <div className="mt-5 grid gap-3">
+                    {fields.map(([key, label]) => (
+                        <label
+                            key={key}
+                            className="text-sm font-medium text-white/80"
+                        >
+                            {label}
+                            <input
+                                value={data[key]}
+                                onChange={(event) =>
+                                    setData({
+                                        ...data,
+                                        [key]: event.target.value,
+                                    })
+                                }
+                                maxLength={key === 'genre' ? 40 : 150}
+                                className="input-glass mt-1.5 h-10 w-full rounded-xl px-3.5 text-sm text-white focus:outline-none"
+                            />
+                        </label>
+                    ))}
+                </div>
+                <div className="mt-6 flex justify-end gap-2">
+                    <button
+                        type="button"
+                        onClick={() => onOpenChange(false)}
+                        className="rounded-xl px-4 py-2.5 text-sm text-white/60 hover:bg-white/5 hover:text-white"
+                    >
+                        Скасувати
+                    </button>
+                    <button
+                        type="button"
+                        onClick={save}
+                        disabled={
+                            saving || !data.title.trim() || !data.artist.trim()
+                        }
+                        className="btn-glow rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
+                    >
+                        Зберегти
+                    </button>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}

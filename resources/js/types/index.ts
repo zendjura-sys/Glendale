@@ -5,3 +5,4 @@ export type * from './social';
 export type * from './messenger';
 export type * from './community';
 export type * from './photos';
+export type * from './music';

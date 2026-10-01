@@ -5,6 +5,8 @@ import {
     FileText,
     Images,
     LayoutDashboard,
+    Music2,
+    PlugZap,
     Settings2,
     Shield,
     ShieldCheck,
@@ -15,7 +17,9 @@ import type { PropsWithChildren } from 'react';
 import { Aurora } from '@/components/gc/aurora';
 import { LogoMark } from '@/components/gc/logo';
 import { UserAvatar } from '@/components/gc/user-avatar';
+import { PlayerBar } from '@/components/music/player-bar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
+import { usePlayer } from '@/lib/player';
 import { cn } from '@/lib/utils';
 
 const items = [
@@ -24,8 +28,10 @@ const items = [
     { label: 'Записи', href: '/admin/posts', icon: FileText },
     { label: 'Спільноти', href: '/admin/communities', icon: Shield },
     { label: 'Фото', href: '/admin/photos', icon: Images },
+    { label: 'Музика', href: '/admin/music', icon: Music2 },
     { label: 'Стікери', href: '/admin/stickers', icon: Sticker },
     { label: 'Модулі', href: '/admin/modules', icon: Blocks },
+    { label: 'Інтеграції', href: '/admin/integrations', icon: PlugZap },
     { label: 'Налаштування', href: '/admin/settings', icon: Settings2 },
 ];
 
@@ -41,8 +47,9 @@ function useActive() {
 }
 
 export default function AdminLayout({ children }: PropsWithChildren) {
-    const { auth } = usePage().props;
+    const { auth, modules } = usePage().props;
     const isActive = useActive();
+    const { current } = usePlayer();
 
     return (
         <div className="relative min-h-dvh">
@@ -139,9 +146,15 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                 ))}
             </header>
 
-            <main className="px-4 py-6 sm:px-6 lg:ml-[256px] lg:px-8 lg:py-8">
+            <main
+                className={cn(
+                    'px-4 py-6 sm:px-6 lg:ml-[256px] lg:px-8 lg:py-8',
+                    current && 'pb-28 lg:pb-28',
+                )}
+            >
                 <div className="mx-auto max-w-[1280px]">{children}</div>
             </main>
+            {modules.includes('music') && <PlayerBar standalone />}
         </div>
     );
 }
