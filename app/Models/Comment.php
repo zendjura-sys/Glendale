@@ -1,0 +1,49 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
+
+/**
+ * @property int $id
+ * @property int $post_id
+ * @property int $user_id
+ * @property int|null $parent_id
+ * @property string $body
+ * @property int $likes_count
+ * @property Carbon $created_at
+ */
+#[Fillable(['post_id', 'user_id', 'parent_id', 'body'])]
+class Comment extends Model
+{
+    use SoftDeletes;
+
+    /**
+     * @return BelongsTo<Post, $this>
+     */
+    public function post(): BelongsTo
+    {
+        return $this->belongsTo(Post::class);
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * @return MorphMany<Like, $this>
+     */
+    public function likes(): MorphMany
+    {
+        return $this->morphMany(Like::class, 'likeable');
+    }
+}
