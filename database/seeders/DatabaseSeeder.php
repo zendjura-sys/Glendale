@@ -13,6 +13,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(ModuleManager $modules): void
     {
+        $modules->flush();
+
         foreach ($modules->all() as $module) {
             Module::query()->firstOrCreate(
                 ['key' => $module['key']],
