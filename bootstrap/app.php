@@ -10,6 +10,9 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -35,4 +38,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Відмова в дії з Inertia-форми — тост і повернення назад замість сторінки помилки.
+        $exceptions->respond(function (Response $response, Throwable $e, Request $request) {
+            if ($e instanceof HttpExceptionInterface && $request->header('X-Inertia') && ! $request->isMethod('GET')
+                && in_array($response->getStatusCode(), [403, 409, 422, 423, 429], true)) {
+                Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage() ?: 'Дію заборонено.']);
+
+                return back();
+            }
+
+            return $response;
+        });
     })->create();
