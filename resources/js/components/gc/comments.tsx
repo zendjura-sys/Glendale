@@ -11,21 +11,24 @@ import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
 
 type Props = {
-    postId: number;
+    /** Базовий URL коментарів, напр. `/posts/1/comments`. */
+    endpoint: string;
     initial: CommentItem[];
     total: number;
     canComment: boolean;
     onCountChange: (count: number) => void;
     autoFocus?: boolean;
+    className?: string;
 };
 
 export function Comments({
-    postId,
+    endpoint,
     initial,
     total,
     canComment,
     onCountChange,
     autoFocus,
+    className,
 }: Props) {
     const { auth } = usePage().props;
     const [comments, setComments] = useState(initial);
@@ -38,7 +41,7 @@ export function Comments({
     const loadAll = async () => {
         const response = await api<{ comments: CommentItem[] }>(
             'GET',
-            `/posts/${postId}/comments`,
+            endpoint,
         );
         setComments(response.comments);
         setLoadedAll(true);
@@ -52,7 +55,7 @@ export function Comments({
             const response = await api<{
                 comment: CommentItem;
                 comments_count: number;
-            }>('POST', `/posts/${postId}/comments`, {
+            }>('POST', endpoint, {
                 body,
                 parent_id: replyTo?.id ?? null,
             });
@@ -111,7 +114,12 @@ export function Comments({
     const byId = new Map(comments.map((c) => [c.id, c]));
 
     return (
-        <div className="space-y-3 border-t border-white/[0.06] pt-3">
+        <div
+            className={cn(
+                'space-y-3 border-t border-white/[0.06] pt-3',
+                className,
+            )}
+        >
             {!loadedAll && total > comments.length && (
                 <button
                     type="button"

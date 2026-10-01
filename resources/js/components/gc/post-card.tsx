@@ -257,7 +257,7 @@ export function PostCard({
             {showComments && (
                 <div className="mt-3">
                     <Comments
-                        postId={post.id}
+                        endpoint={`/posts/${post.id}/comments`}
                         initial={post.comments}
                         total={commentsCount}
                         canComment={post.can.comment}

@@ -4,3 +4,4 @@ export type * from './ui';
 export type * from './social';
 export type * from './messenger';
 export type * from './community';
+export type * from './photos';
