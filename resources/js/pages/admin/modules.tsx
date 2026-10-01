@@ -76,7 +76,7 @@ export default function AdminModules({ modules }: { modules: ModuleItem[] }) {
                                     style={{ animationDelay: `${i * 50}ms` }}
                                 >
                                     {m.enabled && (
-                                        <div className="bg-gradient-brand absolute -top-12 -left-12 size-36 rounded-full opacity-20 blur-3xl" />
+                                        <div className="absolute -top-12 -left-12 size-36 rounded-full bg-gradient-brand opacity-20 blur-3xl" />
                                     )}
                                     <div className="relative flex items-start gap-4">
                                         <span

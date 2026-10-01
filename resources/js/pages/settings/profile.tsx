@@ -1,5 +1,5 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { AtSign, Globe, Lock, MapPin } from 'lucide-react';
+import { AtSign, Globe, Lock, MapPin, MessageCircle } from 'lucide-react';
 import type { FormEvent } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/delete-user';
@@ -24,6 +24,7 @@ type ProfileForm = {
     gender: string;
     website: string;
     is_private: boolean;
+    message_privacy: string;
 };
 
 type Props = {
@@ -49,6 +50,7 @@ export default function Profile({ mustVerifyEmail, status, profile }: Props) {
         gender: profile.gender ?? '',
         website: profile.website ?? '',
         is_private: !!profile.is_private,
+        message_privacy: profile.message_privacy ?? 'everyone',
     });
     const { data, setData, errors, processing } = form;
 
@@ -294,8 +296,48 @@ export default function Profile({ mustVerifyEmail, status, profile }: Props) {
                                 }
                                 className="peer sr-only"
                             />
-                            <span className="peer-checked:bg-gradient-brand relative mt-2 h-6 w-11 shrink-0 rounded-full bg-white/10 transition after:absolute after:top-0.5 after:left-0.5 after:size-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5" />
+                            <span className="relative mt-2 h-6 w-11 shrink-0 rounded-full bg-white/10 transition peer-checked:bg-gradient-brand after:absolute after:top-0.5 after:left-0.5 after:size-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5" />
                         </label>
+
+                        <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4">
+                            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.05]">
+                                <MessageCircle className="size-[18px] text-[#a58bff]" />
+                            </span>
+                            <span className="min-w-[160px] flex-1">
+                                <span className="block text-sm font-semibold text-white">
+                                    Хто може писати мені
+                                </span>
+                                <span className="mt-0.5 block text-xs text-white/45">
+                                    Особисті повідомлення від інших учасників
+                                </span>
+                            </span>
+                            <div className="glass flex rounded-xl p-1 text-sm">
+                                {[
+                                    { value: 'everyone', label: 'Усі' },
+                                    { value: 'friends', label: 'Лише друзі' },
+                                ].map((option) => (
+                                    <button
+                                        key={option.value}
+                                        type="button"
+                                        onClick={() =>
+                                            setData(
+                                                'message_privacy',
+                                                option.value,
+                                            )
+                                        }
+                                        className={cn(
+                                            'rounded-lg px-3 py-1.5 font-medium transition',
+                                            data.message_privacy ===
+                                                option.value
+                                                ? 'bg-gradient-brand text-white'
+                                                : 'text-white/55 hover:text-white',
+                                        )}
+                                    >
+                                        {option.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </SettingsCard>
 

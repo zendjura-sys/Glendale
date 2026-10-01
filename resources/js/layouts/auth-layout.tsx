@@ -57,7 +57,7 @@ function Showcase() {
                             className="glass animate-rise rounded-2xl p-4"
                             style={{ animationDelay: `${120 + i * 90}ms` }}
                         >
-                            <span className="bg-gradient-brand mb-3 flex size-9 items-center justify-center rounded-xl shadow-[0_8px_24px_-8px_rgb(109_93_252/0.9)]">
+                            <span className="mb-3 flex size-9 items-center justify-center rounded-xl bg-gradient-brand shadow-[0_8px_24px_-8px_rgb(109_93_252/0.9)]">
                                 <Icon className="size-[18px] text-white" />
                             </span>
                             <div className="text-sm font-semibold text-white">

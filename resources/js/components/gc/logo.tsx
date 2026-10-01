@@ -11,7 +11,7 @@ export function LogoMark({ className }: { className?: string }) {
                 className,
             )}
         >
-            <span className="bg-gradient-brand absolute inset-0 rounded-[30%] opacity-90 shadow-[0_8px_28px_-6px_rgb(109_93_252/0.9)]" />
+            <span className="absolute inset-0 rounded-[30%] bg-gradient-brand opacity-90 shadow-[0_8px_28px_-6px_rgb(109_93_252/0.9)]" />
             <span className="absolute inset-[1.5px] rounded-[28%] bg-[#0b0f22]" />
             <svg
                 viewBox="0 0 32 32"

@@ -54,6 +54,52 @@ export function timeAgo(iso: string): string {
     return `${formatter.format(date)} о ${timeOnly.format(date)}`;
 }
 
+const shortDay = new Intl.DateTimeFormat('uk', {
+    day: 'numeric',
+    month: 'short',
+});
+
+export function clockTime(iso: string): string {
+    return timeOnly.format(new Date(iso));
+}
+
+/**
+ * Час у списку бесід: «14:20», «вчора», «12 бер.», «12.03.24».
+ */
+export function shortTime(iso: string): string {
+    const date = new Date(iso);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) {
+        return timeOnly.format(date);
+    }
+
+    if (date.toDateString() === yesterday.toDateString()) {
+        return 'вчора';
+    }
+
+    return date.getFullYear() === today.getFullYear()
+        ? shortDay.format(date)
+        : date.toLocaleDateString('uk');
+}
+
+/**
+ * Роздільник днів у чаті: «Сьогодні», «Вчора», «12 березня».
+ */
+export function dayLabel(iso: string): string {
+    const date = new Date(iso);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) return 'Сьогодні';
+    if (date.toDateString() === yesterday.toDateString()) return 'Вчора';
+
+    return formatDate(iso, date.getFullYear() !== today.getFullYear());
+}
+
 export function formatDate(iso: string, withYear = true): string {
     return (withYear ? dayMonthYear : dayMonth).format(new Date(iso));
 }
