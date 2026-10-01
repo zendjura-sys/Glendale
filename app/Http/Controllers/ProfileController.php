@@ -102,7 +102,7 @@ class ProfileController extends Controller
                 ->all() : [],
             'photos' => $canSeeContent ? $photos->latest('id')->limit(6)->get()->map($mapPhoto)->all() : [],
             'photosHref' => $modules->enabled('photos') ? '/photos/u/'.$user->username : null,
-            'music' => $modules->enabled('music') && $canSeeContent ? [
+            'audio' => $modules->enabled('music') && $canSeeContent ? [
                 'href' => '/music/u/'.$user->username,
                 'tracks' => $user->library()->count(),
             ] : null,

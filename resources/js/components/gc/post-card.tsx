@@ -21,6 +21,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { MusicCard } from '@/components/music/music-card';
 import { api } from '@/lib/api';
 import { compactNumber, timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -215,6 +216,8 @@ export function PostCard({
                     <MediaGrid items={post.attachments} />
                 </div>
             )}
+
+            {post.music && <MusicCard track={post.music} className="mt-3.5" />}
 
             <footer className="mt-4 flex items-center gap-2">
                 <LikeButton liked={liked} count={likes} onToggle={toggleLike} />

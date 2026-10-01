@@ -1,4 +1,11 @@
-import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/react';
+import {
+    Deferred,
+    Head,
+    InfiniteScroll,
+    Link,
+    router,
+    usePage,
+} from '@inertiajs/react';
 import {
     CalendarDays,
     Camera,
@@ -8,6 +15,7 @@ import {
     Lock,
     MapPin,
     MessageCircle,
+    Music2,
     PenLine,
     ShieldCheck,
     UsersRound,
@@ -20,9 +28,16 @@ import { PostSkeleton } from '@/components/gc/post-skeleton';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { EmptyState, Widget } from '@/components/gc/widget';
+import { NowPlayingCard } from '@/components/music/now-playing';
 import { compactNumber, formatDate, lastSeen, plural } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import type { PostItem, Relation, ScrollData, UserCard } from '@/types';
+import type {
+    NowPlaying,
+    PostItem,
+    Relation,
+    ScrollData,
+    UserCard,
+} from '@/types';
 
 type Profile = UserCard & {
     last_name: string;
@@ -53,6 +68,8 @@ type Props = {
     friends: UserCard[];
     photos: { id: number; url: string; href: string }[];
     photosHref: string | null;
+    audio: { href: string; tracks: number } | null;
+    nowPlaying?: NowPlaying | null;
     posts: ScrollData<PostItem>;
 };
 
@@ -137,6 +154,8 @@ export default function ProfileShow({
     friends,
     photos,
     photosHref,
+    audio,
+    nowPlaying,
     posts,
 }: Props) {
     const { modules } = usePage().props;
@@ -314,6 +333,13 @@ export default function ProfileShow({
                                 label="фото"
                                 href={photosHref ?? undefined}
                             />
+                            {audio && (
+                                <Counter
+                                    value={audio.tracks}
+                                    label="аудіо"
+                                    href={audio.href}
+                                />
+                            )}
                         </div>
                     </div>
                 </div>
@@ -378,6 +404,41 @@ export default function ProfileShow({
                                 </div>
                             )}
                         </Widget>
+
+                        {audio && (
+                            <Deferred data="nowPlaying" fallback={null}>
+                                {nowPlaying ? (
+                                    <NowPlayingCard track={nowPlaying} />
+                                ) : null}
+                            </Deferred>
+                        )}
+
+                        {audio && audio.tracks > 0 && (
+                            <Link
+                                href={audio.href}
+                                className="glass group flex items-center gap-3 rounded-3xl p-4 transition hover:border-white/15"
+                            >
+                                <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#a855f7] to-[#4f8bff] shadow-[0_10px_30px_-10px_rgb(168_85_247/0.9)]">
+                                    <Music2 className="size-5 text-white" />
+                                </span>
+                                <span className="min-w-0 flex-1">
+                                    <span className="block text-sm font-semibold text-white">
+                                        Аудіозаписи
+                                    </span>
+                                    <span className="block text-xs text-white/45">
+                                        {audio.tracks}{' '}
+                                        {plural(audio.tracks, [
+                                            'трек',
+                                            'треки',
+                                            'треків',
+                                        ])}
+                                    </span>
+                                </span>
+                                <span className="text-xs text-white/40 transition group-hover:text-white">
+                                    Слухати →
+                                </span>
+                            </Link>
+                        )}
 
                         {photos.length > 0 && (
                             <Widget
