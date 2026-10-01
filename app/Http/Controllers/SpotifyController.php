@@ -56,7 +56,7 @@ class SpotifyController extends Controller
             return $back;
         }
 
-        SpotifyAccount::query()->updateOrCreate(['user_id' => $request->user()->id], [
+        $request->user()->spotifyAccount()->updateOrCreate([], [
             'spotify_id' => $profile['id'],
             'display_name' => $profile['display_name'] ?? $profile['id'],
             'avatar_url' => $profile['images'][0]['url'] ?? null,

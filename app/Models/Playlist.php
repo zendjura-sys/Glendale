@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -62,7 +63,12 @@ class Playlist extends Model
 
     public function recount(): void
     {
-        $stats = $this->tracks()->reorder()->selectRaw('count(*) as aggregate, coalesce(sum(tracks.duration), 0) as total')->first();
+        $stats = DB::table('playlist_track')
+            ->join('tracks', 'tracks.id', '=', 'playlist_track.track_id')
+            ->where('playlist_track.playlist_id', $this->id)
+            ->whereNull('tracks.deleted_at')
+            ->selectRaw('count(*) as aggregate, coalesce(sum(tracks.duration), 0) as total')
+            ->first();
         $this->forceFill(['tracks_count' => (int) $stats?->aggregate, 'duration' => (int) $stats?->total])->saveQuietly();
     }
 
