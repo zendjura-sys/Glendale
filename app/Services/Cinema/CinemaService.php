@@ -115,7 +115,7 @@ class CinemaService
             'imdb_id' => $movie->kinopoisk_id || $movie->shikimori_id ? null : $movie->imdb_id,
         ]);
         if ($criteria === []) {
-            throw new CinemaException('У фільму немає ID КіноПошуку, Shikimori чи IMDb — Kodik не знайде його.', 422);
+            throw new CinemaException('У фільму немає зовнішнього ID (IMDb, Shikimori) — Kodik не знайде його.', 422);
         }
 
         $sources = collect($this->kodik->search($criteria))->flatMap(fn (array $c) => $c['sources'])->all();

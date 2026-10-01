@@ -54,7 +54,7 @@ class CinemaController extends Controller
 
         match ($sort) {
             'popular' => $catalog->orderByDesc('views_count'),
-            'rating' => $catalog->orderByRaw('coalesce(rating_kp, rating_imdb, rating_shikimori, 0) desc'),
+            'rating' => $catalog->orderByRaw('coalesce(rating_imdb, rating_tmdb, rating_shikimori, 0) desc'),
             'year' => $catalog->orderByDesc('year'),
             default => $catalog->orderByDesc('created_at'),
         };
@@ -76,7 +76,7 @@ class CinemaController extends Controller
             'rows' => $filtered ? [] : [
                 ['key' => 'continue', 'title' => 'Продовжити перегляд', 'movies' => $this->cards($this->listQuery($user, 'watching')->limit(12)->get())],
                 ['key' => 'popular', 'title' => 'Популярне зараз', 'movies' => $this->cards(Movie::query()->published()->orderByDesc('views_count')->orderByDesc('id')->limit(16)->get())],
-                ['key' => 'top', 'title' => 'Найвищий рейтинг', 'movies' => $this->cards(Movie::query()->published()->orderByRaw('coalesce(rating_kp, rating_imdb, rating_shikimori, 0) desc')->limit(16)->get())],
+                ['key' => 'top', 'title' => 'Найвищий рейтинг', 'movies' => $this->cards(Movie::query()->published()->orderByRaw('coalesce(rating_imdb, rating_tmdb, rating_shikimori, 0) desc')->limit(16)->get())],
             ],
             'types' => collect(Movie::TYPES)->map(fn (string $label, string $key) => ['key' => $key, 'label' => $label])->values(),
             'typeCounts' => Movie::query()->published()->selectRaw('type, count(*) as aggregate')->groupBy('type')->pluck('aggregate', 'type')->map(fn ($v) => (int) $v),
@@ -118,10 +118,12 @@ class CinemaController extends Controller
                 'countries' => $movie->countries ?? [],
                 'duration' => $movie->duration,
                 'ratings' => array_filter([
-                    'kp' => $movie->rating_kp,
                     'imdb' => $movie->rating_imdb,
                     'shikimori' => $movie->rating_shikimori,
+                    'tmdb' => $movie->rating_tmdb,
                 ], fn ($v) => $v !== null),
+                'tagline' => $movie->tagline,
+                'trailer_url' => $movie->trailer_url,
                 'user_rating' => $movie->userRating(),
                 'ratings_count' => $movie->ratings_count,
                 'watchers_count' => $movie->watchers_count,
@@ -130,7 +132,8 @@ class CinemaController extends Controller
                 'comments_enabled' => $movie->comments_enabled,
                 'is_published' => $movie->is_published,
                 'imdb_id' => $movie->imdb_id,
-                'kinopoisk_id' => $movie->kinopoisk_id,
+                'shikimori_id' => $movie->shikimori_id,
+                'tmdb_id' => $movie->tmdb_id,
             ],
             'players' => $this->cinema->players($movie),
             'state' => $this->cinema->stateFor($movie, $viewer),

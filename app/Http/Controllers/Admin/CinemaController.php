@@ -73,7 +73,6 @@ class CinemaController extends Controller
                 'views_count' => $m->views_count,
                 'watchers_count' => $m->watchers_count,
                 'comments_count' => $m->comments_count,
-                'kinopoisk_id' => $m->kinopoisk_id,
                 'imdb_id' => $m->imdb_id,
                 'shikimori_id' => $m->shikimori_id,
                 'tmdb_id' => $m->tmdb_id,
@@ -147,7 +146,7 @@ class CinemaController extends Controller
     public function enrich(int $movie): RedirectResponse
     {
         if (! $this->enricher->available()) {
-            throw new CinemaException('Підключіть TMDB, Shikimori, OMDb або КіноПошук в інтеграціях.', 422);
+            throw new CinemaException('Підключіть TMDB, Shikimori або OMDb в інтеграціях.', 422);
         }
 
         $result = $this->enricher->enrich(Movie::withTrashed()->findOrFail($movie));
@@ -155,7 +154,7 @@ class CinemaController extends Controller
 
         Inertia::flash('toast', match (true) {
             $result['providers'] === [] && $result['errors'] !== [] => ['type' => 'error', 'message' => $result['errors'][0]],
-            $result['providers'] === [] => ['type' => 'error', 'message' => 'Жодне джерело не знайшло цей фільм. Додайте ID КіноПошуку, IMDb чи TMDB.'],
+            $result['providers'] === [] => ['type' => 'error', 'message' => 'Жодне джерело не знайшло цей фільм. Додайте ID IMDb, TMDB чи Shikimori.'],
             default => ['type' => 'success', 'message' => 'Дані з '.implode(', ', $result['providers']).': оновлено полів — '.count($result['changed']).'.'],
         });
 
@@ -288,7 +287,7 @@ class CinemaController extends Controller
     {
         $data = $request->validate([
             'q' => ['required', 'string', 'max:150'],
-            'by' => ['nullable', Rule::in(['title', 'kinopoisk_id', 'imdb_id', 'shikimori_id'])],
+            'by' => ['nullable', Rule::in(['title', 'imdb_id', 'shikimori_id'])],
         ]);
         $criteria = [($data['by'] ?? 'title') => trim($data['q'])];
 
@@ -373,7 +372,7 @@ class CinemaController extends Controller
                 }
 
                 return [
-                    ...collect($c)->except('sources')->all(),
+                    ...collect($c)->except(['sources', 'rating_kp', 'kinopoisk_id'])->all(),
                     'type_label' => Movie::TYPES[$c['type']] ?? $c['type'],
                     'translations' => collect($c['sources'])->pluck('translation')->filter()->unique()->values()->all(),
                     'sources_count' => count($c['sources']),
@@ -390,8 +389,8 @@ class CinemaController extends Controller
             'movie' => $movie ? [
                 ...$movie->toCard(),
                 ...$movie->only([
-                    'tagline', 'trailer_url', 'rating_tmdb', 'tmdb_id', 'origin', 'description', 'poster_url', 'backdrop_url', 'countries', 'duration', 'age_rating', 'rating_kp', 'rating_imdb', 'rating_shikimori',
-                    'kinopoisk_id', 'imdb_id', 'shikimori_id', 'is_published', 'is_featured', 'comments_enabled', 'views_count', 'watchers_count',
+                    'tagline', 'trailer_url', 'rating_tmdb', 'tmdb_id', 'origin', 'description', 'poster_url', 'backdrop_url', 'countries', 'duration', 'age_rating', 'rating_imdb', 'rating_shikimori',
+                    'imdb_id', 'shikimori_id', 'is_published', 'is_featured', 'comments_enabled', 'views_count', 'watchers_count',
                     'comments_count', 'ratings_count',
                 ]),
                 'genres' => $movie->genres ?? [],
@@ -425,14 +424,12 @@ class CinemaController extends Controller
             'countries.*' => ['string', 'max:60'],
             'duration' => ['nullable', 'integer', 'min:1', 'max:1500'],
             'age_rating' => ['nullable', 'string', 'max:10'],
-            'rating_kp' => ['nullable', 'numeric', 'between:0,10'],
             'rating_imdb' => ['nullable', 'numeric', 'between:0,10'],
             'rating_shikimori' => ['nullable', 'numeric', 'between:0,10'],
             'rating_tmdb' => ['nullable', 'numeric', 'between:0,10'],
             'tagline' => ['nullable', 'string', 'max:300'],
             'trailer_url' => ['nullable', 'url:https', 'max:500'],
             'tmdb_id' => ['nullable', 'string', 'max:30', 'regex:/^(movie|tv):\d+$/'],
-            'kinopoisk_id' => ['nullable', 'string', 'max:20', 'regex:/^\d+$/'],
             'imdb_id' => ['nullable', 'string', 'max:20', 'regex:/^tt\d+$/'],
             'shikimori_id' => ['nullable', 'string', 'max:20', 'regex:/^\d+$/'],
             'poster_url' => ['nullable', 'url:http,https', 'max:500'],
@@ -446,7 +443,6 @@ class CinemaController extends Controller
             'comments_enabled' => ['sometimes', 'boolean'],
         ], [
             'imdb_id.regex' => 'IMDb ID має вигляд tt0111161.',
-            'kinopoisk_id.regex' => 'ID КіноПошуку — лише цифри.',
             'shikimori_id.regex' => 'ID Shikimori — лише цифри.',
             'tmdb_id.regex' => 'TMDB ID має вигляд movie:603 або tv:1399.',
         ]);

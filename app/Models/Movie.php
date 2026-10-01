@@ -202,7 +202,7 @@ class Movie extends Model
             'poster' => $this->poster,
             'backdrop' => $this->backdrop,
             'genres' => array_slice($this->genres ?? [], 0, 3),
-            'rating' => $this->rating_kp ?? $this->rating_imdb ?? $this->rating_tmdb ?? $this->rating_shikimori ?? $this->userRating(),
+            'rating' => $this->rating_imdb ?? $this->rating_tmdb ?? $this->rating_shikimori ?? $this->userRating(),
             'age_rating' => $this->age_rating,
             'episodes_count' => $this->episodes_count,
         ];

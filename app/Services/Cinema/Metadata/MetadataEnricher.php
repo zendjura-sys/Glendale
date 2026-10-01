@@ -7,22 +7,21 @@ use App\Services\Cinema\CinemaException;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * Збагачує фільм даними з КіноПошуку, IMDb (OMDb), Shikimori і TMDB.
+ * Збагачує фільм даними з IMDb (OMDb), Shikimori і TMDB.
  *
- * Порядок важливий: КіноПошук дає IMDb ID, за яким TMDB знаходить українську локалізацію.
+ * Порядок важливий: OMDb уточнює IMDb ID, за яким TMDB знаходить українську локалізацію.
  * TMDB має найвищий пріоритет для назви, опису, жанрів і зображень; рейтинги та ID оновлюються завжди.
  * Фільми, додані вручну, отримують лише порожні поля — правки адміністратора не перезаписуються.
  */
 class MetadataEnricher
 {
-    private const ALWAYS = ['rating_kp', 'rating_imdb', 'rating_shikimori', 'rating_tmdb'];
+    private const ALWAYS = ['rating_imdb', 'rating_shikimori', 'rating_tmdb'];
 
     private const IDS = ['tmdb_id', 'imdb_id', 'shikimori_id'];
 
     private const TMDB_PREFERRED = ['description', 'genres', 'poster_url', 'backdrop_url', 'trailer_url', 'tagline'];
 
     public function __construct(
-        private readonly KinopoiskProvider $kinopoisk,
         private readonly OmdbProvider $omdb,
         private readonly ShikimoriProvider $shikimori,
         private readonly TmdbProvider $tmdb,
@@ -33,7 +32,7 @@ class MetadataEnricher
      */
     public function providers(): array
     {
-        return [$this->kinopoisk, $this->omdb, $this->shikimori, $this->tmdb];
+        return [$this->omdb, $this->shikimori, $this->tmdb];
     }
 
     public function available(): bool

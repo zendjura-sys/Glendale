@@ -66,11 +66,6 @@ return [
         'api_url' => env('OMDB_API_URL', 'https://www.omdbapi.com'),
     ],
 
-    'kinopoisk' => [
-        'key' => env('KINOPOISK_KEY'),
-        'api_url' => env('KINOPOISK_API_URL', 'https://kinopoiskapiunofficial.tech'),
-    ],
-
     'shikimori' => [
         'url' => env('SHIKIMORI_URL', 'https://shikimori.one'),
     ],

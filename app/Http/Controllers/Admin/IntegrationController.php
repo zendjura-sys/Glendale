@@ -9,7 +9,6 @@ use App\Services\Cinema\CinemaException;
 use App\Services\Cinema\FlixcdnClient;
 use App\Services\Cinema\FlixcdnPlayer;
 use App\Services\Cinema\KodikClient;
-use App\Services\Cinema\Metadata\KinopoiskProvider;
 use App\Services\Cinema\Metadata\OmdbProvider;
 use App\Services\Cinema\Metadata\ShikimoriProvider;
 use App\Services\Cinema\Metadata\TmdbProvider;
@@ -34,7 +33,6 @@ class IntegrationController extends Controller
         private readonly TmdbProvider $tmdb,
         private readonly ShikimoriProvider $shikimori,
         private readonly OmdbProvider $omdb,
-        private readonly KinopoiskProvider $kinopoisk,
     ) {}
 
     public function index(): Response
@@ -207,8 +205,8 @@ class IntegrationController extends Controller
                 'docs' => 'https://t.me/FlixCDN',
                 'steps' => [
                     'Отримайте токен і адреси API в кабінеті FlixCDN (або в їхній підтримці @FlixCDN).',
-                    'Шаблон плеєра: адреса iframe з {kinopoisk_id} або {imdb_id}.',
-                    'Пошук API: адреса з {token} і {kinopoisk_id}/{imdb_id}/{title}. Оновлення: з {token} і {page}.',
+                    'Шаблон плеєра: адреса iframe з {imdb_id} та {token}.',
+                    'Пошук API: адреса з {token} та {imdb_id} або {title}. Оновлення: з {token} і {page}.',
                 ],
                 'configured' => $this->flixcdn->configured() || $this->flixcdnApi->configured(),
                 'stat' => MovieSource::query()->where('provider', 'flixcdn')->count().' плеєрів у каталозі',
@@ -217,10 +215,10 @@ class IntegrationController extends Controller
                     ['name' => 'token', 'setting' => 'flixcdn_token', 'type' => 'secret', 'label' => 'Токен', 'env' => config('services.flixcdn.token'),
                         'rules' => ['nullable', 'string', 'max:2000', 'regex:/^[A-Za-z0-9_\-.]+$/'], 'message' => 'Токен містить недопустимі символи.'],
                     ['name' => 'template', 'setting' => 'flixcdn_template', 'type' => 'url', 'label' => 'Шаблон плеєра',
-                        'placeholder' => 'https://player.example/?kp={kinopoisk_id}&token={token}', 'help' => 'Підставляються {kinopoisk_id}, {imdb_id}, {token}.',
+                        'placeholder' => 'https://player.example/?imdb={imdb_id}&token={token}', 'help' => 'Підставляються {imdb_id} і {token}; працюють і інші ID з кабінету FlixCDN.',
                         'rules' => [...$url, $this->placeholderRule(['{kinopoisk_id}', '{imdb_id}'])]],
                     ['name' => 'api_search', 'setting' => 'flixcdn_api_search', 'type' => 'url', 'label' => 'API: пошук',
-                        'placeholder' => 'https://api.example/search?token={token}&kinopoisk_id={kinopoisk_id}', 'help' => 'Для імпорту й оновлення плеєрів окремого фільму.',
+                        'placeholder' => 'https://api.example/search?token={token}&imdb_id={imdb_id}', 'help' => 'Для імпорту й оновлення плеєрів окремого фільму.',
                         'rules' => [...$url, $this->placeholderRule(['{kinopoisk_id}', '{imdb_id}', '{title}'])]],
                     ['name' => 'api_updates', 'setting' => 'flixcdn_api_updates', 'type' => 'url', 'label' => 'API: оновлення',
                         'placeholder' => 'https://api.example/updates?token={token}&page={page}', 'help' => 'Список новинок для автонаповнення.',
@@ -269,19 +267,6 @@ class IntegrationController extends Controller
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{6,40}$/'], 'message' => 'Ключ OMDb — латинські літери та цифри.'],
                 ],
             ],
-            'kinopoisk' => [
-                'label' => 'КіноПошук',
-                'group' => 'metadata',
-                'description' => 'Рейтинг КіноПошуку, слогани, обкладинки (Kinopoisk API Unofficial).',
-                'docs' => 'https://kinopoiskapiunofficial.tech',
-                'steps' => ['Зареєструйтеся на kinopoiskapiunofficial.tech.', 'Скопіюйте токен з профілю.'],
-                'configured' => $this->kinopoisk->configured(),
-                'test' => fn () => $this->safe(fn () => $this->kinopoisk->test()),
-                'fields' => [
-                    ['name' => 'key', 'setting' => 'kinopoisk_key', 'type' => 'secret', 'label' => 'API-токен', 'env' => config('services.kinopoisk.key'),
-                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9\-]{8,64}$/'], 'message' => 'Токен — латинські літери, цифри та дефіси.'],
-                ],
-            ],
         ];
     }
 
@@ -292,7 +277,7 @@ class IntegrationController extends Controller
     {
         return function (string $attribute, mixed $value, \Closure $fail) use ($placeholders) {
             if (is_string($value) && $value !== '' && ! Str::contains($value, $placeholders)) {
-                $fail('Адреса має містити '.implode(' або ', $placeholders).'.');
+                $fail('Адреса має містити '.implode(' або ', array_diff($placeholders, ['{kinopoisk_id}'])).'.');
             }
         };
     }
