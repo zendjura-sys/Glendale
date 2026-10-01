@@ -278,7 +278,7 @@ SVG;
         $cinema = app(CinemaService::class);
         $movies = [];
         foreach (self::MOVIES as $i => [$title, $original, $year, $type, $youtube, $imdb, $minutes, $genres, $description, $rating, $featured]) {
-            $backdrop = $this->download("https://picsum.photos/seed/gc-movie-{$i}/1600/900", "demo/cinema/backdrop-{$i}.jpg");
+            [$backdrop, $poster] = $this->movieArt($youtube, $i);
             $movie = Movie::query()->create([
                 'user_id' => $u[0]->id,
                 'slug' => $cinema->uniqueSlug($original, $year),
@@ -297,7 +297,7 @@ SVG;
                 'is_featured' => $featured,
                 'origin' => 'manual',
             ]);
-            $movie->forceFill(['backdrop_path' => $backdrop, 'views_count' => random_int(120, 5200), 'created_at' => now()->subDays(20 - $i)])->saveQuietly();
+            $movie->forceFill(['backdrop_path' => $backdrop, 'poster_path' => $poster, 'views_count' => random_int(120, 5200), 'created_at' => now()->subDays(20 - $i)])->saveQuietly();
             $movie->sources()->create([
                 'provider' => 'custom',
                 'external_id' => 'yt-'.$youtube,
@@ -885,6 +885,60 @@ SVG;
                 'accepted_at' => now()->subDays(random_int(1, 20)),
             ]);
         }
+    }
+
+    /**
+     * Фон і вертикальний постер із кадру трейлера на YouTube.
+     *
+     * @return array{0: string|null, 1: string|null}
+     */
+    private function movieArt(string $youtube, int $i): array
+    {
+        $disk = Storage::disk('public');
+        $backdropPath = "demo/cinema/backdrop-{$i}.jpg";
+        $posterPath = "demo/cinema/poster-{$i}.jpg";
+        if ($disk->exists($backdropPath) && $disk->exists($posterPath)) {
+            return [$backdropPath, $posterPath];
+        }
+
+        $frame = null;
+        foreach (['maxresdefault', 'hqdefault'] as $quality) {
+            try {
+                $response = Http::timeout(20)->get("https://i.ytimg.com/vi/{$youtube}/{$quality}.jpg");
+                if ($response->successful() && ($frame = @imagecreatefromstring($response->body()))) {
+                    break;
+                }
+            } catch (Throwable) {
+            }
+        }
+        if (! $frame) {
+            return [$this->download("https://picsum.photos/seed/gc-movie-{$i}/1600/900", $backdropPath), null];
+        }
+
+        // Прибираємо чорні смуги (letterbox) з кадру.
+        $wide = @imagecropauto($frame, IMG_CROP_THRESHOLD, 0.2, 0x000000) ?: $frame;
+        $w = imagesx($wide);
+        $frameH = imagesy($wide);
+
+        $backdropH = min($frameH, (int) round($w * 9 / 16));
+        $backdropCrop = imagecrop($wide, ['x' => 0, 'y' => intdiv($frameH - $backdropH, 2), 'width' => $w, 'height' => $backdropH]);
+        $backdrop = $backdropCrop ? imagescale($backdropCrop, 1280, (int) round(1280 * $backdropH / $w)) : null;
+        $posterW = (int) round($frameH * 2 / 3);
+        $crop = imagecrop($wide, ['x' => intdiv($w - $posterW, 2), 'y' => 0, 'width' => $posterW, 'height' => $frameH]);
+        $poster = $crop ? imagescale($crop, 400, 600) : null;
+
+        $save = function ($image, string $path) use ($disk): ?string {
+            if (! $image) {
+                return null;
+            }
+            ob_start();
+            imagejpeg($image, null, 86);
+            $disk->put($path, (string) ob_get_clean());
+
+            return $path;
+        };
+
+        return [$save($backdrop, $backdropPath), $save($poster, $posterPath)];
     }
 
     private function download(string $url, string $path): ?string
