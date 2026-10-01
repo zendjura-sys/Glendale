@@ -24,6 +24,23 @@ export type Auth = {
     user: User;
 };
 
+export type FirebaseConfig = {
+    apiKey: string;
+    authDomain: string;
+    projectId: string;
+    appId: string | null;
+};
+
+export type SocialProvider = 'discord' | 'google';
+
+export type SocialConnection = {
+    provider: SocialProvider;
+    label: string;
+    connected: boolean;
+    account: string | null;
+    available: boolean;
+};
+
 export type Passkey = {
     id: number;
     name: string;

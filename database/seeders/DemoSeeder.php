@@ -30,6 +30,7 @@ use App\Services\Families\FamilyEvents;
 use App\Services\Families\FamilyService;
 use App\Services\Families\ReportService;
 use App\Services\Families\Warehouse;
+use App\Services\Messenger;
 use App\Services\MusicService;
 use App\Services\PhotoService;
 use App\Services\Servers\ServerCatalog;
@@ -412,6 +413,18 @@ SVG;
             'points' => 3,
             'reward' => 0,
         ]);
+
+        $chat = $family->refresh()->conversation;
+        $messenger = app(Messenger::class);
+        foreach ([
+            [$leader, 'Всім привіт! Сьогодні о 20:00 бізвар за Grove Street — збір на базі о 19:40.'],
+            [$members[1], 'Прийняла. Виплати за вчора вже на балансах, перевірте банк 💸'],
+            [$members[4], 'Буду. Хто бере броню зі складу — пишіть у звіт, щоб квота не злетіла.'],
+            [$members[6], 'Я на мобільному сьогодні, але підключусь 🔥'],
+            [$members[2], 'Нагадую: скріни контрактів — у звіт протягом 48 годин, інакше не зарахую.'],
+        ] as [$author, $text]) {
+            $messenger->send($chat, $author->user, $text);
+        }
     }
 
     /** Відкриті фільми Blender Studio (CC BY) з офіційними трейлерами/фільмами на YouTube. */

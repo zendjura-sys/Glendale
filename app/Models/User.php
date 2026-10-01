@@ -29,6 +29,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $email
  * @property string|null $discord_id
  * @property string|null $discord_username
+ * @property string|null $google_id
+ * @property string|null $google_email
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string $role
@@ -57,7 +59,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
     'username', 'first_name', 'last_name', 'email', 'password',
     'status', 'about', 'city', 'birthday', 'gender', 'website', 'is_private', 'message_privacy',
 ])]
-#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'email', 'ban_reason'])]
+#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'email', 'ban_reason', 'google_email'])]
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */

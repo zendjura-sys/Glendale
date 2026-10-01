@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\CinemaController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityController;
@@ -28,6 +29,13 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', WelcomeController::class)->name('home');
 
 Route::redirect('dashboard', '/feed')->name('dashboard');
+
+Route::prefix('auth')->name('auth.')->group(function () {
+    Route::get('discord', [SocialAuthController::class, 'discordRedirect'])->middleware('throttle:20,1')->name('discord');
+    Route::get('discord/callback', [SocialAuthController::class, 'discordCallback'])->middleware('throttle:20,1')->name('discord.callback');
+    Route::post('firebase', [SocialAuthController::class, 'firebase'])->middleware('throttle:20,1')->name('firebase');
+    Route::delete('social/{provider}', [SocialAuthController::class, 'unlink'])->middleware('auth')->whereIn('provider', ['discord', 'google'])->name('social.unlink');
+});
 
 Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::get('feed', [FeedController::class, 'index'])->middleware('module:feed')->name('feed');

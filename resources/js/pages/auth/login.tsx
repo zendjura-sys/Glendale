@@ -1,4 +1,5 @@
 import { Form, Head, usePage } from '@inertiajs/react';
+import { SocialLogin } from '@/components/auth/social-login';
 import InputError from '@/components/input-error';
 import PasskeyVerify from '@/components/passkey-verify';
 import PasswordInput from '@/components/password-input';
@@ -29,6 +30,16 @@ export default function Login({ status, canResetPassword }: Props) {
                     {status}
                 </div>
             )}
+
+            <div className="mb-2.5 empty:hidden">
+                <SocialLogin
+                    mode="login"
+                    divider={
+                        typeof window === 'undefined' ||
+                        !window.PublicKeyCredential
+                    }
+                />
+            </div>
 
             <PasskeyVerify />
 

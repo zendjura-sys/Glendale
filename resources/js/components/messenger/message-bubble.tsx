@@ -10,6 +10,7 @@ import {
     RotateCw,
     Trash2,
 } from 'lucide-react';
+import { RankBadge } from '@/components/families/ui';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { clockTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -234,15 +235,26 @@ export function MessageBubble({
                     )}
                 >
                     {showAuthor && message.user && (
-                        <Link
-                            href={`/${message.user.username}`}
+                        <div
                             className={cn(
-                                'mb-0.5 block text-[13px] font-semibold text-[#9fb0ff] hover:underline',
+                                'mb-0.5 flex min-w-0 items-center gap-1.5',
                                 hasImages && 'px-2 pt-0.5',
                             )}
                         >
-                            {message.user.first_name}
-                        </Link>
+                            <Link
+                                href={`/${message.user.username}`}
+                                className="truncate text-[13px] font-semibold text-[#9fb0ff] hover:underline"
+                            >
+                                {message.user.first_name}
+                            </Link>
+                            {message.user.family_rank && (
+                                <RankBadge
+                                    rank={message.user.family_rank.rank}
+                                    title={message.user.family_rank.title}
+                                    className="px-1.5 py-0 text-[10px]"
+                                />
+                            )}
+                        </div>
                     )}
 
                     {message.reply_to && (

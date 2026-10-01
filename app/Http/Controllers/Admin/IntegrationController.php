@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\MovieSource;
 use App\Models\SpotifyAccount;
+use App\Models\User;
+use App\Services\Auth\DiscordOAuth;
+use App\Services\Auth\FirebaseAuth;
 use App\Services\Cinema\CinemaException;
 use App\Services\Cinema\FlixcdnClient;
 use App\Services\Cinema\FlixcdnPlayer;
@@ -33,6 +36,8 @@ class IntegrationController extends Controller
         private readonly TmdbProvider $tmdb,
         private readonly ShikimoriProvider $shikimori,
         private readonly OmdbProvider $omdb,
+        private readonly DiscordOAuth $discord,
+        private readonly FirebaseAuth $firebase,
     ) {}
 
     public function index(): Response
@@ -184,6 +189,51 @@ class IntegrationController extends Controller
         $url = ['nullable', 'string', 'max:500', 'url:https'];
 
         return [
+            'discord' => [
+                'label' => 'Discord',
+                'group' => 'auth',
+                'description' => 'Вхід і реєстрація в один клік, прив’язка Discord до профілю та RP-сімей.',
+                'docs' => 'https://discord.com/developers/applications',
+                'steps' => [
+                    'Discord Developer Portal → New Application → OAuth2.',
+                    'Додайте Redirect: '.$this->discord->redirectUri(),
+                    'Скопіюйте Client ID і Client Secret сюди.',
+                ],
+                'configured' => $this->discord->configured(),
+                'stat' => User::query()->whereNotNull('discord_id')->count().' профілів із Discord',
+                'test' => fn () => $this->discord->testCredentials(),
+                'fields' => [
+                    ['name' => 'client_id', 'setting' => 'discord_client_id', 'type' => 'text', 'label' => 'Client ID', 'placeholder' => '123456789012345678',
+                        'rules' => ['nullable', 'string', 'regex:/^\d{15,22}$/'], 'message' => 'Client ID Discord — це 15–22 цифри.'],
+                    ['name' => 'client_secret', 'setting' => 'discord_client_secret', 'type' => 'secret', 'label' => 'Client Secret', 'env' => config('services.discord.client_secret'),
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_\-]{20,64}$/'], 'message' => 'Client Secret містить недопустимі символи.'],
+                ],
+            ],
+            'firebase' => [
+                'label' => 'Google (Firebase)',
+                'group' => 'auth',
+                'description' => 'Вхід через Google-акаунт за допомогою Firebase Authentication.',
+                'docs' => 'https://console.firebase.google.com',
+                'steps' => [
+                    'Firebase Console → Authentication → Sign-in method → увімкніть Google.',
+                    'Authentication → Settings → Authorized domains: додайте '.parse_url((string) config('app.url'), PHP_URL_HOST).'.',
+                    'Project settings → Your apps → Web app: скопіюйте apiKey, authDomain, projectId, appId.',
+                ],
+                'configured' => $this->firebase->configured(),
+                'stat' => User::query()->whereNotNull('google_id')->count().' профілів із Google',
+                'test' => fn () => $this->firebase->testCredentials(),
+                'fields' => [
+                    ['name' => 'api_key', 'setting' => 'firebase_api_key', 'type' => 'text', 'label' => 'apiKey', 'placeholder' => 'AIzaSy…',
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_\-]{30,60}$/'], 'message' => 'apiKey Firebase має вигляд AIzaSy…'],
+                    ['name' => 'auth_domain', 'setting' => 'firebase_auth_domain', 'type' => 'text', 'label' => 'authDomain', 'placeholder' => 'gamecon.firebaseapp.com',
+                        'help' => 'Можна лишити порожнім — візьмемо projectId.firebaseapp.com.',
+                        'rules' => ['nullable', 'string', 'max:255', 'regex:/^[a-z0-9.\-]+$/'], 'message' => 'Вкажіть домен без https://'],
+                    ['name' => 'project_id', 'setting' => 'firebase_project_id', 'type' => 'text', 'label' => 'projectId', 'placeholder' => 'gamecon-ua',
+                        'rules' => ['nullable', 'string', 'regex:/^[a-z0-9\-]{4,40}$/'], 'message' => 'projectId — малі латинські літери, цифри й дефіс.'],
+                    ['name' => 'app_id', 'setting' => 'firebase_app_id', 'type' => 'text', 'label' => 'appId', 'placeholder' => '1:1234567890:web:abc123',
+                        'rules' => ['nullable', 'string', 'max:100', 'regex:/^[0-9a-z:]+$/'], 'message' => 'appId має вигляд 1:123…:web:…'],
+                ],
+            ],
             'kodik' => [
                 'label' => 'Kodik',
                 'group' => 'players',

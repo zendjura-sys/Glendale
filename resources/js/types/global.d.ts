@@ -1,4 +1,4 @@
-import type { Auth } from '@/types/auth';
+import type { Auth, FirebaseConfig } from '@/types/auth';
 import type { SharedMusic } from '@/types/music';
 import type { NavEntry } from '@/types/social';
 
@@ -20,6 +20,10 @@ declare module '@inertiajs/core' {
                 max_attachments: number;
                 max_message_file_mb: number;
                 announcement: string | null;
+                social: {
+                    discord: boolean;
+                    google: FirebaseConfig | null;
+                };
             };
             nav: NavEntry[];
             modules: string[];

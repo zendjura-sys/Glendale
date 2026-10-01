@@ -10,6 +10,8 @@ export type UserCard = {
     is_online: boolean;
     is_verified: boolean;
     status: string | null;
+    /** Лише в чаті сім’ї. */
+    family_rank?: { rank: number; title: string | null; tag: string };
 };
 
 export type Relation = 'none' | 'friends' | 'outgoing' | 'incoming' | 'self';
