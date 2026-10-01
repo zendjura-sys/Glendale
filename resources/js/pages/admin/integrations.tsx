@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { IntegrationCard } from '@/components/cinema/integration-card';
+import type { CinemaIntegration } from '@/components/cinema/integration-card';
 import { PageHeader, Pill, StatCard } from '@/components/gc/admin';
 import { SpotifyLogo } from '@/components/music/track-cover';
 import { Input } from '@/components/ui/input';
@@ -29,6 +31,7 @@ type Props = {
         premium: number;
         scopes: string[];
     };
+    cinema: CinemaIntegration[];
 };
 
 function copy(text: string) {
@@ -36,7 +39,7 @@ function copy(text: string) {
     toast.success('Скопійовано.');
 }
 
-export default function AdminIntegrations({ spotify }: Props) {
+export default function AdminIntegrations({ spotify, cinema }: Props) {
     const [reveal, setReveal] = useState(false);
     const form = useForm({
         client_id: spotify.client_id ?? '',
@@ -278,6 +281,35 @@ export default function AdminIntegrations({ spotify }: Props) {
                     </aside>
                 </div>
             </section>
+
+            {(
+                [
+                    [
+                        'players',
+                        'Кіно: плеєри',
+                        'Звідки беруться фільми та озвучки. Обидва балансери підтримують автонаповнення каталогу.',
+                    ],
+                    [
+                        'metadata',
+                        'Кіно: метадані',
+                        'Назви, описи, постери, трейлери та рейтинги для кожного тайтлу.',
+                    ],
+                ] as const
+            ).map(([group, title, text]) => (
+                <div key={group} className="mt-8">
+                    <h2 className="font-display text-lg font-semibold text-white">
+                        {title}
+                    </h2>
+                    <p className="mb-4 text-sm text-white/45">{text}</p>
+                    <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+                        {cinema
+                            .filter((c) => c.group === group)
+                            .map((c) => (
+                                <IntegrationCard key={c.key} integration={c} />
+                            ))}
+                    </div>
+                </div>
+            ))}
         </>
     );
 }
