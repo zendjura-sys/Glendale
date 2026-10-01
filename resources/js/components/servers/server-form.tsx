@@ -109,7 +109,10 @@ export function ServerFormFields({
                             type="button"
                             onClick={() => {
                                 setData('platform', value);
-                                if (value === 'mobile' && data.multiplayer === 'ragemp') {
+                                if (
+                                    value === 'mobile' &&
+                                    data.multiplayer === 'ragemp'
+                                ) {
                                     setData('multiplayer', 'launcher');
                                 }
                             }}

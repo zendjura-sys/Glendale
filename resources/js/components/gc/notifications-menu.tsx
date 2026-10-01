@@ -1,7 +1,13 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
     Bell,
+    CalendarDays,
+    ClipboardCheck,
+    Crown,
+    Gavel,
     Heart,
+    Package,
+    Wallet,
     ImageIcon,
     MessageSquare,
     PenSquare,
@@ -27,7 +33,19 @@ const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
     community_approved: { icon: ShieldCheck, className: 'bg-[#6d5dfc]' },
     photo_like: { icon: Heart, className: 'bg-rose-500' },
     photo_comment: { icon: ImageIcon, className: 'bg-[#38bdf8]' },
+    family_application: { icon: UserPlus, className: 'bg-amber-500' },
+    family_accepted: { icon: Crown, className: 'bg-amber-500' },
+    family_report: { icon: ClipboardCheck, className: 'bg-amber-500' },
+    family_review: { icon: ClipboardCheck, className: 'bg-emerald-500' },
+    family_cashout: { icon: Wallet, className: 'bg-emerald-500' },
+    family_bank: { icon: Wallet, className: 'bg-emerald-500' },
+    family_sanction: { icon: Gavel, className: 'bg-rose-500' },
+    family_kicked: { icon: Gavel, className: 'bg-rose-500' },
+    family_warehouse: { icon: Package, className: 'bg-rose-500' },
+    family_event: { icon: CalendarDays, className: 'bg-[#6d5dfc]' },
 };
+
+const familyIcon = { icon: Crown, className: 'bg-amber-500' };
 
 export function NotificationsMenu() {
     const { counters } = usePage().props;
@@ -122,10 +140,14 @@ export function NotificationsMenu() {
                             </div>
                         ) : (
                             items.map((item) => {
-                                const meta = kindIcon[item.kind] ?? {
-                                    icon: Bell,
-                                    className: 'bg-white/20',
-                                };
+                                const meta =
+                                    kindIcon[item.kind] ??
+                                    (item.kind.startsWith('family_')
+                                        ? familyIcon
+                                        : {
+                                              icon: Bell,
+                                              className: 'bg-white/20',
+                                          });
                                 const Icon = meta.icon;
 
                                 return (

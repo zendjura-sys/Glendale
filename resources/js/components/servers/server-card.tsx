@@ -88,7 +88,7 @@ export function ServerCard({
             className={cn(
                 'glass group relative flex animate-rise flex-col gap-4 overflow-hidden rounded-3xl p-5 transition hover:-translate-y-0.5 hover:border-white/15',
                 server.is_featured &&
-                    'ring-1 ring-[#7c8cff]/30 shadow-[0_20px_60px_-30px_rgb(124_92_255/0.9)]',
+                    'shadow-[0_20px_60px_-30px_rgb(124_92_255/0.9)] ring-1 ring-[#7c8cff]/30',
             )}
             style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}
         >

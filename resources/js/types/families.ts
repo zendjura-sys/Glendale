@@ -145,7 +145,12 @@ export type FamilyReportItem = {
     reviewed_at: string | null;
     created_at: string;
     deadline: string;
-    proofs: { id: number; url: string; width: number | null; height: number | null }[];
+    proofs: {
+        id: number;
+        url: string;
+        width: number | null;
+        height: number | null;
+    }[];
 };
 
 export type ReportConfig = {

@@ -191,8 +191,7 @@ export default function AdminServers({
                             className="glass inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white"
                             title="Додати відсутні сервери з базового списку"
                         >
-                            <DownloadCloud className="size-4" /> Базовий
-                            список
+                            <DownloadCloud className="size-4" /> Базовий список
                         </button>
                         <button
                             type="button"
@@ -596,8 +595,7 @@ function ServerDialog({
                             Іконка сервера
                         </div>
                         <div className="text-xs text-white/40">
-                            PNG, JPG, WebP або GIF до 4 МБ — збережемо у
-                            256×256
+                            PNG, JPG, WebP або GIF до 4 МБ — збережемо у 256×256
                         </div>
                         <FieldError message={form.errors.icon} />
                     </div>

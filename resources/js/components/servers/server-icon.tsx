@@ -44,7 +44,10 @@ export function ServerIcon({
                 className,
             )}
         >
-            {name.replace(/[^\p{L}\p{N}]/gu, '').slice(0, 2).toUpperCase()}
+            {name
+                .replace(/[^\p{L}\p{N}]/gu, '')
+                .slice(0, 2)
+                .toUpperCase()}
         </span>
     );
 }

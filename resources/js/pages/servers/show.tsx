@@ -9,10 +9,7 @@ import {
 } from 'lucide-react';
 import { EmptyState } from '@/components/gc/widget';
 import { FamilyLogo } from '@/components/families/family-logo';
-import {
-    ConnectButton,
-    ServerLinks,
-} from '@/components/servers/server-card';
+import { ConnectButton, ServerLinks } from '@/components/servers/server-card';
 import { OnlineMeter, ServerIcon } from '@/components/servers/server-icon';
 import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
