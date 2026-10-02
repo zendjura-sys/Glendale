@@ -67,6 +67,8 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final body = TextEditingController();
+  bool stickersOpen = false;
+  List<Map<String, dynamic>> stickers = [];
 
   @override
   void dispose() {
@@ -97,10 +99,33 @@ class _ChatScreenState extends State<ChatScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(text(conversation['title']) ?? 'Чат', maxLines: 1, overflow: TextOverflow.ellipsis, style: onest.copyWith(fontWeight: FontWeight.w700, fontSize: 16)),
-                        Text(online ? 'у мережі' : '${conversation['members_count'] ?? ''} учасн.', style: onest.copyWith(color: online ? cyan : muted, fontSize: 12)),
+                        Text(text(conversation['title']) ?? 'Чат', maxLines: 1, overflow: TextOverflow.ellipsis, style: onest.copyWith(fontWeight: FontWeight.w700, fontSize: 17)),
+                        Text(
+                          online
+                              ? 'у мережі'
+                              : peer == null
+                                  ? '${conversation['members_count'] ?? ''} учасн.'
+                                  : (clock(peer['last_seen_at']).isEmpty ? 'не в мережі' : 'був о ${clock(peer['last_seen_at'])}'),
+                          style: onest.copyWith(color: online ? cyan : muted, fontSize: 11),
+                        ),
                       ],
                     ),
+                  ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert_rounded, color: cyan),
+                    color: card,
+                    onSelected: (value) async {
+                      if (value != 'mute') return;
+                      final next = conversation['is_muted'] != true;
+                      await widget.session.api.post('/api/v1/messages/${widget.id}/mute', {'muted': next});
+                      await reload();
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'mute',
+                        child: Text(conversation['is_muted'] == true ? 'Увімкнути звук' : 'Вимкнути звук', style: onest),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -113,22 +138,54 @@ class _ChatScreenState extends State<ChatScreen> {
                 ],
               ),
             ),
+            if (stickersOpen) _stickerStrip(reload),
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 8, 10),
+              padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Expanded(child: GcField(controller: body, label: 'Повідомлення', onSubmit: () => _send(reload))),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: _toggleStickers,
+                        customBorder: const CircleBorder(),
+                        child: Ink(
+                          width: 40,
+                          height: 40,
+                          decoration: const BoxDecoration(shape: BoxShape.circle, gradient: brand),
+                          child: Icon(stickersOpen ? Icons.keyboard_rounded : Icons.sticky_note_2_outlined, color: Colors.white, size: 20),
+                        ),
+                      ),
+                    ),
+                  ),
                   const SizedBox(width: 8),
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => _send(reload),
-                      customBorder: const CircleBorder(),
-                      child: Ink(
-                        width: 46,
-                        height: 46,
-                        decoration: const BoxDecoration(shape: BoxShape.circle, gradient: brand),
-                        child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.only(left: 14),
+                      decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(24)),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: body,
+                              style: onest,
+                              cursorColor: cyan,
+                              minLines: 1,
+                              maxLines: 4,
+                              textInputAction: TextInputAction.send,
+                              onSubmitted: (_) => _send(reload),
+                              decoration: InputDecoration(
+                                hintText: 'Напишіть повідомлення',
+                                hintStyle: onest.copyWith(color: muted, fontSize: 14),
+                                border: InputBorder.none,
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          IconButton(onPressed: () => _send(reload), icon: const Icon(Icons.send_rounded, color: cyan, size: 22)),
+                        ],
                       ),
                     ),
                   ),
@@ -173,39 +230,87 @@ class _ChatScreenState extends State<ChatScreen> {
     );
     return Align(
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
-        constraints: const BoxConstraints(maxWidth: 280),
-        decoration: BoxDecoration(gradient: mine ? brand : null, color: mine ? null : card, borderRadius: radius),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (!mine && text(user['name']) != null)
-              Text(text(user['name'])!, style: onest.copyWith(color: cyan, fontSize: 12, fontWeight: FontWeight.w600)),
-            if (sticker != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: CachedNetworkImage(imageUrl: sticker, width: 120, height: 120),
-              ),
-            for (final image in images)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: CachedNetworkImage(imageUrl: image, width: 220, height: 160, fit: BoxFit.cover),
-                ),
-              ),
-            if (caption.isNotEmpty) Text(caption, style: onest.copyWith(color: Colors.white)),
-            if (kind == 'voice') Text('Голосове повідомлення', style: onest.copyWith(color: Colors.white70, fontSize: 13)),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(clock(message['created_at']), style: onest.copyWith(color: Colors.white70, fontSize: 10)),
+      child: Column(
+        crossAxisAlignment: mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            constraints: const BoxConstraints(maxWidth: 240),
+            decoration: BoxDecoration(gradient: mine ? brand : null, color: mine ? null : card, borderRadius: radius),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!mine && text(user['name']) != null)
+                  Text(text(user['name'])!, style: onest.copyWith(color: cyan, fontSize: 12, fontWeight: FontWeight.w600)),
+                if (sticker != null) CachedNetworkImage(imageUrl: sticker, width: 120, height: 120),
+                for (final image in images)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: CachedNetworkImage(imageUrl: image, width: 210, height: 150, fit: BoxFit.cover),
+                    ),
+                  ),
+                if (caption.isNotEmpty) Text(caption, style: onest.copyWith(color: mine ? Colors.white : ink, fontSize: 14)),
+                if (kind == 'voice') Text('Голосове повідомлення', style: onest.copyWith(color: mine ? Colors.white70 : muted, fontSize: 13)),
+              ],
             ),
-          ],
-        ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 2, bottom: 8),
+            child: Text(clock(message['created_at']), style: onest.copyWith(color: muted, fontSize: 11)),
+          ),
+        ],
       ),
     );
+  }
+
+  Widget _stickerStrip(Future<void> Function() reload) {
+    if (stickers.isEmpty) {
+      return const Padding(padding: EdgeInsets.all(16), child: Text('Стікерів немає.', style: TextStyle(color: muted, fontFamily: 'Onest')));
+    }
+    return SizedBox(
+      height: 210,
+      child: GridView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4),
+        itemCount: stickers.length,
+        itemBuilder: (context, index) {
+          final sticker = stickers[index];
+          final url = absolute(sticker['url']);
+          return InkWell(
+            onTap: () => _sendSticker(sticker['id'], reload),
+            child: url == null ? const SizedBox() : Padding(padding: const EdgeInsets.all(6), child: CachedNetworkImage(imageUrl: url)),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _toggleStickers() async {
+    if (!stickersOpen && stickers.isEmpty) {
+      try {
+        final data = await widget.session.api.get('/api/v1/messages/stickers');
+        final loaded = <Map<String, dynamic>>[];
+        for (final pack in maps(data['packs'])) {
+          loaded.addAll(maps(pack['stickers']));
+        }
+        stickers = loaded;
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+      }
+    }
+    if (mounted) setState(() => stickersOpen = !stickersOpen);
+  }
+
+  Future<void> _sendSticker(dynamic id, Future<void> Function() reload) async {
+    try {
+      await widget.session.api.post('/api/v1/messages/${widget.id}', {'sticker_id': id});
+      setState(() => stickersOpen = false);
+      await reload();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
   }
 
   Future<void> _send(Future<void> Function() reload) async {

@@ -88,23 +88,29 @@ class _AuthScreenState extends State<AuthScreen> {
     return Stage(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(24),
-            children: [
-              const SizedBox(height: 28),
-              const Center(child: LogoMark(size: 72)),
-              const SizedBox(height: 16),
-              const Center(child: Wordmark()),
-              const Padding(
-                padding: EdgeInsets.only(top: 8, bottom: 28),
-                child: Center(child: Text('Соціальна мережа гравців', style: TextStyle(color: muted, fontFamily: 'Onest'))),
+        body: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.only(top: MediaQuery.viewPaddingOf(context).top + 36, bottom: 48),
+              decoration: const BoxDecoration(gradient: brand),
+              child: const Column(
+                children: [
+                  LogoMark(size: 72),
+                  SizedBox(height: 12),
+                  Text('GameCon', style: TextStyle(fontFamily: 'Unbounded', fontWeight: FontWeight.w700, fontSize: 26, color: Colors.white)),
+                ],
               ),
-              Glass(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(ticket != null ? 'Код із застосунку' : (register ? 'Створити акаунт' : 'З поверненням'), style: unbounded.copyWith(fontSize: 22)),
+            ),
+            Expanded(
+              child: Transform.translate(
+                offset: const Offset(0, -24),
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(color: voidColor, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+                    children: [
+                    Text(ticket != null ? 'Код із застосунку' : (register ? 'Створити акаунт' : 'З поверненням'), textAlign: TextAlign.center, style: unbounded.copyWith(fontSize: 24)),
                     const SizedBox(height: 14),
                     if (error != null) ...[
                       Text(error!, style: onest.copyWith(color: pink)),
@@ -168,9 +174,6 @@ class _AuthScreenState extends State<AuthScreen> {
                       const SizedBox(height: 8),
                       GhostButton(label: 'Discord', icon: Icons.forum_rounded, onPressed: busy ? null : _discord),
                     ],
-                  ],
-                ),
-              ),
               TextButton(
                 onPressed: () => setState(() {
                   register = !register;
@@ -179,8 +182,12 @@ class _AuthScreenState extends State<AuthScreen> {
                 }),
                 child: Text(register ? 'Вже є акаунт? Увійти' : 'Немає акаунта? Реєстрація', style: const TextStyle(color: cyan, fontFamily: 'Onest')),
               ),
-            ],
-          ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -188,9 +188,16 @@ class _TabButton extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: selected ? cyan : muted, size: 22),
+          Icon(icon, color: selected ? cyan : const Color(0xFF9A9898), size: 22),
           const SizedBox(height: 2),
-          Text(label, style: TextStyle(color: selected ? cyan : muted, fontFamily: 'Onest', fontSize: 11, fontWeight: selected ? FontWeight.w600 : FontWeight.w400)),
+          Text(label, style: TextStyle(color: selected ? cyan : const Color(0xFF9A9898), fontFamily: 'Onest', fontSize: 11, fontWeight: selected ? FontWeight.w600 : FontWeight.w400)),
+          const SizedBox(height: 3),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            width: selected ? 12 : 0,
+            height: 4,
+            decoration: BoxDecoration(gradient: selected ? brand : null, borderRadius: BorderRadius.circular(4)),
+          ),
         ],
       ),
     );
