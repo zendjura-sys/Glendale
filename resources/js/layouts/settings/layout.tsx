@@ -34,6 +34,17 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                 <p className="mt-1 text-sm text-white/45">
                     Керуйте сторінкою, приватністю та безпекою акаунта
                 </p>
+                <p className="mt-2 flex flex-wrap gap-x-3 text-xs text-white/35">
+                    <Link href="/policy" className="hover:text-white/60">
+                        Політика
+                    </Link>
+                    <Link href="/terms" className="hover:text-white/60">
+                        Умови
+                    </Link>
+                    <Link href="/child-safety" className="hover:text-white/60">
+                        Безпека дітей
+                    </Link>
+                </p>
             </div>
 
             <div className="flex flex-col gap-5 md:flex-row">

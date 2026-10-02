@@ -104,6 +104,15 @@ export default function Register({ passwordRules }: Props) {
                                 />
                             </div>
 
+                            <p className="text-center text-xs leading-relaxed text-white/40">
+                                Створюючи акаунт, ви погоджуєтесь з{' '}
+                                <TextLink href="/terms">умовами</TextLink> та{' '}
+                                <TextLink href="/policy">
+                                    політикою конфіденційності
+                                </TextLink>
+                                .
+                            </p>
+
                             <Button
                                 type="submit"
                                 size="lg"

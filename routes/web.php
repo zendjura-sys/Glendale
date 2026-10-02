@@ -9,6 +9,7 @@ use App\Http\Controllers\CommunityMemberController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FriendController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
 use App\Http\Controllers\MusicController;
@@ -341,6 +342,10 @@ Route::get('music/spotify/callback', [SpotifyController::class, 'callback'])
 Route::get('play/embed', [CinemaController::class, 'embed'])
     ->middleware('throttle:120,1')
     ->name('cinema.embed');
+
+Route::get('policy', [LegalController::class, 'policy'])->name('legal.policy');
+Route::get('terms', [LegalController::class, 'terms'])->name('legal.terms');
+Route::get('child-safety', [LegalController::class, 'safety'])->name('legal.safety');
 
 Route::get('id{id}', [ProfileController::class, 'byId'])->whereNumber('id')->name('profile.id');
 Route::get('{user}', [ProfileController::class, 'show'])

@@ -386,6 +386,17 @@ export default function Welcome({
             </main>
 
             <footer className="border-t border-white/[0.05] py-8 text-center text-xs text-white/30">
+                <div className="mb-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+                    <Link href="/policy" className="hover:text-white/60">
+                        Політика конфіденційності
+                    </Link>
+                    <Link href="/terms" className="hover:text-white/60">
+                        Умови
+                    </Link>
+                    <Link href="/child-safety" className="hover:text-white/60">
+                        Безпека дітей
+                    </Link>
+                </div>
                 © {new Date().getFullYear()} GameCon · Соціальна мережа нового
                 покоління
             </footer>

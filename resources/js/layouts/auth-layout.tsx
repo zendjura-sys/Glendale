@@ -131,7 +131,21 @@ export default function AuthLayout({
                         {children}
                     </div>
 
-                    <p className="mt-6 text-center text-[11px] text-white/30">
+                    <p className="mt-6 text-center text-[11px] leading-relaxed text-white/30">
+                        <span className="mb-1 flex flex-wrap items-center justify-center gap-x-3">
+                            <Link href="/policy" className="hover:text-white/60">
+                                Політика
+                            </Link>
+                            <Link href="/terms" className="hover:text-white/60">
+                                Умови
+                            </Link>
+                            <Link
+                                href="/child-safety"
+                                className="hover:text-white/60"
+                            >
+                                Безпека дітей
+                            </Link>
+                        </span>
                         © {new Date().getFullYear()} {site?.name ?? 'GameCon'}
                     </p>
                 </div>

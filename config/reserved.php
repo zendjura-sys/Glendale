@@ -8,5 +8,6 @@ return [
         'register', 'reset-password', 'root', 'search', 'settings', 'storage', 'support', 'system',
         'two-factor-challenge', 'up', 'user', 'users', 'verify-email', 'videos', 'events', 'me',
         'servers', 'families', 'f', 's', 'family', 'server', 'discord',
+        'policy', 'terms', 'privacy', 'legal', 'safety',
     ],
 ];
