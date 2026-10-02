@@ -88,6 +88,7 @@ class Wordmark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         LogoMark(size: 36),
         SizedBox(width: 10),
@@ -109,9 +110,9 @@ class Glass extends StatelessWidget {
       width: double.infinity,
       padding: padding,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.045),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        color: card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: child,
     );
@@ -175,12 +176,154 @@ class PrimaryButton extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onPressed,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           child: Ink(
-            height: 52,
-            decoration: BoxDecoration(gradient: brand, borderRadius: BorderRadius.circular(16)),
+            height: 50,
+            decoration: BoxDecoration(gradient: brand, borderRadius: BorderRadius.circular(14)),
             child: Center(child: Text(label, style: const TextStyle(fontFamily: 'Onest', fontWeight: FontWeight.w600, fontSize: 16, color: Colors.white))),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class GhostButton extends StatelessWidget {
+  const GhostButton({required this.label, required this.onPressed, required this.icon, super.key});
+  final String label;
+  final VoidCallback? onPressed;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 50,
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, color: ink, size: 18),
+        label: Text(label, style: onest.copyWith(fontWeight: FontWeight.w600)),
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          backgroundColor: card,
+        ),
+      ),
+    );
+  }
+}
+
+class SectionLabel extends StatelessWidget {
+  const SectionLabel(this.text, {super.key});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 18, bottom: 10),
+      child: Text(text, style: unbounded.copyWith(fontSize: 16)),
+    );
+  }
+}
+
+class FeatureBanner extends StatelessWidget {
+  const FeatureBanner({required this.title, required this.onTap, this.image, this.subtitle, this.action = 'Дивитися', super.key});
+  final String title;
+  final String? image;
+  final String? subtitle;
+  final String action;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final photo = absolute(image);
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: SizedBox(
+          height: 210,
+          width: double.infinity,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (photo == null)
+                const DecoratedBox(decoration: BoxDecoration(gradient: brand))
+              else
+                CachedNetworkImage(imageUrl: photo, fit: BoxFit.cover),
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0x3305070F), Color(0xF005070F)],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: unbounded.copyWith(fontSize: 20)),
+                    if (subtitle != null) Text(subtitle!, style: onest.copyWith(color: muted, fontSize: 12)),
+                    const SizedBox(height: 10),
+                    DecoratedBox(
+                      decoration: BoxDecoration(gradient: brand, borderRadius: BorderRadius.circular(20)),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 18),
+                            const SizedBox(width: 4),
+                            Text(action, style: onest.copyWith(fontWeight: FontWeight.w600, fontSize: 13)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class PosterTile extends StatelessWidget {
+  const PosterTile({required this.title, required this.onTap, this.image, this.subtitle, super.key});
+  final String title;
+  final String? image;
+  final String? subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final photo = absolute(image);
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AspectRatio(
+              aspectRatio: 2 / 3,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: photo == null
+                    ? const DecoratedBox(decoration: BoxDecoration(gradient: brand))
+                    : CachedNetworkImage(imageUrl: photo, fit: BoxFit.cover, width: double.infinity),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: onest.copyWith(fontSize: 12, fontWeight: FontWeight.w600)),
+            if (subtitle != null) Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis, style: onest.copyWith(color: muted, fontSize: 11)),
+          ],
         ),
       ),
     );
@@ -206,10 +349,10 @@ class GcField extends StatelessWidget {
         labelText: label,
         labelStyle: onest.copyWith(color: muted),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.03),
+        fillColor: card,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: indigo)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.06))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: indigo)),
       ),
     );
   }
@@ -234,9 +377,10 @@ class ChipRow extends StatelessWidget {
                 label: Text(option.$2, style: onest.copyWith(fontSize: 13)),
                 selected: selected == option.$1,
                 onSelected: (_) => onSelect(option.$1),
-                selectedColor: indigo.withValues(alpha: 0.45),
-                backgroundColor: Colors.white.withValues(alpha: 0.04),
-                side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                selectedColor: indigo,
+                backgroundColor: card,
+                side: BorderSide(color: selected == option.$1 ? Colors.transparent : Colors.white.withValues(alpha: 0.08)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 labelStyle: TextStyle(color: selected == option.$1 ? Colors.white : muted),
               ),
             ),

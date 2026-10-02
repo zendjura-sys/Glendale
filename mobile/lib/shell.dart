@@ -35,35 +35,47 @@ class AppShell extends StatelessWidget {
       builder: (context, _) => Stage(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: child,
+        body: SafeArea(bottom: false, child: child),
         bottomNavigationBar: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (player.title.isNotEmpty)
-              Material(
-                color: deep,
-                child: ListTile(
-                  dense: true,
-                  title: Text(player.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: onest.copyWith(fontWeight: FontWeight.w600)),
-                  subtitle: Text(player.artist, maxLines: 1, style: onest.copyWith(color: muted, fontSize: 12)),
-                  trailing: IconButton(
-                    onPressed: player.toggle,
-                    icon: Icon(player.playing ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Material(
+                  color: card,
+                  borderRadius: BorderRadius.circular(18),
+                  child: ListTile(
+                    dense: true,
+                    leading: const CircleAvatar(backgroundColor: indigo, child: Icon(Icons.music_note_rounded, color: Colors.white, size: 18)),
+                    title: Text(player.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: onest.copyWith(fontWeight: FontWeight.w600)),
+                    subtitle: Text(player.artist, maxLines: 1, style: onest.copyWith(color: muted, fontSize: 12)),
+                    trailing: IconButton(
+                      onPressed: player.toggle,
+                      icon: Icon(player.playing ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white),
+                    ),
                   ),
                 ),
               ),
-            Material(
-              color: const Color(0xFF070A16),
-              child: SafeArea(
-                top: false,
-                child: SizedBox(
-                  height: 64,
-                  child: Row(
-                    children: [
-                      for (var i = 0; i < _tabs.length; i++)
-                        Expanded(child: _TabButton(icon: _tabs[i].$3, label: _tabs[i].$2, selected: selected == i, onTap: () => context.go(_tabs[i].$1))),
-                      Expanded(child: _TabButton(icon: Icons.menu_rounded, label: 'Меню', selected: false, onTap: () => _menu(context))),
-                    ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: bar,
+                  borderRadius: BorderRadius.circular(26),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: SizedBox(
+                    height: 64,
+                    child: Row(
+                      children: [
+                        for (var i = 0; i < _tabs.length; i++)
+                          Expanded(child: _TabButton(icon: _tabs[i].$3, label: _tabs[i].$2, selected: selected == i, onTap: () => context.go(_tabs[i].$1))),
+                        Expanded(child: _TabButton(icon: Icons.grid_view_rounded, label: 'Меню', selected: false, onTap: () => _menu(context))),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -89,15 +101,23 @@ class AppShell extends StatelessWidget {
     ];
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: deep,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      backgroundColor: abyss,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
       builder: (sheet) {
         return SafeArea(
           child: ListView(
             shrinkWrap: true,
             children: [
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 10),
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(4)),
+                ),
+              ),
               const Padding(
-                padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+                padding: EdgeInsets.fromLTRB(20, 14, 20, 8),
                 child: Text('GameCon', style: TextStyle(fontFamily: 'Unbounded', fontWeight: FontWeight.w700, fontSize: 20, color: ink)),
               ),
               for (final item in items)
@@ -140,12 +160,22 @@ class _TabButton extends StatelessWidget {
     final color = selected ? Colors.white : muted;
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: color, size: 22),
+          Container(
+            width: 46,
+            height: 28,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              gradient: selected ? brand : null,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
           const SizedBox(height: 2),
-          Text(label, style: TextStyle(color: color, fontFamily: 'Onest', fontSize: 11)),
+          Text(label, style: TextStyle(color: color, fontFamily: 'Onest', fontSize: 10, fontWeight: selected ? FontWeight.w600 : FontWeight.w400)),
         ],
       ),
     );

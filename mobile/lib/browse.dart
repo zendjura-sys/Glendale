@@ -74,6 +74,16 @@ class _CommunitiesScreenState extends State<CommunitiesScreen> {
                 child: Glass(
                   child: ListTile(
                     contentPadding: EdgeInsets.zero,
+                    leading: CircleAvatar(
+                      backgroundColor: indigo,
+                      child: Text(
+                        () {
+                          final label = text(row['name']) ?? '?';
+                          return (label.isEmpty ? '?' : label[0]).toUpperCase();
+                        }(),
+                        style: unbounded.copyWith(fontSize: 16),
+                      ),
+                    ),
                     title: Text(text(row['name']) ?? '', style: onest.copyWith(fontWeight: FontWeight.w600)),
                     subtitle: Text('${text(row['category_label']) ?? ''} · ${row['members_count'] ?? 0}', style: onest.copyWith(color: muted)),
                     onTap: () {
@@ -244,21 +254,28 @@ class _MusicScreenState extends State<MusicScreen> {
               ),
             if (tracks.isEmpty) const Padding(padding: EdgeInsets.only(top: 16), child: Text('Треків немає.', style: TextStyle(color: muted, fontFamily: 'Onest'))),
             for (final track in tracks)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(text(track['title']) ?? '', style: onest.copyWith(fontWeight: FontWeight.w600)),
-                subtitle: Text(text(track['artist']) ?? '', style: onest.copyWith(color: muted)),
-                trailing: IconButton(
-                  onPressed: () async {
-                    final url = absolute(track['url']);
-                    if (url == null) return;
-                    await widget.player.play(url, text(track['title']) ?? '', text(track['artist']) ?? '');
-                    final id = track['id'];
-                    if (id != null) {
-                      await widget.session.api.post('/api/v1/music/now-playing', {'track_id': id});
-                    }
-                  },
-                  icon: const Icon(Icons.play_arrow_rounded, color: Colors.white),
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Glass(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const CircleAvatar(backgroundColor: indigo, child: Icon(Icons.music_note_rounded, color: Colors.white, size: 18)),
+                    title: Text(text(track['title']) ?? '', style: onest.copyWith(fontWeight: FontWeight.w600)),
+                    subtitle: Text(text(track['artist']) ?? '', style: onest.copyWith(color: muted)),
+                    trailing: IconButton(
+                      onPressed: () async {
+                        final url = absolute(track['url']);
+                        if (url == null) return;
+                        await widget.player.play(url, text(track['title']) ?? '', text(track['artist']) ?? '');
+                        final id = track['id'];
+                        if (id != null) {
+                          await widget.session.api.post('/api/v1/music/now-playing', {'track_id': id});
+                        }
+                      },
+                      icon: const Icon(Icons.play_circle_fill_rounded, color: cyan),
+                    ),
+                  ),
                 ),
               ),
           ],
@@ -278,11 +295,13 @@ class CinemaScreen extends StatefulWidget {
 
 class _CinemaScreenState extends State<CinemaScreen> {
   final query = TextEditingController();
+  final slides = PageController(viewportFraction: 0.9);
   String q = '';
 
   @override
   void dispose() {
     query.dispose();
+    slides.dispose();
     super.dispose();
   }
 
@@ -293,38 +312,66 @@ class _CinemaScreenState extends State<CinemaScreen> {
       load: () => widget.session.api.get('/api/v1/cinema?q=${Uri.encodeQueryComponent(q)}&page=1'),
       builder: (data, reload) {
         final movies = Listing.parse(data['movies']).items;
+        final featured = movies.take(5).toList();
         return ScreenScroll(
           onRefresh: reload,
           children: [
             Text('Кіно', style: unbounded.copyWith(fontSize: 28)),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             GcField(controller: query, label: 'Пошук фільму', onSubmit: () => setState(() => q = query.text.trim())),
             if (movies.isEmpty) const Padding(padding: EdgeInsets.only(top: 16), child: Text('Нічого не знайдено.', style: TextStyle(color: muted, fontFamily: 'Onest'))),
-            for (final movie in movies)
+            if (featured.isNotEmpty) ...[
+              const SectionLabel('Зараз у ефірі'),
+              SizedBox(
+                height: 210,
+                child: PageView.builder(
+                  controller: slides,
+                  itemCount: featured.length,
+                  itemBuilder: (context, index) {
+                    final movie = featured[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 10),
+                      child: FeatureBanner(
+                        title: text(movie['title']) ?? '',
+                        subtitle: '${text(movie['type_label']) ?? ''} · ${movie['year'] ?? ''}',
+                        image: text(movie['poster']),
+                        onTap: () => _openMovie(context, movie),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+            if (movies.isNotEmpty) const SectionLabel('Каталог'),
+            for (var i = 0; i < movies.length; i += 3)
               Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Glass(
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: absolute(movie['poster']) == null
-                        ? null
-                        : ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: CachedNetworkImage(imageUrl: absolute(movie['poster'])!, width: 48, height: 72, fit: BoxFit.cover),
-                          ),
-                    title: Text(text(movie['title']) ?? '', style: onest.copyWith(fontWeight: FontWeight.w600)),
-                    subtitle: Text('${text(movie['type_label']) ?? ''} · ${movie['year'] ?? ''}', style: onest.copyWith(color: muted)),
-                    onTap: () {
-                      final slug = text(movie['slug']);
-                      if (slug != null) context.push('/cinema/$slug');
-                    },
-                  ),
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (var column = 0; column < 3; column++)
+                      Expanded(
+                        child: i + column < movies.length
+                            ? PosterTile(
+                                title: text(movies[i + column]['title']) ?? '',
+                                subtitle: '${movies[i + column]['year'] ?? ''}',
+                                image: text(movies[i + column]['poster']),
+                                onTap: () => _openMovie(context, movies[i + column]),
+                              )
+                            : const SizedBox(),
+                      ),
+                  ],
                 ),
               ),
           ],
         );
       },
     );
+  }
+
+  void _openMovie(BuildContext context, Map<String, dynamic> movie) {
+    final slug = text(movie['slug']);
+    if (slug != null) context.push('/cinema/$slug');
   }
 }
 
@@ -362,44 +409,106 @@ class _MovieScreenState extends State<MovieScreen> {
         final movie = data['movie'] is Map ? Map<String, dynamic>.from(data['movie'] as Map) : <String, dynamic>{};
         final players = maps(data['players']);
         final statuses = data['statuses'] is Map ? Map<String, dynamic>.from(data['statuses'] as Map) : <String, dynamic>{};
+        final poster = text(movie['poster']) ?? text(movie['backdrop']);
         return ScreenScroll(
           onRefresh: reload,
           children: [
-            IconButton(onPressed: () => context.go('/cinema'), icon: const Icon(Icons.arrow_back_rounded, color: Colors.white)),
-            Text(text(movie['title']) ?? widget.slug, style: unbounded.copyWith(fontSize: 24)),
-            if (text(movie['description']) != null) Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text(text(movie['description'])!, style: onest)),
-            if (player != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: SizedBox(height: 240, child: WebViewWidget(controller: player!)),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(22),
+              child: SizedBox(
+                height: 280,
+                width: double.infinity,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (player != null)
+                      WebViewWidget(controller: player!)
+                    else if (absolute(poster) != null)
+                      CachedNetworkImage(imageUrl: absolute(poster)!, fit: BoxFit.cover)
+                    else
+                      const DecoratedBox(decoration: BoxDecoration(gradient: brand)),
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0x6605070F), Colors.transparent, Color(0xF005070F)],
+                          stops: [0, 0.45, 1],
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 4,
+                      top: 4,
+                      child: IconButton(
+                        onPressed: () => context.go('/cinema'),
+                        icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                      ),
+                    ),
+                    if (player == null && players.isNotEmpty)
+                      Positioned(
+                        right: 16,
+                        bottom: 16,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              final raw = text(players.first['link']);
+                              if (raw != null) _open(raw);
+                            },
+                            customBorder: const CircleBorder(),
+                            child: Ink(
+                              width: 58,
+                              height: 58,
+                              decoration: const BoxDecoration(shape: BoxShape.circle, gradient: brand),
+                              child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 34),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
-            Wrap(
-              spacing: 8,
-              children: [
-                for (final source in players)
-                  ActionChip(
-                    label: Text(
-                      '${text(source['provider_label']) ?? 'Плеєр'}${text(source['translation']) == null ? '' : ' · ${text(source['translation'])}'}',
-                      style: onest.copyWith(fontSize: 12),
+            ),
+            const SizedBox(height: 14),
+            Text(text(movie['title']) ?? widget.slug, style: unbounded.copyWith(fontSize: 24)),
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text('${text(movie['type_label']) ?? ''} · ${movie['year'] ?? ''}', style: onest.copyWith(color: muted)),
+            ),
+            if (text(movie['description']) != null)
+              Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(text(movie['description'])!, style: onest.copyWith(height: 1.4))),
+            if (players.isNotEmpty) const SectionLabel('Озвучення'),
+            for (final source in players)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Glass(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      Icons.play_circle_fill_rounded,
+                      color: link == _playerUrl('${source['link']}') ? cyan : muted,
                     ),
-                    backgroundColor: link == _playerUrl('${source['link']}') ? indigo : Colors.white.withValues(alpha: 0.05),
-                    onPressed: () {
+                    title: Text(text(source['provider_label']) ?? 'Плеєр', style: onest.copyWith(fontWeight: FontWeight.w600)),
+                    subtitle: text(source['translation']) == null ? null : Text(text(source['translation'])!, style: onest.copyWith(color: muted, fontSize: 12)),
+                    onTap: () {
                       final raw = text(source['link']);
                       if (raw != null) _open(raw);
                     },
                   ),
-              ],
-            ),
-            const SizedBox(height: 8),
+                ),
+              ),
+            if (statuses.isNotEmpty) const SectionLabel('Мій список'),
             Wrap(
               spacing: 8,
+              runSpacing: 8,
               children: [
                 for (final entry in statuses.entries)
                   ActionChip(
                     label: Text('${entry.value}', style: onest.copyWith(color: gold, fontSize: 12)),
+                    backgroundColor: card,
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
                     onPressed: () async {
                       await widget.session.api.post('/api/v1/cinema/${widget.slug}/status', {'status': entry.key});
                       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${entry.value}')));

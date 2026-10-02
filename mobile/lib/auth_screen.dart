@@ -92,11 +92,13 @@ class _AuthScreenState extends State<AuthScreen> {
           child: ListView(
             padding: const EdgeInsets.all(24),
             children: [
-              const SizedBox(height: 36),
-              const Wordmark(),
+              const SizedBox(height: 28),
+              const Center(child: LogoMark(size: 72)),
+              const SizedBox(height: 16),
+              const Center(child: Wordmark()),
               const Padding(
                 padding: EdgeInsets.only(top: 8, bottom: 28),
-                child: Text('Соціальна мережа гравців', style: TextStyle(color: muted, fontFamily: 'Onest')),
+                child: Center(child: Text('Соціальна мережа гравців', style: TextStyle(color: muted, fontFamily: 'Onest'))),
               ),
               Glass(
                 child: Column(
@@ -153,10 +155,18 @@ class _AuthScreenState extends State<AuthScreen> {
                                   });
                                 }),
                       ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.12))),
+                          Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text('або', style: onest.copyWith(color: muted, fontSize: 12))),
+                          Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.12))),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      GhostButton(label: 'Google', icon: Icons.g_mobiledata_rounded, onPressed: busy ? null : _google),
                       const SizedBox(height: 8),
-                      PrimaryButton(label: 'Увійти через Google', onPressed: busy ? null : _google),
-                      const SizedBox(height: 8),
-                      PrimaryButton(label: 'Увійти через Discord', onPressed: busy ? null : _discord),
+                      GhostButton(label: 'Discord', icon: Icons.forum_rounded, onPressed: busy ? null : _discord),
                     ],
                   ],
                 ),

@@ -35,7 +35,10 @@ class _FeedScreenState extends State<FeedScreen> {
           onRefresh: reload,
           children: [
             const Wordmark(),
-            const SizedBox(height: 12),
+            const Padding(
+              padding: EdgeInsets.only(top: 6, bottom: 12),
+              child: Text('Стрічка', style: TextStyle(color: muted, fontFamily: 'Onest')),
+            ),
             ChipRow(
               options: const [('friends', 'Стрічка'), ('discover', 'Цікаве')],
               selected: tab,
@@ -45,21 +48,27 @@ class _FeedScreenState extends State<FeedScreen> {
               }),
             ),
             const SizedBox(height: 12),
-            GcField(controller: composer, label: 'Що нового?'),
-            const SizedBox(height: 8),
-            PrimaryButton(
-              label: 'Опублікувати',
-              onPressed: () async {
-                final body = composer.text.trim();
-                if (body.isEmpty) return;
-                try {
-                  await widget.session.api.post('/api/v1/posts', {'body': body, 'visibility': 'public'});
-                  composer.clear();
-                  await reload();
-                } catch (e) {
-                  if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-                }
-              },
+            Glass(
+              child: Column(
+                children: [
+                  GcField(controller: composer, label: 'Що нового?'),
+                  const SizedBox(height: 10),
+                  PrimaryButton(
+                    label: 'Опублікувати',
+                    onPressed: () async {
+                      final body = composer.text.trim();
+                      if (body.isEmpty) return;
+                      try {
+                        await widget.session.api.post('/api/v1/posts', {'body': body, 'visibility': 'public'});
+                        composer.clear();
+                        await reload();
+                      } catch (e) {
+                        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+                      }
+                    },
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
             if (posts.items.isEmpty) const Text('Стрічка порожня.', style: TextStyle(color: muted, fontFamily: 'Onest')),

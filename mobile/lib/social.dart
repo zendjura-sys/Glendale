@@ -257,21 +257,26 @@ class ProfileScreen extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: IconButton(onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back_rounded, color: Colors.white)),
               ),
-            Row(
-              children: [
-                Avatar(url: text(user['avatar_url']), name: text(user['name']) ?? name, size: 72, online: user['is_online'] == true),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(text(user['name']) ?? name, style: unbounded.copyWith(fontSize: 20)),
-                      Text('@$name', style: onest.copyWith(color: muted)),
-                      if (text(user['about']) != null) Text(text(user['about'])!, style: onest),
-                    ],
-                  ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(22),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(16, 28, 16, 18),
+                decoration: const BoxDecoration(gradient: brand),
+                child: Column(
+                  children: [
+                    Avatar(url: text(user['avatar_url']), name: text(user['name']) ?? name, size: 84, online: user['is_online'] == true),
+                    const SizedBox(height: 10),
+                    Text(text(user['name']) ?? name, textAlign: TextAlign.center, style: unbounded.copyWith(fontSize: 20)),
+                    Text('@$name', style: onest.copyWith(color: Colors.white70)),
+                    if (text(user['about']) != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(text(user['about'])!, textAlign: TextAlign.center, style: onest.copyWith(fontSize: 13)),
+                      ),
+                  ],
                 ),
-              ],
+              ),
             ),
             Row(
               children: [

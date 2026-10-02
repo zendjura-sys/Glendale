@@ -10,6 +10,8 @@ const indigo = Color(0xFF6D5DFC);
 const pink = Color(0xFFF04FD8);
 const cyan = Color(0xFF38E1FF);
 const gold = Color(0xFFF5C451);
+const card = Color(0xFF12182C);
+const bar = Color(0xFF0C1020);
 
 const brand = LinearGradient(
   colors: [neonBlue, Color(0xFF8B6BFF), pink],
