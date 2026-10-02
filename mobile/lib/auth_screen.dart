@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -200,15 +201,31 @@ class _AuthScreenState extends State<AuthScreen> {
       error = null;
     });
     try {
-      final account = await GoogleSignIn(serverClientId: googleWebClientId).signIn();
-      final idToken = (await account?.authentication)?.idToken;
+      final google = GoogleSignIn(serverClientId: googleWebClientId);
+      final account = await google.signIn();
+      if (account == null) return;
+      final idToken = (await account.authentication).idToken;
       if (idToken == null) throw ApiException('Google не повернув токен.');
       await _run(() => widget.session.api.post('/api/v1/auth/google', {'google_token': idToken, 'device': 'GameCon Flutter'}));
+    } on PlatformException catch (e) {
+      final message = _googleFailure(e);
+      if (mounted) setState(() => error = message);
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = e is ApiException ? e.message : 'Не вдалося увійти через Google.');
     } finally {
       if (mounted) setState(() => busy = false);
     }
+  }
+
+  String? _googleFailure(PlatformException error) {
+    final raw = '${error.code} ${error.message}';
+    if (raw.contains('canceled') || raw.contains('12501') || raw.contains('sign_in_cancelled')) {
+      return null;
+    }
+    if (raw.contains('10')) {
+      return 'Google не приймає вхід у цій збірці. Увійдіть поштою або через Discord.';
+    }
+    return 'Не вдалося увійти через Google. Спробуйте пошту або Discord.';
   }
 
   Future<void> _discord() async {
