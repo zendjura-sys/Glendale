@@ -442,7 +442,7 @@ class MusicAttachment extends StatelessWidget {
 
   Future<void> _play(BuildContext context) async {
     if (spotify) {
-      final link = text(track['external_url']) ?? 'https://open.spotify.com/track/${track['id']}';
+      final link = text(track['url']) ?? text(track['external_url']) ?? 'https://open.spotify.com/track/${track['id']}';
       await launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication);
       return;
     }

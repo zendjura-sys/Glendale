@@ -14,6 +14,7 @@ String appPathFor(String? sitePath) {
   if (raw == null) return '/feed';
   final uri = Uri.tryParse(raw);
   final path = uri?.path ?? raw;
+  final query = uri != null && uri.hasQuery ? '?${uri.query}' : '';
   final parts = path.split('/').where((p) => p.isNotEmpty).toList();
   if (parts.isEmpty) return '/feed';
   final head = parts.first;
@@ -23,27 +24,35 @@ String appPathFor(String? sitePath) {
       final tab = rest(2);
       return '/families/${rest(1)}${tab.isEmpty ? '' : '?tab=$tab'}';
     case 'c':
-      return '/communities/${rest(1)}';
+      final sub = rest(2);
+      return '/communities/${rest(1)}${['members', 'settings', 'photos'].contains(sub) ? '/$sub' : ''}${sub == 'members' ? query : ''}';
     case 'messages':
       return parts.length > 1 && int.tryParse(rest(1)) != null ? '/messages/${rest(1)}' : '/messages';
     case 'posts':
       return '/posts/${rest(1)}';
     case 'albums':
-      return '/albums/${rest(1)}';
+      return '/albums/${rest(1)}$query';
     case 'photos':
       return parts.length > 2 && rest(1) == 'u' ? '/photos?user=${rest(2)}' : '/photos';
-    case 'cinema':
-    case 'servers':
-    case 'families':
-    case 'communities':
     case 'music':
+      if (rest(1) == 'u' && parts.length > 2) return '/music?user=${rest(2)}';
+      if (rest(1) == 'playlists' && parts.length > 2) return '/music/playlists/${rest(2)}';
+      return '/music$query';
+    case 'cinema':
+      return '$path${rest(1) == 'my' ? query : ''}';
+    case 'families':
+      return rest(1) == 'create' ? '/families/create' : '/families';
+    case 'servers':
+    case 'communities':
     case 'friends':
     case 'people':
     case 'notifications':
     case 'feed':
-      return path;
+      return '$path$query';
     case 'settings':
       return '/settings';
+    case 'id':
+      return '/feed';
     default:
       return '/u/$head';
   }

@@ -21,6 +21,7 @@ use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ServerController;
 use App\Http\Controllers\Settings\ProfileController as SettingsProfileController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\TrackController;
@@ -179,7 +180,16 @@ Route::prefix('v1')->group(function () {
                 Route::delete('{conversation}/messages/{message}', [MessageController::class, 'destroy']);
             });
 
+            Route::middleware('module:communities')->group(function () {
+                Route::get('communities', [CommunityController::class, 'index']);
+                Route::post('communities', [CommunityController::class, 'store'])->middleware('throttle:10,1');
+            });
+
             Route::middleware('module:communities')->prefix('c/{community}')->group(function () {
+                Route::get('/', [CommunityController::class, 'show']);
+                Route::post('join', [CommunityController::class, 'join'])->middleware('throttle:60,1');
+                Route::delete('join', [CommunityController::class, 'leave']);
+                Route::get('photos', [PhotoController::class, 'community'])->middleware('module:photos');
                 Route::delete('/', [CommunityController::class, 'destroy']);
                 Route::get('settings', [CommunityController::class, 'edit']);
                 Route::patch('settings', [CommunityController::class, 'update']);
@@ -191,7 +201,17 @@ Route::prefix('v1')->group(function () {
                 Route::delete('members/{user}', [CommunityMemberController::class, 'destroy']);
             });
 
+            Route::middleware('module:photos')->group(function () {
+                Route::get('photos', [PhotoController::class, 'index']);
+                Route::get('photos/u/{user}', [PhotoController::class, 'user']);
+                Route::post('albums', [PhotoAlbumController::class, 'store'])->middleware('throttle:20,1');
+            });
+
             Route::middleware('module:photos')->whereNumber(['album', 'photo'])->group(function () {
+                Route::get('albums/{album}', [PhotoAlbumController::class, 'show']);
+                Route::post('albums/{album}/photos', [PhotoAlbumController::class, 'upload'])->middleware('throttle:30,1');
+                Route::get('photos/{photo}', [PhotoController::class, 'show']);
+                Route::post('photos/{photo}/like', [PhotoController::class, 'like'])->middleware('throttle:120,1');
                 Route::patch('albums/{album}', [PhotoAlbumController::class, 'update']);
                 Route::delete('albums/{album}', [PhotoAlbumController::class, 'destroy']);
                 Route::patch('photos/{photo}', [PhotoController::class, 'update']);
@@ -202,9 +222,16 @@ Route::prefix('v1')->group(function () {
             });
 
             Route::prefix('music')->middleware('module:music')->group(function () {
+                Route::get('/', [MusicController::class, 'index']);
+                Route::get('u/{user}', [MusicController::class, 'user']);
+                Route::post('tracks', [TrackController::class, 'store'])->middleware('throttle:60,1');
+                Route::post('playlists', [PlaylistController::class, 'store'])->middleware('throttle:20,1');
                 Route::get('search', [MusicController::class, 'search'])->middleware('throttle:120,1');
                 Route::delete('now-playing', [NowPlayingController::class, 'destroy']);
                 Route::whereNumber(['track', 'playlist'])->group(function () {
+                    Route::post('tracks/{track}/library', [TrackController::class, 'add']);
+                    Route::delete('tracks/{track}/library', [TrackController::class, 'remove']);
+                    Route::get('playlists/{playlist}', [PlaylistController::class, 'show']);
                     Route::patch('tracks/{track}', [TrackController::class, 'update']);
                     Route::delete('tracks/{track}', [TrackController::class, 'destroy']);
                     Route::post('playlists/{playlist}', [PlaylistController::class, 'update']);
@@ -215,6 +242,7 @@ Route::prefix('v1')->group(function () {
                 Route::prefix('spotify')->middleware('throttle:120,1')->group(function () {
                     Route::patch('/', [SpotifyController::class, 'update']);
                     Route::get('search', [SpotifyController::class, 'search']);
+                    Route::get('library/{section}', [SpotifyController::class, 'library']);
                     Route::get('playlists/{playlist}', [SpotifyController::class, 'playlist']);
                 });
             });
@@ -224,15 +252,49 @@ Route::prefix('v1')->group(function () {
                 Route::get('my', [CinemaController::class, 'my']);
                 Route::get('search', [CinemaController::class, 'search'])->middleware('throttle:120,1');
                 Route::get('{movie}', [CinemaController::class, 'show']);
+                Route::patch('{movie}/status', [CinemaController::class, 'status'])->middleware('throttle:60,1');
+                Route::put('{movie}/rating', [CinemaController::class, 'rate'])->middleware('throttle:60,1');
                 Route::post('{movie}/started', [CinemaController::class, 'started'])->middleware('throttle:30,1');
                 Route::get('{movie}/comments', [CinemaController::class, 'comments']);
                 Route::post('{movie}/comments', [CinemaController::class, 'comment'])->middleware('throttle:30,1');
             });
 
+            Route::prefix('servers')->middleware('module:servers')->group(function () {
+                Route::get('/', [ServerController::class, 'index']);
+                Route::post('suggest', [ServerController::class, 'suggest'])->middleware('throttle:5,10');
+                Route::get('{server}', [ServerController::class, 'show']);
+            });
+
             Route::middleware('module:families')->group(function () {
+                Route::get('families', [Families\FamilyController::class, 'index']);
+                Route::get('families/create', [Families\FamilyController::class, 'create']);
                 Route::post('families', [Families\FamilyController::class, 'store'])->middleware('throttle:5,10');
 
                 Route::prefix('f/{family}')->scopeBindings()->group(function () {
+                    // Сторінки сім’ї — props ті самі, що бачить сайт (права FamilyGate, гроші в копійках).
+                    Route::get('/', [Families\FamilyController::class, 'show']);
+                    Route::post('apply', [Families\FamilyController::class, 'apply'])->middleware('throttle:10,10');
+                    Route::get('chat', [Families\FamilyController::class, 'chat']);
+                    Route::get('reports', [Families\FamilyReportController::class, 'index']);
+                    Route::post('reports', [Families\FamilyReportController::class, 'store'])->middleware('throttle:30,1');
+                    Route::get('queue', [Families\FamilyReportController::class, 'queue']);
+                    Route::post('reports/{report}/review', [Families\FamilyReportController::class, 'review'])->whereNumber('report');
+                    Route::get('proofs/{proof}', [Families\FamilyReportController::class, 'proof'])->whereNumber('proof');
+                    Route::get('bank', [Families\FamilyBankController::class, 'index']);
+                    Route::post('bank/cashouts', [Families\FamilyBankController::class, 'requestCashout'])->middleware('throttle:10,1');
+                    Route::post('bank/deposits', [Families\FamilyBankController::class, 'openDeposit'])->middleware('throttle:10,1');
+                    Route::post('bank/manual', [Families\FamilyBankController::class, 'manual'])->middleware('throttle:30,1');
+                    Route::get('warehouse', [Families\FamilyWarehouseController::class, 'index']);
+                    Route::get('warehouse/logs/{log}/proof', [Families\FamilyWarehouseController::class, 'proof'])->whereNumber('log');
+                    Route::get('members', [Families\FamilyMemberController::class, 'index']);
+                    Route::get('discipline', [Families\FamilyDisciplineController::class, 'index']);
+                    Route::post('discipline', [Families\FamilyDisciplineController::class, 'store'])->middleware('throttle:30,1');
+                    Route::get('events', [Families\FamilyEventController::class, 'index']);
+                    Route::get('rating', [Families\FamilyEventController::class, 'rating']);
+                    Route::get('audit', [Families\FamilyAuditController::class, 'index']);
+                    Route::get('settings', [Families\FamilySettingsController::class, 'index']);
+                    Route::put('settings', [Families\FamilySettingsController::class, 'update']);
+
                     Route::delete('apply', [Families\FamilyController::class, 'withdraw']);
                     Route::post('leave', [Families\FamilyController::class, 'leave']);
                     Route::post('reports/bulk', [Families\FamilyReportController::class, 'bulk']);

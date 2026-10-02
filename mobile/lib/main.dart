@@ -7,11 +7,17 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'auth_screen.dart';
-import 'browse.dart';
 import 'chat.dart';
+import 'cinema.dart';
+import 'communities.dart';
+import 'family_view.dart';
 import 'feed.dart';
+import 'music.dart';
 import 'people.dart';
+import 'photos.dart';
 import 'push.dart';
+import 'servers.dart';
+import 'settings.dart';
 import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
@@ -69,25 +75,37 @@ Future<void> main() async {
           GoRoute(path: '/u/:username', builder: (_, state) => ProfileScreen(key: ValueKey(state.pathParameters['username']), username: state.pathParameters['username'])),
           GoRoute(
             path: '/communities',
-            builder: (_, _) => CommunitiesScreen(session: session),
+            builder: (_, _) => const CommunitiesScreen(),
             routes: [
-              GoRoute(path: ':slug', builder: (_, state) => CommunityScreen(session: session, slug: state.pathParameters['slug']!)),
+              GoRoute(
+                path: ':slug',
+                builder: (_, state) => CommunityScreen(key: ValueKey(state.pathParameters['slug']), slug: state.pathParameters['slug']!),
+                routes: [
+                  GoRoute(path: 'members', builder: (_, state) => CommunityMembersScreen(slug: state.pathParameters['slug']!, tab: state.uri.queryParameters['tab'] ?? 'all')),
+                  GoRoute(path: 'settings', builder: (_, state) => CommunitySettingsScreen(slug: state.pathParameters['slug']!)),
+                  GoRoute(path: 'photos', builder: (_, state) => PhotosScreen(community: state.pathParameters['slug'])),
+                ],
+              ),
+            ],
+          ),
+          GoRoute(path: '/photos', builder: (_, state) => PhotosScreen(key: ValueKey(state.uri.queryParameters['user']), username: state.uri.queryParameters['user'])),
+          GoRoute(
+            path: '/albums/:id',
+            builder: (_, state) => AlbumScreen(key: ValueKey(state.uri.toString()), id: int.tryParse(state.pathParameters['id']!) ?? 0, openPhoto: int.tryParse(state.uri.queryParameters['photo'] ?? '')),
+          ),
+          GoRoute(
+            path: '/music',
+            builder: (_, state) => MusicScreen(key: ValueKey(state.uri.queryParameters['user']), username: state.uri.queryParameters['user'], tab: state.uri.queryParameters['tab']),
+            routes: [
+              GoRoute(path: 'playlists/:id', builder: (_, state) => PlaylistScreen(id: int.tryParse(state.pathParameters['id']!) ?? 0)),
             ],
           ),
           GoRoute(
-            path: '/photos',
-            builder: (_, state) => PhotosScreen(session: session, username: state.uri.queryParameters['user']),
-          ),
-          GoRoute(
-            path: '/albums/:id',
-            builder: (_, state) => AlbumScreen(session: session, id: int.parse(state.pathParameters['id']!)),
-          ),
-          GoRoute(path: '/music', builder: (_, _) => MusicScreen(session: session, player: player)),
-          GoRoute(
             path: '/cinema',
-            builder: (_, _) => CinemaScreen(session: session),
+            builder: (_, _) => const CinemaScreen(),
             routes: [
-              GoRoute(path: ':slug', builder: (_, state) => MovieScreen(session: session, slug: state.pathParameters['slug']!)),
+              GoRoute(path: 'my', builder: (_, state) => MyCinemaScreen(status: state.uri.queryParameters['status'] ?? 'all')),
+              GoRoute(path: ':slug', builder: (_, state) => MovieScreen(key: ValueKey(state.pathParameters['slug']), slug: state.pathParameters['slug']!, autoplay: state.uri.queryParameters['play'] == '1')),
             ],
           ),
           GoRoute(
@@ -99,13 +117,13 @@ Future<void> main() async {
           ),
           GoRoute(
             path: '/servers',
-            builder: (_, _) => ServersScreen(session: session),
+            builder: (_, _) => const ServersScreen(),
             routes: [
-              GoRoute(path: ':slug', builder: (_, state) => ServerScreen(session: session, slug: state.pathParameters['slug']!)),
+              GoRoute(path: ':slug', builder: (_, state) => ServerScreen(slug: state.pathParameters['slug']!)),
             ],
           ),
-          GoRoute(path: '/notifications', builder: (_, _) => NotificationsScreen(session: session)),
-          GoRoute(path: '/settings', builder: (_, _) => SettingsScreen(session: session)),
+          GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
+          GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
         ],
       ),
     ],
