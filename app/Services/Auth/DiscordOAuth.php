@@ -40,7 +40,7 @@ class DiscordOAuth
             'response_type' => 'code',
             'scope' => implode(' ', self::SCOPES),
             'state' => $state,
-            'prompt' => 'none',
+            'prompt' => 'consent',
         ]);
     }
 
