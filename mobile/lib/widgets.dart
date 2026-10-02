@@ -541,15 +541,24 @@ class PostCard extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 8),
                 child: Text('${text(music['artist']) ?? ''} — ${text(music['title'])}', style: onest.copyWith(color: cyan, fontSize: 13)),
               ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
+            Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
             Row(
               children: [
-                IconButton(
-                  onPressed: onLike,
-                  icon: Icon(post['liked'] == true ? Icons.favorite : Icons.favorite_border, color: post['liked'] == true ? pink : muted, size: 20),
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: onLike,
+                    icon: Icon(post['liked'] == true ? Icons.favorite : Icons.favorite_border, color: post['liked'] == true ? pink : muted, size: 18),
+                    label: Text('${post['likes_count'] ?? 0}', style: onest.copyWith(color: muted, fontSize: 13)),
+                  ),
                 ),
-                Text('${post['likes_count'] ?? 0}', style: onest.copyWith(color: muted, fontSize: 13)),
-                TextButton(onPressed: onComment, child: Text('${post['comments_count'] ?? 0} коментарів', style: onest.copyWith(color: muted, fontSize: 13))),
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: onComment,
+                    icon: const Icon(Icons.chat_bubble_outline_rounded, color: muted, size: 18),
+                    label: Text('${post['comments_count'] ?? 0}', style: onest.copyWith(color: muted, fontSize: 13)),
+                  ),
+                ),
               ],
             ),
           ],

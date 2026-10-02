@@ -49,24 +49,12 @@ class _FeedScreenState extends State<FeedScreen> {
             ),
             const SizedBox(height: 12),
             Glass(
-              child: Column(
+              child: Row(
                 children: [
-                  GcField(controller: composer, label: 'Що нового?'),
-                  const SizedBox(height: 10),
-                  PrimaryButton(
-                    label: 'Опублікувати',
-                    onPressed: () async {
-                      final body = composer.text.trim();
-                      if (body.isEmpty) return;
-                      try {
-                        await widget.session.api.post('/api/v1/posts', {'body': body, 'visibility': 'public'});
-                        composer.clear();
-                        await reload();
-                      } catch (e) {
-                        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-                      }
-                    },
-                  ),
+                  Avatar(url: text(widget.session.me?['avatar_url']), name: text(widget.session.me?['name']) ?? 'Я', size: 40),
+                  const SizedBox(width: 10),
+                  Expanded(child: GcField(controller: composer, label: 'Що у вас нового?', onSubmit: () => _publish(context, reload))),
+                  IconButton(onPressed: () => _publish(context, reload), icon: const Icon(Icons.send_rounded, color: cyan)),
                 ],
               ),
             ),
@@ -98,3 +86,17 @@ class _FeedScreenState extends State<FeedScreen> {
 }
 
 int _intId(dynamic value) => value is int ? value : int.tryParse('$value') ?? 0;
+
+extension on _FeedScreenState {
+  Future<void> _publish(BuildContext context, Future<void> Function() reload) async {
+    final body = composer.text.trim();
+    if (body.isEmpty) return;
+    try {
+      await widget.session.api.post('/api/v1/posts', {'body': body, 'visibility': 'public'});
+      composer.clear();
+      await reload();
+    } catch (e) {
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+}

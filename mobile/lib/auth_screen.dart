@@ -104,7 +104,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(ticket != null ? 'Код із застосунку' : (register ? 'Реєстрація' : 'Вхід'), style: unbounded.copyWith(fontSize: 22)),
+                    Text(ticket != null ? 'Код із застосунку' : (register ? 'Створити акаунт' : 'З поверненням'), style: unbounded.copyWith(fontSize: 22)),
                     const SizedBox(height: 14),
                     if (error != null) ...[
                       Text(error!, style: onest.copyWith(color: pink)),

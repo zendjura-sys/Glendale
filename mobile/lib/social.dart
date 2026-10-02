@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -22,17 +23,31 @@ class MessagesScreen extends StatelessWidget {
             Text('Чати', style: unbounded.copyWith(fontSize: 28)),
             if (rows.isEmpty) const Padding(padding: EdgeInsets.only(top: 24), child: Text('Поки немає бесід.', style: TextStyle(color: muted, fontFamily: 'Onest'))),
             for (final row in rows)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Glass(
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(text(row['title']) ?? 'Чат', style: onest.copyWith(fontWeight: FontWeight.w600)),
-                    subtitle: Text(text(row['last_message'] is Map ? (row['last_message'] as Map)['preview'] : null) ?? '', style: onest.copyWith(color: muted)),
-                    trailing: (row['unread'] ?? 0) == 0 ? null : Text('${row['unread']}', style: const TextStyle(color: cyan)),
-                    onTap: () => context.push('/messages/${row['id']}'),
-                  ),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                leading: Avatar(url: text(row['avatar_url']), name: text(row['title']) ?? 'Чат', size: 52),
+                title: Text(text(row['title']) ?? 'Чат', maxLines: 1, overflow: TextOverflow.ellipsis, style: onest.copyWith(fontWeight: FontWeight.w600)),
+                subtitle: Text(
+                  text(row['last_message'] is Map ? (row['last_message'] as Map)['preview'] : null) ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: onest.copyWith(color: muted, fontSize: 13),
                 ),
+                trailing: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(clock(row['last_message'] is Map ? (row['last_message'] as Map)['created_at'] : null), style: onest.copyWith(color: muted, fontSize: 11)),
+                    if ((row['unread'] ?? 0) != 0)
+                      Container(
+                        margin: const EdgeInsets.only(top: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(gradient: brand, borderRadius: BorderRadius.circular(10)),
+                        child: Text('${row['unread']}', style: const TextStyle(color: Colors.white, fontSize: 11, fontFamily: 'Onest')),
+                      ),
+                  ],
+                ),
+                onTap: () => context.push('/messages/${row['id']}'),
               ),
           ],
         );
@@ -67,47 +82,129 @@ class _ChatScreenState extends State<ChatScreen> {
         final conversation = data['conversation'] is Map ? Map<String, dynamic>.from(data['conversation'] as Map) : <String, dynamic>{};
         final history = data['history'] is Map ? data['history'] as Map : {};
         final messages = maps(history['messages']);
+        final peer = conversation['peer'] is Map ? Map<String, dynamic>.from(conversation['peer'] as Map) : null;
+        final online = peer?['is_online'] == true;
         return Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
+              padding: const EdgeInsets.fromLTRB(4, 4, 12, 8),
               child: Row(
                 children: [
                   IconButton(onPressed: () => context.go('/messages'), icon: const Icon(Icons.arrow_back_rounded, color: Colors.white)),
-                  Expanded(child: Text(text(conversation['title']) ?? 'Чат', style: unbounded.copyWith(fontSize: 18))),
+                  Avatar(url: text(conversation['avatar_url']), name: text(conversation['title']) ?? 'Чат', size: 42, online: online),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(text(conversation['title']) ?? 'Чат', maxLines: 1, overflow: TextOverflow.ellipsis, style: onest.copyWith(fontWeight: FontWeight.w700, fontSize: 16)),
+                        Text(online ? 'у мережі' : '${conversation['members_count'] ?? ''} учасн.', style: onest.copyWith(color: online ? cyan : muted, fontSize: 12)),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
                 children: [
-                  for (final message in messages)
-                    Align(
-                      alignment: message['user'] is Map && message['user']['id'] == widget.session.me?['id'] ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(12),
-                        constraints: const BoxConstraints(maxWidth: 280),
-                        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(16)),
-                        child: Text(text(message['body']) ?? text(message['preview']) ?? '', style: onest),
-                      ),
-                    ),
+                  for (final message in messages) _bubble(message),
                 ],
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              padding: const EdgeInsets.fromLTRB(12, 0, 8, 10),
               child: Row(
                 children: [
                   Expanded(child: GcField(controller: body, label: 'Повідомлення', onSubmit: () => _send(reload))),
-                  IconButton(onPressed: () => _send(reload), icon: const Icon(Icons.send_rounded, color: cyan)),
+                  const SizedBox(width: 8),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _send(reload),
+                      customBorder: const CircleBorder(),
+                      child: Ink(
+                        width: 46,
+                        height: 46,
+                        decoration: const BoxDecoration(shape: BoxShape.circle, gradient: brand),
+                        child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
           ],
         );
       },
+    );
+  }
+
+  Widget _bubble(Map<String, dynamic> message) {
+    final kind = text(message['type']) ?? 'text';
+    final caption = text(message['body']) ?? text(message['preview']) ?? '';
+    if (kind == 'system') {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 300),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(16)),
+            child: Text(caption, textAlign: TextAlign.center, style: onest.copyWith(color: muted, fontSize: 13)),
+          ),
+        ),
+      );
+    }
+    final user = message['user'] is Map ? Map<String, dynamic>.from(message['user'] as Map) : <String, dynamic>{};
+    final mine = '${user['id']}' == '${widget.session.me?['id']}';
+    final sticker = message['sticker'] is Map ? absolute((message['sticker'] as Map)['url']) : null;
+    final images = [
+      for (final attachment in maps(message['attachments']))
+        if (absolute(attachment['url']) != null && (text(attachment['type']) == 'image' || text(attachment['type']) == 'gif'))
+          absolute(attachment['url'])!,
+    ];
+    final radius = BorderRadius.only(
+      topLeft: const Radius.circular(18),
+      topRight: const Radius.circular(18),
+      bottomLeft: Radius.circular(mine ? 18 : 4),
+      bottomRight: Radius.circular(mine ? 4 : 18),
+    );
+    return Align(
+      alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+        constraints: const BoxConstraints(maxWidth: 280),
+        decoration: BoxDecoration(gradient: mine ? brand : null, color: mine ? null : card, borderRadius: radius),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!mine && text(user['name']) != null)
+              Text(text(user['name'])!, style: onest.copyWith(color: cyan, fontSize: 12, fontWeight: FontWeight.w600)),
+            if (sticker != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: CachedNetworkImage(imageUrl: sticker, width: 120, height: 120),
+              ),
+            for (final image in images)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: CachedNetworkImage(imageUrl: image, width: 220, height: 160, fit: BoxFit.cover),
+                ),
+              ),
+            if (caption.isNotEmpty) Text(caption, style: onest.copyWith(color: Colors.white)),
+            if (kind == 'voice') Text('Голосове повідомлення', style: onest.copyWith(color: Colors.white70, fontSize: 13)),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(clock(message['created_at']), style: onest.copyWith(color: Colors.white70, fontSize: 10)),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -164,7 +261,15 @@ class _FriendsScreenState extends State<FriendsScreen> {
                         },
                         child: const Text('Прийняти', style: TextStyle(color: cyan)),
                       )
-                    : null,
+                    : IconButton(
+                        onPressed: () async {
+                          final username = text(user['username']);
+                          if (username == null) return;
+                          final chat = await widget.session.api.post('/api/v1/messages/with/$username');
+                          if (context.mounted) context.push('/messages/${chat['id']}');
+                        },
+                        icon: const Icon(Icons.chat_bubble_outline_rounded, color: cyan),
+                      ),
               ),
           ],
         );
@@ -257,40 +362,42 @@ class ProfileScreen extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: IconButton(onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back_rounded, color: Colors.white)),
               ),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(22),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(16, 28, 16, 18),
-                decoration: const BoxDecoration(gradient: brand),
-                child: Column(
-                  children: [
-                    Avatar(url: text(user['avatar_url']), name: text(user['name']) ?? name, size: 84, online: user['is_online'] == true),
-                    const SizedBox(height: 10),
-                    Text(text(user['name']) ?? name, textAlign: TextAlign.center, style: unbounded.copyWith(fontSize: 20)),
-                    Text('@$name', style: onest.copyWith(color: Colors.white70)),
-                    if (text(user['about']) != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Text(text(user['about'])!, textAlign: TextAlign.center, style: onest.copyWith(fontSize: 13)),
-                      ),
-                  ],
-                ),
-              ),
-            ),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                TextButton(onPressed: () => context.push('/photos?user=$name'), child: const Text('Фото', style: TextStyle(color: cyan))),
-                if (!own)
-                  TextButton(
-                    onPressed: () async {
-                      final chat = await session.api.post('/api/v1/messages/with/$name');
-                      if (context.mounted) context.push('/messages/${chat['id']}');
-                    },
-                    child: const Text('Написати', style: TextStyle(color: cyan)),
+                Avatar(url: text(user['avatar_url']), name: text(user['name']) ?? name, size: 86, online: user['is_online'] == true),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(text(user['name']) ?? name, style: unbounded.copyWith(fontSize: 20)),
+                      Text('@$name', style: onest.copyWith(color: muted)),
+                      if (text(user['city']) != null) Text(text(user['city'])!, style: onest.copyWith(color: muted, fontSize: 12)),
+                    ],
                   ),
+                ),
               ],
             ),
+            const SizedBox(height: 14),
+            if (own)
+              GhostButton(label: 'Редагувати профіль', icon: Icons.edit_outlined, onPressed: () => context.go('/settings'))
+            else
+              GhostButton(
+                label: 'Написати',
+                icon: Icons.chat_bubble_outline_rounded,
+                onPressed: () async {
+                  final chat = await session.api.post('/api/v1/messages/with/$name');
+                  if (context.mounted) context.push('/messages/${chat['id']}');
+                },
+              ),
+            const SizedBox(height: 8),
+            GhostButton(label: 'Фото', icon: Icons.photo_outlined, onPressed: () => context.push('/photos?user=$name')),
+            if (text(user['about']) != null) ...[
+              const SectionLabel('Про себе'),
+              Glass(child: Text(text(user['about'])!, style: onest)),
+            ],
+            const SectionLabel('Публікації'),
             for (final post in posts)
               PostCard(
                 post: post,
@@ -307,4 +414,11 @@ class ProfileScreen extends StatelessWidget {
       },
     );
   }
+}
+
+String clock(dynamic iso) {
+  final raw = text(iso);
+  final dt = raw == null ? null : DateTime.tryParse(raw)?.toLocal();
+  if (dt == null) return '';
+  return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 }

@@ -88,25 +88,18 @@ class _AppShellState extends State<AppShell> {
                   ),
                 ),
               ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: bar,
-                  borderRadius: BorderRadius.circular(26),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: SizedBox(
-                    height: 64,
-                    child: Row(
-                      children: [
-                        for (var i = 0; i < _tabs.length; i++)
-                          Expanded(child: _TabButton(icon: _tabs[i].$3, label: _tabs[i].$2, selected: selected == i, onTap: () => context.go(_tabs[i].$1))),
-                        Expanded(child: _TabButton(icon: Icons.grid_view_rounded, label: 'Меню', selected: false, onTap: () => _menu(context))),
-                      ],
-                    ),
+            Material(
+              color: bar,
+              child: SafeArea(
+                top: false,
+                child: SizedBox(
+                  height: 62,
+                  child: Row(
+                    children: [
+                      for (var i = 0; i < _tabs.length; i++)
+                        Expanded(child: _TabButton(icon: _tabs[i].$3, label: _tabs[i].$2, selected: selected == i, onTap: () => context.go(_tabs[i].$1))),
+                      Expanded(child: _TabButton(icon: Icons.grid_view_rounded, label: 'Меню', selected: false, onTap: () => _menu(context))),
+                    ],
                   ),
                 ),
               ),
@@ -189,25 +182,15 @@ class _TabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? Colors.white : muted;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 46,
-            height: 28,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              gradient: selected ? brand : null,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
+          Icon(icon, color: selected ? cyan : muted, size: 22),
           const SizedBox(height: 2),
-          Text(label, style: TextStyle(color: color, fontFamily: 'Onest', fontSize: 10, fontWeight: selected ? FontWeight.w600 : FontWeight.w400)),
+          Text(label, style: TextStyle(color: selected ? cyan : muted, fontFamily: 'Onest', fontSize: 11, fontWeight: selected ? FontWeight.w600 : FontWeight.w400)),
         ],
       ),
     );
