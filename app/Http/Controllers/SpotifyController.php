@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SpotifyAccount;
+use App\Models\User;
 use App\Services\Spotify\SpotifyClient;
 use App\Services\Spotify\SpotifyException;
 use Illuminate\Http\Client\ConnectionException;
@@ -37,13 +38,37 @@ class SpotifyController extends Controller
 
     public function callback(Request $request): RedirectResponse
     {
+        $queryState = (string) $request->query('state');
         $expected = $request->session()->pull('spotify_state');
-        $back = to_route('music.index', ['tab' => 'spotify']);
+        $appUser = null;
+        $fromSession = is_string($expected) && hash_equals($expected, $queryState);
 
-        if ($request->filled('error') || ! $expected || ! hash_equals($expected, (string) $request->query('state'))) {
+        if (! $fromSession) {
+            $cached = Cache::pull('spotify.oauth.'.$queryState);
+            if (is_array($cached) && hash_equals($queryState, (string) ($cached['state'] ?? '')) && isset($cached['user_id'])) {
+                $appUser = User::query()->find($cached['user_id']);
+                if ($appUser instanceof User) {
+                    $expected = $queryState;
+                }
+            }
+        }
+
+        $back = to_route('music.index', ['tab' => 'spotify']);
+        $app = $appUser instanceof User;
+
+        if ($request->filled('error') || ! is_string($expected) || ! hash_equals($expected, $queryState) || ! $request->filled('code')) {
+            if ($app) {
+                return redirect()->away('gamecon://spotify?error=1');
+            }
+
             Inertia::flash('toast', ['type' => 'error', 'message' => $request->query('error') === 'access_denied' ? 'Ви скасували під’єднання Spotify.' : 'Не вдалося під’єднати Spotify. Спробуйте ще раз.']);
 
             return $back;
+        }
+
+        $owner = $appUser ?? $request->user();
+        if (! $owner instanceof User) {
+            return redirect()->guest(route('login'));
         }
 
         try {
@@ -51,12 +76,16 @@ class SpotifyController extends Controller
             $profile = $this->spotify->profile($token['access_token']);
         } catch (SpotifyException|RequestException|ConnectionException $e) {
             report($e);
+            if ($app) {
+                return redirect()->away('gamecon://spotify?error=1');
+            }
+
             Inertia::flash('toast', ['type' => 'error', 'message' => $e instanceof SpotifyException ? $e->getMessage() : 'Spotify не відповідає. Спробуйте пізніше.']);
 
             return $back;
         }
 
-        $request->user()->spotifyAccount()->updateOrCreate([], [
+        $owner->spotifyAccount()->updateOrCreate([], [
             'spotify_id' => $profile['id'],
             'display_name' => $profile['display_name'] ?? $profile['id'],
             'avatar_url' => $profile['images'][0]['url'] ?? null,
@@ -67,7 +96,11 @@ class SpotifyController extends Controller
             'expires_at' => now()->addSeconds((int) $token['expires_in']),
             'scopes' => $token['scope'] ?? null,
         ]);
-        Cache::forget('music.now.'.$request->user()->id);
+        Cache::forget('music.now.'.$owner->id);
+
+        if ($app) {
+            return redirect()->away('gamecon://spotify?ok=1');
+        }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Spotify під’єднано! 🎧']);
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\Auth\ApiTokens;
 use App\Services\Auth\DiscordOAuth;
 use App\Services\Auth\FirebaseAuth;
 use App\Services\Auth\SocialAuthException;
@@ -12,6 +13,7 @@ use App\Services\Auth\SocialProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
@@ -38,9 +40,21 @@ class SocialAuthController extends Controller
 
     public function discordCallback(Request $request): RedirectResponse
     {
+        $queryState = (string) $request->query('state');
         $expected = $request->session()->pull('discord_oauth_state');
+        $fromSession = is_string($expected) && hash_equals($expected, $queryState);
 
-        if ($request->filled('error') || ! is_string($expected) || ! hash_equals($expected, (string) $request->query('state')) || ! $request->filled('code')) {
+        if (! $fromSession) {
+            $cached = Cache::pull('discord.oauth.'.$queryState);
+            if (is_array($cached) && hash_equals($queryState, (string) ($cached['state'] ?? ''))) {
+                $expected = $queryState;
+                if (($cached['client'] ?? null) === 'android') {
+                    $request->attributes->set('gamecon_app', true);
+                }
+            }
+        }
+
+        if ($request->filled('error') || ! is_string($expected) || ! hash_equals($expected, $queryState) || ! $request->filled('code')) {
             return $this->fail($request, $request->query('error') === 'access_denied' ? 'Ви скасували вхід через Discord.' : 'Не вдалося увійти через Discord. Спробуйте ще раз.');
         }
 
@@ -99,6 +113,16 @@ class SocialAuthController extends Controller
             throw new SocialAuthException('Обліковий запис заблоковано'.($user->ban_reason ? ': '.$user->ban_reason : '.'));
         }
 
+        if ($request->attributes->get('gamecon_app') === true) {
+            $tokens = app(ApiTokens::class);
+
+            if ($user->two_factor_confirmed_at !== null) {
+                return redirect()->away('gamecon://auth?ticket='.$tokens->ticket($user));
+            }
+
+            return redirect()->away('gamecon://auth?code='.$tokens->handoff($user));
+        }
+
         if ($user->two_factor_confirmed_at !== null) {
             $request->session()->put(['login.id' => $user->getKey(), 'login.remember' => true]);
 
@@ -113,6 +137,10 @@ class SocialAuthController extends Controller
 
     private function fail(Request $request, string $message): RedirectResponse
     {
+        if ($request->attributes->get('gamecon_app') === true) {
+            return redirect()->away('gamecon://auth?error='.rawurlencode($message));
+        }
+
         Inertia::flash('toast', ['type' => 'error', 'message' => $message]);
 
         return $request->user() ? to_route('profile.edit') : to_route('login');

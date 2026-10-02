@@ -149,7 +149,6 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
 
         Route::prefix('spotify')->name('spotify.')->group(function () {
             Route::get('connect', [SpotifyController::class, 'connect'])->name('connect');
-            Route::get('callback', [SpotifyController::class, 'callback'])->name('callback');
             Route::patch('/', [SpotifyController::class, 'update'])->name('update');
             Route::delete('/', [SpotifyController::class, 'disconnect'])->name('disconnect');
             Route::middleware('throttle:120,1')->group(function () {
@@ -332,6 +331,16 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
 });
 
 require __DIR__.'/settings.php';
+
+// Колбек Spotify поза сесією браузера: застосунок передає користувача в state.
+Route::get('music/spotify/callback', [SpotifyController::class, 'callback'])
+    ->middleware('module:music')
+    ->name('spotify.callback');
+
+// Плеєр для застосунку: сторінка на нашому домені, всередині iframe Kodik/YouTube.
+Route::get('play/embed', [CinemaController::class, 'embed'])
+    ->middleware('throttle:120,1')
+    ->name('cinema.embed');
 
 Route::get('id{id}', [ProfileController::class, 'byId'])->whereNumber('id')->name('profile.id');
 Route::get('{user}', [ProfileController::class, 'show'])
