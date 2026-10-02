@@ -299,8 +299,8 @@ class _SiteBar extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Material(
-                  color: Colors.white.withValues(alpha: 0.05),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: line)),
+                  color: field,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: lineStrong)),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16),
                     onTap: () => context.push('/search'),
