@@ -84,7 +84,7 @@ abstract class FamilyBaseController extends Controller
      */
     protected function roster(Family $family): array
     {
-        return FamilyMember::query()
+        $roster = FamilyMember::query()
             ->where('family_id', $family->id)
             ->where('status', FamilyMember::STATUS_ACTIVE)
             ->orderByDesc('rank')
@@ -92,11 +92,13 @@ abstract class FamilyBaseController extends Controller
             ->get(['id', 'rp_nickname', 'static_id', 'rank'])
             ->map(fn (FamilyMember $m) => ['id' => $m->id, 'display' => $m->displayName(), 'rank' => $m->rank])
             ->all();
+
+        return array_values($roster);
     }
 
     protected function money(mixed $value): int
     {
-        return Money::toMinor(is_scalar($value) ? $value : 0);
+        return Money::toMinor(is_int($value) || is_float($value) || is_string($value) ? $value : 0);
     }
 
     /**

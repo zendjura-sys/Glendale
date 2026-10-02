@@ -112,16 +112,43 @@ class PushNotifier
      */
     private function sender(array $data): string
     {
-        if (isset($data['actor_id']) && ($actor = User::query()->find($data['actor_id']))) {
-            return $actor->name;
+        $actorId = $this->modelId($data['actor_id'] ?? null);
+        if ($actorId !== null) {
+            $actor = User::query()->find($actorId);
+            if ($actor instanceof User) {
+                return $actor->name;
+            }
         }
-        if (isset($data['family_id']) && ($family = Family::query()->find($data['family_id']))) {
-            return '['.$family->tag.'] '.$family->name;
+
+        $familyId = $this->modelId($data['family_id'] ?? null);
+        if ($familyId !== null) {
+            $family = Family::query()->find($familyId);
+            if ($family instanceof Family) {
+                return '['.$family->tag.'] '.$family->name;
+            }
         }
-        if (isset($data['community_id']) && ($community = Community::query()->find($data['community_id']))) {
-            return $community->name;
+
+        $communityId = $this->modelId($data['community_id'] ?? null);
+        if ($communityId !== null) {
+            $community = Community::query()->find($communityId);
+            if ($community instanceof Community) {
+                return $community->name;
+            }
         }
 
         return 'GameCon';
+    }
+
+    private function modelId(mixed $value): ?int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && ctype_digit($value)) {
+            return (int) $value;
+        }
+
+        return null;
     }
 }

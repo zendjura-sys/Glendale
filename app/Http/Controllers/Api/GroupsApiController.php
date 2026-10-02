@@ -364,7 +364,7 @@ class GroupsApiController extends ApiController
         if ($data['target'] === 'treasury') {
             $bank->treasury($family, $member, $amount, $data['comment']);
         } else {
-            $target = FamilyMember::query()->where('family_id', $family->id)->where('status', FamilyMember::STATUS_ACTIVE)->findOrFail($data['member_id']);
+            $target = FamilyMember::query()->where('family_id', $family->id)->where('status', FamilyMember::STATUS_ACTIVE)->findOrFail($request->integer('member_id'));
             $bank->manual($family, $member, $target, $amount, $data['comment']);
         }
 
@@ -418,7 +418,7 @@ class GroupsApiController extends ApiController
             'reason' => ['required', 'string', 'min:3', 'max:500'],
             'amount' => ['nullable', 'required_if:type,fine', 'numeric', 'min:1', 'max:10000000'],
         ]);
-        $target = FamilyMember::query()->where('family_id', $family->id)->where('status', FamilyMember::STATUS_ACTIVE)->findOrFail($data['member_id']);
+        $target = FamilyMember::query()->where('family_id', $family->id)->where('status', FamilyMember::STATUS_ACTIVE)->findOrFail($request->integer('member_id'));
         $discipline->issue($family, $issuer, $target, $data['type'], $data['reason'], isset($data['amount']) ? Money::toMinor($data['amount']) : null);
 
         return response()->json(['ok' => true], 201);
@@ -685,7 +685,7 @@ class GroupsApiController extends ApiController
     {
         $member = $this->active($request, $family);
         $report = $proof->loadMissing('report')->report;
-        abort_unless($report && $report->family_id === $family->id, 404);
+        abort_unless($report->family_id === $family->id, 404);
         abort_unless(
             in_array($member->id, [$report->submitter_id, $report->beneficiary_id], true) || $this->gate->can($member, $family, $report->permission()),
             403,

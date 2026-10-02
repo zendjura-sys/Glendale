@@ -77,7 +77,7 @@ class FamilyWarehouseController extends FamilyBaseController
             'proof' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
         ]);
 
-        $item = FamilyItem::query()->where('family_id', $family->id)->findOrFail($data['item_id']);
+        $item = FamilyItem::query()->where('family_id', $family->id)->findOrFail($request->integer('item_id'));
         $log = $warehouse->move($family, $member, $item, $data['action'], (int) $data['quantity'], $data['comment'] ?? null, $request->file('proof'));
 
         Inertia::flash('toast', [
@@ -129,7 +129,7 @@ class FamilyWarehouseController extends FamilyBaseController
         $member = $this->member($request, $family);
         $entry = FamilyItemLog::query()->where('family_id', $family->id)->findOrFail($log);
         abort_unless($entry->member_id === $member->id || $this->gate->can($member, $family, 'warehouse.logs'), 403);
-        abort_unless($entry->proof_path, 404);
+        abort_if($entry->proof_path === null || $entry->proof_path === '', 404);
 
         return Storage::disk('local')->response($entry->proof_path);
     }

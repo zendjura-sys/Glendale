@@ -7,6 +7,7 @@ use App\Models\ConversationParticipant;
 use App\Models\Family;
 use App\Models\FamilyMember;
 use App\Services\Messenger;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -69,7 +70,7 @@ class FamilyChat
                 };
                 $row = ConversationParticipant::query()->firstOrNew(['conversation_id' => $conversation->id, 'user_id' => $member->user_id]);
                 if (! $row->exists || $row->left_at !== null) {
-                    $row->joined_at = now();
+                    $row->joined_at = Carbon::now();
                     $row->last_read_message_id = $conversation->last_message_id;
                 }
                 $row->left_at = null;

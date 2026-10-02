@@ -182,7 +182,7 @@ class FamilyController extends FamilyBaseController
     public function chat(Request $request, Family $family): RedirectResponse
     {
         $this->member($request, $family);
-        abort_unless($family->conversation_id, 404, 'Чат з’явиться після верифікації сім’ї.');
+        abort_unless($family->conversation_id !== null, 404, 'Чат з’явиться після верифікації сім’ї.');
 
         return redirect()->route('messages.show', $family->conversation_id);
     }
@@ -214,8 +214,10 @@ class FamilyController extends FamilyBaseController
      */
     private function servers(): array
     {
-        return GtaServer::query()->published()->orderByDesc('is_featured')->orderBy('name')->get()
+        $servers = GtaServer::query()->published()->orderByDesc('is_featured')->orderBy('name')->get()
             ->map(fn (GtaServer $s) => ['id' => $s->id, 'slug' => $s->slug, 'name' => $s->name, 'icon' => $s->icon, 'platform' => $s->platform])
             ->all();
+
+        return array_values($servers);
     }
 }

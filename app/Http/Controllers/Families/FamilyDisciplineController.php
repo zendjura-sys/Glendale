@@ -74,7 +74,7 @@ class FamilyDisciplineController extends FamilyBaseController
             'amount' => ['nullable', 'required_if:type,fine', 'numeric', 'min:1', 'max:10000000'],
         ], ['amount.required_if' => 'Вкажіть суму штрафу.']);
 
-        $target = FamilyMember::query()->where('family_id', $family->id)->where('status', FamilyMember::STATUS_ACTIVE)->findOrFail($data['member_id']);
+        $target = FamilyMember::query()->where('family_id', $family->id)->where('status', FamilyMember::STATUS_ACTIVE)->findOrFail($request->integer('member_id'));
         $punishment = $discipline->issue($family, $issuer, $target, $data['type'], $data['reason'], isset($data['amount']) ? $this->money($data['amount']) : null);
 
         $target->refresh();

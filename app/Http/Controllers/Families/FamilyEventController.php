@@ -67,9 +67,13 @@ class FamilyEventController extends FamilyBaseController
             'reward' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
         ]);
 
+        $description = $data['description'] ?? null;
         $events->create($family, $member, [
-            ...$data,
-            'starts_at' => CarbonImmutable::parse($data['starts_at'], 'Europe/Kyiv')->utc(),
+            'title' => $request->string('title')->toString(),
+            'type' => $request->string('type')->toString(),
+            'description' => is_string($description) ? $description : null,
+            'starts_at' => CarbonImmutable::parse($request->string('starts_at')->toString(), 'Europe/Kyiv')->utc()->toDateTimeString(),
+            'points' => isset($data['points']) && is_numeric($data['points']) ? (int) $data['points'] : null,
             'reward' => isset($data['reward']) ? $this->money($data['reward']) : 0,
         ]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Подію створено й анонсовано в чаті сім’ї.']);
@@ -94,7 +98,15 @@ class FamilyEventController extends FamilyBaseController
             'cancelled' => ['sometimes', 'boolean'],
         ]);
 
-        $events->close($family, $event, $member, array_map('intval', $data['attended'] ?? []), (bool) ($data['cancelled'] ?? false));
+        $attended = $data['attended'] ?? [];
+        $attendedIds = [];
+        if (is_array($attended)) {
+            foreach ($attended as $id) {
+                $attendedIds[] = is_numeric($id) ? (int) $id : 0;
+            }
+        }
+
+        $events->close($family, $event, $member, $attendedIds, (bool) ($data['cancelled'] ?? false));
         Inertia::flash('toast', ['type' => 'success', 'message' => ($data['cancelled'] ?? false) ? 'Подію скасовано.' : 'Підсумок збережено: бали й нагороди нараховано.']);
 
         return back();
