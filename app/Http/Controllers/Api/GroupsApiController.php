@@ -9,18 +9,26 @@ use App\Models\Community;
 use App\Models\CommunityMember;
 use App\Models\Family;
 use App\Models\FamilyAuditLog;
+use App\Models\FamilyCashout;
+use App\Models\FamilyDeposit;
 use App\Models\FamilyEvent;
 use App\Models\FamilyItem;
 use App\Models\FamilyMember;
+use App\Models\FamilyPunishment;
 use App\Models\FamilyReport;
 use App\Models\FamilyReportProof;
 use App\Models\FamilyTransaction;
 use App\Models\GtaServer;
 use App\Models\Post;
 use App\Services\CommunityService;
+use App\Services\Families\Discipline;
+use App\Services\Families\FamilyAudit;
+use App\Services\Families\FamilyBank;
 use App\Services\Families\FamilyGate;
+use App\Services\Families\FamilyRating;
 use App\Services\Families\FamilyService;
 use App\Services\Families\ReportService;
+use App\Services\Families\WeeklyDigest;
 use App\Services\PostPresenter;
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Builder;
@@ -161,7 +169,7 @@ class GroupsApiController extends ApiController
         ]);
     }
 
-    public function family(Request $request, Family $family): JsonResponse
+    public function family(Request $request, Family $family, FamilyRating $rating, WeeklyDigest $digest): JsonResponse
     {
         $user = $this->user($request);
         $member = $this->gate->member($family, $user);
@@ -179,17 +187,55 @@ class GroupsApiController extends ApiController
             ]);
         }
 
+        $can = $this->gate->abilities($member, $family);
+        $week = $digest->build($family);
+        $settings = $family->resolvedSettings();
+        $warns = FamilyPunishment::query()->active()->where('member_id', $member->id)->where('type', FamilyPunishment::TYPE_WARN)->count();
+
         return response()->json([
-            'family' => [...$family->toCard(), 'description' => $family->description, 'treasury' => $family->treasury],
-            'member' => [
-                'status' => $member->status,
-                'display' => $member->displayName(),
-                'rank' => $member->rank,
-                'rank_title' => $family->rankTitle($member->rank),
-                'balance' => $member->balance,
+            'family' => [
+                ...$family->toCard(),
+                'description' => $family->description,
+                'treasury' => $family->treasury,
+                'rank_titles' => $family->rankTitles(),
             ],
-            'abilities' => $this->gate->abilities($member, $family),
+            'member' => [
+                ...$member->toCard($family),
+                'balance' => $member->balance,
+                'joined_at' => $member->joined_at?->toIso8601String(),
+                'warns' => $warns,
+                'warn_limit' => (int) $settings['discipline']['warn_limit'],
+            ],
+            'abilities' => $can,
             'chat_id' => $family->conversation_id,
+            'overview' => [
+                'stats' => [
+                    'week_earned' => (int) (collect($week['lines'])->firstWhere('member.id', $member->id)['total'] ?? 0),
+                    'week_total' => $week['total'],
+                    'pending_reports' => FamilyReport::query()->where('beneficiary_id', $member->id)->where('status', FamilyReport::STATUS_PENDING)->count(),
+                    'warns' => $warns,
+                    'warn_limit' => (int) $settings['discipline']['warn_limit'],
+                ],
+                'leaders' => array_values(array_filter(array_slice($rating->leaderboard($family, 'week'), 0, 5), fn (array $row) => ($row['points'] ?? 0) > 0)),
+                'events' => FamilyEvent::query()->where('family_id', $family->id)
+                    ->where('status', FamilyEvent::STATUS_PLANNED)
+                    ->where('starts_at', '>=', now()->subHours(3))
+                    ->orderBy('starts_at')->limit(3)->get()
+                    ->map(fn (FamilyEvent $e) => [
+                        'id' => $e->id,
+                        'title' => $e->title,
+                        'type_label' => FamilyEvent::TYPES[$e->type] ?? $e->type,
+                        'starts_at' => $e->starts_at->toIso8601String(),
+                    ])->values(),
+                'transactions' => FamilyTransaction::query()->where('member_id', $member->id)->latest('id')->limit(6)->get()
+                    ->map(fn (FamilyTransaction $t) => FamilyBankController::transaction($t))->values(),
+                'rates' => $settings['rates'],
+                'deadline_hours' => (int) $settings['reports']['deadline_hours'],
+                'contract_limit' => (int) $settings['reports']['contract_daily_limit'],
+                'max_proofs' => (int) $settings['reports']['max_proofs'],
+                'cashout_min' => $settings['cashout']['min_amount'],
+                'deposits' => $settings['deposits'],
+            ],
         ]);
     }
 
@@ -207,21 +253,286 @@ class GroupsApiController extends ApiController
 
     public function members(Request $request, Family $family): JsonResponse
     {
-        $this->active($request, $family);
+        $actor = $this->active($request, $family);
+        $can = $this->gate->abilities($actor, $family);
         $members = FamilyMember::query()->with('user')->where('family_id', $family->id)
             ->where('status', FamilyMember::STATUS_ACTIVE)->orderByDesc('rank')->get()
-            ->map(fn (FamilyMember $m) => $m->toCard($family))->values();
+            ->map(fn (FamilyMember $m) => [
+                ...$m->toCard($family),
+                'balance' => $m->balance,
+                'joined_at' => $m->joined_at?->toIso8601String(),
+            ])->values();
+        $applications = $can['members.manage']
+            ? FamilyMember::query()->with('user')->where('family_id', $family->id)->where('status', FamilyMember::STATUS_PENDING)->latest('id')->get()
+                ->map(fn (FamilyMember $m) => [...$m->toCard($family), 'note' => $m->application_note])->values()
+            : [];
 
-        return response()->json(['members' => $members]);
+        return response()->json([
+            'members' => $members,
+            'applications' => $applications,
+            'ranks' => [
+                'titles' => $family->rankTitles(),
+                'matrix' => $family->permissionMatrix(),
+                'permissions' => Family::PERMISSIONS,
+                'can_edit' => $can['ranks.manage'],
+            ],
+        ]);
     }
 
     public function bank(Request $request, Family $family): JsonResponse
     {
         $member = $this->active($request, $family);
-        $rows = FamilyTransaction::query()->where('member_id', $member->id)->latest('id')->limit(40)->get()
+        $can = $this->gate->abilities($member, $family);
+        $scope = $can['treasury.manage'] && $request->query('scope') === 'family' ? 'family' : 'me';
+        $settings = $family->resolvedSettings();
+        $rows = FamilyTransaction::query()->with(['member', 'actor'])->where('family_id', $family->id)
+            ->when($scope === 'me', fn (Builder $q) => $q->where('member_id', $member->id))
+            ->latest('id')->limit(40)->get()
             ->map(fn (FamilyTransaction $t) => FamilyBankController::transaction($t, $family))->values();
 
-        return response()->json(['balance' => $member->balance, 'transactions' => $rows]);
+        return response()->json([
+            'scope' => $scope,
+            'balance' => $member->balance,
+            'treasury' => $family->treasury,
+            'transactions' => $rows,
+            'config' => [
+                'deposits' => $settings['deposits'],
+                'cashout_min' => $settings['cashout']['min_amount'],
+            ],
+            'totals' => $can['treasury.manage'] ? [
+                'balances' => (int) FamilyMember::query()->where('family_id', $family->id)->where('status', FamilyMember::STATUS_ACTIVE)->sum('balance'),
+                'deposits' => (int) FamilyDeposit::query()->where('family_id', $family->id)->where('status', FamilyDeposit::STATUS_ACTIVE)->sum('amount'),
+                'pending_cashouts' => (int) FamilyCashout::query()->where('family_id', $family->id)->where('status', FamilyCashout::STATUS_PENDING)->sum('amount'),
+                'paid_week' => (int) -FamilyTransaction::query()->where('family_id', $family->id)->where('type', 'cashout_paid')->where('created_at', '>=', now()->subWeek())->sum('treasury_delta'),
+            ] : [
+                'balances' => $member->balance,
+                'deposits' => (int) FamilyDeposit::query()->where('member_id', $member->id)->where('status', FamilyDeposit::STATUS_ACTIVE)->sum('amount'),
+                'pending_cashouts' => (int) FamilyCashout::query()->where('member_id', $member->id)->where('status', FamilyCashout::STATUS_PENDING)->sum('amount'),
+                'paid_week' => 0,
+            ],
+            'roster' => $can['treasury.manage']
+                ? FamilyMember::query()->where('family_id', $family->id)->where('status', FamilyMember::STATUS_ACTIVE)->orderByDesc('rank')->get()
+                    ->map(fn (FamilyMember $m) => ['id' => $m->id, 'display' => $m->displayName()])->values()
+                : [],
+            'cashouts' => $can['treasury.manage']
+                ? FamilyCashout::query()->with('member')->where('family_id', $family->id)->where('status', FamilyCashout::STATUS_PENDING)->orderBy('id')->get()
+                    ->map(fn (FamilyCashout $c) => FamilyBankController::cashout($c))->values()
+                : [],
+        ]);
+    }
+
+    public function requestCashout(Request $request, Family $family, FamilyBank $bank): JsonResponse
+    {
+        $this->writable($family);
+        $member = $this->active($request, $family);
+        $data = $request->validate([
+            'amount' => ['required', 'numeric', 'min:1', 'max:100000000'],
+            'note' => ['nullable', 'string', 'max:300'],
+        ]);
+        $bank->requestCashout($family, $member, Money::toMinor($data['amount']), $data['note'] ?? null);
+
+        return response()->json(['ok' => true], 201);
+    }
+
+    public function openDeposit(Request $request, Family $family, FamilyBank $bank): JsonResponse
+    {
+        $this->writable($family);
+        $member = $this->active($request, $family);
+        $data = $request->validate([
+            'amount' => ['required', 'numeric', 'min:1', 'max:100000000'],
+            'period' => ['required', Rule::in(array_keys(FamilyDeposit::PERIODS))],
+            'periods' => ['required', 'integer', 'min:1', 'max:60'],
+        ]);
+        $bank->openDeposit($family, $member, Money::toMinor($data['amount']), $data['period'], (int) $data['periods']);
+
+        return response()->json(['ok' => true], 201);
+    }
+
+    public function manualBank(Request $request, Family $family, FamilyBank $bank): JsonResponse
+    {
+        $this->writable($family);
+        $member = $this->active($request, $family);
+        $this->gate->authorize($member, $family, 'treasury.manage');
+        $data = $request->validate([
+            'target' => ['required', Rule::in(['member', 'treasury'])],
+            'member_id' => ['nullable', 'required_if:target,member', 'integer'],
+            'direction' => ['required', Rule::in(['credit', 'debit'])],
+            'amount' => ['required', 'numeric', 'min:0.01', 'max:100000000'],
+            'comment' => ['required', 'string', 'min:3', 'max:300'],
+        ]);
+        $amount = Money::toMinor($data['amount']) * ($data['direction'] === 'debit' ? -1 : 1);
+        if ($data['target'] === 'treasury') {
+            $bank->treasury($family, $member, $amount, $data['comment']);
+        } else {
+            $target = FamilyMember::query()->where('family_id', $family->id)->where('status', FamilyMember::STATUS_ACTIVE)->findOrFail($data['member_id']);
+            $bank->manual($family, $member, $target, $amount, $data['comment']);
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function discipline(Request $request, Family $family): JsonResponse
+    {
+        $member = $this->active($request, $family);
+        $can = $this->gate->abilities($member, $family);
+        $scope = $can['sanctions.issue'] && $request->query('scope') === 'me' ? 'me' : ($can['sanctions.issue'] ? 'family' : 'me');
+        $settings = $family->resolvedSettings()['discipline'];
+        $list = FamilyPunishment::query()->with(['member', 'issuer'])->where('family_id', $family->id)
+            ->when($scope === 'me', fn (Builder $q) => $q->where('member_id', $member->id))
+            ->latest('id')->limit(80)->get()
+            ->map(fn (FamilyPunishment $p) => [
+                'id' => $p->id,
+                'type' => $p->type,
+                'type_label' => FamilyPunishment::TYPES[$p->type] ?? $p->type,
+                'reason' => $p->reason,
+                'amount' => $p->amount,
+                'member' => $p->member->displayName(),
+                'issuer' => $p->is_auto ? 'Система' : $p->issuer?->displayName(),
+                'created_at' => $p->created_at->toIso8601String(),
+            ])->values();
+        $myWarns = FamilyPunishment::query()->active()->where('member_id', $member->id)->where('type', FamilyPunishment::TYPE_WARN)->count();
+
+        return response()->json([
+            'scope' => $scope,
+            'punishments' => $list,
+            'config' => $settings,
+            'my_warns' => $myWarns,
+            'can_issue' => $can['sanctions.issue'],
+            'roster' => $can['sanctions.issue']
+                ? FamilyMember::query()->where('family_id', $family->id)->where('status', FamilyMember::STATUS_ACTIVE)->orderByDesc('rank')->get()
+                    ->filter(fn (FamilyMember $m) => $member->outranks($m, $family))
+                    ->map(fn (FamilyMember $m) => ['id' => $m->id, 'display' => $m->displayName()])->values()
+                : [],
+            'types' => FamilyPunishment::TYPES,
+        ]);
+    }
+
+    public function issuePunishment(Request $request, Family $family, Discipline $discipline): JsonResponse
+    {
+        $this->writable($family);
+        $issuer = $this->active($request, $family);
+        $this->gate->authorize($issuer, $family, 'sanctions.issue');
+        $data = $request->validate([
+            'member_id' => ['required', 'integer'],
+            'type' => ['required', Rule::in(array_keys(FamilyPunishment::TYPES))],
+            'reason' => ['required', 'string', 'min:3', 'max:500'],
+            'amount' => ['nullable', 'required_if:type,fine', 'numeric', 'min:1', 'max:10000000'],
+        ]);
+        $target = FamilyMember::query()->where('family_id', $family->id)->where('status', FamilyMember::STATUS_ACTIVE)->findOrFail($data['member_id']);
+        $discipline->issue($family, $issuer, $target, $data['type'], $data['reason'], isset($data['amount']) ? Money::toMinor($data['amount']) : null);
+
+        return response()->json(['ok' => true], 201);
+    }
+
+    public function rating(Request $request, Family $family, FamilyRating $rating): JsonResponse
+    {
+        $this->active($request, $family);
+        $period = in_array($request->query('period'), ['week', 'month', 'all'], true) ? (string) $request->query('period') : 'week';
+
+        return response()->json(['period' => $period, 'rows' => $rating->leaderboard($family, $period)]);
+    }
+
+    public function settings(Request $request, Family $family, WeeklyDigest $digest): JsonResponse
+    {
+        $member = $this->active($request, $family);
+        $this->gate->authorize($member, $family, 'settings.manage');
+        $preview = $digest->build($family);
+
+        return response()->json([
+            'profile' => [
+                'name' => $family->name,
+                'tag' => $family->tag,
+                'description' => $family->description,
+                'is_recruiting' => $family->is_recruiting,
+                'logo_url' => $family->logo_url,
+            ],
+            'settings' => $family->resolvedSettings(),
+            'digest' => [
+                'text' => $digest->format($family, $preview),
+                'members' => count($preview['lines']),
+                'total' => $preview['total'],
+            ],
+        ]);
+    }
+
+    public function updateProfile(Request $request, Family $family, FamilyAudit $audit): JsonResponse
+    {
+        $this->writable($family);
+        $member = $this->active($request, $family);
+        $this->gate->authorize($member, $family, 'settings.manage');
+        $request->merge(['tag' => strtoupper(trim($request->string('tag')->toString()))]);
+        $data = $request->validate([
+            'name' => ['required', 'string', 'min:2', 'max:60'],
+            'tag' => ['required', 'string', 'min:2', 'max:8', 'regex:/^[A-Za-z0-9А-Яа-яІіЇїЄєҐґ]+$/u', Rule::unique('families', 'tag')->where('server_id', $family->server_id)->ignore($family->id)],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'is_recruiting' => ['required', 'boolean'],
+        ]);
+        $before = $family->only(['name', 'tag', 'description', 'is_recruiting']);
+        $family->fill($data)->save();
+        $audit->log($family, 'FAMILY_UPDATE', $member, null, ['from' => $before, 'to' => $family->only(array_keys($before))]);
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function updateSettings(Request $request, Family $family, FamilyAudit $audit): JsonResponse
+    {
+        $this->writable($family);
+        $member = $this->active($request, $family);
+        $this->gate->authorize($member, $family, 'settings.manage');
+        $money = ['required', 'numeric', 'min:0', 'max:10000000'];
+        $points = ['required', 'integer', 'min:0', 'max:1000'];
+        $data = $request->validate([
+            'rates.bizwar_win' => $money,
+            'rates.bizwar_loss' => $money,
+            'rates.contract_light' => $money,
+            'rates.contract_medium' => $money,
+            'rates.contract_heavy' => $money,
+            'rates.investment_cashback' => ['required', 'numeric', 'min:0', 'max:100'],
+            'deposits.enabled' => ['required', 'boolean'],
+            'deposits.daily_rate' => ['required', 'numeric', 'min:0', 'max:10'],
+            'deposits.weekly_rate' => ['required', 'numeric', 'min:0', 'max:50'],
+            'deposits.min_amount' => $money,
+            'deposits.max_days' => ['required', 'integer', 'min:1', 'max:60'],
+            'deposits.max_weeks' => ['required', 'integer', 'min:1', 'max:26'],
+            'reports.deadline_hours' => ['required', 'integer', 'min:1', 'max:168'],
+            'reports.contract_daily_limit' => ['required', 'integer', 'min:1', 'max:50'],
+            'reports.require_proof' => ['required', 'boolean'],
+            'reports.max_proofs' => ['required', 'integer', 'min:1', 'max:10'],
+            'rating.bizwar' => ['required', 'boolean'],
+            'rating.contracts' => ['required', 'boolean'],
+            'rating.investments' => ['required', 'boolean'],
+            'rating.events' => ['required', 'boolean'],
+            'rating.points_bizwar_win' => $points,
+            'rating.points_bizwar_loss' => $points,
+            'rating.points_contract_light' => $points,
+            'rating.points_contract_medium' => $points,
+            'rating.points_contract_heavy' => $points,
+            'rating.points_per_1000' => $points,
+            'rating.points_event' => $points,
+            'discipline.warn_days' => ['required', 'integer', 'min:1', 'max:365'],
+            'discipline.warn_limit' => ['required', 'integer', 'min:1', 'max:10'],
+            'discipline.escalation' => ['required', Rule::in(['demote', 'kick'])],
+            'cashout.min_amount' => $money,
+            'digest.enabled' => ['required', 'boolean'],
+            'digest.chat' => ['required', 'boolean'],
+        ]);
+        $before = $family->resolvedSettings();
+        $next = $family->settings ?? [];
+        foreach (Family::DEFAULT_SETTINGS as $group => $defaults) {
+            foreach ($defaults as $key => $default) {
+                $value = $data[$group][$key];
+                $next[$group][$key] = match (true) {
+                    is_bool($default) => (bool) $value,
+                    is_string($default) => (string) $value,
+                    is_int($default) && ! str_contains($key, 'rate') && $group !== 'rates' => (int) $value,
+                    default => round((float) $value, 2),
+                };
+            }
+        }
+        $family->update(['settings' => $next]);
+        $audit->log($family, 'RATE_CHANGE', $member, null, ['from' => $before, 'to' => $family->resolvedSettings()]);
+
+        return response()->json(['ok' => true]);
     }
 
     public function warehouse(Request $request, Family $family): JsonResponse
@@ -346,6 +657,10 @@ class GroupsApiController extends ApiController
                         : null,
                 ];
             })->values(),
+            'cashouts' => $can['treasury.manage']
+                ? FamilyCashout::query()->with('member')->where('family_id', $family->id)->where('status', FamilyCashout::STATUS_PENDING)->orderBy('id')->get()
+                    ->map(fn (FamilyCashout $c) => FamilyBankController::cashout($c))->values()
+                : [],
         ]);
     }
 
@@ -452,5 +767,10 @@ class GroupsApiController extends ApiController
         abort_unless($member && $member->isActive(), 403, 'Цей розділ доступний лише учасникам сім’ї.');
 
         return $member;
+    }
+
+    private function writable(Family $family): void
+    {
+        abort_if($family->isSuspended(), 423, 'Сім’ю призупинено платформою — зміни недоступні.');
     }
 }
