@@ -240,7 +240,7 @@ export function FamilyShell({
                             )}
                         </div>
                     </div>
-                    <nav className="flex gap-1 overflow-x-auto border-t border-white/[0.06] px-2 py-1.5 sm:px-4">
+                    <nav className="flex [scrollbar-width:none] gap-1 overflow-x-auto border-t border-white/[0.06] px-2 py-1.5 sm:px-4 [&::-webkit-scrollbar]:hidden">
                         {tabs
                             .filter((t) => t.visible)
                             .map((t) => (

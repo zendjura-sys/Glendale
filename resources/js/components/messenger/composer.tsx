@@ -17,6 +17,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useVoiceRecorder } from '@/hooks/use-voice-recorder';
 import { formatBytes, formatDuration } from '@/lib/format';
+import { fitTextarea } from '@/lib/textarea';
 import { cn } from '@/lib/utils';
 import type { ChatMessage, OutgoingMessage } from '@/types';
 import { ContactShareDialog } from './contact-share-dialog';
@@ -95,9 +96,7 @@ export function Composer({
 
     const resize = () => {
         const el = textRef.current;
-        if (!el) return;
-        el.style.height = 'auto';
-        el.style.height = `${Math.min(el.scrollHeight, 180)}px`;
+        if (el) fitTextarea(el, 180);
     };
 
     const editingId = editing?.id;
@@ -516,7 +515,7 @@ export function Composer({
                                 }
                             }}
                             placeholder="Напишіть повідомлення…"
-                            className="max-h-[180px] min-h-11 min-w-0 flex-1 resize-none bg-transparent py-[11px] pl-4 text-[14.5px] leading-[1.45] text-white placeholder:text-white/35 focus:outline-none"
+                            className="[field-sizing:content] max-h-[180px] min-h-11 min-w-0 flex-1 resize-none bg-transparent py-[11px] pl-4 text-[14.5px] leading-[1.45] text-white placeholder:text-white/35 focus:outline-none"
                         />
                         <div ref={emojiRef} className="relative mb-1">
                             <button

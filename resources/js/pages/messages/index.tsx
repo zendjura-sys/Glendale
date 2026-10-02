@@ -107,7 +107,7 @@ export default function Messages({ conversations, active, history }: Props) {
     return (
         <>
             <Head title={active ? active.title : 'Повідомлення'} />
-            <div className="glass flex h-[calc(100dvh-172px)] min-h-[420px] overflow-hidden rounded-3xl lg:h-[calc(100dvh-100px)]">
+            <div className="glass flex h-[calc(100dvh-172px)] min-h-0 overflow-clip rounded-3xl sm:min-h-[420px] lg:h-[calc(100dvh-100px)]">
                 <ConversationList
                     conversations={list}
                     activeId={activeId}

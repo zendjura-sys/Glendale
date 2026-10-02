@@ -87,9 +87,10 @@ export default function FamilyMembers(props: Props) {
 
     return (
         <FamilyShell {...props} title="Учасники">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
                 {can['members.manage'] && (
                     <Segmented
+                        className="max-w-full"
                         value={tab}
                         onChange={switchTab}
                         options={[
@@ -106,7 +107,7 @@ export default function FamilyMembers(props: Props) {
                     />
                 )}
                 {tab === 'members' && (
-                    <label className="input-glass flex h-10 min-w-[200px] flex-1 items-center gap-2 rounded-xl px-3 sm:max-w-xs">
+                    <label className="input-glass flex h-10 w-full min-w-0 items-center gap-2 rounded-xl px-3 sm:max-w-xs sm:flex-1">
                         <Search className="size-4 text-white/35" />
                         <input
                             value={q}
@@ -136,67 +137,81 @@ export default function FamilyMembers(props: Props) {
                             {applications.map((a) => (
                                 <div
                                     key={a.id}
-                                    className="flex flex-wrap items-center gap-3 rounded-2xl bg-white/[0.03] p-3 ring-1 ring-white/[0.05]"
+                                    className="flex flex-col gap-3 rounded-2xl bg-white/[0.03] p-3 ring-1 ring-white/[0.05] sm:flex-row sm:items-center"
                                 >
-                                    <UserAvatar
-                                        user={{
-                                            name: a.nickname,
-                                            avatar_url: a.avatar_url,
-                                        }}
-                                        size="md"
-                                    />
-                                    <div className="min-w-0 flex-1">
-                                        <div className="font-mono text-sm font-semibold text-white">
-                                            {a.display}
+                                    <div className="flex min-w-0 flex-1 gap-3">
+                                        <UserAvatar
+                                            user={{
+                                                name: a.nickname,
+                                                avatar_url: a.avatar_url,
+                                            }}
+                                            size="md"
+                                        />
+                                        <div className="min-w-0">
+                                            <div className="truncate font-mono text-sm font-semibold text-white">
+                                                {a.display}
+                                            </div>
+                                            <div className="truncate text-xs text-white/40">
+                                                {a.username && (
+                                                    <a
+                                                        href={`/${a.username}`}
+                                                        className="hover:underline"
+                                                    >
+                                                        @{a.username}
+                                                    </a>
+                                                )}
+                                                {a.username ? ' · ' : ''}
+                                                {timeAgo(a.applied_at)}
+                                            </div>
+                                            {a.note && (
+                                                <p className="mt-1 text-sm break-words text-white/65">
+                                                    {a.note}
+                                                </p>
+                                            )}
                                         </div>
-                                        <div className="text-xs text-white/40">
-                                            {a.username && (
-                                                <a
-                                                    href={`/${a.username}`}
-                                                    className="hover:underline"
-                                                >
-                                                    @{a.username}
-                                                </a>
-                                            )}{' '}
-                                            · {timeAgo(a.applied_at)}
-                                        </div>
-                                        {a.note && (
-                                            <p className="mt-1 text-sm text-white/65">
-                                                {a.note}
-                                            </p>
-                                        )}
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            router.post(
-                                                `${base}/members/${a.id}/accept`,
-                                                {},
-                                                { preserveScroll: true },
-                                            )
-                                        }
-                                        className={btnSuccess}
-                                    >
-                                        <Check className="size-4" /> Прийняти
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            const reason = prompt(
-                                                'Причина відмови (необов’язково)',
-                                            );
-                                            if (reason !== null) {
+                                    <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
                                                 router.post(
-                                                    `${base}/members/${a.id}/decline`,
-                                                    { reason },
+                                                    `${base}/members/${a.id}/accept`,
+                                                    {},
                                                     { preserveScroll: true },
-                                                );
+                                                )
                                             }
-                                        }}
-                                        className={btnDanger}
-                                    >
-                                        <X className="size-4" /> Відхилити
-                                    </button>
+                                            className={cn(
+                                                btnSuccess,
+                                                'h-11 w-full sm:w-auto',
+                                            )}
+                                        >
+                                            <Check className="size-4" />{' '}
+                                            Прийняти
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const reason = prompt(
+                                                    'Причина відмови (необов’язково)',
+                                                );
+                                                if (reason !== null) {
+                                                    router.post(
+                                                        `${base}/members/${a.id}/decline`,
+                                                        { reason },
+                                                        {
+                                                            preserveScroll: true,
+                                                        },
+                                                    );
+                                                }
+                                            }}
+                                            className={cn(
+                                                btnDanger,
+                                                'h-11 w-full sm:w-auto',
+                                            )}
+                                        >
+                                            <X className="size-4" /> Відхилити
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>

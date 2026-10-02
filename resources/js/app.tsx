@@ -8,6 +8,9 @@ import SettingsLayout from '@/layouts/settings/layout';
 import SocialLayout from '@/layouts/social-layout';
 import { configureEcho } from '@laravel/echo-react';
 import { xsrfToken } from '@/lib/api';
+import { installKeyboardGuard } from '@/lib/keyboard';
+
+installKeyboardGuard();
 
 // Мета-тег CSRF застаріває після входу через Inertia, тому авторизуємо канали cookie XSRF-TOKEN.
 configureEcho({
