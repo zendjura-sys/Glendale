@@ -502,6 +502,7 @@ class _MovieScreenState extends State<MovieScreen> {
   String? playerKey;
   WebViewController? web;
   bool started = false;
+  final playerCard = GlobalKey();
 
   Api get api => AppScope.read(context).session.api;
 
@@ -545,6 +546,10 @@ class _MovieScreenState extends State<MovieScreen> {
         ..setBackgroundColor(Colors.black)
         ..setUserAgent('Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36')
         ..loadRequest(Uri.parse('${Api.root}/play/embed').replace(queryParameters: {'src': url}));
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final card = playerCard.currentContext;
+      if (card != null && card.mounted) unawaited(Scrollable.ensureVisible(card, alignment: 0.1, duration: const Duration(milliseconds: 350), curve: Curves.easeOutCubic));
     });
     if (!started) {
       started = true;
@@ -625,47 +630,21 @@ class _MovieScreenState extends State<MovieScreen> {
           padding: EdgeInsets.zero,
           radius: 26,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            if (web != null)
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
-                child: AspectRatio(aspectRatio: 16 / 9, child: WebViewWidget(controller: web!)),
-              )
-            else
-              SizedBox(
-                height: 210,
-                child: Stack(children: [
-                  Positioned.fill(child: ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(26)), child: NetImage(text(movie['backdrop']) ?? text(movie['poster'])))),
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: const BoxDecoration(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-                        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x22050712), Color(0xEE0D1222)]),
-                      ),
+            SizedBox(
+              height: 170,
+              child: Stack(children: [
+                Positioned.fill(child: ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(26)), child: NetImage(text(movie['backdrop']) ?? text(movie['poster'])))),
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: const BoxDecoration(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+                      gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x22050712), Color(0xEE0D1222)]),
                     ),
                   ),
-                  Positioned(left: 8, top: 8, child: RoundIcon(icon: LucideIcons.arrowLeft, color: Colors.white, onTap: () => context.canPop() ? context.pop() : context.go('/cinema'))),
-                  if (players.isNotEmpty)
-                    Center(
-                      child: GestureDetector(
-                        onTap: () => _play(players.first),
-                        child: Container(
-                          width: 68,
-                          height: 68,
-                          decoration: const BoxDecoration(gradient: buttonGradient, shape: BoxShape.circle),
-                          child: const Icon(LucideIcons.play, size: 40, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                ]),
-              ),
-            if (web != null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 6, 10, 0),
-                child: Row(children: [
-                  Expanded(child: Text('Якщо плеєр не завантажився — оберіть інше джерело нижче.', style: body(11.5, color: faint))),
-                  IconButton(onPressed: _fullscreen, icon: const Icon(LucideIcons.maximize, color: soft)),
-                ]),
-              ),
+                ),
+                Positioned(left: 8, top: 8, child: RoundIcon(icon: LucideIcons.arrowLeft, color: Colors.white, onTap: () => context.canPop() ? context.pop() : context.go('/cinema'))),
+              ]),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -705,6 +684,47 @@ class _MovieScreenState extends State<MovieScreen> {
             ),
           ]),
         ),
+        if (players.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Glass(
+            key: playerCard,
+            padding: const EdgeInsets.fromLTRB(12, 14, 12, 8),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Padding(padding: const EdgeInsets.only(left: 4), child: CardTitle('Дивитися', icon: LucideIcons.clapperboard)),
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: web != null
+                      ? WebViewWidget(controller: web!)
+                      : GestureDetector(
+                          onTap: () => _play(players.first),
+                          child: Stack(fit: StackFit.expand, children: [
+                            NetImage(text(movie['backdrop']) ?? text(movie['poster'])),
+                            const DecoratedBox(decoration: BoxDecoration(color: Color(0x88050712))),
+                            Center(
+                              child: Container(
+                                width: 62,
+                                height: 62,
+                                decoration: BoxDecoration(gradient: buttonGradient, shape: BoxShape.circle, boxShadow: [BoxShadow(color: primary.withValues(alpha: 0.5), blurRadius: 22)]),
+                                child: const Icon(LucideIcons.play, size: 32, color: Colors.white),
+                              ),
+                            ),
+                          ]),
+                        ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 4, 0, 0),
+                child: Row(children: [
+                  Expanded(child: Text(web != null ? 'Якщо плеєр не завантажився — оберіть інше джерело нижче.' : 'Натисніть, щоб почати перегляд.', style: body(11.5, color: faint))),
+                  IconButton(onPressed: web != null ? _fullscreen : null, tooltip: 'На весь екран', icon: Icon(LucideIcons.maximize, color: web != null ? soft : faint)),
+                ]),
+              ),
+            ]),
+          ),
+        ],
         const SizedBox(height: 12),
         Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

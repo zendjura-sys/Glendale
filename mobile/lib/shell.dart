@@ -541,14 +541,8 @@ class _BottomBar extends StatelessWidget {
                         Stack(
                           clipBehavior: Clip.none,
                           children: [
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 260),
-                              curve: Curves.easeOutCubic,
-                              padding: EdgeInsets.symmetric(horizontal: selected == i ? 16 : 12, vertical: 5),
-                              decoration: BoxDecoration(
-                                gradient: selected == i ? LinearGradient(colors: [primary.withValues(alpha: 0.22), violet.withValues(alpha: 0.16)]) : null,
-                                borderRadius: BorderRadius.circular(14),
-                              ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                               child: AnimatedScale(
                                 scale: selected == i ? 1.06 : 1,
                                 duration: const Duration(milliseconds: 260),
@@ -557,7 +551,7 @@ class _BottomBar extends StatelessWidget {
                                   selected == i ? _items[i].$3 : _items[i].$2,
                                   size: 22,
                                   color: selected == i ? const Color(0xFF8FA0FF) : muted,
-                                  shadows: selected == i ? const [Shadow(color: Color(0xE67C8CFF), blurRadius: 10)] : null,
+                                  shadows: selected == i ? const [Shadow(color: Color(0xE67C8CFF), blurRadius: 10), Shadow(color: Color(0x997C8CFF), blurRadius: 20)] : null,
                                 ),
                               ),
                             ),
