@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\SpotifyController;
+use App\Http\Controllers\TrackController;
 use App\Models\Movie;
 use App\Models\Photo;
 use App\Models\PhotoAlbum;
@@ -45,6 +46,43 @@ class MediaApiController extends ApiController
             'owner' => $user->toCard(),
             'albums' => $albums,
         ]);
+    }
+
+    public function storeAlbum(Request $request): JsonResponse
+    {
+        $user = $this->user($request);
+        $data = $request->validate([
+            'title' => ['required', 'string', 'min:1', 'max:80'],
+            'description' => ['nullable', 'string', 'max:500'],
+            'privacy' => ['required', Rule::in(PhotoAlbum::PRIVACIES)],
+        ]);
+        abort_unless($this->photos->canCreateAlbum($user, $user), 403);
+
+        $album = $this->photos->createAlbum($user, [
+            'title' => trim($data['title']),
+            'description' => isset($data['description']) ? (trim((string) $data['description']) ?: null) : null,
+            'privacy' => $data['privacy'],
+            'comments_enabled' => true,
+        ]);
+
+        return response()->json(['album' => $this->photos->albumCard($album)], 201);
+    }
+
+    public function uploadPhotos(Request $request, PhotoAlbum $album, SiteSettings $settings): JsonResponse
+    {
+        $user = $this->user($request);
+        abort_unless($this->photos->canUpload($album, $user), 403);
+
+        $request->validate([
+            'photos' => ['required', 'array', 'max:30'],
+            'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp,gif', 'max:'.(int) $settings->get('max_upload_mb') * 1024],
+        ], [
+            'photos.max' => 'За раз можна завантажити до 30 фото.',
+        ]);
+
+        $created = $this->photos->upload($album, $user, array_values($request->file('photos', [])));
+
+        return response()->json(['count' => count($created)], 201);
     }
 
     public function album(Request $request, PhotoAlbum $album): JsonResponse
@@ -152,9 +190,18 @@ class MediaApiController extends ApiController
             'description' => ['nullable', 'string', 'max:300'],
             'is_public' => ['sometimes', 'boolean'],
         ]);
-        $playlist = $this->music->createPlaylist($this->user($request), $data);
+        $playlist = $this->music->createPlaylist($this->user($request), [
+            'title' => trim($data['title']),
+            'description' => isset($data['description']) ? (trim((string) $data['description']) ?: null) : null,
+            'is_public' => (bool) ($data['is_public'] ?? false),
+        ]);
 
         return response()->json(['playlist' => $playlist->toCard()], 201);
+    }
+
+    public function storeTrack(Request $request, SiteSettings $settings): JsonResponse
+    {
+        return app(TrackController::class)->store($request, $settings);
     }
 
     public function nowPlaying(Request $request): JsonResponse

@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class MobileApiTest extends TestCase
@@ -69,6 +71,43 @@ class MobileApiTest extends TestCase
         $this->postJson('/api/v1/auth/discord')
             ->assertOk()
             ->assertJsonStructure(['url']);
+    }
+
+    public function test_album_playlist_and_friend_request_state(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->create(['email' => 'player@gamecon.test']);
+        $other = User::factory()->create();
+        $token = $this->postJson('/api/v1/auth/login', [
+            'email' => 'player@gamecon.test',
+            'password' => 'password',
+        ])->assertOk()->json('token');
+
+        $album = $this->withToken($token)->postJson('/api/v1/albums', [
+            'title' => 'Літо',
+            'privacy' => 'friends',
+        ])->assertCreated()->assertJsonPath('album.title', 'Літо')->json('album.id');
+
+        $this->withToken($token)->post('/api/v1/albums/'.$album.'/photos', [
+            'photos' => [UploadedFile::fake()->image('shot.jpg')],
+        ])->assertCreated()->assertJsonPath('count', 1);
+
+        $this->withToken($token)->postJson('/api/v1/music/playlists', [
+            'title' => 'Ніч',
+            'is_public' => false,
+        ])->assertCreated()->assertJsonPath('playlist.title', 'Ніч');
+
+        $this->withToken($token)->postJson('/api/v1/friends/'.$other->username)
+            ->assertOk()
+            ->assertJsonPath('relation', 'outgoing');
+
+        $this->withToken($token)->getJson('/api/v1/people?q='.urlencode($other->username))
+            ->assertOk()
+            ->assertJsonPath('users.data.0.relation', 'outgoing');
+
+        $this->withToken($token)->deleteJson('/api/v1/friends/'.$other->username)
+            ->assertOk()
+            ->assertJsonPath('relation', 'none');
     }
 
     public function test_wrong_password(): void
