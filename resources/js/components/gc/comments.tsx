@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { api, ApiError } from '@/lib/api';
 import { plural, timeAgo } from '@/lib/format';
+import { fitTextarea } from '@/lib/textarea';
 import { cn } from '@/lib/utils';
 import type { CommentItem } from '@/types';
 import { LikeButton } from './like-button';
@@ -230,8 +231,7 @@ export function Comments({
                                 value={body}
                                 onChange={(event) => {
                                     setBody(event.target.value);
-                                    event.target.style.height = 'auto';
-                                    event.target.style.height = `${Math.min(event.target.scrollHeight, 160)}px`;
+                                    fitTextarea(event.target, 160);
                                 }}
                                 onKeyDown={(event) => {
                                     if (
@@ -243,7 +243,7 @@ export function Comments({
                                     }
                                 }}
                                 placeholder="Написати коментар…"
-                                className="max-h-40 min-h-10 flex-1 resize-none bg-transparent px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 focus:outline-none"
+                                className="[field-sizing:content] max-h-40 min-h-10 flex-1 resize-none bg-transparent px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 focus:outline-none"
                             />
                             <button
                                 type="button"

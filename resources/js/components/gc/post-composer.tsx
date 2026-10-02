@@ -13,6 +13,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { MusicCard } from '@/components/music/music-card';
 import { MusicPicker } from '@/components/music/music-picker';
 import { musicPayload } from '@/components/music/share-track-dialog';
+import { fitTextarea } from '@/lib/textarea';
 import { cn } from '@/lib/utils';
 import type { TrackCard, Visibility } from '@/types';
 import { CommunityAvatar } from './community-avatar';
@@ -130,7 +131,7 @@ export function PostComposer({
     return (
         <section
             className={cn(
-                'glass relative overflow-hidden rounded-3xl p-4 transition sm:p-5',
+                'glass relative overflow-clip rounded-3xl p-4 transition sm:p-5',
                 expanded &&
                     'border-[#7c8cff]/30 shadow-[0_0_0_1px_rgb(124_140_255/0.15),0_30px_60px_-30px_rgb(109_93_252/0.6)]',
                 className,
@@ -153,8 +154,7 @@ export function PostComposer({
                         value={form.data.body}
                         onChange={(event) => {
                             form.setData('body', event.target.value);
-                            event.target.style.height = 'auto';
-                            event.target.style.height = `${Math.min(event.target.scrollHeight, 420)}px`;
+                            fitTextarea(event.target, 420);
                         }}
                         onFocus={() => setFocused(true)}
                         onKeyDown={(event) => {
@@ -166,7 +166,7 @@ export function PostComposer({
                         }}
                         rows={expanded ? 3 : 1}
                         placeholder={placeholder}
-                        className="w-full resize-none bg-transparent pt-2.5 text-[15px] leading-relaxed text-white placeholder:text-white/40 focus:outline-none"
+                        className="[field-sizing:content] max-h-[420px] w-full resize-none bg-transparent pt-2.5 text-[15px] leading-relaxed text-white placeholder:text-white/40 focus:outline-none"
                     />
                     {form.errors.body && (
                         <p className="mt-1 text-xs text-rose-300">
