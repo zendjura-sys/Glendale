@@ -1,0 +1,39 @@
+# Deploys Glendale to the VDS over SSH. Runs only when started by hand:
+# Actions → "Deploy to VDS" → Run workflow.
+# Repository secrets (Settings → Secrets and variables → Actions):
+#   VDS_HOST     — server address, e.g. 212.95.33.196
+#   VDS_USER     — SSH user (root or a user with sudo)
+#   VDS_SSH_KEY  — private SSH key whose public half is in ~/.ssh/authorized_keys on the server
+name: Deploy to VDS
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to deploy
+        default: claude/social-network-app-lq8mjb
+        required: true
+
+concurrency: deploy-vds
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1
+        env:
+          BRANCH: ${{ inputs.branch }}
+        with:
+          host: ${{ secrets.VDS_HOST }}
+          username: ${{ secrets.VDS_USER }}
+          key: ${{ secrets.VDS_SSH_KEY }}
+          envs: BRANCH
+          command_timeout: 20m
+          script: |
+            set -e
+            cd ~/Glendale
+            git fetch origin "$BRANCH"
+            git checkout "$BRANCH"
+            git reset --hard "origin/$BRANCH"
+            sudo DOMAIN=social.monsory.net EMAIL=abbyss.prime@gmail.com bash deploy/install.sh
