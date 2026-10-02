@@ -38,7 +38,7 @@ class MiniPlayer extends StatelessWidget {
         child: Container(
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            color: const Color(0xF0121733),
+            color: const Color(0xB30F1426),
             borderRadius: BorderRadius.circular(22),
             border: Border.all(color: lineStrong),
             boxShadow: const [BoxShadow(color: Color(0x99000000), blurRadius: 30, offset: Offset(0, 12), spreadRadius: -10)],

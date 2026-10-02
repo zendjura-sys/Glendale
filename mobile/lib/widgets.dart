@@ -1119,10 +1119,11 @@ class ScreenScroll extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final base = padding ?? const EdgeInsets.fromLTRB(14, 6, 14, 16);
     final list = ListView(
       controller: controller,
       physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-      padding: padding ?? const EdgeInsets.fromLTRB(14, 6, 14, 28),
+      padding: base.copyWith(bottom: base.bottom + MediaQuery.paddingOf(context).bottom),
       children: children,
     );
     if (onRefresh == null) return list;

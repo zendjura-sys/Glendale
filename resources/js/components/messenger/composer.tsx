@@ -235,7 +235,7 @@ export function Composer({
 
     return (
         <div
-            className="relative border-t border-white/[0.06] bg-[#070a16]/40 px-3 pt-2 pb-3 sm:px-4"
+            className="relative border-t border-white/[0.06] bg-transparent px-3 pt-2 pb-3 sm:px-4"
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => {
                 event.preventDefault();

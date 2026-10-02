@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -112,6 +114,7 @@ class _AppShellState extends State<AppShell> {
     final path = GoRouterState.of(context).uri.path;
     final selected = _selected(path);
     final topInset = MediaQuery.viewPaddingOf(context).top;
+    final headerTop = topInset == 0 ? 24.0 : topInset;
     final chatOpen = RegExp(r'^/messages/\d+').hasMatch(path);
     return AppScope(
       session: widget.session,
@@ -119,30 +122,32 @@ class _AppShellState extends State<AppShell> {
       child: Stage(
         child: Scaffold(
           backgroundColor: Colors.transparent,
+          extendBody: true,
           resizeToAvoidBottomInset: true,
-          body: Padding(
-            padding: EdgeInsets.only(top: (topInset == 0 ? 24 : topInset) + 6),
-            child: Column(
-              children: [
-                _SiteBar(session: widget.session),
-                Expanded(child: widget.child),
-              ],
-            ),
+          body: Stack(
+            children: [
+              Padding(padding: EdgeInsets.only(top: headerTop + _siteBarHeight), child: widget.child),
+              Positioned(top: headerTop, left: 0, right: 0, child: _SiteBar(session: widget.session)),
+            ],
           ),
           bottomNavigationBar: chatOpen && MediaQuery.viewInsetsOf(context).bottom > 0
               ? null
               : ListenableBuilder(
                   listenable: Listenable.merge([widget.player, widget.session]),
-                  builder: (context, _) => Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (widget.player.current != null && !chatOpen) MiniPlayer(player: widget.player),
-                      _BottomBar(
-                        selected: selected,
-                        unreadChats: widget.session.unreadChats,
-                        onTab: (i) => i == 4 ? _menu(context) : context.go(_tabs[i].$1),
-                      ),
-                    ],
+                  builder: (context, _) => Material(
+                    color: Colors.transparent,
+                    elevation: 0,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (widget.player.current != null && !chatOpen) MiniPlayer(player: widget.player),
+                        _BottomBar(
+                          selected: selected,
+                          unreadChats: widget.session.unreadChats,
+                          onTab: (i) => i == 4 ? _menu(context) : context.go(_tabs[i].$1),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
         ),
@@ -267,6 +272,8 @@ class _AppShellState extends State<AppShell> {
     );
   }
 }
+
+const _siteBarHeight = 58.0;
 
 class _SiteBar extends StatelessWidget {
   const _SiteBar({required this.session});
@@ -506,9 +513,12 @@ class _BottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(color: bar, border: Border(top: BorderSide(color: line))),
-      child: SafeArea(
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: DecoratedBox(
+          decoration: BoxDecoration(color: const Color(0xA60F0A1E), border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08)))),
+          child: SafeArea(
         top: false,
         child: SizedBox(
           height: 64,
@@ -541,6 +551,8 @@ class _BottomBar extends StatelessWidget {
                 ),
             ],
           ),
+        ),
+      ),
         ),
       ),
     );

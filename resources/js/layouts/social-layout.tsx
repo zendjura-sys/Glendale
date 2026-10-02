@@ -227,8 +227,8 @@ function Topbar() {
     const unreadMessages = useUnreadMessages();
 
     return (
-        <header className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.06] bg-[#05070f]/70 backdrop-blur-2xl [view-transition-name:gc-topbar]">
-            <div className="mx-auto flex h-16 max-w-[1320px] items-center gap-2 px-3 sm:gap-4 sm:px-5">
+        <header className="pointer-events-none fixed inset-x-0 top-0 z-40 bg-transparent [view-transition-name:gc-topbar]">
+            <div className="pointer-events-auto mx-auto flex h-16 max-w-[1320px] items-center gap-2 px-3 sm:gap-4 sm:px-5">
                 <Link href="/feed" className="shrink-0 lg:w-[232px]">
                     <Logo className="hidden sm:inline-flex" />
                     <LogoMark className="sm:hidden" />
@@ -312,7 +312,7 @@ function MobileNav() {
 
     return (
         <>
-            <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.07] bg-[#070a16]/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl [view-transition-name:gc-tabbar] lg:hidden">
+            <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-[#0f0a1e]/60 pb-[env(safe-area-inset-bottom)] backdrop-blur-md [view-transition-name:gc-tabbar] lg:hidden">
                 <div className="flex items-stretch justify-around">
                     {primary.map((item) => {
                         const active = isActive(item.href, item.key);

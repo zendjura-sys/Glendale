@@ -615,7 +615,7 @@ class _ChatScreenState extends State<ChatScreen> {
         : (peer?['is_online'] == true ? 'онлайн' : (text(peer?['last_seen_at']) != null ? 'був(-ла) ${ago(peer?['last_seen_at'])}' : ''));
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 4, 10, 8),
+      padding: EdgeInsets.fromLTRB(10, 4, 10, 8 + MediaQuery.paddingOf(context).bottom),
       child: Glass(
         padding: EdgeInsets.zero,
         radius: 24,

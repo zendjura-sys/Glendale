@@ -208,13 +208,13 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
 
             <div
                 className={cn(
-                    'fixed inset-x-0 z-40 px-2 pb-2 [view-transition-name:gc-player] lg:bottom-0 lg:px-0 lg:pb-0',
+                    'pointer-events-none fixed inset-x-0 z-40 bg-transparent px-3 [view-transition-name:gc-player]',
                     standalone
-                        ? 'bottom-[env(safe-area-inset-bottom)] lg:left-[256px]'
-                        : 'bottom-[calc(57px+env(safe-area-inset-bottom))]',
+                        ? 'bottom-[calc(env(safe-area-inset-bottom)+12px)] lg:left-[256px]'
+                        : 'bottom-[calc(4.25rem+env(safe-area-inset-bottom))] lg:bottom-4',
                 )}
             >
-                <div className="glass-strong relative mx-auto overflow-hidden rounded-2xl border border-white/10 shadow-[0_-10px_50px_-20px_rgb(109_93_252/0.6)] lg:rounded-none lg:border-x-0 lg:border-b-0">
+                <div className="pointer-events-auto relative mx-auto max-w-[1100px] overflow-hidden rounded-2xl border border-white/10 bg-[#0f1426]/70 shadow-[0_18px_50px_-28px_rgb(109_93_252/0.85)] backdrop-blur-md">
                     {player.current?.cover_url && (
                         <img
                             src={player.current.cover_url}
