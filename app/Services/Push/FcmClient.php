@@ -86,10 +86,12 @@ class FcmClient
     }
 
     /**
+     * [$dataOnly] — без блоку `notification`: сповіщення малює сам застосунок (кнопка «Відповісти» в шторці).
+     *
      * @param  array<string, string>  $data
      * @return self::SENT|self::GONE|self::FAILED
      */
-    public function send(string $deviceToken, string $title, string $body, array $data = [], ?string $channel = null, ?string $tag = null): string
+    public function send(string $deviceToken, string $title, string $body, array $data = [], ?string $channel = null, ?string $tag = null, bool $dataOnly = false): string
     {
         $credentials = $this->credentials();
         $access = $this->accessToken();
@@ -104,22 +106,25 @@ class FcmClient
                 'tag' => $tag,
                 'icon' => 'ic_notification',
                 'color' => '#6D7DFF',
-                'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
             ]),
             'collapse_key' => $tag,
         ]);
+        if ($dataOnly) {
+            unset($android['notification']);
+            $data = [...$data, 'title' => $title, 'body' => $body, 'channel' => (string) $channel];
+        }
 
         try {
             $response = Http::timeout(10)
                 ->withToken($access)
                 ->post(rtrim((string) config('services.firebase.fcm_url'), '/').'/v1/projects/'.$credentials['project_id'].'/messages:send', [
-                    'message' => [
+                    'message' => array_filter([
                         'token' => $deviceToken,
-                        'notification' => ['title' => $title, 'body' => $body],
+                        'notification' => $dataOnly ? null : ['title' => $title, 'body' => $body],
                         'data' => array_map('strval', $data),
                         'android' => $android,
-                        'apns' => ['payload' => ['aps' => array_filter(['sound' => 'default', 'thread-id' => $tag])]],
-                    ],
+                        'apns' => $dataOnly ? null : ['payload' => ['aps' => array_filter(['sound' => 'default', 'thread-id' => $tag])]],
+                    ]),
                 ]);
         } catch (ConnectionException) {
             return self::FAILED;

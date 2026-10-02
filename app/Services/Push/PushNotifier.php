@@ -92,10 +92,15 @@ class PushNotifier
                 [
                     'type' => 'message',
                     'conversation_id' => (string) $conversation->id,
+                    'message_id' => (string) $message->id,
+                    'author' => $author,
+                    'text' => $preview,
+                    'group' => $group ? '1' : '0',
                     'url' => '/messages/'.$conversation->id,
                 ],
                 self::CHANNEL_MESSAGES,
                 'chat-'.$conversation->id,
+                dataOnly: true,
             );
         }
     }

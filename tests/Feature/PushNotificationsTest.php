@@ -106,6 +106,35 @@ class PushNotificationsTest extends TestCase
         $this->assertNull($dead->fresh());
         Http::assertSent(fn ($request) => str_contains($request->url(), '/v1/projects/gamecon-test/messages:send')
             && $request->hasHeader('Authorization', 'Bearer ya29.test')
-            && $request['message']['notification']['title'] === 'GameCon');
+            && $request['message']['notification']['title'] === 'GameCon'
+            && ! isset($request['message']['android']['notification']['click_action']));
+    }
+
+    public function test_chat_push_is_data_only_for_apps_that_render_it_themselves(): void
+    {
+        $this->configureFcm();
+        $user = User::factory()->create();
+        $token = $this->token($user);
+        $modern = str_repeat('f', 40);
+        $legacy = str_repeat('g', 40);
+        $this->withToken($token)->postJson('/api/v1/push/devices', ['token' => $modern, 'platform' => 'android', 'local_render' => true])->assertOk();
+        PushDevice::query()->create(['user_id' => $user->id, 'token' => $legacy, 'platform' => 'android']);
+
+        Http::fake([
+            'oauth2.googleapis.com/token' => Http::response(['access_token' => 'ya29.test', 'expires_in' => 3600]),
+            'fcm.googleapis.com/*' => Http::response(['name' => 'projects/gamecon-test/messages/1']),
+        ]);
+
+        (new SendPushNotification($user->id, 'Олена', 'Привіт', ['type' => 'message', 'conversation_id' => '7', 'url' => '/messages/7'], 'messages', 'chat-7', dataOnly: true))->handle(app(FcmClient::class));
+
+        Http::assertSent(fn ($request) => ($request['message']['token'] ?? null) === $modern
+            && ! isset($request['message']['notification'])
+            && ! isset($request['message']['android']['notification'])
+            && $request['message']['android']['priority'] === 'HIGH'
+            && $request['message']['data']['title'] === 'Олена'
+            && $request['message']['data']['body'] === 'Привіт'
+            && $request['message']['data']['conversation_id'] === '7');
+        Http::assertSent(fn ($request) => ($request['message']['token'] ?? null) === $legacy
+            && $request['message']['notification']['title'] === 'Олена');
     }
 }

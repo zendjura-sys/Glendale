@@ -32,6 +32,7 @@ class SendPushNotification implements ShouldQueue
         public readonly array $data,
         public readonly string $channel,
         public readonly ?string $tag = null,
+        public readonly bool $dataOnly = false,
     ) {}
 
     public function handle(FcmClient $fcm): void
@@ -42,7 +43,7 @@ class SendPushNotification implements ShouldQueue
 
         PushDevice::query()->where('user_id', $this->userId)->latest('id')->limit(10)->get()
             ->each(function (PushDevice $device) use ($fcm) {
-                $result = $fcm->send($device->token, $this->title, $this->body, $this->data, $this->channel, $this->tag);
+                $result = $fcm->send($device->token, $this->title, $this->body, $this->data, $this->channel, $this->tag, $this->dataOnly && $device->local_render && $device->platform === 'android');
                 match ($result) {
                     FcmClient::GONE => $device->delete(),
                     FcmClient::SENT => $device->forceFill(['last_used_at' => now()])->saveQuietly(),
