@@ -104,5 +104,33 @@ ThemeData gameConTheme() {
     ),
     sliderTheme: const SliderThemeData(activeTrackColor: primary, thumbColor: Colors.white, inactiveTrackColor: Color(0xFF2A3050), overlayColor: Color(0x226D7DFF)),
     progressIndicatorTheme: const ProgressIndicatorThemeData(color: primary),
+    pageTransitionsTheme: const PageTransitionsTheme(builders: {
+      TargetPlatform.android: _FadeThrough(),
+      TargetPlatform.iOS: _FadeThrough(),
+    }),
   );
+}
+
+/// Сторінки прозорі (фон — спільна «аврора»), тож замість зуму — м’який перехресний фейд зі зсувом.
+class _FadeThrough extends PageTransitionsBuilder {
+  const _FadeThrough();
+
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 280);
+
+  @override
+  Widget buildTransitions<T>(PageRoute<T> route, BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
+    final enter = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
+    final leave = CurvedAnimation(parent: secondaryAnimation, curve: Curves.easeOutCubic);
+    return FadeTransition(
+      opacity: ReverseAnimation(leave),
+      child: FadeTransition(
+        opacity: enter,
+        child: SlideTransition(
+          position: Tween(begin: const Offset(0, 0.025), end: Offset.zero).animate(enter),
+          child: child,
+        ),
+      ),
+    );
+  }
 }

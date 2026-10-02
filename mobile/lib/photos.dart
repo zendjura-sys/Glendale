@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
 import 'feed.dart';
@@ -12,9 +13,9 @@ import 'theme.dart';
 import 'widgets.dart';
 
 const albumPrivacy = {
-  'public': (Icons.public_rounded, 'Усім'),
-  'friends': (Icons.people_alt_outlined, 'Друзям'),
-  'private': (Icons.lock_outline_rounded, 'Тільки мені'),
+  'public': (LucideIcons.globe, 'Усім'),
+  'friends': (LucideIcons.usersRound, 'Друзям'),
+  'private': (LucideIcons.lock, 'Тільки мені'),
 };
 
 // ───────────────────────── Фото користувача / спільноти ─────────────────────────
@@ -79,7 +80,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
     if (data == null) {
       return error == null
           ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
-          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: Icons.photo_library_outlined, title: 'Фото недоступні', text: '$error')));
+          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.images, title: 'Фото недоступні', text: '$error')));
     }
     final owner = mapOf(data['owner']);
     final albums = maps(data['albums']);
@@ -96,7 +97,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
             GestureDetector(
               onTap: () => context.push(appPathFor(text(owner['href']))),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.arrow_back_rounded, size: 14, color: muted),
+                const Icon(LucideIcons.arrowLeft, size: 14, color: muted),
                 const SizedBox(width: 4),
                 Text(owner['type'] == 'community' ? 'До спільноти' : 'До профілю', style: body(12, color: muted)),
               ]),
@@ -115,14 +116,14 @@ class _PhotosScreenState extends State<PhotosScreen> {
             ]),
             if (canCreate) ...[
               const SizedBox(height: 14),
-              PrimaryButton(label: 'Створити альбом', icon: Icons.create_new_folder_outlined, onPressed: _create),
+              PrimaryButton(label: 'Створити альбом', icon: LucideIcons.folderPlus, onPressed: _create),
             ],
           ]),
         ),
         const SizedBox(height: 12),
         if (albums.isEmpty)
           EmptyState(
-            icon: Icons.photo_camera_outlined,
+            icon: LucideIcons.camera,
             title: 'Тут поки немає альбомів',
             text: canCreate ? 'Створіть перший альбом і поділіться найкращими кадрами.' : 'Альбомів, доступних вам, поки немає.',
             action: canCreate ? 'Створити альбом' : null,
@@ -177,7 +178,7 @@ class AlbumTile extends StatelessWidget {
         Expanded(
           child: text(album['cover_url']) != null
               ? NetImage(text(album['cover_url']), radius: 14, width: double.infinity)
-              : CoverPlaceholder(seed: album['id'] ?? 0, icon: Icons.photo_library_outlined, radius: 14, iconSize: 30),
+              : CoverPlaceholder(seed: album['id'] ?? 0, icon: LucideIcons.images, radius: 14, iconSize: 30),
         ),
         const SizedBox(height: 8),
         Padding(
@@ -389,8 +390,8 @@ class _AlbumScreenState extends State<AlbumScreen> {
       builder: (sheet) => Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          SheetAction(icon: Icons.edit_outlined, label: 'Редагувати альбом', onTap: () => Navigator.pop(sheet, 'edit')),
-          SheetAction(icon: Icons.delete_outline_rounded, label: 'Видалити альбом', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
+          SheetAction(icon: LucideIcons.pencil, label: 'Редагувати альбом', onTap: () => Navigator.pop(sheet, 'edit')),
+          SheetAction(icon: LucideIcons.trash2, label: 'Видалити альбом', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
         ]),
       ),
     );
@@ -414,7 +415,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
     if (data == null) {
       return error == null
           ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
-          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: Icons.photo_library_outlined, title: 'Альбом недоступний', text: '$error')));
+          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.images, title: 'Альбом недоступний', text: '$error')));
     }
     final album = mapOf(data['album']);
     final owner = mapOf(album['owner']);
@@ -427,32 +428,32 @@ class _AlbumScreenState extends State<AlbumScreen> {
         Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              RoundIcon(icon: Icons.arrow_back_rounded, onTap: () => context.canPop() ? context.pop() : context.push(appPathFor(text(owner['photos_href'])))),
+              RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.canPop() ? context.pop() : context.push(appPathFor(text(owner['photos_href'])))),
               const SizedBox(width: 6),
               Avatar(url: text(owner['avatar_url']), name: text(owner['name']) ?? '?', size: 28, square: owner['type'] == 'community'),
               const SizedBox(width: 8),
               Expanded(child: Text(text(owner['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, color: muted))),
-              if (can['manage'] == true) IconButton(onPressed: _menu, icon: const Icon(Icons.more_horiz_rounded, color: muted)),
+              if (can['manage'] == true) IconButton(onPressed: _menu, icon: const Icon(LucideIcons.ellipsis, color: muted)),
             ]),
             const SizedBox(height: 10),
             Text(text(album['title']) ?? '', style: display(20)),
             if (text(album['description']) != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(text(album['description'])!, style: body(14, color: soft))),
             const SizedBox(height: 10),
             Wrap(spacing: 8, runSpacing: 6, children: [
-              Pill(label: '$count фото', icon: Icons.photo_outlined),
+              Pill(label: '$count фото', icon: LucideIcons.image),
               if (privacy != null) Pill(label: privacy.$2, icon: privacy.$1),
-              if (album['comments_enabled'] == false) const Pill(label: 'Без коментарів', icon: Icons.comments_disabled_outlined),
+              if (album['comments_enabled'] == false) const Pill(label: 'Без коментарів', icon: LucideIcons.messageCircleOff),
             ]),
             if (can['upload'] == true) ...[
               const SizedBox(height: 14),
-              PrimaryButton(label: uploading ? 'Завантажуємо…' : 'Додати фото', icon: Icons.add_photo_alternate_outlined, busy: uploading, onPressed: uploading ? null : _upload),
+              PrimaryButton(label: uploading ? 'Завантажуємо…' : 'Додати фото', icon: LucideIcons.imagePlus, busy: uploading, onPressed: uploading ? null : _upload),
             ],
           ]),
         ),
         const SizedBox(height: 12),
         if (photos.isEmpty)
           EmptyState(
-            icon: Icons.photo_camera_outlined,
+            icon: LucideIcons.camera,
             title: 'Альбом порожній',
             text: can['upload'] == true ? 'Додайте перші фотографії.' : null,
             action: can['upload'] == true ? 'Додати фото' : null,
@@ -551,9 +552,9 @@ class _PhotoScreenState extends State<PhotoScreen> {
       builder: (sheet) => Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          if (can['edit'] == true) SheetAction(icon: Icons.short_text_rounded, label: 'Змінити підпис', onTap: () => Navigator.pop(sheet, 'caption')),
-          if (can['cover'] == true && photo['is_cover'] != true) SheetAction(icon: Icons.photo_size_select_actual_outlined, label: 'Зробити обкладинкою альбому', onTap: () => Navigator.pop(sheet, 'cover')),
-          if (can['delete'] == true) SheetAction(icon: Icons.delete_outline_rounded, label: 'Видалити фото', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
+          if (can['edit'] == true) SheetAction(icon: LucideIcons.textAlignStart, label: 'Змінити підпис', onTap: () => Navigator.pop(sheet, 'caption')),
+          if (can['cover'] == true && photo['is_cover'] != true) SheetAction(icon: LucideIcons.image, label: 'Зробити обкладинкою альбому', onTap: () => Navigator.pop(sheet, 'cover')),
+          if (can['delete'] == true) SheetAction(icon: LucideIcons.trash2, label: 'Видалити фото', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
         ]),
       ),
     );
@@ -589,7 +590,7 @@ class _PhotoScreenState extends State<PhotoScreen> {
         foregroundColor: Colors.white,
         title: Text(photo.isEmpty ? '' : '${photo['position']} з ${album['photos_count']}', style: body(15)),
         actions: [
-          if (can['edit'] == true || can['delete'] == true || can['cover'] == true) IconButton(onPressed: _menu, icon: const Icon(Icons.more_vert_rounded)),
+          if (can['edit'] == true || can['delete'] == true || can['cover'] == true) IconButton(onPressed: _menu, icon: const Icon(LucideIcons.ellipsisVertical)),
         ],
       ),
       body: data == null
@@ -605,8 +606,8 @@ class _PhotoScreenState extends State<PhotoScreen> {
                   },
                   child: Stack(children: [
                     Positioned.fill(child: InteractiveViewer(maxScale: 4, child: Center(child: NetImage(text(photo['url']), fit: BoxFit.contain)))),
-                    if (prev != null) Positioned(left: 4, top: 0, bottom: 0, child: Center(child: IconButton(onPressed: () => _go(prev), icon: const Icon(Icons.chevron_left_rounded, size: 34, color: Colors.white70)))),
-                    if (next != null) Positioned(right: 4, top: 0, bottom: 0, child: Center(child: IconButton(onPressed: () => _go(next), icon: const Icon(Icons.chevron_right_rounded, size: 34, color: Colors.white70)))),
+                    if (prev != null) Positioned(left: 4, top: 0, bottom: 0, child: Center(child: IconButton(onPressed: () => _go(prev), icon: const Icon(LucideIcons.chevronLeft, size: 34, color: Colors.white70)))),
+                    if (next != null) Positioned(right: 4, top: 0, bottom: 0, child: Center(child: IconButton(onPressed: () => _go(next), icon: const Icon(LucideIcons.chevronRight, size: 34, color: Colors.white70)))),
                   ]),
                 ),
               ),
@@ -631,11 +632,11 @@ class _PhotoScreenState extends State<PhotoScreen> {
                         ),
                         IconButton(
                           onPressed: _like,
-                          icon: Icon(photo['liked'] == true ? Icons.favorite_rounded : Icons.favorite_border_rounded, color: photo['liked'] == true ? const Color(0xFFFB7185) : soft),
+                          icon: Icon(photo['liked'] == true ? LucideIcons.heart600 : LucideIcons.heart, color: photo['liked'] == true ? const Color(0xFFFB7185) : soft),
                         ),
                         Text(compact(photo['likes_count']), style: body(13, color: soft)),
                         const SizedBox(width: 10),
-                        const Icon(Icons.visibility_outlined, size: 16, color: faint),
+                        const Icon(LucideIcons.eye, size: 16, color: faint),
                         const SizedBox(width: 4),
                         Text(compact(photo['views_count']), style: body(12, color: faint)),
                       ]),

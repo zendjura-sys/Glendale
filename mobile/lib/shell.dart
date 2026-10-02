@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
@@ -95,10 +96,10 @@ class _AppShellState extends State<AppShell> {
   }
 
   static const _tabs = [
-    ('/profile', 'Сторінка', Icons.person_outline_rounded),
-    ('/feed', 'Новини', Icons.article_outlined),
-    ('/messages', 'Чати', Icons.chat_bubble_outline_rounded),
-    ('/friends', 'Друзі', Icons.people_outline_rounded),
+    ('/profile', 'Сторінка', LucideIcons.userRound),
+    ('/feed', 'Новини', LucideIcons.newspaper),
+    ('/messages', 'Чати', LucideIcons.messageCircle),
+    ('/friends', 'Друзі', LucideIcons.usersRound),
   ];
 
   int _selected(String path) {
@@ -125,7 +126,7 @@ class _AppShellState extends State<AppShell> {
           builder: (context, _) {
             final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
             final hideChrome = chatOpen && keyboard;
-            final playing = widget.player.current != null && !hideChrome;
+            final playing = widget.player.current != null && !hideChrome && !widget.player.covered;
             final bottom = hideChrome ? 0.0 : MediaQuery.viewPaddingOf(context).bottom + navBarHeight + (playing ? miniPlayerExtent : 0);
             return ShellChrome(
               bottom: bottom,
@@ -167,17 +168,17 @@ class _AppShellState extends State<AppShell> {
     final path = GoRouterState.of(context).uri.path;
     final me = widget.session.me ?? {};
     const tiles = [
-      ('/profile', 'Моя сторінка', Icons.person_outline_rounded),
-      ('/feed', 'Новини', Icons.article_outlined),
-      ('/messages', 'Повідомлення', Icons.chat_bubble_outline_rounded),
-      ('/friends', 'Друзі', Icons.people_outline_rounded),
-      ('/people', 'Пошук людей', Icons.search_rounded),
-      ('/communities', 'Спільноти', Icons.shield_outlined),
-      ('/photos', 'Фотографії', Icons.image_outlined),
-      ('/servers', 'Сервери GTA', Icons.dns_outlined),
-      ('/music', 'Музика', Icons.music_note_outlined),
-      ('/cinema', 'Кіно', Icons.movie_outlined),
-      ('/families', 'Сім’ї', Icons.workspace_premium_outlined),
+      ('/profile', 'Моя сторінка', LucideIcons.userRound),
+      ('/feed', 'Новини', LucideIcons.newspaper),
+      ('/messages', 'Повідомлення', LucideIcons.messageCircle),
+      ('/friends', 'Друзі', LucideIcons.usersRound),
+      ('/people', 'Пошук людей', LucideIcons.search),
+      ('/communities', 'Спільноти', LucideIcons.shield),
+      ('/photos', 'Фотографії', LucideIcons.image),
+      ('/servers', 'Сервери GTA', LucideIcons.server),
+      ('/music', 'Музика', LucideIcons.music),
+      ('/cinema', 'Кіно', LucideIcons.film),
+      ('/families', 'Сім’ї', LucideIcons.crown),
     ];
     showModalBottomSheet<void>(
       context: context,
@@ -213,7 +214,7 @@ class _AppShellState extends State<AppShell> {
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right_rounded, color: muted),
+                      const Icon(LucideIcons.chevronRight, color: muted),
                     ],
                   ),
                 ),
@@ -243,13 +244,13 @@ class _AppShellState extends State<AppShell> {
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Column(
                     children: [
-                      _MenuLink(icon: Icons.settings_outlined, label: 'Налаштування', onTap: () {
+                      _MenuLink(icon: LucideIcons.settings, label: 'Налаштування', onTap: () {
                         Navigator.pop(sheet);
                         context.go('/settings');
                       }),
                       if (widget.session.isAdmin)
                         _MenuLink(
-                          icon: Icons.shield_outlined,
+                          icon: LucideIcons.shield,
                           label: 'Адмін-панель',
                           onTap: () {
                             Navigator.pop(sheet);
@@ -257,7 +258,7 @@ class _AppShellState extends State<AppShell> {
                           },
                         ),
                       _MenuLink(
-                        icon: Icons.logout_rounded,
+                        icon: LucideIcons.logOut,
                         label: 'Вийти',
                         color: dangerSoft,
                         onTap: () async {
@@ -308,7 +309,7 @@ class _SiteBar extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                       child: Row(
                         children: [
-                          const Icon(Icons.search_rounded, color: muted, size: 18),
+                          const Icon(LucideIcons.search, color: muted, size: 18),
                           const SizedBox(width: 8),
                           Expanded(child: Text('Пошук людей і спільнот...', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, color: muted))),
                         ],
@@ -321,7 +322,7 @@ class _SiteBar extends StatelessWidget {
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  IconButton(onPressed: () => showNotifications(context, session), icon: const Icon(Icons.notifications_none_rounded, color: ink)),
+                  IconButton(onPressed: () => showNotifications(context, session), icon: const Icon(LucideIcons.bell, color: ink)),
                   if (session.unreadNotifications > 0)
                     Positioned(right: 6, top: 6, child: CountBadge(count: session.unreadNotifications)),
                 ],
@@ -355,29 +356,29 @@ class CountBadge extends StatelessWidget {
 }
 
 const _noticeKinds = <String, (IconData, Color)>{
-  'post_like': (Icons.favorite_rounded, Color(0xFFF43F5E)),
-  'post_comment': (Icons.chat_bubble_rounded, neonBlue),
-  'wall_post': (Icons.edit_square, violet),
-  'friend_request': (Icons.person_add_alt_1_rounded, Color(0xFF10B981)),
-  'friend_accepted': (Icons.how_to_reg_rounded, Color(0xFF10B981)),
-  'community_request': (Icons.shield_outlined, indigo),
-  'community_approved': (Icons.verified_user_outlined, indigo),
-  'photo_like': (Icons.favorite_rounded, Color(0xFFF43F5E)),
-  'photo_comment': (Icons.image_outlined, Color(0xFF38BDF8)),
-  'family_application': (Icons.person_add_alt_1_rounded, Color(0xFFF59E0B)),
-  'family_accepted': (Icons.workspace_premium_rounded, Color(0xFFF59E0B)),
-  'family_report': (Icons.assignment_turned_in_outlined, Color(0xFFF59E0B)),
-  'family_review': (Icons.assignment_turned_in_outlined, Color(0xFF10B981)),
-  'family_cashout': (Icons.account_balance_wallet_outlined, Color(0xFF10B981)),
-  'family_bank': (Icons.account_balance_wallet_outlined, Color(0xFF10B981)),
-  'family_sanction': (Icons.gavel_rounded, Color(0xFFF43F5E)),
-  'family_kicked': (Icons.gavel_rounded, Color(0xFFF43F5E)),
-  'family_warehouse': (Icons.inventory_2_outlined, Color(0xFFF43F5E)),
-  'family_event': (Icons.event_outlined, indigo),
+  'post_like': (LucideIcons.heart, Color(0xFFF43F5E)),
+  'post_comment': (LucideIcons.messageCircle, neonBlue),
+  'wall_post': (LucideIcons.squarePen, violet),
+  'friend_request': (LucideIcons.userRoundPlus, Color(0xFF10B981)),
+  'friend_accepted': (LucideIcons.userRoundCheck, Color(0xFF10B981)),
+  'community_request': (LucideIcons.shield, indigo),
+  'community_approved': (LucideIcons.shieldCheck, indigo),
+  'photo_like': (LucideIcons.heart, Color(0xFFF43F5E)),
+  'photo_comment': (LucideIcons.image, Color(0xFF38BDF8)),
+  'family_application': (LucideIcons.userRoundPlus, Color(0xFFF59E0B)),
+  'family_accepted': (LucideIcons.crown, Color(0xFFF59E0B)),
+  'family_report': (LucideIcons.clipboardCheck, Color(0xFFF59E0B)),
+  'family_review': (LucideIcons.clipboardCheck, Color(0xFF10B981)),
+  'family_cashout': (LucideIcons.wallet, Color(0xFF10B981)),
+  'family_bank': (LucideIcons.wallet, Color(0xFF10B981)),
+  'family_sanction': (LucideIcons.gavel, Color(0xFFF43F5E)),
+  'family_kicked': (LucideIcons.gavel, Color(0xFFF43F5E)),
+  'family_warehouse': (LucideIcons.package, Color(0xFFF43F5E)),
+  'family_event': (LucideIcons.calendarDays, indigo),
 };
 
 (IconData, Color) noticeKind(String kind) =>
-    _noticeKinds[kind] ?? (kind.startsWith('family_') ? (Icons.workspace_premium_rounded, const Color(0xFFF59E0B)) : (Icons.notifications_rounded, primary));
+    _noticeKinds[kind] ?? (kind.startsWith('family_') ? (LucideIcons.crown, const Color(0xFFF59E0B)) : (LucideIcons.bell, primary));
 
 /// Панель сповіщень (на телефоні сайт показує її на всю ширину під шапкою).
 Future<void> showNotifications(BuildContext context, Session session) {
@@ -420,13 +421,13 @@ class _NotificationsListState extends State<NotificationsList> {
                     await reload();
                     await widget.session.refreshCounters();
                   },
-                  icon: const Icon(Icons.done_all_rounded, size: 16, color: primary),
+                  icon: const Icon(LucideIcons.checkCheck, size: 16, color: primary),
                   label: Text('Прочитати всі', style: body(13, color: primary, weight: FontWeight.w600)),
                 ),
               ),
             Expanded(
               child: rows.isEmpty
-                  ? const QuietEmpty(icon: Icons.notifications_none_rounded, text: 'Сповіщень поки немає')
+                  ? const QuietEmpty(icon: LucideIcons.bell, text: 'Сповіщень поки немає')
                   : ListView.separated(
                       padding: EdgeInsets.fromLTRB(12, 0, 12, 20 + ShellChrome.bottomOf(context)),
                       itemCount: rows.length,
@@ -510,11 +511,11 @@ class _BottomBar extends StatelessWidget {
   final ValueChanged<int> onTab;
 
   static const _items = [
-    ('Сторінка', Icons.person_outline_rounded, Icons.person_rounded),
-    ('Новини', Icons.article_outlined, Icons.article_rounded),
-    ('Чати', Icons.chat_bubble_outline_rounded, Icons.chat_bubble_rounded),
-    ('Друзі', Icons.people_outline_rounded, Icons.people_rounded),
-    ('Меню', Icons.grid_view_rounded, Icons.grid_view_rounded),
+    ('Сторінка', LucideIcons.userRound, LucideIcons.userRound500),
+    ('Новини', LucideIcons.newspaper, LucideIcons.newspaper500),
+    ('Чати', LucideIcons.messageCircle, LucideIcons.messageCircle500),
+    ('Друзі', LucideIcons.usersRound, LucideIcons.usersRound500),
+    ('Меню', LucideIcons.layoutGrid, LucideIcons.layoutGrid500),
   ];
 
   @override
@@ -541,10 +542,24 @@ class _BottomBar extends StatelessWidget {
                           clipBehavior: Clip.none,
                           children: [
                             AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                              decoration: BoxDecoration(color: selected == i ? primary.withValues(alpha: 0.16) : Colors.transparent, borderRadius: BorderRadius.circular(14)),
-                              child: Icon(selected == i ? _items[i].$3 : _items[i].$2, size: 22, color: selected == i ? const Color(0xFF8FA0FF) : muted),
+                              duration: const Duration(milliseconds: 260),
+                              curve: Curves.easeOutCubic,
+                              padding: EdgeInsets.symmetric(horizontal: selected == i ? 16 : 12, vertical: 5),
+                              decoration: BoxDecoration(
+                                gradient: selected == i ? LinearGradient(colors: [primary.withValues(alpha: 0.22), violet.withValues(alpha: 0.16)]) : null,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: AnimatedScale(
+                                scale: selected == i ? 1.06 : 1,
+                                duration: const Duration(milliseconds: 260),
+                                curve: Curves.easeOutBack,
+                                child: Icon(
+                                  selected == i ? _items[i].$3 : _items[i].$2,
+                                  size: 22,
+                                  color: selected == i ? const Color(0xFF8FA0FF) : muted,
+                                  shadows: selected == i ? const [Shadow(color: Color(0xE67C8CFF), blurRadius: 10)] : null,
+                                ),
+                              ),
                             ),
                             if (i == 2 && unreadChats > 0) Positioned(right: 4, top: -4, child: CountBadge(count: unreadChats)),
                           ],

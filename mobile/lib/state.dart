@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/widgets.dart';
 import 'package:just_audio/just_audio.dart';
@@ -116,12 +117,18 @@ class Session extends ChangeNotifier {
 
 /// Один трек у черзі програвача (локальний трек GameCon).
 class QueueTrack {
-  QueueTrack({required this.id, required this.url, required this.title, required this.artist, this.cover});
+  QueueTrack({required this.id, required this.url, required this.title, required this.artist, this.cover, this.album, this.genre, this.userId});
   final int? id;
   final String url;
   final String title;
   final String artist;
   final String? cover;
+  final String? album;
+  final String? genre;
+  final int? userId;
+
+  /// Картка для листа редагування (ті ж ключі, що віддає сервер).
+  Map<String, dynamic> toCard() => {'id': id, 'url': url, 'title': title, 'artist': artist, 'album': album, 'genre': genre, 'cover_url': cover, 'user_id': userId};
 
   static QueueTrack? fromJson(Map<String, dynamic> track) {
     final url = absolute(track['url']);
@@ -132,6 +139,9 @@ class QueueTrack {
       title: text(track['title']) ?? 'Без назви',
       artist: text(track['artist']) ?? '',
       cover: absolute(track['cover_url']),
+      album: text(track['album']),
+      genre: text(track['genre']),
+      userId: track['user_id'] is int ? track['user_id'] as int : int.tryParse('${track['user_id']}'),
     );
   }
 }
@@ -156,6 +166,7 @@ class TrackPlayer extends ChangeNotifier {
   }
 
   final _player = AudioPlayer();
+  final _random = Random();
   Session? session;
   List<QueueTrack> queue = [];
   int index = -1;
@@ -164,6 +175,22 @@ class TrackPlayer extends ChangeNotifier {
   bool repeat = false;
   Duration position = Duration.zero;
   Duration duration = Duration.zero;
+
+  int _covers = 0;
+
+  /// Міні-плеер прибрано з екрана (музика грає далі), поки відкрита форма, якій він заважає.
+  bool get covered => _covers > 0;
+
+  Future<T> coverWhile<T>(Future<T> Function() body) async {
+    _covers++;
+    notifyListeners();
+    try {
+      return await body();
+    } finally {
+      _covers--;
+      notifyListeners();
+    }
+  }
 
   QueueTrack? get current => index >= 0 && index < queue.length ? queue[index] : null;
   String get title => current?.title ?? '';
@@ -220,8 +247,8 @@ class TrackPlayer extends ChangeNotifier {
   Future<void> next({bool auto = false}) async {
     if (queue.isEmpty) return;
     if (auto && repeat) return _start(index);
-    var n = shuffle && queue.length > 1 ? (DateTime.now().microsecond % queue.length) : index + 1;
-    if (shuffle && n == index) n = (n + 1) % queue.length;
+    var n = shuffle && queue.length > 1 ? _random.nextInt(queue.length - 1) : index + 1;
+    if (shuffle && queue.length > 1 && n >= index) n++;
     if (n >= queue.length) {
       if (auto) {
         await _player.pause();
@@ -240,6 +267,77 @@ class TrackPlayer extends ChangeNotifier {
   }
 
   Future<void> seek(Duration to) => _player.seek(to);
+
+  Future<void> playAt(int i) async {
+    if (i < 0 || i >= queue.length) return;
+    if (i == index) return toggle();
+    await _start(i);
+  }
+
+  /// Перетягування в черзі: [to] — нова позиція після вилучення з [from].
+  void move(int from, int to) {
+    if (from < 0 || from >= queue.length) return;
+    to = to.clamp(0, queue.length - 1);
+    if (to == from) return;
+    final playingNow = current;
+    final item = queue.removeAt(from);
+    queue.insert(to, item);
+    index = playingNow == null ? index : queue.indexOf(playingNow);
+    notifyListeners();
+  }
+
+  Future<void> removeAt(int i) async {
+    if (i < 0 || i >= queue.length) return;
+    if (queue.length == 1) return stop();
+    final wasCurrent = i == index;
+    queue.removeAt(i);
+    if (i < index) index--;
+    if (wasCurrent) {
+      await _start(index.clamp(0, queue.length - 1));
+    } else {
+      notifyListeners();
+    }
+  }
+
+  /// «Грати наступним» або «Додати в кінець черги».
+  Future<void> enqueue(Map<String, dynamic> track, {bool next = false}) async {
+    final item = QueueTrack.fromJson(track);
+    if (item == null) return;
+    if (current == null) {
+      queue = [item];
+      return _start(0);
+    }
+    final existing = queue.indexWhere((t) => t.id != null && t.id == item.id);
+    if (existing == index) return;
+    if (existing >= 0) {
+      queue.removeAt(existing);
+      if (existing < index) index--;
+    }
+    queue.insert(next ? index + 1 : queue.length, item);
+    notifyListeners();
+  }
+
+  /// Підхоплює нові назву/виконавця/альбом після редагування треку.
+  void updateMeta(Map<String, dynamic> card) {
+    final id = card['id'] is int ? card['id'] as int : int.tryParse('${card['id']}');
+    var changed = false;
+    for (var i = 0; i < queue.length; i++) {
+      final old = queue[i];
+      if (id == null || old.id != id) continue;
+      queue[i] = QueueTrack(
+        id: old.id,
+        url: old.url,
+        title: text(card['title']) ?? old.title,
+        artist: text(card['artist']) ?? '',
+        cover: absolute(card['cover_url']) ?? old.cover,
+        album: text(card['album']),
+        genre: text(card['genre']),
+        userId: old.userId,
+      );
+      changed = true;
+    }
+    if (changed) notifyListeners();
+  }
 
   void toggleShuffle() {
     shuffle = !shuffle;

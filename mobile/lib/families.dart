@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
 import 'family_tabs.dart';
@@ -99,7 +100,7 @@ class _AuthImageState extends State<AuthImage> {
           return Container(
             color: raised,
             alignment: Alignment.center,
-            child: snapshot.hasError ? const Icon(Icons.broken_image_outlined, color: faint) : const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+            child: snapshot.hasError ? const Icon(LucideIcons.imageOff, color: faint) : const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
           );
         },
       ),
@@ -192,12 +193,12 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
       children: [
         HeroCard(
           badge: 'FAMILY ERP',
-          badgeIcon: Icons.workspace_premium_outlined,
+          badgeIcon: LucideIcons.crown,
           tint: gold,
           title: 'Сім’ї',
           accent: 'GTA RP',
           text: 'Звіти про бізвари й контракти, автоматичні виплати, депозити, склад з квотами, дисципліна й рейтинг — без таблиць і ручних підрахунків.',
-          children: [PrimaryButton(label: 'Створити сім’ю', icon: Icons.add_rounded, expand: false, onPressed: () => context.push('/families/create'))],
+          children: [PrimaryButton(label: 'Створити сім’ю', icon: LucideIcons.plus, expand: false, onPressed: () => context.push('/families/create'))],
         ),
         if (mine.isNotEmpty) ...[
           const SectionLabel('Мої сім’ї'),
@@ -210,7 +211,7 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
             GcField(
               controller: query,
               label: 'Назва або тег',
-              icon: Icons.search_rounded,
+              icon: LucideIcons.search,
               dense: true,
               onChanged: (_) {
                 debounce?.cancel();
@@ -233,7 +234,7 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
         if (loading && families.isEmpty)
           const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
         else if (families.isEmpty)
-          const EmptyState(icon: Icons.workspace_premium_outlined, title: 'Сімей не знайдено', text: 'Спробуйте інший запит або створіть свою.')
+          const EmptyState(icon: LucideIcons.crown, title: 'Сімей не знайдено', text: 'Спробуйте інший запит або створіть свою.')
         else ...[
           for (final family in families) Padding(padding: const EdgeInsets.only(bottom: 10), child: FamilyCard(family: family)),
           LoadMore(more: more && !loading, onMore: _load),
@@ -320,7 +321,7 @@ class FamilyCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                if (family['status'] == 'verified') const Icon(Icons.verified_user_outlined, size: 18, color: green),
+                if (family['status'] == 'verified') const Icon(LucideIcons.shieldCheck, size: 18, color: green),
               ]),
             ),
             if (text(family['description']) != null)
@@ -332,7 +333,7 @@ class FamilyCard extends StatelessWidget {
                 Text(text(server['name']) ?? '', style: body(12, color: muted)),
                 const SizedBox(width: 10),
               ],
-              const Icon(Icons.people_alt_outlined, size: 14, color: muted),
+              const Icon(LucideIcons.usersRound, size: 14, color: muted),
               const SizedBox(width: 4),
               Text('${family['members_count'] ?? 0}', style: body(12, color: muted)),
               const Spacer(),
@@ -421,14 +422,14 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
     return ScreenScroll(
       children: [
         Row(children: [
-          RoundIcon(icon: Icons.arrow_back_rounded, onTap: () => context.canPop() ? context.pop() : context.go('/families')),
+          RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.canPop() ? context.pop() : context.go('/families')),
           const SizedBox(width: 8),
           Text('Нова сім’я', style: display(19)),
         ]),
         const SizedBox(height: 12),
         Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const CardTitle('Сервер і назва', icon: Icons.dns_outlined),
+            const CardTitle('Сервер і назва', icon: LucideIcons.server),
             const SizedBox(height: 12),
             LabeledField(
               label: 'Сервер',
@@ -447,7 +448,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                   child: logo == null
                       ? Container(
                           decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
-                          child: const Icon(Icons.add_photo_alternate_outlined, color: muted),
+                          child: const Icon(LucideIcons.imagePlus, color: muted),
                         )
                       : ClipRRect(borderRadius: BorderRadius.circular(18), child: Image(image: XFileImage(logo!), fit: BoxFit.cover)),
                 ),
@@ -468,7 +469,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
         const SizedBox(height: 12),
         Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const CardTitle('Ваш персонаж', icon: Icons.badge_outlined),
+            const CardTitle('Ваш персонаж', icon: LucideIcons.idCard),
             const SizedBox(height: 6),
             Text('Так вас бачитимуть у сім’ї, звітах і чаті.', style: body(12.5, color: muted)),
             const SizedBox(height: 12),
@@ -480,7 +481,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
         const SizedBox(height: 14),
         Text('Після створення сім’я пройде верифікацію платформою — тоді відкриються набір і чат.', style: body(12.5, color: muted)),
         const SizedBox(height: 10),
-        PrimaryButton(label: 'Створити сім’ю', icon: Icons.check_rounded, busy: busy, onPressed: ready ? _submit : null),
+        PrimaryButton(label: 'Створити сім’ю', icon: LucideIcons.check, busy: busy, onPressed: ready ? _submit : null),
       ],
     );
   }
@@ -489,17 +490,17 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
 // ───────────────────────── Сторінка сім’ї ─────────────────────────
 
 const familySections = [
-  ('overview', 'Огляд', Icons.grid_view_rounded),
-  ('reports', 'Звіти', Icons.description_outlined),
-  ('queue', 'Перевірка', Icons.fact_check_outlined),
-  ('bank', 'Банк', Icons.account_balance_wallet_outlined),
-  ('warehouse', 'Склад', Icons.inventory_2_outlined),
-  ('members', 'Учасники', Icons.people_alt_outlined),
-  ('discipline', 'Дисципліна', Icons.gavel_rounded),
-  ('events', 'Події', Icons.event_outlined),
-  ('rating', 'Рейтинг', Icons.leaderboard_outlined),
-  ('audit', 'Аудит', Icons.receipt_long_outlined),
-  ('settings', 'Налаштування', Icons.settings_outlined),
+  ('overview', 'Огляд', LucideIcons.layoutGrid),
+  ('reports', 'Звіти', LucideIcons.fileText),
+  ('queue', 'Перевірка', LucideIcons.listChecks),
+  ('bank', 'Банк', LucideIcons.wallet),
+  ('warehouse', 'Склад', LucideIcons.package),
+  ('members', 'Учасники', LucideIcons.usersRound),
+  ('discipline', 'Дисципліна', LucideIcons.gavel),
+  ('events', 'Події', LucideIcons.calendarDays),
+  ('rating', 'Рейтинг', LucideIcons.chartNoAxesColumnIncreasing),
+  ('audit', 'Аудит', LucideIcons.receipt),
+  ('settings', 'Налаштування', LucideIcons.settings),
 ];
 
 class FamilyScreen extends StatefulWidget {
@@ -513,6 +514,7 @@ class FamilyScreen extends StatefulWidget {
 
 class _FamilyScreenState extends State<FamilyScreen> {
   late String section = widget.tab ?? 'overview';
+  String? pending;
   Map<String, String> params = {};
   Map<String, dynamic>? data;
   Object? error;
@@ -537,7 +539,10 @@ class _FamilyScreenState extends State<FamilyScreen> {
   Future<void> load({String? to, Map<String, String>? extra}) async {
     final next = to ?? section;
     final query = extra ?? (to == null ? params : <String, String>{});
-    setState(() => loading = true);
+    setState(() {
+      loading = true;
+      if (next != section) pending = next;
+    });
     try {
       final path = familyPath(widget.slug, next);
       final result = await api.get(query.isEmpty ? path : '$path?${Uri(queryParameters: query).query}');
@@ -556,7 +561,12 @@ class _FamilyScreenState extends State<FamilyScreen> {
         toast(context, e);
       }
     } finally {
-      if (mounted) setState(() => loading = false);
+      if (mounted) {
+        setState(() {
+          loading = false;
+          pending = null;
+        });
+      }
     }
   }
 
@@ -580,7 +590,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
     if (page == null) {
       return error == null
           ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
-          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: Icons.workspace_premium_outlined, title: 'Сім’я недоступна', text: '$error', action: 'Спробувати знову', onAction: load)));
+          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.crown, title: 'Сім’я недоступна', text: '$error', action: 'Спробувати знову', onAction: load)));
     }
     if (page['me'] == null) return FamilyPublic(slug: widget.slug, data: page, onChanged: load);
 
@@ -615,7 +625,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
                     child: _SectionTab(
                       label: s.$2,
                       icon: s.$3,
-                      selected: section == s.$1,
+                      selected: (pending ?? section) == s.$1,
                       badge: switch (s.$1) {
                         'queue' => intOf(badges['queue']),
                         'members' => intOf(badges['applications']),
@@ -635,7 +645,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
             const Glass(
               border: gold,
               child: Row(children: [
-                Icon(Icons.hourglass_top_rounded, color: gold),
+                Icon(LucideIcons.hourglass, color: gold),
                 SizedBox(width: 10),
                 Expanded(child: Text('Сім’я очікує верифікації платформою. Чат і набір відкриються після перевірки.')),
               ]),
@@ -649,7 +659,9 @@ class _FamilyScreenState extends State<FamilyScreen> {
             ),
             const SizedBox(height: 10),
           ],
-          ...switch (section) {
+          Swap(
+            id: section,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: switch (section) {
             'overview' => overviewTab(ctx, onReport: _report, go: (s) => load(to: s, extra: const {})),
             'reports' => reportsTab(ctx, onReport: _report),
             'queue' => [QueueTab(ctx: ctx)],
@@ -662,7 +674,8 @@ class _FamilyScreenState extends State<FamilyScreen> {
             'audit' => auditTab(ctx),
             'settings' => [SettingsTab(ctx: ctx)],
             _ => const <Widget>[],
-          },
+          }),
+          ),
         ],
       ),
       Positioned(
@@ -670,7 +683,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
         bottom: 16 + ShellChrome.bottomOf(context),
         child: DecoratedBox(
           decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), boxShadow: [BoxShadow(color: indigo.withValues(alpha: 0.5), blurRadius: 24, offset: const Offset(0, 10), spreadRadius: -8)]),
-          child: PrimaryButton(label: 'Звіт', icon: Icons.note_add_outlined, expand: false, onPressed: _report),
+          child: PrimaryButton(label: 'Звіт', icon: LucideIcons.filePlus, expand: false, onPressed: _report),
         ),
       ),
     ]);
@@ -687,19 +700,34 @@ class _SectionTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const motion = Duration(milliseconds: 260);
     return Material(
-      color: selected ? Colors.white.withValues(alpha: 0.09) : Colors.transparent,
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        onTap: onTap,
-        child: Container(
+        onTap: () {
+          final box = context.findRenderObject();
+          if (box != null) Scrollable.of(context).position.ensureVisible(box, alignment: 0.5, duration: motion, curve: Curves.easeOutCubic);
+          onTap();
+        },
+        child: AnimatedContainer(
+          duration: motion,
+          curve: Curves.easeOutCubic,
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border(bottom: BorderSide(color: selected ? primary : Colors.transparent, width: 2))),
+          decoration: BoxDecoration(
+            color: selected ? Colors.white.withValues(alpha: 0.09) : Colors.white.withValues(alpha: 0),
+            borderRadius: BorderRadius.circular(14),
+            border: Border(bottom: BorderSide(color: selected ? primary : primary.withValues(alpha: 0), width: 2)),
+          ),
           child: Row(children: [
-            Icon(icon, size: 16, color: selected ? const Color(0xFF9AA6FF) : muted),
+            TweenAnimationBuilder<Color?>(
+              tween: ColorTween(end: selected ? const Color(0xFF9AA6FF) : muted),
+              duration: motion,
+              builder: (_, color, _) => Icon(icon, size: 16, color: color),
+            ),
             const SizedBox(width: 6),
-            Text(label, style: body(13, color: selected ? ink : muted, weight: FontWeight.w600)),
+            AnimatedDefaultTextStyle(duration: motion, style: body(13, color: selected ? ink : muted, weight: FontWeight.w600), child: Text(label, maxLines: 1, softWrap: false)),
             if (badge > 0) ...[const SizedBox(width: 6), CountBadge(count: badge)],
           ]),
         ),
@@ -744,7 +772,7 @@ class _FamilyHeader extends StatelessWidget {
                     Text('[${family['tag']}]', style: display(18, color: gold)),
                     Row(children: [
                       Flexible(child: Text(text(family['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: display(19))),
-                      if (family['status'] == 'verified') const Padding(padding: EdgeInsets.only(left: 6), child: Icon(Icons.verified_user_outlined, size: 18, color: green)),
+                      if (family['status'] == 'verified') const Padding(padding: EdgeInsets.only(left: 6), child: Icon(LucideIcons.shieldCheck, size: 18, color: green)),
                     ]),
                     const SizedBox(height: 2),
                     Wrap(spacing: 10, crossAxisAlignment: WrapCrossAlignment.center, children: [
@@ -758,7 +786,7 @@ class _FamilyHeader extends StatelessWidget {
                           ]),
                         ),
                       Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.people_alt_outlined, size: 13, color: muted),
+                        const Icon(LucideIcons.usersRound, size: 13, color: muted),
                         const SizedBox(width: 3),
                         Text('${family['members_count'] ?? 0}', style: body(12, color: muted)),
                       ]),
@@ -786,14 +814,14 @@ class _FamilyHeader extends StatelessWidget {
                       Container(width: 1, height: 32, color: line, margin: const EdgeInsets.symmetric(horizontal: 10)),
                       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text('БАЛАНС', style: body(10, color: muted, weight: FontWeight.w700)),
-                        Text(hryvnia(me['balance']), style: body(15, color: green, weight: FontWeight.w800)),
+                        Text(hryvniaShort(me['balance']), maxLines: 1, softWrap: false, style: body(15, color: green, weight: FontWeight.w800)),
                       ]),
                     ]),
                   ),
                 ),
                 if (onChat != null) ...[
                   const SizedBox(width: 8),
-                  GhostButton(label: 'Чат', icon: Icons.forum_outlined, compact: true, expand: false, onPressed: onChat),
+                  GhostButton(label: 'Чат', icon: LucideIcons.messagesSquare, compact: true, expand: false, onPressed: onChat),
                 ],
               ]),
             ),
@@ -870,7 +898,7 @@ class FamilyPublic extends StatelessWidget {
               const SizedBox(height: 10),
               GhostButton(
                 label: 'Відкликати заявку',
-                icon: Icons.undo_rounded,
+                icon: LucideIcons.undo2,
                 onPressed: () async {
                   if (await attempt(context, () => AppScope.read(context).session.api.delete(familyPath(slug, 'apply')))) await onChanged();
                 },
@@ -879,7 +907,7 @@ class FamilyPublic extends StatelessWidget {
               Text('Сім’я ще не пройшла верифікацію.', style: body(13.5, color: muted))
             else if (family['is_recruiting'] == true) ...[
               if (status == 'declined' || status == 'kicked' || status == 'left') Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(status == 'declined' ? 'Попередню заявку відхилено.' : 'Ви вже були в цій сім’ї.', style: body(12.5, color: muted))),
-              PrimaryButton(label: 'Подати заявку', icon: Icons.how_to_reg_outlined, onPressed: () => _apply(context)),
+              PrimaryButton(label: 'Подати заявку', icon: LucideIcons.userRoundCheck, onPressed: () => _apply(context)),
             ] else
               Text('Набір зараз закрито.', style: body(13.5, color: muted)),
           ]),
@@ -917,7 +945,7 @@ class MemberTile extends StatelessWidget {
               Text(text(member['display']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600).copyWith(fontFamily: 'monospace')),
               const SizedBox(height: 3),
               Wrap(spacing: 6, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                if (member['is_owner'] == true) const Icon(Icons.workspace_premium_rounded, size: 14, color: gold),
+                if (member['is_owner'] == true) const Icon(LucideIcons.crown, size: 14, color: gold),
                 RankPill(rank: member['rank'], title: text(member['rank_title'])),
                 if (text(member['duties']) != null) Text(text(member['duties'])!, style: body(11.5, color: muted)),
                 if (subtitle != null) Text(subtitle!, style: body(11.5, color: muted)),
@@ -943,15 +971,15 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
   final activity = maps(data['activity']);
   return [
     Row(children: [
-      Expanded(child: MetricTile(caps: true, label: 'Заробив за тиждень', value: hryvnia(stats['week_earned']), icon: Icons.trending_up_rounded, color: green)),
+      Expanded(child: MetricTile(caps: true, label: 'Заробив за тиждень', value: hryvniaShort(stats['week_earned']), icon: LucideIcons.trendingUp, color: green)),
       const SizedBox(width: 8),
-      Expanded(child: MetricTile(caps: true, label: 'Виплати сім’ї (тиждень)', value: hryvnia(stats['week_total']), icon: Icons.payments_outlined)),
+      Expanded(child: MetricTile(caps: true, label: 'Виплати сім’ї (тиждень)', value: hryvniaShort(stats['week_total']), icon: LucideIcons.banknote)),
     ]),
     const SizedBox(height: 8),
     Row(children: [
-      Expanded(child: MetricTile(caps: true, label: 'Мої звіти на перевірці', value: '${stats['pending_reports'] ?? 0}', icon: Icons.schedule_rounded, color: gold)),
+      Expanded(child: MetricTile(caps: true, label: 'Мої звіти на перевірці', value: '${stats['pending_reports'] ?? 0}', icon: LucideIcons.clock, color: gold)),
       const SizedBox(width: 8),
-      Expanded(child: MetricTile(caps: true, label: 'Попередження', value: '${stats['warns'] ?? 0}/${stats['warn_limit'] ?? 3}', icon: Icons.warning_amber_rounded, color: intOf(stats['warns']) > 0 ? dangerSoft : ink)),
+      Expanded(child: MetricTile(caps: true, label: 'Попередження', value: '${stats['warns'] ?? 0}/${stats['warn_limit'] ?? 3}', icon: LucideIcons.triangleAlert, color: intOf(stats['warns']) > 0 ? dangerSoft : ink)),
     ]),
     const SizedBox(height: 12),
     Glass(
@@ -961,7 +989,7 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
           width: 52,
           height: 52,
           decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFEF4444)]), borderRadius: BorderRadius.circular(16)),
-          child: const Icon(Icons.note_add_outlined, color: Colors.white),
+          child: const Icon(LucideIcons.filePlus, color: Colors.white),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -976,10 +1004,10 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
     const SizedBox(height: 12),
     _OverviewCard(
       title: 'Лідери тижня',
-      icon: Icons.leaderboard_outlined,
+      icon: LucideIcons.chartNoAxesColumnIncreasing,
       action: 'Увесь рейтинг',
       onAction: () => go('rating'),
-      empty: (Icons.bar_chart_rounded, 'Схвалених звітів цього тижня ще немає'),
+      empty: (LucideIcons.chartColumn, 'Схвалених звітів цього тижня ще немає'),
       children: [
         for (final l in leaders)
           Padding(
@@ -995,25 +1023,25 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
     const SizedBox(height: 12),
     _OverviewCard(
       title: 'Мої операції',
-      icon: Icons.account_balance_wallet_outlined,
+      icon: LucideIcons.wallet,
       action: 'Банк',
       onAction: () => go('bank'),
-      empty: (Icons.wallet_outlined, 'Операцій ще не було'),
+      empty: (LucideIcons.wallet, 'Операцій ще не було'),
       children: [for (final t in transactions) TransactionRow(tx: t)],
     ),
     const SizedBox(height: 12),
     _OverviewCard(
       title: 'Найближчі події',
-      icon: Icons.event_outlined,
+      icon: LucideIcons.calendarDays,
       action: 'Усі',
       onAction: () => go('events'),
-      empty: (Icons.calendar_month_outlined, 'Запланованих подій немає'),
+      empty: (LucideIcons.calendarDays, 'Запланованих подій немає'),
       children: [
         for (final e in events)
           ListTile(
             contentPadding: EdgeInsets.zero,
             dense: true,
-            leading: const Icon(Icons.event_rounded, color: Color(0xFF9AA6FF)),
+            leading: const Icon(LucideIcons.calendarDays, color: Color(0xFF9AA6FF)),
             title: Text(text(e['title']) ?? '', style: body(14, weight: FontWeight.w600)),
             subtitle: Text('${e['type_label']} · ${shortStamp(e['starts_at'])} ${clock(e['starts_at'])}', style: body(12, color: muted)),
           ),
@@ -1023,10 +1051,10 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
       const SizedBox(height: 12),
       _OverviewCard(
         title: 'Закінчується на складі',
-        icon: Icons.inventory_2_outlined,
+        icon: LucideIcons.package,
         action: 'Склад',
         onAction: () => go('warehouse'),
-        empty: (Icons.inventory_2_outlined, ''),
+        empty: (LucideIcons.package, ''),
         children: [
           for (final i in lowStock)
             Padding(
@@ -1043,10 +1071,10 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
       const SizedBox(height: 12),
       _OverviewCard(
         title: 'Остання активність',
-        icon: Icons.receipt_long_outlined,
+        icon: LucideIcons.receipt,
         action: 'Журнал',
         onAction: () => go('audit'),
-        empty: (Icons.receipt_long_outlined, ''),
+        empty: (LucideIcons.receipt, ''),
         children: [for (final a in activity) AuditRow(entry: a, compact: true)],
       ),
     ],
@@ -1086,11 +1114,11 @@ List<Widget> reportsTab(FamilyContext ctx, {required VoidCallback onReport}) {
   final listing = Listing.parse(ctx.data['reports']);
   final status = text(ctx.data['status']) ?? '';
   return [
-    PrimaryButton(label: 'Подати звіт', icon: Icons.note_add_outlined, onPressed: onReport),
+    PrimaryButton(label: 'Подати звіт', icon: LucideIcons.filePlus, onPressed: onReport),
     const SizedBox(height: 12),
     Glass(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const CardTitle('Мої звіти', icon: Icons.description_outlined, caps: false),
+        const CardTitle('Мої звіти', icon: LucideIcons.fileText, caps: false),
         const SizedBox(height: 10),
         Segmented(
           options: const [SegmentOption('', 'Усі'), SegmentOption('pending', 'Очікують'), SegmentOption('approved', 'Схвалені'), SegmentOption('rejected', 'Відхилені')],
@@ -1099,15 +1127,20 @@ List<Widget> reportsTab(FamilyContext ctx, {required VoidCallback onReport}) {
           onSelect: (value) => ctx.reload(extra: {if (value.isNotEmpty) 'status': value}),
         ),
         const SizedBox(height: 10),
-        if (listing.items.isEmpty)
-          const QuietEmpty(icon: Icons.description_outlined, text: 'Звітів ще немає — подайте перший')
-        else
-          for (final r in listing.items) ReportCard(report: r, slug: ctx.slug),
-        if (listing.more)
-          TextButton(
-            onPressed: () => ctx.reload(extra: {if (status.isNotEmpty) 'status': status, 'page': '${listing.current + 1}'}),
-            child: Text('Наступна сторінка', style: body(13, color: primary)),
-          ),
+        Swap(
+          id: status,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            if (listing.items.isEmpty)
+              const QuietEmpty(icon: LucideIcons.fileText, text: 'Звітів ще немає — подайте перший')
+            else
+              for (final r in listing.items) ReportCard(report: r, slug: ctx.slug),
+            if (listing.more)
+              TextButton(
+                onPressed: () => ctx.reload(extra: {if (status.isNotEmpty) 'status': status, 'page': '${listing.current + 1}'}),
+                child: Text('Наступна сторінка', style: body(13, color: primary)),
+              ),
+          ]),
+        ),
       ]),
     ),
   ];
@@ -1157,7 +1190,7 @@ class ReportCard extends StatelessWidget {
           if (intOf(report['reward']) > 0) Text(hryvnia(report['reward']), style: body(12.5, color: green, weight: FontWeight.w700)),
           if (intOf(report['points']) > 0) Text('${report['points']} балів', style: body(12, color: const Color(0xFF9AA6FF))),
         ]),
-        if (flags['similar_reports'] != null) Padding(padding: const EdgeInsets.only(top: 6), child: Pill(label: 'Скріншот схожий на попередні', icon: Icons.warning_amber_rounded, color: gold)),
+        if (flags['similar_reports'] != null) Padding(padding: const EdgeInsets.only(top: 6), child: Pill(label: 'Скріншот схожий на попередні', icon: LucideIcons.triangleAlert, color: gold)),
         if (paths.isNotEmpty) ...[
           const SizedBox(height: 8),
           SizedBox(
@@ -1184,12 +1217,14 @@ class ReportCard extends StatelessWidget {
 // ───────────────────────── Форма звіту ─────────────────────────
 
 Future<bool?> showReportSheet(BuildContext context, String slug) {
-  return showGcSheet<bool>(
-    context,
-    title: 'Подати звіт',
-    height: MediaQuery.sizeOf(context).height * 0.9,
-    builder: (sheet) => _ReportForm(slug: slug, onDone: () => Navigator.pop(sheet, true)),
-  );
+  return AppScope.read(context).player.coverWhile(
+        () => showGcSheet<bool>(
+          context,
+          title: 'Подати звіт',
+          height: MediaQuery.sizeOf(context).height * 0.9,
+          builder: (sheet) => _ReportForm(slug: slug, onDone: () => Navigator.pop(sheet, true)),
+        ),
+      );
 }
 
 class _ReportForm extends StatefulWidget {
@@ -1312,10 +1347,10 @@ class _ReportFormState extends State<_ReportForm> {
                 selected: type == e.key,
                 label: '${e.value}',
                 icon: switch (e.key) {
-                  'bizwar' => Icons.sports_mma_rounded,
-                  'contract' => Icons.assignment_turned_in_outlined,
-                  'investment' => Icons.savings_outlined,
-                  _ => Icons.more_horiz_rounded,
+                  'bizwar' => LucideIcons.swords,
+                  'contract' => LucideIcons.clipboardCheck,
+                  'investment' => LucideIcons.piggyBank,
+                  _ => LucideIcons.ellipsis,
                 },
                 onTap: () => setState(() => type = e.key),
               ),
@@ -1323,7 +1358,7 @@ class _ReportFormState extends State<_ReportForm> {
         ),
         const SizedBox(height: 12),
         Segmented(
-          options: const [SegmentOption('self', 'За себе', icon: Icons.person_outline_rounded), SegmentOption('friend', 'За друга', icon: Icons.people_alt_outlined)],
+          options: const [SegmentOption('self', 'За себе', icon: LucideIcons.userRound), SegmentOption('friend', 'За друга', icon: LucideIcons.usersRound)],
           selected: forWhom,
           onSelect: (value) => setState(() => forWhom = value),
         ),
@@ -1337,7 +1372,7 @@ class _ReportFormState extends State<_ReportForm> {
           hint: 'Звіт можна подати протягом ${config['deadline_hours']} год',
           child: GhostButton(
             label: '${date.day} ${monthsGenitive[date.month - 1]} ${date.year}',
-            icon: Icons.calendar_today_outlined,
+            icon: LucideIcons.calendar,
             onPressed: () async {
               final picked = await showDatePicker(context: context, initialDate: date, firstDate: minDate, lastDate: today);
               if (picked != null) setState(() => date = picked);
@@ -1347,9 +1382,9 @@ class _ReportFormState extends State<_ReportForm> {
         const SizedBox(height: 12),
         if (type == 'bizwar') ...[
           Row(children: [
-            Expanded(child: _Stepper(label: 'Перемоги', hint: '${rates['bizwar_win']} ₴', value: wins, onChanged: (v) => setState(() => wins = v))),
+            Expanded(child: _Stepper(label: 'Перемоги', hint: hryvnia(intOf(rates['bizwar_win']) * 100), value: wins, onChanged: (v) => setState(() => wins = v))),
             const SizedBox(width: 10),
-            Expanded(child: _Stepper(label: 'Поразки', hint: '${rates['bizwar_loss']} ₴', value: losses, onChanged: (v) => setState(() => losses = v))),
+            Expanded(child: _Stepper(label: 'Поразки', hint: hryvnia(intOf(rates['bizwar_loss']) * 100), value: losses, onChanged: (v) => setState(() => losses = v))),
           ]),
           const SizedBox(height: 10),
           Text('Години стріл', style: body(13, color: muted)),
@@ -1365,7 +1400,7 @@ class _ReportFormState extends State<_ReportForm> {
             onSelect: (value) => setState(() => tier = value),
           ),
           const SizedBox(height: 6),
-          Text('Ставка: ${rates['contract_$tier']} ₴ за контракт · ліміт $limit на день кожного рівня', style: body(12, color: muted)),
+          Text('Ставка: ${hryvnia(intOf(rates['contract_$tier']) * 100)} за контракт · ліміт $limit на день кожного рівня', style: body(12, color: muted)),
           const SizedBox(height: 10),
           _Stepper(label: 'Кількість', value: count, min: 1, max: 10, onChanged: (v) => setState(() => count = v)),
         ],
@@ -1395,7 +1430,7 @@ class _ReportFormState extends State<_ReportForm> {
                     top: 2,
                     child: GestureDetector(
                       onTap: () => setState(() => proofs.removeAt(i)),
-                      child: Container(decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle), child: const Icon(Icons.close_rounded, size: 16)),
+                      child: Container(decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle), child: const Icon(LucideIcons.x, size: 16)),
                     ),
                   ),
                 ]),
@@ -1410,7 +1445,7 @@ class _ReportFormState extends State<_ReportForm> {
                   width: 72,
                   height: 72,
                   decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: line)),
-                  child: const Icon(Icons.add_photo_alternate_outlined, color: muted),
+                  child: const Icon(LucideIcons.imagePlus, color: muted),
                 ),
               ),
           ]),
@@ -1418,7 +1453,7 @@ class _ReportFormState extends State<_ReportForm> {
         const SizedBox(height: 16),
         PrimaryButton(
           label: 'Надіслати на перевірку',
-          icon: Icons.send_rounded,
+          icon: LucideIcons.send,
           busy: busy,
           onPressed: (forWhom == 'friend' && beneficiary == null) || (type == 'bizwar' && wins + losses == 0) ? null : _submit,
         ),
@@ -1463,19 +1498,23 @@ class _Stepper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Widget step(IconData icon, VoidCallback? onPressed) => SizedBox.square(
+          dimension: 34,
+          child: IconButton(padding: EdgeInsets.zero, onPressed: onPressed, icon: Icon(icon, size: 18), style: IconButton.styleFrom(backgroundColor: Colors.white.withValues(alpha: 0.05))),
+        );
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 6, 8),
+      padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
       decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
-      child: Row(children: [
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(label, style: body(12.5, color: muted)),
-            Text('$value', style: display(18)),
-            if (hint != null) Text(hint!, style: body(11, color: faint)),
-          ]),
-        ),
-        IconButton(visualDensity: VisualDensity.compact, onPressed: value > min ? () => onChanged(value - 1) : null, icon: const Icon(Icons.remove_rounded)),
-        IconButton(visualDensity: VisualDensity.compact, onPressed: value < max ? () => onChanged(value + 1) : null, icon: const Icon(Icons.add_rounded)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, maxLines: 1, softWrap: false, overflow: TextOverflow.fade, style: body(12.5, color: muted)),
+        const SizedBox(height: 4),
+        Row(children: [
+          Expanded(child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text('$value', style: display(20)))),
+          step(LucideIcons.minus, value > min ? () => onChanged(value - 1) : null),
+          const SizedBox(width: 6),
+          step(LucideIcons.plus, value < max ? () => onChanged(value + 1) : null),
+        ]),
+        if (hint != null) ...[const SizedBox(height: 2), Text(hint!, maxLines: 1, softWrap: false, overflow: TextOverflow.fade, style: body(11, color: faint))],
       ]),
     );
   }

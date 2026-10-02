@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
@@ -66,10 +67,10 @@ class _FriendActionState extends State<FriendAction> {
     final compactSize = widget.compact;
     if (relation == 'self') return const SizedBox.shrink();
     return switch (relation) {
-      'friends' => GhostButton(label: 'У друзях', icon: Icons.how_to_reg_outlined, compact: compactSize, expand: widget.expand, onPressed: busy ? null : _friendMenu),
-      'outgoing' => GhostButton(label: 'Заявку надіслано', icon: Icons.schedule_rounded, compact: compactSize, expand: widget.expand, color: muted, onPressed: busy ? null : () => _run((api) => api.delete('/api/v1/friends/$user'))),
-      'incoming' => PrimaryButton(label: 'Прийняти', icon: Icons.person_add_alt_1_rounded, compact: compactSize, expand: widget.expand, busy: busy, onPressed: () => _run((api) => api.post('/api/v1/friends/$user/accept'))),
-      _ => PrimaryButton(label: 'Додати', icon: Icons.person_add_alt_1_rounded, compact: compactSize, expand: widget.expand, busy: busy, onPressed: () => _run((api) => api.post('/api/v1/friends/$user'))),
+      'friends' => GhostButton(label: 'У друзях', icon: LucideIcons.userRoundCheck, compact: compactSize, expand: widget.expand, onPressed: busy ? null : _friendMenu),
+      'outgoing' => GhostButton(label: 'Заявку надіслано', icon: LucideIcons.clock, compact: compactSize, expand: widget.expand, color: muted, onPressed: busy ? null : () => _run((api) => api.delete('/api/v1/friends/$user'))),
+      'incoming' => PrimaryButton(label: 'Прийняти', icon: LucideIcons.userRoundPlus, compact: compactSize, expand: widget.expand, busy: busy, onPressed: () => _run((api) => api.post('/api/v1/friends/$user/accept'))),
+      _ => PrimaryButton(label: 'Додати', icon: LucideIcons.userRoundPlus, compact: compactSize, expand: widget.expand, busy: busy, onPressed: () => _run((api) => api.post('/api/v1/friends/$user'))),
     };
   }
 }
@@ -203,10 +204,10 @@ class _FriendsScreenState extends State<FriendsScreen> {
   @override
   Widget build(BuildContext context) {
     final empty = switch (tab) {
-      'online' => ('Зараз ніхто не в мережі', Icons.wifi_tethering_off_rounded),
-      'requests' => ('Нових заявок немає', Icons.inbox_outlined),
-      'outgoing' => ('Ви нікому не надсилали заявок', Icons.outbox_outlined),
-      _ => (query.text.isEmpty ? 'У вас поки немає друзів' : 'Нікого не знайдено', Icons.people_outline_rounded),
+      'online' => ('Зараз ніхто не в мережі', LucideIcons.radioOff),
+      'requests' => ('Нових заявок немає', LucideIcons.inbox),
+      'outgoing' => ('Ви нікому не надсилали заявок', LucideIcons.send),
+      _ => (query.text.isEmpty ? 'У вас поки немає друзів' : 'Нікого не знайдено', LucideIcons.usersRound),
     };
     return ScreenScroll(
       onRefresh: () => _load(reset: true),
@@ -218,10 +219,10 @@ class _FriendsScreenState extends State<FriendsScreen> {
               Segmented(
                 scroll: true,
                 options: [
-                  SegmentOption('all', 'Усі друзі', icon: Icons.people_alt_outlined, count: counts['all']),
-                  SegmentOption('online', 'Онлайн', icon: Icons.wifi_tethering_rounded, count: counts['online']),
-                  SegmentOption('requests', 'Заявки', icon: Icons.inbox_outlined, count: intOf(counts['requests']) > 0 ? counts['requests'] : null),
-                  SegmentOption('outgoing', 'Надіслані', icon: Icons.outbox_outlined, count: intOf(counts['outgoing']) > 0 ? counts['outgoing'] : null),
+                  SegmentOption('all', 'Усі друзі', icon: LucideIcons.usersRound, count: counts['all']),
+                  SegmentOption('online', 'Онлайн', icon: LucideIcons.radio, count: counts['online']),
+                  SegmentOption('requests', 'Заявки', icon: LucideIcons.inbox, count: intOf(counts['requests']) > 0 ? counts['requests'] : null),
+                  SegmentOption('outgoing', 'Надіслані', icon: LucideIcons.send, count: intOf(counts['outgoing']) > 0 ? counts['outgoing'] : null),
                 ],
                 selected: tab,
                 onSelect: (value) {
@@ -233,7 +234,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
               GcField(
                 controller: query,
                 label: 'Пошук серед друзів',
-                icon: Icons.search_rounded,
+                icon: LucideIcons.search,
                 dense: true,
                 onChanged: (_) {
                   debounce?.cancel();
@@ -252,7 +253,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
             title: empty.$1,
             text: tab == 'all' ? 'Знайдіть знайомих гравців через пошук людей.' : null,
             action: tab == 'all' ? 'Знайти людей' : null,
-            actionIcon: Icons.person_search_outlined,
+            actionIcon: LucideIcons.userRoundSearch,
             onAction: () => context.push('/people'),
           )
         else ...[
@@ -272,7 +273,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CardTitle('Можливо, ви знайомі', icon: Icons.auto_awesome_outlined, trailing: 'Усі', onTrailing: () => context.push('/people')),
+              CardTitle('Можливо, ви знайомі', icon: LucideIcons.sparkles, trailing: 'Усі', onTrailing: () => context.push('/people')),
               const SizedBox(height: 6),
               if (suggestions.isEmpty)
                 Padding(padding: const EdgeInsets.only(bottom: 6), child: Text('Рекомендацій поки немає.', style: body(13, color: muted)))
@@ -373,9 +374,9 @@ class _PeopleScreenState extends State<PeopleScreen> {
           after: 'людей',
           text: loading && users.isEmpty ? 'Шукаємо…' : '$total ${plural(total, 'людина', 'людини', 'людей')} за вашим запитом',
           children: [
-            GcField(controller: query, label: 'Ім’я, прізвище або нікнейм', icon: Icons.search_rounded, dense: true, onChanged: (_) => _later()),
+            GcField(controller: query, label: 'Ім’я, прізвище або нікнейм', icon: LucideIcons.search, dense: true, onChanged: (_) => _later()),
             const SizedBox(height: 10),
-            GcField(controller: city, label: 'Місто', icon: Icons.place_outlined, dense: true, onChanged: (_) => _later()),
+            GcField(controller: city, label: 'Місто', icon: LucideIcons.mapPin, dense: true, onChanged: (_) => _later()),
             const SizedBox(height: 10),
             Segmented(
               options: const [SegmentOption('', 'Усі'), SegmentOption('male', 'Чоловіки'), SegmentOption('female', 'Жінки')],
@@ -393,7 +394,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
                 value: online,
                 dense: true,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                secondary: const Icon(Icons.wifi_tethering_rounded, color: muted, size: 20),
+                secondary: const Icon(LucideIcons.radio, color: muted, size: 20),
                 title: Text('Зараз онлайн', style: body(14, color: soft)),
                 onChanged: (value) {
                   setState(() => online = value);
@@ -407,7 +408,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
         if (loading && users.isEmpty)
           const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)))
         else if (users.isEmpty)
-          const EmptyState(icon: Icons.person_search_outlined, title: 'Нікого не знайдено', text: 'Спробуйте змінити запит або фільтри.')
+          const EmptyState(icon: LucideIcons.userRoundSearch, title: 'Нікого не знайдено', text: 'Спробуйте змінити запит або фільтри.')
         else ...[
           TwoColumns(children: [for (final user in users) PersonCard(key: ValueKey('person-${user['id']}'), user: user)]),
           LoadMore(more: more && !loading, onMore: _load),
@@ -500,8 +501,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (sheet) => Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          SheetAction(icon: Icons.photo_camera_outlined, label: 'Завантажити нове фото', onTap: () => Navigator.pop(sheet, 'upload')),
-          if (hasAvatar) SheetAction(icon: Icons.delete_outline_rounded, label: 'Видалити фото', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
+          SheetAction(icon: LucideIcons.camera, label: 'Завантажити нове фото', onTap: () => Navigator.pop(sheet, 'upload')),
+          if (hasAvatar) SheetAction(icon: LucideIcons.trash2, label: 'Видалити фото', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
         ]),
       ),
     );
@@ -532,7 +533,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(20),
-          child: EmptyState(icon: Icons.person_off_outlined, title: 'Профіль недоступний', text: '$error', action: 'Спробувати знову', onAction: _load),
+          child: EmptyState(icon: LucideIcons.userRoundX, title: 'Профіль недоступний', text: '$error', action: 'Спробувати знову', onAction: _load),
         ),
       );
     }
@@ -589,7 +590,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                const Icon(Icons.photo_camera_outlined, size: 16),
+                                const Icon(LucideIcons.camera, size: 16),
                                 const SizedBox(width: 6),
                                 Text('Змінити обкладинку', style: body(12.5, weight: FontWeight.w600)),
                               ]),
@@ -620,7 +621,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     Row(children: [
                       Flexible(child: Text(fullName, style: display(24))),
-                      if (profile['is_verified'] == true) ...[const SizedBox(width: 6), const Icon(Icons.verified_rounded, color: primary, size: 20)],
+                      if (profile['is_verified'] == true) ...[const SizedBox(width: 6), const Icon(LucideIcons.badgeCheck, color: primary, size: 20)],
                     ]),
                     if (text(profile['status']) != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(text(profile['status'])!, style: body(14, color: soft))),
                     const SizedBox(height: 8),
@@ -629,24 +630,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       runSpacing: 6,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        if (profile['role'] == 'admin') const Pill(label: 'Адміністратор', icon: Icons.shield_outlined, color: gold),
-                        if (profile['role'] == 'moderator') const Pill(label: 'Модератор', icon: Icons.shield_outlined, color: cyan),
+                        if (profile['role'] == 'admin') const Pill(label: 'Адміністратор', icon: LucideIcons.shield, color: gold),
+                        if (profile['role'] == 'moderator') const Pill(label: 'Модератор', icon: LucideIcons.shield, color: cyan),
                         _Presence(profile: profile),
                       ],
                     ),
                     const SizedBox(height: 16),
                     if (self)
-                      GhostButton(label: 'Редагувати профіль', icon: Icons.edit_outlined, expand: false, compact: true, onPressed: () => context.push('/settings'))
+                      GhostButton(label: 'Редагувати профіль', icon: LucideIcons.pencil, expand: false, compact: true, onPressed: () => context.push('/settings'))
                     else
                       Wrap(spacing: 10, runSpacing: 10, children: [
                         FriendAction(username: name, relation: relation, compact: true, onChanged: (_) => _load()),
-                        if (data['canMessage'] == true) GhostButton(label: 'Написати', icon: Icons.chat_bubble_outline_rounded, compact: true, expand: false, onPressed: _message),
+                        if (data['canMessage'] == true) GhostButton(label: 'Написати', icon: LucideIcons.messageCircle, compact: true, expand: false, onPressed: _message),
                       ]),
                     const SizedBox(height: 16),
                     Divider(color: line, height: 1),
                     const SizedBox(height: 14),
                     if (open) ..._facts(profile),
-                    _Fact(icon: Icons.calendar_today_outlined, label: 'В GameCon з ${fullDate(profile['joined_at'])}'),
+                    _Fact(icon: LucideIcons.calendar, label: 'В GameCon з ${fullDate(profile['joined_at'])}'),
                     const SizedBox(height: 16),
                     Row(
                       children: [
@@ -664,7 +665,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         if (!open) ...[
           const SizedBox(height: 12),
-          const EmptyState(icon: Icons.lock_outline_rounded, title: 'Закритий профіль', text: 'Додайте гравця в друзі, щоб бачити його записи, фото й музику.'),
+          const EmptyState(icon: LucideIcons.lock, title: 'Закритий профіль', text: 'Додайте гравця в друзі, щоб бачити його записи, фото й музику.'),
         ],
         if (open && audio != null) ...[
           const SizedBox(height: 12),
@@ -676,7 +677,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(gradient: buttonGradient, borderRadius: BorderRadius.circular(14)),
-                child: const Icon(Icons.music_note_rounded, color: Colors.white),
+                child: const Icon(LucideIcons.music, color: Colors.white),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -694,7 +695,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Glass(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              CardTitle('Фотографії', icon: Icons.photo_library_outlined, trailing: '${stats['photos']}', onTrailing: () => context.push('/photos?user=$name')),
+              CardTitle('Фотографії', icon: LucideIcons.images, trailing: '${stats['photos']}', onTrailing: () => context.push('/photos?user=$name')),
               const SizedBox(height: 12),
               GridView.count(
                 crossAxisCount: 3,
@@ -723,7 +724,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               CardTitle(
                 'Друзі',
-                icon: Icons.people_alt_outlined,
+                icon: LucideIcons.usersRound,
                 trailing: !self && intOf(stats['mutual']) > 0 ? '${stats['mutual']} ${plural(intOf(stats['mutual']), 'спільний', 'спільні', 'спільних')}' : '${stats['friends']}',
                 onTrailing: self ? () => context.push('/friends') : null,
               ),
@@ -756,7 +757,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(height: 12),
         if (open && pager.posts.isEmpty)
           EmptyState(
-            icon: Icons.edit_outlined,
+            icon: LucideIcons.pencil,
             title: 'На стіні поки порожньо',
             text: self ? 'Розкажіть світу щось цікаве — перший запис завжди найкращий.' : '${text(profile['first_name']) ?? 'Гравець'} ще нічого не публікував(-ла).',
           )
@@ -773,9 +774,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final birthday = text(profile['birthday']);
     return [
       if (text(profile['about']) != null) Padding(padding: const EdgeInsets.only(bottom: 12), child: Text(text(profile['about'])!, style: body(14, color: soft).copyWith(height: 1.5))),
-      if (text(profile['city']) != null) _Fact(icon: Icons.place_outlined, label: text(profile['city'])!),
-      if (birthday != null) _Fact(icon: Icons.cake_outlined, label: _birthday(birthday)),
-      if (website != null) _Fact(icon: Icons.link_rounded, label: website.replaceFirst(RegExp(r'^https?://'), ''), onTap: () => launchUrl(Uri.parse(website), mode: LaunchMode.externalApplication)),
+      if (text(profile['city']) != null) _Fact(icon: LucideIcons.mapPin, label: text(profile['city'])!),
+      if (birthday != null) _Fact(icon: LucideIcons.cake, label: _birthday(birthday)),
+      if (website != null) _Fact(icon: LucideIcons.link, label: website.replaceFirst(RegExp(r'^https?://'), ''), onTap: () => launchUrl(Uri.parse(website), mode: LaunchMode.externalApplication)),
     ];
   }
 
@@ -798,7 +799,7 @@ class _Presence extends StatelessWidget {
     final male = profile['gender'] == 'male';
     final was = female ? 'була' : (male ? 'був' : 'був(-ла)');
     return Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(Icons.circle, size: 8, color: online ? green : faint),
+      Container(width: 8, height: 8, decoration: BoxDecoration(color: online ? green : faint, shape: BoxShape.circle)),
       const SizedBox(width: 6),
       Text(online ? 'онлайн' : (seen == null ? 'не в мережі' : '$was в мережі ${ago(seen)}'), style: body(12.5, color: muted)),
     ]);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
@@ -132,7 +133,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 children: [
                   if (ticket == null) ...[
                     Segmented(
-                      options: const [SegmentOption('login', 'Вхід', icon: Icons.login_rounded), SegmentOption('register', 'Реєстрація', icon: Icons.person_add_alt_1_outlined)],
+                      options: const [SegmentOption('login', 'Вхід', icon: LucideIcons.logIn), SegmentOption('register', 'Реєстрація', icon: LucideIcons.userRoundPlus)],
                       selected: register ? 'register' : 'login',
                       onSelect: (value) => setState(() {
                         register = value == 'register';
@@ -157,22 +158,22 @@ class _AuthScreenState extends State<AuthScreen> {
                     const SizedBox(height: 12),
                   ],
                   if (ticket != null) ...[
-                    GcField(controller: code, label: 'Код', icon: Icons.pin_outlined, keyboard: TextInputType.number, autofocus: true, onSubmit: _submit),
+                    GcField(controller: code, label: 'Код', icon: LucideIcons.rectangleEllipsis, keyboard: TextInputType.number, autofocus: true, onSubmit: _submit),
                     const SizedBox(height: 14),
                     PrimaryButton(label: 'Підтвердити', busy: busy, onPressed: _submit),
                     TextButton(onPressed: () => setState(() => ticket = null), child: Text('Назад', style: body(13, color: muted))),
                   ] else ...[
                     if (register) ...[
                       Row(children: [
-                        Expanded(child: GcField(controller: first, label: 'Ім’я', icon: Icons.person_outline_rounded)),
+                        Expanded(child: GcField(controller: first, label: 'Ім’я', icon: LucideIcons.userRound)),
                         const SizedBox(width: 10),
                         Expanded(child: GcField(controller: last, label: 'Прізвище')),
                       ]),
                       const SizedBox(height: 10),
                     ],
-                    GcField(controller: email, label: 'Пошта', icon: Icons.alternate_email_rounded, keyboard: TextInputType.emailAddress),
+                    GcField(controller: email, label: 'Пошта', icon: LucideIcons.atSign, keyboard: TextInputType.emailAddress),
                     const SizedBox(height: 10),
-                    GcField(controller: password, label: 'Пароль', icon: Icons.lock_outline_rounded, obscure: true, onSubmit: _submit),
+                    GcField(controller: password, label: 'Пароль', icon: LucideIcons.lock, obscure: true, onSubmit: _submit),
                     const SizedBox(height: 16),
                     PrimaryButton(label: register ? 'Створити акаунт' : 'Увійти', busy: busy, onPressed: _submit),
                     const SizedBox(height: 18),
@@ -184,7 +185,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     const SizedBox(height: 14),
                     GhostButton(label: 'Продовжити з Google', icon: Icons.g_mobiledata_rounded, onPressed: busy ? null : _google),
                     const SizedBox(height: 8),
-                    GhostButton(label: 'Продовжити з Discord', icon: Icons.forum_outlined, iconColor: const Color(0xFF8B9AFF), onPressed: busy ? null : _discord),
+                    GhostButton(label: 'Продовжити з Discord', icon: LucideIcons.messagesSquare, iconColor: const Color(0xFF8B9AFF), onPressed: busy ? null : _discord),
                   ],
                 ],
               ),

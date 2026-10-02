@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
@@ -15,9 +16,9 @@ import 'theme.dart';
 import 'widgets.dart';
 
 const _visibility = {
-  'public': (Icons.public_rounded, 'Усім'),
-  'friends': (Icons.people_alt_outlined, 'Друзям'),
-  'private': (Icons.lock_outline_rounded, 'Тільки мені'),
+  'public': (LucideIcons.globe, 'Усім'),
+  'friends': (LucideIcons.usersRound, 'Друзям'),
+  'private': (LucideIcons.lock, 'Тільки мені'),
 };
 
 // ───────────────────────── Картка запису ─────────────────────────
@@ -83,14 +84,14 @@ class _PostCardState extends State<PostCard> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _SheetAction(icon: Icons.link_rounded, label: 'Копіювати посилання', onTap: () => Navigator.pop(sheet, 'link')),
+            _SheetAction(icon: LucideIcons.link, label: 'Копіювати посилання', onTap: () => Navigator.pop(sheet, 'link')),
             if (can['pin'] == true)
               _SheetAction(
-                icon: post['is_pinned'] == true ? Icons.push_pin_outlined : Icons.push_pin_rounded,
+                icon: post['is_pinned'] == true ? LucideIcons.pinOff : LucideIcons.pin,
                 label: post['is_pinned'] == true ? 'Відкріпити' : 'Закріпити',
                 onTap: () => Navigator.pop(sheet, 'pin'),
               ),
-            if (can['delete'] == true) _SheetAction(icon: Icons.delete_outline_rounded, label: 'Видалити запис', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
+            if (can['delete'] == true) _SheetAction(icon: LucideIcons.trash2, label: 'Видалити запис', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
           ],
         ),
       ),
@@ -165,9 +166,9 @@ class _PostCardState extends State<PostCard> {
                         spacing: 4,
                         children: [
                           GestureDetector(onTap: openWho, child: Text(name, style: body(15, weight: FontWeight.w700))),
-                          if (who['is_verified'] == true) const Icon(Icons.verified_rounded, size: 15, color: primary),
+                          if (who['is_verified'] == true) const Icon(LucideIcons.badgeCheck, size: 15, color: primary),
                           if (wall != null) ...[
-                            const Icon(Icons.chevron_right_rounded, size: 16, color: faint),
+                            const Icon(LucideIcons.chevronRight, size: 16, color: faint),
                             GestureDetector(
                               onTap: () => context.push(appPathFor(text(wall['href']))),
                               child: Text(text(wall['name']) ?? '', style: body(15, color: soft, weight: FontWeight.w600)),
@@ -186,14 +187,14 @@ class _PostCardState extends State<PostCard> {
                           Icon(vis.$1, size: 13, color: muted),
                           if (post['is_pinned'] == true) ...[
                             const SizedBox(width: 8),
-                            const Pill(label: 'Закріплено', icon: Icons.push_pin_rounded, color: Color(0xFF9FB6FF)),
+                            const Pill(label: 'Закріплено', icon: LucideIcons.pin, color: Color(0xFF9FB6FF)),
                           ],
                         ],
                       ),
                     ],
                   ),
                 ),
-                IconButton(onPressed: _menu, icon: const Icon(Icons.more_horiz_rounded, color: muted), visualDensity: VisualDensity.compact),
+                IconButton(onPressed: _menu, icon: const Icon(LucideIcons.ellipsis, color: muted), visualDensity: VisualDensity.compact),
               ],
             ),
             if (bodyText.isNotEmpty)
@@ -217,7 +218,7 @@ class _PostCardState extends State<PostCard> {
             Row(
               children: [
                 _ActionPill(
-                  icon: liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                  icon: liked ? LucideIcons.heart600 : LucideIcons.heart,
                   color: liked ? const Color(0xFFFB7185) : null,
                   background: liked ? const Color(0xFFF43F5E).withValues(alpha: 0.14) : null,
                   label: likes > 0 ? compact(likes) : null,
@@ -225,15 +226,15 @@ class _PostCardState extends State<PostCard> {
                 ),
                 const SizedBox(width: 8),
                 _ActionPill(
-                  icon: Icons.chat_bubble_outline_rounded,
+                  icon: LucideIcons.messageCircle,
                   label: comments > 0 ? compact(comments) : null,
                   onTap: commentsEnabled ? () => setState(() => showComments = true) : null,
                 ),
                 const SizedBox(width: 8),
-                _ActionPill(icon: Icons.link_rounded, onTap: _copyLink),
+                _ActionPill(icon: LucideIcons.link, onTap: _copyLink),
                 const Spacer(),
                 if (views > 0) ...[
-                  const Icon(Icons.visibility_outlined, size: 16, color: faint),
+                  const Icon(LucideIcons.eye, size: 16, color: faint),
                   const SizedBox(width: 4),
                   Text(compact(views), style: body(12, color: faint)),
                 ],
@@ -478,7 +479,7 @@ class MusicAttachment extends StatelessWidget {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.35), borderRadius: BorderRadius.circular(12)),
-                      child: Icon(playing ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white),
+                      child: Icon(playing ? LucideIcons.pause : LucideIcons.play, color: Colors.white),
                     ),
                   ],
                 ),
@@ -495,7 +496,7 @@ class MusicAttachment extends StatelessWidget {
               ),
               if (spotify) const Padding(padding: EdgeInsets.only(right: 6), child: SpotifyMark(size: 18)),
               if (!spotify && intOf(track['duration']) > 0) Text(duration(track['duration']), style: body(12, color: muted)),
-              if (onRemove != null) IconButton(onPressed: onRemove, icon: const Icon(Icons.close_rounded, color: muted, size: 20)),
+              if (onRemove != null) IconButton(onPressed: onRemove, icon: const Icon(LucideIcons.x, color: muted, size: 20)),
             ],
           ),
         );
@@ -514,7 +515,7 @@ class SpotifyMark extends StatelessWidget {
       width: size,
       height: size,
       decoration: const BoxDecoration(color: Color(0xFF1ED760), shape: BoxShape.circle),
-      child: Icon(Icons.graphic_eq_rounded, size: size * 0.66, color: Colors.black),
+      child: Icon(LucideIcons.audioLines, size: size * 0.66, color: Colors.black),
     );
   }
 }
@@ -546,7 +547,7 @@ class MovieAttachment extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.play_circle_fill_rounded, color: primary, size: 30),
+          const Icon(LucideIcons.circlePlay, color: primary, size: 30),
         ],
       ),
     );
@@ -682,10 +683,10 @@ class _CommentsThreadState extends State<CommentsThread> {
             Padding(
               padding: const EdgeInsets.only(left: 44, bottom: 4),
               child: Row(children: [
-                const Icon(Icons.subdirectory_arrow_right_rounded, size: 14, color: muted),
+                const Icon(LucideIcons.cornerDownRight, size: 14, color: muted),
                 const SizedBox(width: 4),
                 Expanded(child: Text('Відповідь ${text(mapOf(replyTo!['user'])['first_name']) ?? ''}', style: body(12, color: muted))),
-                GestureDetector(onTap: () => setState(() => replyTo = null), child: const Icon(Icons.close_rounded, size: 16, color: muted)),
+                GestureDetector(onTap: () => setState(() => replyTo = null), child: const Icon(LucideIcons.x, size: 16, color: muted)),
               ]),
             ),
           Row(
@@ -714,7 +715,7 @@ class _CommentsThreadState extends State<CommentsThread> {
                 ),
               ),
               const SizedBox(width: 6),
-              RoundIcon(icon: Icons.send_rounded, onTap: sending ? null : _send, filled: true, size: 40),
+              RoundIcon(icon: LucideIcons.send, onTap: sending ? null : _send, filled: true, size: 40),
             ],
           ),
         ],
@@ -774,13 +775,13 @@ class _CommentsThreadState extends State<CommentsThread> {
                       ],
                       if (comment['can_delete'] == true) ...[
                         const SizedBox(width: 12),
-                        GestureDetector(onTap: () => _remove(comment), child: const Icon(Icons.delete_outline_rounded, size: 15, color: faint)),
+                        GestureDetector(onTap: () => _remove(comment), child: const Icon(LucideIcons.trash2, size: 15, color: faint)),
                       ],
                       const Spacer(),
                       GestureDetector(
                         onTap: () => _like(comment),
                         child: Row(children: [
-                          Icon(comment['liked'] == true ? Icons.favorite_rounded : Icons.favorite_border_rounded, size: 15, color: comment['liked'] == true ? const Color(0xFFFB7185) : faint),
+                          Icon(comment['liked'] == true ? LucideIcons.heart600 : LucideIcons.heart, size: 15, color: comment['liked'] == true ? const Color(0xFFFB7185) : faint),
                           if (intOf(comment['likes_count']) > 0) ...[const SizedBox(width: 3), Text('${comment['likes_count']}', style: body(11.5, color: muted))],
                         ]),
                       ),
@@ -935,7 +936,7 @@ class _ComposerState extends State<Composer> {
                       top: 2,
                       child: GestureDetector(
                         onTap: () => setState(() => images.removeAt(i)),
-                        child: Container(decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle), child: const Icon(Icons.close_rounded, size: 16)),
+                        child: Container(decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle), child: const Icon(LucideIcons.x, size: 16)),
                       ),
                     ),
                   ],
@@ -946,8 +947,8 @@ class _ComposerState extends State<Composer> {
           const SizedBox(height: 10),
           Row(
             children: [
-              _ToolIcon(icon: Icons.image_outlined, onTap: _pickImages, tooltip: 'Фото'),
-              _ToolIcon(icon: Icons.music_note_outlined, onTap: _pickMusic, tooltip: 'Музика'),
+              _ToolIcon(icon: LucideIcons.image, onTap: _pickImages, tooltip: 'Фото'),
+              _ToolIcon(icon: LucideIcons.music, onTap: _pickMusic, tooltip: 'Музика'),
               if (widget.wall == null && widget.community == null) ...[
                 const SizedBox(width: 6),
                 Container(
@@ -976,11 +977,11 @@ class _ComposerState extends State<Composer> {
                   onTap: () => setState(() => asCommunity = !asCommunity),
                   child: Padding(
                     padding: const EdgeInsets.only(left: 6),
-                    child: Pill(label: asCommunity ? 'Від спільноти' : 'Від себе', icon: Icons.swap_horiz_rounded, color: const Color(0xFF9AA6FF)),
+                    child: Pill(label: asCommunity ? 'Від спільноти' : 'Від себе', icon: LucideIcons.arrowLeftRight, color: const Color(0xFF9AA6FF)),
                   ),
                 ),
               const Spacer(),
-              PrimaryButton(label: 'Пост', icon: Icons.auto_awesome_rounded, onPressed: ready ? _publish : null, busy: busy, expand: false, compact: true),
+              PrimaryButton(label: 'Пост', icon: LucideIcons.sparkles, onPressed: ready ? _publish : null, busy: busy, expand: false, compact: true),
             ],
           ),
         ],
@@ -1146,7 +1147,7 @@ class _MusicPickerState extends State<_MusicPicker> {
           GcField(
             controller: query,
             label: source == 'spotify' ? 'Пошук у Spotify' : 'Назва або виконавець',
-            icon: Icons.search_rounded,
+            icon: LucideIcons.search,
             dense: true,
             onChanged: (_) {
               debounce?.cancel();
@@ -1158,10 +1159,10 @@ class _MusicPickerState extends State<_MusicPicker> {
             child: loading
                 ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
                 : error != null
-                    ? QuietEmpty(icon: Icons.error_outline_rounded, text: error!)
+                    ? QuietEmpty(icon: LucideIcons.circleAlert, text: error!)
                     : tracks.isEmpty
                         ? QuietEmpty(
-                            icon: source == 'spotify' ? Icons.graphic_eq_rounded : Icons.music_off_outlined,
+                            icon: source == 'spotify' ? LucideIcons.audioLines : LucideIcons.volumeOff,
                             text: source == 'spotify' && query.text.trim().isEmpty ? 'Почніть вводити назву треку' : 'Нічого не знайдено',
                           )
                         : ListView.builder(
@@ -1198,7 +1199,7 @@ class TrackRow extends StatelessWidget {
               alignment: Alignment.center,
               children: [
                 TrackCover(url: absolute(track['cover_url']), seed: track['id'] ?? track['title'] ?? '', size: 46, radius: 12),
-                if (playing) const Icon(Icons.graphic_eq_rounded, color: Colors.white),
+                if (playing) const Icon(LucideIcons.audioLines, color: Colors.white),
               ],
             ),
             const SizedBox(width: 12),

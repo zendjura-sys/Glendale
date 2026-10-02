@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
@@ -12,6 +13,7 @@ import 'feed.dart';
 import 'posts.dart';
 import 'state.dart';
 import 'theme.dart';
+import 'track_edit.dart';
 import 'widgets.dart';
 
 /// Грає список локальних треків (Spotify-треки відкриваються в Spotify).
@@ -153,7 +155,7 @@ class _MusicScreenState extends State<MusicScreen> {
       children: [
         HeroCard(
           badge: 'МУЗИКА GAMECON',
-          badgeIcon: Icons.music_note_rounded,
+          badgeIcon: LucideIcons.music,
           title: 'Ваш',
           accent: 'звук,',
           after: 'ваші правила',
@@ -163,13 +165,13 @@ class _MusicScreenState extends State<MusicScreen> {
               Pill(label: '${stats['tracks'] ?? 0} ${plural(intOf(stats['tracks']), 'трек', 'треки', 'треків')}'),
               Pill(label: '${minutesLabel(stats['duration'])} музики'),
               Pill(label: '${stats['playlists'] ?? 0} ${plural(intOf(stats['playlists']), 'плейлист', 'плейлисти', 'плейлистів')}'),
-              if (account != null) Pill(label: text(account['display_name']) ?? 'Spotify', icon: Icons.graphic_eq_rounded, color: const Color(0xFF1ED760)),
+              if (account != null) Pill(label: text(account['display_name']) ?? 'Spotify', icon: LucideIcons.audioLines, color: const Color(0xFF1ED760)),
             ]),
             const SizedBox(height: 14),
             Row(children: [
-              Expanded(child: GhostButton(label: 'Плейлист', icon: Icons.playlist_add_rounded, onPressed: _newPlaylist)),
+              Expanded(child: GhostButton(label: 'Плейлист', icon: LucideIcons.listPlus, onPressed: _newPlaylist)),
               const SizedBox(width: 10),
-              Expanded(child: PrimaryButton(label: 'Завантажити', icon: Icons.upload_rounded, onPressed: _upload)),
+              Expanded(child: PrimaryButton(label: 'Завантажити', icon: LucideIcons.upload, onPressed: _upload)),
             ]),
           ],
         ),
@@ -180,10 +182,10 @@ class _MusicScreenState extends State<MusicScreen> {
             Segmented(
               scroll: true,
               options: [
-                const SegmentOption('mine', 'Мої аудіозаписи', icon: Icons.headphones_rounded),
-                const SegmentOption('discover', 'Огляд', icon: Icons.explore_outlined),
-                SegmentOption('playlists', 'Плейлисти', icon: Icons.queue_music_rounded, count: playlists.isEmpty ? null : playlists.length),
-                const SegmentOption('spotify', 'Spotify', icon: Icons.graphic_eq_rounded),
+                const SegmentOption('mine', 'Мої аудіозаписи', icon: LucideIcons.headphones),
+                const SegmentOption('discover', 'Огляд', icon: LucideIcons.compass),
+                SegmentOption('playlists', 'Плейлисти', icon: LucideIcons.listMusic, count: playlists.isEmpty ? null : playlists.length),
+                const SegmentOption('spotify', 'Spotify', icon: LucideIcons.audioLines),
               ],
               selected: tab,
               onSelect: (value) {
@@ -196,7 +198,7 @@ class _MusicScreenState extends State<MusicScreen> {
               GcField(
                 controller: query,
                 label: tab == 'mine' ? 'Пошук у моїх аудіозаписах' : 'Пошук по всій музиці GameCon',
-                icon: Icons.search_rounded,
+                icon: LucideIcons.search,
                 dense: true,
                 onChanged: (_) {
                   debounce?.cancel();
@@ -225,8 +227,8 @@ class _MusicScreenState extends State<MusicScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 6),
           child: Wrap(spacing: 10, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
             Text(title.toUpperCase(), style: display(14)),
-            if (tracks.isNotEmpty) PrimaryButton(label: 'Слухати все', icon: Icons.play_arrow_rounded, compact: true, expand: false, onPressed: () => playTracks(context, tracks, 0)),
-            if (tracks.length > 1) GhostButton(label: 'Перемішати', icon: Icons.shuffle_rounded, compact: true, expand: false, onPressed: () => playTracks(context, tracks, DateTime.now().millisecond % tracks.length, shuffle: true)),
+            if (tracks.isNotEmpty) PrimaryButton(label: 'Слухати все', icon: LucideIcons.play, compact: true, expand: false, onPressed: () => playTracks(context, tracks, 0)),
+            if (tracks.length > 1) GhostButton(label: 'Перемішати', icon: LucideIcons.shuffle, compact: true, expand: false, onPressed: () => playTracks(context, tracks, DateTime.now().millisecond % tracks.length, shuffle: true)),
           ]),
         ),
         const SizedBox(height: 8),
@@ -234,7 +236,7 @@ class _MusicScreenState extends State<MusicScreen> {
           const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
         else if (tracks.isEmpty)
           QuietEmpty(
-            icon: Icons.music_off_outlined,
+            icon: LucideIcons.volumeOff,
             text: tab == 'mine' && query.text.isEmpty ? 'Тут поки тихо. Завантажте трек або додайте з огляду.' : 'Нічого не знайдено',
           )
         else ...[
@@ -254,7 +256,7 @@ class _MusicScreenState extends State<MusicScreen> {
       children: [
         Glass(
           child: Row(children: [
-            RoundIcon(icon: Icons.arrow_back_rounded, onTap: () => context.pop()),
+            RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.pop()),
             const SizedBox(width: 8),
             Avatar(url: text(owner['avatar_url']), name: text(owner['name']) ?? '?', size: 46),
             const SizedBox(width: 12),
@@ -321,12 +323,16 @@ class _LibraryTrackState extends State<LibraryTrack> {
       builder: (sheet) => Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          SheetAction(icon: Icons.play_arrow_rounded, label: 'Слухати', onTap: () => Navigator.pop(sheet, 'play')),
-          SheetAction(icon: track['in_library'] == true ? Icons.remove_circle_outline_rounded : Icons.add_circle_outline_rounded, label: track['in_library'] == true ? 'Прибрати з моїх' : 'Додати до моїх', onTap: () => Navigator.pop(sheet, 'library')),
-          SheetAction(icon: Icons.playlist_add_rounded, label: 'Додати до плейлиста', onTap: () => Navigator.pop(sheet, 'playlist')),
-          if (widget.playlistId != null && widget.canManagePlaylist) SheetAction(icon: Icons.playlist_remove_rounded, label: 'Прибрати з плейлиста', onTap: () => Navigator.pop(sheet, 'detach')),
-          if (own) SheetAction(icon: Icons.edit_outlined, label: 'Редагувати', onTap: () => Navigator.pop(sheet, 'edit')),
-          if (own) SheetAction(icon: Icons.delete_outline_rounded, label: 'Видалити трек', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
+          SheetAction(icon: LucideIcons.play, label: 'Слухати', onTap: () => Navigator.pop(sheet, 'play')),
+          if (text(track['source']) != 'spotify') ...[
+            SheetAction(icon: LucideIcons.listStart, label: 'Грати наступним', onTap: () => Navigator.pop(sheet, 'next')),
+            SheetAction(icon: LucideIcons.listEnd, label: 'Додати в чергу', onTap: () => Navigator.pop(sheet, 'queue')),
+          ],
+          SheetAction(icon: track['in_library'] == true ? LucideIcons.circleMinus : LucideIcons.circlePlus, label: track['in_library'] == true ? 'Прибрати з моїх' : 'Додати до моїх', onTap: () => Navigator.pop(sheet, 'library')),
+          SheetAction(icon: LucideIcons.listPlus, label: 'Додати до плейлиста', onTap: () => Navigator.pop(sheet, 'playlist')),
+          if (widget.playlistId != null && widget.canManagePlaylist) SheetAction(icon: LucideIcons.listMinus, label: 'Прибрати з плейлиста', onTap: () => Navigator.pop(sheet, 'detach')),
+          if (own) SheetAction(icon: LucideIcons.pencil, label: 'Редагувати', onTap: () => Navigator.pop(sheet, 'edit')),
+          if (own) SheetAction(icon: LucideIcons.trash2, label: 'Видалити трек', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
         ]),
       ),
     );
@@ -334,6 +340,9 @@ class _LibraryTrackState extends State<LibraryTrack> {
     switch (choice) {
       case 'play':
         await playTracks(context, widget.tracks, widget.index);
+      case 'next' || 'queue':
+        await AppScope.read(context).player.enqueue(track, next: choice == 'next');
+        if (mounted) toast(context, choice == 'next' ? 'Заграє наступним.' : 'Додано в чергу.');
       case 'library':
         await _toggleLibrary();
       case 'playlist':
@@ -365,8 +374,8 @@ class _LibraryTrackState extends State<LibraryTrack> {
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           for (final p in mine)
-            SheetAction(icon: Icons.queue_music_rounded, label: '${p['title']} · ${p['tracks_count']}', onTap: () => Navigator.pop(sheet, intOf(p['id']))),
-          SheetAction(icon: Icons.add_rounded, label: 'Новий плейлист', onTap: () => Navigator.pop(sheet, -1)),
+            SheetAction(icon: LucideIcons.listMusic, label: '${p['title']} · ${p['tracks_count']}', onTap: () => Navigator.pop(sheet, intOf(p['id']))),
+          SheetAction(icon: LucideIcons.plus, label: 'Новий плейлист', onTap: () => Navigator.pop(sheet, -1)),
         ]),
       ),
     );
@@ -381,40 +390,12 @@ class _LibraryTrackState extends State<LibraryTrack> {
     }
   }
 
-  Future<bool?> _edit() {
-    final title = TextEditingController(text: text(track['title']) ?? '');
-    final artist = TextEditingController(text: text(track['artist']) ?? '');
-    final album = TextEditingController(text: text(track['album']) ?? '');
-    final genre = TextEditingController(text: text(track['genre']) ?? '');
-    return showGcSheet<bool>(
-      context,
-      title: 'Редагувати трек',
-      builder: (sheet) => SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          LabeledField(label: 'Назва', child: GcField(controller: title, label: 'Назва')),
-          const SizedBox(height: 10),
-          LabeledField(label: 'Виконавець', child: GcField(controller: artist, label: 'Виконавець')),
-          const SizedBox(height: 10),
-          LabeledField(label: 'Альбом', child: GcField(controller: album, label: 'Необов’язково')),
-          const SizedBox(height: 10),
-          LabeledField(label: 'Жанр', child: GcField(controller: genre, label: 'Необов’язково')),
-          const SizedBox(height: 16),
-          PrimaryButton(
-            label: 'Зберегти',
-            onPressed: () async {
-              final ok = await attempt(sheet, () => api.patch(Api.site('/music/tracks/${track['id']}'), {
-                    'title': title.text.trim(),
-                    'artist': artist.text.trim(),
-                    'album': album.text.trim(),
-                    'genre': genre.text.trim(),
-                  }));
-              if (ok && sheet.mounted) Navigator.pop(sheet, true);
-            },
-          ),
-        ]),
-      ),
-    );
+  Future<bool?> _edit() async {
+    final player = AppScope.read(context).player;
+    final card = await editTrackSheet(context, track);
+    if (card == null) return false;
+    player.updateMeta(card);
+    return true;
   }
 
   @override
@@ -432,9 +413,9 @@ class _LibraryTrackState extends State<LibraryTrack> {
               visualDensity: VisualDensity.compact,
               tooltip: track['in_library'] == true ? 'У ваших аудіозаписах' : 'Додати до моїх',
               onPressed: _toggleLibrary,
-              icon: Icon(track['in_library'] == true ? Icons.check_rounded : Icons.add_rounded, size: 18, color: track['in_library'] == true ? const Color(0xFF9AA6FF) : muted),
+              icon: Icon(track['in_library'] == true ? LucideIcons.check : LucideIcons.plus, size: 18, color: track['in_library'] == true ? const Color(0xFF9AA6FF) : muted),
             ),
-          IconButton(visualDensity: VisualDensity.compact, onPressed: _menu, icon: const Icon(Icons.more_horiz_rounded, color: muted, size: 20)),
+          IconButton(visualDensity: VisualDensity.compact, onPressed: _menu, icon: const Icon(LucideIcons.ellipsis, color: muted, size: 20)),
         ]),
       ),
     );
@@ -458,6 +439,7 @@ class _UploadTrackState extends State<_UploadTrack> {
   final album = TextEditingController();
   final genre = TextEditingController();
   bool busy = false;
+  bool searching = false;
 
   @override
   void dispose() {
@@ -471,13 +453,15 @@ class _UploadTrackState extends State<_UploadTrack> {
     final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: widget.formats);
     final file = result?.files.single;
     if (file == null) return;
-    // «Виконавець - Назва.mp3» → поля форми, як на сайті.
-    final base = file.name.replaceFirst(RegExp(r'\.[^.]+$'), '').replaceAll('_', ' ');
-    final parts = base.split(RegExp(r'\s+[-–—]\s+'));
     setState(() {
       audio = file;
-      if (title.text.isEmpty) title.text = parts.length > 1 ? parts.sublist(1).join(' - ') : base;
-      if (artist.text.isEmpty && parts.length > 1) artist.text = parts.first;
+      searching = true;
+    });
+    final tags = await discoverMeta(path: file.path, fileName: file.name, title: title.text, artist: artist.text);
+    if (!mounted) return;
+    setState(() {
+      searching = false;
+      applyMeta(tags, title: title, artist: artist, album: album, genre: genre);
     });
   }
 
@@ -511,7 +495,8 @@ class _UploadTrackState extends State<_UploadTrack> {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        GhostButton(label: audio == null ? 'Обрати аудіофайл' : audio!.name, icon: Icons.audio_file_outlined, onPressed: busy ? null : _pick),
+        GhostButton(label: audio == null ? 'Обрати аудіофайл' : audio!.name, icon: LucideIcons.fileAudio, onPressed: busy ? null : _pick),
+        if (searching) Padding(padding: const EdgeInsets.only(top: 8), child: Row(children: [const SizedBox.square(dimension: 14, child: CircularProgressIndicator(strokeWidth: 2)), const SizedBox(width: 8), Text('Читаю теги й шукаю альбом…', style: body(12.5, color: muted))])),
         const SizedBox(height: 12),
         Row(children: [
           GestureDetector(
@@ -525,7 +510,7 @@ class _UploadTrackState extends State<_UploadTrack> {
               child: cover == null
                   ? Container(
                       decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
-                      child: const Icon(Icons.add_photo_alternate_outlined, color: muted),
+                      child: const Icon(LucideIcons.imagePlus, color: muted),
                     )
                   : ClipRRect(borderRadius: BorderRadius.circular(14), child: Image(image: XFileImage(cover!), fit: BoxFit.cover)),
             ),
@@ -546,9 +531,9 @@ class _UploadTrackState extends State<_UploadTrack> {
         const SizedBox(height: 16),
         PrimaryButton(
           label: 'Завантажити',
-          icon: Icons.upload_rounded,
+          icon: LucideIcons.upload,
           busy: busy,
-          onPressed: audio != null && title.text.trim().isNotEmpty && artist.text.trim().isNotEmpty ? _submit : null,
+          onPressed: audio != null && !searching && title.text.trim().isNotEmpty && artist.text.trim().isNotEmpty ? _submit : null,
         ),
       ]),
     );
@@ -567,7 +552,7 @@ class PlaylistGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     if (playlists.isEmpty) {
       return EmptyState(
-        icon: Icons.queue_music_rounded,
+        icon: LucideIcons.listMusic,
         title: 'Плейлистів поки немає',
         text: onCreate == null ? null : 'Зберіть треки під настрій: для катки, дороги чи вечора.',
         action: onCreate == null ? null : 'Створити плейлист',
@@ -596,7 +581,7 @@ class PlaylistGrid extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Row(children: [
                   Expanded(child: Text(text(p['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w700))),
-                  if (p['is_public'] == false) const Icon(Icons.lock_outline_rounded, size: 14, color: muted),
+                  if (p['is_public'] == false) const Icon(LucideIcons.lock, size: 14, color: muted),
                 ]),
               ),
               Padding(
@@ -632,7 +617,7 @@ class PlaylistCover extends StatelessWidget {
       );
     }
     if (covers.isNotEmpty) return NetImage(covers.first, radius: radius, width: double.infinity);
-    return CoverPlaceholder(seed: playlist['id'] ?? 0, icon: Icons.queue_music_rounded, radius: radius, iconSize: 32);
+    return CoverPlaceholder(seed: playlist['id'] ?? 0, icon: LucideIcons.listMusic, radius: radius, iconSize: 32);
   }
 }
 
@@ -696,7 +681,7 @@ class _PlaylistFormState extends State<_PlaylistForm> {
         if (widget.playlist != null) ...[
           GhostButton(
             label: cover == null ? 'Змінити обкладинку' : 'Обкладинку обрано',
-            icon: Icons.image_outlined,
+            icon: LucideIcons.image,
             onPressed: () async {
               final picked = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1200, imageQuality: 90);
               if (picked != null) setState(() => cover = picked);
@@ -755,7 +740,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
     if (page == null) {
       return error == null
           ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
-          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: Icons.queue_music_rounded, title: 'Плейлист недоступний', text: '$error')));
+          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.listMusic, title: 'Плейлист недоступний', text: '$error')));
     }
     final playlist = mapOf(page['playlist']);
     final owner = mapOf(playlist['owner']);
@@ -768,7 +753,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
         Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              RoundIcon(icon: Icons.arrow_back_rounded, onTap: () => context.pop()),
+              RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.pop()),
               const Spacer(),
               if (manage)
                 IconButton(
@@ -778,8 +763,8 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
                       builder: (sheet) => Padding(
                         padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
                         child: Column(mainAxisSize: MainAxisSize.min, children: [
-                          SheetAction(icon: Icons.edit_outlined, label: 'Редагувати', onTap: () => Navigator.pop(sheet, 'edit')),
-                          SheetAction(icon: Icons.delete_outline_rounded, label: 'Видалити плейлист', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
+                          SheetAction(icon: LucideIcons.pencil, label: 'Редагувати', onTap: () => Navigator.pop(sheet, 'edit')),
+                          SheetAction(icon: LucideIcons.trash2, label: 'Видалити плейлист', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
                         ]),
                       ),
                     );
@@ -791,7 +776,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
                       if (await attempt(context, () => api.delete(Api.site('/music/playlists/${widget.id}'))) && context.mounted) context.pop();
                     }
                   },
-                  icon: const Icon(Icons.more_horiz_rounded, color: muted),
+                  icon: const Icon(LucideIcons.ellipsis, color: muted),
                 ),
             ]),
             const SizedBox(height: 8),
@@ -816,16 +801,16 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
             if (tracks.isNotEmpty) ...[
               const SizedBox(height: 14),
               Row(children: [
-                Expanded(child: PrimaryButton(label: 'Слухати', icon: Icons.play_arrow_rounded, onPressed: () => playTracks(context, tracks, 0))),
+                Expanded(child: PrimaryButton(label: 'Слухати', icon: LucideIcons.play, onPressed: () => playTracks(context, tracks, 0))),
                 const SizedBox(width: 10),
-                Expanded(child: GhostButton(label: 'Перемішати', icon: Icons.shuffle_rounded, onPressed: () => playTracks(context, tracks, DateTime.now().millisecond % tracks.length, shuffle: true))),
+                Expanded(child: GhostButton(label: 'Перемішати', icon: LucideIcons.shuffle, onPressed: () => playTracks(context, tracks, DateTime.now().millisecond % tracks.length, shuffle: true))),
               ]),
             ],
           ]),
         ),
         const SizedBox(height: 12),
         if (tracks.isEmpty)
-          EmptyState(icon: Icons.music_off_outlined, title: 'Плейлист порожній', text: manage ? 'Додавайте треки через меню «⋯» у списку музики.' : null)
+          EmptyState(icon: LucideIcons.volumeOff, title: 'Плейлист порожній', text: manage ? 'Додавайте треки через меню «⋯» у списку музики.' : null)
         else
           Glass(
             padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
@@ -910,7 +895,7 @@ class _SpotifyPanelState extends State<SpotifyPanel> {
       builder: (sheet) => FutureBuilder<Map<String, dynamic>>(
         future: api.get(Api.site('/music/spotify/playlists/${playlist['id']}')),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return snapshot.hasError ? QuietEmpty(icon: Icons.error_outline_rounded, text: '${snapshot.error}') : const Center(child: CircularProgressIndicator(strokeWidth: 2));
+          if (!snapshot.hasData) return snapshot.hasError ? QuietEmpty(icon: LucideIcons.circleAlert, text: '${snapshot.error}') : const Center(child: CircularProgressIndicator(strokeWidth: 2));
           final tracks = maps(snapshot.data!['tracks']);
           return ListView(padding: const EdgeInsets.fromLTRB(10, 0, 10, 20), children: [
             for (var i = 0; i < tracks.length; i++) TrackRow(track: tracks[i], onTap: () => playTracks(context, tracks, i)),
@@ -923,12 +908,12 @@ class _SpotifyPanelState extends State<SpotifyPanel> {
   @override
   Widget build(BuildContext context) {
     if (!widget.configured) {
-      return const EmptyState(icon: Icons.graphic_eq_rounded, title: 'Spotify ще не підключено', text: 'Адміністратор ще не налаштував інтеграцію зі Spotify.');
+      return const EmptyState(icon: LucideIcons.audioLines, title: 'Spotify ще не підключено', text: 'Адміністратор ще не налаштував інтеграцію зі Spotify.');
     }
     final account = widget.account;
     if (account == null) {
       return EmptyState(
-        icon: Icons.graphic_eq_rounded,
+        icon: LucideIcons.audioLines,
         title: 'Під’єднайте Spotify',
         text: 'Ваші топ-треки, плейлисти й нещодавнє — прямо в GameCon. Пошук Spotify для записів на стіні.',
         action: 'Під’єднати Spotify',
@@ -967,7 +952,7 @@ class _SpotifyPanelState extends State<SpotifyPanel> {
                 if (!context.mounted) return;
                 if (await attempt(context, () => api.delete('/api/v1/music/spotify'), success: 'Spotify від’єднано.')) widget.onChanged();
               },
-              icon: const Icon(Icons.link_off_rounded, size: 18, color: dangerSoft),
+              icon: const Icon(LucideIcons.unlink, size: 18, color: dangerSoft),
               label: Text('Від’єднати', style: body(13, color: dangerSoft)),
             ),
           ),
@@ -980,7 +965,7 @@ class _SpotifyPanelState extends State<SpotifyPanel> {
           GcField(
             controller: query,
             label: 'Пошук у Spotify',
-            icon: Icons.search_rounded,
+            icon: LucideIcons.search,
             dense: true,
             onChanged: (_) {
               debounce?.cancel();
@@ -1003,9 +988,9 @@ class _SpotifyPanelState extends State<SpotifyPanel> {
           if (loading)
             const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
           else if (error != null)
-            QuietEmpty(icon: Icons.error_outline_rounded, text: error!)
+            QuietEmpty(icon: LucideIcons.circleAlert, text: error!)
           else if (items.isEmpty)
-            const QuietEmpty(icon: Icons.graphic_eq_rounded, text: 'Тут поки порожньо')
+            const QuietEmpty(icon: LucideIcons.audioLines, text: 'Тут поки порожньо')
           else if (section == 'playlists' && query.text.trim().isEmpty)
             for (final p in items)
               ListTile(

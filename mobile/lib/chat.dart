@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
 import 'posts.dart';
@@ -77,25 +78,25 @@ class _MessagesScreenState extends State<MessagesScreen> {
             children: [
               Row(children: [
                 Expanded(child: Text('Повідомлення', style: display(20))),
-                RoundIcon(icon: Icons.edit_square, tooltip: 'Нове повідомлення', color: soft, onTap: () => showNewConversation(context)),
+                RoundIcon(icon: LucideIcons.squarePen, tooltip: 'Нове повідомлення', color: soft, onTap: () => showNewConversation(context)),
               ]),
               const SizedBox(height: 12),
-              GcField(controller: query, label: 'Пошук', icon: Icons.search_rounded, dense: true, onChanged: (_) => setState(() {})),
+              GcField(controller: query, label: 'Пошук', icon: LucideIcons.search, dense: true, onChanged: (_) => setState(() {})),
               const SizedBox(height: 8),
               if (loading)
                 const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)))
               else if (conversations.isEmpty)
                 EmptyState(
                   boxed: false,
-                  icon: Icons.chat_bubble_outline_rounded,
+                  icon: LucideIcons.messageCircle,
                   title: 'Повідомлень поки немає',
                   text: 'Напишіть другу або створіть бесіду для своєї компанії.',
                   action: 'Нове повідомлення',
-                  actionIcon: Icons.edit_outlined,
+                  actionIcon: LucideIcons.pencil,
                   onAction: () => showNewConversation(context),
                 )
               else if (shown.isEmpty)
-                const QuietEmpty(icon: Icons.search_off_rounded, text: 'Нічого не знайдено')
+                const QuietEmpty(icon: LucideIcons.searchX, text: 'Нічого не знайдено')
               else
                 for (final conversation in shown) _ConversationRow(conversation: conversation),
             ],
@@ -130,7 +131,7 @@ class _ConversationRow extends StatelessWidget {
                     width: 50,
                     height: 50,
                     decoration: const BoxDecoration(gradient: buttonGradient, shape: BoxShape.circle),
-                    child: const Icon(Icons.groups_2_outlined, color: Colors.white),
+                    child: const Icon(LucideIcons.usersRound, color: Colors.white),
                   )
                 : Avatar(url: text(conversation['avatar_url']), name: title, size: 50, online: peer?['is_online'] == true),
             const SizedBox(width: 12),
@@ -140,7 +141,7 @@ class _ConversationRow extends StatelessWidget {
                 children: [
                   Row(children: [
                     Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w700))),
-                    if (conversation['is_muted'] == true) const Padding(padding: EdgeInsets.only(right: 4), child: Icon(Icons.notifications_off_outlined, size: 14, color: faint)),
+                    if (conversation['is_muted'] == true) const Padding(padding: EdgeInsets.only(right: 4), child: Icon(LucideIcons.bellOff, size: 14, color: faint)),
                     if (last != null) Text(shortStamp(last['created_at']), style: body(11.5, color: muted)),
                   ]),
                   const SizedBox(height: 3),
@@ -264,7 +265,7 @@ class _NewConversationState extends State<_NewConversation> {
       child: Column(
         children: [
           Segmented(
-            options: const [SegmentOption('direct', 'Повідомлення', icon: Icons.chat_bubble_outline_rounded), SegmentOption('group', 'Нова бесіда', icon: Icons.groups_2_outlined)],
+            options: const [SegmentOption('direct', 'Повідомлення', icon: LucideIcons.messageCircle), SegmentOption('group', 'Нова бесіда', icon: LucideIcons.usersRound)],
             selected: mode,
             onSelect: (value) => setState(() => mode = value),
           ),
@@ -290,13 +291,13 @@ class _NewConversationState extends State<_NewConversation> {
               ),
             const SizedBox(height: 10),
           ],
-          GcField(controller: query, label: 'Пошук серед друзів', icon: Icons.search_rounded, dense: true, onChanged: (_) => setState(() {})),
+          GcField(controller: query, label: 'Пошук серед друзів', icon: LucideIcons.search, dense: true, onChanged: (_) => setState(() {})),
           const SizedBox(height: 8),
           Expanded(
             child: loading
                 ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
                 : shown.isEmpty
-                    ? const QuietEmpty(icon: Icons.people_outline_rounded, text: 'Друзів не знайдено. Писати можна друзям і тим, хто приймає повідомлення від усіх.')
+                    ? const QuietEmpty(icon: LucideIcons.usersRound, text: 'Друзів не знайдено. Писати можна друзям і тим, хто приймає повідомлення від усіх.')
                     : ListView(
                         children: [
                           for (final user in shown)
@@ -311,7 +312,7 @@ class _NewConversationState extends State<_NewConversation> {
                               },
                               trailing: mode == 'group'
                                   ? Icon(
-                                      picked.any((p) => p['id'] == user['id']) ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                                      picked.any((p) => p['id'] == user['id']) ? LucideIcons.circleCheck : LucideIcons.circle,
                                       color: picked.any((p) => p['id'] == user['id']) ? primary : faint,
                                     )
                                   : null,
@@ -502,9 +503,9 @@ class _ChatScreenState extends State<ChatScreen> {
       builder: (sheet) => Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          _AttachOption(icon: Icons.image_outlined, color: const Color(0xFF38BDF8), title: 'Фото', subtitle: 'JPG, PNG, WebP, GIF', onTap: () => Navigator.pop(sheet, 'photo')),
-          _AttachOption(icon: Icons.insert_drive_file_outlined, color: violet, title: 'Файл', subtitle: 'до 50 МБ', onTap: () => Navigator.pop(sheet, 'file')),
-          _AttachOption(icon: Icons.person_outline_rounded, color: const Color(0xFF2DD4BF), title: 'Контакт', subtitle: 'Пошук на GameCon', onTap: () => Navigator.pop(sheet, 'contact')),
+          _AttachOption(icon: LucideIcons.image, color: const Color(0xFF38BDF8), title: 'Фото', subtitle: 'JPG, PNG, WebP, GIF', onTap: () => Navigator.pop(sheet, 'photo')),
+          _AttachOption(icon: LucideIcons.file, color: violet, title: 'Файл', subtitle: 'до 50 МБ', onTap: () => Navigator.pop(sheet, 'file')),
+          _AttachOption(icon: LucideIcons.userRound, color: const Color(0xFF2DD4BF), title: 'Контакт', subtitle: 'Пошук на GameCon', onTap: () => Navigator.pop(sheet, 'contact')),
         ]),
       ),
     );
@@ -557,10 +558,10 @@ class _ChatScreenState extends State<ChatScreen> {
       builder: (sheet) => Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          SheetAction(icon: Icons.reply_rounded, label: 'Відповісти', onTap: () => Navigator.pop(sheet, 'reply')),
-          if (hasText) SheetAction(icon: Icons.copy_rounded, label: 'Копіювати текст', onTap: () => Navigator.pop(sheet, 'copy')),
-          if (own && hasText && message['type'] == 'text') SheetAction(icon: Icons.edit_outlined, label: 'Редагувати', onTap: () => Navigator.pop(sheet, 'edit')),
-          if (own) SheetAction(icon: Icons.delete_outline_rounded, label: 'Видалити', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
+          SheetAction(icon: LucideIcons.reply, label: 'Відповісти', onTap: () => Navigator.pop(sheet, 'reply')),
+          if (hasText) SheetAction(icon: LucideIcons.copy, label: 'Копіювати текст', onTap: () => Navigator.pop(sheet, 'copy')),
+          if (own && hasText && message['type'] == 'text') SheetAction(icon: LucideIcons.pencil, label: 'Редагувати', onTap: () => Navigator.pop(sheet, 'edit')),
+          if (own) SheetAction(icon: LucideIcons.trash2, label: 'Видалити', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
         ]),
       ),
     );
@@ -603,7 +604,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final chat = conversation;
     if (chat == null) {
       return error != null
-          ? Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: Icons.chat_bubble_outline_rounded, title: 'Бесіда недоступна', text: '$error', action: 'Назад', onAction: () => context.go('/messages'))))
+          ? Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.messageCircle, title: 'Бесіда недоступна', text: '$error', action: 'Назад', onAction: () => context.go('/messages'))))
           : const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
     }
     final group = chat['type'] == 'group';
@@ -624,13 +625,13 @@ class _ChatScreenState extends State<ChatScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(4, 8, 6, 8),
               child: Row(children: [
-                IconButton(onPressed: () => context.canPop() ? context.pop() : context.go('/messages'), icon: const Icon(Icons.arrow_back_rounded, color: soft)),
+                IconButton(onPressed: () => context.canPop() ? context.pop() : context.go('/messages'), icon: const Icon(LucideIcons.arrowLeft, color: soft)),
                 Expanded(
                   child: GestureDetector(
                     onTap: () => group ? _showMembers() : (peer != null ? context.push('/u/${peer['username']}') : null),
                     child: Row(children: [
                       group && text(chat['avatar_url']) == null
-                          ? Container(width: 38, height: 38, decoration: const BoxDecoration(gradient: buttonGradient, shape: BoxShape.circle), child: const Icon(Icons.groups_2_outlined, size: 20, color: Colors.white))
+                          ? Container(width: 38, height: 38, decoration: const BoxDecoration(gradient: buttonGradient, shape: BoxShape.circle), child: const Icon(LucideIcons.usersRound, size: 20, color: Colors.white))
                           : Avatar(url: text(chat['avatar_url']), name: text(chat['title']) ?? '?', size: 38, online: peer?['is_online'] == true),
                       const SizedBox(width: 10),
                       Expanded(
@@ -645,15 +646,15 @@ class _ChatScreenState extends State<ChatScreen> {
                 IconButton(
                   tooltip: chat['is_muted'] == true ? 'Увімкнути сповіщення' : 'Вимкнути сповіщення',
                   onPressed: _toggleMute,
-                  icon: Icon(chat['is_muted'] == true ? Icons.notifications_off_outlined : Icons.notifications_none_rounded, color: muted),
+                  icon: Icon(chat['is_muted'] == true ? LucideIcons.bellOff : LucideIcons.bell, color: muted),
                 ),
-                if (group) IconButton(onPressed: _showMembers, icon: const Icon(Icons.info_outline_rounded, color: muted)),
+                if (group) IconButton(onPressed: _showMembers, icon: const Icon(LucideIcons.info, color: muted)),
               ]),
             ),
             Divider(height: 1, color: line),
             Expanded(
               child: messages.isEmpty
-                  ? const QuietEmpty(icon: Icons.waving_hand_outlined, text: 'Напишіть перше повідомлення')
+                  ? const QuietEmpty(icon: LucideIcons.hand, text: 'Напишіть перше повідомлення')
                   : ListView.builder(
                       controller: scroll,
                       reverse: true,
@@ -698,9 +699,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _composer() {
     final banner = editing != null
-        ? ('Редагування', text(editing!['body']) ?? '', Icons.edit_outlined)
+        ? ('Редагування', text(editing!['body']) ?? '', LucideIcons.pencil)
         : replyTo != null
-            ? ('Відповідь ${text(mapOf(replyTo!['user'])['first_name']) ?? ''}', text(replyTo!['preview']) ?? '', Icons.reply_rounded)
+            ? ('Відповідь ${text(mapOf(replyTo!['user'])['first_name']) ?? ''}', text(replyTo!['preview']) ?? '', LucideIcons.reply)
             : null;
     return Container(
       padding: EdgeInsets.fromLTRB(8, 6, 8, 8 + ShellChrome.bottomOf(context)),
@@ -727,7 +728,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     editing = null;
                     replyTo = null;
                   }),
-                  icon: const Icon(Icons.close_rounded, size: 18, color: muted),
+                  icon: const Icon(LucideIcons.x, size: 18, color: muted),
                 ),
               ]),
             ),
@@ -751,7 +752,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
                         child: Row(children: [
-                          const Icon(Icons.insert_drive_file_outlined, size: 18, color: violet),
+                          const Icon(LucideIcons.file, size: 18, color: violet),
                           const SizedBox(width: 6),
                           Expanded(child: Text(files[i].name, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(11))),
                         ]),
@@ -763,7 +764,7 @@ class _ChatScreenState extends State<ChatScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              if (editing == null) RoundIcon(icon: Icons.attach_file_rounded, onTap: _attach, color: soft, tooltip: 'Вкладення'),
+              if (editing == null) RoundIcon(icon: LucideIcons.paperclip, onTap: _attach, color: soft, tooltip: 'Вкладення'),
               const SizedBox(width: 4),
               Expanded(
                 child: TextField(
@@ -784,13 +785,13 @@ class _ChatScreenState extends State<ChatScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: lineStrong)),
                     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: lineStrong)),
                     focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: primary, width: 1.4)),
-                    suffixIcon: editing == null ? IconButton(onPressed: _stickers, icon: const Icon(Icons.sentiment_satisfied_alt_outlined, color: muted)) : null,
+                    suffixIcon: editing == null ? IconButton(onPressed: _stickers, icon: const Icon(LucideIcons.smile, color: muted)) : null,
                   ),
                 ),
               ),
               const SizedBox(width: 6),
               RoundIcon(
-                icon: editing != null ? Icons.check_rounded : Icons.send_rounded,
+                icon: editing != null ? LucideIcons.check : LucideIcons.send,
                 onTap: sending || (input.text.trim().isEmpty && images.isEmpty && files.isEmpty) ? null : _send,
                 filled: true,
                 size: 44,
@@ -869,7 +870,7 @@ class _Pending extends StatelessWidget {
           top: 2,
           child: GestureDetector(
             onTap: onRemove,
-            child: Container(decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle), child: const Icon(Icons.close_rounded, size: 14)),
+            child: Container(decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle), child: const Icon(LucideIcons.x, size: 14)),
           ),
         ),
       ]),
@@ -936,7 +937,7 @@ class _Bubble extends StatelessWidget {
     final meta = Row(mainAxisSize: MainAxisSize.min, children: [
       if (message['edited_at'] != null) Text('ред. ', style: body(10.5, color: own ? Colors.white60 : faint)),
       Text(clock(message['created_at']), style: body(10.5, color: own ? Colors.white70 : faint)),
-      if (own) ...[const SizedBox(width: 3), Icon(read ? Icons.done_all_rounded : Icons.done_rounded, size: 14, color: Colors.white70)],
+      if (own) ...[const SizedBox(width: 3), Icon(read ? LucideIcons.checkCheck : LucideIcons.check, size: 14, color: Colors.white70)],
     ]);
 
     final content = Column(
@@ -1056,7 +1057,7 @@ class _FileChip extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(color: own ? Colors.white24 : violet.withValues(alpha: 0.25), borderRadius: BorderRadius.circular(10)),
-            child: const Icon(Icons.download_rounded, size: 18, color: Colors.white),
+            child: const Icon(LucideIcons.download, size: 18, color: Colors.white),
           ),
           const SizedBox(width: 10),
           Flexible(
@@ -1133,7 +1134,7 @@ class _VoiceClipState extends State<_VoiceClip> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(color: widget.own ? Colors.white24 : primary, shape: BoxShape.circle),
-            child: Icon(playing ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white, size: 22),
+            child: Icon(playing ? LucideIcons.pause : LucideIcons.play, color: Colors.white, size: 22),
           ),
         ),
         const SizedBox(width: 8),
@@ -1211,7 +1212,7 @@ class _ContactPickerState extends State<_ContactPicker> {
         GcField(
           controller: query,
           label: 'Пошук на GameCon',
-          icon: Icons.search_rounded,
+          icon: LucideIcons.search,
           dense: true,
           onChanged: (_) {
             debounce?.cancel();
@@ -1221,7 +1222,7 @@ class _ContactPickerState extends State<_ContactPicker> {
         const SizedBox(height: 8),
         Expanded(
           child: users.isEmpty
-              ? const QuietEmpty(icon: Icons.person_search_outlined, text: 'Введіть ім’я або нікнейм')
+              ? const QuietEmpty(icon: LucideIcons.userRoundSearch, text: 'Введіть ім’я або нікнейм')
               : ListView(children: [for (final user in users) UserTile(user: user, onTap: () => widget.onPick(user))]),
         ),
       ]),
@@ -1348,13 +1349,13 @@ class _GroupInfoState extends State<_GroupInfo> {
           child: Column(children: [
             Expanded(
               child: candidates.isEmpty
-                  ? const QuietEmpty(icon: Icons.people_outline_rounded, text: 'Усі ваші друзі вже в бесіді')
+                  ? const QuietEmpty(icon: LucideIcons.usersRound, text: 'Усі ваші друзі вже в бесіді')
                   : ListView(children: [
                       for (final user in candidates)
                         UserTile(
                           user: user,
                           onTap: () => set(() => chosen.contains(user) ? chosen.remove(user) : chosen.add(user)),
-                          trailing: Icon(chosen.contains(user) ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded, color: chosen.contains(user) ? primary : faint),
+                          trailing: Icon(chosen.contains(user) ? LucideIcons.circleCheck : LucideIcons.circle, color: chosen.contains(user) ? primary : faint),
                         ),
                     ]),
             ),
@@ -1390,11 +1391,11 @@ class _GroupInfoState extends State<_GroupInfo> {
       children: [
         if (manager)
           Row(children: [
-            Expanded(child: GhostButton(label: 'Назва', icon: Icons.edit_outlined, compact: true, onPressed: _rename)),
+            Expanded(child: GhostButton(label: 'Назва', icon: LucideIcons.pencil, compact: true, onPressed: _rename)),
             const SizedBox(width: 8),
-            Expanded(child: GhostButton(label: 'Фото', icon: Icons.photo_camera_outlined, compact: true, onPressed: _photo)),
+            Expanded(child: GhostButton(label: 'Фото', icon: LucideIcons.camera, compact: true, onPressed: _photo)),
             const SizedBox(width: 8),
-            Expanded(child: PrimaryButton(label: 'Додати', icon: Icons.person_add_alt_1_rounded, compact: true, onPressed: _add)),
+            Expanded(child: PrimaryButton(label: 'Додати', icon: LucideIcons.userRoundPlus, compact: true, onPressed: _add)),
           ]),
         const SizedBox(height: 10),
         for (final member in members)
@@ -1406,11 +1407,11 @@ class _GroupInfoState extends State<_GroupInfo> {
               _ => '@${member['username']}',
             },
             trailing: manager && intOf(member['id']) != widget.myId && member['role'] != 'owner'
-                ? IconButton(onPressed: () => _remove(member), icon: const Icon(Icons.person_remove_outlined, color: muted, size: 20))
+                ? IconButton(onPressed: () => _remove(member), icon: const Icon(LucideIcons.userRoundMinus, color: muted, size: 20))
                 : null,
           ),
         const SizedBox(height: 12),
-        if (me != null) DangerButton(label: 'Вийти з бесіди', icon: Icons.logout_rounded, expand: true, onPressed: () => _remove(me)),
+        if (me != null) DangerButton(label: 'Вийти з бесіди', icon: LucideIcons.logOut, expand: true, onPressed: () => _remove(me)),
       ],
     );
   }

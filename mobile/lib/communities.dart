@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
@@ -107,13 +108,13 @@ class _CommunitiesScreenState extends State<CommunitiesScreen> {
           after: 'за інтересами',
           text: 'Клани, фандоми, команди та сторінки улюблених ігор — усе в одному місці.',
           children: [
-            PrimaryButton(label: 'Створити спільноту', icon: Icons.add_rounded, expand: false, onPressed: _create),
+            PrimaryButton(label: 'Створити спільноту', icon: LucideIcons.plus, expand: false, onPressed: _create),
             const SizedBox(height: 14),
             Segmented(
               options: [
-                SegmentOption('mine', 'Мої спільноти', icon: Icons.radio_button_unchecked_rounded, count: intOf(counts['mine']) > 0 ? counts['mine'] : null),
-                SegmentOption('managed', 'Керую', icon: Icons.workspace_premium_outlined, count: intOf(counts['managed']) > 0 ? counts['managed'] : null),
-                const SegmentOption('discover', 'Огляд', icon: Icons.explore_outlined),
+                SegmentOption('mine', 'Мої спільноти', icon: LucideIcons.userRoundCheck, count: intOf(counts['mine']) > 0 ? counts['mine'] : null),
+                SegmentOption('managed', 'Керую', icon: LucideIcons.crown, count: intOf(counts['managed']) > 0 ? counts['managed'] : null),
+                const SegmentOption('discover', 'Огляд', icon: LucideIcons.compass),
               ],
               selected: tab ?? 'discover',
               onSelect: (value) {
@@ -125,7 +126,7 @@ class _CommunitiesScreenState extends State<CommunitiesScreen> {
             GcField(
               controller: query,
               label: 'Назва або адреса спільноти',
-              icon: Icons.search_rounded,
+              icon: LucideIcons.search,
               dense: true,
               onChanged: (_) {
                 debounce?.cancel();
@@ -160,7 +161,7 @@ class _CommunitiesScreenState extends State<CommunitiesScreen> {
           const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)))
         else if (items.isEmpty)
           EmptyState(
-            icon: Icons.search_off_rounded,
+            icon: LucideIcons.searchX,
             title: empty.$1,
             text: empty.$2,
             action: empty.$3 ? 'Перейти до огляду' : 'Створити спільноту',
@@ -201,7 +202,7 @@ class CommunityCard extends StatelessWidget {
               children: [
                 Row(children: [
                   Flexible(child: Text(text(community['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w700))),
-                  if (community['is_verified'] == true) ...[const SizedBox(width: 4), const Icon(Icons.verified_rounded, size: 15, color: primary)],
+                  if (community['is_verified'] == true) ...[const SizedBox(width: 4), const Icon(LucideIcons.badgeCheck, size: 15, color: primary)],
                 ]),
                 const SizedBox(height: 2),
                 Text([text(community['category_label']), communityKind(community)].whereType<String>().join(' · '), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
@@ -269,11 +270,11 @@ class _JoinButtonState extends State<JoinButton> {
     final public = c['type'] == 'public';
     final role = c['membership'] is Map ? text(mapOf(c['membership'])['role']) : null;
     if (role == 'owner' || c['managed'] == true && status == 'active') {
-      return Pill(label: role == 'owner' ? 'Власник' : 'Керуєте', icon: Icons.workspace_premium_outlined, color: gold);
+      return Pill(label: role == 'owner' ? 'Власник' : 'Керуєте', icon: LucideIcons.crown, color: gold);
     }
     return switch (status) {
-      'active' => GhostButton(label: public ? 'Ви підписані' : 'Ви учасник', icon: Icons.check_rounded, compact: true, expand: false, onPressed: busy ? null : _toggle),
-      'pending' => GhostButton(label: 'Заявку надіслано', icon: Icons.schedule_rounded, compact: true, expand: false, color: muted, onPressed: busy ? null : _toggle),
+      'active' => GhostButton(label: public ? 'Ви підписані' : 'Ви учасник', icon: LucideIcons.check, compact: true, expand: false, onPressed: busy ? null : _toggle),
+      'pending' => GhostButton(label: 'Заявку надіслано', icon: LucideIcons.clock, compact: true, expand: false, color: muted, onPressed: busy ? null : _toggle),
       _ => PrimaryButton(label: public ? 'Підписатися' : (c['privacy'] == 'closed' ? 'Подати заявку' : 'Вступити'), compact: true, expand: false, busy: busy, onPressed: _toggle),
     };
   }
@@ -331,9 +332,9 @@ class _CreateCommunityState extends State<_CreateCommunity> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _TypeOption(selected: type == 'group', icon: Icons.groups_2_outlined, title: 'Група', text: 'Спілкування й обговорення: учасники пишуть на стіні.', onTap: () => setState(() => type = 'group')),
+          _TypeOption(selected: type == 'group', icon: LucideIcons.usersRound, title: 'Група', text: 'Спілкування й обговорення: учасники пишуть на стіні.', onTap: () => setState(() => type = 'group')),
           const SizedBox(height: 8),
-          _TypeOption(selected: type == 'public', icon: Icons.campaign_outlined, title: 'Публічна сторінка', text: 'Новини від імені сторінки для підписників.', onTap: () => setState(() => type = 'public')),
+          _TypeOption(selected: type == 'public', icon: LucideIcons.megaphone, title: 'Публічна сторінка', text: 'Новини від імені сторінки для підписників.', onTap: () => setState(() => type = 'public')),
           const SizedBox(height: 14),
           LabeledField(label: 'Назва', child: GcField(controller: name, label: 'Наприклад, «Кіберкотлета UA»', onChanged: (_) => setState(() {}))),
           const SizedBox(height: 12),
@@ -349,7 +350,7 @@ class _CreateCommunityState extends State<_CreateCommunity> {
           if (type == 'group') ...[
             const SizedBox(height: 12),
             Segmented(
-              options: const [SegmentOption('open', 'Відкрита', icon: Icons.lock_open_rounded), SegmentOption('closed', 'Закрита', icon: Icons.lock_outline_rounded)],
+              options: const [SegmentOption('open', 'Відкрита', icon: LucideIcons.lockOpen), SegmentOption('closed', 'Закрита', icon: LucideIcons.lock)],
               selected: privacy,
               onSelect: (value) => setState(() => privacy = value),
             ),
@@ -450,7 +451,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     if (data == null) {
       return error == null
           ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
-          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: Icons.groups_2_outlined, title: 'Спільнота недоступна', text: '$error', action: 'Спробувати знову', onAction: _load)));
+          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.usersRound, title: 'Спільнота недоступна', text: '$error', action: 'Спробувати знову', onAction: _load)));
     }
     final c = mapOf(data['community']);
     final can = mapOf(data['can']);
@@ -493,12 +494,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   children: [
                     Row(children: [
                       Flexible(child: Text(text(c['name']) ?? '', style: display(22))),
-                      if (c['is_verified'] == true) ...[const SizedBox(width: 6), const Icon(Icons.verified_rounded, color: primary, size: 20)],
+                      if (c['is_verified'] == true) ...[const SizedBox(width: 6), const Icon(LucideIcons.badgeCheck, color: primary, size: 20)],
                     ]),
                     if (text(c['status']) != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(text(c['status'])!, style: body(14, color: soft))),
                     const SizedBox(height: 8),
                     Wrap(spacing: 8, runSpacing: 6, children: [
-                      Pill(label: communityKind(c), icon: c['privacy'] == 'closed' ? Icons.lock_outline_rounded : Icons.public_rounded),
+                      Pill(label: communityKind(c), icon: c['privacy'] == 'closed' ? LucideIcons.lock : LucideIcons.globe),
                       if (text(c['category_label']) != null) Pill(label: text(c['category_label'])!),
                       if (membership?['role'] != null && membership?['status'] == 'active') Pill(label: communityRoles[membership!['role']] ?? '', color: gold),
                     ]),
@@ -514,7 +515,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       if (can['manage'] == true)
                         GhostButton(
                           label: intOf(stats['requests']) > 0 ? 'Керування · ${stats['requests']}' : 'Керування',
-                          icon: Icons.settings_outlined,
+                          icon: LucideIcons.settings,
                           compact: true,
                           expand: false,
                           onPressed: () async {
@@ -531,22 +532,22 @@ class _CommunityScreenState extends State<CommunityScreen> {
         ),
         if (can['view'] == false) ...[
           const SizedBox(height: 12),
-          const EmptyState(icon: Icons.lock_outline_rounded, title: 'Це закрита група', text: 'Записи та учасників бачать лише учасники. Подайте заявку — адміністратори розглянуть її найближчим часом.'),
+          const EmptyState(icon: LucideIcons.lock, title: 'Це закрита група', text: 'Записи та учасників бачать лише учасники. Подайте заявку — адміністратори розглянуть її найближчим часом.'),
         ] else ...[
           if (text(c['description']) != null || text(c['website']) != null || text(c['city']) != null) ...[
             const SizedBox(height: 12),
             Glass(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const CardTitle('Інформація', icon: Icons.info_outline_rounded),
+                const CardTitle('Інформація', icon: LucideIcons.info),
                 const SizedBox(height: 10),
                 if (text(c['description']) != null) Text(text(c['description'])!, style: body(14, color: soft).copyWith(height: 1.5)),
-                if (text(c['city']) != null) Padding(padding: const EdgeInsets.only(top: 8), child: Row(children: [const Icon(Icons.place_outlined, size: 16, color: muted), const SizedBox(width: 8), Text(text(c['city'])!, style: body(13.5, color: soft))])),
+                if (text(c['city']) != null) Padding(padding: const EdgeInsets.only(top: 8), child: Row(children: [const Icon(LucideIcons.mapPin, size: 16, color: muted), const SizedBox(width: 8), Text(text(c['city'])!, style: body(13.5, color: soft))])),
                 if (text(c['website']) != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: GestureDetector(
                       onTap: () => launchUrl(Uri.parse(text(c['website'])!), mode: LaunchMode.externalApplication),
-                      child: Row(children: [const Icon(Icons.link_rounded, size: 16, color: muted), const SizedBox(width: 8), Flexible(child: Text(text(c['website'])!.replaceFirst(RegExp(r'^https?://'), ''), style: body(13.5, color: const Color(0xFF9AA8FF))))]),
+                      child: Row(children: [const Icon(LucideIcons.link, size: 16, color: muted), const SizedBox(width: 8), Flexible(child: Text(text(c['website'])!.replaceFirst(RegExp(r'^https?://'), ''), style: body(13.5, color: const Color(0xFF9AA8FF))))]),
                     ),
                   ),
               ]),
@@ -556,7 +557,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             const SizedBox(height: 12),
             Glass(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                CardTitle(c['type'] == 'public' ? 'Підписники' : 'Учасники', icon: Icons.people_alt_outlined, trailing: compact(count), onTrailing: () => context.push('/communities/${widget.slug}/members')),
+                CardTitle(c['type'] == 'public' ? 'Підписники' : 'Учасники', icon: LucideIcons.usersRound, trailing: compact(count), onTrailing: () => context.push('/communities/${widget.slug}/members')),
                 const SizedBox(height: 12),
                 Wrap(spacing: 14, runSpacing: 12, children: [
                   for (final user in members)
@@ -580,7 +581,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             Glass(
               padding: const EdgeInsets.fromLTRB(12, 14, 12, 8),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Padding(padding: EdgeInsets.only(left: 4), child: CardTitle('Керівники', icon: Icons.workspace_premium_outlined)),
+                const Padding(padding: EdgeInsets.only(left: 4), child: CardTitle('Керівники', icon: LucideIcons.crown)),
                 for (final user in managers) UserTile(user: user, subtitle: communityRoles[user['role']] ?? ''),
               ]),
             ),
@@ -589,10 +590,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
             const SizedBox(height: 12),
             Glass(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                CardTitle('Фотографії', icon: Icons.photo_library_outlined, trailing: intOf(photos['count']) > 0 ? '${photos['count']}' : null, onTrailing: () => context.push('/communities/${widget.slug}/photos')),
+                CardTitle('Фотографії', icon: LucideIcons.images, trailing: intOf(photos['count']) > 0 ? '${photos['count']}' : null, onTrailing: () => context.push('/communities/${widget.slug}/photos')),
                 const SizedBox(height: 12),
                 if (maps(photos['items']).isEmpty)
-                  GhostButton(label: 'Створити альбом', icon: Icons.add_photo_alternate_outlined, onPressed: () => context.push('/communities/${widget.slug}/photos'))
+                  GhostButton(label: 'Створити альбом', icon: LucideIcons.imagePlus, onPressed: () => context.push('/communities/${widget.slug}/photos'))
                 else
                   GridView.count(
                     crossAxisCount: 3,
@@ -621,7 +622,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
           const SizedBox(height: 12),
           if (pager.posts.isEmpty)
             EmptyState(
-              icon: Icons.forum_outlined,
+              icon: LucideIcons.messagesSquare,
               title: 'Тут поки тихо',
               text: can['post'] == true ? 'Опублікуйте перший запис — розкажіть, про що ця спільнота.' : 'Новини з’являться тут, щойно адміністратори щось опублікують.',
             )
@@ -720,11 +721,11 @@ class _CommunityMembersScreenState extends State<CommunityMembersScreen> {
       builder: (sheet) => Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          SheetAction(icon: Icons.person_outline_rounded, label: 'Відкрити профіль', onTap: () => Navigator.pop(sheet, 'profile')),
+          SheetAction(icon: LucideIcons.userRound, label: 'Відкрити профіль', onTap: () => Navigator.pop(sheet, 'profile')),
           for (final role in ['admin', 'editor', 'member'])
-            if (role != member['role']) SheetAction(icon: Icons.badge_outlined, label: 'Зробити: ${communityRoles[role]}', onTap: () => Navigator.pop(sheet, 'role:$role')),
-          if (myRole == 'owner') SheetAction(icon: Icons.workspace_premium_outlined, label: 'Передати права власника', color: gold, onTap: () => Navigator.pop(sheet, 'role:owner')),
-          SheetAction(icon: Icons.person_remove_outlined, label: 'Видалити зі спільноти', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'remove')),
+            if (role != member['role']) SheetAction(icon: LucideIcons.idCard, label: 'Зробити: ${communityRoles[role]}', onTap: () => Navigator.pop(sheet, 'role:$role')),
+          if (myRole == 'owner') SheetAction(icon: LucideIcons.crown, label: 'Передати права власника', color: gold, onTap: () => Navigator.pop(sheet, 'role:owner')),
+          SheetAction(icon: LucideIcons.userRoundMinus, label: 'Видалити зі спільноти', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'remove')),
         ]),
       ),
     );
@@ -749,7 +750,7 @@ class _CommunityMembersScreenState extends State<CommunityMembersScreen> {
       onRefresh: () => _load(reset: true),
       children: [
         Row(children: [
-          RoundIcon(icon: Icons.arrow_back_rounded, onTap: () => context.pop()),
+          RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.pop()),
           const SizedBox(width: 8),
           Expanded(child: Text(text(community['name']) ?? 'Учасники', maxLines: 1, overflow: TextOverflow.ellipsis, style: display(18))),
         ]),
@@ -775,7 +776,7 @@ class _CommunityMembersScreenState extends State<CommunityMembersScreen> {
             GcField(
               controller: query,
               label: 'Пошук учасників',
-              icon: Icons.search_rounded,
+              icon: LucideIcons.search,
               dense: true,
               onChanged: (_) {
                 debounce?.cancel();
@@ -788,7 +789,7 @@ class _CommunityMembersScreenState extends State<CommunityMembersScreen> {
         if (loading && items.isEmpty)
           const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)))
         else if (items.isEmpty)
-          QuietEmpty(icon: Icons.people_outline_rounded, text: tab == 'requests' ? 'Нових заявок немає' : 'Нікого не знайдено')
+          QuietEmpty(icon: LucideIcons.usersRound, text: tab == 'requests' ? 'Нових заявок немає' : 'Нікого не знайдено')
         else
           Glass(
             padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
@@ -799,11 +800,11 @@ class _CommunityMembersScreenState extends State<CommunityMembersScreen> {
                   subtitle: tab == 'requests' ? 'Заявка ${ago(member['joined_at'])}' : (communityRoles[member['role']] ?? '') + (member['is_friend'] == true ? ' · ваш друг' : ''),
                   trailing: tab == 'requests'
                       ? Row(mainAxisSize: MainAxisSize.min, children: [
-                          IconButton(tooltip: 'Прийняти', onPressed: () => _act(() => api.post(Api.site('/c/${widget.slug}/members/${member['username']}/approve'))), icon: const Icon(Icons.check_circle_outline_rounded, color: green)),
-                          IconButton(tooltip: 'Відхилити', onPressed: () => _act(() => api.delete(Api.site('/c/${widget.slug}/members/${member['username']}/request'))), icon: const Icon(Icons.cancel_outlined, color: dangerSoft)),
+                          IconButton(tooltip: 'Прийняти', onPressed: () => _act(() => api.post(Api.site('/c/${widget.slug}/members/${member['username']}/approve'))), icon: const Icon(LucideIcons.circleCheck, color: green)),
+                          IconButton(tooltip: 'Відхилити', onPressed: () => _act(() => api.delete(Api.site('/c/${widget.slug}/members/${member['username']}/request'))), icon: const Icon(LucideIcons.circleX, color: dangerSoft)),
                         ])
                       : admin && member['role'] != 'owner' && intOf(member['id']) != AppScope.of(context).session.myId
-                          ? IconButton(onPressed: () => _memberMenu(member), icon: const Icon(Icons.more_horiz_rounded, color: muted))
+                          ? IconButton(onPressed: () => _memberMenu(member), icon: const Icon(LucideIcons.ellipsis, color: muted))
                           : null,
                 ),
             ]),
@@ -929,23 +930,23 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
     return ScreenScroll(
       children: [
         Row(children: [
-          RoundIcon(icon: Icons.arrow_back_rounded, onTap: () => context.pop()),
+          RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.pop()),
           const SizedBox(width: 8),
           Expanded(child: Text('Керування спільнотою', style: display(18))),
         ]),
         const SizedBox(height: 12),
         Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const CardTitle('Оформлення', icon: Icons.palette_outlined),
+            const CardTitle('Оформлення', icon: LucideIcons.palette),
             const SizedBox(height: 12),
             Row(children: [
               Avatar(url: text(c['avatar_url']), name: text(c['name']) ?? '?', size: 64, square: true),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(children: [
-                  GhostButton(label: 'Змінити аватар', icon: Icons.photo_camera_outlined, compact: true, onPressed: () => _image('avatar')),
+                  GhostButton(label: 'Змінити аватар', icon: LucideIcons.camera, compact: true, onPressed: () => _image('avatar')),
                   const SizedBox(height: 8),
-                  GhostButton(label: 'Змінити обкладинку', icon: Icons.wallpaper_rounded, compact: true, onPressed: () => _image('cover')),
+                  GhostButton(label: 'Змінити обкладинку', icon: LucideIcons.wallpaper, compact: true, onPressed: () => _image('cover')),
                 ]),
               ),
             ]),
@@ -954,7 +955,7 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
         const SizedBox(height: 12),
         Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const CardTitle('Основне', icon: Icons.tune_rounded),
+            const CardTitle('Основне', icon: LucideIcons.slidersHorizontal),
             const SizedBox(height: 12),
             LabeledField(label: 'Назва', child: GcField(controller: name, label: 'Назва')),
             const SizedBox(height: 10),
@@ -977,7 +978,7 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
         const SizedBox(height: 12),
         Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const CardTitle('Доступ', icon: Icons.lock_outline_rounded),
+            const CardTitle('Доступ', icon: LucideIcons.lock),
             const SizedBox(height: 12),
             Segmented(
               options: const [SegmentOption('group', 'Група'), SegmentOption('public', 'Публічна сторінка')],
@@ -987,7 +988,7 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
             if (type == 'group') ...[
               const SizedBox(height: 10),
               Segmented(
-                options: const [SegmentOption('open', 'Відкрита', icon: Icons.lock_open_rounded), SegmentOption('closed', 'Закрита', icon: Icons.lock_outline_rounded)],
+                options: const [SegmentOption('open', 'Відкрита', icon: LucideIcons.lockOpen), SegmentOption('closed', 'Закрита', icon: LucideIcons.lock)],
                 selected: privacy,
                 onSelect: (v) => setState(() => privacy = v),
               ),
@@ -1003,12 +1004,12 @@ class _CommunitySettingsScreenState extends State<CommunitySettingsScreen> {
           ]),
         ),
         const SizedBox(height: 14),
-        PrimaryButton(label: 'Зберегти', icon: Icons.check_rounded, busy: busy, onPressed: _save),
+        PrimaryButton(label: 'Зберегти', icon: LucideIcons.check, busy: busy, onPressed: _save),
         const SizedBox(height: 10),
-        GhostButton(label: 'Учасники й заявки', icon: Icons.people_alt_outlined, onPressed: () => context.push('/communities/${widget.slug}/members')),
+        GhostButton(label: 'Учасники й заявки', icon: LucideIcons.usersRound, onPressed: () => context.push('/communities/${widget.slug}/members')),
         if (data['isOwner'] == true) ...[
           const SizedBox(height: 22),
-          DangerButton(label: 'Видалити спільноту', icon: Icons.delete_outline_rounded, expand: true, onPressed: _delete),
+          DangerButton(label: 'Видалити спільноту', icon: LucideIcons.trash2, expand: true, onPressed: _delete),
         ],
       ],
     );

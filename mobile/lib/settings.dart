@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
@@ -20,7 +21,7 @@ class NotificationsScreen extends StatelessWidget {
       Padding(
         padding: EdgeInsets.fromLTRB(14, siteHeaderInset(context) + 6, 8, 0),
         child: Row(children: [
-          RoundIcon(icon: Icons.arrow_back_rounded, onTap: () => context.canPop() ? context.pop() : context.go('/feed')),
+          RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.canPop() ? context.pop() : context.go('/feed')),
           const SizedBox(width: 8),
           Text('Сповіщення', style: display(19)),
         ]),
@@ -176,7 +177,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         PageTitle('Налаштування', subtitle: 'Керуйте сторінкою, приватністю та безпекою акаунта'),
         const SizedBox(height: 12),
         Segmented(
-          options: const [SegmentOption('profile', 'Профіль', icon: Icons.person_outline_rounded), SegmentOption('security', 'Безпека', icon: Icons.shield_outlined)],
+          options: const [SegmentOption('profile', 'Профіль', icon: LucideIcons.userRound), SegmentOption('security', 'Безпека', icon: LucideIcons.shield)],
           selected: tab,
           onSelect: (value) => setState(() => tab = value),
         ),
@@ -190,7 +191,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return [
       Glass(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const CardTitle('Основне', icon: Icons.badge_outlined),
+          const CardTitle('Основне', icon: LucideIcons.idCard),
           const SizedBox(height: 12),
           Row(children: [
             Expanded(child: LabeledField(label: 'Ім’я', child: GcField(controller: first, label: 'Ім’я'))),
@@ -224,7 +225,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             label: 'День народження',
             child: GhostButton(
               label: birthday == null ? 'Не вказано' : '${birthday!.day} ${monthsGenitive[birthday!.month - 1]} ${birthday!.year}',
-              icon: Icons.cake_outlined,
+              icon: LucideIcons.cake,
               onPressed: () async {
                 final picked = await showDatePicker(
                   context: context,
@@ -244,7 +245,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       const SizedBox(height: 12),
       Glass(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const CardTitle('Приватність', icon: Icons.lock_outline_rounded),
+          const CardTitle('Приватність', icon: LucideIcons.lock),
           SwitchListTile(
             value: private,
             contentPadding: EdgeInsets.zero,
@@ -263,7 +264,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ]),
       ),
       const SizedBox(height: 14),
-      PrimaryButton(label: 'Зберегти зміни', icon: Icons.check_rounded, busy: saving, onPressed: _save),
+      PrimaryButton(label: 'Зберегти зміни', icon: LucideIcons.check, busy: saving, onPressed: _save),
     ];
   }
 
@@ -272,7 +273,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return [
       Glass(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const CardTitle('Пароль', icon: Icons.key_rounded),
+          const CardTitle('Пароль', icon: LucideIcons.keyRound),
           const SizedBox(height: 12),
           GcField(controller: current, label: 'Поточний пароль', obscure: true),
           const SizedBox(height: 10),
@@ -286,13 +287,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       const SizedBox(height: 12),
       Glass(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const CardTitle('Під’єднані акаунти', icon: Icons.link_rounded),
+          const CardTitle('Під’єднані акаунти', icon: LucideIcons.link),
           const SizedBox(height: 6),
           if (connections.isEmpty) Text('Завантаження…', style: body(13, color: muted)),
           for (final c in connections.where((c) => c['available'] == true || c['connected'] == true))
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: Icon(c['provider'] == 'discord' ? Icons.forum_outlined : Icons.g_mobiledata_rounded, color: c['connected'] == true ? primary : muted, size: 28),
+              leading: Icon(c['provider'] == 'discord' ? LucideIcons.messagesSquare : Icons.g_mobiledata_rounded, color: c['connected'] == true ? primary : muted, size: 28),
               title: Text('${c['label']}', style: body(14.5, weight: FontWeight.w600)),
               subtitle: Text(c['connected'] == true ? (text(c['account']) ?? 'Під’єднано') : 'Не під’єднано', style: body(12.5, color: muted)),
               trailing: c['connected'] == true
@@ -309,22 +310,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
       const SizedBox(height: 12),
       Glass(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const CardTitle('Двофакторний захист', icon: Icons.verified_user_outlined),
+          const CardTitle('Двофакторний захист', icon: LucideIcons.shieldCheck),
           const SizedBox(height: 8),
           Text(me['two_factor'] == true ? 'Увімкнено. Під час входу застосунок попросить код.' : 'Вимкнено. Увімкніть на сайті в розділі «Безпека».', style: body(13.5, color: soft)),
           const SizedBox(height: 10),
-          GhostButton(label: 'Відкрити на сайті', icon: Icons.open_in_new_rounded, onPressed: () => launchUrl(Uri.parse('${Api.root}/settings/security'), mode: LaunchMode.externalApplication)),
+          GhostButton(label: 'Відкрити на сайті', icon: LucideIcons.externalLink, onPressed: () => launchUrl(Uri.parse('${Api.root}/settings/security'), mode: LaunchMode.externalApplication)),
         ]),
       ),
       const SizedBox(height: 12),
       Glass(
         border: danger.withValues(alpha: 0.3),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const CardTitle('Видалення акаунта', icon: Icons.warning_amber_rounded),
+          const CardTitle('Видалення акаунта', icon: LucideIcons.triangleAlert),
           const SizedBox(height: 8),
           Text('Профіль, записи, фото й повідомлення зникнуть назавжди. Цю дію не можна скасувати.', style: body(13, color: muted)),
           const SizedBox(height: 12),
-          DangerButton(label: 'Видалити акаунт', icon: Icons.delete_forever_outlined, expand: true, onPressed: _deleteAccount),
+          DangerButton(label: 'Видалити акаунт', icon: LucideIcons.trash2, expand: true, onPressed: _deleteAccount),
         ]),
       ),
     ];

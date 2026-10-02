@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
@@ -90,9 +91,9 @@ class _ServersScreenState extends State<ServersScreen> {
             Segmented(
               scroll: true,
               options: [
-                SegmentOption('', 'Усі', icon: Icons.dns_outlined, count: stats['servers']),
-                SegmentOption('pc', 'ПК', icon: Icons.desktop_windows_outlined, count: stats['pc']),
-                SegmentOption('mobile', 'Мобільні', icon: Icons.smartphone_rounded, count: stats['mobile']),
+                SegmentOption('', 'Усі', icon: LucideIcons.server, count: stats['servers']),
+                SegmentOption('pc', 'ПК', icon: LucideIcons.monitor, count: stats['pc']),
+                SegmentOption('mobile', 'Мобільні', icon: LucideIcons.smartphone, count: stats['mobile']),
               ],
               selected: platform,
               onSelect: (value) {
@@ -104,7 +105,7 @@ class _ServersScreenState extends State<ServersScreen> {
             GcField(
               controller: query,
               label: 'Пошук сервера',
-              icon: Icons.search_rounded,
+              icon: LucideIcons.search,
               dense: true,
               onChanged: (_) {
                 debounce?.cancel();
@@ -122,14 +123,14 @@ class _ServersScreenState extends State<ServersScreen> {
               },
             ),
             const SizedBox(height: 12),
-            PrimaryButton(label: 'Додати сервер', icon: Icons.add_rounded, onPressed: _suggest),
+            PrimaryButton(label: 'Додати сервер', icon: LucideIcons.plus, onPressed: _suggest),
           ],
         ),
         if (mine.isNotEmpty) ...[
           const SizedBox(height: 12),
           Glass(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const CardTitle('Ваші пропозиції', icon: Icons.outbox_outlined),
+              const CardTitle('Ваші пропозиції', icon: LucideIcons.send),
               const SizedBox(height: 8),
               for (final s in mine)
                 Padding(
@@ -149,7 +150,7 @@ class _ServersScreenState extends State<ServersScreen> {
         ],
         const SizedBox(height: 12),
         if (servers.isEmpty)
-          const EmptyState(icon: Icons.dns_outlined, title: 'Серверів не знайдено', text: 'Спробуйте інший запит або додайте сервер.')
+          const EmptyState(icon: LucideIcons.server, title: 'Серверів не знайдено', text: 'Спробуйте інший запит або додайте сервер.')
         else
           for (final server in servers) Padding(padding: const EdgeInsets.only(bottom: 10), child: ServerCard(server: server)),
         Glass(
@@ -158,7 +159,7 @@ class _ServersScreenState extends State<ServersScreen> {
               width: 52,
               height: 52,
               decoration: BoxDecoration(gradient: buttonGradient, borderRadius: BorderRadius.circular(16)),
-              child: const Icon(Icons.workspace_premium_outlined, color: Colors.white),
+              child: const Icon(LucideIcons.crown, color: Colors.white),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -167,7 +168,7 @@ class _ServersScreenState extends State<ServersScreen> {
                 const SizedBox(height: 4),
                 Text('Звіти, банк і виплати, склад, дисципліна й рейтинг — усе в одній панелі.', style: body(12.5, color: muted)),
                 const SizedBox(height: 10),
-                GhostButton(label: 'Створити сім’ю', icon: Icons.add_rounded, compact: true, expand: false, onPressed: () => context.push('/families/create')),
+                GhostButton(label: 'Створити сім’ю', icon: LucideIcons.plus, compact: true, expand: false, onPressed: () => context.push('/families/create')),
               ]),
             ),
           ]),
@@ -219,11 +220,11 @@ class ServerCard extends StatelessWidget {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 Flexible(child: Text(text(server['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: display(16))),
-                if (server['is_featured'] == true) const Padding(padding: EdgeInsets.only(left: 6), child: Icon(Icons.auto_awesome_rounded, size: 16, color: gold)),
+                if (server['is_featured'] == true) const Padding(padding: EdgeInsets.only(left: 6), child: Icon(LucideIcons.sparkles, size: 16, color: gold)),
               ]),
               const SizedBox(height: 6),
               Wrap(spacing: 6, runSpacing: 4, children: [
-                Pill(label: text(server['platform_label']) ?? '', icon: server['platform'] == 'mobile' ? Icons.smartphone_rounded : Icons.desktop_windows_outlined),
+                Pill(label: text(server['platform_label']) ?? '', icon: server['platform'] == 'mobile' ? LucideIcons.smartphone : LucideIcons.monitor),
                 Pill(label: text(server['multiplayer_label']) ?? '', color: const Color(0xFFB79CFF)),
                 const Pill(label: '🇺🇦 UA', color: gold),
               ]),
@@ -234,7 +235,7 @@ class ServerCard extends StatelessWidget {
         const SizedBox(height: 10),
         if (online is num) ...[
           Row(children: [
-            const Icon(Icons.circle, size: 8, color: green),
+            Container(width: 8, height: 8, decoration: const BoxDecoration(color: green, shape: BoxShape.circle)),
             const SizedBox(width: 6),
             Text('${compact(online)} онлайн', style: body(12.5, color: green, weight: FontWeight.w600)),
             const Spacer(),
@@ -259,7 +260,7 @@ class ServerCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(10), border: Border.all(color: line)),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.copy_rounded, size: 13, color: muted),
+                    const Icon(LucideIcons.copy, size: 13, color: muted),
                     const SizedBox(width: 6),
                     Flexible(child: Text(text(server['connect'])!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: soft).copyWith(fontFamily: 'monospace'))),
                   ]),
@@ -269,8 +270,8 @@ class ServerCard extends StatelessWidget {
           else
             Text('${server['families_count'] ?? 0} ${plural(intOf(server['families_count']), 'сім’я', 'сім’ї', 'сімей')}', style: body(12, color: muted)),
           const Spacer(),
-          if (text(server['website']) != null) RoundIcon(icon: Icons.language_rounded, size: 34, onTap: () => launchUrl(Uri.parse(text(server['website'])!), mode: LaunchMode.externalApplication)),
-          if (text(server['discord']) != null) RoundIcon(icon: Icons.forum_outlined, size: 34, onTap: () => launchUrl(Uri.parse(text(server['discord'])!), mode: LaunchMode.externalApplication)),
+          if (text(server['website']) != null) RoundIcon(icon: LucideIcons.globe, size: 34, onTap: () => launchUrl(Uri.parse(text(server['website'])!), mode: LaunchMode.externalApplication)),
+          if (text(server['discord']) != null) RoundIcon(icon: LucideIcons.messagesSquare, size: 34, onTap: () => launchUrl(Uri.parse(text(server['discord'])!), mode: LaunchMode.externalApplication)),
         ]),
       ]),
     );
@@ -379,7 +380,7 @@ class ServerScreen extends StatelessWidget {
           onRefresh: reload,
           children: [
             Row(children: [
-              RoundIcon(icon: Icons.arrow_back_rounded, onTap: () => context.canPop() ? context.pop() : context.go('/servers')),
+              RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.canPop() ? context.pop() : context.go('/servers')),
               const SizedBox(width: 8),
               Text('Сервери', style: body(14, color: muted)),
             ]),
@@ -389,7 +390,7 @@ class ServerScreen extends StatelessWidget {
               const SizedBox(height: 12),
               Glass(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const CardTitle('Про сервер', icon: Icons.info_outline_rounded),
+                  const CardTitle('Про сервер', icon: LucideIcons.info),
                   const SizedBox(height: 10),
                   Text(text(server['description'])!, style: body(14, color: soft).copyWith(height: 1.5)),
                 ]),
@@ -397,11 +398,11 @@ class ServerScreen extends StatelessWidget {
             ],
             if (text(server['telegram']) != null) ...[
               const SizedBox(height: 12),
-              GhostButton(label: 'Telegram', icon: Icons.send_rounded, onPressed: () => launchUrl(Uri.parse(text(server['telegram'])!), mode: LaunchMode.externalApplication)),
+              GhostButton(label: 'Telegram', icon: LucideIcons.send, onPressed: () => launchUrl(Uri.parse(text(server['telegram'])!), mode: LaunchMode.externalApplication)),
             ],
             const SectionLabel('Сім’ї сервера'),
             if (families.isEmpty)
-              EmptyState(icon: Icons.workspace_premium_outlined, title: 'Сімей поки немає', text: 'Станьте першими — створіть сім’ю на цьому сервері.', action: 'Створити сім’ю', onAction: () => context.push('/families/create'))
+              EmptyState(icon: LucideIcons.crown, title: 'Сімей поки немає', text: 'Станьте першими — створіть сім’ю на цьому сервері.', action: 'Створити сім’ю', onAction: () => context.push('/families/create'))
             else
               Glass(
                 padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),

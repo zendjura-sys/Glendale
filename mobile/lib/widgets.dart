@@ -1,8 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'state.dart';
 import 'theme.dart';
 
 // ───────────────────────── Тло й логотип ─────────────────────────
@@ -524,7 +526,7 @@ class SearchField extends StatelessWidget {
     return GcField(
       controller: controller,
       label: hint,
-      icon: Icons.search_rounded,
+      icon: LucideIcons.search,
       dense: true,
       onSubmit: () => onSearch(controller.text.trim()),
     );
@@ -554,7 +556,7 @@ class GcSelect<T> extends StatelessWidget {
           hint: hint == null ? null : Text(hint!, style: body(14.5, color: faint)),
           dropdownColor: popover,
           borderRadius: BorderRadius.circular(14),
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: muted),
+          icon: const Icon(LucideIcons.chevronDown, color: muted),
           style: body(14.5),
           items: [for (final item in items) DropdownMenuItem<T>(value: item.$1, child: Text(item.$2, overflow: TextOverflow.ellipsis))],
           onChanged: onChanged,
@@ -582,56 +584,126 @@ class Segmented extends StatelessWidget {
   final ValueChanged<String> onSelect;
   final bool scroll;
 
+  static const _motion = Duration(milliseconds: 260);
+  static final _pill = BoxDecoration(color: Colors.white.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(14), border: Border.all(color: lineStrong));
+
   @override
   Widget build(BuildContext context) {
-    Widget tab(SegmentOption option) {
-      final on = option.id == selected;
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => onSelect(option.id),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: EdgeInsets.symmetric(horizontal: scroll ? 14 : 8, vertical: 11),
-          decoration: BoxDecoration(
-            color: on ? Colors.white.withValues(alpha: 0.08) : Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: on ? lineStrong : Colors.transparent),
+    Widget content(SegmentOption option, bool on) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (option.icon != null) ...[
+            TweenAnimationBuilder<Color?>(
+              tween: ColorTween(end: on ? const Color(0xFF9AA6FF) : muted),
+              duration: _motion,
+              builder: (_, color, _) => Icon(option.icon, size: 16, color: color),
+            ),
+            const SizedBox(width: 7),
+          ],
+          AnimatedDefaultTextStyle(
+            duration: _motion,
+            style: body(13.5, color: on ? ink : muted, weight: FontWeight.w600).copyWith(height: 1.2),
+            child: Text(option.label, maxLines: 1, softWrap: false),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (option.icon != null) ...[Icon(option.icon, size: 16, color: on ? const Color(0xFF9AA6FF) : muted), const SizedBox(width: 7)],
-              Flexible(
-                child: Text(
-                  option.label,
-                  maxLines: 2,
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                  style: body(13.5, color: on ? ink : muted, weight: FontWeight.w600).copyWith(height: 1.2),
+          if (option.count != null) ...[
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
+              child: Text('${option.count}', maxLines: 1, softWrap: false, style: body(11, color: muted, weight: FontWeight.w600)),
+            ),
+          ],
+        ],
+      );
+    }
+
+    final frame = BoxDecoration(color: Colors.white.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(18), border: Border.all(color: line));
+
+    if (scroll) {
+      return Container(
+        padding: const EdgeInsets.all(4),
+        decoration: frame,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(children: [
+            for (final option in options)
+              Builder(
+                builder: (tabContext) => GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    final box = tabContext.findRenderObject();
+                    if (box != null) Scrollable.of(tabContext).position.ensureVisible(box, alignment: 0.5, duration: _motion, curve: Curves.easeOutCubic);
+                    onSelect(option.id);
+                  },
+                  child: AnimatedContainer(
+                    duration: _motion,
+                    curve: Curves.easeOutCubic,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                    decoration: option.id == selected ? _pill : _pill.copyWith(color: Colors.transparent, border: Border.all(color: Colors.transparent)),
+                    child: content(option, option.id == selected),
+                  ),
                 ),
               ),
-              if (option.count != null) ...[
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
-                  child: Text('${option.count}', style: body(11, color: muted, weight: FontWeight.w600)),
-                ),
-              ],
-            ],
-          ),
+          ]),
         ),
       );
     }
 
-    final children = [for (final option in options) scroll ? tab(option) : Expanded(child: tab(option))];
+    final index = options.indexWhere((o) => o.id == selected);
     return Container(
       padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
-      child: scroll
-          ? SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: children))
-          : Row(children: children),
+      decoration: frame,
+      child: LayoutBuilder(builder: (context, constraints) {
+        final width = constraints.maxWidth / options.length;
+        return Stack(children: [
+          if (index >= 0)
+            AnimatedPositioned(
+              duration: _motion,
+              curve: Curves.easeOutCubic,
+              left: width * index,
+              top: 0,
+              bottom: 0,
+              width: width,
+              child: DecoratedBox(decoration: _pill),
+            ),
+          Row(children: [
+            for (final option in options)
+              Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onSelect(option.id),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 11),
+                    child: Center(child: FittedBox(fit: BoxFit.scaleDown, child: content(option, option.id == selected))),
+                  ),
+                ),
+              ),
+          ]),
+        ]);
+      }),
+    );
+  }
+}
+
+/// Плавна зміна вмісту вкладки: старий вміст згасає, новий з’являється з легким зсувом.
+class Swap extends StatelessWidget {
+  const Swap({required this.id, required this.child, super.key});
+  final Object? id;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 280),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      layoutBuilder: (current, previous) => Stack(alignment: Alignment.topCenter, children: [...previous, ?current]),
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: SlideTransition(position: Tween(begin: const Offset(0, 0.02), end: Offset.zero).animate(animation), child: child),
+      ),
+      child: KeyedSubtree(key: ValueKey(id), child: child),
     );
   }
 }
@@ -845,7 +917,7 @@ class UserTile extends StatelessWidget {
                 children: [
                   Row(children: [
                     Flexible(child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w600))),
-                    if (user['is_verified'] == true) ...[const SizedBox(width: 4), const Icon(Icons.verified_rounded, size: 15, color: primary)],
+                    if (user['is_verified'] == true) ...[const SizedBox(width: 4), const Icon(LucideIcons.badgeCheck, size: 15, color: primary)],
                   ]),
                   Text(
                     subtitle ?? '@${text(user['username']) ?? ''}',
@@ -972,13 +1044,20 @@ class MetricTile extends StatelessWidget {
         children: [
           if (caps)
             Row(children: [
-              Expanded(child: Text(label.toUpperCase(), style: body(10.5, color: muted, weight: FontWeight.w600).copyWith(letterSpacing: 0.8, height: 1.3))),
+              Expanded(
+                child: SizedBox(
+                  height: 28,
+                  child: Text(label.toUpperCase(), maxLines: 2, overflow: TextOverflow.ellipsis, style: body(10.5, color: muted, weight: FontWeight.w600).copyWith(letterSpacing: 0.8, height: 1.3)),
+                ),
+              ),
               if (icon != null) Icon(icon, size: 15, color: faint),
             ]),
           if (caps) const SizedBox(height: 10),
-          gradient == null
-              ? Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: display(22, color: color))
-              : GradientText(value, style: display(24), gradient: gradient!),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: gradient == null ? Text(value, maxLines: 1, softWrap: false, style: display(22, color: color)) : GradientText(value, style: display(24), gradient: gradient!),
+          ),
           if (!caps) ...[const SizedBox(height: 4), Text(label, style: body(12, color: muted).copyWith(height: 1.25))],
         ],
       ),
@@ -988,7 +1067,7 @@ class MetricTile extends StatelessWidget {
 
 /// Плитка-обкладинка з градієнтом (немає фото/постера).
 class CoverPlaceholder extends StatelessWidget {
-  const CoverPlaceholder({required this.seed, this.icon = Icons.music_note_rounded, this.radius = 14, this.iconSize = 22, super.key});
+  const CoverPlaceholder({required this.seed, this.icon = LucideIcons.music, this.radius = 14, this.iconSize = 22, super.key});
   final Object seed;
   final IconData icon;
   final double radius;
@@ -1031,7 +1110,7 @@ class NetImage extends StatelessWidget {
             width: width,
             height: height,
             placeholder: (_, _) => Container(color: raised),
-            errorWidget: (_, _, _) => Container(color: raised, child: const Icon(Icons.broken_image_outlined, color: faint)),
+            errorWidget: (_, _, _) => Container(color: raised, child: const Icon(LucideIcons.imageOff, color: faint)),
           );
     return radius == 0 ? image : ClipRRect(borderRadius: BorderRadius.circular(radius), child: image);
   }
@@ -1094,7 +1173,7 @@ class _RemoteState extends State<Remote> {
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: EmptyState(
-                icon: Icons.wifi_off_rounded,
+                icon: LucideIcons.wifiOff,
                 title: 'Не вдалося завантажити',
                 text: '${snapshot.error}',
                 action: 'Спробувати знову',
@@ -1199,8 +1278,11 @@ void toast(BuildContext context, Object message) {
 
 /// Шторка знизу зі скляним фоном, ручкою й заголовком.
 Future<T?> showGcSheet<T>(BuildContext context, {String? title, String? subtitle, required Widget Function(BuildContext sheet) builder, bool scroll = true, double? height}) {
+  final scope = context.getInheritedWidgetOfExactType<AppScope>();
   return showModalBottomSheet<T>(
     context: context,
+    // Над таб-баром і міні-плеєром оболонки, а не під ними.
+    useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
     backgroundColor: popover,
@@ -1236,17 +1318,18 @@ Future<T?> showGcSheet<T>(BuildContext context, {String? title, String? subtitle
                       ],
                     ),
                   ),
-                  IconButton(onPressed: () => Navigator.pop(sheet), icon: const Icon(Icons.close_rounded, color: muted)),
+                  IconButton(onPressed: () => Navigator.pop(sheet), icon: const Icon(LucideIcons.x, color: muted)),
                 ],
               ),
             ),
           Flexible(child: builder(sheet)),
         ],
       );
-      return Padding(
+      final sized = Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(sheet).bottom),
         child: height == null ? content : SizedBox(height: height, child: content),
       );
+      return scope == null ? sized : AppScope(session: scope.session, player: scope.player, child: sized);
     },
   );
 }

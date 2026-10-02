@@ -1,9 +1,11 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'state.dart';
 import 'theme.dart';
+import 'track_edit.dart';
 import 'widgets.dart';
 
 class TrackCover extends StatelessWidget {
@@ -33,61 +35,73 @@ class MiniPlayer extends StatelessWidget {
     final track = player.current!;
     final total = player.duration.inMilliseconds;
     final progress = total == 0 ? 0.0 : (player.position.inMilliseconds / total).clamp(0.0, 1.0);
+    Widget control(IconData icon, VoidCallback onPressed, {Color color = soft, double size = 24}) => SizedBox.square(
+          dimension: 40,
+          child: IconButton(padding: EdgeInsets.zero, onPressed: onPressed, icon: Icon(icon, color: color, size: size)),
+        );
     return SizedBox(
       height: miniPlayerExtent,
       child: Padding(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-      child: GestureDetector(
-        onTap: () => showFullPlayer(context, player),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: const [BoxShadow(color: Color(0x996D5DFC), blurRadius: 28, offset: Offset(0, 12), spreadRadius: -18)],
-          ),
-          child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: const Color(0xB30F1426),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              LinearProgressIndicator(value: progress, minHeight: 2.5, backgroundColor: Colors.white.withValues(alpha: 0.06), color: primary),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 4, 6, 4),
-                child: Row(
-                  children: [
-                    TrackCover(url: track.cover, seed: track.id ?? track.title, size: 46),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(track.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w700)),
-                          Text(track.artist.isEmpty ? 'Невідомий виконавець' : track.artist, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
-                        ],
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+        child: GestureDetector(
+          onTap: () => showFullPlayer(context, player),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: const [BoxShadow(color: Color(0x996D5DFC), blurRadius: 28, offset: Offset(0, 12), spreadRadius: -18)],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: const Color(0xB30F1426),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+                  ),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 9),
+                          child: Row(
+                            children: [
+                              TrackCover(url: track.cover, seed: track.id ?? track.title, size: 46, radius: 12),
+                              const SizedBox(width: 11),
+                              Expanded(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(track.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w700).copyWith(height: 1.2)),
+                                    const SizedBox(height: 2),
+                                    Text(track.artist.isEmpty ? 'Невідомий виконавець' : track.artist, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted).copyWith(height: 1.2)),
+                                  ],
+                                ),
+                              ),
+                              control(LucideIcons.skipBack, player.prev),
+                              RoundIcon(icon: player.playing ? LucideIcons.pause : LucideIcons.play, onTap: player.toggle, filled: true, size: 44),
+                              control(LucideIcons.skipForward, player.next),
+                              control(LucideIcons.x, player.stop, color: muted, size: 20),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                    IconButton(onPressed: player.prev, icon: const Icon(Icons.skip_previous_rounded, color: soft, size: 28)),
-                    RoundIcon(icon: player.playing ? Icons.pause_rounded : Icons.play_arrow_rounded, onTap: player.toggle, filled: true, size: 44),
-                    IconButton(onPressed: player.next, icon: const Icon(Icons.skip_next_rounded, color: soft, size: 28)),
-                    IconButton(onPressed: player.stop, icon: const Icon(Icons.close_rounded, color: muted, size: 22)),
-                  ],
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        top: 0,
+                        child: LinearProgressIndicator(value: progress, minHeight: 2.5, backgroundColor: Colors.white.withValues(alpha: 0.06), color: primary),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ],
+            ),
           ),
-        ),
-          ),
-        ),
         ),
       ),
-    ),
     );
   }
 }
@@ -102,16 +116,45 @@ Future<void> showFullPlayer(BuildContext context, TrackPlayer player) {
         if (track == null) return const SizedBox(height: 120);
         final total = player.duration.inMilliseconds.toDouble();
         final at = player.position.inMilliseconds.toDouble().clamp(0.0, total <= 0 ? 0.0 : total);
+        final session = player.session;
+        final own = track.id != null && session != null && (track.userId == session.myId || session.isAdmin);
+        final details = [track.album, track.genre].whereType<String>().join(' · ');
         return SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 6, 24, 28),
           child: Column(
             children: [
               AspectRatio(aspectRatio: 1, child: TrackCover(url: track.cover, seed: track.id ?? track.title, size: double.infinity, radius: 26)),
-              const SizedBox(height: 22),
-              Text(track.title, textAlign: TextAlign.center, style: display(20)),
-              const SizedBox(height: 6),
-              Text(track.artist.isEmpty ? 'Невідомий виконавець' : track.artist, style: body(14, color: muted)),
-              const SizedBox(height: 14),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  const SizedBox(width: 44),
+                  Expanded(
+                    child: Column(children: [
+                      Text(track.title, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: display(20)),
+                      const SizedBox(height: 6),
+                      Text(track.artist.isEmpty ? 'Невідомий виконавець' : track.artist, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: muted)),
+                      if (details.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        Text(details, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: faint)),
+                      ],
+                    ]),
+                  ),
+                  SizedBox(
+                    width: 44,
+                    child: own
+                        ? IconButton(
+                            tooltip: 'Редагувати метадані',
+                            onPressed: () async {
+                              final card = await editTrackSheet(context, track.toCard());
+                              if (card != null) player.updateMeta(card);
+                            },
+                            icon: const Icon(LucideIcons.pencil, size: 20, color: soft),
+                          )
+                        : null,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
               Slider(
                 value: at,
                 max: total <= 0 ? 1 : total,
@@ -131,23 +174,30 @@ Future<void> showFullPlayer(BuildContext context, TrackPlayer player) {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  IconButton(onPressed: player.toggleShuffle, icon: Icon(Icons.shuffle_rounded, color: player.shuffle ? primary : muted)),
-                  IconButton(onPressed: player.prev, icon: const Icon(Icons.skip_previous_rounded, size: 36, color: ink)),
-                  RoundIcon(icon: player.playing ? Icons.pause_rounded : Icons.play_arrow_rounded, onTap: player.toggle, filled: true, size: 68),
-                  IconButton(onPressed: player.next, icon: const Icon(Icons.skip_next_rounded, size: 36, color: ink)),
-                  IconButton(onPressed: player.toggleRepeat, icon: Icon(Icons.repeat_one_rounded, color: player.repeat ? primary : muted)),
+                  IconButton(tooltip: 'Перемішати', onPressed: player.toggleShuffle, icon: Icon(LucideIcons.shuffle, color: player.shuffle ? primary : muted)),
+                  IconButton(onPressed: player.prev, icon: const Icon(LucideIcons.skipBack, size: 32, color: ink)),
+                  RoundIcon(icon: player.playing ? LucideIcons.pause : LucideIcons.play, onTap: player.toggle, filled: true, size: 68),
+                  IconButton(onPressed: player.next, icon: const Icon(LucideIcons.skipForward, size: 32, color: ink)),
+                  IconButton(tooltip: 'Повтор треку', onPressed: player.toggleRepeat, icon: Icon(player.repeat ? LucideIcons.repeat1 : LucideIcons.repeat, color: player.repeat ? primary : muted)),
                 ],
               ),
               if (player.queue.length > 1) ...[
                 const SizedBox(height: 18),
-                const CardTitle('Далі в черзі', icon: Icons.queue_music_rounded),
-                for (var i = 0; i < player.queue.length; i++)
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: TrackCover(url: player.queue[i].cover, seed: player.queue[i].id ?? i, size: 40, radius: 10),
-                    title: Text(player.queue[i].title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: i == player.index ? primary : ink, weight: FontWeight.w600)),
-                    subtitle: Text(player.queue[i].artist, maxLines: 1, style: body(12, color: muted)),
-                  ),
+                Row(children: [
+                  const Expanded(child: CardTitle('Черга відтворення', icon: LucideIcons.listMusic)),
+                  Text('${player.index + 1} / ${player.queue.length}', style: body(12, color: faint)),
+                ]),
+                Align(alignment: Alignment.centerLeft, child: Text('Торкніться, щоб увімкнути; перетягніть за ⋮⋮, щоб змінити порядок.', style: body(12, color: faint))),
+                const SizedBox(height: 6),
+                ReorderableListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  buildDefaultDragHandles: false,
+                  itemCount: player.queue.length,
+                  onReorderItem: player.move,
+                  proxyDecorator: (child, _, _) => Material(color: popover, elevation: 6, borderRadius: BorderRadius.circular(14), child: child),
+                  itemBuilder: (context, i) => _QueueRow(key: ObjectKey(player.queue[i]), player: player, i: i),
+                ),
               ],
             ],
           ),
@@ -155,4 +205,51 @@ Future<void> showFullPlayer(BuildContext context, TrackPlayer player) {
       },
     ),
   );
+}
+
+class _QueueRow extends StatelessWidget {
+  const _QueueRow({required this.player, required this.i, super.key});
+  final TrackPlayer player;
+  final int i;
+
+  @override
+  Widget build(BuildContext context) {
+    final track = player.queue[i];
+    final on = i == player.index;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => player.playAt(i),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+          decoration: BoxDecoration(color: on ? primary.withValues(alpha: 0.10) : Colors.transparent, borderRadius: BorderRadius.circular(14)),
+          child: Row(children: [
+            Stack(alignment: Alignment.center, children: [
+              TrackCover(url: track.cover, seed: track.id ?? i, size: 42, radius: 10),
+              if (on)
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.45), borderRadius: BorderRadius.circular(10)),
+                  child: Icon(player.playing ? LucideIcons.audioLines : LucideIcons.pause, size: 18, color: Colors.white),
+                ),
+            ]),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(track.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: on ? const Color(0xFF9AA6FF) : ink, weight: FontWeight.w600)),
+                Text(track.artist.isEmpty ? 'Невідомий виконавець' : track.artist, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+              ]),
+            ),
+            IconButton(tooltip: 'Прибрати з черги', visualDensity: VisualDensity.compact, onPressed: () => player.removeAt(i), icon: const Icon(LucideIcons.x, size: 18, color: faint)),
+            ReorderableDragStartListener(
+              index: i,
+              child: const Padding(padding: EdgeInsets.symmetric(horizontal: 6, vertical: 8), child: Icon(LucideIcons.gripVertical, size: 18, color: muted)),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
 }
