@@ -16,6 +16,8 @@ declare module '@inertiajs/core' {
             site: {
                 name: string;
                 tagline: string | null;
+                description: string;
+                play_store: { url: string } | null;
                 registration_open: boolean;
                 max_attachments: number;
                 max_message_file_mb: number;

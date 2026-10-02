@@ -25,6 +25,9 @@ class SettingsController extends Controller
         $data = $request->validate([
             'site_name' => ['required', 'string', 'max:60'],
             'tagline' => ['nullable', 'string', 'max:140'],
+            'seo_description' => ['nullable', 'string', 'max:300'],
+            'play_store_enabled' => ['boolean'],
+            'play_store_url' => ['nullable', 'string', 'max:300', 'url:http,https'],
             'registration_open' => ['boolean'],
             'email_verification' => ['boolean'],
             'max_post_length' => ['required', 'integer', 'min:100', 'max:50000'],

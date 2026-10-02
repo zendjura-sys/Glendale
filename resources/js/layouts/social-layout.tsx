@@ -35,6 +35,7 @@ import { useUnreadMessages } from '@/lib/inbox';
 import { usePlayer } from '@/lib/player';
 import { cn } from '@/lib/utils';
 import { PageTransition } from '@/components/gc/page-transition';
+import { PlayStoreLink } from '@/components/gc/play-store';
 
 function useIsActive() {
     const { currentUrl } = useCurrentUrl();
@@ -134,6 +135,11 @@ function Sidebar() {
                     Адмін-панель
                 </Link>
             )}
+
+            <PlayStoreLink
+                compact
+                className="mt-3 w-full justify-center px-3"
+            />
 
             <div className="mt-auto px-3 pt-4 text-[11px] leading-relaxed text-white/30">
                 © {new Date().getFullYear()} GameCon · Соціальна мережа нового
@@ -488,6 +494,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                             {link.label}
                         </Link>
                     ))}
+                    <PlayStoreLink compact className="mx-1.5 my-1" />
                     <button
                         type="button"
                         onClick={() => router.post('/logout')}

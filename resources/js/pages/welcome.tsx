@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Aurora } from '@/components/gc/aurora';
 import { Logo } from '@/components/gc/logo';
+import { PlayStoreLink } from '@/components/gc/play-store';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { compactNumber, plural } from '@/lib/format';
 import { login, register } from '@/routes';
@@ -227,6 +228,7 @@ export default function Welcome({
                             >
                                 У мене вже є акаунт
                             </Link>
+                            <PlayStoreLink className="h-13 px-5" />
                         </div>
 
                         <div className="mt-10 flex items-center gap-4">

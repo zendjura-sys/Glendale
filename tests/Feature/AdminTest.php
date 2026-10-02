@@ -115,12 +115,61 @@ class AdminTest extends TestCase
             'max_message_file_mb' => 40,
             'music_max_track_mb' => 25,
             'maintenance_message' => 'Технічні роботи о 03:00',
+            'seo_description' => 'Опис для пошуку',
+            'play_store_enabled' => false,
+            'play_store_url' => 'https://play.google.com/store/apps/details?id=online.gamecon.app',
         ])->assertSessionHasNoErrors();
 
         $this->actingAs($admin)->get(route('feed'))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('site.name', 'GameCon UA')
+                ->where('site.description', 'Опис для пошуку')
+                ->where('site.play_store', null)
                 ->where('site.announcement', 'Технічні роботи о 03:00'));
+    }
+
+    public function test_play_store_button_appears_only_with_a_valid_link(): void
+    {
+        $description = app(SiteSettings::class)->seoDescription();
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('<meta name="description" content="'.e($description).'"', false)
+            ->assertSee('property="og:image"', false)
+            ->assertSee('/og.jpg', false)
+            ->assertSee('/favicon.svg', false)
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('site.description', $description)
+                ->where('site.play_store', null));
+
+        $admin = User::factory()->admin()->create();
+        $payload = [
+            'site_name' => 'GameCon',
+            'tagline' => 'Тест',
+            'registration_open' => true,
+            'email_verification' => false,
+            'max_post_length' => 5000,
+            'max_attachments' => 10,
+            'max_upload_mb' => 20,
+            'max_message_file_mb' => 50,
+            'music_max_track_mb' => 30,
+            'maintenance_message' => null,
+            'seo_description' => $description,
+            'play_store_enabled' => true,
+            'play_store_url' => 'not-a-url',
+        ];
+
+        $this->actingAs($admin)->put(route('admin.settings.update'), $payload)
+            ->assertSessionHasErrors('play_store_url');
+
+        $payload['play_store_url'] = 'https://play.google.com/store/apps/details?id=online.gamecon.app';
+
+        $this->actingAs($admin)->put(route('admin.settings.update'), $payload)
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($admin)->get(route('feed'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('site.play_store.url', $payload['play_store_url']));
     }
 
     public function test_email_verification_setting_gates_the_site(): void

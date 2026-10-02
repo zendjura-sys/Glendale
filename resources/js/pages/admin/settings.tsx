@@ -1,5 +1,12 @@
 import { Head, useForm } from '@inertiajs/react';
-import { FileText, Globe, ShieldCheck, Wrench } from 'lucide-react';
+import {
+    FileText,
+    Globe,
+    Search,
+    ShieldCheck,
+    Smartphone,
+    Wrench,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { FormEvent, PropsWithChildren, ReactNode } from 'react';
 import { PageHeader, Toggle } from '@/components/gc/admin';
@@ -12,6 +19,9 @@ import { Spinner } from '@/components/ui/spinner';
 type Settings = {
     site_name: string;
     tagline: string;
+    seo_description: string;
+    play_store_enabled: boolean;
+    play_store_url: string;
     registration_open: boolean;
     email_verification: boolean;
     max_post_length: number;
@@ -74,6 +84,9 @@ export default function AdminSettings({ settings }: { settings: Settings }) {
     const form = useForm<Settings>({
         ...settings,
         tagline: settings.tagline ?? '',
+        seo_description: settings.seo_description ?? '',
+        play_store_enabled: Boolean(settings.play_store_enabled),
+        play_store_url: settings.play_store_url ?? '',
         maintenance_message: settings.maintenance_message ?? '',
     });
     const { data, setData, errors, processing } = form;
@@ -122,6 +135,63 @@ export default function AdminSettings({ settings }: { settings: Settings }) {
                             maxLength={140}
                         />
                         <InputError message={errors.tagline} />
+                    </div>
+                </Section>
+
+                <Section
+                    icon={Search}
+                    title="SEO"
+                    description="Опис для пошуку і превʼю посилання в месенджерах. Картинка — логотип сайту."
+                >
+                    <div className="grid gap-2">
+                        <Label htmlFor="seo_description">Опис</Label>
+                        <textarea
+                            id="seo_description"
+                            value={data.seo_description}
+                            onChange={(e) =>
+                                setData('seo_description', e.target.value)
+                            }
+                            rows={3}
+                            maxLength={300}
+                            placeholder="Коротко, чим є GameCon"
+                            className="input-glass w-full resize-y rounded-xl px-3.5 py-3 text-sm text-white placeholder:text-white/30"
+                        />
+                        <InputError message={errors.seo_description} />
+                    </div>
+                    <img
+                        src="/og.jpg"
+                        alt="Превʼю посилання GameCon"
+                        className="aspect-[1200/630] w-full max-w-md rounded-2xl border border-white/10"
+                    />
+                </Section>
+
+                <Section
+                    icon={Smartphone}
+                    title="Google Play"
+                    description="Кнопка завантаження зʼявляється на головній, у бічному меню і в мобільному меню, коли ввімкнено і вказано посилання."
+                >
+                    <SwitchRow
+                        title="Показувати кнопку"
+                        text="Вимкнено — кнопка ніде не зʼявляється, навіть якщо посилання збережене."
+                        checked={data.play_store_enabled}
+                        onChange={(v) => setData('play_store_enabled', v)}
+                    />
+                    <div className="grid gap-2">
+                        <Label htmlFor="play_store_url">
+                            Посилання на Google Play
+                        </Label>
+                        <Input
+                            id="play_store_url"
+                            type="url"
+                            inputMode="url"
+                            value={data.play_store_url}
+                            onChange={(e) =>
+                                setData('play_store_url', e.target.value)
+                            }
+                            maxLength={300}
+                            placeholder="https://play.google.com/store/apps/details?id=…"
+                        />
+                        <InputError message={errors.play_store_url} />
                     </div>
                 </Section>
 

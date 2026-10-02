@@ -15,6 +15,9 @@ class SiteSettings
     public const DEFAULTS = [
         'site_name' => 'GameCon',
         'tagline' => 'Соціальна мережа нового покоління',
+        'seo_description' => 'GameCon — соціальна мережа для геймерів і кіноманів: друзі, спільноти, музика, кіно, сімʼї та ігрові сервери.',
+        'play_store_enabled' => false,
+        'play_store_url' => null,
         'registration_open' => true,
         'email_verification' => false,
         'max_post_length' => 5000,
@@ -95,6 +98,26 @@ class SiteSettings
     public function putSecret(string $key, ?string $value): void
     {
         $this->put([$key => $value === null || $value === '' ? null : Crypt::encryptString($value)]);
+    }
+
+    public function seoDescription(): string
+    {
+        $value = $this->get('seo_description');
+
+        return is_string($value) && trim($value) !== ''
+            ? trim($value)
+            : (string) self::DEFAULTS['seo_description'];
+    }
+
+    public function playStoreUrl(): ?string
+    {
+        if (! $this->get('play_store_enabled')) {
+            return null;
+        }
+
+        $url = $this->get('play_store_url');
+
+        return is_string($url) && preg_match('#\Ahttps?://#i', $url) === 1 ? $url : null;
     }
 
     /**
