@@ -703,7 +703,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ? ('Відповідь ${text(mapOf(replyTo!['user'])['first_name']) ?? ''}', text(replyTo!['preview']) ?? '', Icons.reply_rounded)
             : null;
     return Container(
-      padding: EdgeInsets.fromLTRB(8, 6, 8, 8 + MediaQuery.paddingOf(context).bottom),
+      padding: EdgeInsets.fromLTRB(8, 6, 8, 8 + ShellChrome.bottomOf(context)),
       decoration: const BoxDecoration(border: Border(top: BorderSide(color: line))),
       child: Column(
         mainAxisSize: MainAxisSize.min,

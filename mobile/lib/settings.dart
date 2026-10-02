@@ -16,24 +16,17 @@ class NotificationsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final session = AppScope.of(context).session;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(14, siteHeaderInset(context) + 6, 14, 0),
-      child: Glass(
-        padding: const EdgeInsets.only(top: 14),
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(children: [
-              RoundIcon(icon: Icons.arrow_back_rounded, onTap: () => context.canPop() ? context.pop() : context.go('/feed')),
-              const SizedBox(width: 8),
-              Text('Сповіщення', style: display(19)),
-            ]),
-          ),
-          const SizedBox(height: 6),
-          Expanded(child: NotificationsList(session: session, onOpen: (path) => context.push(appPathFor(path)))),
+    return Column(children: [
+      Padding(
+        padding: EdgeInsets.fromLTRB(14, siteHeaderInset(context) + 6, 8, 0),
+        child: Row(children: [
+          RoundIcon(icon: Icons.arrow_back_rounded, onTap: () => context.canPop() ? context.pop() : context.go('/feed')),
+          const SizedBox(width: 8),
+          Text('Сповіщення', style: display(19)),
         ]),
       ),
-    );
+      Expanded(child: NotificationsList(session: session, onOpen: (path) => context.push(appPathFor(path)))),
+    ]);
   }
 }
 

@@ -120,36 +120,44 @@ class _AppShellState extends State<AppShell> {
       session: widget.session,
       player: widget.player,
       child: Stage(
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          extendBody: true,
-          resizeToAvoidBottomInset: true,
-          body: Stack(
-            children: [
-              widget.child,
-              Positioned(top: headerTop, left: 0, right: 0, child: _SiteBar(session: widget.session)),
-            ],
-          ),
-          bottomNavigationBar: chatOpen && MediaQuery.viewInsetsOf(context).bottom > 0
-              ? null
-              : ListenableBuilder(
-                  listenable: Listenable.merge([widget.player, widget.session]),
-                  builder: (context, _) => Material(
-                    color: Colors.transparent,
-                    elevation: 0,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (widget.player.current != null && !chatOpen) MiniPlayer(player: widget.player),
-                        _BottomBar(
-                          selected: selected,
-                          unreadChats: widget.session.unreadChats,
-                          onTab: (i) => i == 4 ? _menu(context) : context.go(_tabs[i].$1),
+        child: ListenableBuilder(
+          listenable: Listenable.merge([widget.player, widget.session]),
+          builder: (context, _) {
+            final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
+            final hideChrome = chatOpen && keyboard;
+            final playing = widget.player.current != null && !hideChrome;
+            final bottom = hideChrome ? 0.0 : MediaQuery.viewPaddingOf(context).bottom + navBarHeight + (playing ? miniPlayerExtent : 0);
+            return ShellChrome(
+              bottom: bottom,
+              child: Scaffold(
+                backgroundColor: Colors.transparent,
+                resizeToAvoidBottomInset: true,
+                body: Stack(
+                  children: [
+                    widget.child,
+                    Positioned(top: headerTop, left: 0, right: 0, child: _SiteBar(session: widget.session)),
+                    if (!hideChrome)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (playing) MiniPlayer(player: widget.player),
+                            _BottomBar(
+                              selected: selected,
+                              unreadChats: widget.session.unreadChats,
+                              onTab: (i) => i == 4 ? _menu(context) : context.go(_tabs[i].$1),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+                  ],
                 ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -420,7 +428,7 @@ class _NotificationsListState extends State<NotificationsList> {
               child: rows.isEmpty
                   ? const QuietEmpty(icon: Icons.notifications_none_rounded, text: 'Сповіщень поки немає')
                   : ListView.separated(
-                      padding: EdgeInsets.fromLTRB(12, 0, 12, 20 + MediaQuery.paddingOf(context).bottom),
+                      padding: EdgeInsets.fromLTRB(12, 0, 12, 20 + ShellChrome.bottomOf(context)),
                       itemCount: rows.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 2),
                       itemBuilder: (context, i) => NotificationRow(row: rows[i], onTap: () => widget.onOpen(text(rows[i]['url']))),

@@ -5,6 +5,7 @@
 #   - вручну: Actions → «App build» → Run workflow (кнопка з'являється, коли файл є в main;
 #     до того — через `gh workflow run app-build.yml --ref <гілка>` не вийде, тож піднімайте версію
 #     або запуште цей файл після оновлення секретів підпису).
+#   Пуш цього файлу без зміни pubspec збирає ту саму версію 1.1.0+10 з новим хромом оболонки.
 #
 # Секрети репозиторію (Settings → Secrets and variables → Actions):
 #   GAMECON_KEYSTORE_BASE64  — base64 від gamecon-upload.jks (`base64 -w0 gamecon-upload.jks`)

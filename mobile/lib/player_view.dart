@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 import 'state.dart';
@@ -31,24 +33,33 @@ class MiniPlayer extends StatelessWidget {
     final track = player.current!;
     final total = player.duration.inMilliseconds;
     final progress = total == 0 ? 0.0 : (player.position.inMilliseconds / total).clamp(0.0, 1.0);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
+    return SizedBox(
+      height: miniPlayerExtent,
+      child: Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
       child: GestureDetector(
         onTap: () => showFullPlayer(context, player),
-        child: Container(
-          clipBehavior: Clip.antiAlias,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [BoxShadow(color: Color(0x996D5DFC), blurRadius: 28, offset: Offset(0, 12), spreadRadius: -18)],
+          ),
+          child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: DecoratedBox(
           decoration: BoxDecoration(
             color: const Color(0xB30F1426),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: lineStrong),
-            boxShadow: const [BoxShadow(color: Color(0x99000000), blurRadius: 30, offset: Offset(0, 12), spreadRadius: -10)],
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               LinearProgressIndicator(value: progress, minHeight: 2.5, backgroundColor: Colors.white.withValues(alpha: 0.06), color: primary),
               Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 6, 8),
+                padding: const EdgeInsets.fromLTRB(10, 4, 6, 4),
                 child: Row(
                   children: [
                     TrackCover(url: track.cover, seed: track.id ?? track.title, size: 46),
@@ -72,7 +83,11 @@ class MiniPlayer extends StatelessWidget {
             ],
           ),
         ),
+          ),
+        ),
+        ),
       ),
+    ),
     );
   }
 }

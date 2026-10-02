@@ -1112,6 +1112,23 @@ class _RemoteState extends State<Remote> {
 /// Висота прозорої шапки поверх контенту, без системного відступу.
 const siteBarHeight = 58.0;
 
+/// Нижнє меню без системного відступу.
+const navBarHeight = 64.0;
+
+/// Плаваючий плеєр разом із відступом над меню.
+const miniPlayerExtent = 76.0;
+
+/// Нижній хром оболонки: скільки контент має лишити під скляним меню й плеєром.
+class ShellChrome extends InheritedWidget {
+  const ShellChrome({required this.bottom, required super.child, super.key});
+  final double bottom;
+
+  static double bottomOf(BuildContext context) => context.dependOnInheritedWidgetOfExactType<ShellChrome>()?.bottom ?? MediaQuery.paddingOf(context).bottom;
+
+  @override
+  bool updateShouldNotify(ShellChrome oldWidget) => bottom != oldWidget.bottom;
+}
+
 /// Скільки місця шапка займає зверху, щоб перший елемент стартував під нею,
 /// а прокрутка йшла вже під прозорими кнопками.
 double siteHeaderInset(BuildContext context) {
@@ -1135,7 +1152,7 @@ class ScreenScroll extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       padding: base.copyWith(
         top: base.top + siteHeaderInset(context),
-        bottom: base.bottom + MediaQuery.paddingOf(context).bottom,
+        bottom: base.bottom + ShellChrome.bottomOf(context),
       ),
       children: children,
     );
