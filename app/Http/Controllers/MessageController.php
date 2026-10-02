@@ -13,6 +13,7 @@ use App\Services\MessengerPresenter;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -82,7 +83,7 @@ class MessageController extends Controller
                 $user,
                 $request->file('voice'),
                 (int) $data['voice_duration'],
-                array_filter((array) json_decode($data['voice_waveform'] ?? '[]', true), 'is_numeric'),
+                $this->waveform($data['voice_waveform'] ?? '[]'),
                 $replyTo,
             ),
             isset($data['contact_id']) => $this->messenger->sendContact(
@@ -118,8 +119,8 @@ class MessageController extends Controller
      */
     private function sendText(Conversation $conversation, User $user, array $data, Request $request): Message
     {
-        $images = $request->file('images', []);
-        $files = $request->file('files', []);
+        $images = $this->uploadedList($request->file('images', []));
+        $files = $this->uploadedList($request->file('files', []));
 
         if (count($images) + count($files) > self::MAX_IMAGES) {
             throw ValidationException::withMessages(['files' => 'Не більше '.self::MAX_IMAGES.' вкладень в одному повідомленні.']);
@@ -133,6 +134,41 @@ class MessageController extends Controller
             isset($data['reply_to_id']) ? (int) $data['reply_to_id'] : null,
             $files,
         );
+    }
+
+    /**
+     * @return list<UploadedFile>
+     */
+    private function uploadedList(mixed $files): array
+    {
+        $list = [];
+        foreach (is_array($files) ? $files : [$files] as $file) {
+            if ($file instanceof UploadedFile) {
+                $list[] = $file;
+            }
+        }
+
+        return $list;
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function waveform(mixed $raw): array
+    {
+        $decoded = is_string($raw) ? json_decode($raw, true) : $raw;
+        if (! is_array($decoded)) {
+            return [];
+        }
+
+        $peaks = [];
+        foreach ($decoded as $peak) {
+            if (is_numeric($peak)) {
+                $peaks[] = (int) $peak;
+            }
+        }
+
+        return $peaks;
     }
 
     public function update(Request $request, Conversation $conversation, Message $message): JsonResponse

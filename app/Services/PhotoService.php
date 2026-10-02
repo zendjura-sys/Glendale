@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 
 class PhotoService
 {
@@ -181,9 +182,15 @@ class PhotoService
      */
     public function ownerCard(Model $owner): array
     {
-        return $owner instanceof Community
-            ? ['type' => 'community', 'name' => $owner->name, 'avatar_url' => $owner->avatar_url, 'href' => '/c/'.$owner->slug, 'photos_href' => '/c/'.$owner->slug.'/photos', 'community' => $owner->toCard()]
-            : ['type' => 'user', 'name' => $owner->name, 'avatar_url' => $owner->avatar_url, 'href' => '/'.$owner->username, 'photos_href' => '/photos/u/'.$owner->username, 'user' => $owner->toCard()];
+        if ($owner instanceof Community) {
+            return ['type' => 'community', 'name' => $owner->name, 'avatar_url' => $owner->avatar_url, 'href' => '/c/'.$owner->slug, 'photos_href' => '/c/'.$owner->slug.'/photos', 'community' => $owner->toCard()];
+        }
+
+        if ($owner instanceof User) {
+            return ['type' => 'user', 'name' => $owner->name, 'avatar_url' => $owner->avatar_url, 'href' => '/'.$owner->username, 'photos_href' => '/photos/u/'.$owner->username, 'user' => $owner->toCard()];
+        }
+
+        throw new InvalidArgumentException('Album owner must be a user or a community.');
     }
 
     /**

@@ -23,7 +23,7 @@ export async function api<T>(
     body?: Record<string, unknown> | FormData,
 ): Promise<T> {
     const isForm = body instanceof FormData;
-    const response = await fetch(url, {
+    const init: RequestInit = {
         method,
         credentials: 'same-origin',
         headers: {
@@ -32,8 +32,13 @@ export async function api<T>(
             'X-Requested-With': 'XMLHttpRequest',
             'X-XSRF-TOKEN': xsrfToken(),
         },
-        body: isForm ? body : body ? JSON.stringify(body) : undefined,
-    });
+    };
+
+    if (method !== 'GET' && body !== undefined) {
+        init.body = isForm ? body : JSON.stringify(body);
+    }
+
+    const response = await fetch(url, init);
 
     if (!response.ok) {
         const payload = await response.json().catch(() => ({}));

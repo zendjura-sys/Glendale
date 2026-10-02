@@ -34,9 +34,6 @@ class Comment extends Model
     }
 
     /**
-     * @return BelongsTo<User, $this>
-     */
-    /**
      * @return BelongsTo<Photo, $this>
      */
     public function photo(): BelongsTo
@@ -52,6 +49,9 @@ class Comment extends Model
         return $this->belongsTo(Movie::class);
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

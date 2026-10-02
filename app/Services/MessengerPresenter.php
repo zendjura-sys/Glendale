@@ -125,7 +125,7 @@ class MessengerPresenter
         return match ($message->type) {
             Message::TYPE_STICKER => trim(($message->meta['sticker']['emoji'] ?? '').' Стікер'),
             Message::TYPE_VOICE => 'Голосове повідомлення',
-            Message::TYPE_CONTACT => 'Контакт: '.($this->contact($message)?->name ?? 'видалений акаунт'),
+            Message::TYPE_CONTACT => 'Контакт: '.(($contact = $this->contact($message)) instanceof User ? $contact->name : 'видалений акаунт'),
             default => $this->textPreview($message),
         };
     }
@@ -197,7 +197,7 @@ class MessengerPresenter
         $this->preloadContacts($messages->concat($messages->pluck('replyTo')->filter()));
 
         return [
-            'messages' => $messages->take(self::PAGE)->reverse()->map(fn (Message $m) => $this->message($m))->values()->all(),
+            'messages' => array_values($messages->take(self::PAGE)->reverse()->map(fn (Message $m) => $this->message($m))->all()),
             'has_more' => $hasMore,
         ];
     }
@@ -228,7 +228,7 @@ class MessengerPresenter
         $peers = $this->peers($conversations, $viewer);
         $this->preloadContacts($conversations->pluck('lastMessage')->filter());
 
-        return $conversations->map(fn (Conversation $c) => $this->summary($c, $viewer, $peers[$c->id] ?? null))->values()->all();
+        return array_values($conversations->map(fn (Conversation $c) => $this->summary($c, $viewer, $peers[$c->id] ?? null))->all());
     }
 
     /**
@@ -241,7 +241,7 @@ class MessengerPresenter
         return [
             'id' => $conversation->id,
             'type' => $conversation->type,
-            'title' => $conversation->isGroup() ? $conversation->title : ($peer?->name ?? 'Видалений акаунт'),
+            'title' => $conversation->isGroup() ? $conversation->title : ($peer !== null ? $peer->name : 'Видалений акаунт'),
             'avatar_url' => $conversation->isGroup() ? $conversation->avatar_url : $peer?->avatar_url,
             'peer' => $peer?->toCard(),
             'members_count' => (int) ($conversation->members_count ?? 0),
@@ -275,7 +275,7 @@ class MessengerPresenter
         return [
             'id' => $conversation->id,
             'type' => $conversation->type,
-            'title' => $conversation->isGroup() ? $conversation->title : ($peer?->name ?? 'Видалений акаунт'),
+            'title' => $conversation->isGroup() ? $conversation->title : ($peer !== null ? $peer->name : 'Видалений акаунт'),
             'avatar_url' => $conversation->isGroup() ? $conversation->avatar_url : $peer?->avatar_url,
             'peer' => $peer ? [...$peer->toCard(), 'last_seen_at' => $peer->last_seen_at?->toIso8601String(), 'gender' => $peer->gender] : null,
             'can_write' => $conversation->isGroup() || ($peer !== null && $messenger->canMessage($viewer, $peer)),

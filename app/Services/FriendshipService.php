@@ -136,13 +136,12 @@ class FriendshipService
      */
     public function friendIds(User $user): array
     {
-        return $this->friendIdsCache[$user->id] ??= Friendship::query()
+        return $this->friendIdsCache[$user->id] ??= array_values(Friendship::query()
             ->where('status', Friendship::ACCEPTED)
             ->where(fn (Builder $q) => $q->where('requester_id', $user->id)->orWhere('addressee_id', $user->id))
             ->get(['requester_id', 'addressee_id'])
             ->map(fn (Friendship $f) => $f->requester_id === $user->id ? $f->addressee_id : $f->requester_id)
-            ->values()
-            ->all();
+            ->all());
     }
 
     /**

@@ -119,7 +119,7 @@ class KodikClient
         $candidates = [];
 
         foreach ($results as $item) {
-            if (! is_array($item) || empty($item['link'])) {
+            if (empty($item['link'])) {
                 continue;
             }
 

@@ -37,7 +37,7 @@ class PhotoController extends Controller
                 'caption' => $p->caption,
                 'size' => $p->size,
                 'user' => $p->user?->toCard(),
-                'album' => $p->album ? ['id' => $p->album->id, 'title' => $p->album->title, 'owner' => $p->album->owner?->name] : null,
+                'album' => ['id' => $p->album->id, 'title' => $p->album->title, 'owner' => $p->album->owner?->name],
                 'created_at' => $p->created_at->toIso8601String(),
                 'deleted_at' => $p->deleted_at?->toIso8601String(),
             ]);
@@ -68,7 +68,7 @@ class PhotoController extends Controller
             $message = 'Фото переміщено в кошик.';
         }
 
-        $model->album?->recount();
+        $model->album->recount();
         Inertia::flash('toast', ['type' => 'success', 'message' => $message]);
 
         return back();
@@ -78,7 +78,7 @@ class PhotoController extends Controller
     {
         $model = Photo::onlyTrashed()->with('album')->findOrFail($photo);
         $model->restore();
-        $model->album?->recount();
+        $model->album->recount();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Фото відновлено.']);
 

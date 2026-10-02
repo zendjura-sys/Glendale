@@ -8,7 +8,6 @@ use App\Models\Track;
 use App\Models\User;
 use App\Services\Spotify\SpotifyClient;
 use App\Services\Spotify\SpotifyException;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
@@ -79,29 +78,41 @@ class MusicService
      */
     public function libraryIds(User $user, iterable $trackIds): array
     {
-        $ids = collect($trackIds)->unique()->values();
-        if ($ids->isEmpty()) {
+        $ids = [];
+        foreach ($trackIds as $id) {
+            $ids[] = $id;
+        }
+        $ids = array_values(array_unique($ids));
+        if ($ids === []) {
             return [];
         }
 
-        return DB::table('music_library')
-            ->where('user_id', $user->id)
-            ->whereIn('track_id', $ids)
-            ->pluck('track_id')
-            ->mapWithKeys(fn ($id) => [(int) $id => true])
-            ->all();
+        $owned = [];
+        foreach (DB::table('music_library')->where('user_id', $user->id)->whereIn('track_id', $ids)->pluck('track_id') as $id) {
+            if (is_numeric($id)) {
+                $owned[(int) $id] = true;
+            }
+        }
+
+        return $owned;
     }
 
     /**
-     * @param  Collection<int, Track>|\Illuminate\Support\Collection<int, Track>  $tracks
+     * @param  iterable<int|string, Track>  $tracks
      * @return list<array<string, mixed>>
      */
     public function cards(iterable $tracks, User $viewer): array
     {
         $tracks = collect($tracks);
-        $owned = $this->libraryIds($viewer, $tracks->pluck('id'));
+        $trackIds = [];
+        foreach ($tracks->pluck('id') as $id) {
+            if (is_numeric($id)) {
+                $trackIds[] = (int) $id;
+            }
+        }
+        $owned = $this->libraryIds($viewer, $trackIds);
 
-        return $tracks->map(fn (Track $t) => $t->toCard(isset($owned[$t->id])))->values()->all();
+        return array_values($tracks->map(fn (Track $t) => $t->toCard(isset($owned[$t->id])))->all());
     }
 
     public function canManageTrack(Track $track, User $user): bool
@@ -109,6 +120,9 @@ class MusicService
         return $track->user_id === $user->id || $user->isStaff();
     }
 
+    /**
+     * @param  array{title: string, description: string|null, is_public: bool}  $data
+     */
     public function createPlaylist(User $user, array $data): Playlist
     {
         if ($user->playlists()->count() >= Playlist::MAX_PER_USER) {
@@ -156,7 +170,7 @@ class MusicService
      */
     public function nowPlaying(User $user, ?Track $track, ?array $spotifyTrack = null): void
     {
-        $duration = $track?->duration ?? (int) ($spotifyTrack['duration'] ?? 0);
+        $duration = $track !== null ? $track->duration : (int) ($spotifyTrack['duration'] ?? 0);
 
         MusicStatus::query()->updateOrCreate(['user_id' => $user->id], [
             'source' => $track ? 'local' : 'spotify',

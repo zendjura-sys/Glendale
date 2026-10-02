@@ -8,6 +8,7 @@ use App\Support\Settings\SiteSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TrackController extends Controller
 {
@@ -77,7 +78,7 @@ class TrackController extends Controller
         return response()->json(['in_library' => false]);
     }
 
-    public function download(Track $track)
+    public function download(Track $track): StreamedResponse
     {
         $name = trim($track->artist.' - '.$track->title).'.'.pathinfo($track->path, PATHINFO_EXTENSION);
 

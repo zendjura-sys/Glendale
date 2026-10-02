@@ -57,15 +57,25 @@ class ProfileController extends Controller
         $items = $canSeeContent ? $this->presenter->many(new Collection($posts->items()), $viewer) : [];
 
         if ($modules->enabled('photos')) {
-            $photos = Photo::query()->whereIn('album_id', $viewer
+            $photoQuery = Photo::query()->whereIn('album_id', $viewer
                 ? $photoService->visibleAlbums($user, $viewer)->select('id')
                 : PhotoAlbum::query()->whereMorphedTo('owner', $user)->where('privacy', PhotoAlbum::PRIVACY_PUBLIC)->select('id'));
-            $mapPhoto = fn (Photo $p) => ['id' => $p->id, 'url' => $p->url, 'href' => '/albums/'.$p->album_id.'?photo='.$p->id];
+            $photoCount = (clone $photoQuery)->count();
+            $photoItems = $canSeeContent ? $photoQuery->latest('id')->limit(6)->get()->map(fn (Photo $photo) => [
+                'id' => $photo->id,
+                'url' => $photo->url,
+                'href' => '/albums/'.$photo->album_id.'?photo='.$photo->id,
+            ])->all() : [];
         } else {
-            $photos = PostAttachment::query()
+            $photoQuery = PostAttachment::query()
                 ->where('type', PostAttachment::TYPE_IMAGE)
                 ->whereHas('post', fn ($q) => $q->where('author_id', $user->id)->where('visibility', Post::VISIBILITY_PUBLIC));
-            $mapPhoto = fn (PostAttachment $a) => ['id' => $a->id, 'url' => $a->url, 'href' => '/posts/'.$a->post_id];
+            $photoCount = (clone $photoQuery)->count();
+            $photoItems = $canSeeContent ? $photoQuery->latest('id')->limit(6)->get()->map(fn (PostAttachment $attachment) => [
+                'id' => $attachment->id,
+                'url' => $attachment->url,
+                'href' => '/posts/'.$attachment->post_id,
+            ])->all() : [];
         }
 
         return Inertia::render('profile/show', [
@@ -90,7 +100,7 @@ class ProfileController extends Controller
             'stats' => [
                 'friends' => count($friendIds),
                 'posts' => $user->posts()->count(),
-                'photos' => (clone $photos)->count(),
+                'photos' => $photoCount,
                 'mutual' => $viewer && $relation !== FriendshipService::SELF ? $this->friendships->mutualCount($viewer, $user) : 0,
             ],
             'friends' => $canSeeContent ? User::query()
@@ -100,7 +110,7 @@ class ProfileController extends Controller
                 ->get()
                 ->map->toCard()
                 ->all() : [],
-            'photos' => $canSeeContent ? $photos->latest('id')->limit(6)->get()->map($mapPhoto)->all() : [],
+            'photos' => $photoItems,
             'photosHref' => $modules->enabled('photos') ? '/photos/u/'.$user->username : null,
             'audio' => $modules->enabled('music') && $canSeeContent ? [
                 'href' => '/music/u/'.$user->username,

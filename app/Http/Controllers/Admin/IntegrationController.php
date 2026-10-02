@@ -106,7 +106,11 @@ class IntegrationController extends Controller
 
     public function updateCinema(Request $request, string $provider): RedirectResponse
     {
-        $fields = collect($this->cinemaProviders()[$provider]['fields'] ?? abort(404));
+        $meta = $this->cinemaProviders()[$provider] ?? null;
+        if (! is_array($meta) || ! isset($meta['fields']) || ! is_array($meta['fields'])) {
+            abort(404);
+        }
+        $fields = collect($this->providerFields($meta));
 
         if ($request->boolean('clear')) {
             foreach ($fields as $field) {
@@ -158,31 +162,69 @@ class IntegrationController extends Controller
      */
     private function cinemaCards(): array
     {
-        return collect($this->cinemaProviders())->map(fn (array $p, string $key) => [
-            'key' => $key,
-            'label' => $p['label'],
-            'group' => $p['group'],
-            'description' => $p['description'],
-            'docs' => $p['docs'],
-            'steps' => $p['steps'],
-            'configured' => $p['configured'],
-            'stat' => $p['stat'] ?? null,
-            'fields' => collect($p['fields'])->map(function (array $f) {
-                $value = $f['type'] === 'secret' ? $this->settings->secret($f['setting']) : $this->settings->get($f['setting']);
-
-                return [
-                    'name' => $f['name'],
-                    'label' => $f['label'],
-                    'type' => $f['type'],
-                    'placeholder' => $f['placeholder'] ?? null,
-                    'help' => $f['help'] ?? null,
-                    'options' => $f['options'] ?? null,
-                    'value' => $f['type'] === 'secret' ? null : $value,
-                    'hint' => $f['type'] === 'secret' ? $this->hint($value ?: ($f['env'] ?? null)) : null,
-                    'from_env' => blank($value) && filled($f['env'] ?? null),
+        $cards = [];
+        foreach ($this->cinemaProviders() as $key => $provider) {
+            $fields = [];
+            foreach ($this->providerFields($provider) as $field) {
+                $setting = $field['setting'] ?? null;
+                $setting = is_string($setting) ? $setting : '';
+                $type = $field['type'] ?? null;
+                $value = $type === 'secret' ? $this->settings->secret($setting) : $this->settings->get($setting);
+                $env = $field['env'] ?? null;
+                $fields[] = [
+                    'name' => $field['name'] ?? null,
+                    'label' => $field['label'] ?? null,
+                    'type' => $type,
+                    'placeholder' => $field['placeholder'] ?? null,
+                    'help' => $field['help'] ?? null,
+                    'options' => $field['options'] ?? null,
+                    'value' => $type === 'secret' ? null : $value,
+                    'hint' => $type === 'secret' ? $this->hint(is_string($value) && $value !== '' ? $value : (is_string($env) ? $env : null)) : null,
+                    'from_env' => blank($value) && filled($env),
                 ];
-            })->values()->all(),
-        ])->values()->all();
+            }
+            $cards[] = [
+                'key' => $key,
+                'label' => $provider['label'] ?? null,
+                'group' => $provider['group'] ?? null,
+                'description' => $provider['description'] ?? null,
+                'docs' => $provider['docs'] ?? null,
+                'steps' => $provider['steps'] ?? null,
+                'configured' => $provider['configured'] ?? null,
+                'stat' => $provider['stat'] ?? null,
+                'fields' => $fields,
+            ];
+        }
+
+        return $cards;
+    }
+
+    /**
+     * @param  array<string, mixed>  $provider
+     * @return list<array<string, mixed>>
+     */
+    private function providerFields(array $provider): array
+    {
+        $raw = $provider['fields'] ?? null;
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        $fields = [];
+        foreach ($raw as $field) {
+            if (! is_array($field)) {
+                continue;
+            }
+            $row = [];
+            foreach ($field as $name => $value) {
+                if (is_string($name)) {
+                    $row[$name] = $value;
+                }
+            }
+            $fields[] = $row;
+        }
+
+        return $fields;
     }
 
     /**

@@ -16,6 +16,7 @@ use App\Models\Sticker;
 use App\Models\User;
 use App\Services\Push\PushNotifier;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -213,7 +214,7 @@ class Messenger
         ], $replyToId, function (Message $message) use ($images, $documents) {
             $position = 0;
 
-            foreach (array_values($images) as $file) {
+            foreach ($images as $file) {
                 $message->attachments()->create([
                     'type' => MessageAttachment::TYPE_IMAGE,
                     ...$this->images->store($file, 'messages'),
@@ -221,7 +222,7 @@ class Messenger
                 ]);
             }
 
-            foreach (array_values($documents) as $file) {
+            foreach ($documents as $file) {
                 $message->attachments()->create([
                     'type' => MessageAttachment::TYPE_FILE,
                     'disk' => MessageAttachment::PRIVATE_DISK,
@@ -262,7 +263,7 @@ class Messenger
                 'mime' => Str::limit((string) $audio->getMimeType(), 64, ''),
                 'size' => $audio->getSize(),
                 'duration' => $duration,
-                'meta' => ['waveform' => array_values(array_map(fn ($v) => max(0, min(100, (int) $v)), array_slice($waveform, 0, 64)))],
+                'meta' => ['waveform' => array_map(fn ($v) => max(0, min(100, (int) $v)), array_slice($waveform, 0, 64))],
             ]);
         });
     }
@@ -343,7 +344,7 @@ class Messenger
                 $previous = $conversation->messages()->latest('id')->first();
                 $conversation->update([
                     'last_message_id' => $previous?->id,
-                    'last_message_at' => $previous?->created_at ?? $conversation->last_message_at,
+                    'last_message_at' => $previous !== null ? $previous->created_at : $conversation->last_message_at,
                 ]);
             }
         });
@@ -388,11 +389,13 @@ class Messenger
     /**
      * Підзапит непрочитаних повідомлень для рядка учасника з таблиці $participants.
      */
-    public function unreadMessages($query, int $userId, string $participants): void
+    public function unreadMessages(QueryBuilder $query, int $userId, string $participants): void
     {
         $query->from('messages')
-            ->whereColumn('messages.conversation_id', "{$participants}.conversation_id")
-            ->whereRaw("messages.id > coalesce({$participants}.last_read_message_id, 0)")
+            ->whereColumn('messages.conversation_id', $participants === 'me' ? 'me.conversation_id' : 'conversation_participants.conversation_id')
+            ->whereRaw($participants === 'me'
+                ? 'messages.id > coalesce(me.last_read_message_id, 0)'
+                : 'messages.id > coalesce(conversation_participants.last_read_message_id, 0)')
             ->whereNull('messages.deleted_at')
             ->where(fn ($q) => $q->whereNull('messages.user_id')->orWhere('messages.user_id', '!=', $userId));
     }

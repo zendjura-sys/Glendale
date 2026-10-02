@@ -57,7 +57,7 @@ class StickerPack extends Model
      */
     public static function catalog(): array
     {
-        return Cache::rememberForever(self::CACHE_KEY, fn () => self::query()
+        return Cache::rememberForever(self::CACHE_KEY, fn () => array_values(self::query()
             ->active()
             ->whereHas('stickers')
             ->with('stickers')
@@ -68,8 +68,8 @@ class StickerPack extends Model
                 'id' => $pack->id,
                 'slug' => $pack->slug,
                 'name' => $pack->name,
-                'stickers' => $pack->stickers->map->toCard()->all(),
+                'stickers' => array_values($pack->stickers->map->toCard()->all()),
             ])
-            ->all());
+            ->all()));
     }
 }

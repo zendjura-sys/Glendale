@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -89,7 +90,7 @@ class UserController extends Controller
         }
 
         if (array_key_exists('banned', $data)) {
-            $user->banned_at = $data['banned'] ? now() : null;
+            $user->banned_at = $data['banned'] ? Carbon::now() : null;
             $user->ban_reason = $data['banned'] ? ($data['ban_reason'] ?? null) : null;
         }
 

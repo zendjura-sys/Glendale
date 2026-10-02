@@ -80,11 +80,12 @@ class SocialLogin
     }
 
     /**
+     * @param  array<string, bool>  $available
      * @return list<array{provider: string, label: string, connected: bool, account: string|null, available: bool}>
      */
     public function connections(User $user, array $available): array
     {
-        return collect(self::PROVIDERS)->map(function (string $label, string $provider) use ($user, $available) {
+        return array_values(collect(self::PROVIDERS)->map(function (string $label, string $provider) use ($user, $available) {
             [$idColumn, $labelColumn] = self::COLUMNS[$provider];
 
             return [
@@ -94,7 +95,7 @@ class SocialLogin
                 'account' => $user->{$labelColumn},
                 'available' => (bool) ($available[$provider] ?? false),
             ];
-        })->values()->all();
+        })->all());
     }
 
     private function register(SocialProfile $profile): User

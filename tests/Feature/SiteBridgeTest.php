@@ -36,8 +36,10 @@ class SiteBridgeTest extends TestCase
         $this->withToken($token)->postJson('/api/v1/site/posts/'.$foreign->id.'/pin')->assertForbidden();
         $this->assertFalse($foreign->fresh()->is_pinned);
 
-        // Без токена міст недоступний.
-        $this->postJson('/api/v1/site/posts/'.$mine->id.'/pin')->assertUnauthorized();
+        // Без токена міст недоступний. withToken() лишає заголовок на наступні запити.
+        $this->flushHeaders()
+            ->postJson('/api/v1/site/posts/'.$mine->id.'/pin')
+            ->assertUnauthorized();
     }
 
     public function test_site_page_is_returned_as_props(): void

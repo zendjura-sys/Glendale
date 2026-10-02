@@ -69,11 +69,11 @@ class SpotifyClient
      */
     public function exchangeCode(string $code): array
     {
-        return $this->tokenRequest([
+        return $this->tokenShape($this->tokenRequest([
             'grant_type' => 'authorization_code',
             'code' => $code,
             'redirect_uri' => $this->redirectUri(),
-        ]);
+        ]));
     }
 
     /**
@@ -137,7 +137,7 @@ class SpotifyClient
 
         $response = $this->get($account, '/search', $params);
 
-        return array_map(self::track(...), $response['tracks']['items'] ?? []);
+        return $this->mapTracks($response['tracks']['items'] ?? null);
     }
 
     /**
@@ -145,7 +145,7 @@ class SpotifyClient
      */
     public function topTracks(SpotifyAccount $account, int $limit = 20): array
     {
-        return array_map(self::track(...), $this->get($account, '/me/top/tracks', ['limit' => $limit, 'time_range' => 'short_term'])['items'] ?? []);
+        return $this->mapTracks($this->get($account, '/me/top/tracks', ['limit' => $limit, 'time_range' => 'short_term'])['items'] ?? null);
     }
 
     /**
@@ -153,9 +153,7 @@ class SpotifyClient
      */
     public function recentlyPlayed(SpotifyAccount $account, int $limit = 20): array
     {
-        $items = $this->get($account, '/me/player/recently-played', ['limit' => $limit])['items'] ?? [];
-
-        return collect($items)->map(fn (array $item) => self::track($item['track']))->unique('id')->values()->all();
+        return $this->uniqueTracks($this->wrappedTracks($this->get($account, '/me/player/recently-played', ['limit' => $limit])['items'] ?? null, 'track'));
     }
 
     /**
@@ -163,9 +161,7 @@ class SpotifyClient
      */
     public function savedTracks(SpotifyAccount $account, int $limit = 30): array
     {
-        $items = $this->get($account, '/me/tracks', ['limit' => $limit])['items'] ?? [];
-
-        return array_map(fn (array $item) => self::track($item['track']), $items);
+        return $this->wrappedTracks($this->get($account, '/me/tracks', ['limit' => $limit])['items'] ?? null, 'track');
     }
 
     /**
@@ -173,18 +169,29 @@ class SpotifyClient
      */
     public function playlists(SpotifyAccount $account, int $limit = 30): array
     {
-        $items = $this->get($account, '/me/playlists', ['limit' => $limit])['items'] ?? [];
+        $playlists = [];
+        $items = $this->get($account, '/me/playlists', ['limit' => $limit])['items'] ?? null;
+        if (! is_array($items)) {
+            return [];
+        }
+        foreach ($items as $item) {
+            if (! is_array($item) || $item === []) {
+                continue;
+            }
+            $playlist = self::stringKeyed($item);
+            $playlists[] = [
+                'id' => $playlist['id'] ?? null,
+                'uri' => $playlist['uri'] ?? null,
+                'name' => $playlist['name'] ?? null,
+                'description' => strip_tags((string) ($playlist['description'] ?? '')),
+                'cover_url' => self::firstImageUrl($playlist['images'] ?? null),
+                'tracks_count' => self::nestedTotal($playlist, 'tracks') ?? self::nestedTotal($playlist, 'items') ?? 0,
+                'owner' => self::nestedString($playlist['owner'] ?? null, 'display_name'),
+                'url' => self::nestedString($playlist['external_urls'] ?? null, 'spotify'),
+            ];
+        }
 
-        return collect($items)->filter()->map(fn (array $p) => [
-            'id' => $p['id'],
-            'uri' => $p['uri'],
-            'name' => $p['name'],
-            'description' => strip_tags((string) ($p['description'] ?? '')),
-            'cover_url' => $p['images'][0]['url'] ?? null,
-            'tracks_count' => $p['tracks']['total'] ?? $p['items']['total'] ?? 0,
-            'owner' => $p['owner']['display_name'] ?? null,
-            'url' => $p['external_urls']['spotify'] ?? null,
-        ])->values()->all();
+        return $playlists;
     }
 
     /**
@@ -192,14 +199,24 @@ class SpotifyClient
      */
     public function playlistTracks(SpotifyAccount $account, string $playlistId, int $limit = 100): array
     {
-        $items = $this->get($account, '/playlists/'.rawurlencode($playlistId).'/tracks', ['limit' => $limit])['items'] ?? [];
+        $items = $this->get($account, '/playlists/'.rawurlencode($playlistId).'/tracks', ['limit' => $limit])['items'] ?? null;
+        if (! is_array($items)) {
+            return [];
+        }
 
-        return collect($items)
-            ->map(fn (array $item) => $item['track'] ?? $item['item'] ?? null)
-            ->filter(fn ($t) => is_array($t) && ($t['type'] ?? 'track') === 'track' && ! empty($t['id']))
-            ->map(self::track(...))
-            ->values()
-            ->all();
+        $tracks = [];
+        foreach ($items as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+            $track = $item['track'] ?? $item['item'] ?? null;
+            if (! is_array($track) || ($track['type'] ?? 'track') !== 'track' || empty($track['id'])) {
+                continue;
+            }
+            $tracks[] = self::track(self::stringKeyed($track));
+        }
+
+        return $tracks;
     }
 
     /**
@@ -233,7 +250,7 @@ class SpotifyClient
     {
         $response = $this->request($account)
             ->put($this->apiUrl('/me/player/play').'?'.http_build_query(['device_id' => $deviceId]), [
-                'uris' => array_values($uris),
+                'uris' => $uris,
                 'offset' => ['position' => $offset],
             ]);
 
@@ -256,7 +273,7 @@ class SpotifyClient
             'key' => 'spotify:'.$t['id'],
             'uri' => $t['uri'] ?? 'spotify:track:'.$t['id'],
             'title' => $t['name'] ?? '',
-            'artist' => collect($t['artists'] ?? [])->pluck('name')->join(', '),
+            'artist' => self::artistNames($t['artists'] ?? null),
             'album' => $t['album']['name'] ?? null,
             'duration' => (int) round(((int) ($t['duration_ms'] ?? 0)) / 1000),
             'cover_url' => $images[1]['url'] ?? $images[0]['url'] ?? null,
@@ -347,6 +364,168 @@ class SpotifyClient
         };
 
         throw new SpotifyException($message, $response->status());
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array{access_token: string, refresh_token?: string, expires_in: int, scope?: string}
+     */
+    private function tokenShape(array $payload): array
+    {
+        $accessToken = $payload['access_token'] ?? null;
+        $expiresIn = $payload['expires_in'] ?? null;
+        if (! is_string($accessToken) || $accessToken === '' || ! is_int($expiresIn)) {
+            throw new SpotifyException('Не вдалося отримати токен Spotify.', 502);
+        }
+
+        $shaped = [
+            'access_token' => $accessToken,
+            'expires_in' => $expiresIn,
+        ];
+        if (isset($payload['refresh_token']) && is_string($payload['refresh_token']) && $payload['refresh_token'] !== '') {
+            $shaped['refresh_token'] = $payload['refresh_token'];
+        }
+        if (isset($payload['scope']) && is_string($payload['scope'])) {
+            $shaped['scope'] = $payload['scope'];
+        }
+
+        return $shaped;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function mapTracks(mixed $items): array
+    {
+        if (! is_array($items)) {
+            return [];
+        }
+
+        $tracks = [];
+        foreach ($items as $item) {
+            if (is_array($item)) {
+                $tracks[] = self::track(self::stringKeyed($item));
+            }
+        }
+
+        return $tracks;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function wrappedTracks(mixed $items, string $key): array
+    {
+        if (! is_array($items)) {
+            return [];
+        }
+
+        $tracks = [];
+        foreach ($items as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+            $track = $item[$key] ?? null;
+            if (is_array($track)) {
+                $tracks[] = self::track(self::stringKeyed($track));
+            }
+        }
+
+        return $tracks;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $tracks
+     * @return list<array<string, mixed>>
+     */
+    private function uniqueTracks(array $tracks): array
+    {
+        $unique = [];
+        $seen = [];
+        foreach ($tracks as $track) {
+            $id = $track['id'] ?? null;
+            $key = is_scalar($id) ? (string) $id : '';
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $unique[] = $track;
+        }
+
+        return $unique;
+    }
+
+    /**
+     * @param  array<mixed>  $item
+     * @return array<string, mixed>
+     */
+    private static function stringKeyed(array $item): array
+    {
+        $row = [];
+        foreach ($item as $key => $value) {
+            if (is_string($key)) {
+                $row[$key] = $value;
+            }
+        }
+
+        return $row;
+    }
+
+    private static function artistNames(mixed $artists): string
+    {
+        if (! is_array($artists)) {
+            return '';
+        }
+
+        $names = [];
+        foreach ($artists as $artist) {
+            if (! is_array($artist)) {
+                continue;
+            }
+            $name = $artist['name'] ?? null;
+            $names[] = is_scalar($name) ? (string) $name : '';
+        }
+
+        return implode(', ', $names);
+    }
+
+    private static function firstImageUrl(mixed $images): mixed
+    {
+        if (! is_array($images)) {
+            return null;
+        }
+        $first = null;
+        foreach ($images as $image) {
+            $first = $image;
+            break;
+        }
+        if (! is_array($first)) {
+            return null;
+        }
+
+        return $first['url'] ?? null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $playlist
+     */
+    private static function nestedTotal(array $playlist, string $key): mixed
+    {
+        $node = $playlist[$key] ?? null;
+        if (! is_array($node) || ! array_key_exists('total', $node)) {
+            return null;
+        }
+
+        return $node['total'];
+    }
+
+    private static function nestedString(mixed $node, string $key): mixed
+    {
+        if (! is_array($node) || ! array_key_exists($key, $node)) {
+            return null;
+        }
+
+        return $node[$key];
     }
 
     /**

@@ -85,13 +85,13 @@ class PostPresenter
             ->flip()
             ->all() : [];
 
-        return $posts->map(fn (Post $post) => $this->present(
+        return array_values($posts->map(fn (Post $post) => $this->present(
             $post,
             $viewer,
             isset($likedPostIds[$post->id]),
             $post->wall instanceof Community && isset($managed[$post->wall_id]),
-            ($previewComments[$post->id] ?? collect())->map(fn (Comment $c) => $this->comment($c, $viewer, isset($likedCommentIds[$c->id])))->values()->all(),
-        ))->values()->all();
+            array_values(($previewComments[$post->id] ?? collect())->map(fn (Comment $c) => $this->comment($c, $viewer, isset($likedCommentIds[$c->id])))->all()),
+        ))->all());
     }
 
     /**

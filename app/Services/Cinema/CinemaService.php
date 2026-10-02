@@ -6,6 +6,7 @@ use App\Models\Movie;
 use App\Models\MovieSource;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -51,7 +52,7 @@ class CinemaService
             $movie->fill($fresh ? $meta : array_filter($meta, fn ($v, $k) => blank($movie->getAttribute($k)), ARRAY_FILTER_USE_BOTH));
             $movie->title = Str::limit((string) ($movie->title ?: 'Без назви'), 200, '');
             $movie->slug ??= $this->uniqueSlug($movie->title, $movie->year);
-            $movie->synced_at = now();
+            $movie->synced_at = Carbon::now();
             $movie->save();
 
             $this->syncSources($movie, $provider, $candidate['sources'] ?? []);
@@ -73,18 +74,26 @@ class CinemaService
             $result['kodik'] = $this->refreshKodik($movie);
         }
         if ($this->flixcdnApi->searchTemplate() && ($movie->kinopoisk_id || $movie->imdb_id || $movie->title)) {
-            $sources = collect($this->flixcdnApi->search([
+            $sources = [];
+            foreach ($this->flixcdnApi->search([
                 'kinopoisk_id' => $movie->kinopoisk_id,
                 'imdb_id' => $movie->imdb_id,
                 'title' => $movie->title,
-            ]))->filter(fn (array $c) => $this->matches($movie, $c))->flatMap(fn (array $c) => $c['sources'])->all();
+            ]) as $candidate) {
+                if (! $this->matches($movie, $candidate)) {
+                    continue;
+                }
+                foreach ($this->sourceList($candidate['sources'] ?? null) as $source) {
+                    $sources[] = $source;
+                }
+            }
             $this->syncSources($movie, 'flixcdn', $sources);
             $result['flixcdn'] = count($sources);
         }
         if ($result === []) {
             throw new CinemaException('Жоден провайдер плеєрів не налаштований.', 422);
         }
-        $movie->forceFill(['synced_at' => now()])->saveQuietly();
+        $movie->forceFill(['synced_at' => Carbon::now()])->saveQuietly();
 
         return $result;
     }
@@ -118,7 +127,12 @@ class CinemaService
             throw new CinemaException('У фільму немає зовнішнього ID (IMDb, Shikimori) — Kodik не знайде його.', 422);
         }
 
-        $sources = collect($this->kodik->search($criteria))->flatMap(fn (array $c) => $c['sources'])->all();
+        $sources = [];
+        foreach ($this->kodik->search($criteria) as $candidate) {
+            foreach ($this->sourceList($candidate['sources'] ?? null) as $source) {
+                $sources[] = $source;
+            }
+        }
         $this->syncSources($movie, 'kodik', $sources);
 
         return count($sources);
@@ -130,7 +144,7 @@ class CinemaService
     public function syncSources(Movie $movie, string $provider, array $sources): void
     {
         $keep = [];
-        foreach (array_values($sources) as $position => $source) {
+        foreach ($sources as $position => $source) {
             $model = $movie->sources()->getQuery()->firstOrNew(['provider' => $provider, 'external_id' => $source['external_id']]);
             $model->fill([...$source, 'provider' => $provider, 'position' => $position]);
             $model->movie()->associate($movie);
@@ -139,6 +153,32 @@ class CinemaService
         }
 
         MovieSource::query()->where('movie_id', $movie->id)->where('provider', $provider)->whereNotIn('id', $keep)->delete();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function sourceList(mixed $sources): array
+    {
+        if (! is_array($sources)) {
+            return [];
+        }
+
+        $list = [];
+        foreach ($sources as $source) {
+            if (! is_array($source)) {
+                continue;
+            }
+            $row = [];
+            foreach ($source as $key => $value) {
+                if (is_string($key)) {
+                    $row[$key] = $value;
+                }
+            }
+            $list[] = $row;
+        }
+
+        return $list;
     }
 
     /**

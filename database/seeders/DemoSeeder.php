@@ -126,7 +126,7 @@ class DemoSeeder extends Seeder
         $gamer = StickerPack::query()->firstOrCreate(['slug' => 'gamecon_gamer'], ['name' => 'GameCon Gamer', 'author' => 'GameCon', 'position' => 2]);
         if (! $gamer->stickers()->exists()) {
             foreach (self::GAMER_STICKERS as $position => [$label, $emoji, $from, $to]) {
-                $path = 'stickers/gamecon/'.Str::slug($label ?: 'x', '_').'-'.$position.'.svg';
+                $path = 'stickers/gamecon/'.Str::slug($label, '_').'-'.$position.'.svg';
                 Storage::disk('public')->put($path, $this->stickerSvg($label, $emoji, $from, $to, $position));
                 $gamer->stickers()->create(['path' => $path, 'emoji' => $emoji, 'position' => $position]);
             }
@@ -258,12 +258,13 @@ SVG;
         }
 
         $this->seedStickers();
-        Model::unguarded(fn () => $this->seedMessages($users->values()->all()));
-        Model::unguarded(fn () => $this->seedCommunities($users->values()->all()));
-        Model::unguarded(fn () => $this->seedPhotos($users->values()->all()));
-        Model::unguarded(fn () => $this->seedMusic($users->values()->all()));
-        Model::unguarded(fn () => $this->seedCinema($users->values()->all()));
-        $this->seedFamilies($users->values()->all());
+        $seedUsers = array_values($users->values()->all());
+        Model::unguarded(fn () => $this->seedMessages($seedUsers));
+        Model::unguarded(fn () => $this->seedCommunities($seedUsers));
+        Model::unguarded(fn () => $this->seedPhotos($seedUsers));
+        Model::unguarded(fn () => $this->seedMusic($seedUsers));
+        Model::unguarded(fn () => $this->seedCinema($seedUsers));
+        $this->seedFamilies($seedUsers);
     }
 
     private const FAMILY_ROSTER = [
@@ -325,6 +326,9 @@ SVG;
                 $families->setDuties($family, $leader, $member->refresh(), $duties);
             }
             $members[$i + 1] = $member->refresh();
+        }
+        if (! isset($members[1], $members[2], $members[3], $members[4], $members[5], $members[6], $members[7], $members[8], $members[9])) {
+            throw new \RuntimeException('demo family roster incomplete');
         }
         foreach ([['Oleg_Hunter', '81020', 'Грав у Corleone 2 місяці, є мікрофон, онлайн 4+ год.'], ['Yulia_Frost', '82244', 'Хочу в бізвари, маю досвід.']] as $j => [$nick, $static, $note]) {
             $families->apply($family, $u[11 + $j], ['rp_nickname' => $nick, 'static_id' => $static, 'note' => $note]);
@@ -568,7 +572,7 @@ SVG;
             }
 
             $cover = $this->download("https://picsum.photos/seed/gc-music-{$i}/600/600", "demo/music/cover-{$i}.jpg");
-            $owner = $u[[0, 13, 2, 1, 2, 0, 3, 13, 1, 4, 3, 13][$i] ?? 0];
+            $owner = $u[[0, 13, 2, 1, 2, 0, 3, 13, 1, 4, 3, 13][$i]];
 
             $track = Track::query()->create([
                 'user_id' => $owner->id,
@@ -665,7 +669,12 @@ SVG;
         }
 
         $service = app(PhotoService::class);
-        foreach ($albums as $a => [$owner, $title, $description, $privacy, $count]) {
+        foreach ($albums as $a => $albumRow) {
+            $owner = $albumRow[0];
+            $title = $albumRow[1];
+            $description = $albumRow[2];
+            $privacy = $albumRow[3];
+            $count = $albumRow[4];
             if (PhotoAlbum::query()->whereMorphedTo('owner', $owner)->where('title', $title)->exists()) {
                 continue;
             }
@@ -783,7 +792,7 @@ SVG;
                     'as_community' => true,
                     'body' => $body,
                     'visibility' => Post::VISIBILITY_PUBLIC,
-                    'is_pinned' => $n === 0 && $slug === 'gamecon',
+                    'is_pinned' => $n === 0 && $community->slug === 'gamecon',
                     'views_count' => random_int(300, 9000),
                     'created_at' => now()->subHours($i * 3 + $n * 7 + 1),
                 ]);
@@ -1032,7 +1041,7 @@ SVG;
 
         $result = Process::run(['ffmpeg', '-y', '-loglevel', 'error', '-filter_complex', $filter, '-c:a', 'libopus', '-b:a', '32k', $disk->path($path)]);
 
-        return $result->successful() && $disk->exists($path) ? $path : null;
+        return $result->successful() ? $path : null;
     }
 
     /**

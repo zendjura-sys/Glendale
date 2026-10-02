@@ -47,7 +47,15 @@ class ShikimoriProvider extends MetadataProvider
                 'search' => $movie->title_original ?: $movie->title,
                 'limit' => 1,
             ]);
-            $id = isset($found[0]['id']) ? (string) $found[0]['id'] : null;
+            $id = null;
+            if (is_array($found)) {
+                foreach ($found as $row) {
+                    if (is_array($row) && isset($row['id']) && is_scalar($row['id'])) {
+                        $id = (string) $row['id'];
+                    }
+                    break;
+                }
+            }
         }
         if (! $id) {
             return null;
@@ -67,18 +75,47 @@ class ShikimoriProvider extends MetadataProvider
             $description = trim((string) preg_replace(['/\[\[([^\]]+)\]\]/u', '/\[[^\]]+\]/u', '/\s{3,}/u'], ['$1', '', "\n\n"], $description));
         }
 
+        $genres = self::genreNames($a['genres'] ?? null);
+
         return array_filter([
             'shikimori_id' => (string) $id,
             'title' => self::str($a['russian'] ?? null, 200),
             'title_original' => self::str($a['name'] ?? null, 200),
             'description' => $description ? mb_substr($description, 0, 5000) : null,
             'poster_url' => $image && ! str_contains($image, 'missing') ? $image : null,
-            'genres' => collect($a['genres'] ?? [])->map(fn ($g) => mb_strtolower((string) ($g['russian'] ?? $g['name'] ?? '')))->filter()->values()->all() ?: null,
+            'genres' => $genres !== [] ? $genres : null,
             'rating_shikimori' => self::rating($a['score'] ?? null),
             'episodes_count' => (int) ($a['episodes'] ?: ($a['episodes_aired'] ?? 0)) ?: null,
             'duration' => (int) ($a['duration'] ?? 0) ?: null,
             'age_rating' => self::AGE[$a['rating'] ?? ''] ?? null,
             'year' => self::year($a['aired_on'] ?? null),
-        ], fn ($v) => $v !== null && $v !== []);
+        ], fn ($v) => $v !== null);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function genreNames(mixed $genres): array
+    {
+        if (! is_array($genres)) {
+            return [];
+        }
+
+        $names = [];
+        foreach ($genres as $genre) {
+            if (! is_array($genre)) {
+                continue;
+            }
+            $name = $genre['russian'] ?? $genre['name'] ?? '';
+            if (! is_scalar($name)) {
+                continue;
+            }
+            $name = mb_strtolower(trim((string) $name));
+            if ($name !== '') {
+                $names[] = $name;
+            }
+        }
+
+        return $names;
     }
 }
