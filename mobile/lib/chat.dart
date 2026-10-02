@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +16,7 @@ import 'posts.dart';
 import 'push.dart';
 import 'state.dart';
 import 'theme.dart';
+import 'voice_note.dart';
 import 'widgets.dart';
 
 // ───────────────────────── Список бесід ─────────────────────────
@@ -356,12 +359,21 @@ class _ChatScreenState extends State<ChatScreen> {
   bool sending = false;
   int lastRead = 0;
 
+  final recorder = VoiceRecorder();
+  bool holding = false;
+  bool locked = false;
+  Offset drag = Offset.zero;
+  final bubbleKeys = <int, GlobalKey>{};
+  int? flashId;
+
   Api get api => AppScope.read(context).session.api;
   int? get myId => AppScope.read(context).session.myId;
 
   @override
   void initState() {
     super.initState();
+    recorder.addListener(_onRecorder);
+    recorder.onLimit = () => _stopVoice(send: true);
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
     unawaited(Push.instance?.seenChat(widget.id));
     poll = Timer.periodic(const Duration(seconds: 4), (_) => _refresh());
@@ -376,7 +388,14 @@ class _ChatScreenState extends State<ChatScreen> {
     scroll.dispose();
     input.dispose();
     focus.dispose();
+    recorder
+      ..removeListener(_onRecorder)
+      ..dispose();
     super.dispose();
+  }
+
+  void _onRecorder() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _load() async {
@@ -499,6 +518,126 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  // ── Голосові ──
+
+  Future<void> _startVoice({required bool hold}) async {
+    if (recorder.active || sending) return;
+    holding = hold;
+    locked = !hold;
+    drag = Offset.zero;
+    final player = AppScope.read(context).player;
+    if (player.engine.playing) unawaited(player.engine.pause());
+    final ok = await recorder.start();
+    if (!mounted) return;
+    if (!ok) {
+      toast(context, 'Дозвольте доступ до мікрофона в налаштуваннях, щоб записувати голосові.');
+      return;
+    }
+    // Палець відпустили, поки система питала дозвіл.
+    if (hold && !holding) {
+      await recorder.cancel();
+      return;
+    }
+    unawaited(HapticFeedback.mediumImpact());
+  }
+
+  Future<void> _stopVoice({required bool send}) async {
+    if (!recorder.active) return;
+    final tooShort = recorder.elapsed < const Duration(milliseconds: 700);
+    holding = false;
+    locked = false;
+    drag = Offset.zero;
+    if (!send || tooShort) {
+      await recorder.cancel();
+      if (send && tooShort && mounted) toast(context, 'Утримуйте мікрофон, щоб записати голосове.');
+      return;
+    }
+    final note = await recorder.finish();
+    if (note != null) await _sendVoice(note);
+  }
+
+  Future<void> _sendVoice(VoiceNote note) async {
+    setState(() => sending = true);
+    try {
+      final data = await api.upload(
+        '/api/v1/messages/${widget.id}',
+        {
+          'voice_duration': '${note.seconds}',
+          'voice_waveform': jsonEncode(note.waveform),
+          if (replyTo != null) 'reply_to_id': '${replyTo!['id']}',
+        },
+        [await http.MultipartFile.fromPath('voice', note.path, filename: 'voice.m4a')],
+      );
+      if (!mounted) return;
+      setState(() {
+        if (data['message'] is Map) messages.add(mapOf(data['message']));
+        replyTo = null;
+      });
+      if (scroll.hasClients) unawaited(scroll.animateTo(0, duration: const Duration(milliseconds: 250), curve: Curves.easeOut));
+    } catch (e) {
+      if (mounted) toast(context, e);
+    } finally {
+      if (mounted) setState(() => sending = false);
+    }
+  }
+
+  void _onHoldMove(LongPressMoveUpdateDetails details) {
+    if (!recorder.active || locked) return;
+    setState(() => drag = details.offsetFromOrigin);
+    if (drag.dx < -110) {
+      unawaited(HapticFeedback.lightImpact());
+      unawaited(_stopVoice(send: false));
+    } else if (drag.dy < -80) {
+      unawaited(HapticFeedback.selectionClick());
+      setState(() {
+        locked = true;
+        holding = false;
+        drag = Offset.zero;
+      });
+    }
+  }
+
+  void _onHoldEnd() {
+    if (locked) return;
+    holding = false;
+    if (recorder.active) unawaited(_stopVoice(send: true));
+  }
+
+  // ── Відповіді ──
+
+  void _reply(Map<String, dynamic> message) {
+    unawaited(HapticFeedback.lightImpact());
+    setState(() {
+      if (editing != null) input.clear();
+      editing = null;
+      replyTo = message;
+    });
+    focus.requestFocus();
+  }
+
+  /// Прокручує до повідомлення, на яке відповіли, підвантажуючи старіші за потреби.
+  Future<void> _jumpTo(int id) async {
+    for (var attempt = 0; attempt < 40 && mounted; attempt++) {
+      final target = bubbleKeys[id]?.currentContext;
+      if (target != null && target.mounted) {
+        await Scrollable.ensureVisible(target, alignment: 0.4, duration: const Duration(milliseconds: 350), curve: Curves.easeOutCubic);
+        if (!mounted) return;
+        setState(() => flashId = id);
+        await Future<void>.delayed(const Duration(milliseconds: 1200));
+        if (mounted && flashId == id) setState(() => flashId = null);
+        return;
+      }
+      if (!scroll.hasClients) return;
+      final position = scroll.position;
+      final known = messages.any((m) => intOf(m['id']) == id);
+      if (position.pixels >= position.maxScrollExtent - 1 && !hasMore && !known) break;
+      scroll.jumpTo(math.min(position.pixels + position.viewportDimension * 0.8, position.maxScrollExtent));
+      if (!known) await _older();
+      await WidgetsBinding.instance.endOfFrame;
+    }
+    if (mounted) toast(context, 'Повідомлення не знайдено.');
+  }
+
   Future<void> _attach() async {
     final choice = await showGcSheet<String>(
       context,
@@ -570,11 +709,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (!mounted || choice == null) return;
     switch (choice) {
       case 'reply':
-        setState(() {
-          editing = null;
-          replyTo = message;
-        });
-        focus.requestFocus();
+        _reply(message);
       case 'copy':
         await Clipboard.setData(ClipboardData(text: text(message['body']) ?? ''));
         if (mounted) toast(context, 'Скопійовано.');
@@ -667,15 +802,22 @@ class _ChatScreenState extends State<ChatScreen> {
                         final previous = i + 1 < reversed.length ? reversed[i + 1] : null;
                         final day = _dayOf(message['created_at']);
                         final showDay = previous == null || _dayOf(previous['created_at']) != day;
-                        return Column(children: [
+                        final id = intOf(message['id']);
+                        final bubble = _Bubble(
+                          message: message,
+                          own: intOf(mapOf(message['user'])['id']) == myId,
+                          group: group,
+                          read: id <= readUpTo,
+                          onMenu: () => _messageMenu(message),
+                          onQuote: _jumpTo,
+                          conversationId: widget.id,
+                        );
+                        return Column(key: bubbleKeys.putIfAbsent(id, GlobalKey.new), children: [
                           if (showDay) _DayLabel(iso: message['created_at']),
-                          _Bubble(
-                            message: message,
-                            own: intOf(mapOf(message['user'])['id']) == myId,
-                            group: group,
-                            read: intOf(message['id']) <= readUpTo,
-                            onMenu: () => _messageMenu(message),
-                            conversationId: widget.id,
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            decoration: BoxDecoration(color: flashId == id ? primary.withValues(alpha: 0.16) : Colors.transparent, borderRadius: BorderRadius.circular(14)),
+                            child: message['type'] == 'system' || chat['can_write'] == false ? bubble : _SwipeToReply(onReply: () => _reply(message), child: bubble),
                           ),
                         ]);
                       },
@@ -766,41 +908,128 @@ class _ChatScreenState extends State<ChatScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              if (editing == null) RoundIcon(icon: LucideIcons.paperclip, onTap: _attach, color: soft, tooltip: 'Вкладення'),
-              const SizedBox(width: 4),
               Expanded(
-                child: TextField(
-                  controller: input,
-                  focusNode: focus,
-                  minLines: 1,
-                  maxLines: 6,
-                  textCapitalization: TextCapitalization.sentences,
-                  onChanged: (_) => setState(() {}),
-                  style: body(16),
-                  decoration: InputDecoration(
-                    hintText: 'Напишіть повідомлення…',
-                    hintStyle: body(14.5, color: faint),
-                    filled: true,
-                    fillColor: field,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: lineStrong)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: lineStrong)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: primary, width: 1.4)),
-                    suffixIcon: editing == null ? IconButton(onPressed: _stickers, icon: const Icon(LucideIcons.smile, color: muted)) : null,
-                  ),
-                ),
+                child: recorder.active
+                    ? _recordingBar()
+                    : Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                        if (editing == null) RoundIcon(icon: LucideIcons.paperclip, onTap: _attach, color: soft, tooltip: 'Вкладення'),
+                        const SizedBox(width: 4),
+                        Expanded(child: _field()),
+                      ]),
               ),
               const SizedBox(width: 6),
-              RoundIcon(
-                icon: editing != null ? LucideIcons.check : LucideIcons.send,
-                onTap: sending || (input.text.trim().isEmpty && images.isEmpty && files.isEmpty) ? null : _send,
-                filled: true,
-                size: 44,
-              ),
+              _trailing(),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _trailing() {
+    final empty = input.text.trim().isEmpty && images.isEmpty && files.isEmpty;
+    if (recorder.active && locked) {
+      return RoundIcon(icon: LucideIcons.send, onTap: sending ? null : () => _stopVoice(send: true), filled: true, size: 44, tooltip: 'Надіслати голосове');
+    }
+    if (editing != null || !empty) {
+      return RoundIcon(icon: editing != null ? LucideIcons.check : LucideIcons.send, onTap: sending || empty ? null : _send, filled: true, size: 44);
+    }
+    final recording = recorder.active;
+    return Tooltip(
+      message: 'Утримуйте, щоб записати голосове',
+      child: GestureDetector(
+        onTap: sending ? null : () => _startVoice(hold: false),
+        onLongPressStart: sending ? null : (_) => _startVoice(hold: true),
+        onLongPressMoveUpdate: _onHoldMove,
+        onLongPressEnd: (_) => _onHoldEnd(),
+        onLongPressCancel: _onHoldEnd,
+        child: AnimatedScale(
+          scale: recording ? 1.3 : 1,
+          duration: const Duration(milliseconds: 160),
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              gradient: buttonGradient,
+              shape: BoxShape.circle,
+              boxShadow: recording ? [BoxShadow(color: primary.withValues(alpha: 0.55), blurRadius: 18)] : null,
+            ),
+            child: const Icon(LucideIcons.mic, color: Colors.white, size: 21),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _recordingBar() {
+    final seconds = recorder.elapsed.inSeconds;
+    final recent = recorder.levels.length > 34 ? recorder.levels.sublist(recorder.levels.length - 34) : recorder.levels;
+    final cancelHint = (1 + drag.dx / 110).clamp(0.25, 1.0);
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      decoration: BoxDecoration(color: field, borderRadius: BorderRadius.circular(22), border: Border.all(color: lineStrong)),
+      child: Row(children: [
+        if (locked)
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            tooltip: 'Скасувати',
+            onPressed: () => _stopVoice(send: false),
+            icon: const Icon(LucideIcons.trash2, size: 19, color: dangerSoft),
+          )
+        else
+          const SizedBox(width: 8),
+        _RecDot(),
+        const SizedBox(width: 6),
+        Text(duration(seconds), style: body(13.5, weight: FontWeight.w700).copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
+        const SizedBox(width: 8),
+        Expanded(
+          child: locked
+              ? Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                  for (final level in recent)
+                    Container(
+                      width: 2.4,
+                      height: 4 + level / 100 * 22,
+                      margin: const EdgeInsets.symmetric(horizontal: 1),
+                      decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(2)),
+                    ),
+                ])
+              : Opacity(
+                  opacity: cancelHint,
+                  child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                    const Icon(LucideIcons.chevronLeft, size: 16, color: muted),
+                    Flexible(child: Text('Вліво — скасувати', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted))),
+                    const SizedBox(width: 8),
+                    const Icon(LucideIcons.lock, size: 14, color: faint),
+                    const Icon(LucideIcons.chevronUp, size: 14, color: faint),
+                    const SizedBox(width: 4),
+                  ]),
+                ),
+        ),
+      ]),
+    );
+  }
+
+  Widget _field() {
+    return TextField(
+      controller: input,
+      focusNode: focus,
+      minLines: 1,
+      maxLines: 6,
+      textCapitalization: TextCapitalization.sentences,
+      onChanged: (_) => setState(() {}),
+      style: body(16),
+      decoration: InputDecoration(
+        hintText: 'Напишіть повідомлення…',
+        hintStyle: body(14.5, color: faint),
+        filled: true,
+        fillColor: field,
+        isDense: true,
+        contentPadding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: lineStrong)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: lineStrong)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: primary, width: 1.4)),
+        suffixIcon: editing == null ? IconButton(onPressed: _stickers, icon: const Icon(LucideIcons.smile, color: muted)) : null,
       ),
     );
   }
@@ -907,14 +1136,121 @@ class _DayLabel extends StatelessWidget {
   }
 }
 
+class _RecDot extends StatefulWidget {
+  @override
+  State<_RecDot> createState() => _RecDotState();
+}
+
+class _RecDotState extends State<_RecDot> with SingleTickerProviderStateMixin {
+  late final pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 700))..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: Tween(begin: 0.35, end: 1.0).animate(pulse),
+      child: Container(width: 10, height: 10, decoration: const BoxDecoration(color: Color(0xFFFF4D5E), shape: BoxShape.circle)),
+    );
+  }
+}
+
+/// Свайп повідомлення вліво — відповісти (як у Telegram).
+class _SwipeToReply extends StatefulWidget {
+  const _SwipeToReply({required this.onReply, required this.child});
+  final VoidCallback onReply;
+  final Widget child;
+
+  @override
+  State<_SwipeToReply> createState() => _SwipeToReplyState();
+}
+
+class _SwipeToReplyState extends State<_SwipeToReply> with SingleTickerProviderStateMixin {
+  static const threshold = 64.0;
+  static const reach = 90.0;
+  late final back = AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
+  double offset = 0;
+  double released = 0;
+  bool armed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    back.addListener(() => setState(() => offset = released * (1 - Curves.easeOutCubic.transform(back.value))));
+  }
+
+  @override
+  void dispose() {
+    back.dispose();
+    super.dispose();
+  }
+
+  void _update(DragUpdateDetails details) {
+    back.stop();
+    // Після порогу тягнеться туго, щоб було відчутно, що відповідь «спрацювала».
+    final next = (offset + details.delta.dx * (offset.abs() > threshold ? 0.35 : 1)).clamp(-reach, 0.0);
+    final nowArmed = next.abs() >= threshold;
+    if (nowArmed && !armed) unawaited(HapticFeedback.lightImpact());
+    setState(() {
+      offset = next;
+      armed = nowArmed;
+    });
+  }
+
+  void _end() {
+    if (armed) widget.onReply();
+    armed = false;
+    released = offset;
+    unawaited(back.forward(from: 0));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = (offset.abs() / threshold).clamp(0.0, 1.0);
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onHorizontalDragUpdate: _update,
+      onHorizontalDragEnd: (_) => _end(),
+      onHorizontalDragCancel: _end,
+      child: Stack(
+        alignment: Alignment.centerRight,
+        children: [
+          if (offset != 0)
+            Positioned(
+              right: 6,
+              child: Opacity(
+                opacity: progress,
+                child: Transform.scale(
+                  scale: 0.6 + 0.4 * progress,
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(color: armed ? primary : Colors.white.withValues(alpha: 0.12), shape: BoxShape.circle),
+                    child: const Icon(LucideIcons.reply, size: 17, color: Colors.white),
+                  ),
+                ),
+              ),
+            ),
+          Transform.translate(offset: Offset(offset, 0), child: widget.child),
+        ],
+      ),
+    );
+  }
+}
+
 /// Повідомлення: текст, відповідь, фото, файли, голосове, стікер, контакт, системне.
 class _Bubble extends StatelessWidget {
-  const _Bubble({required this.message, required this.own, required this.group, required this.read, required this.onMenu, required this.conversationId});
+  const _Bubble({required this.message, required this.own, required this.group, required this.read, required this.onMenu, required this.onQuote, required this.conversationId});
   final Map<String, dynamic> message;
   final bool own;
   final bool group;
   final bool read;
   final VoidCallback onMenu;
+  final ValueChanged<int> onQuote;
   final int conversationId;
 
   @override
@@ -955,18 +1291,21 @@ class _Bubble extends StatelessWidget {
             ]),
           ),
         if (reply != null)
-          Container(
-            margin: const EdgeInsets.only(bottom: 6),
-            padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(8),
-              border: Border(left: BorderSide(color: own ? Colors.white70 : primary, width: 2.5)),
+          GestureDetector(
+            onTap: reply['deleted'] == true ? null : () => onQuote(intOf(reply['id'])),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border(left: BorderSide(color: own ? Colors.white70 : primary, width: 2.5)),
+              ),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(text(reply['author']) ?? '', style: body(11.5, color: own ? Colors.white : const Color(0xFF9AA8FF), weight: FontWeight.w700)),
+                Text(reply['deleted'] == true ? 'Повідомлення видалено' : (text(reply['preview']) ?? ''), maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12, color: own ? Colors.white70 : muted)),
+              ]),
             ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(text(reply['author']) ?? '', style: body(11.5, color: own ? Colors.white : const Color(0xFF9AA8FF), weight: FontWeight.w700)),
-              Text(reply['deleted'] == true ? 'Повідомлення видалено' : (text(reply['preview']) ?? ''), maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12, color: own ? Colors.white70 : muted)),
-            ]),
           ),
         if (photos.isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 4), child: SizedBox(width: 240, child: MediaGrid(items: photos))),
         for (final doc in docs) _FileChip(file: doc, own: own),
@@ -1125,7 +1464,7 @@ class _VoiceClipState extends State<_VoiceClip> {
 
   @override
   Widget build(BuildContext context) {
-    final waveform = (widget.clip['waveform'] is List ? (widget.clip['waveform'] as List) : const []).map((v) => (v is num ? v.toDouble() : 0.3).clamp(0.08, 1.0)).toList();
+    final waveform = (widget.clip['waveform'] is List ? (widget.clip['waveform'] as List) : const []).map((v) => (v is num ? v / 100 : 0.3).clamp(0.08, 1.0)).toList();
     final bars = waveform.isEmpty ? List<double>.filled(28, 0.35) : waveform;
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
