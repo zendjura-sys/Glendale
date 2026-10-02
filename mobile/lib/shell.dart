@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
+import 'nav_items.dart';
 import 'player_view.dart';
 import 'state.dart';
 import 'theme.dart';
@@ -95,25 +96,9 @@ class _AppShellState extends State<AppShell> {
     if (ok) widget.session.noteSpotify();
   }
 
-  static const _tabs = [
-    ('/profile', 'Сторінка', LucideIcons.userRound),
-    ('/feed', 'Новини', LucideIcons.newspaper),
-    ('/messages', 'Чати', LucideIcons.messageCircle),
-    ('/friends', 'Друзі', LucideIcons.usersRound),
-  ];
-
-  int _selected(String path) {
-    if (path.startsWith('/messages')) return 2;
-    if (path.startsWith('/friends')) return 3;
-    if (path == '/profile' || path == '/u/${widget.session.username}') return 0;
-    if (path == '/feed') return 1;
-    return 4;
-  }
-
   @override
   Widget build(BuildContext context) {
     final path = GoRouterState.of(context).uri.path;
-    final selected = _selected(path);
     final topInset = MediaQuery.viewPaddingOf(context).top;
     final headerTop = topInset == 0 ? 24.0 : topInset;
     final chatOpen = RegExp(r'^/messages/\d+').hasMatch(path);
@@ -146,11 +131,17 @@ class _AppShellState extends State<AppShell> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             if (playing) MiniPlayer(player: widget.player),
-                            _BottomBar(
-                              selected: selected,
-                              unreadChats: widget.session.unreadChats,
-                              onTab: (i) => i == 4 ? _menu(context) : context.go(_tabs[i].$1),
-                            ),
+                            Builder(builder: (context) {
+                              final tabs = widget.session.navTabs;
+                              final items = [for (final t in tabs) navItem(t)!, navMenu];
+                              final selected = navIndexFor(tabs, path, username: widget.session.username) ?? tabs.length;
+                              return _BottomBar(
+                                items: items,
+                                selected: selected,
+                                unreadChats: widget.session.unreadChats,
+                                onTab: (i) => i == tabs.length ? _menu(context) : context.go(tabs[i]),
+                              );
+                            }),
                           ],
                         ),
                       ),
@@ -167,19 +158,8 @@ class _AppShellState extends State<AppShell> {
   void _menu(BuildContext context) {
     final path = GoRouterState.of(context).uri.path;
     final me = widget.session.me ?? {};
-    const tiles = [
-      ('/profile', 'Моя сторінка', LucideIcons.userRound),
-      ('/feed', 'Новини', LucideIcons.newspaper),
-      ('/messages', 'Повідомлення', LucideIcons.messageCircle),
-      ('/friends', 'Друзі', LucideIcons.usersRound),
-      ('/people', 'Пошук людей', LucideIcons.search),
-      ('/communities', 'Спільноти', LucideIcons.shield),
-      ('/photos', 'Фотографії', LucideIcons.image),
-      ('/servers', 'Сервери GTA', LucideIcons.server),
-      ('/music', 'Музика', LucideIcons.music),
-      ('/cinema', 'Кіно', LucideIcons.film),
-      ('/families', 'Сім’ї', LucideIcons.crown),
-    ];
+    final pinned = widget.session.navTabs;
+    final tiles = [for (final item in navCatalog) if (!pinned.contains(item.path)) (item.path, item.title, item.icon)];
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: popover,
@@ -244,6 +224,10 @@ class _AppShellState extends State<AppShell> {
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Column(
                     children: [
+                      _MenuLink(icon: LucideIcons.panelBottom, label: 'Налаштувати нижню панель', onTap: () {
+                        Navigator.pop(sheet);
+                        context.go('/settings?tab=app');
+                      }),
                       _MenuLink(icon: LucideIcons.settings, label: 'Налаштування', onTap: () {
                         Navigator.pop(sheet);
                         context.go('/settings');
@@ -505,18 +489,11 @@ class NotificationRow extends StatelessWidget {
 }
 
 class _BottomBar extends StatelessWidget {
-  const _BottomBar({required this.selected, required this.unreadChats, required this.onTab});
+  const _BottomBar({required this.items, required this.selected, required this.unreadChats, required this.onTab});
+  final List<NavItem> items;
   final int selected;
   final int unreadChats;
   final ValueChanged<int> onTab;
-
-  static const _items = [
-    ('Сторінка', LucideIcons.userRound, LucideIcons.userRound500),
-    ('Новини', LucideIcons.newspaper, LucideIcons.newspaper500),
-    ('Чати', LucideIcons.messageCircle, LucideIcons.messageCircle500),
-    ('Друзі', LucideIcons.usersRound, LucideIcons.usersRound500),
-    ('Меню', LucideIcons.layoutGrid, LucideIcons.layoutGrid500),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -531,7 +508,7 @@ class _BottomBar extends StatelessWidget {
           height: 64,
           child: Row(
             children: [
-              for (var i = 0; i < _items.length; i++)
+              for (var i = 0; i < items.length; i++)
                 Expanded(
                   child: InkWell(
                     onTap: () => onTab(i),
@@ -548,18 +525,18 @@ class _BottomBar extends StatelessWidget {
                                 duration: const Duration(milliseconds: 260),
                                 curve: Curves.easeOutBack,
                                 child: Icon(
-                                  selected == i ? _items[i].$3 : _items[i].$2,
+                                  selected == i ? items[i].activeIcon : items[i].icon,
                                   size: 22,
                                   color: selected == i ? const Color(0xFF8FA0FF) : muted,
                                   shadows: selected == i ? const [Shadow(color: Color(0xE67C8CFF), blurRadius: 10), Shadow(color: Color(0x997C8CFF), blurRadius: 20)] : null,
                                 ),
                               ),
                             ),
-                            if (i == 2 && unreadChats > 0) Positioned(right: 4, top: -4, child: CountBadge(count: unreadChats)),
+                            if (items[i].path == '/messages' && unreadChats > 0) Positioned(right: 4, top: -4, child: CountBadge(count: unreadChats)),
                           ],
                         ),
                         const SizedBox(height: 3),
-                        Text(_items[i].$1, style: body(11, color: selected == i ? const Color(0xFF8FA0FF) : muted, weight: selected == i ? FontWeight.w700 : FontWeight.w500)),
+                        Text(items[i].label, maxLines: 1, overflow: TextOverflow.fade, softWrap: false, style: body(11, color: selected == i ? const Color(0xFF8FA0FF) : muted, weight: selected == i ? FontWeight.w700 : FontWeight.w500)),
                       ],
                     ),
                   ),

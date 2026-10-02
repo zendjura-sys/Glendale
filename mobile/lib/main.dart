@@ -133,7 +133,7 @@ Future<void> main() async {
             ],
           ),
           GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
-          GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
+          GoRoute(path: '/settings', builder: (_, state) => SettingsScreen(initialTab: state.uri.queryParameters['tab'])),
         ],
       ),
     ],

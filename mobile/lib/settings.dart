@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
+import 'nav_items.dart';
 import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
@@ -34,14 +36,15 @@ class NotificationsScreen extends StatelessWidget {
 // ───────────────────────── Налаштування ─────────────────────────
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  const SettingsScreen({this.initialTab, super.key});
+  final String? initialTab;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  String tab = 'profile';
+  late String tab = const ['profile', 'security', 'app'].contains(widget.initialTab) ? widget.initialTab! : 'profile';
   final first = TextEditingController();
   final last = TextEditingController();
   final username = TextEditingController();
@@ -177,12 +180,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
         PageTitle('Налаштування', subtitle: 'Керуйте сторінкою, приватністю та безпекою акаунта'),
         const SizedBox(height: 12),
         Segmented(
-          options: const [SegmentOption('profile', 'Профіль', icon: LucideIcons.userRound), SegmentOption('security', 'Безпека', icon: LucideIcons.shield)],
+          options: const [
+            SegmentOption('profile', 'Профіль', icon: LucideIcons.userRound),
+            SegmentOption('security', 'Безпека', icon: LucideIcons.shield),
+            SegmentOption('app', 'Застосунок', icon: LucideIcons.smartphone),
+          ],
           selected: tab,
           onSelect: (value) => setState(() => tab = value),
         ),
         const SizedBox(height: 12),
-        if (tab == 'profile') ..._profile() else ..._security(),
+        Swap(
+          id: tab,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: switch (tab) {
+            'security' => _security(),
+            'app' => const [NavEditor()],
+            _ => _profile(),
+          }),
+        ),
       ],
     );
   }
@@ -329,5 +343,124 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ]),
       ),
     ];
+  }
+}
+
+// ───────────────────────── Нижня панель ─────────────────────────
+
+/// Вибір і порядок розділів нижньої панелі. Решта розділів — у «Меню».
+class NavEditor extends StatelessWidget {
+  const NavEditor({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final session = AppScope.of(context).session;
+    return ListenableBuilder(
+      listenable: session,
+      builder: (context, _) {
+        final tabs = session.navTabs;
+        final rest = [for (final item in navCatalog) if (!tabs.contains(item.path)) item];
+        final full = tabs.length >= maxNav;
+
+        void save(List<String> next) => session.setNavTabs(next);
+
+        return Glass(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            const CardTitle('Нижня панель', icon: LucideIcons.panelBottom),
+            const SizedBox(height: 6),
+            Text('До $maxNav розділів поруч із «Меню». Те, що приберете з панелі, буде в меню.', style: body(13, color: muted)),
+            const SizedBox(height: 14),
+            _NavPreview(tabs: tabs),
+            const SizedBox(height: 16),
+            Text('У панелі', style: body(12.5, color: muted, weight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              buildDefaultDragHandles: false,
+              itemCount: tabs.length,
+              onReorderItem: (from, to) {
+                final next = [...tabs];
+                next.insert(to, next.removeAt(from));
+                save(next);
+              },
+              proxyDecorator: (child, _, _) => Material(color: popover, elevation: 6, borderRadius: BorderRadius.circular(14), child: child),
+              itemBuilder: (context, i) {
+                final item = navItem(tabs[i])!;
+                return Padding(
+                  key: ValueKey(item.path),
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(4, 2, 4, 2),
+                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
+                    child: Row(children: [
+                      ReorderableDragStartListener(
+                        index: i,
+                        child: const Padding(padding: EdgeInsets.all(10), child: Icon(LucideIcons.gripVertical, size: 18, color: faint)),
+                      ),
+                      Icon(item.icon, size: 20, color: const Color(0xFF9AA6FF)),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(item.title, style: body(14.5, weight: FontWeight.w600))),
+                      IconButton(
+                        tooltip: 'Прибрати в меню',
+                        onPressed: tabs.length <= 1 ? null : () => save([...tabs]..removeAt(i)),
+                        icon: Icon(LucideIcons.circleMinus, size: 20, color: tabs.length <= 1 ? faint : dangerSoft),
+                      ),
+                    ]),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+            Row(children: [
+              Expanded(child: Text('У меню', style: body(12.5, color: muted, weight: FontWeight.w700))),
+              if (full) Text('Панель заповнена', style: body(11.5, color: faint)),
+            ]),
+            const SizedBox(height: 8),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              for (final item in rest)
+                Opacity(
+                  opacity: full ? 0.45 : 1,
+                  child: SelectPill(
+                    label: item.title,
+                    icon: item.icon,
+                    selected: false,
+                    onTap: () => full ? toast(context, 'Спочатку приберіть розділ із панелі.') : save([...tabs, item.path]),
+                  ),
+                ),
+            ]),
+            if (!listEquals(tabs, defaultNav)) ...[
+              const SizedBox(height: 14),
+              GhostButton(label: 'Повернути як було', icon: LucideIcons.rotateCcw, compact: true, onPressed: () => save(defaultNav)),
+            ],
+          ]),
+        );
+      },
+    );
+  }
+}
+
+/// Зменшений вигляд панелі, щоб одразу бачити результат.
+class _NavPreview extends StatelessWidget {
+  const _NavPreview({required this.tabs});
+  final List<String> tabs;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = [for (final t in tabs) navItem(t)!, navMenu];
+    return Container(
+      height: 58,
+      decoration: BoxDecoration(color: const Color(0xA60F0A1E), borderRadius: BorderRadius.circular(16), border: Border.all(color: line)),
+      child: Row(children: [
+        for (final item in items)
+          Expanded(
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(item.icon, size: 19, color: muted),
+              const SizedBox(height: 3),
+              Text(item.label, maxLines: 1, overflow: TextOverflow.fade, softWrap: false, style: body(10.5, color: muted, weight: FontWeight.w500)),
+            ]),
+          ),
+      ]),
+    );
   }
 }

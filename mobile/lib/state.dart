@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api.dart';
+import 'nav_items.dart';
 
 class Session extends ChangeNotifier {
   Session(this.prefs) : api = Api(() => _token) {
@@ -29,6 +31,26 @@ class Session extends ChangeNotifier {
   String? get username => text(me?['username']);
   int? get myId => me?['id'] is int ? me!['id'] as int : int.tryParse('${me?['id']}');
   bool get isAdmin => me?['role'] == 'admin';
+
+  String get _navKey => 'nav.tabs.${myId ?? 0}';
+
+  /// Розділи нижньої панелі, які обрав цей акаунт (без «Меню» — воно завжди останнє).
+  List<String> get navTabs {
+    final saved = prefs.getStringList(_navKey);
+    if (saved == null) return defaultNav;
+    final clean = cleanNav(saved);
+    return clean.isEmpty ? defaultNav : clean;
+  }
+
+  Future<void> setNavTabs(List<String> tabs) async {
+    final clean = cleanNav(tabs);
+    if (clean.isEmpty || listEquals(clean, defaultNav)) {
+      await prefs.remove(_navKey);
+    } else {
+      await prefs.setStringList(_navKey, clean);
+    }
+    notifyListeners();
+  }
 
   Future<void> boot() async {
     if (_token != null) {
