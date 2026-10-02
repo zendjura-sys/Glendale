@@ -81,4 +81,10 @@ void main() {
     player.updateMeta({'id': 3, 'title': 'Нова', 'artist': 'Гурт', 'album': 'Альбом'});
     expect(player.queue[2].album, 'Альбом');
   });
+
+  test('сміттєвий виконавець показується як невідомий', () {
+    expect(artistOf('.'), 'Невідомий виконавець');
+    expect(artistOf(null, '—'), '—');
+    expect(artistOf('Manowar'), 'Manowar');
+  });
 }

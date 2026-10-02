@@ -6,6 +6,7 @@ import 'package:flutter/painting.dart' show Color;
 import 'package:just_audio/just_audio.dart';
 
 import 'state.dart';
+import 'track_edit.dart';
 
 /// Медіасесія Android/iOS для [TrackPlayer]: музика грає у фоні (foreground-сервіс),
 /// а в шторці й на заблокованому екрані з’являється плеєр з обкладинкою й кнопками.
@@ -54,14 +55,14 @@ class GcAudioHandler extends BaseAudioHandler with SeekHandler {
     mediaItem.add(MediaItem(
       id: '${track.id ?? track.url}',
       title: track.title,
-      artist: track.artist.isEmpty ? 'Невідомий виконавець' : track.artist,
+      artist: artistOf(track.artist),
       album: track.album,
       genre: track.genre,
       duration: duration,
       artUri: cover,
     ));
     queue.add([
-      for (final t in player.queue) MediaItem(id: '${t.id ?? t.url}', title: t.title, artist: t.artist, album: t.album, artUri: t.cover == null ? null : Uri.tryParse(t.cover!)),
+      for (final t in player.queue) MediaItem(id: '${t.id ?? t.url}', title: t.title, artist: artistOf(t.artist), album: t.album, artUri: t.cover == null ? null : Uri.tryParse(t.cover!)),
     ]);
     _broadcast();
   }

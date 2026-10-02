@@ -37,6 +37,48 @@ bool junkMeta(String? value) {
   return v.isEmpty || !RegExp(r'[\p{L}\p{N}]', unicode: true).hasMatch(v) || _junkName.hasMatch(v);
 }
 
+/// Виконавець для показу: «.» і подібне сміття — це «Невідомий виконавець».
+String artistOf(dynamic artist, [String fallback = 'Невідомий виконавець']) {
+  final value = text(artist);
+  return junkMeta(value) ? fallback : value!;
+}
+
+final _repairing = <int>{};
+
+/// Старі треки, завантажені до появи парсера, мають назви тимчасових файлів. Читаємо теги
+/// самого файлу (без каталогу — він може вгадати неправильно) і, якщо трек свій, зберігаємо.
+/// Повертає виправлену картку або `null`, якщо нічого не знайшлося.
+Future<Map<String, dynamic>?> repairTrackMeta(Session session, Map<String, dynamic> card) async {
+  final id = intOf(card['id']);
+  final url = absolute(card['url']);
+  if (id == 0 || url == null || text(card['source']) == 'spotify') return null;
+  if (!junkMeta(text(card['title'])) && !junkMeta(text(card['artist']))) return null;
+  if (!_repairing.add(id)) return null;
+  final tags = await readUrlTags(url);
+  final fixed = <String, dynamic>{...card};
+  var changed = false;
+  void put(String key, String? value) {
+    if (value != null && junkMeta(text(card[key]))) {
+      fixed[key] = value;
+      changed = true;
+    }
+  }
+
+  put('title', tags.title);
+  put('artist', tags.artist);
+  put('album', tags.album);
+  put('genre', tags.genre);
+  if (!changed) return null;
+  if (intOf(card['user_id']) == session.myId) {
+    try {
+      await session.api.patch(Api.site('/music/tracks/$id'), {
+        for (final key in ['title', 'artist', 'album', 'genre']) key: text(fixed[key]) ?? '',
+      });
+    } catch (_) {}
+  }
+  return fixed;
+}
+
 String? _clean(String? value, [int max = 150]) {
   final v = value?.replaceAll(RegExp(r'\s+'), ' ').trim();
   if (v == null || v.isEmpty) return null;

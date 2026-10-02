@@ -298,6 +298,22 @@ class _LibraryTrackState extends State<LibraryTrack> {
   Map<String, dynamic> get track => widget.tracks[widget.index];
   Api get api => AppScope.read(context).session.api;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _repair());
+  }
+
+  Future<void> _repair() async {
+    if (!mounted) return;
+    final scope = AppScope.read(context);
+    if (intOf(track['user_id']) != scope.session.myId) return;
+    final fixed = await repairTrackMeta(scope.session, track);
+    if (fixed == null || !mounted) return;
+    setState(() => track.addAll(fixed));
+    scope.player.updateMeta(fixed);
+  }
+
   Future<void> _toggleLibrary() async {
     final inLibrary = track['in_library'] == true;
     try {

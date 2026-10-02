@@ -76,7 +76,7 @@ class MiniPlayer extends StatelessWidget {
                                   children: [
                                     Text(track.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w700).copyWith(height: 1.2)),
                                     const SizedBox(height: 2),
-                                    Text(track.artist.isEmpty ? 'Невідомий виконавець' : track.artist, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted).copyWith(height: 1.2)),
+                                    Text(artistOf(track.artist), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted).copyWith(height: 1.2)),
                                   ],
                                 ),
                               ),
@@ -132,7 +132,7 @@ Future<void> showFullPlayer(BuildContext context, TrackPlayer player) {
                     child: Column(children: [
                       Text(track.title, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: display(20)),
                       const SizedBox(height: 6),
-                      Text(track.artist.isEmpty ? 'Невідомий виконавець' : track.artist, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: muted)),
+                      Text(artistOf(track.artist), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: muted)),
                       if (details.isNotEmpty) ...[
                         const SizedBox(height: 3),
                         Text(details, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: faint)),
@@ -239,7 +239,7 @@ class _QueueRow extends StatelessWidget {
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(track.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: on ? const Color(0xFF9AA6FF) : ink, weight: FontWeight.w600)),
-                Text(track.artist.isEmpty ? 'Невідомий виконавець' : track.artist, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                Text(artistOf(track.artist), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
               ]),
             ),
             IconButton(tooltip: 'Прибрати з черги', visualDensity: VisualDensity.compact, onPressed: () => player.removeAt(i), icon: const Icon(LucideIcons.x, size: 18, color: faint)),

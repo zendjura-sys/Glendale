@@ -168,6 +168,9 @@ class TrackPlayer extends ChangeNotifier {
   final _player = AudioPlayer();
   final _random = Random();
 
+  /// Викликається на початку кожного треку (тут лагодять «сміттєві» назви).
+  void Function(QueueTrack track)? onStart;
+
   /// Рушій відтворення — для медіасесії в шторці (`GcAudioHandler`).
   AudioPlayer get engine => _player;
   Session? session;
@@ -230,6 +233,7 @@ class TrackPlayer extends ChangeNotifier {
     position = Duration.zero;
     notifyListeners();
     final track = queue[i];
+    onStart?.call(track);
     try {
       await _player.setUrl(track.url);
       unawaited(_player.play());

@@ -22,6 +22,7 @@ import 'settings.dart';
 import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
+import 'track_edit.dart';
 import 'widgets.dart';
 
 Future<void> main() async {
@@ -38,6 +39,9 @@ Future<void> main() async {
   final prefs = await SharedPreferences.getInstance();
   final session = Session(prefs);
   final player = TrackPlayer()..session = session;
+  player.onStart = (track) => repairTrackMeta(session, track.toCard()).then((fixed) {
+        if (fixed != null) player.updateMeta(fixed);
+      }).catchError((_) {});
   await GcAudioHandler.attach(player);
   await session.boot();
   final links = AppLinks();

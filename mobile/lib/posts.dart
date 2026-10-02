@@ -13,6 +13,7 @@ import 'player_view.dart';
 import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
+import 'track_edit.dart';
 import 'widgets.dart';
 
 const _visibility = {
@@ -490,7 +491,7 @@ class MusicAttachment extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(text(track['title']) ?? 'Трек', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w700)),
-                    Text(text(track['artist']) ?? 'Невідомий виконавець', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
+                    Text(artistOf(track['artist']), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
                   ],
                 ),
               ),
@@ -1208,7 +1209,7 @@ class TrackRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(text(track['title']) ?? 'Без назви', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, color: playing ? const Color(0xFF9AA6FF) : ink, weight: FontWeight.w600)),
-                  Text(text(track['artist']) ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
+                  Text(artistOf(track['artist'], '—'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
                 ],
               ),
             ),
