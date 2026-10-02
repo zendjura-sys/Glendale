@@ -518,6 +518,130 @@ class _FriendCard extends StatelessWidget {
   }
 }
 
+class _PersonRow extends StatelessWidget {
+  const _PersonRow({required this.user, required this.action});
+  final Map<String, dynamic> user;
+  final Widget action;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = text(user['name']) ?? 'GameCon';
+    final username = text(user['username']);
+    return InkWell(
+      onTap: username == null ? null : () => context.push('/u/$username'),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Avatar(url: text(user['avatar_url']), name: name, online: user['is_online'] == true, size: 52),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: onest.copyWith(fontWeight: FontWeight.w700, fontSize: 16)),
+                  Text('@${username ?? ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: onest.copyWith(color: muted, fontSize: 13)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            action,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class FriendAction extends StatefulWidget {
+  const FriendAction({required this.session, required this.username, required this.relation, required this.onChanged, super.key});
+  final Session session;
+  final String? username;
+  final String relation;
+  final Future<void> Function() onChanged;
+
+  @override
+  State<FriendAction> createState() => _FriendActionState();
+}
+
+class _FriendActionState extends State<FriendAction> {
+  bool busy = false;
+
+  Future<void> run(Future<dynamic> Function() action) async {
+    if (busy || widget.username == null) return;
+    setState(() => busy = true);
+    try {
+      await action();
+      await widget.onChanged();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (busy) {
+      return const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: cyan));
+    }
+    final relation = widget.relation;
+    if (relation == 'friends' || relation == 'self') {
+      return Text('У друзях', style: onest.copyWith(color: muted, fontSize: 13));
+    }
+    if (relation == 'outgoing') {
+      return _Pill(
+        label: 'Надіслано',
+        color: const Color(0xFF9AA3C7),
+        filled: false,
+        onTap: () => run(() => widget.session.api.delete('/api/v1/friends/${widget.username}')),
+      );
+    }
+    if (relation == 'incoming') {
+      return _Pill(
+        label: 'Прийняти',
+        color: const Color(0xFF34D399),
+        filled: true,
+        onTap: () => run(() => widget.session.api.post('/api/v1/friends/${widget.username}/accept')),
+      );
+    }
+    return _Pill(
+      label: 'Додати',
+      color: cyan,
+      filled: true,
+      onTap: () => run(() => widget.session.api.post('/api/v1/friends/${widget.username}')),
+    );
+  }
+}
+
+class _Pill extends StatelessWidget {
+  const _Pill({required this.label, required this.color, required this.filled, required this.onTap});
+  final String label;
+  final Color color;
+  final bool filled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: filled ? color.withValues(alpha: 0.16) : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color.withValues(alpha: filled ? 0.0 : 0.45)),
+          ),
+          child: Text(label, style: onest.copyWith(color: color, fontWeight: FontWeight.w700, fontSize: 13)),
+        ),
+      ),
+    );
+  }
+}
+
 class PeopleScreen extends StatefulWidget {
   const PeopleScreen({required this.session, super.key});
   final Session session;
@@ -551,18 +675,13 @@ class _PeopleScreenState extends State<PeopleScreen> {
             GcField(controller: query, label: 'Пошук', onSubmit: () => setState(() => q = query.text.trim())),
             if (users.isEmpty) const Padding(padding: EdgeInsets.only(top: 24), child: Text('Нікого не знайдено.', style: TextStyle(color: muted, fontFamily: 'Onest'))),
             for (final user in users)
-              UserTile(
+              _PersonRow(
                 user: user,
-                trailing: TextButton(
-                  onPressed: () async {
-                    try {
-                      await widget.session.api.post('/api/v1/friends/${user['username']}');
-                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Заявку надіслано')));
-                    } catch (e) {
-                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-                    }
-                  },
-                  child: const Text('Додати', style: TextStyle(color: cyan)),
+                action: FriendAction(
+                  session: widget.session,
+                  username: text(user['username']),
+                  relation: text(user['relation']) ?? 'none',
+                  onChanged: reload,
                 ),
               ),
           ],
@@ -658,13 +777,26 @@ class ProfileScreen extends StatelessWidget {
             if (own)
               GhostButton(label: 'Редагувати профіль', icon: Icons.edit_outlined, onPressed: () => context.go('/settings'))
             else
-              GhostButton(
-                label: 'Написати',
-                icon: Icons.chat_bubble_outline_rounded,
-                onPressed: () async {
-                  final chat = await session.api.post('/api/v1/messages/with/$name');
-                  if (context.mounted) context.push('/messages/${chat['id']}');
-                },
+              Row(
+                children: [
+                  Expanded(
+                    child: GhostButton(
+                      label: 'Написати',
+                      icon: Icons.chat_bubble_outline_rounded,
+                      onPressed: () async {
+                        final chat = await session.api.post('/api/v1/messages/with/$name');
+                        if (context.mounted) context.push('/messages/${chat['id']}');
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  FriendAction(
+                    session: session,
+                    username: name,
+                    relation: text(user['relation']) ?? 'none',
+                    onChanged: reload,
+                  ),
+                ],
               ),
             if (joinedLabel(user['created_at']).isNotEmpty) ...[
               const SizedBox(height: 12),

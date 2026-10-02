@@ -74,13 +74,16 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('module:photos')->group(function () {
             Route::get('users/{user}/photos', [MediaApiController::class, 'photos']);
+            Route::post('albums', [MediaApiController::class, 'storeAlbum'])->middleware('throttle:20,1');
             Route::get('albums/{album}', [MediaApiController::class, 'album'])->whereNumber('album');
+            Route::post('albums/{album}/photos', [MediaApiController::class, 'uploadPhotos'])->whereNumber('album')->middleware('throttle:20,1');
             Route::get('photos/{photo}', [MediaApiController::class, 'photo'])->whereNumber('photo');
             Route::post('photos/{photo}/like', [MediaApiController::class, 'likePhoto'])->whereNumber('photo');
         });
 
         Route::prefix('music')->middleware('module:music')->group(function () {
             Route::get('/', [MediaApiController::class, 'music']);
+            Route::post('tracks', [MediaApiController::class, 'storeTrack'])->middleware('throttle:10,1');
             Route::post('playlists', [MediaApiController::class, 'storePlaylist'])->middleware('throttle:20,1');
             Route::post('now-playing', [MediaApiController::class, 'nowPlaying'])->middleware('throttle:60,1');
             Route::post('spotify/connect', [MediaApiController::class, 'spotifyStart']);
@@ -113,6 +116,10 @@ Route::prefix('v1')->group(function () {
             Route::get('families/{family}/warehouse', [GroupsApiController::class, 'warehouse']);
             Route::get('families/{family}/events', [GroupsApiController::class, 'events']);
             Route::get('families/{family}/reports', [GroupsApiController::class, 'reports']);
+            Route::post('families/{family}/reports', [GroupsApiController::class, 'storeReport'])->middleware('throttle:20,1');
+            Route::get('families/{family}/queue', [GroupsApiController::class, 'queue']);
+            Route::post('families/{family}/reports/{report}/review', [GroupsApiController::class, 'reviewReport'])->whereNumber('report');
+            Route::get('families/{family}/proofs/{proof}', [GroupsApiController::class, 'proof'])->whereNumber('proof');
             Route::get('families/{family}/audit', [GroupsApiController::class, 'audit']);
         });
     });

@@ -89,6 +89,30 @@ class Api {
   Future<Map<String, dynamic>> patch(String path, Map<String, dynamic> body) => _send('PATCH', path, body);
   Future<Map<String, dynamic>> delete(String path) => _send('DELETE', path);
 
+  Future<Map<String, dynamic>> upload(String path, Map<String, String> fields, List<http.MultipartFile> files) async {
+    final request = http.MultipartRequest('POST', Uri.parse('$root$path'));
+    request.headers['Accept'] = 'application/json';
+    request.headers['User-Agent'] = 'GameCon/1.0 (Flutter)';
+    final bearer = token();
+    if (bearer != null) request.headers['Authorization'] = 'Bearer $bearer';
+    request.fields.addAll(fields);
+    request.files.addAll(files);
+    late http.Response response;
+    try {
+      final streamed = await request.send().timeout(const Duration(seconds: 180));
+      response = await http.Response.fromStream(streamed);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Немає зв’язку з GameCon.');
+    }
+    if (response.statusCode >= 400) throw ApiException(_explain(response.body));
+    if (response.body.isEmpty) return {};
+    final decoded = jsonDecode(response.body);
+    if (decoded is Map<String, dynamic>) return decoded;
+    if (decoded is Map) return Map<String, dynamic>.from(decoded);
+    return {};
+  }
+
   Future<Map<String, dynamic>> me() async {
     final json = await get('/api/v1/me');
     final user = json['user'];

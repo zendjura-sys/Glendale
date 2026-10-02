@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
@@ -212,6 +214,18 @@ class _FamilyScreenState extends State<FamilyScreen> {
         final family = data['family'] is Map ? Map<String, dynamic>.from(data['family'] as Map) : <String, dynamic>{};
         final member = data['member'] is Map ? Map<String, dynamic>.from(data['member'] as Map) : null;
         final active = member != null && member['rank'] != null;
+        final abilities = data['abilities'] is Map ? Map<String, dynamic>.from(data['abilities'] as Map) : <String, dynamic>{};
+        final canReview = abilities['reports.review'] == true;
+        final tabs = [
+          ('overview', 'Огляд'),
+          ('reports', 'Звіти'),
+          if (canReview) ('queue', 'Перевірка'),
+          ('bank', 'Банк'),
+          ('warehouse', 'Склад'),
+          ('members', 'Учасники'),
+          ('events', 'Події'),
+          ('audit', 'Аудит'),
+        ];
         return ScreenScroll(
           onRefresh: reload,
           children: [
@@ -245,15 +259,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    for (final tab in const [
-                      ('overview', 'Огляд'),
-                      ('reports', 'Звіти'),
-                      ('bank', 'Банк'),
-                      ('warehouse', 'Склад'),
-                      ('members', 'Учасники'),
-                      ('events', 'Події'),
-                      ('audit', 'Аудит'),
-                    ])
+                    for (final tab in tabs)
                       Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: ChoiceChip(
@@ -271,7 +277,23 @@ class _FamilyScreenState extends State<FamilyScreen> {
               if (section == 'overview') _Overview(family: family, member: member),
               if (loading) const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator(color: indigo))),
               if (!loading && extra != null && extra!['error'] != null) Text('${extra!['error']}', style: onest),
-              if (!loading && extra != null && extra!['error'] == null) _SectionBody(section: section, data: extra!),
+              if (!loading && section == 'reports')
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: GhostButton(
+                    label: 'Надіслати звіт',
+                    icon: Icons.assignment_outlined,
+                    onPressed: () => showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: deep,
+                      builder: (context) => _ReportSheet(session: widget.session, slug: widget.slug, onSent: () => _open('reports')),
+                    ),
+                  ),
+                ),
+              if (!loading && section == 'queue' && extra != null && extra!['error'] == null)
+                _Queue(session: widget.session, slug: widget.slug, data: extra!, onChanged: () => _open('queue')),
+              if (!loading && extra != null && extra!['error'] == null && section != 'queue') _SectionBody(section: section, data: extra!),
             ],
           ],
         );
@@ -460,3 +482,295 @@ class _TagMark extends StatelessWidget {
     );
   }
 }
+
+class _Queue extends StatelessWidget {
+  const _Queue({required this.session, required this.slug, required this.data, required this.onChanged});
+  final Session session;
+  final String slug;
+  final Map<String, dynamic> data;
+  final Future<void> Function() onChanged;
+
+  Future<void> decide(BuildContext context, int id, String decision, [String? comment]) async {
+    try {
+      await session.api.post('/api/v1/families/$slug/reports/$id/review', {
+        'decision': decision,
+        'comment': ?comment,
+      });
+      await onChanged();
+    } catch (e) {
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = maps(data['reports']);
+    if (rows.isEmpty) {
+      return const Padding(padding: EdgeInsets.only(top: 8), child: Text('Черга перевірок порожня.', style: TextStyle(color: muted, fontFamily: 'Onest')));
+    }
+    return Column(
+      children: [
+        for (final row in rows)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Glass(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('${text(row['type_label']) ?? 'Звіт'} · #${row['id']}', style: onest.copyWith(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 4),
+                  Text('${text(row['beneficiary']) ?? ''} · ${text(row['event_date']) ?? ''}', style: onest.copyWith(color: muted, fontSize: 12)),
+                  if (text(row['description']) != null) ...[
+                    const SizedBox(height: 6),
+                    Text(text(row['description'])!, style: onest.copyWith(fontSize: 13)),
+                  ],
+                  if (row['reward'] != null) Text('Винагорода: ${hryvnia(row['reward'])}', style: onest.copyWith(color: const Color(0xFF34D399), fontSize: 12)),
+                  if (row['flags'] is Map && (row['flags'] as Map)['similar_reports'] is List && ((row['flags'] as Map)['similar_reports'] as List).isNotEmpty)
+                    Text('Скріншот схожий на попередні звіти.', style: onest.copyWith(color: gold, fontSize: 12)),
+                  const SizedBox(height: 8),
+                  for (final proof in maps(row['proofs']))
+                    if (proof['id'] != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            '${Api.root}/api/v1/families/$slug/proofs/${proof['id']}',
+                            headers: {if (session.token != null) 'Authorization': 'Bearer ${session.token}'},
+                            height: 160,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => const SizedBox(height: 48, child: Center(child: Text('Скріншот не відкрився', style: TextStyle(color: muted, fontFamily: 'Onest')))),
+                          ),
+                        ),
+                      ),
+                  if (row['self_review'] == true)
+                    Text('Свій звіт перевіряє інший офіцер.', style: onest.copyWith(color: muted, fontSize: 12))
+                  else
+                    Row(
+                      children: [
+                        TextButton(onPressed: () => decide(context, row['id'] as int, 'approve'), child: const Text('Схвалити', style: TextStyle(color: Color(0xFF34D399), fontFamily: 'Onest'))),
+                        TextButton(
+                          onPressed: () async {
+                            final comment = TextEditingController();
+                            final ok = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                backgroundColor: deep,
+                                title: Text('Причина відхилення', style: onest),
+                                content: GcField(controller: comment, label: 'Коментар'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Скасувати')),
+                                  TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Відхилити')),
+                                ],
+                              ),
+                            );
+                            if (ok == true && context.mounted) await decide(context, row['id'] as int, 'reject', comment.text.trim());
+                            comment.dispose();
+                          },
+                          child: const Text('Відхилити', style: TextStyle(color: Color(0xFFF87171), fontFamily: 'Onest')),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _ReportSheet extends StatefulWidget {
+  const _ReportSheet({required this.session, required this.slug, required this.onSent});
+  final Session session;
+  final String slug;
+  final Future<void> Function() onSent;
+
+  @override
+  State<_ReportSheet> createState() => _ReportSheetState();
+}
+
+class _ReportSheetState extends State<_ReportSheet> {
+  final description = TextEditingController();
+  final wins = TextEditingController(text: '1');
+  final losses = TextEditingController(text: '0');
+  final count = TextEditingController(text: '1');
+  final amount = TextEditingController();
+  String type = 'bizwar';
+  String audience = 'self';
+  String tier = 'light';
+  int? beneficiary;
+  late String date;
+  final hours = <int>{};
+  final proofs = <XFile>[];
+  List<Map<String, dynamic>> members = const [];
+  bool busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    date = _ymd(now);
+    widget.session.api.get('/api/v1/families/${widget.slug}/members').then((json) {
+      if (mounted) setState(() => members = maps(json['members']));
+    }).catchError((_) {});
+  }
+
+  @override
+  void dispose() {
+    description.dispose();
+    wins.dispose();
+    losses.dispose();
+    count.dispose();
+    amount.dispose();
+    super.dispose();
+  }
+
+  Future<void> send() async {
+    setState(() => busy = true);
+    try {
+      final fields = <String, String>{
+        'type': type,
+        'for': audience,
+        'event_date': date,
+        'description': description.text.trim(),
+        if (audience == 'friend' && beneficiary != null) 'beneficiary_id': '$beneficiary',
+        if (type == 'bizwar') 'wins': wins.text.trim(),
+        if (type == 'bizwar') 'losses': losses.text.trim(),
+        if (type == 'contract') 'tier': tier,
+        if (type == 'contract') 'count': count.text.trim(),
+        if (type == 'investment') 'amount': amount.text.trim(),
+      };
+      final files = <http.MultipartFile>[];
+      for (final proof in proofs) {
+        files.add(await http.MultipartFile.fromPath('proofs[]', proof.path, filename: proof.name));
+      }
+      if (type == 'bizwar') {
+        var i = 0;
+        for (final hour in hours) {
+          fields['hours[$i]'] = '$hour';
+          i++;
+        }
+      }
+      await widget.session.api.upload('/api/v1/families/${widget.slug}/reports', fields, files);
+      if (!mounted) return;
+      Navigator.pop(context);
+      await widget.onSent();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final today = DateTime.now();
+    final yesterday = today.subtract(const Duration(days: 1));
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.viewInsetsOf(context).bottom),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Новий звіт', style: unbounded.copyWith(fontSize: 20)),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final item in const [('bizwar', 'Бізвар'), ('contract', 'Контракт'), ('investment', 'Інвестиція'), ('other', 'Інше')])
+                  ChoiceChip(
+                    label: Text(item.$2, style: onest.copyWith(fontSize: 13)),
+                    selected: type == item.$1,
+                    selectedColor: indigo,
+                    onSelected: (_) => setState(() => type = item.$1),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              children: [
+                ChoiceChip(label: Text('За себе', style: onest.copyWith(fontSize: 13)), selected: audience == 'self', selectedColor: indigo, onSelected: (_) => setState(() => audience = 'self')),
+                ChoiceChip(label: Text('За учасника', style: onest.copyWith(fontSize: 13)), selected: audience == 'friend', selectedColor: indigo, onSelected: (_) => setState(() => audience = 'friend')),
+                ChoiceChip(label: Text('Сьогодні', style: onest.copyWith(fontSize: 13)), selected: date == _ymd(today), selectedColor: indigo, onSelected: (_) => setState(() => date = _ymd(today))),
+                ChoiceChip(label: Text('Вчора', style: onest.copyWith(fontSize: 13)), selected: date == _ymd(yesterday), selectedColor: indigo, onSelected: (_) => setState(() => date = _ymd(yesterday))),
+              ],
+            ),
+            if (audience == 'friend') ...[
+              const SizedBox(height: 8),
+              DropdownButton<int>(
+                isExpanded: true,
+                dropdownColor: card,
+                value: beneficiary,
+                hint: Text('Учасник', style: onest.copyWith(color: muted)),
+                items: [
+                  for (final member in members)
+                    if (text(member['username']) != widget.session.username && member['id'] is int)
+                      DropdownMenuItem(value: member['id'] as int, child: Text(text(member['display']) ?? '', style: onest)),
+                ],
+                onChanged: (value) => setState(() => beneficiary = value),
+              ),
+            ],
+            if (type == 'bizwar') ...[
+              const SizedBox(height: 8),
+              GcField(controller: wins, label: 'Перемоги'),
+              const SizedBox(height: 8),
+              GcField(controller: losses, label: 'Поразки'),
+              const SizedBox(height: 8),
+              Text('Години стріл', style: onest.copyWith(color: muted, fontSize: 12)),
+              Wrap(
+                spacing: 6,
+                children: [
+                  for (final hour in const [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22])
+                    FilterChip(
+                      label: Text('$hour', style: onest.copyWith(fontSize: 12)),
+                      selected: hours.contains(hour),
+                      onSelected: (on) => setState(() => on ? hours.add(hour) : hours.remove(hour)),
+                    ),
+                ],
+              ),
+            ],
+            if (type == 'contract') ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  for (final item in const [('light', 'Легкий'), ('medium', 'Середній'), ('heavy', 'Важкий')])
+                    ChoiceChip(label: Text(item.$2, style: onest.copyWith(fontSize: 13)), selected: tier == item.$1, selectedColor: indigo, onSelected: (_) => setState(() => tier = item.$1)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              GcField(controller: count, label: 'Кількість'),
+            ],
+            if (type == 'investment') ...[
+              const SizedBox(height: 8),
+              GcField(controller: amount, label: 'Сума, ₴'),
+            ],
+            const SizedBox(height: 8),
+            GcField(controller: description, label: 'Опис'),
+            const SizedBox(height: 8),
+            GhostButton(
+              label: proofs.isEmpty ? 'Додати скріншоти' : 'Скріншоти: ${proofs.length}',
+              icon: Icons.screenshot_monitor_outlined,
+              onPressed: () async {
+                final picked = await ImagePicker().pickMultiImage(imageQuality: 85);
+                if (picked.isNotEmpty) {
+                  setState(() {
+                    proofs.addAll(picked.take(6));
+                  });
+                }
+              },
+            ),
+            const SizedBox(height: 12),
+            PrimaryButton(label: busy ? 'Надсилання…' : 'Надіслати звіт', onPressed: busy ? null : send),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _ymd(DateTime value) => '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';

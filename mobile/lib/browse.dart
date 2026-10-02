@@ -1,6 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -163,10 +166,15 @@ class PhotosScreen extends StatelessWidget {
       load: () => session.api.get('/api/v1/users/$name/photos'),
       builder: (data, reload) {
         final albums = maps(data['albums']);
+        final own = name == session.username;
         return ScreenScroll(
           onRefresh: reload,
           children: [
             Text('Фото', style: unbounded.copyWith(fontSize: 28)),
+            if (own) ...[
+              const SizedBox(height: 12),
+              GhostButton(label: 'Створити альбом', icon: Icons.add_photo_alternate_outlined, onPressed: () => createAlbum(context, session, reload)),
+            ],
             if (albums.isEmpty) const Padding(padding: EdgeInsets.only(top: 16), child: Text('Альбомів немає.', style: TextStyle(color: muted, fontFamily: 'Onest'))),
             for (final album in albums)
               Padding(
@@ -197,11 +205,16 @@ class AlbumScreen extends StatelessWidget {
       load: () => session.api.get('/api/v1/albums/$id'),
       builder: (data, reload) {
         final photos = Listing.parse(data['photos']).items;
+        final canUpload = data['can_upload'] == true;
         return ScreenScroll(
           onRefresh: reload,
           children: [
             IconButton(onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back_rounded, color: Colors.white)),
             Text(text(data['album'] is Map ? (data['album'] as Map)['title'] : null) ?? 'Альбом', style: unbounded.copyWith(fontSize: 24)),
+            if (canUpload) ...[
+              const SizedBox(height: 10),
+              GhostButton(label: 'Завантажити фото', icon: Icons.file_upload_outlined, onPressed: () => uploadPhotos(context, session, id, reload)),
+            ],
             for (final photo in photos)
               if (absolute(photo['url']) != null)
                 Padding(
@@ -268,6 +281,27 @@ class _MusicScreenState extends State<MusicScreen> {
               selected: tab,
               onSelect: (value) => setState(() => tab = value),
             ),
+            if (tab == 'mine') ...[
+              const SizedBox(height: 12),
+              GhostButton(label: 'Завантажити трек', icon: Icons.upload_file_rounded, onPressed: () => uploadTrack(context, widget.session, () => setState(() => stamp++))),
+            ],
+            if (tab == 'playlists') ...[
+              const SizedBox(height: 12),
+              GhostButton(label: 'Новий плейлист', icon: Icons.queue_music_rounded, onPressed: () => createPlaylist(context, widget.session, () => setState(() => stamp++))),
+              const SizedBox(height: 8),
+              for (final playlist in maps(data['playlists']))
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Glass(
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const CircleAvatar(backgroundColor: indigo, child: Icon(Icons.queue_music_rounded, color: Colors.white, size: 18)),
+                      title: Text(text(playlist['title']) ?? 'Плейлист', style: onest.copyWith(fontWeight: FontWeight.w600)),
+                      subtitle: Text('${playlist['tracks_count'] ?? 0} треків', style: onest.copyWith(color: muted, fontSize: 12)),
+                    ),
+                  ),
+                ),
+            ],
             if (spotify['configured'] == true && spotify['account'] == null) ...[
               const SizedBox(height: 14),
               GhostButton(
@@ -298,8 +332,9 @@ class _MusicScreenState extends State<MusicScreen> {
                   ),
                 ),
               ),
-            if (tracks.isEmpty) const Padding(padding: EdgeInsets.only(top: 16), child: Text('Треків немає.', style: TextStyle(color: muted, fontFamily: 'Onest'))),
-            for (final track in tracks)
+            if (tab != 'playlists' && tracks.isEmpty) const Padding(padding: EdgeInsets.only(top: 16), child: Text('Треків немає.', style: TextStyle(color: muted, fontFamily: 'Onest'))),
+            if (tab != 'playlists')
+              for (final track in tracks)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Glass(
@@ -840,4 +875,162 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ],
     );
   }
+}
+
+Future<void> createAlbum(BuildContext context, Session session, Future<void> Function() reload) async {
+  final title = TextEditingController();
+  var privacy = 'public';
+  final ok = await showModalBottomSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: deep,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setLocal) => Padding(
+        padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.viewInsetsOf(context).bottom),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Новий альбом', style: unbounded.copyWith(fontSize: 20)),
+            const SizedBox(height: 12),
+            GcField(controller: title, label: 'Назва'),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final item in const [('public', 'Усім'), ('friends', 'Друзям'), ('private', 'Лише мені')])
+                  ChoiceChip(
+                    label: Text(item.$2, style: onest.copyWith(fontSize: 13)),
+                    selected: privacy == item.$1,
+                    selectedColor: indigo,
+                    onSelected: (_) => setLocal(() => privacy = item.$1),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            PrimaryButton(
+              label: 'Створити',
+              onPressed: () => Navigator.pop(context, true),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+  if (ok != true || !context.mounted) {
+    title.dispose();
+    return;
+  }
+  try {
+    await session.api.post('/api/v1/albums', {'title': title.text.trim(), 'privacy': privacy});
+    await reload();
+    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Альбом створено')));
+  } catch (e) {
+    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+  }
+  title.dispose();
+}
+
+Future<void> uploadPhotos(BuildContext context, Session session, int albumId, Future<void> Function() reload) async {
+  final picked = await ImagePicker().pickMultiImage(imageQuality: 85);
+  if (picked.isEmpty || !context.mounted) return;
+  try {
+    final files = <http.MultipartFile>[];
+    for (final photo in picked.take(30)) {
+      files.add(await http.MultipartFile.fromPath('photos[]', photo.path, filename: photo.name));
+    }
+    final json = await session.api.upload('/api/v1/albums/$albumId/photos', {}, files);
+    await reload();
+    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Завантажено фото: ${json['count'] ?? files.length}')));
+  } catch (e) {
+    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+  }
+}
+
+Future<void> uploadTrack(BuildContext context, Session session, VoidCallback done) async {
+  final picked = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: const ['mp3', 'm4a', 'aac', 'ogg', 'wav', 'flac']);
+  final path = picked?.files.single.path;
+  if (path == null || !context.mounted) return;
+  final title = TextEditingController(text: picked!.files.single.name.replaceAll(RegExp(r'\.[^.]+$'), ''));
+  final artist = TextEditingController();
+  final ok = await showModalBottomSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: deep,
+    builder: (context) => Padding(
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.viewInsetsOf(context).bottom),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Новий трек', style: unbounded.copyWith(fontSize: 20)),
+          const SizedBox(height: 12),
+          GcField(controller: title, label: 'Назва'),
+          const SizedBox(height: 8),
+          GcField(controller: artist, label: 'Виконавець'),
+          const SizedBox(height: 14),
+          PrimaryButton(label: 'Завантажити', onPressed: () => Navigator.pop(context, true)),
+        ],
+      ),
+    ),
+  );
+  if (ok != true || !context.mounted) {
+    title.dispose();
+    artist.dispose();
+    return;
+  }
+  try {
+    final file = await http.MultipartFile.fromPath('audio', path, filename: picked.files.single.name);
+    await session.api.upload('/api/v1/music/tracks', {'title': title.text.trim(), 'artist': artist.text.trim()}, [file]);
+    done();
+    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Трек завантажено')));
+  } catch (e) {
+    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+  }
+  title.dispose();
+  artist.dispose();
+}
+
+Future<void> createPlaylist(BuildContext context, Session session, VoidCallback done) async {
+  final title = TextEditingController();
+  var isPublic = false;
+  final ok = await showModalBottomSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: deep,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setLocal) => Padding(
+        padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.viewInsetsOf(context).bottom),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Новий плейлист', style: unbounded.copyWith(fontSize: 20)),
+            const SizedBox(height: 12),
+            GcField(controller: title, label: 'Назва'),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text('Публічний', style: onest),
+              value: isPublic,
+              activeThumbColor: cyan,
+              onChanged: (value) => setLocal(() => isPublic = value),
+            ),
+            PrimaryButton(label: 'Створити', onPressed: () => Navigator.pop(context, true)),
+          ],
+        ),
+      ),
+    ),
+  );
+  if (ok != true || !context.mounted) {
+    title.dispose();
+    return;
+  }
+  try {
+    await session.api.post('/api/v1/music/playlists', {'title': title.text.trim(), 'is_public': isPublic});
+    done();
+    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Плейлист створено')));
+  } catch (e) {
+    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+  }
+  title.dispose();
 }

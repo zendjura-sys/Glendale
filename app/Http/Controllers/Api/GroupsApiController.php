@@ -13,19 +13,24 @@ use App\Models\FamilyEvent;
 use App\Models\FamilyItem;
 use App\Models\FamilyMember;
 use App\Models\FamilyReport;
+use App\Models\FamilyReportProof;
 use App\Models\FamilyTransaction;
 use App\Models\GtaServer;
 use App\Models\Post;
 use App\Services\CommunityService;
 use App\Services\Families\FamilyGate;
 use App\Services\Families\FamilyService;
+use App\Services\Families\ReportService;
 use App\Services\PostPresenter;
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class GroupsApiController extends ApiController
 {
@@ -263,6 +268,117 @@ class GroupsApiController extends ApiController
             ])->values();
 
         return response()->json(['reports' => $reports]);
+    }
+
+    public function storeReport(Request $request, Family $family, ReportService $reports): JsonResponse
+    {
+        abort_if($family->isSuspended(), 423, 'Сім’ю призупинено платформою — зміни недоступні.');
+        $member = $this->active($request, $family);
+        $data = $request->validate([
+            'type' => ['required', Rule::in(array_keys(FamilyReport::TYPES))],
+            'for' => ['required', Rule::in(['self', 'friend'])],
+            'beneficiary_id' => ['nullable', 'required_if:for,friend', 'integer'],
+            'event_date' => ['required', 'date_format:Y-m-d'],
+            'wins' => ['nullable', 'integer', 'min:0', 'max:40'],
+            'losses' => ['nullable', 'integer', 'min:0', 'max:40'],
+            'hours' => ['nullable', 'array', 'max:13'],
+            'hours.*' => ['integer', Rule::in(FamilyReport::HOURS)],
+            'tier' => ['nullable', 'required_if:type,contract', Rule::in(array_keys(FamilyReport::TIERS))],
+            'count' => ['nullable', 'integer', 'min:1', 'max:10'],
+            'amount' => ['nullable', 'required_if:type,investment', 'numeric', 'min:0', 'max:100000000'],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'proofs' => ['nullable', 'array', 'max:10'],
+            'proofs.*' => ['file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+        ], [
+            'beneficiary_id.required_if' => 'Оберіть друга, за якого подаєте звіт.',
+            'tier.required_if' => 'Оберіть рівень контракту.',
+            'amount.required_if' => 'Вкажіть суму інвестиції.',
+            'proofs.*.image' => 'Доказом має бути зображення (скріншот).',
+            'proofs.*.max' => 'Скріншот завеликий — до 10 МБ.',
+        ]);
+
+        $report = $reports->submit($family, $member, $data, array_values($request->file('proofs', [])));
+
+        return response()->json([
+            'report' => [
+                'id' => $report->id,
+                'type' => $report->type,
+                'status' => $report->status,
+                'reward' => $report->reward,
+            ],
+        ], 201);
+    }
+
+    public function queue(Request $request, Family $family, ReportService $reports): JsonResponse
+    {
+        $member = $this->active($request, $family);
+        $can = $this->gate->abilities($member, $family);
+        abort_unless($can['reports.review'] || $can['treasury.manage'], 403, 'Черга доступна офіцерам.');
+
+        $types = collect(array_keys(FamilyReport::TYPES))->filter(fn ($t) => $can['reports.'.$t])->values()->all();
+        $pending = FamilyReport::query()
+            ->with(['submitter.user', 'beneficiary.user', 'proofs'])
+            ->where('family_id', $family->id)
+            ->where('status', FamilyReport::STATUS_PENDING)
+            ->whereIn('type', $types ?: ['-'])
+            ->orderBy('id')
+            ->limit(100)
+            ->get();
+
+        return response()->json([
+            'reports' => $pending->map(function (FamilyReport $r) use ($family, $member, $reports) {
+                return [
+                    'id' => $r->id,
+                    'type' => $r->type,
+                    'type_label' => FamilyReport::TYPES[$r->type] ?? $r->type,
+                    'status' => $r->status,
+                    'event_date' => $r->event_date->toDateString(),
+                    'description' => $r->description,
+                    'reward' => $r->reward,
+                    'data' => $r->data,
+                    'flags' => $r->flags,
+                    'self_review' => $member->user_id !== $family->owner_id && in_array($member->id, [$r->submitter_id, $r->beneficiary_id], true),
+                    'submitter' => $r->submitter->displayName(),
+                    'beneficiary' => $r->beneficiary->displayName(),
+                    'proofs' => $r->proofs->map(fn (FamilyReportProof $p) => ['id' => $p->id])->values(),
+                    'contracts_used' => $r->type === FamilyReport::TYPE_CONTRACT
+                        ? $reports->contractsUsed($r->beneficiary, (string) ($r->data['tier'] ?? 'light'), $r->event_date->toImmutable())
+                        : null,
+                ];
+            })->values(),
+        ]);
+    }
+
+    public function reviewReport(Request $request, Family $family, FamilyReport $report, ReportService $reports): JsonResponse
+    {
+        abort_unless($report->family_id === $family->id, 404);
+        abort_if($family->isSuspended(), 423, 'Сім’ю призупинено платформою — зміни недоступні.');
+        $member = $this->active($request, $family);
+        $data = $request->validate([
+            'decision' => ['required', Rule::in(['approve', 'reject'])],
+            'comment' => ['nullable', 'string', 'max:500'],
+            'reward' => ['nullable', 'numeric', 'min:0', 'max:10000000'],
+        ]);
+
+        $custom = isset($data['reward']) && $report->type === FamilyReport::TYPE_OTHER ? Money::toMinor($data['reward']) : null;
+        $reports->review($family, $report, $member, $data['decision'] === 'approve', $data['comment'] ?? null, $custom);
+
+        return response()->json(['status' => $data['decision'] === 'approve' ? FamilyReport::STATUS_APPROVED : FamilyReport::STATUS_REJECTED]);
+    }
+
+    public function proof(Request $request, Family $family, FamilyReportProof $proof): StreamedResponse
+    {
+        $member = $this->active($request, $family);
+        $report = $proof->loadMissing('report')->report;
+        abort_unless($report && $report->family_id === $family->id, 404);
+        abort_unless(
+            in_array($member->id, [$report->submitter_id, $report->beneficiary_id], true) || $this->gate->can($member, $family, $report->permission()),
+            403,
+        );
+
+        return Storage::disk(FamilyReportProof::DISK)->response($proof->path, null, [
+            'Cache-Control' => 'private, max-age=86400',
+        ]);
     }
 
     public function audit(Request $request, Family $family): JsonResponse
