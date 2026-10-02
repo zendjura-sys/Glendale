@@ -18,6 +18,7 @@ class Session extends ChangeNotifier {
   bool ready = false;
   Uri? handoff;
   String? notice;
+  int spotifyStamp = 0;
 
   String? get username => text(me?['username']);
 
@@ -60,6 +61,11 @@ class Session extends ChangeNotifier {
 
   void consumeLink() {
     handoff = null;
+  }
+
+  void noteSpotify() {
+    spotifyStamp++;
+    notifyListeners();
   }
 
   void toast(String message) {

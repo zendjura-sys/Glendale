@@ -81,7 +81,7 @@ class SpotifyClient
      */
     public function profile(string $accessToken): array
     {
-        return Http::withToken($accessToken)->acceptJson()->timeout(10)->get($this->apiUrl('/me'))->throw()->json();
+        return $this->http()->withToken($accessToken)->get($this->apiUrl('/me'))->throw()->json();
     }
 
     public function accessToken(SpotifyAccount $account): string
@@ -314,15 +314,20 @@ class SpotifyClient
         return $response->json() ?? [];
     }
 
+    private function http(): PendingRequest
+    {
+        return Http::withOptions([
+            'curl' => [\CURLOPT_IPRESOLVE => \CURL_IPRESOLVE_V4],
+        ])->acceptJson()->timeout(10);
+    }
+
     private function request(?SpotifyAccount $account): PendingRequest
     {
         if (! $this->configured()) {
             throw new SpotifyException('Spotify не налаштовано адміністратором.', 503);
         }
 
-        return Http::withToken($account ? $this->accessToken($account) : $this->appToken())
-            ->acceptJson()
-            ->timeout(10);
+        return $this->http()->withToken($account ? $this->accessToken($account) : $this->appToken());
     }
 
     private function ensure(Response $response): void
@@ -354,10 +359,9 @@ class SpotifyClient
             throw new SpotifyException('Spotify не налаштовано адміністратором.', 503);
         }
 
-        $response = Http::asForm()
+        $response = $this->http()
+            ->asForm()
             ->withBasicAuth((string) $this->clientId(), (string) $this->clientSecret())
-            ->acceptJson()
-            ->timeout(10)
             ->post($this->accountsUrl('/api/token'), $form);
 
         if (! $response->successful() || ! $response->json('access_token')) {

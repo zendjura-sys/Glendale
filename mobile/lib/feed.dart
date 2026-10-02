@@ -35,10 +35,7 @@ class _FeedScreenState extends State<FeedScreen> {
           onRefresh: reload,
           children: [
             const Wordmark(),
-            const Padding(
-              padding: EdgeInsets.only(top: 6, bottom: 12),
-              child: Text('Стрічка', style: TextStyle(color: muted, fontFamily: 'Onest')),
-            ),
+            const SizedBox(height: 14),
             ChipRow(
               options: const [('friends', 'Стрічка'), ('discover', 'Цікаве')],
               selected: tab,
@@ -48,12 +45,35 @@ class _FeedScreenState extends State<FeedScreen> {
               }),
             ),
             const SizedBox(height: 12),
-            Glass(
+            Container(
+              padding: const EdgeInsets.fromLTRB(10, 6, 4, 6),
+              decoration: BoxDecoration(
+                color: card,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+              ),
               child: Row(
                 children: [
                   Avatar(url: text(widget.session.me?['avatar_url']), name: text(widget.session.me?['name']) ?? 'Я', size: 40),
-                  const SizedBox(width: 10),
-                  Expanded(child: GcField(controller: composer, label: 'Що у вас нового?', onSubmit: () => _publish(context, reload))),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: composer,
+                      style: onest,
+                      cursorColor: cyan,
+                      minLines: 1,
+                      maxLines: 4,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _publish(context, reload),
+                      decoration: InputDecoration(
+                        hintText: 'Що у вас нового?',
+                        hintStyle: onest.copyWith(color: muted),
+                        border: InputBorder.none,
+                        isCollapsed: true,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                      ),
+                    ),
+                  ),
                   IconButton(onPressed: () => _publish(context, reload), icon: const Icon(Icons.send_rounded, color: cyan)),
                 ],
               ),

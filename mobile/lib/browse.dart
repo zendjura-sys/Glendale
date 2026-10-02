@@ -46,26 +46,29 @@ class _CommunitiesScreenState extends State<CommunitiesScreen> {
             ),
             const SizedBox(height: 12),
             GcField(controller: name, label: 'Назва нової спільноти'),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton(
-                onPressed: () async {
-                  try {
-                    await widget.session.api.post('/api/v1/communities', {
-                      'name': name.text.trim(),
-                      'type': 'group',
-                      'category': 'games',
-                      'privacy': 'open',
-                    });
-                    name.clear();
-                    setState(() => tab = 'managed');
-                    await reload();
-                  } catch (e) {
-                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-                  }
-                },
-                child: const Text('Створити', style: TextStyle(color: cyan)),
-              ),
+            const SizedBox(height: 10),
+            PrimaryButton(
+              label: 'Створити',
+              onPressed: () async {
+                final title = name.text.trim();
+                if (title.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Вкажіть назву спільноти')));
+                  return;
+                }
+                try {
+                  await widget.session.api.post('/api/v1/communities', {
+                    'name': title,
+                    'type': 'group',
+                    'category': 'games',
+                    'privacy': 'open',
+                  });
+                  name.clear();
+                  setState(() => tab = 'managed');
+                  await reload();
+                } catch (e) {
+                  if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+                }
+              },
             ),
             if (rows.isEmpty) const Text('У цій вкладці спільнот немає.', style: TextStyle(color: muted, fontFamily: 'Onest')),
             for (final row in rows)
@@ -224,11 +227,31 @@ class MusicScreen extends StatefulWidget {
 
 class _MusicScreenState extends State<MusicScreen> {
   String tab = 'mine';
+  int stamp = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    stamp = widget.session.spotifyStamp;
+    widget.session.addListener(_onSession);
+  }
+
+  @override
+  void dispose() {
+    widget.session.removeListener(_onSession);
+    super.dispose();
+  }
+
+  void _onSession() {
+    if (widget.session.spotifyStamp != stamp && mounted) {
+      setState(() => stamp = widget.session.spotifyStamp);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Remote(
-      watch: tab,
+      watch: '$tab:$stamp',
       load: () => widget.session.api.get('/api/v1/music?tab=$tab&page=1'),
       builder: (data, reload) {
         final tracks = Listing.parse(data['tracks']).items;
@@ -243,14 +266,35 @@ class _MusicScreenState extends State<MusicScreen> {
               selected: tab,
               onSelect: (value) => setState(() => tab = value),
             ),
-            if (spotify['configured'] == true && spotify['account'] == null)
-              TextButton(
+            if (spotify['configured'] == true && spotify['account'] == null) ...[
+              const SizedBox(height: 14),
+              GhostButton(
+                label: 'Під’єднати Spotify',
+                icon: Icons.library_music_outlined,
                 onPressed: () async {
-                  final json = await widget.session.api.post('/api/v1/music/spotify/connect');
-                  final url = text(json['url']);
-                  if (url != null) await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                  try {
+                    final json = await widget.session.api.post('/api/v1/music/spotify/connect');
+                    final url = text(json['url']);
+                    if (url != null) await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                  } catch (e) {
+                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+                  }
                 },
-                child: const Text('Під’єднати Spotify', style: TextStyle(color: cyan)),
+              ),
+            ],
+            if (spotify['account'] != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Glass(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.library_music_outlined, color: cyan, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(text(spotify['account'] is Map ? (spotify['account'] as Map)['display_name'] : null) ?? 'Spotify підключено', style: onest.copyWith(fontWeight: FontWeight.w600))),
+                    ],
+                  ),
+                ),
               ),
             if (tracks.isEmpty) const Padding(padding: EdgeInsets.only(top: 16), child: Text('Треків немає.', style: TextStyle(color: muted, fontFamily: 'Onest'))),
             for (final track in tracks)
@@ -395,9 +439,9 @@ class _MovieScreenState extends State<MovieScreen> {
       link = url;
       player = WebViewController()
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
-        ..setBackgroundColor(voidColor)
+        ..setBackgroundColor(const Color(0xFF000000))
         ..setUserAgent('Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36')
-        ..loadRequest(Uri.parse(url), headers: const {'Referer': 'https://gamecon.online/'});
+        ..loadRequest(Uri.https('gamecon.online', '/play/embed', {'src': url}));
     });
   }
 
@@ -415,9 +459,8 @@ class _MovieScreenState extends State<MovieScreen> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(22),
-              child: SizedBox(
-                height: 280,
-                width: double.infinity,
+              child: AspectRatio(
+                aspectRatio: player != null ? 16 / 9 : 16 / 10,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -427,16 +470,17 @@ class _MovieScreenState extends State<MovieScreen> {
                       CachedNetworkImage(imageUrl: absolute(poster)!, fit: BoxFit.cover)
                     else
                       const DecoratedBox(decoration: BoxDecoration(gradient: brand)),
-                    const DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Color(0x6605070F), Colors.transparent, Color(0xF005070F)],
-                          stops: [0, 0.45, 1],
+                    if (player == null)
+                      const DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Color(0x6605070F), Colors.transparent, Color(0xF005070F)],
+                            stops: [0, 0.45, 1],
+                          ),
                         ),
                       ),
-                    ),
                     Positioned(
                       left: 4,
                       top: 4,
@@ -446,9 +490,7 @@ class _MovieScreenState extends State<MovieScreen> {
                       ),
                     ),
                     if (player == null && players.isNotEmpty)
-                      Positioned(
-                        right: 16,
-                        bottom: 16,
+                      Center(
                         child: Material(
                           color: Colors.transparent,
                           child: InkWell(
@@ -458,10 +500,10 @@ class _MovieScreenState extends State<MovieScreen> {
                             },
                             customBorder: const CircleBorder(),
                             child: Ink(
-                              width: 58,
-                              height: 58,
+                              width: 64,
+                              height: 64,
                               decoration: const BoxDecoration(shape: BoxShape.circle, gradient: brand),
-                              child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 34),
+                              child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 38),
                             ),
                           ),
                         ),
@@ -550,15 +592,26 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
         final mine = maps(data['mine']);
         final catalog = maps(data['families'] is Map ? (data['families'] as Map)['data'] : data['catalog']);
         final listed = catalog.isNotEmpty ? catalog : Listing.parse(data['families']).items;
+        final seen = <String>{};
+        bool fresh(Map<String, dynamic> row) {
+          final key = text(row['slug']) ?? '${text(row['name'])}|${text(row['tag'])}';
+          if (seen.contains(key)) return false;
+          seen.add(key);
+          return true;
+        }
+        final mineRows = mine.where(fresh).toList();
+        final rest = listed.where(fresh).toList();
         return ScreenScroll(
           onRefresh: reload,
           children: [
             Text('Сім’ї', style: unbounded.copyWith(fontSize: 28)),
+            const SizedBox(height: 8),
             GcField(controller: query, label: 'Пошук', onSubmit: () => setState(() => q = query.text.trim())),
-            if (mine.isNotEmpty) const Text('Мої', style: TextStyle(color: muted, fontFamily: 'Onest')),
-            for (final row in mine) _familyTile(context, row),
-            for (final row in listed) _familyTile(context, row),
-            if (mine.isEmpty && listed.isEmpty) const Text('Сімей не знайдено.', style: TextStyle(color: muted, fontFamily: 'Onest')),
+            if (mineRows.isNotEmpty) const SectionLabel('Мої'),
+            for (final row in mineRows) _familyTile(context, row),
+            if (rest.isNotEmpty) const SectionLabel('Усі'),
+            for (final row in rest) _familyTile(context, row),
+            if (mineRows.isEmpty && rest.isEmpty) const Padding(padding: EdgeInsets.only(top: 16), child: Text('Сімей не знайдено.', style: TextStyle(color: muted, fontFamily: 'Onest'))),
           ],
         );
       },
@@ -566,14 +619,31 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
   }
 
   Widget _familyTile(BuildContext context, Map<String, dynamic> row) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(text(row['name']) ?? '', style: onest),
-      subtitle: Text(text(row['tag']) ?? '', style: onest.copyWith(color: muted)),
-      onTap: () {
-        final slug = text(row['slug']);
-        if (slug != null) context.push('/families/$slug');
-      },
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Glass(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        child: ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: CircleAvatar(
+            backgroundColor: indigo,
+            child: Text(
+              () {
+                final label = text(row['tag']) ?? text(row['name']) ?? '?';
+                return (label.isEmpty ? '?' : label[0]).toUpperCase();
+              }(),
+              style: unbounded.copyWith(fontSize: 14),
+            ),
+          ),
+          title: Text(text(row['name']) ?? '', style: onest.copyWith(fontWeight: FontWeight.w600)),
+          subtitle: Text(text(row['tag']) ?? '', style: onest.copyWith(color: muted)),
+          trailing: const Icon(Icons.chevron_right_rounded, color: muted),
+          onTap: () {
+            final slug = text(row['slug']);
+            if (slug != null) context.push('/families/$slug');
+          },
+        ),
+      ),
     );
   }
 }
@@ -615,7 +685,9 @@ class _FamilyScreenState extends State<FamilyScreen> {
               GcField(controller: nick, label: 'RP-нік'),
               const SizedBox(height: 8),
               GcField(controller: staticId, label: 'Static ID'),
-              TextButton(
+              const SizedBox(height: 10),
+              PrimaryButton(
+                label: 'Подати заявку',
                 onPressed: () async {
                   try {
                     await widget.session.api.post('/api/v1/families/${widget.slug}/apply', {
@@ -627,7 +699,6 @@ class _FamilyScreenState extends State<FamilyScreen> {
                     if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
                   }
                 },
-                child: const Text('Подати заявку', style: TextStyle(color: cyan)),
               ),
             ],
             if (text(family['description']) != null) Text(text(family['description'])!, style: onest),
@@ -636,8 +707,10 @@ class _FamilyScreenState extends State<FamilyScreen> {
             for (final row in maps(data['items'])) Text(text(row['name']) ?? '', style: onest),
             for (final row in maps(data['events'])) Text(text(row['title']) ?? '', style: onest),
             for (final row in maps(data['reports'])) Text('${text(row['type_label']) ?? ''} · ${text(row['status']) ?? ''}', style: onest),
-            if (data['chat_id'] != null)
-              TextButton(onPressed: () => context.push('/messages/${data['chat_id']}'), child: const Text('Чат сім’ї', style: TextStyle(color: cyan))),
+            if (data['chat_id'] != null) ...[
+              const SizedBox(height: 12),
+              GhostButton(label: 'Чат сім’ї', icon: Icons.chat_bubble_outline_rounded, onPressed: () => context.push('/messages/${data['chat_id']}')),
+            ],
           ],
         );
       },
@@ -645,43 +718,75 @@ class _FamilyScreenState extends State<FamilyScreen> {
   }
 }
 
-class ServersScreen extends StatelessWidget {
+class ServersScreen extends StatefulWidget {
   const ServersScreen({required this.session, super.key});
   final Session session;
 
   @override
+  State<ServersScreen> createState() => _ServersScreenState();
+}
+
+class _ServersScreenState extends State<ServersScreen> {
+  final name = TextEditingController();
+
+  @override
+  void dispose() {
+    name.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final name = TextEditingController();
     return Remote(
-      load: () => session.api.get('/api/v1/servers'),
+      load: () => widget.session.api.get('/api/v1/servers'),
       builder: (data, reload) {
         final servers = maps(data['servers']);
         return ScreenScroll(
           onRefresh: reload,
           children: [
             Text('Сервери GTA', style: unbounded.copyWith(fontSize: 28)),
+            const SizedBox(height: 8),
             GcField(controller: name, label: 'Запропонувати сервер'),
-            TextButton(
+            const SizedBox(height: 10),
+            PrimaryButton(
+              label: 'Надіслати',
               onPressed: () async {
+                final title = name.text.trim();
+                if (title.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Вкажіть назву сервера')));
+                  return;
+                }
                 try {
-                  await session.api.post('/api/v1/servers', {'name': name.text.trim(), 'platform': 'pc'});
+                  await widget.session.api.post('/api/v1/servers', {'name': title, 'platform': 'pc'});
                   name.clear();
+                  await reload();
                   if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Заявку надіслано')));
                 } catch (e) {
                   if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
                 }
               },
-              child: const Text('Надіслати', style: TextStyle(color: cyan)),
             ),
+            const SizedBox(height: 8),
             for (final server in servers)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(text(server['name']) ?? '', style: onest),
-                subtitle: Text('${server['players_online'] ?? '—'} онлайн', style: onest.copyWith(color: muted)),
-                onTap: () {
-                  final slug = text(server['slug']);
-                  if (slug != null) context.push('/servers/$slug');
-                },
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Glass(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.sports_esports_rounded, color: cyan),
+                    title: Text(text(server['name']) ?? '', style: onest.copyWith(fontWeight: FontWeight.w600)),
+                    subtitle: Text(
+                      server['players_online'] == null ? 'Онлайн невідомий' : '${server['players_online']} онлайн',
+                      style: onest.copyWith(color: muted),
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded, color: muted),
+                    onTap: () {
+                      final slug = text(server['slug']);
+                      if (slug != null) context.push('/servers/$slug');
+                    },
+                  ),
+                ),
               ),
           ],
         );
@@ -736,12 +841,14 @@ class NotificationsScreen extends StatelessWidget {
           onRefresh: reload,
           children: [
             Text('Сповіщення', style: unbounded.copyWith(fontSize: 28)),
-            TextButton(
+            const SizedBox(height: 8),
+            GhostButton(
+              label: 'Прочитати всі',
+              icon: Icons.done_all_rounded,
               onPressed: () async {
                 await session.api.post('/api/v1/notifications/read');
                 await reload();
               },
-              child: const Text('Прочитати всі', style: TextStyle(color: cyan)),
             ),
             if (rows.isEmpty) const Text('Немає сповіщень.', style: TextStyle(color: muted, fontFamily: 'Onest')),
             for (final row in rows)
@@ -806,7 +913,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         GcField(controller: current, label: 'Поточний пароль', obscure: true),
         const SizedBox(height: 8),
         GcField(controller: next, label: 'Новий пароль', obscure: true),
-        TextButton(
+        const SizedBox(height: 10),
+        GhostButton(
+          label: 'Змінити пароль',
+          icon: Icons.lock_outline_rounded,
           onPressed: () async {
             try {
               await widget.session.api.put('/api/v1/me/password', {
@@ -814,13 +924,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 'password': next.text,
                 'password_confirmation': next.text,
               });
+              current.clear();
+              next.clear();
               if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Пароль змінено')));
             } catch (e) {
               if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
             }
           },
-          child: const Text('Змінити пароль', style: TextStyle(color: cyan)),
         ),
+        const SizedBox(height: 14),
         Text('Google: ${me['google'] == true ? 'під’єднано' : 'ні'} · Discord: ${text(me['discord_username']) ?? 'ні'}', style: onest.copyWith(color: muted)),
       ],
     );

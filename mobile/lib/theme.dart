@@ -38,5 +38,11 @@ ThemeData gameConTheme() {
   return base.copyWith(
     textTheme: base.textTheme.apply(fontFamily: 'Onest', bodyColor: ink, displayColor: ink),
     splashColor: indigo.withValues(alpha: 0.2),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: card,
+      contentTextStyle: onest.copyWith(color: ink),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    ),
   );
 }

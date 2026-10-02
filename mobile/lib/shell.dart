@@ -34,8 +34,9 @@ class _AppShellState extends State<AppShell> {
     if (!mounted || uri == null || uri.host != 'spotify') return;
     widget.session.consumeLink();
     final failed = uri.queryParameters['error'];
-    final message = failed == null || failed.isEmpty ? 'Spotify підключено.' : 'Spotify не підключився.';
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    final ok = failed == null || failed.isEmpty;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ok ? 'Spotify підключено.' : 'Spotify не підключився.')));
+    if (ok) widget.session.noteSpotify();
   }
 
   static const _tabs = [

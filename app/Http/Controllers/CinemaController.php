@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Comment;
 use App\Models\Like;
 use App\Models\Movie;
+use App\Models\MovieSource;
 use App\Models\User;
 use App\Services\Cinema\CinemaService;
+use App\Services\Cinema\FlixcdnPlayer;
 use App\Services\FriendshipService;
 use App\Services\PostPresenter;
 use Illuminate\Database\Eloquent\Builder;
@@ -373,6 +375,54 @@ class CinemaController extends Controller
             ->whereIn('likeable_id', $comments->modelKeys())
             ->pluck('likeable_id')
             ->flip();
+    }
+
+    /**
+     * Порожня сторінка з iframe: WebView застосунку відкриває її з gamecon.online,
+     * тож Kodik бачить дозволений домен, а не порожній referrer.
+     */
+    public function embed(Request $request, FlixcdnPlayer $flixcdn): \Symfony\Component\HttpFoundation\Response
+    {
+        $url = (string) $request->query('src', '');
+        abort_unless($this->embeddable($url, $flixcdn), 404);
+
+        $src = e($url);
+        $html = <<<HTML
+        <!DOCTYPE html>
+        <html><head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <meta name="referrer" content="origin">
+        <style>html,body,iframe{margin:0;width:100%;height:100%;border:0;background:#000}</style>
+        </head>
+        <body><iframe src="{$src}" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="origin"></iframe></body>
+        </html>
+        HTML;
+
+        return response($html, 200, ['Content-Type' => 'text/html; charset=UTF-8']);
+    }
+
+    private function embeddable(string $url, FlixcdnPlayer $flixcdn): bool
+    {
+        $parts = parse_url($url);
+        if (! is_array($parts) || ($parts['scheme'] ?? '') !== 'https' || ! isset($parts['host'])) {
+            return false;
+        }
+
+        if (MovieSource::query()->where('link', $url)->exists()) {
+            return true;
+        }
+
+        $host = strtolower((string) $parts['host']);
+        foreach (['kodik.info', 'kodik.cc', 'kodik.biz', 'kodikplayer.com', 'youtube.com', 'youtube-nocookie.com', 'youtu.be'] as $suffix) {
+            if ($host === $suffix || str_ends_with($host, '.'.$suffix)) {
+                return true;
+            }
+        }
+
+        $templateHost = parse_url((string) $flixcdn->template(), PHP_URL_HOST);
+
+        return is_string($templateHost) && strcasecmp($templateHost, $host) === 0;
     }
 
     private function stateResponse(User $user, Movie $movie): JsonResponse

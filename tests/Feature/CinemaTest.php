@@ -386,4 +386,15 @@ class CinemaTest extends TestCase
         $this->actingAs($admin)->delete("/admin/cinema/{$movie->id}");
         $this->assertDatabaseMissing('movies', ['id' => $movie->id]);
     }
+
+    public function test_player_embed_allows_kodik_and_rejects_other_hosts(): void
+    {
+        $this->get('/play/embed?src='.urlencode('https://kodik.info/video/1/hash/720p'))
+            ->assertOk()
+            ->assertSee('https://kodik.info/video/1/hash/720p', false)
+            ->assertSee('referrerpolicy="origin"', false);
+
+        $this->get('/play/embed?src='.urlencode('https://evil.example/phish'))->assertNotFound();
+        $this->get('/play/embed?src='.urlencode('http://kodik.info/video/1'))->assertNotFound();
+    }
 }

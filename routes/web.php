@@ -337,6 +337,11 @@ Route::get('music/spotify/callback', [SpotifyController::class, 'callback'])
     ->middleware('module:music')
     ->name('spotify.callback');
 
+// Плеєр для застосунку: сторінка на нашому домені, всередині iframe Kodik/YouTube.
+Route::get('play/embed', [CinemaController::class, 'embed'])
+    ->middleware('throttle:120,1')
+    ->name('cinema.embed');
+
 Route::get('id{id}', [ProfileController::class, 'byId'])->whereNumber('id')->name('profile.id');
 Route::get('{user}', [ProfileController::class, 'show'])
     ->where('user', '[A-Za-z][A-Za-z0-9_.]{1,30}[A-Za-z0-9]')
