@@ -1,0 +1,26 @@
+const whole = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 });
+
+/**
+ * Копійки → «12 500 ₴» або «12 500,50 ₴».
+ */
+export function uah(minor: number | null | undefined, signed = false): string {
+    const value = minor ?? 0;
+    const abs = Math.abs(value);
+    const cents = abs % 100;
+    const text = `${whole.format(Math.floor(abs / 100))}${cents ? `,${String(cents).padStart(2, '0')}` : ''} ₴`;
+
+    if (value < 0) {
+        return `−${text}`;
+    }
+
+    return signed && value > 0 ? `+${text}` : text;
+}
+
+/**
+ * Гривні з форми → копійки.
+ */
+export function toMinor(value: string | number): number {
+    return Math.round(
+        Number(String(value).replace(/\s/g, '').replace(',', '.')) * 100,
+    );
+}

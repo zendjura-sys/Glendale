@@ -1,0 +1,597 @@
+import { usePage } from '@inertiajs/react';
+import {
+    FileUp,
+    ImagePlus,
+    Lock,
+    Mic,
+    Paperclip,
+    Pencil,
+    Reply,
+    SendHorizonal,
+    Smile,
+    Trash2,
+    UserRound,
+    X,
+} from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import { useVoiceRecorder } from '@/hooks/use-voice-recorder';
+import { formatBytes, formatDuration } from '@/lib/format';
+import { usePlayer } from '@/lib/player';
+import { fitTextarea } from '@/lib/textarea';
+import { cn, dockedAboveNav } from '@/lib/utils';
+import type { ChatMessage, OutgoingMessage } from '@/types';
+import { ContactShareDialog } from './contact-share-dialog';
+import { EmojiPanel } from './emoji-panel';
+
+const MAX_ATTACHMENTS = 10;
+const MAX_LENGTH = 4096;
+
+type Props = {
+    canWrite: boolean;
+    replyTo: ChatMessage | null;
+    editing: ChatMessage | null;
+    onCancel: () => void;
+    onSend: (message: OutgoingMessage) => void;
+    onEdit: (message: ChatMessage, body: string) => void;
+    onTyping: () => void;
+    onEditLast: () => void;
+};
+
+function useOutsideClose(
+    open: boolean,
+    ref: React.RefObject<HTMLElement | null>,
+    close: () => void,
+) {
+    useEffect(() => {
+        if (!open) return;
+        const onClick = (event: MouseEvent) => {
+            if (!ref.current?.contains(event.target as Node)) close();
+        };
+        window.addEventListener('mousedown', onClick);
+
+        return () => window.removeEventListener('mousedown', onClick);
+    }, [open, ref, close]);
+}
+
+export function Composer({
+    canWrite,
+    replyTo,
+    editing,
+    onCancel,
+    onSend,
+    onEdit,
+    onTyping,
+    onEditLast,
+}: Props) {
+    const { site } = usePage().props;
+    const [body, setBody] = useState('');
+    const [images, setImages] = useState<File[]>([]);
+    const [docs, setDocs] = useState<File[]>([]);
+    const [emojiOpen, setEmojiOpen] = useState(false);
+    const [attachOpen, setAttachOpen] = useState(false);
+    const [contactOpen, setContactOpen] = useState(false);
+    const textRef = useRef<HTMLTextAreaElement>(null);
+    const imageRef = useRef<HTMLInputElement>(null);
+    const docRef = useRef<HTMLInputElement>(null);
+    const emojiRef = useRef<HTMLDivElement>(null);
+    const attachRef = useRef<HTMLDivElement>(null);
+    const maxAttachments = Math.min(
+        MAX_ATTACHMENTS,
+        site.max_attachments || MAX_ATTACHMENTS,
+    );
+    const maxFileBytes = (site.max_message_file_mb || 50) * 1024 * 1024;
+
+    const voice = useVoiceRecorder((recording) =>
+        onSend({ kind: 'voice', ...recording }),
+    );
+    const playing = usePlayer().current !== null;
+
+    const previews = useMemo(
+        () => images.map((file) => URL.createObjectURL(file)),
+        [images],
+    );
+    useEffect(
+        () => () => previews.forEach((url) => URL.revokeObjectURL(url)),
+        [previews],
+    );
+
+    const resize = () => {
+        const el = textRef.current;
+        if (el) fitTextarea(el, 180);
+    };
+
+    const editingId = editing?.id;
+    useEffect(() => {
+        if (editingId === undefined) return;
+        setBody(editing?.body ?? '');
+        setImages([]);
+        setDocs([]);
+        requestAnimationFrame(() => {
+            resize();
+            textRef.current?.focus();
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [editingId]);
+
+    const replyId = replyTo?.id;
+    useEffect(() => {
+        if (replyId !== undefined) textRef.current?.focus();
+    }, [replyId]);
+
+    useOutsideClose(emojiOpen, emojiRef, () => setEmojiOpen(false));
+    useOutsideClose(attachOpen, attachRef, () => setAttachOpen(false));
+
+    const addFiles = (
+        list: FileList | File[] | null,
+        mode: 'auto' | 'document' = 'auto',
+    ) => {
+        if (!list || editing) return;
+        const incoming = Array.from(list);
+        const tooBig = incoming.filter((file) => file.size > maxFileBytes);
+        if (tooBig.length) {
+            toast.error(
+                `Файл «${tooBig[0].name}» завеликий. Максимум — ${site.max_message_file_mb || 50} МБ.`,
+            );
+        }
+        const accepted = incoming.filter((file) => file.size <= maxFileBytes);
+        const asImage = (file: File) =>
+            mode === 'auto' &&
+            /^image\/(jpeg|png|webp|gif)$/.test(file.type) &&
+            file.size <= 20 * 1024 * 1024;
+        const free = maxAttachments - images.length - docs.length;
+        if (accepted.length > free) {
+            toast(
+                `Не більше ${maxAttachments} вкладень в одному повідомленні.`,
+            );
+        }
+        const taken = accepted.slice(0, Math.max(0, free));
+        const nextImages = taken.filter(asImage);
+        const nextDocs = taken.filter((file) => !asImage(file));
+        if (nextImages.length) setImages((c) => [...c, ...nextImages]);
+        if (nextDocs.length) setDocs((c) => [...c, ...nextDocs]);
+        textRef.current?.focus();
+    };
+
+    const trimmed = body.trim();
+    const hasAttachments = images.length > 0 || docs.length > 0;
+    const canSubmit = editing
+        ? trimmed.length > 0 && trimmed !== editing.body
+        : trimmed.length > 0 || hasAttachments;
+    const showMic = !editing && !canSubmit && voice.supported;
+
+    const reset = () => {
+        setBody('');
+        setImages([]);
+        setDocs([]);
+        requestAnimationFrame(resize);
+    };
+
+    const submit = () => {
+        if (!canSubmit) {
+            if (editing && trimmed === editing.body) {
+                onCancel();
+                reset();
+            }
+
+            return;
+        }
+
+        if (editing) {
+            onEdit(editing, trimmed);
+        } else {
+            onSend({ kind: 'text', body: trimmed, images, files: docs });
+        }
+
+        reset();
+    };
+
+    const insertEmoji = (emoji: string) => {
+        const el = textRef.current;
+        const start = el?.selectionStart ?? body.length;
+        const end = el?.selectionEnd ?? body.length;
+        const next = body.slice(0, start) + emoji + body.slice(end);
+        setBody(next);
+        requestAnimationFrame(() => {
+            el?.focus();
+            el?.setSelectionRange(start + emoji.length, start + emoji.length);
+            resize();
+        });
+    };
+
+    const startRecording = () => {
+        voice.start().catch((error: unknown) => {
+            const denied =
+                error instanceof DOMException &&
+                (error.name === 'NotAllowedError' ||
+                    error.name === 'SecurityError');
+            toast.error(
+                denied
+                    ? 'Дозвольте доступ до мікрофона в налаштуваннях браузера.'
+                    : 'Не вдалося увімкнути мікрофон.',
+            );
+        });
+    };
+
+    const sendRecording = () => {
+        void voice.stop().then((recording) => {
+            if (recording) onSend({ kind: 'voice', ...recording });
+        });
+    };
+
+    if (!canWrite) {
+        return (
+            <div
+                className={cn(
+                    'border-t border-white/[0.06] px-4 pt-4',
+                    dockedAboveNav(playing),
+                )}
+            >
+                <p className="flex items-center justify-center gap-2 text-center text-sm text-white/45">
+                    <Lock className="size-4" />
+                    Користувач обмежив коло осіб, які можуть надсилати йому
+                    повідомлення.
+                </p>
+            </div>
+        );
+    }
+
+    const context = editing ?? replyTo;
+    const iconButton =
+        'flex size-10 shrink-0 items-center justify-center rounded-xl text-white/55 transition hover:bg-white/[0.07] hover:text-white disabled:opacity-40';
+
+    return (
+        <div
+            className={cn(
+                'relative border-t border-white/[0.06] bg-transparent px-3 pt-2 sm:px-4',
+                dockedAboveNav(playing),
+            )}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => {
+                event.preventDefault();
+                addFiles(event.dataTransfer.files);
+            }}
+        >
+            {context && (
+                <div className="mb-2 flex animate-in items-center gap-3 rounded-xl bg-white/[0.04] px-3 py-2 fade-in slide-in-from-bottom-1">
+                    {editing ? (
+                        <Pencil className="size-4 shrink-0 text-[#8fa0ff]" />
+                    ) : (
+                        <Reply className="size-4 shrink-0 text-[#8fa0ff]" />
+                    )}
+                    <span className="min-w-0 flex-1 border-l-2 border-[#7c8cff] pl-2.5 text-[13px]">
+                        <span className="block font-semibold text-[#a9b6ff]">
+                            {editing
+                                ? 'Редагування'
+                                : (context.user?.first_name ?? 'Повідомлення')}
+                        </span>
+                        <span className="block truncate text-white/55">
+                            {context.body ||
+                                context.preview ||
+                                (context.attachments.length
+                                    ? 'Фотографія'
+                                    : '')}
+                        </span>
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (editing) reset();
+                            onCancel();
+                        }}
+                        className="rounded-lg p-1 text-white/50 hover:bg-white/10 hover:text-white"
+                        aria-label="Скасувати"
+                    >
+                        <X className="size-4" />
+                    </button>
+                </div>
+            )}
+
+            {(previews.length > 0 || docs.length > 0) && (
+                <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
+                    {previews.map((url, index) => (
+                        <div
+                            key={url}
+                            className="relative size-[72px] shrink-0 animate-in overflow-hidden rounded-xl ring-1 ring-white/10 zoom-in-90"
+                        >
+                            <img
+                                src={url}
+                                alt=""
+                                className="size-full object-cover"
+                            />
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setImages((current) =>
+                                        current.filter((_, i) => i !== index),
+                                    )
+                                }
+                                className="absolute top-1 right-1 rounded-full bg-black/60 p-0.5 text-white hover:bg-black/80"
+                                aria-label="Прибрати"
+                            >
+                                <X className="size-3.5" />
+                            </button>
+                        </div>
+                    ))}
+                    {docs.map((file, index) => (
+                        <div
+                            key={`${file.name}-${index}`}
+                            className="relative flex h-[72px] w-[188px] shrink-0 animate-in items-center gap-2.5 rounded-xl bg-white/[0.05] pr-7 pl-2.5 ring-1 ring-white/10 zoom-in-90"
+                        >
+                            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#4f8bff] to-[#6d5dfc] text-white">
+                                <FileUp className="size-5" />
+                            </span>
+                            <span className="min-w-0">
+                                <span className="block truncate text-[13px] font-medium text-white">
+                                    {file.name}
+                                </span>
+                                <span className="block text-[11px] text-white/45">
+                                    {formatBytes(file.size)}
+                                </span>
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setDocs((current) =>
+                                        current.filter((_, i) => i !== index),
+                                    )
+                                }
+                                className="absolute top-1 right-1 rounded-full bg-black/40 p-0.5 text-white hover:bg-black/70"
+                                aria-label="Прибрати"
+                            >
+                                <X className="size-3.5" />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <input
+                ref={imageRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                multiple
+                hidden
+                onChange={(event) => {
+                    addFiles(event.target.files);
+                    event.target.value = '';
+                }}
+            />
+            <input
+                ref={docRef}
+                type="file"
+                multiple
+                hidden
+                onChange={(event) => {
+                    addFiles(event.target.files, 'document');
+                    event.target.value = '';
+                }}
+            />
+
+            {voice.recording ? (
+                <div className="flex animate-in items-center gap-2 fade-in">
+                    <button
+                        type="button"
+                        onClick={voice.cancel}
+                        className={cn(iconButton, 'hover:text-rose-300')}
+                        aria-label="Скасувати запис"
+                        title="Скасувати"
+                    >
+                        <Trash2 className="size-5" />
+                    </button>
+                    <div className="input-glass flex h-11 min-w-0 flex-1 items-center gap-3 rounded-[22px] px-4">
+                        <span className="relative flex size-2.5 shrink-0">
+                            <span className="absolute inset-0 animate-ping rounded-full bg-rose-500/70" />
+                            <span className="relative size-2.5 rounded-full bg-rose-500" />
+                        </span>
+                        <span className="w-10 shrink-0 text-sm font-medium text-white tabular-nums">
+                            {formatDuration(voice.elapsed)}
+                        </span>
+                        <span className="flex h-7 min-w-0 flex-1 items-center justify-end gap-[3px] overflow-hidden">
+                            {voice.live.map((level, index) => (
+                                <span
+                                    key={index}
+                                    className="w-[3px] shrink-0 rounded-full bg-gradient-to-t from-[#6d5dfc] to-[#38e1ff] transition-[height] duration-100"
+                                    style={{ height: `${level}%` }}
+                                />
+                            ))}
+                        </span>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={sendRecording}
+                        className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-brand text-white shadow-[0_0_24px_-2px_rgb(124_92_255/0.9)] transition hover:brightness-110"
+                        aria-label="Надіслати голосове"
+                    >
+                        <SendHorizonal className="size-5" />
+                    </button>
+                </div>
+            ) : (
+                <div className="flex items-end gap-1.5">
+                    {!editing && (
+                        <div ref={attachRef} className="relative mb-0.5">
+                            <button
+                                type="button"
+                                onClick={() => setAttachOpen((v) => !v)}
+                                className={cn(
+                                    iconButton,
+                                    attachOpen && 'bg-white/[0.07] text-white',
+                                )}
+                                aria-label="Прикріпити"
+                                title="Прикріпити"
+                            >
+                                <Paperclip
+                                    className={cn(
+                                        'size-5 transition',
+                                        attachOpen && 'rotate-45',
+                                    )}
+                                />
+                            </button>
+                            {attachOpen && (
+                                <div className="glass-strong absolute bottom-12 left-0 z-30 w-52 animate-rise rounded-2xl p-1.5">
+                                    {[
+                                        {
+                                            label: 'Фото',
+                                            hint: 'JPG, PNG, WebP, GIF',
+                                            icon: ImagePlus,
+                                            tone: 'from-[#4f8bff] to-[#38e1ff]',
+                                            run: () =>
+                                                imageRef.current?.click(),
+                                        },
+                                        {
+                                            label: 'Файл',
+                                            hint: `до ${site.max_message_file_mb || 50} МБ`,
+                                            icon: FileUp,
+                                            tone: 'from-[#6d5dfc] to-[#a855f7]',
+                                            run: () => docRef.current?.click(),
+                                        },
+                                        {
+                                            label: 'Контакт',
+                                            hint: 'Пошук на GameCon',
+                                            icon: UserRound,
+                                            tone: 'from-[#22d3a6] to-[#38e1ff]',
+                                            run: () => setContactOpen(true),
+                                        },
+                                    ].map((item) => (
+                                        <button
+                                            key={item.label}
+                                            type="button"
+                                            onClick={() => {
+                                                setAttachOpen(false);
+                                                item.run();
+                                            }}
+                                            className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition hover:bg-white/[0.06]"
+                                        >
+                                            <span
+                                                className={cn(
+                                                    'flex size-8 items-center justify-center rounded-lg bg-gradient-to-br text-white',
+                                                    item.tone,
+                                                )}
+                                            >
+                                                <item.icon className="size-4" />
+                                            </span>
+                                            <span>
+                                                <span className="block text-sm font-medium text-white">
+                                                    {item.label}
+                                                </span>
+                                                <span className="block text-[11px] text-white/40">
+                                                    {item.hint}
+                                                </span>
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="input-glass flex min-w-0 flex-1 items-end rounded-[22px] pr-1">
+                        <textarea
+                            ref={textRef}
+                            value={body}
+                            rows={1}
+                            maxLength={MAX_LENGTH}
+                            onChange={(event) => {
+                                setBody(event.target.value);
+                                resize();
+                                if (event.target.value) onTyping();
+                            }}
+                            onPaste={(event) => {
+                                const pasted = Array.from(
+                                    event.clipboardData.files,
+                                );
+                                if (pasted.length) {
+                                    event.preventDefault();
+                                    addFiles(pasted);
+                                }
+                            }}
+                            onKeyDown={(event) => {
+                                if (
+                                    event.key === 'Enter' &&
+                                    !event.shiftKey &&
+                                    !event.nativeEvent.isComposing
+                                ) {
+                                    event.preventDefault();
+                                    submit();
+                                } else if (event.key === 'Escape' && context) {
+                                    if (editing) reset();
+                                    onCancel();
+                                } else if (
+                                    event.key === 'ArrowUp' &&
+                                    !body &&
+                                    !editing
+                                ) {
+                                    onEditLast();
+                                }
+                            }}
+                            placeholder="Напишіть повідомлення…"
+                            className="[field-sizing:content] max-h-[180px] min-h-11 min-w-0 flex-1 resize-none bg-transparent py-[11px] pl-4 text-[14.5px] leading-[1.45] text-white placeholder:text-white/35 focus:outline-none"
+                        />
+                        <div ref={emojiRef} className="relative mb-1">
+                            <button
+                                type="button"
+                                onClick={() => setEmojiOpen((value) => !value)}
+                                className={cn(
+                                    'flex size-9 items-center justify-center rounded-full text-white/50 transition hover:text-white',
+                                    emojiOpen && 'text-[#ffd36b]',
+                                )}
+                                aria-label="Емодзі та стікери"
+                                title="Емодзі та стікери"
+                            >
+                                <Smile className="size-5" />
+                            </button>
+                            {emojiOpen && (
+                                <div className="absolute right-0 bottom-12 z-30">
+                                    <EmojiPanel
+                                        allowStickers={!editing}
+                                        onEmoji={insertEmoji}
+                                        onSticker={(sticker) => {
+                                            setEmojiOpen(false);
+                                            onSend({
+                                                kind: 'sticker',
+                                                sticker,
+                                            });
+                                        }}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {showMic ? (
+                        <button
+                            type="button"
+                            onClick={startRecording}
+                            className="mb-0.5 flex size-11 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-white/70 transition hover:bg-gradient-brand hover:text-white hover:shadow-[0_0_24px_-2px_rgb(124_92_255/0.9)]"
+                            aria-label="Записати голосове"
+                            title="Голосове повідомлення"
+                        >
+                            <Mic className="size-5" />
+                        </button>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={submit}
+                            disabled={!canSubmit}
+                            className={cn(
+                                'mb-0.5 flex size-11 shrink-0 items-center justify-center rounded-full text-white transition duration-300',
+                                canSubmit
+                                    ? 'scale-100 bg-gradient-brand shadow-[0_0_24px_-2px_rgb(124_92_255/0.9)] hover:brightness-110'
+                                    : 'scale-95 bg-white/[0.06] text-white/35',
+                            )}
+                            aria-label={editing ? 'Зберегти' : 'Надіслати'}
+                        >
+                            <SendHorizonal className="size-5" />
+                        </button>
+                    )}
+                </div>
+            )}
+
+            <ContactShareDialog
+                open={contactOpen}
+                onOpenChange={setContactOpen}
+                onShare={(contact) => onSend({ kind: 'contact', contact })}
+            />
+        </div>
+    );
+}

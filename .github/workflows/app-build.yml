@@ -1,0 +1,108 @@
+# Збірка Android-застосунку GameCon (online.gamecon.app) у GitHub Actions.
+#
+# Коли запускається:
+#   - push, що змінює mobile/pubspec.yaml (тобто підняли версію) — у будь-якій гілці;
+#   - вручну: Actions → «App build» → Run workflow (кнопка з'являється, коли файл є в main;
+#     до того — через `gh workflow run app-build.yml --ref <гілка>` не вийде, тож піднімайте версію
+#     або запуште цей файл після оновлення секретів підпису).
+#   Пуш цього файлу без зміни pubspec збирає ту саму версію 1.1.0+10: скляний хром і матові поля вводу.
+#
+# Секрети репозиторію (Settings → Secrets and variables → Actions):
+#   GAMECON_KEYSTORE_BASE64  — base64 від gamecon-upload.jks (`base64 -w0 gamecon-upload.jks`)
+#   GAMECON_STORE_PASSWORD   — пароль сховища
+#   GAMECON_KEY_ALIAS        — gamecon
+#   GAMECON_KEY_PASSWORD     — пароль ключа
+# Без ключа реліз не збирається: APK з дебаг-підписом не встановиться поверх наявного застосунку.
+#
+# Результат: артефакт «gamecon-<версія>» з .apk, .aab і SHA-1 підпису (Actions → прогін → Artifacts).
+name: App build
+
+on:
+  push:
+    paths:
+      - mobile/pubspec.yaml
+      - .github/workflows/app-build.yml
+  workflow_dispatch:
+
+concurrency:
+  group: app-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    if: github.repository == 'zendjura-sys/Glendale'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+
+      - name: Version
+        id: version
+        run: |
+          v=$(grep -E '^version:' pubspec.yaml | awk '{print $2}')
+          echo "full=$v" >> "$GITHUB_OUTPUT"
+          echo "name=$(echo "$v" | cut -d+ -f1 | tr . _)" >> "$GITHUB_OUTPUT"
+          echo "Версія: $v"
+
+      - run: flutter pub get
+
+      - run: flutter analyze
+
+      - name: Signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.GAMECON_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Немає секрету GAMECON_KEYSTORE_BASE64 — реліз без ключа підпису не збираю."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/gamecon-upload.jks"
+          echo "GAMECON_STORE_FILE=$RUNNER_TEMP/gamecon-upload.jks" >> "$GITHUB_ENV"
+
+      # Порядок як у ручній збірці: спершу APK, потім AAB.
+      - name: Build APK
+        env:
+          GAMECON_STORE_PASSWORD: ${{ secrets.GAMECON_STORE_PASSWORD }}
+          GAMECON_KEY_ALIAS: ${{ secrets.GAMECON_KEY_ALIAS }}
+          GAMECON_KEY_PASSWORD: ${{ secrets.GAMECON_KEY_PASSWORD }}
+        run: flutter build apk --release
+
+      - name: Build AAB
+        env:
+          GAMECON_STORE_PASSWORD: ${{ secrets.GAMECON_STORE_PASSWORD }}
+          GAMECON_KEY_ALIAS: ${{ secrets.GAMECON_KEY_ALIAS }}
+          GAMECON_KEY_PASSWORD: ${{ secrets.GAMECON_KEY_PASSWORD }}
+        run: flutter build appbundle --release
+
+      - name: Collect
+        run: |
+          mkdir -p "$RUNNER_TEMP/out"
+          n=gamecon_${{ steps.version.outputs.name }}
+          cp build/app/outputs/flutter-apk/app-release.apk "$RUNNER_TEMP/out/$n.apk"
+          cp build/app/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/out/$n.aab"
+          # Має збігатися з 24:E9:3E:4D:A8:AE:34:57:3E:7F:C0:2B:F0:E4:84:B6:FE:41:35:82
+          keytool -printcert -jarfile "$RUNNER_TEMP/out/$n.apk" | grep -E 'SHA1|SHA-1' | tee "$RUNNER_TEMP/out/signature.txt"
+          rm -f "$GAMECON_STORE_FILE"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gamecon-${{ steps.version.outputs.full }}
+          path: ${{ runner.temp }}/out/
+          retention-days: 30
