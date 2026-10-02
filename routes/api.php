@@ -113,8 +113,17 @@ Route::prefix('v1')->group(function () {
             Route::post('families/{family}/apply', [GroupsApiController::class, 'applyFamily'])->middleware('throttle:10,1');
             Route::get('families/{family}/members', [GroupsApiController::class, 'members']);
             Route::get('families/{family}/bank', [GroupsApiController::class, 'bank']);
+            Route::post('families/{family}/cashouts', [GroupsApiController::class, 'requestCashout'])->middleware('throttle:20,1');
+            Route::post('families/{family}/deposits', [GroupsApiController::class, 'openDeposit'])->middleware('throttle:20,1');
+            Route::post('families/{family}/bank/manual', [GroupsApiController::class, 'manualBank'])->middleware('throttle:30,1');
             Route::get('families/{family}/warehouse', [GroupsApiController::class, 'warehouse']);
+            Route::get('families/{family}/discipline', [GroupsApiController::class, 'discipline']);
+            Route::post('families/{family}/discipline', [GroupsApiController::class, 'issuePunishment'])->middleware('throttle:30,1');
             Route::get('families/{family}/events', [GroupsApiController::class, 'events']);
+            Route::get('families/{family}/rating', [GroupsApiController::class, 'rating']);
+            Route::get('families/{family}/settings', [GroupsApiController::class, 'settings']);
+            Route::patch('families/{family}/settings/profile', [GroupsApiController::class, 'updateProfile']);
+            Route::put('families/{family}/settings', [GroupsApiController::class, 'updateSettings']);
             Route::get('families/{family}/reports', [GroupsApiController::class, 'reports']);
             Route::post('families/{family}/reports', [GroupsApiController::class, 'storeReport'])->middleware('throttle:20,1');
             Route::get('families/{family}/queue', [GroupsApiController::class, 'queue']);
