@@ -175,7 +175,7 @@ class GroupsApiController extends ApiController
         }
 
         return response()->json([
-            'family' => [...$family->toCard(), 'description' => $family->description],
+            'family' => [...$family->toCard(), 'description' => $family->description, 'treasury' => $family->treasury],
             'member' => [
                 'status' => $member->status,
                 'display' => $member->displayName(),

@@ -9,6 +9,8 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
+export 'family_view.dart';
+
 class CommunitiesScreen extends StatefulWidget {
   const CommunitiesScreen({required this.session, super.key});
   final Session session;
@@ -571,153 +573,6 @@ String? _playerUrl(String raw) {
   return absolute(value);
 }
 
-class FamiliesScreen extends StatefulWidget {
-  const FamiliesScreen({required this.session, super.key});
-  final Session session;
-
-  @override
-  State<FamiliesScreen> createState() => _FamiliesScreenState();
-}
-
-class _FamiliesScreenState extends State<FamiliesScreen> {
-  final query = TextEditingController();
-  String q = '';
-
-  @override
-  Widget build(BuildContext context) {
-    return Remote(
-      watch: q,
-      load: () => widget.session.api.get('/api/v1/families?q=${Uri.encodeQueryComponent(q)}'),
-      builder: (data, reload) {
-        final mine = maps(data['mine']);
-        final catalog = maps(data['families'] is Map ? (data['families'] as Map)['data'] : data['catalog']);
-        final listed = catalog.isNotEmpty ? catalog : Listing.parse(data['families']).items;
-        final seen = <String>{};
-        bool fresh(Map<String, dynamic> row) {
-          final key = text(row['slug']) ?? '${text(row['name'])}|${text(row['tag'])}';
-          if (seen.contains(key)) return false;
-          seen.add(key);
-          return true;
-        }
-        final mineRows = mine.where(fresh).toList();
-        final rest = listed.where(fresh).toList();
-        return ScreenScroll(
-          onRefresh: reload,
-          children: [
-            Text('Сім’ї', style: unbounded.copyWith(fontSize: 28)),
-            const SizedBox(height: 8),
-            GcField(controller: query, label: 'Пошук', onSubmit: () => setState(() => q = query.text.trim())),
-            if (mineRows.isNotEmpty) const SectionLabel('Мої'),
-            for (final row in mineRows) _familyTile(context, row),
-            if (rest.isNotEmpty) const SectionLabel('Усі'),
-            for (final row in rest) _familyTile(context, row),
-            if (mineRows.isEmpty && rest.isEmpty) const Padding(padding: EdgeInsets.only(top: 16), child: Text('Сімей не знайдено.', style: TextStyle(color: muted, fontFamily: 'Onest'))),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _familyTile(BuildContext context, Map<String, dynamic> row) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Glass(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        child: ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: CircleAvatar(
-            backgroundColor: indigo,
-            child: Text(
-              () {
-                final label = text(row['tag']) ?? text(row['name']) ?? '?';
-                return (label.isEmpty ? '?' : label[0]).toUpperCase();
-              }(),
-              style: unbounded.copyWith(fontSize: 14),
-            ),
-          ),
-          title: Text(text(row['name']) ?? '', style: onest.copyWith(fontWeight: FontWeight.w600)),
-          subtitle: Text(text(row['tag']) ?? '', style: onest.copyWith(color: muted)),
-          trailing: const Icon(Icons.chevron_right_rounded, color: muted),
-          onTap: () {
-            final slug = text(row['slug']);
-            if (slug != null) context.push('/families/$slug');
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class FamilyScreen extends StatefulWidget {
-  const FamilyScreen({required this.session, required this.slug, super.key});
-  final Session session;
-  final String slug;
-
-  @override
-  State<FamilyScreen> createState() => _FamilyScreenState();
-}
-
-class _FamilyScreenState extends State<FamilyScreen> {
-  final nick = TextEditingController();
-  final staticId = TextEditingController();
-  String section = 'overview';
-
-  @override
-  Widget build(BuildContext context) {
-    final path = section == 'overview' ? '/api/v1/families/${widget.slug}' : '/api/v1/families/${widget.slug}/$section';
-    return Remote(
-      watch: section,
-      load: () => widget.session.api.get(path),
-      builder: (data, reload) {
-        final family = data['family'] is Map ? Map<String, dynamic>.from(data['family'] as Map) : <String, dynamic>{};
-        return ScreenScroll(
-          onRefresh: reload,
-          children: [
-            IconButton(onPressed: () => context.go('/families'), icon: const Icon(Icons.arrow_back_rounded, color: Colors.white)),
-            Text(text(family['name']) ?? widget.slug, style: unbounded.copyWith(fontSize: 24)),
-            ChipRow(
-              options: const [('overview', 'Огляд'), ('members', 'Учасники'), ('bank', 'Банк'), ('warehouse', 'Склад'), ('events', 'Події'), ('reports', 'Звіти')],
-              selected: section,
-              onSelect: (value) => setState(() => section = value),
-            ),
-            const SizedBox(height: 8),
-            if (section == 'overview' && data['member'] == null) ...[
-              GcField(controller: nick, label: 'RP-нік'),
-              const SizedBox(height: 8),
-              GcField(controller: staticId, label: 'Static ID'),
-              const SizedBox(height: 10),
-              PrimaryButton(
-                label: 'Подати заявку',
-                onPressed: () async {
-                  try {
-                    await widget.session.api.post('/api/v1/families/${widget.slug}/apply', {
-                      'rp_nickname': nick.text.trim(),
-                      'static_id': staticId.text.trim(),
-                    });
-                    await reload();
-                  } catch (e) {
-                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-                  }
-                },
-              ),
-            ],
-            if (text(family['description']) != null) Text(text(family['description'])!, style: onest),
-            for (final row in maps(data['members'])) Text('${text(row['display']) ?? text(row['name']) ?? ''} · ${text(row['rank_title']) ?? ''}', style: onest),
-            for (final row in maps(data['transactions'])) Text('${row['amount'] ?? ''} · ${text(row['comment']) ?? text(row['type']) ?? ''}', style: onest),
-            for (final row in maps(data['items'])) Text(text(row['name']) ?? '', style: onest),
-            for (final row in maps(data['events'])) Text(text(row['title']) ?? '', style: onest),
-            for (final row in maps(data['reports'])) Text('${text(row['type_label']) ?? ''} · ${text(row['status']) ?? ''}', style: onest),
-            if (data['chat_id'] != null) ...[
-              const SizedBox(height: 12),
-              GhostButton(label: 'Чат сім’ї', icon: Icons.chat_bubble_outline_rounded, onPressed: () => context.push('/messages/${data['chat_id']}')),
-            ],
-          ],
-        );
-      },
-    );
-  }
-}
-
 class ServersScreen extends StatefulWidget {
   const ServersScreen({required this.session, super.key});
   final Session session;
@@ -872,11 +727,17 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  late final first = TextEditingController(text: text(widget.session.me?['first_name']) ?? '');
+  late final last = TextEditingController(text: text(widget.session.me?['last_name']) ?? '');
+  late final username = TextEditingController(text: text(widget.session.me?['username']) ?? '');
   late final status = TextEditingController(text: text(widget.session.me?['status']) ?? '');
   late final city = TextEditingController(text: text(widget.session.me?['city']) ?? '');
   late final about = TextEditingController(text: text(widget.session.me?['about']) ?? '');
+  late final website = TextEditingController(text: text(widget.session.me?['website']) ?? '');
   final current = TextEditingController();
   final next = TextEditingController();
+  late bool closed = widget.session.me?['is_private'] == true;
+  late String messages = text(widget.session.me?['message_privacy']) ?? 'everyone';
 
   @override
   Widget build(BuildContext context) {
@@ -884,22 +745,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ScreenScroll(
       children: [
         Text('Налаштування', style: unbounded.copyWith(fontSize: 28)),
-        Text(text(me['email']) ?? '', style: onest.copyWith(color: muted)),
+        Text('Керуйте сторінкою, приватністю та безпекою акаунта', style: onest.copyWith(color: muted)),
+        const SizedBox(height: 12),
+        const SectionLabel('Основне'),
+        GcField(controller: first, label: 'Ім’я'),
+        const SizedBox(height: 8),
+        GcField(controller: last, label: 'Прізвище'),
+        const SizedBox(height: 8),
+        GcField(controller: username, label: 'Адреса сторінки'),
         const SizedBox(height: 8),
         GcField(controller: status, label: 'Статус'),
         const SizedBox(height: 8),
-        GcField(controller: city, label: 'Місто'),
-        const SizedBox(height: 8),
         GcField(controller: about, label: 'Про себе'),
         const SizedBox(height: 8),
+        GcField(controller: city, label: 'Місто'),
+        const SizedBox(height: 8),
+        GcField(controller: website, label: 'Вебсайт'),
+        const SizedBox(height: 12),
+        Glass(
+          child: SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text('Закритий профіль', style: onest.copyWith(fontWeight: FontWeight.w600)),
+            subtitle: Text('Записи, друзів і фото бачитимуть лише ваші друзі.', style: onest.copyWith(color: muted, fontSize: 12)),
+            value: closed,
+            onChanged: (value) => setState(() => closed = value),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Glass(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Хто може писати мені', style: onest.copyWith(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  ChoiceChip(label: const Text('Усі'), selected: messages == 'everyone', onSelected: (_) => setState(() => messages = 'everyone')),
+                  ChoiceChip(label: const Text('Лише друзі'), selected: messages == 'friends', onSelected: (_) => setState(() => messages = 'friends')),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
         PrimaryButton(
-          label: 'Зберегти',
+          label: 'Зберегти зміни',
           onPressed: () async {
             try {
               final json = await widget.session.api.patch('/api/v1/me', {
+                'first_name': first.text.trim(),
+                'last_name': last.text.trim(),
+                'username': username.text.trim(),
                 'status': status.text.trim(),
                 'city': city.text.trim(),
                 'about': about.text.trim(),
+                'website': website.text.trim().isEmpty ? null : website.text.trim(),
+                'is_private': closed,
+                'message_privacy': messages,
               });
               final user = json['user'];
               if (user is Map) widget.session.me = Map<String, dynamic>.from(user);

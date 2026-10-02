@@ -576,7 +576,7 @@ class ScreenScroll extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final list = ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
       children: children,
     );
     if (onRefresh == null) return list;

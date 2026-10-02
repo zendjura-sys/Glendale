@@ -162,7 +162,12 @@ class SocialApiController extends ApiController
                 'birthday' => $open ? $user->birthday?->toDateString() : null,
                 'gender' => $open ? $user->gender : null,
                 'relation' => $relation,
+                'role' => $user->role,
+                'created_at' => $user->created_at?->toIso8601String(),
                 'friends' => count($this->friendships->friendIds($user)),
+                'friends_preview' => $open
+                    ? $this->friendships->friendsQuery($user)->limit(8)->get()->map(fn (User $friend) => $friend->toCard())->values()
+                    : [],
             ],
             'posts' => $open ? $this->page($posts, $this->presenter->many(new Collection($posts->items()), $viewer)) : $this->page($posts, []),
         ]);

@@ -10,10 +10,11 @@ class ApiException implements Exception {
 }
 
 class Listing {
-  Listing(this.items, this.current, this.last);
+  Listing(this.items, this.current, this.last, [this.total = 0]);
   final List<Map<String, dynamic>> items;
   final int current;
   final int last;
+  final int total;
   bool get more => current < last;
 
   static Listing parse(dynamic block) {
@@ -22,7 +23,7 @@ class Listing {
     final items = raw is List
         ? raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList()
         : <Map<String, dynamic>>[];
-    return Listing(items, _int(block['current_page'], 1), _int(block['last_page'], 1));
+    return Listing(items, _int(block['current_page'], 1), _int(block['last_page'], 1), _int(block['total'], items.length));
   }
 }
 
@@ -42,6 +43,29 @@ String? text(dynamic value) {
   final s = '$value'.trim();
   if (s.isEmpty || s == 'null') return null;
   return s;
+}
+
+String hryvnia(dynamic minor) {
+  final value = minor is int ? minor : int.tryParse('$minor') ?? 0;
+  final negative = value < 0;
+  final abs = value.abs();
+  final whole = abs ~/ 100;
+  final cents = abs % 100;
+  final digits = whole.toString();
+  final grouped = StringBuffer();
+  for (var i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 == 0) grouped.write(' ');
+    grouped.write(digits[i]);
+  }
+  final tail = cents == 0 ? '' : ',${cents.toString().padLeft(2, '0')}';
+  return '${negative ? '−' : ''}$grouped$tail ₴';
+}
+
+String joinedLabel(dynamic iso) {
+  final dt = DateTime.tryParse(text(iso) ?? '');
+  if (dt == null) return '';
+  const months = ['січня', 'лютого', 'березня', 'квітня', 'травня', 'червня', 'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня'];
+  return 'В GameCon з ${dt.day} ${months[dt.month - 1]} ${dt.year} р.';
 }
 
 String? absolute(dynamic value) {

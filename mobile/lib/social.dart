@@ -7,20 +7,44 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-class MessagesScreen extends StatelessWidget {
+class MessagesScreen extends StatefulWidget {
   const MessagesScreen({required this.session, super.key});
   final Session session;
 
   @override
+  State<MessagesScreen> createState() => _MessagesScreenState();
+}
+
+class _MessagesScreenState extends State<MessagesScreen> {
+  final query = TextEditingController();
+
+  @override
+  void dispose() {
+    query.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Remote(
-      load: () => session.api.get('/api/v1/messages'),
+      load: () => widget.session.api.get('/api/v1/messages'),
       builder: (data, reload) {
-        final rows = maps(data['conversations']);
+        final needle = query.text.trim().toLowerCase();
+        final rows = maps(data['conversations']).where((row) {
+          if (needle.isEmpty) return true;
+          return (text(row['title']) ?? '').toLowerCase().contains(needle);
+        }).toList();
         return ScreenScroll(
           onRefresh: reload,
           children: [
-            Text('Чати', style: unbounded.copyWith(fontSize: 28)),
+            Row(
+              children: [
+                Text('Повідомлення', style: unbounded.copyWith(fontSize: 26)),
+                const Spacer(),
+                IconButton(onPressed: () => context.go('/people'), icon: const Icon(Icons.edit_outlined, color: ink)),
+              ],
+            ),
+            GcField(controller: query, label: 'Пошук', onSubmit: () => setState(() {})),
             if (rows.isEmpty) const Padding(padding: EdgeInsets.only(top: 24), child: Text('Поки немає бесід.', style: TextStyle(color: muted, fontFamily: 'Onest'))),
             for (final row in rows)
               ListTile(
@@ -336,49 +360,160 @@ class FriendsScreen extends StatefulWidget {
 
 class _FriendsScreenState extends State<FriendsScreen> {
   String tab = 'all';
+  final query = TextEditingController();
+  String q = '';
+
+  @override
+  void dispose() {
+    query.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Remote(
-      watch: tab,
-      load: () => widget.session.api.get('/api/v1/friends?tab=$tab'),
+      watch: '$tab:$q',
+      load: () => widget.session.api.get('/api/v1/friends?tab=$tab&q=${Uri.encodeQueryComponent(q)}'),
       builder: (data, reload) {
         final users = Listing.parse(data['users']).items;
+        final counts = data['counts'] is Map ? Map<String, dynamic>.from(data['counts'] as Map) : <String, dynamic>{};
         return ScreenScroll(
           onRefresh: reload,
           children: [
-            Text('Друзі', style: unbounded.copyWith(fontSize: 28)),
-            const SizedBox(height: 8),
-            ChipRow(
-              options: const [('all', 'Усі'), ('online', 'Онлайн'), ('requests', 'Заявки'), ('outgoing', 'Надіслані')],
-              selected: tab,
-              onSelect: (value) => setState(() => tab = value),
-            ),
-            if (users.isEmpty) const Padding(padding: EdgeInsets.only(top: 24), child: Text('Нікого немає.', style: TextStyle(color: muted, fontFamily: 'Onest'))),
-            for (final user in users)
-              UserTile(
-                user: user,
-                trailing: tab == 'requests'
-                    ? TextButton(
-                        onPressed: () async {
-                          await widget.session.api.post('/api/v1/friends/${user['username']}/accept');
-                          await reload();
-                        },
-                        child: const Text('Прийняти', style: TextStyle(color: cyan)),
-                      )
-                    : IconButton(
-                        onPressed: () async {
-                          final username = text(user['username']);
-                          if (username == null) return;
-                          final chat = await widget.session.api.post('/api/v1/messages/with/$username');
-                          if (context.mounted) context.push('/messages/${chat['id']}');
-                        },
-                        icon: const Icon(Icons.chat_bubble_outline_rounded, color: cyan),
-                      ),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _CountChip(label: 'Усі друзі', count: counts['all'], icon: Icons.people_alt_outlined, selected: tab == 'all', onTap: () => setState(() => tab = 'all')),
+                  _CountChip(label: 'Онлайн', count: counts['online'], icon: Icons.wifi_tethering_rounded, selected: tab == 'online', onTap: () => setState(() => tab = 'online')),
+                  _CountChip(label: 'Заявки', count: counts['requests'], icon: Icons.mail_outline_rounded, selected: tab == 'requests', onTap: () => setState(() => tab = 'requests')),
+                ],
               ),
+            ),
+            const SizedBox(height: 10),
+            GcField(controller: query, label: 'Пошук серед друзів', onSubmit: () => setState(() => q = query.text.trim())),
+            const SizedBox(height: 12),
+            if (users.isEmpty) const Text('Нікого немає.', style: TextStyle(color: muted, fontFamily: 'Onest')),
+            for (var i = 0; i < users.length; i += 2)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: _FriendCard(user: users[i], tab: tab, session: widget.session, reload: reload)),
+                    const SizedBox(width: 10),
+                    Expanded(child: i + 1 < users.length ? _FriendCard(user: users[i + 1], tab: tab, session: widget.session, reload: reload) : const SizedBox()),
+                  ],
+                ),
+              ),
+            if (tab == 'all') ...[
+              const SizedBox(height: 8),
+              const Glass(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('МОЖЛИВО, ВИ ЗНАЙОМІ', style: TextStyle(fontFamily: 'Unbounded', fontSize: 13, color: ink)),
+                    SizedBox(height: 6),
+                    Text('Рекомендацій поки немає.', style: TextStyle(color: muted, fontFamily: 'Onest')),
+                  ],
+                ),
+              ),
+            ],
           ],
         );
       },
+    );
+  }
+}
+
+class _CountChip extends StatelessWidget {
+  const _CountChip({required this.label, required this.count, required this.icon, required this.selected, required this.onTap});
+  final String label;
+  final dynamic count;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Material(
+        color: card,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: selected ? neonBlue.withValues(alpha: 0.7) : Colors.white.withValues(alpha: 0.05)),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, size: 16, color: selected ? neonBlue : muted),
+                const SizedBox(width: 6),
+                Text(label, style: onest.copyWith(fontWeight: FontWeight.w600, fontSize: 13)),
+                const SizedBox(width: 6),
+                Text('${count ?? 0}', style: onest.copyWith(color: muted, fontSize: 12)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FriendCard extends StatelessWidget {
+  const _FriendCard({required this.user, required this.tab, required this.session, required this.reload});
+  final Map<String, dynamic> user;
+  final String tab;
+  final Session session;
+  final Future<void> Function() reload;
+
+  @override
+  Widget build(BuildContext context) {
+    final username = text(user['username']);
+    return Glass(
+      padding: const EdgeInsets.fromLTRB(10, 14, 10, 12),
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: username == null ? null : () => context.push('/u/$username'),
+            child: Avatar(url: text(user['avatar_url']), name: text(user['name']) ?? '?', size: 72, online: user['is_online'] == true),
+          ),
+          const SizedBox(height: 8),
+          Text(text(user['name']) ?? '', textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: onest.copyWith(fontWeight: FontWeight.w700)),
+          Text('@${username ?? ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: onest.copyWith(color: muted, fontSize: 12)),
+          const SizedBox(height: 10),
+          if (tab == 'requests')
+            TextButton(
+              onPressed: username == null
+                  ? null
+                  : () async {
+                      await session.api.post('/api/v1/friends/$username/accept');
+                      await reload();
+                    },
+              child: const Text('Прийняти', style: TextStyle(color: Color(0xFF34D399), fontFamily: 'Onest')),
+            )
+          else
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(color: const Color(0xFF1A2033), borderRadius: BorderRadius.circular(12)),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.person_add_alt_1_rounded, color: Color(0xFF34D399), size: 14),
+                  SizedBox(width: 4),
+                  Text('У друзях', style: TextStyle(color: Color(0xFF34D399), fontFamily: 'Onest', fontSize: 13)),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -459,6 +594,9 @@ class ProfileScreen extends StatelessWidget {
         final user = data['user'] is Map ? Map<String, dynamic>.from(data['user'] as Map) : <String, dynamic>{};
         final posts = Listing.parse(data['posts']).items;
         final own = name == session.username;
+        final friends = maps(user['friends_preview']);
+        final postsPage = Listing.parse(data['posts']);
+        final role = text(user['role']);
         return ScreenScroll(
           onRefresh: reload,
           children: [
@@ -467,24 +605,56 @@ class ProfileScreen extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: IconButton(onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back_rounded, color: Colors.white)),
               ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Avatar(url: text(user['avatar_url']), name: text(user['name']) ?? name, size: 86, online: user['is_online'] == true),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(text(user['name']) ?? name, style: unbounded.copyWith(fontSize: 20)),
-                      Text('@$name', style: onest.copyWith(color: muted)),
-                      if (text(user['city']) != null) Text(text(user['city'])!, style: onest.copyWith(color: muted, fontSize: 12)),
-                    ],
-                  ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(22),
+              child: SizedBox(
+                height: 120,
+                width: double.infinity,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (absolute(user['cover_url']) != null)
+                      CachedNetworkImage(imageUrl: absolute(user['cover_url'])!, fit: BoxFit.cover)
+                    else
+                      const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF2436FF), Color(0xFF8B2BE2), Color(0xFFE14DCA)]))),
+                  ],
                 ),
-              ],
+              ),
             ),
-            const SizedBox(height: 14),
+            Transform.translate(
+              offset: const Offset(0, -36),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Avatar(url: text(user['avatar_url']), name: text(user['name']) ?? name, size: 92, online: user['is_online'] == true),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Flexible(child: Text(text(user['name']) ?? name, style: unbounded.copyWith(fontSize: 24))),
+                        if (role == 'admin' || role == 'moderator') ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(color: const Color(0xFF3A2E12), borderRadius: BorderRadius.circular(12), border: Border.all(color: gold.withValues(alpha: 0.5))),
+                            child: Text(role == 'admin' ? 'Адміністратор' : 'Модератор', style: onest.copyWith(color: gold, fontSize: 11)),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.circle, size: 8, color: user['is_online'] == true ? const Color(0xFF34D399) : muted),
+                        const SizedBox(width: 6),
+                        Text(user['is_online'] == true ? 'онлайн' : 'не в мережі', style: onest.copyWith(color: muted, fontSize: 13)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
             if (own)
               GhostButton(label: 'Редагувати профіль', icon: Icons.edit_outlined, onPressed: () => context.go('/settings'))
             else
@@ -496,13 +666,96 @@ class ProfileScreen extends StatelessWidget {
                   if (context.mounted) context.push('/messages/${chat['id']}');
                 },
               ),
-            const SizedBox(height: 8),
-            GhostButton(label: 'Фото', icon: Icons.photo_outlined, onPressed: () => context.push('/photos?user=$name')),
-            if (text(user['about']) != null) ...[
-              const SectionLabel('Про себе'),
-              Glass(child: Text(text(user['about'])!, style: onest)),
+            if (joinedLabel(user['created_at']).isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Row(children: [const Icon(Icons.calendar_today_outlined, size: 14, color: muted), const SizedBox(width: 8), Text(joinedLabel(user['created_at']), style: onest.copyWith(color: muted, fontSize: 13))]),
             ],
-            const SectionLabel('Публікації'),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                _Stat('${user['friends'] ?? 0}', 'друзі'),
+                _Stat('${postsPage.total}', 'записів'),
+                _Stat('0', 'фото', onTap: () => context.push('/photos?user=$name')),
+                const _Stat('0', 'аудіо'),
+              ],
+            ),
+            if (friends.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              Glass(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('ДРУЗІ', style: onest.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 78,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: [
+                          for (final friend in friends)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: GestureDetector(
+                                onTap: () {
+                                  final handle = text(friend['username']);
+                                  if (handle != null) context.push('/u/$handle');
+                                },
+                                child: SizedBox(
+                                  width: 64,
+                                  child: Column(
+                                    children: [
+                                      Avatar(url: text(friend['avatar_url']), name: text(friend['name']) ?? '?', size: 48),
+                                      const SizedBox(height: 4),
+                                      Text(text(friend['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: onest.copyWith(fontSize: 11)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            if (own) ...[
+              const SizedBox(height: 12),
+              Material(
+                color: card,
+                borderRadius: BorderRadius.circular(22),
+                child: InkWell(
+                  onTap: () => context.go('/feed'),
+                  borderRadius: BorderRadius.circular(22),
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Row(
+                      children: [
+                        Avatar(url: text(session.me?['avatar_url']), name: text(user['name']) ?? name, size: 40),
+                        const SizedBox(width: 10),
+                        Expanded(child: Text('Що нового, ${text(user['first_name']) ?? text(user['name']) ?? ''}?', style: onest.copyWith(color: muted))),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 12),
+            if (posts.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+                decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(22)),
+                child: Column(
+                  children: [
+                    const Icon(Icons.edit_outlined, color: neonBlue),
+                    const SizedBox(height: 10),
+                    Text('На стіні поки порожньо', style: unbounded.copyWith(fontSize: 18)),
+                    const SizedBox(height: 6),
+                    Text('Розкажіть світу щось цікаве — перший запис завжди найкращий.', textAlign: TextAlign.center, style: onest.copyWith(color: muted)),
+                  ],
+                ),
+              ),
             for (final post in posts)
               PostCard(
                 post: post,
@@ -517,6 +770,28 @@ class ProfileScreen extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _Stat extends StatelessWidget {
+  const _Stat(this.value, this.label, {this.onTap});
+  final String value;
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          children: [
+            Text(value, style: unbounded.copyWith(fontSize: 20)),
+            Text(label, style: onest.copyWith(color: muted, fontSize: 12)),
+          ],
+        ),
+      ),
     );
   }
 }
