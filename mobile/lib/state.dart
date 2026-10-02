@@ -167,6 +167,9 @@ class TrackPlayer extends ChangeNotifier {
 
   final _player = AudioPlayer();
   final _random = Random();
+
+  /// Рушій відтворення — для медіасесії в шторці (`GcAudioHandler`).
+  AudioPlayer get engine => _player;
   Session? session;
   List<QueueTrack> queue = [];
   int index = -1;
@@ -236,8 +239,8 @@ class TrackPlayer extends ChangeNotifier {
     } catch (_) {}
   }
 
-  Future<void> toggle() async {
-    if (_player.playing) {
+  Future<void> toggle({bool forcePlay = false}) async {
+    if (_player.playing && !forcePlay) {
       await _player.pause();
     } else if (current != null) {
       await _player.play();

@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'audio.dart';
 import 'auth_screen.dart';
 import 'chat.dart';
 import 'cinema.dart';
@@ -37,6 +38,7 @@ Future<void> main() async {
   final prefs = await SharedPreferences.getInstance();
   final session = Session(prefs);
   final player = TrackPlayer()..session = session;
+  await GcAudioHandler.attach(player);
   await session.boot();
   final links = AppLinks();
   links.uriLinkStream.listen(session.takeLink);

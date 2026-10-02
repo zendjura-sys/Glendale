@@ -11,6 +11,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
 import 'posts.dart';
+import 'push.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -362,6 +363,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    unawaited(Push.instance?.seenChat(widget.id));
     poll = Timer.periodic(const Duration(seconds: 4), (_) => _refresh());
     scroll.addListener(() {
       if (scroll.position.pixels > scroll.position.maxScrollExtent - 300) _older();

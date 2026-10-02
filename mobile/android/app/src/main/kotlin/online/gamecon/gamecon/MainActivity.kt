@@ -1,5 +1,6 @@
 package online.gamecon.gamecon
 
-import io.flutter.embedding.android.FlutterActivity
+import com.ryanheise.audioservice.AudioServiceActivity
 
-class MainActivity : FlutterActivity()
+// Медіасесія плеєра (фон, шторка, заблокований екран) потребує AudioServiceActivity.
+class MainActivity : AudioServiceActivity()
