@@ -82,7 +82,7 @@ class MusicController extends Controller
             'tracks' => Inertia::scroll(fn () => $tracks),
             'total' => $user->library()->count(),
             'playlists' => $this->playlistCards($user->playlists()->when($viewer->isNot($user), fn (Builder $q) => $q->where('is_public', true))),
-            'nowPlaying' => Inertia::defer(fn () => $this->music->currentFor($user)),
+            'nowPlaying' => Inertia::defer(fn () => $this->music->currentFor($user, $viewer)),
         ]);
     }
 

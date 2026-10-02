@@ -116,7 +116,7 @@ class ProfileController extends Controller
                 'href' => '/music/u/'.$user->username,
                 'tracks' => $user->library()->count(),
             ] : null,
-            'nowPlaying' => $modules->enabled('music') && $canSeeContent ? Inertia::defer(fn () => app(MusicService::class)->currentFor($user)) : null,
+            'nowPlaying' => $modules->enabled('music') && $canSeeContent ? Inertia::defer(fn () => app(MusicService::class)->currentFor($user, $viewer)) : null,
             'posts' => Inertia::scroll(fn () => $posts->setCollection(collect($items))),
         ]);
     }

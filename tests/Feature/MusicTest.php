@@ -227,7 +227,17 @@ class MusicTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->where('audio.href', '/music/u/'.$user->username)
                 ->missing('nowPlaying')
-                ->loadDeferredProps(fn (Assert $reload) => $reload->where('nowPlaying.key', 'local:'.$track->id)->where('nowPlaying.via', 'gamecon')));
+                ->loadDeferredProps(fn (Assert $reload) => $reload->where('nowPlaying.key', 'local:'.$track->id)->where('nowPlaying.via', 'gamecon')->where('nowPlaying.in_library', false)));
+
+        $this->actingAs($viewer)->postJson(route('tracks.add', $track))->assertOk();
+
+        $this->actingAs($viewer)->get(route('music.user', $user))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload->where('nowPlaying.key', 'local:'.$track->id)->where('nowPlaying.in_library', true)));
+
+        $this->actingAs($user)->get(route('profile.show', $user))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload->where('nowPlaying.in_library', false)));
 
         $this->actingAs($user)->deleteJson(route('music.now-playing'))->assertOk();
         $this->assertNull(app(MusicService::class)->currentFor($user->fresh()));

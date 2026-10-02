@@ -47,37 +47,49 @@ export default function MusicUser({
             <div className="space-y-5">
                 <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-6">
                     <div className="pointer-events-none absolute -top-28 -right-10 size-80 rounded-full bg-[#a855f7]/20 blur-3xl" />
-                    <div className="relative flex flex-wrap items-center gap-4">
-                        <Link href={`/${owner.username}`} className="shrink-0">
-                            <UserAvatar user={owner} size="lg" />
-                        </Link>
-                        <div className="min-w-0 flex-1">
+                    <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center">
+                        <div className="flex min-w-0 flex-1 items-center gap-4">
                             <Link
                                 href={`/${owner.username}`}
-                                className="inline-flex items-center gap-1.5 text-xs text-white/45 hover:text-white"
+                                className="shrink-0"
                             >
-                                <ArrowLeft className="size-3.5" /> До профілю
+                                <UserAvatar user={owner} size="lg" />
                             </Link>
-                            <h1 className="mt-0.5 truncate font-display text-2xl font-bold text-white">
-                                <span className="text-gradient">Музика</span>{' '}
-                                {owner.name}
-                            </h1>
-                            <p className="mt-0.5 text-sm text-white/50">
-                                {total}{' '}
-                                {plural(total, ['трек', 'треки', 'треків'])}
-                                {playlists.length > 0 &&
-                                    ` · ${playlists.length} ${plural(
-                                        playlists.length,
-                                        ['плейлист', 'плейлисти', 'плейлистів'],
-                                    )}`}
-                            </p>
+                            <div className="min-w-0 flex-1">
+                                <Link
+                                    href={`/${owner.username}`}
+                                    className="inline-flex items-center gap-1.5 text-xs whitespace-nowrap text-white/45 hover:text-white"
+                                >
+                                    <ArrowLeft className="size-3.5" /> До
+                                    профілю
+                                </Link>
+                                <h1 className="mt-0.5 truncate font-display text-xl font-bold text-white sm:text-2xl">
+                                    <span className="text-gradient">
+                                        Музика
+                                    </span>{' '}
+                                    {owner.name}
+                                </h1>
+                                <p className="mt-0.5 truncate text-sm text-white/50">
+                                    {total}{' '}
+                                    {plural(total, ['трек', 'треки', 'треків'])}
+                                    {playlists.length > 0 &&
+                                        ` · ${playlists.length} ${plural(
+                                            playlists.length,
+                                            [
+                                                'плейлист',
+                                                'плейлисти',
+                                                'плейлистів',
+                                            ],
+                                        )}`}
+                                </p>
+                            </div>
                         </div>
                         {tracks.data.length > 0 && (
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 sm:shrink-0">
                                 <button
                                     type="button"
                                     onClick={() => playQueue(tracks.data, 0)}
-                                    className="btn-glow inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold"
+                                    className="btn-glow inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold sm:flex-none"
                                 >
                                     <Play className="size-4 fill-current" />
                                     Слухати
@@ -87,7 +99,7 @@ export default function MusicUser({
                                     onClick={() =>
                                         playQueue(shuffled(tracks.data), 0)
                                     }
-                                    className="glass inline-flex size-11 items-center justify-center rounded-xl text-white/80 hover:text-white"
+                                    className="glass inline-flex size-11 shrink-0 items-center justify-center rounded-xl text-white/80 hover:text-white"
                                     aria-label="Перемішати"
                                 >
                                     <Shuffle className="size-4" />

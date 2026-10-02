@@ -194,10 +194,24 @@ class MusicService
 
     /**
      * Що зараз слухає користувач: трек із плеєра GameCon або з Spotify.
+     * Позначка «вже у моїх аудіозаписах» рахується для [$viewer] поза кешем, бо кеш спільний для всіх глядачів.
      *
      * @return array<string, mixed>|null
      */
-    public function currentFor(User $user): ?array
+    public function currentFor(User $user, ?User $viewer = null): ?array
+    {
+        $now = $this->cachedCurrent($user);
+        if ($now !== null && ($now['source'] ?? null) === 'local' && isset($now['id'])) {
+            $now['in_library'] = $viewer !== null && $viewer->library()->whereKey($now['id'])->exists();
+        }
+
+        return $now;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function cachedCurrent(User $user): ?array
     {
         return Cache::remember($this->statusCacheKey($user), now()->addSeconds(30), function () use ($user) {
             $status = $user->musicStatus()->with('track')->first();
