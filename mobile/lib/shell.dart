@@ -5,11 +5,38 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-class AppShell extends StatelessWidget {
+class AppShell extends StatefulWidget {
   const AppShell({required this.session, required this.player, required this.child, super.key});
   final Session session;
   final TrackPlayer player;
   final Widget child;
+
+  @override
+  State<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends State<AppShell> {
+  @override
+  void initState() {
+    super.initState();
+    widget.session.addListener(_onSession);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _onSession());
+  }
+
+  @override
+  void dispose() {
+    widget.session.removeListener(_onSession);
+    super.dispose();
+  }
+
+  void _onSession() {
+    final uri = widget.session.handoff;
+    if (!mounted || uri == null || uri.host != 'spotify') return;
+    widget.session.consumeLink();
+    final failed = uri.queryParameters['error'];
+    final message = failed == null || failed.isEmpty ? 'Spotify підключено.' : 'Spotify не підключився.';
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
 
   static const _tabs = [
     ('/feed', 'Новини', Icons.home_rounded),
@@ -30,16 +57,20 @@ class AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final path = GoRouterState.of(context).uri.path;
     final selected = _selected(path);
+    final topInset = MediaQuery.viewPaddingOf(context).top;
     return ListenableBuilder(
-      listenable: player,
+      listenable: widget.player,
       builder: (context, _) => Stage(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: SafeArea(bottom: false, child: child),
+        body: Padding(
+          padding: EdgeInsets.only(top: (topInset == 0 ? 28 : topInset) + 6),
+          child: widget.child,
+        ),
         bottomNavigationBar: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (player.title.isNotEmpty)
+            if (widget.player.title.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                 child: Material(
@@ -48,11 +79,11 @@ class AppShell extends StatelessWidget {
                   child: ListTile(
                     dense: true,
                     leading: const CircleAvatar(backgroundColor: indigo, child: Icon(Icons.music_note_rounded, color: Colors.white, size: 18)),
-                    title: Text(player.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: onest.copyWith(fontWeight: FontWeight.w600)),
-                    subtitle: Text(player.artist, maxLines: 1, style: onest.copyWith(color: muted, fontSize: 12)),
+                    title: Text(widget.player.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: onest.copyWith(fontWeight: FontWeight.w600)),
+                    subtitle: Text(widget.player.artist, maxLines: 1, style: onest.copyWith(color: muted, fontSize: 12)),
                     trailing: IconButton(
-                      onPressed: player.toggle,
-                      icon: Icon(player.playing ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white),
+                      onPressed: widget.player.toggle,
+                      icon: Icon(widget.player.playing ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white),
                     ),
                   ),
                 ),
@@ -99,6 +130,7 @@ class AppShell extends StatelessWidget {
       ('/notifications', 'Сповіщення', Icons.notifications_rounded),
       ('/settings', 'Налаштування', Icons.settings_rounded),
     ];
+    final session = widget.session;
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: abyss,
