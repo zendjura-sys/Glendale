@@ -17,7 +17,7 @@ class NotificationsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final session = AppScope.of(context).session;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 6, 14, 0),
+      padding: EdgeInsets.fromLTRB(14, siteHeaderInset(context) + 6, 14, 0),
       child: Glass(
         padding: const EdgeInsets.only(top: 14),
         child: Column(children: [

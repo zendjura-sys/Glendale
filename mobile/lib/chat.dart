@@ -615,7 +615,7 @@ class _ChatScreenState extends State<ChatScreen> {
         : (peer?['is_online'] == true ? 'онлайн' : (text(peer?['last_seen_at']) != null ? 'був(-ла) ${ago(peer?['last_seen_at'])}' : ''));
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(10, 4, 10, 8 + MediaQuery.paddingOf(context).bottom),
+      padding: EdgeInsets.fromLTRB(10, siteHeaderInset(context) + 4, 10, 0),
       child: Glass(
         padding: EdgeInsets.zero,
         radius: 24,
@@ -703,7 +703,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ? ('Відповідь ${text(mapOf(replyTo!['user'])['first_name']) ?? ''}', text(replyTo!['preview']) ?? '', Icons.reply_rounded)
             : null;
     return Container(
-      padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+      padding: EdgeInsets.fromLTRB(8, 6, 8, 8 + MediaQuery.paddingOf(context).bottom),
       decoration: const BoxDecoration(border: Border(top: BorderSide(color: line))),
       child: Column(
         mainAxisSize: MainAxisSize.min,

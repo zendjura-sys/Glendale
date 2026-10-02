@@ -22,7 +22,8 @@ import type { ReactNode } from 'react';
 import { ServerIcon } from '@/components/servers/server-icon';
 import { useRealtime } from '@/hooks/use-realtime';
 import { uah } from '@/lib/money';
-import { cn } from '@/lib/utils';
+import { usePlayer } from '@/lib/player';
+import { cn, floatingAboveNav } from '@/lib/utils';
 import type { FamilySection, FamilyShellProps } from '@/types';
 import { FamilyLogo } from './family-logo';
 import { RankBadge } from './ui';
@@ -46,6 +47,7 @@ export function FamilyShell({
     children,
 }: FamilyShellProps & { title: string; children: ReactNode }) {
     const base = `/f/${family.slug}`;
+    const playing = usePlayer().current !== null;
     const reload = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useRealtime(`family.${family.id}`, {
@@ -142,7 +144,12 @@ export function FamilyShell({
     return (
         <>
             <Head title={`${title} · [${family.tag}] ${family.name}`} />
-            <div className="space-y-4 pb-20 lg:pb-0">
+            <div
+                className={cn(
+                    'space-y-4',
+                    section !== 'reports' && 'pb-16 lg:pb-0',
+                )}
+            >
                 <header className="glass noise relative overflow-hidden rounded-3xl">
                     <div className="relative h-28 sm:h-36">
                         {family.cover_url ? (
@@ -302,7 +309,10 @@ export function FamilyShell({
             {section !== 'reports' && (
                 <Link
                     href={`${base}/reports?new=1`}
-                    className="btn-glow fixed right-4 bottom-20 z-30 inline-flex h-14 items-center gap-2 rounded-2xl px-5 text-sm font-semibold shadow-2xl lg:hidden"
+                    className={cn(
+                        'btn-glow fixed right-4 z-30 inline-flex h-14 items-center gap-2 rounded-2xl px-5 text-sm font-semibold shadow-2xl lg:hidden',
+                        floatingAboveNav(playing),
+                    )}
                 >
                     <FilePlus2 className="size-5" /> Звіт
                 </Link>

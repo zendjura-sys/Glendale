@@ -17,8 +17,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useVoiceRecorder } from '@/hooks/use-voice-recorder';
 import { formatBytes, formatDuration } from '@/lib/format';
+import { usePlayer } from '@/lib/player';
 import { fitTextarea } from '@/lib/textarea';
-import { cn } from '@/lib/utils';
+import { cn, dockedAboveNav } from '@/lib/utils';
 import type { ChatMessage, OutgoingMessage } from '@/types';
 import { ContactShareDialog } from './contact-share-dialog';
 import { EmojiPanel } from './emoji-panel';
@@ -84,6 +85,7 @@ export function Composer({
     const voice = useVoiceRecorder((recording) =>
         onSend({ kind: 'voice', ...recording }),
     );
+    const playing = usePlayer().current !== null;
 
     const previews = useMemo(
         () => images.map((file) => URL.createObjectURL(file)),
@@ -219,7 +221,12 @@ export function Composer({
 
     if (!canWrite) {
         return (
-            <div className="border-t border-white/[0.06] px-4 py-4">
+            <div
+                className={cn(
+                    'border-t border-white/[0.06] px-4 pt-4',
+                    dockedAboveNav(playing),
+                )}
+            >
                 <p className="flex items-center justify-center gap-2 text-center text-sm text-white/45">
                     <Lock className="size-4" />
                     Користувач обмежив коло осіб, які можуть надсилати йому
@@ -235,7 +242,10 @@ export function Composer({
 
     return (
         <div
-            className="relative border-t border-white/[0.06] bg-transparent px-3 pt-2 pb-3 sm:px-4"
+            className={cn(
+                'relative border-t border-white/[0.06] bg-transparent px-3 pt-2 sm:px-4',
+                dockedAboveNav(playing),
+            )}
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => {
                 event.preventDefault();

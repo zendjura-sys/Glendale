@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { SettingsCard } from '@/layouts/settings/layout';
-import { cn } from '@/lib/utils';
+import { usePlayer } from '@/lib/player';
+import { cn, floatingAboveNav } from '@/lib/utils';
 import { send } from '@/routes/verification';
 import type { SocialConnection } from '@/types/auth';
 
@@ -46,6 +47,7 @@ export default function Profile({
     connections,
 }: Props) {
     const { auth } = usePage().props;
+    const playing = usePlayer().current !== null;
     const form = useForm<ProfileForm>({
         first_name: profile.first_name ?? '',
         last_name: profile.last_name ?? '',
@@ -349,7 +351,12 @@ export default function Profile({
                     </div>
                 </SettingsCard>
 
-                <div className="glass-strong sticky bottom-20 z-10 flex items-center justify-end gap-3 rounded-2xl p-3 lg:bottom-4">
+                <div
+                    className={cn(
+                        'glass-strong sticky z-10 flex items-center justify-end gap-3 rounded-2xl p-3',
+                        floatingAboveNav(playing),
+                    )}
+                >
                     {form.recentlySuccessful && (
                         <span className="text-sm text-emerald-300">
                             Збережено

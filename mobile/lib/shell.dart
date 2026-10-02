@@ -126,7 +126,7 @@ class _AppShellState extends State<AppShell> {
           resizeToAvoidBottomInset: true,
           body: Stack(
             children: [
-              Padding(padding: EdgeInsets.only(top: headerTop + _siteBarHeight), child: widget.child),
+              widget.child,
               Positioned(top: headerTop, left: 0, right: 0, child: _SiteBar(session: widget.session)),
             ],
           ),
@@ -272,8 +272,6 @@ class _AppShellState extends State<AppShell> {
     );
   }
 }
-
-const _siteBarHeight = 58.0;
 
 class _SiteBar extends StatelessWidget {
   const _SiteBar({required this.session});
@@ -422,7 +420,7 @@ class _NotificationsListState extends State<NotificationsList> {
               child: rows.isEmpty
                   ? const QuietEmpty(icon: Icons.notifications_none_rounded, text: 'Сповіщень поки немає')
                   : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+                      padding: EdgeInsets.fromLTRB(12, 0, 12, 20 + MediaQuery.paddingOf(context).bottom),
                       itemCount: rows.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 2),
                       itemBuilder: (context, i) => NotificationRow(row: rows[i], onTap: () => widget.onOpen(text(rows[i]['url']))),

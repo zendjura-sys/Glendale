@@ -667,7 +667,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
       ),
       Positioned(
         right: 16,
-        bottom: 16,
+        bottom: 16 + MediaQuery.paddingOf(context).bottom,
         child: DecoratedBox(
           decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), boxShadow: [BoxShadow(color: indigo.withValues(alpha: 0.5), blurRadius: 24, offset: const Offset(0, 10), spreadRadius: -8)]),
           child: PrimaryButton(label: 'Звіт', icon: Icons.note_add_outlined, expand: false, onPressed: _report),

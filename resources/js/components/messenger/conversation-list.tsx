@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { messagePreview } from '@/components/gc/inbox-listener';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { shortTime } from '@/lib/format';
-import { cn } from '@/lib/utils';
+import { usePlayer } from '@/lib/player';
+import { cn, dockedAboveNav } from '@/lib/utils';
 import type { ConversationSummary } from '@/types';
 import { ConversationAvatar } from './conversation-avatar';
 
@@ -49,6 +50,7 @@ export function ConversationList({
     className?: string;
 }) {
     const [query, setQuery] = useState('');
+    const playing = usePlayer().current !== null;
     const needle = query.trim().toLowerCase();
     const visible = needle
         ? conversations.filter((c) => c.title.toLowerCase().includes(needle))
@@ -82,7 +84,12 @@ export function ConversationList({
                 </label>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
+            <div
+                className={cn(
+                    'min-h-0 flex-1 overflow-y-auto px-2',
+                    dockedAboveNav(playing, 'lg:pb-2'),
+                )}
+            >
                 {visible.length === 0 ? (
                     <div className="flex flex-col items-center px-6 py-14 text-center">
                         <span className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-white/[0.04]">

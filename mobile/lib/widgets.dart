@@ -1109,7 +1109,17 @@ class _RemoteState extends State<Remote> {
   }
 }
 
-/// Прокрутка екрана з відступами під шапку й нижнє меню.
+/// Висота прозорої шапки поверх контенту, без системного відступу.
+const siteBarHeight = 58.0;
+
+/// Скільки місця шапка займає зверху, щоб перший елемент стартував під нею,
+/// а прокрутка йшла вже під прозорими кнопками.
+double siteHeaderInset(BuildContext context) {
+  final top = MediaQuery.viewPaddingOf(context).top;
+  return (top == 0 ? 24.0 : top) + siteBarHeight;
+}
+
+/// Прокрутка екрана: контент їде під прозору шапку і під скляне меню.
 class ScreenScroll extends StatelessWidget {
   const ScreenScroll({required this.children, this.onRefresh, this.padding, this.controller, super.key});
   final List<Widget> children;
@@ -1123,7 +1133,10 @@ class ScreenScroll extends StatelessWidget {
     final list = ListView(
       controller: controller,
       physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-      padding: base.copyWith(bottom: base.bottom + MediaQuery.paddingOf(context).bottom),
+      padding: base.copyWith(
+        top: base.top + siteHeaderInset(context),
+        bottom: base.bottom + MediaQuery.paddingOf(context).bottom,
+      ),
       children: children,
     );
     if (onRefresh == null) return list;

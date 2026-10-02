@@ -6,6 +6,7 @@ import { ConversationList } from '@/components/messenger/conversation-list';
 import { GroupInfoDialog } from '@/components/messenger/group-info-dialog';
 import { NewChatDialog } from '@/components/messenger/new-chat-dialog';
 import { inbox } from '@/lib/inbox';
+import { usePlayer } from '@/lib/player';
 import { cn } from '@/lib/utils';
 import type {
     ChatHistory,
@@ -21,6 +22,7 @@ type Props = {
 
 export default function Messages({ conversations, active, history }: Props) {
     const userId = usePage().props.auth.user.id;
+    const playing = usePlayer().current !== null;
     const [list, setList] = useState(conversations);
     const [composeOpen, setComposeOpen] = useState(false);
     const [infoOpen, setInfoOpen] = useState(false);
@@ -107,7 +109,12 @@ export default function Messages({ conversations, active, history }: Props) {
     return (
         <>
             <Head title={active ? active.title : 'Повідомлення'} />
-            <div className="glass flex h-[calc(100dvh-172px)] min-h-0 overflow-clip rounded-3xl sm:min-h-[420px] lg:h-[calc(100dvh-100px)]">
+            <div
+                className={cn(
+                    'glass flex min-h-0 overflow-clip rounded-3xl max-lg:h-[calc(100dvh-76px)] max-lg:rounded-b-none md:flex-row lg:h-[calc(100dvh-100px)]',
+                    playing ? 'max-lg:-mb-44' : 'max-lg:-mb-24',
+                )}
+            >
                 <ConversationList
                     conversations={list}
                     activeId={activeId}
