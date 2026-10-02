@@ -1,6 +1,5 @@
 import { Form } from '@inertiajs/react';
 import { useRef } from 'react';
-import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { SettingsCard } from '@/layouts/settings/layout';
+import { destroy } from '@/routes/profile';
 
 export default function DeleteUser() {
     const passwordInput = useRef<HTMLInputElement>(null);
@@ -42,7 +42,7 @@ export default function DeleteUser() {
                     </DialogDescription>
 
                     <Form
-                        {...ProfileController.destroy.form()}
+                        {...destroy.form()}
                         options={{ preserveScroll: true }}
                         onError={() => passwordInput.current?.focus()}
                         resetOnSuccess
