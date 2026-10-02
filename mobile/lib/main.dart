@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,9 +8,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'auth_screen.dart';
 import 'browse.dart';
+import 'chat.dart';
 import 'feed.dart';
+import 'people.dart';
+import 'push.dart';
 import 'shell.dart';
-import 'social.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -26,7 +30,7 @@ Future<void> main() async {
   ));
   final prefs = await SharedPreferences.getInstance();
   final session = Session(prefs);
-  final player = TrackPlayer();
+  final player = TrackPlayer()..session = session;
   await session.boot();
   final links = AppLinks();
   links.uriLinkStream.listen(session.takeLink);
@@ -49,21 +53,20 @@ Future<void> main() async {
       ShellRoute(
         builder: (_, _, child) => AppShell(session: session, player: player, child: child),
         routes: [
-          GoRoute(path: '/feed', builder: (_, _) => FeedScreen(session: session)),
+          GoRoute(path: '/feed', builder: (_, _) => const FeedScreen()),
+          GoRoute(path: '/search', builder: (_, state) => SearchScreen(initial: state.uri.queryParameters['q'] ?? '')),
+          GoRoute(path: '/posts/:id', builder: (_, state) => PostScreen(id: int.tryParse(state.pathParameters['id']!) ?? 0)),
           GoRoute(
             path: '/messages',
-            builder: (_, _) => MessagesScreen(session: session),
+            builder: (_, _) => const MessagesScreen(),
             routes: [
-              GoRoute(
-                path: ':id',
-                builder: (_, state) => ChatScreen(session: session, id: int.parse(state.pathParameters['id']!)),
-              ),
+              GoRoute(path: ':id', builder: (_, state) => ChatScreen(key: ValueKey(state.pathParameters['id']), id: int.tryParse(state.pathParameters['id']!) ?? 0)),
             ],
           ),
-          GoRoute(path: '/friends', builder: (_, _) => FriendsScreen(session: session)),
-          GoRoute(path: '/people', builder: (_, _) => PeopleScreen(session: session)),
-          GoRoute(path: '/profile', builder: (_, _) => ProfileScreen(session: session)),
-          GoRoute(path: '/u/:username', builder: (_, state) => ProfileScreen(session: session, username: state.pathParameters['username'])),
+          GoRoute(path: '/friends', builder: (_, state) => FriendsScreen(tab: state.uri.queryParameters['tab'] ?? 'all')),
+          GoRoute(path: '/people', builder: (_, state) => PeopleScreen(initial: state.uri.queryParameters['q'] ?? '')),
+          GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
+          GoRoute(path: '/u/:username', builder: (_, state) => ProfileScreen(key: ValueKey(state.pathParameters['username']), username: state.pathParameters['username'])),
           GoRoute(
             path: '/communities',
             builder: (_, _) => CommunitiesScreen(session: session),
@@ -109,6 +112,8 @@ Future<void> main() async {
   );
 
   runApp(GameConApp(router: router));
+  // Після першого кадру: дозвіл на сповіщення й реєстрація пристрою для push.
+  unawaited(Push(session, router).start());
 }
 
 class _Lost extends StatelessWidget {

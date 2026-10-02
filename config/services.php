@@ -56,6 +56,9 @@ return [
         'auth_domain' => env('FIREBASE_AUTH_DOMAIN'),
         'project_id' => env('FIREBASE_PROJECT_ID'),
         'app_id' => env('FIREBASE_APP_ID'),
+        // Ключ сервісного акаунта для push (JSON або шлях до файлу); можна задати в адмінці.
+        'credentials' => env('FIREBASE_CREDENTIALS'),
+        'fcm_url' => env('FIREBASE_FCM_URL', 'https://fcm.googleapis.com'),
         'certs_url' => env('FIREBASE_CERTS_URL', 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com'),
         'tokeninfo_url' => env('GOOGLE_TOKENINFO_URL', 'https://oauth2.googleapis.com/tokeninfo'),
     ],

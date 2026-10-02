@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\MovieSource;
+use App\Models\PushDevice;
 use App\Models\SpotifyAccount;
 use App\Models\User;
 use App\Services\Auth\DiscordOAuth;
@@ -15,6 +16,7 @@ use App\Services\Cinema\KodikClient;
 use App\Services\Cinema\Metadata\OmdbProvider;
 use App\Services\Cinema\Metadata\ShikimoriProvider;
 use App\Services\Cinema\Metadata\TmdbProvider;
+use App\Services\Push\FcmClient;
 use App\Services\Spotify\SpotifyClient;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\RedirectResponse;
@@ -38,6 +40,7 @@ class IntegrationController extends Controller
         private readonly OmdbProvider $omdb,
         private readonly DiscordOAuth $discord,
         private readonly FirebaseAuth $firebase,
+        private readonly FcmClient $fcm,
     ) {}
 
     public function index(): Response
@@ -128,6 +131,9 @@ class IntegrationController extends Controller
             };
         }
         Cache::forget('cinema.meta.down.'.$provider);
+        if ($provider === 'push') {
+            $this->fcm->forgetAccessToken();
+        }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Налаштування '.$this->cinemaProviders()[$provider]['label'].' збережено.']);
 
@@ -233,6 +239,28 @@ class IntegrationController extends Controller
                     ['name' => 'app_id', 'setting' => 'firebase_app_id', 'type' => 'text', 'label' => 'appId', 'placeholder' => '1:1234567890:web:abc123',
                         'help' => 'Обов’язково: з номера проєкту в appId сервер перевіряє, що токен Google виданий саме вашому сайту.',
                         'rules' => ['nullable', 'string', 'max:100', 'regex:/^\d+:\d+:web:[0-9a-f]+$/'], 'message' => 'appId має вигляд 1:123…:web:…'],
+                ],
+            ],
+            'push' => [
+                'label' => 'Push-сповіщення (Firebase)',
+                'group' => 'push',
+                'description' => 'Сповіщення дзвіночка й нові повідомлення чатів приходять у застосунок GameCon, навіть коли він закритий.',
+                'docs' => 'https://console.firebase.google.com',
+                'steps' => [
+                    'Firebase Console → Project settings → Cloud Messaging: переконайтеся, що Firebase Cloud Messaging API (V1) увімкнено.',
+                    'Project settings → Service accounts → Generate new private key — завантажиться JSON-файл.',
+                    'Відкрийте файл і вставте весь його вміст у поле нижче, потім натисніть «Перевірити».',
+                    'Проєкт має бути тим самим, що й у google-services.json застосунку (пакет online.gamecon.app).',
+                ],
+                'configured' => $this->fcm->configured(),
+                'stat' => PushDevice::query()->count().' пристроїв · '.PushDevice::query()->distinct()->count('user_id').' користувачів',
+                'test' => fn () => $this->fcm->testCredentials(),
+                'fields' => [
+                    ['name' => 'service_account', 'setting' => 'fcm_service_account', 'type' => 'secret', 'label' => 'Ключ сервісного акаунта (JSON)', 'placeholder' => '{"type": "service_account", …}',
+                        'env' => config('services.firebase.credentials'),
+                        'rules' => ['nullable', 'string', 'max:10000', fn (string $attribute, mixed $value, \Closure $fail) => is_string($value) && FcmClient::parse($value) === null
+                            ? $fail('Вставте повний JSON ключа сервісного акаунта Firebase (type: service_account).') : null],
+                    ],
                 ],
             ],
             'kodik' => [

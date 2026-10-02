@@ -5,7 +5,26 @@ use App\Http\Controllers\Api\ChatApiController;
 use App\Http\Controllers\Api\FeedApiController;
 use App\Http\Controllers\Api\GroupsApiController;
 use App\Http\Controllers\Api\MediaApiController;
+use App\Http\Controllers\Api\PushApiController;
 use App\Http\Controllers\Api\SocialApiController;
+use App\Http\Controllers\CinemaController;
+use App\Http\Controllers\CommentController;
+use App\Http\Controllers\CommunityController;
+use App\Http\Controllers\CommunityMemberController;
+use App\Http\Controllers\Families;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\MessengerController;
+use App\Http\Controllers\MusicController;
+use App\Http\Controllers\NowPlayingController;
+use App\Http\Controllers\PhotoAlbumController;
+use App\Http\Controllers\PhotoController;
+use App\Http\Controllers\PlaylistController;
+use App\Http\Controllers\PostController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Settings\ProfileController as SettingsProfileController;
+use App\Http\Controllers\SpotifyController;
+use App\Http\Controllers\TrackController;
+use App\Http\Middleware\BridgeSiteAction;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -27,6 +46,8 @@ Route::prefix('v1')->group(function () {
         Route::delete('me/connections/{provider}', [SocialApiController::class, 'unlink'])->whereIn('provider', ['discord', 'google']);
 
         Route::get('notifications', [SocialApiController::class, 'notifications']);
+        Route::post('push/devices', [PushApiController::class, 'store'])->middleware('throttle:30,1');
+        Route::delete('push/devices', [PushApiController::class, 'destroy']);
         Route::post('notifications/read', [SocialApiController::class, 'readNotifications']);
         Route::get('search', [SocialApiController::class, 'search'])->middleware('throttle:60,1');
 
@@ -130,6 +151,122 @@ Route::prefix('v1')->group(function () {
             Route::post('families/{family}/reports/{report}/review', [GroupsApiController::class, 'reviewReport'])->whereNumber('report');
             Route::get('families/{family}/proofs/{proof}', [GroupsApiController::class, 'proof'])->whereNumber('proof');
             Route::get('families/{family}/audit', [GroupsApiController::class, 'audit']);
+        });
+
+        /*
+         * Дії й сторінки сайту для застосунку: ті самі контролери, що й у routes/web.php, за тими самими
+         * шляхами з префіксом /api/v1/site. BridgeSiteAction перетворює редиректи й Inertia-сторінки на JSON.
+         */
+        Route::prefix('site')->middleware(BridgeSiteAction::class)->group(function () {
+            Route::middleware('module:feed')->group(function () {
+                Route::post('posts/{post}/pin', [PostController::class, 'pin'])->whereNumber('post');
+                Route::delete('comments/{comment}', [CommentController::class, 'destroy'])->whereNumber('comment');
+                Route::post('comments/{comment}/like', [CommentController::class, 'like'])->whereNumber('comment')->middleware('throttle:120,1');
+            });
+
+            // Шапка профілю як на сайті: статистика, друзі, фото, аудіо, права (canPost, canMessage).
+            Route::get('u/{user}', [ProfileController::class, 'show']);
+            Route::post('me/avatar', [ProfileController::class, 'updateAvatar']);
+            Route::delete('me/avatar', [ProfileController::class, 'destroyAvatar']);
+            Route::post('me/cover', [ProfileController::class, 'updateCover']);
+            Route::delete('settings/profile', [SettingsProfileController::class, 'destroy']);
+
+            Route::prefix('messages')->middleware('module:messages')->whereNumber(['conversation', 'message'])->group(function () {
+                Route::post('{conversation}/settings', [MessengerController::class, 'update']);
+                Route::post('{conversation}/members', [MessengerController::class, 'addMembers']);
+                Route::delete('{conversation}/members/{user}', [MessengerController::class, 'removeMember']);
+                Route::patch('{conversation}/messages/{message}', [MessageController::class, 'update']);
+                Route::delete('{conversation}/messages/{message}', [MessageController::class, 'destroy']);
+            });
+
+            Route::middleware('module:communities')->prefix('c/{community}')->group(function () {
+                Route::delete('/', [CommunityController::class, 'destroy']);
+                Route::get('settings', [CommunityController::class, 'edit']);
+                Route::patch('settings', [CommunityController::class, 'update']);
+                Route::post('images/{field}', [CommunityController::class, 'updateImage'])->whereIn('field', ['avatar', 'cover']);
+                Route::get('members', [CommunityMemberController::class, 'index']);
+                Route::post('members/{user}/approve', [CommunityMemberController::class, 'approve']);
+                Route::delete('members/{user}/request', [CommunityMemberController::class, 'decline']);
+                Route::patch('members/{user}', [CommunityMemberController::class, 'role']);
+                Route::delete('members/{user}', [CommunityMemberController::class, 'destroy']);
+            });
+
+            Route::middleware('module:photos')->whereNumber(['album', 'photo'])->group(function () {
+                Route::patch('albums/{album}', [PhotoAlbumController::class, 'update']);
+                Route::delete('albums/{album}', [PhotoAlbumController::class, 'destroy']);
+                Route::patch('photos/{photo}', [PhotoController::class, 'update']);
+                Route::delete('photos/{photo}', [PhotoController::class, 'destroy']);
+                Route::post('photos/{photo}/cover', [PhotoController::class, 'cover']);
+                Route::get('photos/{photo}/comments', [PhotoController::class, 'comments']);
+                Route::post('photos/{photo}/comments', [PhotoController::class, 'comment'])->middleware('throttle:30,1');
+            });
+
+            Route::prefix('music')->middleware('module:music')->group(function () {
+                Route::get('search', [MusicController::class, 'search'])->middleware('throttle:120,1');
+                Route::delete('now-playing', [NowPlayingController::class, 'destroy']);
+                Route::whereNumber(['track', 'playlist'])->group(function () {
+                    Route::patch('tracks/{track}', [TrackController::class, 'update']);
+                    Route::delete('tracks/{track}', [TrackController::class, 'destroy']);
+                    Route::post('playlists/{playlist}', [PlaylistController::class, 'update']);
+                    Route::delete('playlists/{playlist}', [PlaylistController::class, 'destroy']);
+                    Route::post('playlists/{playlist}/tracks/{track}', [PlaylistController::class, 'attach']);
+                    Route::delete('playlists/{playlist}/tracks/{track}', [PlaylistController::class, 'detach']);
+                });
+                Route::prefix('spotify')->middleware('throttle:120,1')->group(function () {
+                    Route::patch('/', [SpotifyController::class, 'update']);
+                    Route::get('search', [SpotifyController::class, 'search']);
+                    Route::get('playlists/{playlist}', [SpotifyController::class, 'playlist']);
+                });
+            });
+
+            Route::prefix('cinema')->middleware('module:cinema')->group(function () {
+                Route::get('/', [CinemaController::class, 'index']);
+                Route::get('my', [CinemaController::class, 'my']);
+                Route::get('search', [CinemaController::class, 'search'])->middleware('throttle:120,1');
+                Route::get('{movie}', [CinemaController::class, 'show']);
+                Route::post('{movie}/started', [CinemaController::class, 'started'])->middleware('throttle:30,1');
+                Route::get('{movie}/comments', [CinemaController::class, 'comments']);
+                Route::post('{movie}/comments', [CinemaController::class, 'comment'])->middleware('throttle:30,1');
+            });
+
+            Route::middleware('module:families')->group(function () {
+                Route::post('families', [Families\FamilyController::class, 'store'])->middleware('throttle:5,10');
+
+                Route::prefix('f/{family}')->scopeBindings()->group(function () {
+                    Route::delete('apply', [Families\FamilyController::class, 'withdraw']);
+                    Route::post('leave', [Families\FamilyController::class, 'leave']);
+                    Route::post('reports/bulk', [Families\FamilyReportController::class, 'bulk']);
+
+                    Route::whereNumber(['cashout', 'deposit', 'item', 'member', 'punishment', 'event'])->group(function () {
+                        Route::post('bank/cashouts/{cashout}/pay', [Families\FamilyBankController::class, 'payCashout']);
+                        Route::post('bank/cashouts/{cashout}/cancel', [Families\FamilyBankController::class, 'cancelCashout']);
+                        Route::get('bank/cashouts/{cashout}/proof', [Families\FamilyBankController::class, 'cashoutProof']);
+                        Route::post('bank/deposits/{deposit}/close', [Families\FamilyBankController::class, 'closeDeposit']);
+
+                        Route::post('warehouse/move', [Families\FamilyWarehouseController::class, 'move'])->middleware('throttle:60,1');
+                        Route::post('warehouse/items', [Families\FamilyWarehouseController::class, 'storeItem']);
+                        Route::patch('warehouse/items/{item}', [Families\FamilyWarehouseController::class, 'updateItem']);
+
+                        Route::put('ranks', [Families\FamilyMemberController::class, 'ranks']);
+                        Route::post('members/{member}/accept', [Families\FamilyMemberController::class, 'accept']);
+                        Route::post('members/{member}/decline', [Families\FamilyMemberController::class, 'decline']);
+                        Route::patch('members/{member}', [Families\FamilyMemberController::class, 'update']);
+                        Route::post('members/{member}/kick', [Families\FamilyMemberController::class, 'kick']);
+                        Route::post('members/{member}/transfer', [Families\FamilyMemberController::class, 'transfer']);
+
+                        Route::post('discipline/{punishment}/revoke', [Families\FamilyDisciplineController::class, 'revoke']);
+
+                        Route::post('events', [Families\FamilyEventController::class, 'store'])->middleware('throttle:20,1');
+                        Route::post('events/{event}/rsvp', [Families\FamilyEventController::class, 'rsvp']);
+                        Route::post('events/{event}/close', [Families\FamilyEventController::class, 'close']);
+                    });
+
+                    Route::post('settings/profile', [Families\FamilySettingsController::class, 'profile']);
+                    Route::put('settings/webhooks', [Families\FamilySettingsController::class, 'webhooks']);
+                    Route::post('settings/webhooks/test', [Families\FamilySettingsController::class, 'test'])->middleware('throttle:6,1');
+                    Route::post('settings/digest', [Families\FamilySettingsController::class, 'digest'])->middleware('throttle:3,10');
+                });
+            });
         });
     });
 });

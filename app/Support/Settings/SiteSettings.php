@@ -44,10 +44,11 @@ class SiteSettings
         'firebase_auth_domain' => null,
         'firebase_project_id' => null,
         'firebase_app_id' => null,
+        'fcm_service_account' => null,
     ];
 
     /** Ключі, які не можна віддавати у фронтенд. */
-    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret'];
+    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account'];
 
     /** @var array<string, mixed>|null */
     private ?array $values = null;

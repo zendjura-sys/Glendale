@@ -31,7 +31,7 @@ export type IntegrationField = {
 export type CinemaIntegration = {
     key: string;
     label: string;
-    group: 'players' | 'metadata';
+    group: 'auth' | 'push' | 'players' | 'metadata';
     description: string;
     docs: string;
     steps: string[];

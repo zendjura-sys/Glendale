@@ -87,10 +87,15 @@ class Api {
   Future<Map<String, dynamic>> post(String path, [Map<String, dynamic>? body]) => _send('POST', path, body);
   Future<Map<String, dynamic>> put(String path, Map<String, dynamic> body) => _send('PUT', path, body);
   Future<Map<String, dynamic>> patch(String path, Map<String, dynamic> body) => _send('PATCH', path, body);
-  Future<Map<String, dynamic>> delete(String path) => _send('DELETE', path);
+  Future<Map<String, dynamic>> delete(String path, [Map<String, dynamic>? body]) => _send('DELETE', path, body);
 
-  Future<Map<String, dynamic>> upload(String path, Map<String, String> fields, List<http.MultipartFile> files) async {
+  /// Дії сайту через міст `/api/v1/site/...` (ті самі шляхи, що в routes/web.php).
+  static String site(String path) => '/api/v1/site${path.startsWith('/') ? path : '/$path'}';
+
+  /// Multipart-запит. Для PATCH/PUT Laravel приймає `_method` у формі.
+  Future<Map<String, dynamic>> upload(String path, Map<String, String> fields, List<http.MultipartFile> files, {String method = 'POST'}) async {
     final request = http.MultipartRequest('POST', Uri.parse('$root$path'));
+    if (method != 'POST') request.fields['_method'] = method;
     request.headers['Accept'] = 'application/json';
     request.headers['User-Agent'] = 'GameCon/1.0 (Flutter)';
     final bearer = token();
@@ -136,7 +141,7 @@ class Api {
         'POST' => http.post(uri, headers: headers, body: encoded ?? '{}'),
         'PUT' => http.put(uri, headers: headers, body: encoded),
         'PATCH' => http.patch(uri, headers: headers, body: encoded),
-        'DELETE' => http.delete(uri, headers: headers),
+        'DELETE' => http.delete(uri, headers: headers, body: encoded),
         _ => throw ApiException('Невідомий метод.'),
       }.timeout(const Duration(seconds: 40));
     } catch (e) {
@@ -161,11 +166,22 @@ class Api {
         if (errors is Map && errors.isNotEmpty) {
           final first = errors.values.first;
           if (first is List && first.isNotEmpty) return '${first.first}';
+          if (first is String) return first;
         }
         final message = text(json['message']);
         if (message != null) return message;
       }
     } catch (_) {}
     return 'Щось пішло не так.';
+  }
+
+  /// Завантаження файлу з авторизацією (докази звітів, вкладення чату).
+  Future<List<int>> bytes(String path) async {
+    final response = await http.get(Uri.parse(path.startsWith('http') ? path : '$root$path'), headers: {
+      'User-Agent': 'GameCon/1.0 (Flutter)',
+      if (token() != null) 'Authorization': 'Bearer ${token()}',
+    });
+    if (response.statusCode >= 400) throw ApiException('Файл недоступний.');
+    return response.bodyBytes;
   }
 }

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Іконку сповіщень шукають за назвою (FCM і локальні сповіщення) — не даємо R8 її вирізати. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_notification" />

@@ -17,13 +17,17 @@ use App\Models\User;
 use App\Services\CommunityService;
 use App\Services\Families\FamilyGate;
 use App\Services\FriendshipService;
+use App\Services\Push\PushNotifier;
 use App\Support\Modules\ModuleManager;
 use App\Support\Settings\SiteSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -64,6 +68,13 @@ class AppServiceProvider extends ServiceProvider
         ]);
 
         Model::preventLazyLoading(! app()->isProduction());
+
+        // Кожне сповіщення дзвіночка сайту також іде push-ом у застосунок.
+        Event::listen(NotificationSent::class, function (NotificationSent $event) {
+            if ($event->channel === 'database' && $event->response instanceof DatabaseNotification) {
+                rescue(fn () => app(PushNotifier::class)->notification($event->notifiable, $event->response), report: true);
+            }
+        });
     }
 
     /**

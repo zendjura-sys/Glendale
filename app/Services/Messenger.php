@@ -14,6 +14,7 @@ use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\Sticker;
 use App\Models\User;
+use App\Services\Push\PushNotifier;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
@@ -472,6 +473,9 @@ class Messenger
         $conversation->activeParticipants()->pluck('user_id')->each(
             fn (int $userId) => $this->broadcast(new InboxUpdated($userId, $conversation->id, $payload)),
         );
+
+        // Push у застосунок — як і реальний час, не має ламати відправку повідомлення.
+        rescue(fn () => app(PushNotifier::class)->message($conversation, $message, $payload), report: true);
     }
 
     private function broadcastUpdated(Conversation $conversation): void
