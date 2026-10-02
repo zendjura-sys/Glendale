@@ -50,6 +50,7 @@ export default defineConfig({
             'vendor/**',
             'node_modules/**',
             'public/**',
+            'mobile/**',
             'bootstrap/ssr/**',
             'tailwind.config.js',
             'resources/js/actions/**',
@@ -72,6 +73,8 @@ export default defineConfig({
         ignorePatterns: [
             '.github/**',
             'composer.json',
+            // Flutter-застосунок форматує `dart format`, не vp.
+            'mobile/**',
             'resources/js/components/ui/*',
             'resources/views/mail/*',
         ],
