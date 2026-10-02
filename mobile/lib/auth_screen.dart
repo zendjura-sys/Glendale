@@ -83,108 +83,109 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  void _submit() {
+    if (busy) return;
+    if (ticket != null) {
+      _run(() => widget.session.api.post('/api/v1/auth/two-factor', {'ticket': ticket, 'code': code.text.trim()}));
+      return;
+    }
+    _run(() {
+      if (register) {
+        return widget.session.api.post('/api/v1/auth/register', {
+          'first_name': first.text.trim(),
+          'last_name': last.text.trim(),
+          'email': email.text.trim(),
+          'password': password.text,
+          'password_confirmation': password.text,
+          'device': 'GameCon Flutter',
+        });
+      }
+      return widget.session.api.post('/api/v1/auth/login', {
+        'email': email.text.trim(),
+        'password': password.text,
+        'device': 'GameCon Flutter',
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final top = MediaQuery.viewPaddingOf(context).top;
     return Stage(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: Column(
+        body: ListView(
+          padding: EdgeInsets.fromLTRB(18, top + 40, 18, 32),
           children: [
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.only(top: MediaQuery.viewPaddingOf(context).top + 36, bottom: 48),
-              decoration: const BoxDecoration(gradient: brand),
-              child: const Column(
+            const Center(child: LogoMark(size: 64)),
+            const SizedBox(height: 14),
+            const Center(child: Wordmark(size: 26)),
+            const SizedBox(height: 8),
+            Text('Соцмережа українського гейм-ком’юніті', textAlign: TextAlign.center, style: body(13.5, color: muted)),
+            const SizedBox(height: 26),
+            Glass(
+              padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
+              radius: 26,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  LogoMark(size: 72),
-                  SizedBox(height: 12),
-                  Text('GameCon', style: TextStyle(fontFamily: 'Unbounded', fontWeight: FontWeight.w700, fontSize: 26, color: Colors.white)),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Transform.translate(
-                offset: const Offset(0, -24),
-                child: DecoratedBox(
-                  decoration: const BoxDecoration(color: voidColor, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-                    children: [
-                    Text(ticket != null ? 'Код із застосунку' : (register ? 'Створити акаунт' : 'З поверненням'), textAlign: TextAlign.center, style: unbounded.copyWith(fontSize: 24)),
-                    const SizedBox(height: 14),
-                    if (error != null) ...[
-                      Text(error!, style: onest.copyWith(color: pink)),
-                      const SizedBox(height: 10),
-                    ],
-                    if (ticket != null) ...[
-                      GcField(controller: code, label: 'Код'),
-                      const SizedBox(height: 12),
-                      PrimaryButton(
-                        label: 'Підтвердити',
-                        onPressed: busy
-                            ? null
-                            : () => _run(() => widget.session.api.post('/api/v1/auth/two-factor', {
-                                  'ticket': ticket,
-                                  'code': code.text.trim(),
-                                })),
-                      ),
-                    ] else ...[
-                      if (register) ...[
-                        GcField(controller: first, label: 'Ім’я'),
-                        const SizedBox(height: 10),
-                        GcField(controller: last, label: 'Прізвище'),
-                        const SizedBox(height: 10),
-                      ],
-                      GcField(controller: email, label: 'Пошта'),
-                      const SizedBox(height: 10),
-                      GcField(controller: password, label: 'Пароль', obscure: true),
-                      const SizedBox(height: 14),
-                      PrimaryButton(
-                        label: register ? 'Створити акаунт' : 'Увійти',
-                        onPressed: busy
-                            ? null
-                            : () => _run(() {
-                                  if (register) {
-                                    return widget.session.api.post('/api/v1/auth/register', {
-                                      'first_name': first.text.trim(),
-                                      'last_name': last.text.trim(),
-                                      'email': email.text.trim(),
-                                      'password': password.text,
-                                      'password_confirmation': password.text,
-                                      'device': 'GameCon Flutter',
-                                    });
-                                  }
-                                  return widget.session.api.post('/api/v1/auth/login', {
-                                    'email': email.text.trim(),
-                                    'password': password.text,
-                                    'device': 'GameCon Flutter',
-                                  });
-                                }),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.12))),
-                          Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text('або', style: onest.copyWith(color: muted, fontSize: 12))),
-                          Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.12))),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      GhostButton(label: 'Google', icon: Icons.g_mobiledata_rounded, onPressed: busy ? null : _google),
-                      const SizedBox(height: 8),
-                      GhostButton(label: 'Discord', icon: Icons.forum_rounded, onPressed: busy ? null : _discord),
-                    ],
-              TextButton(
-                onPressed: () => setState(() {
-                  register = !register;
-                  ticket = null;
-                  error = null;
-                }),
-                child: Text(register ? 'Вже є акаунт? Увійти' : 'Немає акаунта? Реєстрація', style: const TextStyle(color: cyan, fontFamily: 'Onest')),
-              ),
-                    ],
+                  if (ticket == null) ...[
+                    Segmented(
+                      options: const [SegmentOption('login', 'Вхід', icon: Icons.login_rounded), SegmentOption('register', 'Реєстрація', icon: Icons.person_add_alt_1_outlined)],
+                      selected: register ? 'register' : 'login',
+                      onSelect: (value) => setState(() {
+                        register = value == 'register';
+                        error = null;
+                      }),
+                    ),
+                    const SizedBox(height: 18),
+                  ],
+                  Text(ticket != null ? 'Код підтвердження' : (register ? 'Створіть акаунт' : 'З поверненням'), style: display(22)),
+                  const SizedBox(height: 4),
+                  Text(
+                    ticket != null ? 'Введіть 6 цифр із застосунку-автентифікатора або резервний код.' : (register ? 'Кілька секунд — і ви в GameCon.' : 'Увійдіть, щоб продовжити.'),
+                    style: body(13, color: muted),
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  if (error != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: danger.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(14), border: Border.all(color: danger.withValues(alpha: 0.35))),
+                      child: Text(error!, style: body(13, color: dangerSoft)),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (ticket != null) ...[
+                    GcField(controller: code, label: 'Код', icon: Icons.pin_outlined, keyboard: TextInputType.number, autofocus: true, onSubmit: _submit),
+                    const SizedBox(height: 14),
+                    PrimaryButton(label: 'Підтвердити', busy: busy, onPressed: _submit),
+                    TextButton(onPressed: () => setState(() => ticket = null), child: Text('Назад', style: body(13, color: muted))),
+                  ] else ...[
+                    if (register) ...[
+                      Row(children: [
+                        Expanded(child: GcField(controller: first, label: 'Ім’я', icon: Icons.person_outline_rounded)),
+                        const SizedBox(width: 10),
+                        Expanded(child: GcField(controller: last, label: 'Прізвище')),
+                      ]),
+                      const SizedBox(height: 10),
+                    ],
+                    GcField(controller: email, label: 'Пошта', icon: Icons.alternate_email_rounded, keyboard: TextInputType.emailAddress),
+                    const SizedBox(height: 10),
+                    GcField(controller: password, label: 'Пароль', icon: Icons.lock_outline_rounded, obscure: true, onSubmit: _submit),
+                    const SizedBox(height: 16),
+                    PrimaryButton(label: register ? 'Створити акаунт' : 'Увійти', busy: busy, onPressed: _submit),
+                    const SizedBox(height: 18),
+                    Row(children: [
+                      const Expanded(child: Divider(color: lineStrong)),
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text('або', style: body(12, color: muted))),
+                      const Expanded(child: Divider(color: lineStrong)),
+                    ]),
+                    const SizedBox(height: 14),
+                    GhostButton(label: 'Продовжити з Google', icon: Icons.g_mobiledata_rounded, onPressed: busy ? null : _google),
+                    const SizedBox(height: 8),
+                    GhostButton(label: 'Продовжити з Discord', icon: Icons.forum_outlined, iconColor: const Color(0xFF8B9AFF), onPressed: busy ? null : _discord),
+                  ],
+                ],
               ),
             ),
           ],

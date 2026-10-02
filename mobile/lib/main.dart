@@ -10,7 +10,7 @@ import 'auth_screen.dart';
 import 'chat.dart';
 import 'cinema.dart';
 import 'communities.dart';
-import 'family_view.dart';
+import 'families.dart';
 import 'feed.dart';
 import 'music.dart';
 import 'people.dart';
@@ -110,9 +110,13 @@ Future<void> main() async {
           ),
           GoRoute(
             path: '/families',
-            builder: (_, _) => FamiliesScreen(session: session),
+            builder: (_, _) => const FamiliesScreen(),
             routes: [
-              GoRoute(path: ':slug', builder: (_, state) => FamilyScreen(session: session, slug: state.pathParameters['slug']!)),
+              GoRoute(path: 'create', builder: (_, state) => CreateFamilyScreen(server: state.uri.queryParameters['server'])),
+              GoRoute(
+                path: ':slug',
+                builder: (_, state) => FamilyScreen(key: ValueKey(state.uri.toString()), slug: state.pathParameters['slug']!, tab: state.uri.queryParameters['tab']),
+              ),
             ],
           ),
           GoRoute(

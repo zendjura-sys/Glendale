@@ -69,4 +69,29 @@ class SiteBridgeTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonStructure(['message', 'errors']);
     }
+
+    public function test_site_pages_used_by_the_app_return_props(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->token($user);
+
+        $this->withToken($token)->getJson('/api/v1/site/u/'.$user->username)
+            ->assertOk()
+            ->assertJsonPath('profile.username', $user->username)
+            ->assertJsonPath('relation', 'self')
+            ->assertJsonStructure(['stats' => ['friends', 'posts', 'photos'], 'canPost', 'canMessage']);
+
+        $this->withToken($token)->getJson('/api/v1/site/families')
+            ->assertOk()
+            ->assertJsonStructure(['mine', 'families', 'servers']);
+
+        $this->withToken($token)->getJson('/api/v1/site/servers')
+            ->assertOk()
+            ->assertJsonStructure(['servers', 'stats', 'options']);
+
+        $this->withToken($token)->getJson('/api/v1/site/communities?tab=discover')
+            ->assertOk()
+            ->assertJsonPath('tab', 'discover')
+            ->assertJsonStructure(['communities', 'categories', 'counts']);
+    }
 }
