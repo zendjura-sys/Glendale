@@ -6,6 +6,8 @@ import {
     ChevronLeft,
     Info,
     Loader2,
+    Phone,
+    PhoneOff,
     Sparkles,
 } from 'lucide-react';
 import {
@@ -23,6 +25,9 @@ import { useRealtime } from '@/hooks/use-realtime';
 import { api, ApiError } from '@/lib/api';
 import { dayLabel, lastSeen, plural } from '@/lib/format';
 import { inbox } from '@/lib/inbox';
+import { cn } from '@/lib/utils';
+import { leaveVoice, startCall, useVoice } from '@/lib/voice';
+import type { CallState } from '@/lib/voice';
 import type {
     Attachment,
     ChatAttachment,
@@ -75,6 +80,15 @@ export function ChatView({
     const me = auth.user;
     const isGroup = active.type === 'group';
     const canManage = active.my_role === 'owner' || active.my_role === 'admin';
+
+    const voice = useVoice();
+    const [call, setCall] = useState<CallState | null>(active.call ?? null);
+    useEffect(() => setCall(active.call ?? null), [active.id, active.call]);
+    const inThisCall =
+        voice.kind === 'call' &&
+        voice.conversationId === active.id &&
+        voice.status !== 'idle';
+    const canCall = Boolean(active.can_call && active.calls_enabled);
 
     const [messages, setMessages] = useState<ChatMessage[]>(history.messages);
     const [hasMore, setHasMore] = useState(history.has_more);
@@ -257,6 +271,12 @@ export function ChatView({
         },
         'conversation.updated': () => {
             router.reload({ only: ['active', 'conversations'] });
+        },
+        'call.updated': (event: {
+            conversation_id: number;
+            call: CallState | null;
+        }) => {
+            if (event.conversation_id === active.id) setCall(event.call);
         },
         'client-typing': (event: { user_id: number; name: string }) => {
             if (event.user_id === me.id) return;
@@ -647,6 +667,45 @@ export function ChatView({
                         <Bell className="size-[18px]" />
                     )}
                 </button>
+                {(canCall || inThisCall) && (
+                    <button
+                        type="button"
+                        onClick={() =>
+                            inThisCall
+                                ? void leaveVoice()
+                                : void startCall({
+                                      id: active.id,
+                                      title: active.title,
+                                  })
+                        }
+                        className={cn(
+                            'flex size-9 items-center justify-center rounded-xl transition',
+                            inThisCall
+                                ? 'bg-rose-500 text-white hover:bg-rose-500/85'
+                                : 'text-white/60 hover:bg-white/[0.07] hover:text-white',
+                        )}
+                        aria-label={
+                            inThisCall
+                                ? 'Покласти слухавку'
+                                : call
+                                  ? 'Приєднатися до дзвінка'
+                                  : 'Зателефонувати'
+                        }
+                        title={
+                            inThisCall
+                                ? 'Покласти слухавку'
+                                : call
+                                  ? 'Приєднатися до дзвінка'
+                                  : 'Зателефонувати'
+                        }
+                    >
+                        {inThisCall ? (
+                            <PhoneOff className="size-[18px]" />
+                        ) : (
+                            <Phone className="size-[18px]" />
+                        )}
+                    </button>
+                )}
                 {isGroup && (
                     <button
                         type="button"
@@ -659,6 +718,30 @@ export function ChatView({
                     </button>
                 )}
             </header>
+
+            {call && !inThisCall && call.joined.length > 0 && (
+                <div className="flex items-center gap-3 border-b border-white/[0.06] bg-emerald-400/[0.07] px-3 py-2 sm:px-4">
+                    <Phone className="size-4 shrink-0 text-emerald-300" />
+                    <span className="min-w-0 flex-1 truncate text-sm text-white/80">
+                        {isGroup ? 'Іде груповий дзвінок' : 'Іде дзвінок'} ·{' '}
+                        {call.joined.map((p) => p.name).join(', ')}
+                    </span>
+                    {canCall && (
+                        <button
+                            type="button"
+                            onClick={() =>
+                                void startCall({
+                                    id: active.id,
+                                    title: active.title,
+                                })
+                            }
+                            className="inline-flex h-8 shrink-0 items-center rounded-lg bg-emerald-500 px-3 text-xs font-semibold text-white transition hover:bg-emerald-500/85"
+                        >
+                            Приєднатися
+                        </button>
+                    )}
+                </div>
+            )}
 
             <div className="relative min-h-0 flex-1">
                 <div

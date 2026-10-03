@@ -207,6 +207,8 @@ class Calls
         return [
             'id' => $call->id,
             'conversation_id' => $call->conversation_id,
+            'group' => (bool) $call->conversation?->isGroup(),
+            'title' => $call->conversation?->isGroup() ? $call->conversation->title : null,
             'status' => $call->status,
             'started_by' => $call->started_by,
             'caller' => $call->caller?->toCard(),
@@ -342,7 +344,7 @@ class Calls
      */
     private function broadcast(Call $call, ?array $state): void
     {
-        $userIds = $call->participants()->pluck('user_id')->map(fn ($id) => (int) $id)->values()->all();
+        $userIds = array_values(array_map('intval', $call->participants()->pluck('user_id')->all()));
         rescue(fn () => broadcast(new CallUpdated($call->conversation_id, $userIds, $state)), report: false);
     }
 

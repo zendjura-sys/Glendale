@@ -8,6 +8,7 @@ import {
     PhoneOff,
     Volume2,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { leaveVoice, toggleDeafen, toggleMic, useVoice } from '@/lib/voice';
 
@@ -15,8 +16,24 @@ const iconBtn =
     'inline-flex size-9 items-center justify-center rounded-xl transition';
 
 /** Панель поточної розмови під шапкою: видно на всіх сторінках, поки ви в голосовій кімнаті. */
+function useElapsed(since: number | null) {
+    const [now, setNow] = useState(() => Date.now());
+    useEffect(() => {
+        if (since === null) return;
+        const timer = window.setInterval(() => setNow(Date.now()), 1000);
+
+        return () => window.clearInterval(timer);
+    }, [since]);
+    if (since === null) return '';
+    const seconds = Math.max(0, Math.floor((now - since) / 1000));
+    const m = Math.floor(seconds / 60);
+
+    return `${m}:${String(seconds % 60).padStart(2, '0')}`;
+}
+
 export function VoiceBar() {
     const voice = useVoice();
+    const elapsed = useElapsed(voice.connectedAt);
     if (voice.status === 'idle') return null;
 
     return (
@@ -34,7 +51,9 @@ export function VoiceBar() {
                     <span className="block truncate text-xs text-white/45">
                         {voice.status === 'connecting'
                             ? 'Підключення…'
-                            : voice.label}
+                            : voice.kind === 'call'
+                              ? `${voice.label} · ${elapsed}`
+                              : voice.label}
                     </span>
                 </Link>
                 <button
@@ -79,7 +98,11 @@ export function VoiceBar() {
                 <button
                     type="button"
                     onClick={() => void leaveVoice()}
-                    aria-label="Вийти з кімнати"
+                    aria-label={
+                        voice.kind === 'call'
+                            ? 'Покласти слухавку'
+                            : 'Вийти з кімнати'
+                    }
                     className={cn(
                         iconBtn,
                         'bg-rose-500 text-white hover:bg-rose-500/85',

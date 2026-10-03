@@ -1,20 +1,37 @@
-import type { Room } from 'livekit-client';
+import type { Room, RoomOptions } from 'livekit-client';
 import { useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
 import { api, ApiError } from '@/lib/api';
 
 /**
- * Голосова кімната GameCon. Одне з’єднання LiveKit на весь сайт, поза React-деревом —
- * розмова не обривається під час переходів між сторінками (як музичний плеєр).
+ * Голос GameCon: кімнати сімей і спільнот та дзвінки в бесідах. Одне з’єднання LiveKit на весь сайт,
+ * поза React-деревом — розмова не обривається під час переходів між сторінками (як музичний плеєр).
  */
 
 export type VoiceOwner = { type: 'family' | 'community'; id: number };
 
+export type CallState = {
+    id: number;
+    conversation_id: number;
+    status: 'ringing' | 'active' | 'ended';
+    started_by: number | null;
+    caller: { id: number; name: string; avatar_url: string | null } | null;
+    started_at: string;
+    answered_at: string | null;
+    joined: { id: number; name: string; avatar_url: string | null }[];
+    invited: number[];
+};
+
 export type VoiceState = {
     status: 'idle' | 'connecting' | 'connected';
+    kind: 'room' | 'call' | null;
+    /** Голосова кімната (kind = room). */
     roomId: number | null;
+    /** Дзвінок і його бесіда (kind = call). */
+    callId: number | null;
+    conversationId: number | null;
     roomName: string;
-    /** Назва сім’ї чи спільноти й посилання на неї — для панелі внизу. */
+    /** Назва сім’ї, спільноти чи бесіди й посилання на неї — для панелі розмови. */
     label: string;
     href: string;
     owner: VoiceOwner | null;
@@ -24,11 +41,15 @@ export type VoiceState = {
     micBlocked: boolean;
     deafened: boolean;
     speaking: string[];
+    connectedAt: number | null;
 };
 
 const initial: VoiceState = {
     status: 'idle',
+    kind: null,
     roomId: null,
+    callId: null,
+    conversationId: null,
     roomName: '',
     label: '',
     href: '',
@@ -38,6 +59,7 @@ const initial: VoiceState = {
     micBlocked: false,
     deafened: false,
     speaking: [],
+    connectedAt: null,
 };
 
 let state = initial;
@@ -62,6 +84,10 @@ export function useVoice(): VoiceState {
     );
 }
 
+export function voiceState(): VoiceState {
+    return state;
+}
+
 function cleanup() {
     audio.forEach((el) => el.remove());
     audio.clear();
@@ -69,34 +95,55 @@ function cleanup() {
     set({ ...initial, deafened: state.deafened });
 }
 
-type JoinResponse = { url: string; token: string; identity: string };
+type Access = {
+    url: string;
+    token: string;
+    identity: string;
+    call?: CallState;
+};
 
-export async function joinVoice(
-    target: { id: number; name: string },
-    owner: VoiceOwner,
-    label: string,
-    href: string,
+/**
+ * Якість звуку: Opus 64 кбіт/с, RED (надлишкові пакети — без «булькання» при втратах),
+ * DTX (тиша не передається), шумо- й ехоподавлення, ізоляція голосу там, де браузер уміє.
+ */
+async function roomOptions(): Promise<RoomOptions> {
+    const { AudioPresets } = await import('livekit-client');
+
+    return {
+        adaptiveStream: true,
+        dynacast: true,
+        audioCaptureDefaults: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            voiceIsolation: true,
+        },
+        publishDefaults: {
+            audioPreset: AudioPresets.musicHighQuality,
+            dtx: true,
+            red: true,
+        },
+    };
+}
+
+async function connect(
+    fetchAccess: () => Promise<Access>,
+    meta: Partial<VoiceState>,
+    failure: string,
 ) {
-    if (state.roomId === target.id && state.status !== 'idle') return;
     if (room) await leaveVoice();
-
-    set({
-        status: 'connecting',
-        roomId: target.id,
-        roomName: target.name,
-        label,
-        href,
-        owner,
-    });
+    set({ ...meta, status: 'connecting' });
 
     try {
-        const [lk, access] = await Promise.all([
+        const [lk, access, options] = await Promise.all([
             import('livekit-client'),
-            api<JoinResponse>('POST', `/voice/rooms/${target.id}/join`),
+            fetchAccess(),
+            roomOptions(),
         ]);
         const { DisconnectReason, Room, RoomEvent, Track } = lk;
-        const next = new Room({ adaptiveStream: true, dynacast: true });
+        const next = new Room(options);
         room = next;
+        if (access.call) set({ callId: access.call.id });
 
         next.on(RoomEvent.TrackSubscribed, (track) => {
             if (track.kind !== Track.Kind.Audio) return;
@@ -140,24 +187,94 @@ export async function joinVoice(
             status: 'connected',
             identity: access.identity,
             micBlocked: blocked,
+            connectedAt: Date.now(),
         });
         if (!blocked) await setMic(true);
     } catch (e) {
         await room?.disconnect().catch(() => undefined);
         cleanup();
-        toast.error(
-            e instanceof ApiError
-                ? e.message
-                : 'Не вдалося підключитися до голосової кімнати',
-        );
+        toast.error(e instanceof ApiError ? e.message : failure);
     }
+}
+
+export async function joinVoice(
+    target: { id: number; name: string },
+    owner: VoiceOwner,
+    label: string,
+    href: string,
+) {
+    if (
+        state.kind === 'room' &&
+        state.roomId === target.id &&
+        state.status !== 'idle'
+    )
+        return;
+
+    await connect(
+        () => api<Access>('POST', `/voice/rooms/${target.id}/join`),
+        {
+            kind: 'room',
+            roomId: target.id,
+            roomName: target.name,
+            label,
+            href,
+            owner,
+        },
+        'Не вдалося підключитися до голосової кімнати',
+    );
+}
+
+/** Подзвонити в бесіду або приєднатися до дзвінка, що вже триває. */
+export async function startCall(conversation: { id: number; title: string }) {
+    if (
+        state.kind === 'call' &&
+        state.conversationId === conversation.id &&
+        state.status !== 'idle'
+    )
+        return;
+
+    await connect(
+        () => api<Access>('POST', `/messages/${conversation.id}/call`),
+        {
+            kind: 'call',
+            conversationId: conversation.id,
+            roomName: conversation.title,
+            label: 'Дзвінок',
+            href: `/messages/${conversation.id}`,
+        },
+        'Не вдалося зателефонувати',
+    );
+}
+
+/** Відповісти на вхідний дзвінок. */
+export async function answerCall(call: CallState, title: string) {
+    await connect(
+        () => api<Access>('POST', `/calls/${call.id}/join`),
+        {
+            kind: 'call',
+            callId: call.id,
+            conversationId: call.conversation_id,
+            roomName: title,
+            label: 'Дзвінок',
+            href: `/messages/${call.conversation_id}`,
+        },
+        'Не вдалося відповісти на дзвінок',
+    );
+}
+
+export function declineCall(call: CallState) {
+    void api('POST', `/calls/${call.id}/decline`).catch(() => undefined);
 }
 
 export async function leaveVoice() {
     const current = room;
+    const callId = state.kind === 'call' ? state.callId : null;
     room = null;
     await current?.disconnect().catch(() => undefined);
     cleanup();
+    // Сервер дізнається й з вебхука, але так співрозмовник побачить кінець дзвінка одразу.
+    if (callId)
+        void api('POST', `/calls/${callId}/leave`).catch(() => undefined);
 }
 
 async function setMic(on: boolean) {

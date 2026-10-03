@@ -175,7 +175,9 @@ export function VoiceRooms({
             <ul className="space-y-1">
                 {data.rooms.map((room) => {
                     const here =
-                        voice.roomId === room.id && voice.status !== 'idle';
+                        voice.kind === 'room' &&
+                        voice.roomId === room.id &&
+                        voice.status !== 'idle';
 
                     return (
                         <li key={room.id}>

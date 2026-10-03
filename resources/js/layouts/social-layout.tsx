@@ -16,6 +16,7 @@ import {
 import { useEffect, useState } from 'react';
 import type { PropsWithChildren } from 'react';
 import { Aurora } from '@/components/gc/aurora';
+import { IncomingCall } from '@/components/gc/incoming-call';
 import { InboxListener } from '@/components/gc/inbox-listener';
 import { Logo, LogoMark } from '@/components/gc/logo';
 import { ModuleIcon } from '@/components/gc/module-icon';
@@ -539,7 +540,10 @@ export default function SocialLayout({ children }: PropsWithChildren) {
     return (
         <div className="relative min-h-dvh">
             {modules.includes('messages') && (
-                <InboxListener userId={auth.user.id} />
+                <>
+                    <InboxListener userId={auth.user.id} />
+                    <IncomingCall userId={auth.user.id} />
+                </>
             )}
             <Aurora />
             <Topbar />
