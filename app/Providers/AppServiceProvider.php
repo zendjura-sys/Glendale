@@ -19,6 +19,7 @@ use App\Services\Families\FamilyGate;
 use App\Services\FriendshipService;
 use App\Services\Push\PushNotifier;
 use App\Support\Mail\AccountMail;
+use App\Support\Mail\MailBrand;
 use App\Support\Mail\MailCategory;
 use App\Support\Mail\SocialMailer;
 use App\Support\Modules\ModuleManager;
@@ -78,6 +79,7 @@ class AppServiceProvider extends ServiceProvider
         // Тип листа визначає адресу: no-reply@ — «Оповіщення», social@ — «Соцмережі».
         Event::listen(MessageSending::class, function (MessageSending $event) {
             MailCategory::apply($event->message);
+            MailBrand::embed($event->message);
         });
 
         // Кожне сповіщення дзвіночка сайту також іде push-ом у застосунок і листом у «Соцмережі».

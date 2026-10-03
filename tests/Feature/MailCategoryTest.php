@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Post;
 use App\Models\User;
 use App\Notifications\PostInteraction;
+use App\Support\Mail\MailBrand;
 use App\Support\Mail\MailCategory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Symfony\Component\Mime\Email;
@@ -40,6 +41,7 @@ class MailCategoryTest extends TestCase
         $this->assertStringContainsString('парол', mb_strtolower($email->getSubject()));
         $this->assertSame('auto-generated', $email->getHeaders()->get('Auto-Submitted')->getBodyAsString());
         $this->assertSame('updates:account:site:gamecon', $email->getHeaders()->get('Feedback-ID')->getBodyAsString());
+        $this->assertBranded($email);
     }
 
     public function test_friend_request_is_a_social_letter(): void
@@ -57,6 +59,7 @@ class MailCategoryTest extends TestCase
         $this->assertStringContainsString('хоче додати вас у друзі', $email->getSubject());
         $this->assertStringContainsString('Олена Коваль', $email->getSubject());
         $this->assertSame('social:activity:site:gamecon', $email->getHeaders()->get('Feedback-ID')->getBodyAsString());
+        $this->assertBranded($email);
     }
 
     public function test_like_is_a_social_letter_and_does_not_mail_the_actor(): void
@@ -76,6 +79,17 @@ class MailCategoryTest extends TestCase
         $this->assertSame([$author->email], array_map(fn ($address) => $address->getAddress(), $email->getTo()));
         $this->assertStringContainsString('Ігор Мельник', $email->getSubject());
         $this->assertStringContainsString('оцінив(-ла) ваш запис', $email->getSubject());
+    }
+
+    private function assertBranded(Email $email): void
+    {
+        $html = $email->getHtmlBody();
+        $this->assertIsString($html);
+        $this->assertStringContainsString(MailBrand::src(), $html);
+        $this->assertStringContainsString('alt="GameCon"', $html);
+
+        $ids = array_map(fn ($part) => $part->getContentId(), $email->getAttachments());
+        $this->assertContains(MailBrand::CONTENT_ID, $ids);
     }
 
     private function onlyEmail(): Email

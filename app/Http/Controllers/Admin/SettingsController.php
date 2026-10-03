@@ -43,8 +43,9 @@ class SettingsController extends Controller
         $app = (string) config('app.name');
 
         try {
-            Mail::raw(
-                'Це службовий лист '.$app.': підтвердження пошти та скидання пароля приходять із цієї адреси.',
+            Mail::send(
+                ['html' => 'mail.account-notice', 'text' => 'mail.account-notice-text'],
+                ['intro' => 'Це службовий лист '.$app.': підтвердження пошти та скидання пароля приходять із цієї адреси.'],
                 function (Message $message) use ($data, $app) {
                     $message->to($data['email'])->subject($app.': сповіщення акаунта');
                     $message->getSymfonyMessage()->getHeaders()->addTextHeader('X-GameCon-Category', MailCategory::UPDATES);

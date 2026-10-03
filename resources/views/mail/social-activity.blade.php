@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="uk">
-<body style="margin:0;padding:24px;font-family:sans-serif;font-size:16px;line-height:1.5;color:#111">
-<p style="margin:0 0 16px">{{ $intro }}</p>
-<p style="margin:0"><a href="{{ $actionUrl }}">Відкрити</a></p>
+<body style="margin:0;padding:24px;background:#ffffff;">
+@include('mail.logo')
+<p style="margin:20px 0 0;font-family:sans-serif;font-size:16px;line-height:1.5;color:#111;">{{ $intro }}</p>
+<p style="margin:16px 0 0;font-family:sans-serif;font-size:16px;line-height:1.5;"><a href="{{ $actionUrl }}">Відкрити</a></p>
 </body>
 </html>

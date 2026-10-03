@@ -128,4 +128,11 @@ return [
         'address' => env('MAIL_SOCIAL_ADDRESS'),
     ],
 
+    'markdown' => [
+        'theme' => 'default',
+        'paths' => [
+            resource_path('views/vendor/mail'),
+        ],
+    ],
+
 ];
