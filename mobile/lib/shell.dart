@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -112,7 +113,11 @@ class _AppShellState extends State<AppShell> {
             final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
             final hideChrome = chatOpen && keyboard;
             final playing = widget.player.current != null && !hideChrome && !widget.player.covered;
-            final bottom = hideChrome ? 0.0 : MediaQuery.viewPaddingOf(context).bottom + navBarHeight + (playing ? miniPlayerExtent : 0);
+            // Планшет або широкий екран: бічне меню замість нижньої панелі, контент по центру — як на сайті.
+            final wide = MediaQuery.sizeOf(context).width >= tabletWidth;
+            final systemBottom = MediaQuery.viewPaddingOf(context).bottom;
+            final bottom = hideChrome ? 0.0 : systemBottom + (wide ? 8 : navBarHeight) + (playing ? miniPlayerExtent : 0);
+            final contentLeft = wide ? sideNavWidth + 24 : 0.0;
             return ShellChrome(
               bottom: bottom,
               child: Scaffold(
@@ -120,18 +125,43 @@ class _AppShellState extends State<AppShell> {
                 resizeToAvoidBottomInset: true,
                 body: Stack(
                   children: [
-                    widget.child,
+                    if (wide)
+                      Positioned.fill(
+                        left: contentLeft,
+                        right: 12,
+                        child: LayoutBuilder(
+                          builder: (context, box) => Center(
+                            child: SizedBox(width: math.min(box.maxWidth, tabletContentWidth), height: box.maxHeight, child: widget.child),
+                          ),
+                        ),
+                      )
+                    else
+                      widget.child,
                     Positioned(top: headerTop, left: 0, right: 0, child: _SiteBar(session: widget.session)),
+                    if (wide)
+                      Positioned(
+                        top: headerTop + siteBarHeight + 6,
+                        left: 12,
+                        bottom: systemBottom + 12,
+                        width: sideNavWidth,
+                        child: _SideNav(session: widget.session, path: path, onMore: () => _menu(context)),
+                      ),
                     if (!hideChrome)
                       Positioned(
-                        left: 0,
-                        right: 0,
+                        left: contentLeft,
+                        right: wide ? 12 : 0,
                         bottom: 0,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (playing) MiniPlayer(player: widget.player),
-                            Builder(builder: (context) {
+                            if (playing && wide)
+                              Padding(
+                                padding: EdgeInsets.only(bottom: systemBottom + 8),
+                                child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: tabletContentWidth), child: MiniPlayer(player: widget.player))),
+                              )
+                            else if (playing)
+                              MiniPlayer(player: widget.player),
+                            if (!wide) Builder(builder: (context) {
                               final tabs = widget.session.navTabs;
                               final items = [for (final t in tabs) navItem(t)!, navMenu];
                               final selected = navIndexFor(tabs, path, username: widget.session.username) ?? tabs.length;
@@ -483,6 +513,63 @@ class NotificationRow extends StatelessWidget {
             if (!read) Container(margin: const EdgeInsets.only(top: 6, left: 6), width: 8, height: 8, decoration: const BoxDecoration(color: primary, shape: BoxShape.circle)),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Бічне меню на планшеті: усі розділи списком, як ліва колонка сайту.
+class _SideNav extends StatelessWidget {
+  const _SideNav({required this.session, required this.path, required this.onMore});
+  final Session session;
+  final String path;
+  final VoidCallback onMore;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget item(IconData icon, String title, bool selected, VoidCallback onTap, {int badge = 0}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 2),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(14),
+            child: Ink(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: selected ? primary.withValues(alpha: 0.14) : Colors.transparent,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(children: [
+                Icon(icon, size: 20, color: selected ? const Color(0xFF9AA6FF) : muted),
+                const SizedBox(width: 12),
+                Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, color: selected ? Colors.white : soft, weight: selected ? FontWeight.w700 : FontWeight.w500))),
+                if (badge > 0) CountBadge(count: badge),
+              ]),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Glass(
+      padding: const EdgeInsets.all(8),
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          for (final nav in navCatalog)
+            item(
+              navIndexFor([nav.path], path, username: session.username) == 0 ? nav.activeIcon : nav.icon,
+              nav.title,
+              navIndexFor([nav.path], path, username: session.username) == 0,
+              () => context.go(nav.path),
+              badge: nav.path == '/messages' ? session.unreadChats : 0,
+            ),
+          const Padding(padding: EdgeInsets.symmetric(vertical: 6), child: Divider(height: 1, color: line)),
+          item(LucideIcons.settings, 'Налаштування', path.startsWith('/settings'), () => context.go('/settings')),
+          item(LucideIcons.layoutGrid, 'Ще', false, onMore),
+        ],
       ),
     );
   }

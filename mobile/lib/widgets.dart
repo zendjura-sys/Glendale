@@ -1197,6 +1197,15 @@ const navBarHeight = 64.0;
 /// Плаваючий плеєр разом із відступом над меню.
 const miniPlayerExtent = 76.0;
 
+/// З якої ширини екрана (планшет, горизонтальний телефон-«лопата») показуємо бічне меню замість нижнього.
+const tabletWidth = 840.0;
+
+/// Ширина бічного меню на планшеті.
+const sideNavWidth = 240.0;
+
+/// Найбільша ширина стрічки на планшеті — як центральна колонка сайту.
+const tabletContentWidth = 820.0;
+
 /// Нижній хром оболонки: скільки контент має лишити під скляним меню й плеєром.
 class ShellChrome extends InheritedWidget {
   const ShellChrome({required this.bottom, required super.child, super.key});
@@ -1290,7 +1299,10 @@ Future<T?> showGcSheet<T>(BuildContext context, {String? title, String? subtitle
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       side: BorderSide(color: lineStrong),
     ),
-    builder: (sheet) {
+    // Аркуш живе в кореневому навігаторі, вище за AppScope оболонки. Тому вміст будуємо під
+    // перенесеним AppScope, і `sheet` у builder — контекст усередині нього: AppScope.read(sheet) працює.
+    builder: (route) {
+      Widget build(BuildContext sheet) {
       final content = Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1325,11 +1337,14 @@ Future<T?> showGcSheet<T>(BuildContext context, {String? title, String? subtitle
           Flexible(child: builder(sheet)),
         ],
       );
-      final sized = Padding(
+      return Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(sheet).bottom),
         child: height == null ? content : SizedBox(height: height, child: content),
       );
-      return scope == null ? sized : AppScope(session: scope.session, player: scope.player, child: sized);
+      }
+
+      final inner = Builder(builder: build);
+      return scope == null ? inner : AppScope(session: scope.session, player: scope.player, child: inner);
     },
   );
 }
