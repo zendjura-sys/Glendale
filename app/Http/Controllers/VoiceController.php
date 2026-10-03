@@ -76,10 +76,10 @@ class VoiceController extends Controller
         abort_unless($this->voice->canManage($request->user(), $owner), 403, 'Недостатньо прав, щоб керувати голосовими кімнатами.');
         $data = $request->validate(['action' => ['required', Rule::in(['mute', 'unmute', 'kick'])]]);
 
-        match ($data['action']) {
+        match ((string) $data['action']) {
             'mute' => $this->voice->mute($room, $user, true),
             'unmute' => $this->voice->mute($room, $user, false),
-            'kick' => $this->voice->kick($room, $user),
+            default => $this->voice->kick($room, $user),
         };
 
         return response()->json($this->voice->state($owner, $request->user()));
