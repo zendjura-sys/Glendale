@@ -1,13 +1,15 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import {
     FileText,
     Globe,
+    Mail,
     Search,
     ShieldCheck,
     Smartphone,
     Wrench,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useState } from 'react';
 import type { FormEvent, PropsWithChildren, ReactNode } from 'react';
 import { PageHeader, Toggle } from '@/components/gc/admin';
 import InputError from '@/components/input-error';
@@ -83,7 +85,83 @@ function SwitchRow({
     );
 }
 
-export default function AdminSettings({ settings }: { settings: Settings }) {
+type MailStatus = { mailer: string; from: string; ready: boolean };
+
+function MailSection({ mail }: { mail: MailStatus }) {
+    const [email, setEmail] = useState(usePage().props.auth.user?.email ?? '');
+    const [sending, setSending] = useState(false);
+
+    const send = () => {
+        setSending(true);
+        router.post(
+            '/admin/settings/mail-test',
+            { email },
+            { preserveScroll: true, onFinish: () => setSending(false) },
+        );
+    };
+
+    return (
+        <Section
+            icon={Mail}
+            title="Пошта"
+            description="Листи підтвердження та сповіщення. Сервер відправляє їх через sendmail (Postfix) — налаштування: deploy/mail/setup-mail.sh."
+        >
+            <div
+                className={cn(
+                    'rounded-2xl border px-4 py-3 text-sm',
+                    mail.ready
+                        ? 'border-white/10 text-white/70'
+                        : 'border-amber-400/30 bg-amber-400/10 text-amber-100',
+                )}
+            >
+                {mail.ready ? (
+                    <>
+                        Відправка: <b className="text-white">{mail.mailer}</b>
+                        {' · '}від <b className="text-white">{mail.from}</b>
+                    </>
+                ) : (
+                    <>
+                        Пошта в режимі <b>{mail.mailer}</b>: листи лише
+                        записуються в журнал і нікому не надходять. Вкажіть у
+                        .env MAIL_MAILER=sendmail і запустіть
+                        deploy/mail/setup-mail.sh на сервері.
+                    </>
+                )}
+            </div>
+            <div className="grid gap-2">
+                <Label htmlFor="mail_test">Тестовий лист</Label>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                    <Input
+                        id="mail_test"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        maxLength={190}
+                    />
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={sending || email.trim() === ''}
+                        onClick={send}
+                        className="shrink-0"
+                    >
+                        {sending && <Spinner />}
+                        Надіслати тестовий лист
+                    </Button>
+                </div>
+            </div>
+        </Section>
+    );
+}
+
+export default function AdminSettings({
+    settings,
+    mail,
+}: {
+    settings: Settings;
+    mail: MailStatus;
+}) {
     const form = useForm<Settings>({
         ...settings,
         tagline: settings.tagline ?? '',
@@ -254,6 +332,8 @@ export default function AdminSettings({ settings }: { settings: Settings }) {
                         onChange={(v) => setData('email_verification', v)}
                     />
                 </Section>
+
+                <MailSection mail={mail} />
 
                 <Section
                     icon={FileText}

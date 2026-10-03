@@ -182,6 +182,28 @@ class AdminTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->where('site.play_store.badge', 'preregister'));
     }
 
+    public function test_admin_sees_mail_status_and_sends_a_test_mail(): void
+    {
+        config(['mail.default' => 'array', 'mail.from.address' => 'no-reply@gamecon.online']);
+        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
+
+        $this->actingAs($admin)->get(route('admin.settings.edit'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('mail.mailer', 'array')
+                ->where('mail.from', 'no-reply@gamecon.online')
+                ->where('mail.ready', false));
+
+        $this->actingAs($user)->post(route('admin.settings.mail-test'), ['email' => 'x@example.com'])->assertForbidden();
+        $this->actingAs($admin)->post(route('admin.settings.mail-test'), ['email' => 'not-an-email'])->assertSessionHasErrors('email');
+
+        $this->actingAs($admin)->post(route('admin.settings.mail-test'), ['email' => 'owner@example.com'])->assertRedirect();
+
+        $messages = app('mail.manager')->mailer('array')->getSymfonyTransport()->messages();
+        $this->assertCount(1, $messages);
+        $this->assertSame('owner@example.com', $messages[0]->getEnvelope()->getRecipients()[0]->getAddress());
+    }
+
     public function test_email_verification_setting_gates_the_site(): void
     {
         $user = User::factory()->unverified()->create();

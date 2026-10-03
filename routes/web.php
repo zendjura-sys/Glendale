@@ -327,6 +327,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::patch('modules/{module}', [Admin\ModuleController::class, 'update'])->name('modules.update');
         Route::get('settings', [Admin\SettingsController::class, 'edit'])->name('settings.edit');
         Route::put('settings', [Admin\SettingsController::class, 'update'])->name('settings.update');
+        Route::post('settings/mail-test', [Admin\SettingsController::class, 'mailTest'])->middleware('throttle:6,1')->name('settings.mail-test');
     });
 });
 
