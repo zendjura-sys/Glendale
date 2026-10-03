@@ -19,7 +19,7 @@ class SocialMailer
 {
     public function notification(object $notifiable, DatabaseNotification $notification): void
     {
-        if (! $notifiable instanceof User || $notifiable->banned_at !== null || ! $notifiable->email_social) {
+        if (! $notifiable instanceof User || $notifiable->banned_at !== null || $notifiable->email_social === false) {
             return;
         }
 
