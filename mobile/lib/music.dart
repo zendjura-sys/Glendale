@@ -450,6 +450,9 @@ class _UploadTrack extends StatefulWidget {
 class _UploadTrackState extends State<_UploadTrack> {
   PlatformFile? audio;
   XFile? cover;
+
+  /// Обкладинка з каталогу (якщо свою не обрали) — сервер завантажить її за посиланням.
+  String? catalogCover;
   final title = TextEditingController();
   final artist = TextEditingController();
   final album = TextEditingController();
@@ -478,6 +481,14 @@ class _UploadTrackState extends State<_UploadTrack> {
     setState(() {
       searching = false;
       applyMeta(tags, title: title, artist: artist, album: album, genre: genre);
+      catalogCover ??= tags.cover;
+    });
+  }
+
+  void _picked(TrackTags tags) {
+    setState(() {
+      applyMeta(tags, title: title, artist: artist, album: album, genre: genre, overwrite: true);
+      if (tags.cover != null) catalogCover = tags.cover;
     });
   }
 
@@ -496,6 +507,7 @@ class _UploadTrackState extends State<_UploadTrack> {
         'artist': artist.text.trim(),
         if (album.text.trim().isNotEmpty) 'album': album.text.trim(),
         if (genre.text.trim().isNotEmpty) 'genre': genre.text.trim(),
+        if (cover == null && catalogCover != null) 'cover_url': catalogCover!,
       }, parts);
       if (mounted) toast(context, 'Трек завантажено 🎵');
       widget.onDone();
@@ -520,20 +532,20 @@ class _UploadTrackState extends State<_UploadTrack> {
               final picked = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1200, imageQuality: 90);
               if (picked != null) setState(() => cover = picked);
             },
-            child: SizedBox(
-              width: 72,
-              height: 72,
-              child: cover == null
-                  ? Container(
-                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
-                      child: const Icon(LucideIcons.imagePlus, color: muted),
-                    )
-                  : ClipRRect(borderRadius: BorderRadius.circular(14), child: Image(image: XFileImage(cover!), fit: BoxFit.cover)),
-            ),
+            child: CoverPreview(image: cover == null ? null : XFileImage(cover!), url: catalogCover),
           ),
           const SizedBox(width: 12),
-          Expanded(child: Text('Обкладинка (необов’язково). Якщо у файлі є вбудована — сервер візьме її.', style: body(12.5, color: muted))),
+          Expanded(
+            child: Text(
+              cover == null && catalogCover != null
+                  ? 'Обкладинка з каталогу. Торкніться, щоб обрати свою.'
+                  : 'Обкладинка (необов’язково). Якщо у файлі є вбудована — сервер візьме її.',
+              style: body(12.5, color: muted),
+            ),
+          ),
         ]),
+        const SizedBox(height: 12),
+        CatalogSearch(onPick: _picked),
         const SizedBox(height: 12),
         LabeledField(label: 'Назва', child: GcField(controller: title, label: 'Назва треку', onChanged: (_) => setState(() {}))),
         const SizedBox(height: 10),

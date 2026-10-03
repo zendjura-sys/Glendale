@@ -131,6 +131,35 @@ class MusicTest extends TestCase
         $this->assertSame(0, Track::query()->count());
     }
 
+    public function test_owner_sets_cover_from_catalog_url_only_from_allowed_host(): void
+    {
+        $owner = User::factory()->create();
+        $track = $this->track($owner);
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
+        Http::fake([
+            'is1-ssl.mzstatic.com/*' => Http::response($png, 200, ['Content-Type' => 'image/png']),
+            '*' => Http::response('nope', 404),
+        ]);
+
+        $this->actingAs($owner)->patchJson(route('tracks.update', $track), [
+            'title' => 'Респаун',
+            'artist' => 'Lag Spike',
+            'cover_url' => 'https://example.com/cover.png',
+        ])->assertOk();
+        $this->assertNull($track->fresh()->cover_path);
+        Http::assertNothingSent();
+
+        $this->actingAs($owner)->patchJson(route('tracks.update', $track), [
+            'title' => 'Респаун',
+            'artist' => 'Lag Spike',
+            'cover_url' => 'https://is1-ssl.mzstatic.com/image/thumb/Music/600x600bb.jpg',
+        ])->assertOk()->assertJsonPath('track.title', 'Респаун');
+
+        $cover = $track->fresh()->cover_path;
+        $this->assertNotNull($cover);
+        Storage::disk('public')->assertExists($cover);
+    }
+
     public function test_library_add_and_remove_and_non_owner_cannot_edit(): void
     {
         $owner = User::factory()->create();

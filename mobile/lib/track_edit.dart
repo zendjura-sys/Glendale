@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -11,13 +12,14 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-/// Метадані треку з тегів, назви файлу чи каталогу.
+/// Метадані треку з тегів, назви файлу чи каталогу; [cover] — обкладинка альбому з каталогу.
 class TrackTags {
-  const TrackTags({this.title, this.artist, this.album, this.genre});
+  const TrackTags({this.title, this.artist, this.album, this.genre, this.cover});
   final String? title;
   final String? artist;
   final String? album;
   final String? genre;
+  final String? cover;
 
   bool get isEmpty => title == null && artist == null && album == null && genre == null;
 
@@ -26,6 +28,7 @@ class TrackTags {
         artist: artist ?? other.artist,
         album: album ?? other.album,
         genre: genre ?? other.genre,
+        cover: cover ?? other.cover,
       );
 }
 
@@ -244,40 +247,89 @@ String _fold(String s) => s.toLowerCase().replaceAll(RegExp(r'[^\p{L}\p{N}]+', u
 
 String _strip(String title) => title.replaceAll(RegExp(r'\s*[\(\[][^\)\]]*(official|video|audio|lyrics|remaster|hd|hq|кліп|клип)[^\)\]]*[\)\]]', caseSensitive: false), '').trim();
 
-/// Пошук у відкритому каталозі iTunes: уточнює назву й виконавця, додає альбом і жанр.
+/// Схожість двох рядків 0…1 (відстань Левенштейна) — щоб виправляти друкарські помилки й регістр.
+double similarity(String a, String b) {
+  final x = _fold(a), y = _fold(b);
+  if (x.isEmpty || y.isEmpty) return 0;
+  if (x == y) return 1;
+  var prev = List<int>.generate(y.length + 1, (j) => j);
+  for (var i = 1; i <= x.length; i++) {
+    final cur = List<int>.filled(y.length + 1, 0);
+    cur[0] = i;
+    for (var j = 1; j <= y.length; j++) {
+      final cost = x.codeUnitAt(i - 1) == y.codeUnitAt(j - 1) ? 0 : 1;
+      cur[j] = math.min(math.min(prev[j] + 1, cur[j - 1] + 1), prev[j - 1] + cost);
+    }
+    prev = cur;
+  }
+  return 1 - prev[y.length] / math.max(x.length, y.length);
+}
+
+/// Значення з каталогу вважаємо «тим самим», лише трохи інакше записаним.
+bool _same(String? known, String? found) => known != null && found != null && similarity(known, found) >= 0.75;
+
+TrackTags _fromCatalog(Map<String, dynamic> r) {
+  final art = text(r['artworkUrl100']);
+  return TrackTags(
+    title: _clean('${r['trackName'] ?? ''}'),
+    artist: _clean('${r['artistName'] ?? ''}'),
+    album: _clean('${r['collectionName'] ?? ''}'.replaceFirst(RegExp(r'\s+-\s+(Single|EP)$'), '')),
+    genre: _clean('${r['primaryGenreName'] ?? ''}', 40),
+    // 100×100 → 600×600: та сама картинка в більшому розмірі.
+    cover: art?.replaceFirst(RegExp(r'\d+x\d+bb'), '600x600bb'),
+  );
+}
+
+/// Відкритий каталог iTunes: спершу український магазин, потім загальний.
+Future<List<Map<String, dynamic>>> _itunes(String term, {int limit = 10}) async {
+  if (term.trim().length < 2) return const [];
+  for (final country in ['UA', 'US']) {
+    try {
+      final uri = Uri.https('itunes.apple.com', '/search', {'term': term, 'entity': 'song', 'limit': '$limit', 'country': country});
+      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+      if (response.statusCode != 200) continue;
+      final results = maps(jsonDecode(utf8.decode(response.bodyBytes))['results']);
+      if (results.isNotEmpty) return results;
+    } catch (_) {}
+  }
+  return const [];
+}
+
+/// Пошук за довільним текстом («виконавець назва», уривок назви): до [limit] різних треків з обкладинками.
+Future<List<TrackTags>> searchCatalog(String query, {int limit = 6}) async {
+  final seen = <String>{};
+  final found = <TrackTags>[];
+  for (final r in await _itunes(_strip(query), limit: 15)) {
+    final tags = _fromCatalog(r);
+    if (tags.title == null || tags.artist == null || !seen.add(_fold('${tags.artist} ${tags.title}'))) continue;
+    found.add(tags);
+    if (found.length >= limit) break;
+  }
+  return found;
+}
+
+/// Пошук у відкритому каталозі iTunes: уточнює назву й виконавця (з друкарськими помилками теж), додає альбом, жанр і обкладинку.
 Future<TrackTags> lookupCatalog({String? artist, String? title}) async {
   final name = title == null ? null : _strip(title);
   final term = [artist, name].whereType<String>().where((s) => s.trim().isNotEmpty).join(' ');
-  if (term.trim().length < 2) return const TrackTags();
-  try {
-    final uri = Uri.https('itunes.apple.com', '/search', {'term': term, 'entity': 'song', 'limit': '10'});
-    final response = await http.get(uri).timeout(const Duration(seconds: 10));
-    if (response.statusCode != 200) return const TrackTags();
-    final results = maps(jsonDecode(utf8.decode(response.bodyBytes))['results']);
-    if (results.isEmpty) return const TrackTags();
-    int score(Map<String, dynamic> r) {
-      final a = _fold('${r['artistName'] ?? ''}');
-      final t = _fold('${r['trackName'] ?? ''}');
-      var s = 0;
-      if (artist != null && _fold(artist).isNotEmpty) s += a == _fold(artist) ? 4 : (a.contains(_fold(artist)) || _fold(artist).contains(a) ? 2 : 0);
-      if (name != null && _fold(name).isNotEmpty) s += t == _fold(name) ? 4 : (t.contains(_fold(name)) || _fold(name).contains(t) ? 2 : 0);
-      return s;
-    }
-
-    final best = results.reduce((a, b) => score(b) > score(a) ? b : a);
-    if (score(best) < 2) return const TrackTags();
-    return TrackTags(
-      title: _clean('${best['trackName'] ?? ''}'),
-      artist: _clean('${best['artistName'] ?? ''}'),
-      album: _clean('${best['collectionName'] ?? ''}'.replaceFirst(RegExp(r'\s+-\s+(Single|EP)$'), '')),
-      genre: _clean('${best['primaryGenreName'] ?? ''}', 40),
-    );
-  } catch (_) {
-    return const TrackTags();
+  final results = await _itunes(term);
+  if (results.isEmpty) return const TrackTags();
+  double part(String found, String? known) {
+    if (known == null || _fold(known).isEmpty) return 0;
+    final f = _fold(found), k = _fold(known);
+    if (f == k) return 1;
+    if (f.contains(k) || k.contains(f)) return 0.7;
+    final sim = similarity(f, k);
+    return sim >= 0.75 ? sim * 0.9 : 0;
   }
+
+  double score(Map<String, dynamic> r) => part('${r['artistName'] ?? ''}', artist) + part('${r['trackName'] ?? ''}', name);
+  final best = results.reduce((a, b) => score(b) > score(a) ? b : a);
+  return score(best) < 0.7 ? const TrackTags() : _fromCatalog(best);
 }
 
-/// Теги файлу → ім’я файлу → каталог. Повертає те, чим варто заповнити порожні чи «сміттєві» поля.
+/// Теги файлу → ім’я файлу → каталог. Повертає те, чим варто заповнити порожні чи «сміттєві» поля
+/// й виправити написання (регістр, друкарські помилки) за каталогом.
 Future<TrackTags> discoverMeta({String? path, String? url, String? fileName, String? title, String? artist}) async {
   var found = path != null ? await readFileTags(path) : (url != null ? await readUrlTags(url) : const TrackTags());
   if (fileName != null) found = found.or(guessFromName(fileName));
@@ -285,30 +337,149 @@ Future<TrackTags> discoverMeta({String? path, String? url, String? fileName, Str
   final knownArtist = found.artist ?? (junkMeta(artist) ? null : artist);
   final catalog = await lookupCatalog(artist: knownArtist, title: knownTitle);
   return TrackTags(
-    title: knownTitle != null && catalog.title != null && _fold(knownTitle) == _fold(catalog.title!) ? catalog.title : (found.title ?? catalog.title),
-    artist: knownArtist != null && catalog.artist != null && _fold(knownArtist) == _fold(catalog.artist!) ? catalog.artist : (found.artist ?? catalog.artist),
-    album: found.album ?? catalog.album,
+    title: _same(knownTitle, catalog.title) ? catalog.title : (found.title ?? catalog.title),
+    artist: _same(knownArtist, catalog.artist) ? catalog.artist : (found.artist ?? catalog.artist),
+    album: _same(found.album, catalog.album) ? catalog.album : (found.album ?? catalog.album),
     genre: found.genre ?? catalog.genre,
+    cover: catalog.cover,
   );
 }
 
-/// Записує знайдене лише в порожні поля або поля зі «сміттям».
-int applyMeta(TrackTags tags, {required TextEditingController title, required TextEditingController artist, required TextEditingController album, required TextEditingController genre}) {
+/// Записує знайдене в порожні поля або поля зі «сміттям», а схоже написане (регістр, друкарські помилки)
+/// виправляє на варіант із каталогу. З [overwrite] (вибір користувача з пошуку) замінює все.
+int applyMeta(TrackTags tags, {required TextEditingController title, required TextEditingController artist, required TextEditingController album, required TextEditingController genre, bool overwrite = false}) {
   var filled = 0;
-  void put(TextEditingController c, String? value, {bool replaceSame = false}) {
+  void put(TextEditingController c, String? value, {bool correct = false}) {
     if (value == null) return;
     final current = c.text.trim();
-    if (junkMeta(current) || (replaceSame && _fold(current) == _fold(value) && current != value)) {
+    if (overwrite || junkMeta(current) || (correct && current != value && _same(current, value))) {
       if (current != value) filled++;
       c.text = value;
     }
   }
 
-  put(title, tags.title, replaceSame: true);
-  put(artist, tags.artist, replaceSame: true);
-  put(album, tags.album);
+  put(title, tags.title, correct: true);
+  put(artist, tags.artist, correct: true);
+  put(album, tags.album, correct: true);
   put(genre, tags.genre);
   return filled;
+}
+
+/// «Що відомо про пісню»: довільний текст → каталог → список треків з обкладинками.
+/// Найкращий збіг підставляється одразу, інший можна обрати торканням.
+class CatalogSearch extends StatefulWidget {
+  const CatalogSearch({required this.onPick, super.key});
+  final ValueChanged<TrackTags> onPick;
+
+  @override
+  State<CatalogSearch> createState() => _CatalogSearchState();
+}
+
+class _CatalogSearchState extends State<CatalogSearch> {
+  final query = TextEditingController();
+  List<TrackTags> results = [];
+  TrackTags? picked;
+  bool searching = false;
+  String? note;
+
+  @override
+  void dispose() {
+    query.dispose();
+    super.dispose();
+  }
+
+  Future<void> _search() async {
+    final q = query.text.trim();
+    if (q.length < 2 || searching) return;
+    FocusScope.of(context).unfocus();
+    setState(() {
+      searching = true;
+      note = null;
+    });
+    final found = await searchCatalog(q);
+    if (!mounted) return;
+    setState(() {
+      searching = false;
+      results = found;
+      note = found.isEmpty ? 'Нічого не знайдено. Спробуйте «виконавець назва» або іншу частину назви.' : null;
+    });
+    if (found.isNotEmpty) _pick(found.first);
+  }
+
+  void _pick(TrackTags tags) {
+    setState(() => picked = tags);
+    widget.onPick(tags);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      LabeledField(
+        label: 'Що відомо про пісню',
+        child: Row(children: [
+          Expanded(child: GcField(controller: query, label: 'Виконавець, назва чи її частина', icon: LucideIcons.search, onSubmit: _search)),
+          const SizedBox(width: 8),
+          GhostButton(label: 'Знайти', expand: false, compact: true, onPressed: searching ? null : _search),
+        ]),
+      ),
+      if (searching)
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(children: [const SizedBox.square(dimension: 14, child: CircularProgressIndicator(strokeWidth: 2)), const SizedBox(width: 8), Text('Шукаю в каталозі…', style: body(12.5, color: muted))]),
+        ),
+      if (note != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(note!, style: body(12, color: muted))),
+      for (final tags in results)
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _pick(tags),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: SizedBox.square(
+                  dimension: 40,
+                  child: tags.cover == null
+                      ? Container(color: Colors.white.withValues(alpha: 0.06), child: const Icon(LucideIcons.music, size: 18, color: muted))
+                      : Image.network(tags.cover!, fit: BoxFit.cover, errorBuilder: (_, _, _) => Container(color: Colors.white.withValues(alpha: 0.06))),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(tags.title ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, weight: FontWeight.w600)),
+                  Text([tags.artist, tags.album].whereType<String>().join(' · '), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                ]),
+              ),
+              if (identical(tags, picked)) const Icon(LucideIcons.check, size: 18, color: primary),
+            ]),
+          ),
+        ),
+    ]);
+  }
+}
+
+/// Мініатюра обкладинки в формах: локальний файл, посилання з каталогу або заглушка.
+class CoverPreview extends StatelessWidget {
+  const CoverPreview({this.url, this.image, this.size = 72, super.key});
+  final String? url;
+  final ImageProvider? image;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = image ?? (url == null ? null : NetworkImage(url!));
+    return SizedBox(
+      width: size,
+      height: size,
+      child: provider == null
+          ? Container(
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
+              child: const Icon(LucideIcons.imagePlus, color: muted),
+            )
+          : ClipRRect(borderRadius: BorderRadius.circular(14), child: Image(image: provider, fit: BoxFit.cover, errorBuilder: (_, _, _) => const SizedBox())),
+    );
+  }
 }
 
 // ───────────────────────── Редагування ─────────────────────────
@@ -340,10 +511,15 @@ class _TrackEditorState extends State<_TrackEditor> {
   bool busy = false;
   String? note;
 
+  /// Обкладинка з каталогу, яку збережемо разом із треком.
+  String? coverUrl;
+  late final String? currentCover = absolute(widget.track['cover_url']);
+
   @override
   void initState() {
     super.initState();
-    if ([title, artist, album].any((c) => junkMeta(c.text))) WidgetsBinding.instance.addPostFrameCallback((_) => _autofill(quiet: true));
+    // Одразу доповнюємо й виправляємо те, що є: теги файлу, назву, каталог і обкладинку.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _autofill(quiet: true));
   }
 
   @override
@@ -361,10 +537,22 @@ class _TrackEditorState extends State<_TrackEditor> {
     });
     final tags = await discoverMeta(url: absolute(widget.track['url']), title: title.text, artist: artist.text);
     if (!mounted) return;
-    final filled = applyMeta(tags, title: title, artist: artist, album: album, genre: genre);
+    var filled = applyMeta(tags, title: title, artist: artist, album: album, genre: genre);
+    if (currentCover == null && coverUrl == null && tags.cover != null) {
+      coverUrl = tags.cover;
+      filled++;
+    }
     setState(() {
       searching = false;
-      note = filled > 0 ? 'Заповнено полів: $filled. Перевірте й збережіть.' : (quiet ? null : 'Нічого нового не знайдено — заповніть вручну.');
+      note = filled > 0 ? 'Заповнено й виправлено полів: $filled. Перевірте й збережіть.' : (quiet ? null : 'Нічого нового не знайдено — опишіть пісню в пошуку нижче.');
+    });
+  }
+
+  void _picked(TrackTags tags) {
+    applyMeta(tags, title: title, artist: artist, album: album, genre: genre, overwrite: true);
+    setState(() {
+      if (tags.cover != null) coverUrl = tags.cover;
+      note = 'Підставлено з каталогу. Перевірте й збережіть.';
     });
   }
 
@@ -376,6 +564,7 @@ class _TrackEditorState extends State<_TrackEditor> {
         'artist': artist.text.trim(),
         'album': album.text.trim(),
         'genre': genre.text.trim(),
+        if (coverUrl != null) 'cover_url': coverUrl,
       });
       if (!mounted) return;
       toast(context, 'Збережено.');
@@ -396,8 +585,22 @@ class _TrackEditorState extends State<_TrackEditor> {
         GhostButton(label: searching ? 'Шукаю метадані…' : 'Заповнити автоматично', icon: LucideIcons.wandSparkles, onPressed: searching || busy ? null : _autofill),
         Padding(
           padding: const EdgeInsets.only(top: 6, bottom: 10),
-          child: Text(note ?? 'Теги файлу, назва файлу й каталог iTunes: назва, виконавець, альбом і жанр.', style: body(12, color: note == null ? faint : muted)),
+          child: Text(note ?? 'Теги файлу, назва файлу й каталог iTunes: назва, виконавець, альбом, жанр і обкладинка.', style: body(12, color: note == null ? faint : muted)),
         ),
+        CatalogSearch(onPick: _picked),
+        const SizedBox(height: 12),
+        Row(children: [
+          CoverPreview(url: coverUrl ?? currentCover),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              coverUrl != null ? 'Обкладинка з каталогу — збережеться разом із треком.' : (currentCover != null ? 'Поточна обкладинка.' : 'Обкладинки поки немає — знайдіть пісню в пошуку вище.'),
+              style: body(12.5, color: muted),
+            ),
+          ),
+          if (coverUrl != null) IconButton(tooltip: 'Не змінювати обкладинку', onPressed: () => setState(() => coverUrl = null), icon: const Icon(LucideIcons.x, size: 18, color: muted)),
+        ]),
+        const SizedBox(height: 12),
         LabeledField(label: 'Назва', child: GcField(controller: title, label: 'Назва', onChanged: (_) => setState(() {}))),
         const SizedBox(height: 10),
         LabeledField(label: 'Виконавець', child: GcField(controller: artist, label: 'Виконавець', onChanged: (_) => setState(() {}))),

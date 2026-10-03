@@ -12,8 +12,10 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class MusicService
 {
@@ -23,13 +25,14 @@ class MusicService
     ) {}
 
     /**
-     * @param  array{title: string, artist: string, album?: string|null, genre?: string|null, duration?: int|null}  $meta
+     * @param  array{title: string, artist: string, album?: string|null, genre?: string|null, duration?: int|null, cover_url?: string|null}  $meta
      */
     public function upload(User $user, UploadedFile $audio, array $meta, ?UploadedFile $cover = null): Track
     {
         $extension = strtolower($audio->getClientOriginalExtension() ?: $audio->extension() ?: 'mp3');
         $path = $audio->storeAs('music/'.now()->format('Y/m'), Str::random(32).'.'.$extension, 'public');
-        $coverPath = $cover ? $this->images->store($cover, 'music/covers', cover: [600, 600])['path'] : null;
+        $coverPath = $cover ? $this->images->store($cover, 'music/covers', cover: [600, 600])['path']
+            : (filled($meta['cover_url'] ?? null) ? $this->coverFromUrl((string) $meta['cover_url']) : null);
 
         $track = Track::query()->create([
             'user_id' => $user->id,
@@ -47,6 +50,53 @@ class MusicService
         $this->add($user, $track);
 
         return $track;
+    }
+
+    /** Хости, звідки сервер сам завантажує обкладинки за посиланням (каталог iTunes). */
+    public const COVER_HOSTS = ['mzstatic.com'];
+
+    /**
+     * Обкладинка за посиланням із каталогу (автозаповнення в застосунку): лише https і лише з COVER_HOSTS,
+     * щоб сервер не ходив куди завгодно. Повертає шлях збереженої обкладинки або null.
+     */
+    public function coverFromUrl(string $url): ?string
+    {
+        $parts = parse_url($url);
+        $host = strtolower((string) ($parts['host'] ?? ''));
+        $allowed = collect(self::COVER_HOSTS)->contains(fn (string $h) => $host === $h || str_ends_with($host, '.'.$h));
+        if (($parts['scheme'] ?? '') !== 'https' || ! $allowed) {
+            return null;
+        }
+
+        try {
+            $response = Http::timeout(10)->withOptions(['allow_redirects' => false])->get($url);
+        } catch (ConnectionException) {
+            return null;
+        }
+
+        $body = $response->body();
+        if (! $response->successful() || ! str_starts_with((string) $response->header('Content-Type'), 'image/') || $body === '' || strlen($body) > 5 * 1024 * 1024) {
+            return null;
+        }
+
+        $temp = tempnam(sys_get_temp_dir(), 'cover');
+        if ($temp === false) {
+            return null;
+        }
+
+        try {
+            file_put_contents($temp, $body);
+            $file = new UploadedFile($temp, 'cover', null, null, true);
+            if (! str_starts_with((string) $file->getMimeType(), 'image/')) {
+                return null;
+            }
+
+            return $this->images->store($file, 'music/covers', cover: [600, 600])['path'];
+        } catch (Throwable) {
+            return null;
+        } finally {
+            @unlink($temp);
+        }
     }
 
     public function add(User $user, Track $track): bool

@@ -1437,7 +1437,8 @@ class _VoiceClipState extends State<_VoiceClip> {
   Future<void> _toggle() async {
     if (player == null) {
       final session = AppScope.read(context).session;
-      final audio = AudioPlayer();
+      // Без локального проксі just_audio: він працює через http://127.0.0.1, а Android блокує такий трафік.
+      final audio = AudioPlayer(useProxyForRequestHeaders: false);
       player = audio;
       audio.playerStateStream.listen((state) {
         if (!mounted) return;
@@ -1455,6 +1456,9 @@ class _VoiceClipState extends State<_VoiceClip> {
       try {
         await audio.setUrl(url, headers: {if (session.token != null) 'Authorization': 'Bearer ${session.token}'});
       } catch (e) {
+        // Наступне натискання пробує ще раз з новим програвачем.
+        player = null;
+        await audio.dispose();
         if (mounted) toast(context, 'Не вдалося відтворити запис.');
         return;
       }
