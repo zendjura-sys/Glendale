@@ -37,7 +37,7 @@ grep -A12 "package=$PKG" "$OUT/media-session-background.txt" | head -n 30
 
 fail=0
 grep -q "isForeground=true" "$OUT/services-background.txt" || { echo "::error::Після згортання AudioService не працює як foreground-сервіс"; fail=1; }
-grep -A12 "package=$PKG" "$OUT/media-session-background.txt" | grep -q "state=PlaybackState {state=3" || { echo "::error::Після згортання медіасесія не в стані PLAYING"; fail=1; }
+grep -A12 "package=$PKG" "$OUT/media-session-background.txt" | grep -qE "state=PlaybackState \{state=(PLAYING\()?3" || { echo "::error::Після згортання медіасесія не в стані PLAYING"; fail=1; }
 grep -q "pkg=$PKG" "$OUT/notifications-open.txt" || { echo "::error::Немає сповіщення з плеєром"; fail=1; }
 [ "$fail" = 0 ] && echo "✅ Музика грає у фоні, плеєр у шторці є."
 exit "$fail"
