@@ -209,7 +209,7 @@ class _AuthScreenState extends State<AuthScreen> {
       if (idToken == null) throw ApiException('Google не повернув токен.');
       await _run(() => widget.session.api.post('/api/v1/auth/google', {'google_token': idToken, 'device': 'GameCon Flutter'}));
     } on PlatformException catch (e) {
-      final message = _googleFailure(e);
+      final message = await _googleFailure(e);
       if (mounted) setState(() => error = message);
     } catch (e) {
       if (mounted) setState(() => error = e is ApiException ? e.message : 'Не вдалося увійти через Google.');
@@ -218,15 +218,29 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  String? _googleFailure(PlatformException error) {
+  Future<String?> _googleFailure(PlatformException error) async {
     final raw = '${error.code} ${error.message}';
     if (raw.contains('canceled') || raw.contains('12501') || raw.contains('sign_in_cancelled')) {
       return null;
     }
-    if (raw.contains('10')) {
-      return 'Google не приймає вхід у цій збірці. Увійдіть поштою або через Discord.';
+    // Код Google Play Services з «ApiException: 10: …» — показуємо його, щоб було видно причину.
+    final code = RegExp(r'ApiException: (\d+)').firstMatch(raw)?.group(1);
+    if (code == '10') {
+      // DEVELOPER_ERROR: підпис застосунку не зареєстровано у Firebase — показуємо, який саме.
+      final sha1 = await _signingSha1();
+      return 'Google не приймає вхід у цій збірці (код 10). Увійдіть поштою або через Discord.'
+          '${sha1 == null ? '' : '\nПідпис: $sha1'}';
     }
-    return 'Не вдалося увійти через Google. Спробуйте пошту або Discord.';
+    return 'Не вдалося увійти через Google${code == null ? '' : ' (код $code)'}. Спробуйте пошту або Discord.';
+  }
+
+  Future<String?> _signingSha1() async {
+    try {
+      final list = await const MethodChannel('gamecon/app').invokeListMethod<String>('signingSha1');
+      return list == null || list.isEmpty ? null : list.last;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> _discord() async {

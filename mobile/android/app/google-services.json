@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "142512043248-0n7doia9eofv2up79t2h9eiumteresqi.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "online.gamecon.app",
+            "certificate_hash": "e04d4b5b8e02711c07eeadd71c0df1eaff2f503b"
+          }
+        },
+        {
           "client_id": "142512043248-n00879botnkei6cmhjgl30l30lo8skvi.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
