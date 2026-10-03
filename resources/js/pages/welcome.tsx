@@ -228,7 +228,7 @@ export default function Welcome({
                             >
                                 У мене вже є акаунт
                             </Link>
-                            <PlayStoreLink className="h-13 px-5" />
+                            <PlayStoreLink />
                         </div>
 
                         <div className="mt-10 flex items-center gap-4">

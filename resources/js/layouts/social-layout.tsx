@@ -138,10 +138,7 @@ function Sidebar() {
                 </Link>
             )}
 
-            <PlayStoreLink
-                compact
-                className="mt-3 w-full justify-center px-3"
-            />
+            <PlayStoreLink compact className="mt-3 self-center" />
 
             <div className="mt-auto px-3 pt-4 text-[11px] leading-relaxed text-white/30">
                 © {new Date().getFullYear()} GameCon · Соціальна мережа нового
@@ -499,7 +496,10 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                             {link.label}
                         </Link>
                     ))}
-                    <PlayStoreLink compact className="mx-1.5 my-1" />
+                    <PlayStoreLink
+                        compact
+                        className="mx-1.5 my-1.5 justify-self-start"
+                    />
                     <button
                         type="button"
                         onClick={() => router.post('/logout')}
