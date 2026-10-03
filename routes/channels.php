@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\CommunityMember;
 use App\Models\ConversationParticipant;
 use App\Models\FamilyMember;
 use App\Models\User;
@@ -14,6 +15,15 @@ Broadcast::channel('family.{familyId}', function (User $user, int $familyId) {
         ->where('family_id', $familyId)
         ->where('user_id', $user->id)
         ->where('status', FamilyMember::STATUS_ACTIVE)
+        ->exists();
+});
+
+// Голосові кімнати спільноти: хто зайшов і вийшов.
+Broadcast::channel('community.{communityId}', function (User $user, int $communityId) {
+    return CommunityMember::query()
+        ->where('community_id', $communityId)
+        ->where('user_id', $user->id)
+        ->where('status', CommunityMember::STATUS_ACTIVE)
         ->exists();
 });
 

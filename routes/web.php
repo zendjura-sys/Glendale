@@ -24,7 +24,9 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\TrackController;
+use App\Http\Controllers\VoiceController;
 use App\Http\Controllers\WelcomeController;
+use App\Models\VoiceRoom;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', WelcomeController::class)->name('home');
@@ -57,6 +59,16 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('friends/{user}', [FriendController::class, 'store'])->middleware('throttle:60,1')->name('friends.store');
         Route::post('friends/{user}/accept', [FriendController::class, 'accept'])->name('friends.accept');
         Route::delete('friends/{user}', [FriendController::class, 'destroy'])->name('friends.destroy');
+    });
+
+    // Голосові кімнати сімей і спільнот (звук — через LiveKit).
+    Route::prefix('voice')->name('voice.')->group(function () {
+        Route::get('{type}/{id}', [VoiceController::class, 'index'])->whereIn('type', VoiceRoom::OWNERS)->whereNumber('id')->name('index');
+        Route::post('{type}/{id}', [VoiceController::class, 'store'])->whereIn('type', VoiceRoom::OWNERS)->whereNumber('id')->middleware('throttle:20,1')->name('store');
+        Route::patch('rooms/{room}', [VoiceController::class, 'update'])->whereNumber('room')->name('update');
+        Route::delete('rooms/{room}', [VoiceController::class, 'destroy'])->whereNumber('room')->name('destroy');
+        Route::post('rooms/{room}/join', [VoiceController::class, 'join'])->whereNumber('room')->middleware('throttle:30,1')->name('join');
+        Route::post('rooms/{room}/members/{user:id}', [VoiceController::class, 'moderate'])->whereNumber(['room', 'user'])->name('moderate');
     });
 
     Route::prefix('messages')->name('messages.')->middleware('module:messages')->group(function () {

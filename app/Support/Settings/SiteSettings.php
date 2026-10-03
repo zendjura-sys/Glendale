@@ -49,10 +49,13 @@ class SiteSettings
         'firebase_project_id' => null,
         'firebase_app_id' => null,
         'fcm_service_account' => null,
+        'livekit_url' => null,
+        'livekit_api_key' => null,
+        'livekit_api_secret' => null,
     ];
 
     /** Ключі, які не можна віддавати у фронтенд. */
-    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account'];
+    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret'];
 
     /** @var array<string, mixed>|null */
     private ?array $values = null;

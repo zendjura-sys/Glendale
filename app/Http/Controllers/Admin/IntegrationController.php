@@ -7,6 +7,8 @@ use App\Models\MovieSource;
 use App\Models\PushDevice;
 use App\Models\SpotifyAccount;
 use App\Models\User;
+use App\Models\VoiceParticipant;
+use App\Models\VoiceRoom;
 use App\Services\Auth\DiscordOAuth;
 use App\Services\Auth\FirebaseAuth;
 use App\Services\Cinema\CinemaException;
@@ -18,6 +20,7 @@ use App\Services\Cinema\Metadata\ShikimoriProvider;
 use App\Services\Cinema\Metadata\TmdbProvider;
 use App\Services\Push\FcmClient;
 use App\Services\Spotify\SpotifyClient;
+use App\Services\Voice\LiveKit;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -41,6 +44,7 @@ class IntegrationController extends Controller
         private readonly DiscordOAuth $discord,
         private readonly FirebaseAuth $firebase,
         private readonly FcmClient $fcm,
+        private readonly LiveKit $livekit,
     ) {}
 
     public function index(): Response
@@ -303,6 +307,31 @@ class IntegrationController extends Controller
                         'rules' => ['nullable', 'string', 'max:10000', fn (string $attribute, mixed $value, \Closure $fail) => is_string($value) && FcmClient::parse($value) === null
                             ? $fail('Вставте повний JSON ключа сервісного акаунта Firebase (type: service_account).') : null],
                     ],
+                ],
+            ],
+            'voice' => [
+                'label' => 'Голосові кімнати (LiveKit)',
+                'group' => 'voice',
+                'description' => 'Голосові канали сімей і спільнот на сайті й у застосунку — як у Discord. Звук іде через ваш сервер LiveKit.',
+                'docs' => 'https://docs.livekit.io/home/self-hosting/deployment/',
+                'steps' => [
+                    'Встановіть LiveKit на сервер: sudo bash deploy/livekit/setup-livekit.sh — скрипт видасть адресу, API Key і Secret.',
+                    'Вставте їх нижче й натисніть «Перевірити».',
+                    'Вебхук LiveKit скрипт уже налаштував на '.url('/api/livekit/webhook').' — так сайт бачить, хто в кімнаті.',
+                ],
+                'configured' => $this->livekit->configured(),
+                'stat' => VoiceRoom::query()->count().' кімнат · '.VoiceParticipant::query()->count().' зараз у голосі',
+                'test' => fn () => $this->livekit->test(),
+                'fields' => [
+                    ['name' => 'url', 'setting' => 'livekit_url', 'type' => 'text', 'label' => 'Адреса сервера', 'placeholder' => 'wss://voice.gamecon.online',
+                        'env' => config('services.livekit.url'),
+                        'rules' => ['nullable', 'string', 'max:255', 'regex:#^wss?://[^\s]+$#'], 'message' => 'Адреса має починатися з wss://'],
+                    ['name' => 'api_key', 'setting' => 'livekit_api_key', 'type' => 'text', 'label' => 'API Key', 'placeholder' => 'APIxxxxxxxx',
+                        'env' => config('services.livekit.key'),
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_\-]{6,64}$/'], 'message' => 'API Key — латинські літери й цифри.'],
+                    ['name' => 'api_secret', 'setting' => 'livekit_api_secret', 'type' => 'secret', 'label' => 'API Secret',
+                        'env' => config('services.livekit.secret'),
+                        'rules' => ['nullable', 'string', 'min:16', 'max:128'], 'message' => 'Секрет LiveKit — щонайменше 16 символів.'],
                 ],
             ],
             'kodik' => [

@@ -26,8 +26,13 @@ use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\Settings\ProfileController as SettingsProfileController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\TrackController;
+use App\Http\Controllers\VoiceController;
 use App\Http\Middleware\BridgeSiteAction;
+use App\Models\VoiceRoom;
 use Illuminate\Support\Facades\Route;
+
+// Вебхук сервера голосу LiveKit (підпис перевіряє контролер).
+Route::post('livekit/webhook', [VoiceController::class, 'webhook'])->middleware('throttle:600,1');
 
 Route::prefix('v1')->group(function () {
     Route::prefix('auth')->middleware('throttle:20,1')->group(function () {
@@ -46,6 +51,16 @@ Route::prefix('v1')->group(function () {
         Route::put('me/password', [SocialApiController::class, 'password']);
         Route::get('me/connections', [SocialApiController::class, 'connections']);
         Route::delete('me/connections/{provider}', [SocialApiController::class, 'unlink'])->whereIn('provider', ['discord', 'google']);
+
+        // Голосові кімнати сімей і спільнот (звук — через LiveKit).
+        Route::prefix('voice')->group(function () {
+            Route::get('{type}/{id}', [VoiceController::class, 'index'])->whereIn('type', VoiceRoom::OWNERS)->whereNumber('id');
+            Route::post('{type}/{id}', [VoiceController::class, 'store'])->whereIn('type', VoiceRoom::OWNERS)->whereNumber('id')->middleware('throttle:20,1');
+            Route::patch('rooms/{room}', [VoiceController::class, 'update'])->whereNumber('room');
+            Route::delete('rooms/{room}', [VoiceController::class, 'destroy'])->whereNumber('room');
+            Route::post('rooms/{room}/join', [VoiceController::class, 'join'])->whereNumber('room')->middleware('throttle:30,1');
+            Route::post('rooms/{room}/members/{user:id}', [VoiceController::class, 'moderate'])->whereNumber(['room', 'user']);
+        });
 
         Route::get('notifications', [SocialApiController::class, 'notifications']);
         Route::post('push/devices', [PushApiController::class, 'store'])->middleware('throttle:30,1');

@@ -79,6 +79,7 @@ class Family extends Model
         'warehouse.manage' => 'Керувати складом і квотами',
         'sanctions.issue' => 'Видавати попередження, догани, штрафи',
         'events.manage' => 'Створювати події й відмічати присутніх',
+        'voice.manage' => 'Голосові кімнати: створювати, вимикати мікрофон, виключати',
         'audit.view' => 'Переглядати журнал аудиту',
         'settings.manage' => 'Ставки, рейтинг, бот і налаштування',
     ];
@@ -95,6 +96,7 @@ class Family extends Model
         'warehouse.manage' => [8, 9],
         'sanctions.issue' => [8, 9],
         'events.manage' => [6, 7, 8, 9],
+        'voice.manage' => [7, 8, 9],
         'audit.view' => [9],
         'settings.manage' => [9],
     ];
