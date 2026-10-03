@@ -12,6 +12,8 @@ php artisan down --retry=15 2>/dev/null || true
 trap 'php artisan up 2>/dev/null || true' EXIT
 
 composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-progress
+# Кеш маршрутів від попереднього релізу: без очищення Wayfinder під час збірки не бачить нових маршрутів.
+php artisan optimize:clear
 npm ci --no-audit --no-fund --loglevel=error
 npm run build
 
