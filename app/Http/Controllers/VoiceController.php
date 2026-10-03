@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Call;
 use App\Models\User;
 use App\Models\VoiceRoom;
+use App\Services\Voice\Calls;
 use App\Services\Voice\LiveKit;
 use App\Services\Voice\VoiceRooms;
 use Illuminate\Http\JsonResponse;
@@ -86,10 +88,21 @@ class VoiceController extends Controller
     }
 
     /** Вебхук LiveKit: хто зайшов і вийшов. Без сесії — справжність перевіряє підпис. */
-    public function webhook(Request $request): JsonResponse
+    public function webhook(Request $request, Calls $calls): JsonResponse
     {
         $event = $this->livekit->webhook($request->getContent(), $request->header('Authorization'));
         abort_if($event === null, 401);
+
+        // Кімнати дзвінків (call-{id}) і голосові кімнати сімей та спільнот (gc-{id}) — один вебхук LiveKit.
+        $callId = Call::idFromLivekit((string) ($event['room']['name'] ?? ''));
+        if ($callId !== null) {
+            $call = Call::query()->find($callId);
+            if ($call) {
+                $calls->webhook($call, $event);
+            }
+
+            return response()->json(['ok' => true]);
+        }
 
         $this->voice->webhook($event);
 

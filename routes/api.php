@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\GroupsApiController;
 use App\Http\Controllers\Api\MediaApiController;
 use App\Http\Controllers\Api\PushApiController;
 use App\Http\Controllers\Api\SocialApiController;
+use App\Http\Controllers\CallController;
 use App\Http\Controllers\CinemaController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityController;
@@ -100,6 +101,14 @@ Route::prefix('v1')->group(function () {
             Route::post('{conversation}', [ChatApiController::class, 'send'])->whereNumber('conversation')->middleware('throttle:60,1');
             Route::post('{conversation}/read', [ChatApiController::class, 'read'])->whereNumber('conversation');
             Route::post('{conversation}/mute', [ChatApiController::class, 'mute'])->whereNumber('conversation');
+            Route::get('{conversation}/call', [CallController::class, 'show'])->whereNumber('conversation');
+            Route::post('{conversation}/call', [CallController::class, 'start'])->whereNumber('conversation')->middleware('throttle:20,1');
+        });
+
+        Route::prefix('calls/{call}')->whereNumber('call')->middleware('module:messages')->group(function () {
+            Route::post('join', [CallController::class, 'join'])->middleware('throttle:30,1');
+            Route::post('decline', [CallController::class, 'decline']);
+            Route::post('leave', [CallController::class, 'leave']);
         });
 
         Route::middleware('module:communities')->group(function () {

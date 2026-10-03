@@ -9,6 +9,7 @@ use App\Services\FriendshipService;
 use App\Services\ImageStorage;
 use App\Services\Messenger;
 use App\Services\MessengerPresenter;
+use App\Services\Voice\Calls;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -33,14 +34,14 @@ class MessengerController extends Controller
         ]);
     }
 
-    public function show(Request $request, Conversation $conversation): Response
+    public function show(Request $request, Conversation $conversation, Calls $calls): Response
     {
         $user = $request->user();
         $me = $this->participant($conversation, $user);
 
         return Inertia::render('messages/index', [
             'conversations' => $this->presenter->inbox($user, $this->messenger, $conversation->id),
-            'active' => $this->presenter->details($conversation, $user, $me, $this->messenger),
+            'active' => [...$this->presenter->details($conversation, $user, $me, $this->messenger), ...$calls->forViewer($conversation, $user)],
             'history' => $this->presenter->history($conversation),
         ]);
     }

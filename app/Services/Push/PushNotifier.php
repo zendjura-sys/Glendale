@@ -22,6 +22,9 @@ class PushNotifier
 
     public const CHANNEL_ACTIVITY = 'activity';
 
+    /** Вхідні дзвінки: окремий канал із мелодією й показом поверх екрана. */
+    public const CHANNEL_CALLS = 'calls';
+
     public function __construct(private readonly FcmClient $fcm) {}
 
     /**

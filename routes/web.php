@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Auth\SocialAuthController;
+use App\Http\Controllers\CallController;
 use App\Http\Controllers\CinemaController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityController;
@@ -71,6 +72,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('rooms/{room}/members/{user:id}', [VoiceController::class, 'moderate'])->whereNumber(['room', 'user'])->withoutScopedBindings()->name('moderate');
     });
 
+    Route::prefix('calls/{call}')->name('calls.')->whereNumber('call')->middleware('module:messages')->group(function () {
+        Route::post('join', [CallController::class, 'join'])->middleware('throttle:30,1')->name('join');
+        Route::post('decline', [CallController::class, 'decline'])->name('decline');
+        Route::post('leave', [CallController::class, 'leave'])->name('leave');
+    });
+
     Route::prefix('messages')->name('messages.')->middleware('module:messages')->group(function () {
         Route::get('/', [MessengerController::class, 'index'])->name('index');
         Route::get('contacts', [MessengerController::class, 'contacts'])->name('contacts');
@@ -90,6 +97,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::delete('{conversation}/members/{user}', [MessengerController::class, 'removeMember'])->name('members.destroy');
             Route::patch('{conversation}/messages/{message}', [MessageController::class, 'update'])->name('messages.update');
             Route::delete('{conversation}/messages/{message}', [MessageController::class, 'destroy'])->name('messages.destroy');
+            // Дзвінки в бесіді (звук — через LiveKit).
+            Route::get('{conversation}/call', [CallController::class, 'show'])->name('call.show');
+            Route::post('{conversation}/call', [CallController::class, 'start'])->middleware('throttle:20,1')->name('call.start');
         });
     });
 
