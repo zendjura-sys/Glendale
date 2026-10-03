@@ -59,7 +59,7 @@ Route::prefix('v1')->group(function () {
             Route::patch('rooms/{room}', [VoiceController::class, 'update'])->whereNumber('room');
             Route::delete('rooms/{room}', [VoiceController::class, 'destroy'])->whereNumber('room');
             Route::post('rooms/{room}/join', [VoiceController::class, 'join'])->whereNumber('room')->middleware('throttle:30,1');
-            Route::post('rooms/{room}/members/{user:id}', [VoiceController::class, 'moderate'])->whereNumber(['room', 'user']);
+            Route::post('rooms/{room}/members/{user:id}', [VoiceController::class, 'moderate'])->whereNumber(['room', 'user'])->withoutScopedBindings();
         });
 
         Route::get('notifications', [SocialApiController::class, 'notifications']);

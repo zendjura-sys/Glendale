@@ -68,7 +68,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::patch('rooms/{room}', [VoiceController::class, 'update'])->whereNumber('room')->name('update');
         Route::delete('rooms/{room}', [VoiceController::class, 'destroy'])->whereNumber('room')->name('destroy');
         Route::post('rooms/{room}/join', [VoiceController::class, 'join'])->whereNumber('room')->middleware('throttle:30,1')->name('join');
-        Route::post('rooms/{room}/members/{user:id}', [VoiceController::class, 'moderate'])->whereNumber(['room', 'user'])->name('moderate');
+        Route::post('rooms/{room}/members/{user:id}', [VoiceController::class, 'moderate'])->whereNumber(['room', 'user'])->withoutScopedBindings()->name('moderate');
     });
 
     Route::prefix('messages')->name('messages.')->middleware('module:messages')->group(function () {

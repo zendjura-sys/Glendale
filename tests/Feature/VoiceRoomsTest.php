@@ -54,13 +54,16 @@ class VoiceRoomsTest extends TestCase
         $settings->putSecret('livekit_api_secret', self::SECRET);
     }
 
+    private int $members = 0;
+
     private function member(int $rank = 1): User
     {
         $user = User::factory()->create();
+        $n = $this->members++;
         $this->family->members()->create([
             'user_id' => $user->id,
-            'rp_nickname' => 'Tony_Moretti',
-            'static_id' => '20002',
+            'rp_nickname' => $n === 0 ? 'Tony_Moretti' : 'Tony_Moretti'.$n,
+            'static_id' => (string) (20002 + $n),
             'rank' => $rank,
             'status' => FamilyMember::STATUS_ACTIVE,
             'joined_at' => now(),
