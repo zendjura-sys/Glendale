@@ -12,6 +12,7 @@ import 'feed.dart';
 import 'posts.dart';
 import 'state.dart';
 import 'theme.dart';
+import 'voice_room.dart';
 import 'widgets.dart';
 
 const communityRoles = {'owner': 'Власник', 'admin': 'Адміністратор', 'editor': 'Редактор', 'member': 'Учасник'};
@@ -534,6 +535,16 @@ class _CommunityScreenState extends State<CommunityScreen> {
           const SizedBox(height: 12),
           const EmptyState(icon: LucideIcons.lock, title: 'Це закрита група', text: 'Записи та учасників бачать лише учасники. Подайте заявку — адміністратори розглянуть її найближчим часом.'),
         ] else ...[
+          if (membership?['status'] == 'active') ...[
+            const SizedBox(height: 12),
+            VoiceRoomsPanel(
+              key: ValueKey('voice-community-${c['id']}'),
+              type: 'community',
+              id: intOf(c['id']),
+              label: text(c['name']) ?? '',
+              route: '/communities/${widget.slug}',
+            ),
+          ],
           if (text(c['description']) != null || text(c['website']) != null || text(c['city']) != null) ...[
             const SizedBox(height: 12),
             Glass(

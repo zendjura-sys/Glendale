@@ -11,6 +11,7 @@ import 'nav_items.dart';
 import 'player_view.dart';
 import 'state.dart';
 import 'theme.dart';
+import 'voice_room.dart';
 import 'widgets.dart';
 
 /// Переводить посилання сайту (`/f/black`, `/c/clan`, `/tonny.morales`) у маршрути застосунку.
@@ -108,7 +109,7 @@ class _AppShellState extends State<AppShell> {
       player: widget.player,
       child: Stage(
         child: ListenableBuilder(
-          listenable: Listenable.merge([widget.player, widget.session]),
+          listenable: Listenable.merge([widget.player, widget.session, VoiceCall.instance]),
           builder: (context, _) {
             final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
             final hideChrome = chatOpen && keyboard;
@@ -120,7 +121,8 @@ class _AppShellState extends State<AppShell> {
             final tabletPortrait = !wide && screen.shortestSide >= 600;
             final contentWidth = wide ? tabletContentWidth : tabletPortraitWidth;
             final systemBottom = MediaQuery.viewPaddingOf(context).bottom;
-            final bottom = hideChrome ? 0.0 : systemBottom + (wide ? 8 : navBarHeight) + (playing ? miniPlayerExtent : 0);
+            final inCall = VoiceCall.instance.active && !hideChrome;
+            final bottom = hideChrome ? 0.0 : systemBottom + (wide ? 8 : navBarHeight) + (playing ? miniPlayerExtent : 0) + (inCall ? voiceBarExtent : 0);
             final contentLeft = wide ? sideNavWidth + 24 : 0.0;
             return ShellChrome(
               bottom: bottom,
@@ -158,6 +160,12 @@ class _AppShellState extends State<AppShell> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            // Розмова в голосовій кімнаті — над плеєром, на всіх екранах.
+                            if (inCall)
+                              Padding(
+                                padding: EdgeInsets.only(bottom: wide && !playing ? systemBottom + 8 : 0),
+                                child: Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: wide || tabletPortrait ? contentWidth : double.infinity), child: const VoiceBar())),
+                              ),
                             if (playing && wide)
                               Padding(
                                 padding: EdgeInsets.only(bottom: systemBottom + 8),

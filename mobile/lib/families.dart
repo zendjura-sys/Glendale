@@ -14,6 +14,7 @@ import 'posts.dart';
 import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
+import 'voice_room.dart';
 import 'widgets.dart';
 
 /// Шлях сторінки сім’ї на мосту сайту: `/api/v1/site/f/{slug}/{section}`.
@@ -969,7 +970,15 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
   final transactions = maps(data['transactions']);
   final lowStock = maps(data['low_stock']);
   final activity = maps(data['activity']);
+  final family = mapOf(data['family']);
   return [
+    VoiceRoomsPanel(
+      key: ValueKey('voice-family-${family['id']}'),
+      type: 'family',
+      id: intOf(family['id']),
+      label: '[${text(family['tag']) ?? ''}] ${text(family['name']) ?? ''}',
+      route: '/families/${ctx.slug}',
+    ),
     Row(children: [
       Expanded(child: MetricTile(caps: true, label: 'Заробив за тиждень', value: hryvniaShort(stats['week_earned']), icon: LucideIcons.trendingUp, color: green)),
       const SizedBox(width: 8),
