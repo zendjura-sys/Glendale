@@ -212,7 +212,7 @@ class _AuthScreenState extends State<AuthScreen> {
       final message = await _googleFailure(e);
       if (mounted) setState(() => error = message);
     } catch (e) {
-      if (mounted) setState(() => error = e is ApiException ? e.message : 'Не вдалося увійти через Google.');
+      if (mounted) setState(() => error = e is ApiException ? e.message : 'Не вдалося увійти через Google.\n$e');
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -231,7 +231,9 @@ class _AuthScreenState extends State<AuthScreen> {
       return 'Google не приймає вхід у цій збірці (код 10). Увійдіть поштою або через Discord.'
           '${sha1 == null ? '' : '\nПідпис: $sha1'}';
     }
-    return 'Не вдалося увійти через Google${code == null ? '' : ' (код $code)'}. Спробуйте пошту або Discord.';
+    // Без коду Google показуємо сирий текст помилки — інакше причину не видно.
+    return 'Не вдалося увійти через Google${code == null ? '' : ' (код $code)'}. Спробуйте пошту або Discord.'
+        '${code == null ? '\n${error.code}: ${error.message ?? ''}' : ''}';
   }
 
   Future<String?> _signingSha1() async {
