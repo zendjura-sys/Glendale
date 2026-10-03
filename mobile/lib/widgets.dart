@@ -1206,6 +1206,9 @@ const sideNavWidth = 240.0;
 /// Найбільша ширина стрічки на планшеті — як центральна колонка сайту.
 const tabletContentWidth = 820.0;
 
+/// Ширина стрічки на вертикальному планшеті (3:4), де лишається нижня панель.
+const tabletPortraitWidth = 680.0;
+
 /// Нижній хром оболонки: скільки контент має лишити під скляним меню й плеєром.
 class ShellChrome extends InheritedWidget {
   const ShellChrome({required this.bottom, required super.child, super.key});

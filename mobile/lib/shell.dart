@@ -114,7 +114,11 @@ class _AppShellState extends State<AppShell> {
             final hideChrome = chatOpen && keyboard;
             final playing = widget.player.current != null && !hideChrome && !widget.player.covered;
             // Планшет або широкий екран: бічне меню замість нижньої панелі, контент по центру — як на сайті.
-            final wide = MediaQuery.sizeOf(context).width >= tabletWidth;
+            final screen = MediaQuery.sizeOf(context);
+            final wide = screen.width >= tabletWidth;
+            // Планшет вертикально (3:4): нижня панель лишається, але стрічка — по центру, не на всю ширину.
+            final tabletPortrait = !wide && screen.shortestSide >= 600;
+            final contentWidth = wide ? tabletContentWidth : tabletPortraitWidth;
             final systemBottom = MediaQuery.viewPaddingOf(context).bottom;
             final bottom = hideChrome ? 0.0 : systemBottom + (wide ? 8 : navBarHeight) + (playing ? miniPlayerExtent : 0);
             final contentLeft = wide ? sideNavWidth + 24 : 0.0;
@@ -125,13 +129,13 @@ class _AppShellState extends State<AppShell> {
                 resizeToAvoidBottomInset: true,
                 body: Stack(
                   children: [
-                    if (wide)
+                    if (wide || tabletPortrait)
                       Positioned.fill(
                         left: contentLeft,
-                        right: 12,
+                        right: wide ? 12 : 0,
                         child: LayoutBuilder(
                           builder: (context, box) => Center(
-                            child: SizedBox(width: math.min(box.maxWidth, tabletContentWidth), height: box.maxHeight, child: widget.child),
+                            child: SizedBox(width: math.min(box.maxWidth, contentWidth), height: box.maxHeight, child: widget.child),
                           ),
                         ),
                       )
@@ -157,8 +161,10 @@ class _AppShellState extends State<AppShell> {
                             if (playing && wide)
                               Padding(
                                 padding: EdgeInsets.only(bottom: systemBottom + 8),
-                                child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: tabletContentWidth), child: MiniPlayer(player: widget.player))),
+                                child: Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: contentWidth), child: MiniPlayer(player: widget.player))),
                               )
+                            else if (playing && tabletPortrait)
+                              Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: contentWidth), child: MiniPlayer(player: widget.player)))
                             else if (playing)
                               MiniPlayer(player: widget.player),
                             if (!wide) Builder(builder: (context) {
