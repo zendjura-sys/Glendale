@@ -362,7 +362,9 @@ class NavEditor extends StatelessWidget {
         final rest = [for (final item in navCatalog) if (!tabs.contains(item.path)) item];
         final full = tabs.length >= maxNav;
 
-        void save(List<String> next) => session.setNavTabs(next);
+        void save(List<String> next) => session.setNavTabs(next).catchError((Object e) {
+              if (context.mounted) toast(context, e);
+            });
 
         return Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [

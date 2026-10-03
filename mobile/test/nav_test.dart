@@ -19,22 +19,27 @@ void main() {
     expect(navIndexFor(tabs, '/feed'), isNull);
   });
 
-  test('вибір зберігається окремо для кожного акаунта', () async {
+  test('панель береться з акаунта, як на сайті', () async {
     SharedPreferences.setMockInitialValues({});
-    final session = Session(await SharedPreferences.getInstance())..me = {'id': 7};
+    final session = Session(await SharedPreferences.getInstance())..me = {'id': 7, 'nav_tabs': ['music', 'cinema', 'events']};
+    expect(session.navTabs, ['/music', '/cinema']);
+    session.me = {'id': 8, 'nav_tabs': <String>[]};
+    expect(session.navTabs, defaultNav);
+  });
+
+  test('без профілю вибір живе локально', () async {
+    SharedPreferences.setMockInitialValues({});
+    final session = Session(await SharedPreferences.getInstance());
     expect(session.navTabs, defaultNav);
     await session.setNavTabs(['/music', '/cinema']);
     expect(session.navTabs, ['/music', '/cinema']);
-    session.me = {'id': 8};
-    expect(session.navTabs, defaultNav);
-    session.me = {'id': 7};
     await session.setNavTabs(defaultNav);
-    expect(session.prefs.getStringList('nav.tabs.7'), isNull);
+    expect(session.prefs.getStringList('nav.tabs.0'), isNull);
   });
 
   testWidgets('прибраний розділ переходить у меню, доданий — у панель', (tester) async {
     SharedPreferences.setMockInitialValues({});
-    final session = Session(await SharedPreferences.getInstance())..me = {'id': 1};
+    final session = Session(await SharedPreferences.getInstance());
     await tester.pumpWidget(MaterialApp(
       home: AppScope(
         session: session,

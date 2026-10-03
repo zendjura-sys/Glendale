@@ -35,8 +35,11 @@ class Session extends ChangeNotifier {
   String get _navKey => 'nav.tabs.${myId ?? 0}';
 
   /// Розділи нижньої панелі, які обрав цей акаунт (без «Меню» — воно завжди останнє).
+  /// Вибір зберігається в акаунті й однаковий на сайті та в застосунку; локальна копія —
+  /// поки профіль ще не завантажився.
   List<String> get navTabs {
-    final saved = prefs.getStringList(_navKey);
+    final server = me?['nav_tabs'];
+    final saved = server is List ? [for (final key in server) '/$key'] : prefs.getStringList(_navKey);
     if (saved == null) return defaultNav;
     final clean = cleanNav(saved);
     return clean.isEmpty ? defaultNav : clean;
@@ -44,12 +47,23 @@ class Session extends ChangeNotifier {
 
   Future<void> setNavTabs(List<String> tabs) async {
     final clean = cleanNav(tabs);
-    if (clean.isEmpty || listEquals(clean, defaultNav)) {
-      await prefs.remove(_navKey);
-    } else {
-      await prefs.setStringList(_navKey, clean);
-    }
+    if (clean.isEmpty) return;
+    final previous = me?['nav_tabs'];
+    final previousLocal = prefs.getStringList(_navKey);
+    Future<void> keep(List<String>? local) => local == null || listEquals(local, defaultNav) ? prefs.remove(_navKey) : prefs.setStringList(_navKey, local);
+
+    me?['nav_tabs'] = [for (final path in clean) path.substring(1)];
+    await keep(clean);
     notifyListeners();
+    if (me == null) return;
+    try {
+      await api.put(Api.site('/settings/navigation'), {'tabs': me!['nav_tabs']});
+    } catch (_) {
+      me?['nav_tabs'] = previous;
+      await keep(previousLocal);
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> boot() async {
