@@ -27,6 +27,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 50
     steps:
+      # Емулятор, Flutter і Gradle разом не вміщаються на диск раннера — прибираємо непотрібне.
+      - name: Місце на диску
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost /usr/share/swift \
+            /usr/local/lib/node_modules /opt/hostedtoolcache/CodeQL /usr/local/share/powershell /usr/local/share/chromium
+          df -h /
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-java@v4
@@ -45,6 +52,12 @@ jobs:
         run: |
           flutter pub get
           flutter build apk --release --dart-define=GC_AUDIO_TEST_URL=https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3
+          cp build/app/outputs/flutter-apk/app-release.apk "$RUNNER_TEMP/app-release.apk"
+
+      - name: Прибрати проміжні файли збірки
+        run: |
+          rm -rf mobile/build ~/.gradle/caches /usr/local/lib/android/sdk/ndk
+          df -h /
 
       - name: KVM для емулятора
         run: |
@@ -59,7 +72,7 @@ jobs:
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: bash mobile/tool/audio_check.sh
+          script: APK=$RUNNER_TEMP/app-release.apk bash mobile/tool/audio_check.sh
 
       - uses: actions/upload-artifact@v4
         if: always()

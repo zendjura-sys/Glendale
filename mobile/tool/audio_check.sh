@@ -3,7 +3,7 @@
 # далі згортаємо застосунок і дивимося, чи живий foreground-сервіс, медіасесія і сповіщення.
 # Запускає .github/workflows/app-audio-check.yml; результати — в артефакті audio-check.
 set -u
-APK=mobile/build/app/outputs/flutter-apk/app-release.apk
+APK=${APK:-mobile/build/app/outputs/flutter-apk/app-release.apk}
 PKG=online.gamecon.app
 OUT=audio-check
 mkdir -p "$OUT"
