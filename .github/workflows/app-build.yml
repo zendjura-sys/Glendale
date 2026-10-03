@@ -61,6 +61,20 @@ jobs:
           echo "name=$(echo "$v" | cut -d+ -f1 | tr . _)" >> "$GITHUB_OUTPUT"
           echo "Версія: $v"
 
+      # Раннер має 16 ГБ пам’яті: Gradle з 8 ГБ, демон Kotlin і нативна збірка WebRTC його вичерпували,
+      # і GitHub вимикав машину посеред збірки. Обмежуємо пам’ять і звільняємо диск.
+      - name: Ресурси для Gradle
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL || true
+          mkdir -p ~/.gradle
+          cat >> ~/.gradle/gradle.properties <<'PROPS'
+          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:ReservedCodeCacheSize=256m
+          org.gradle.workers.max=2
+          kotlin.daemon.jvmargs=-Xmx2g
+          PROPS
+          df -h / | tail -1
+          free -h | head -2
+
       - run: flutter pub get
 
       - run: flutter analyze
