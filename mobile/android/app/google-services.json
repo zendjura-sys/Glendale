@@ -23,6 +23,14 @@
           }
         },
         {
+          "client_id": "142512043248-0svjfjs276b95n2rnqsq2vvp419c00s5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "online.gamecon.app",
+            "certificate_hash": "e1259bdc0e64c72c5a480d71b51626310f12797c"
+          }
+        },
+        {
           "client_id": "142512043248-n00879botnkei6cmhjgl30l30lo8skvi.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
