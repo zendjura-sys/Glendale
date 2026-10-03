@@ -24,6 +24,7 @@ import { CommunityAvatar } from '@/components/gc/community-avatar';
 import { PostCard } from '@/components/gc/post-card';
 import { PostComposer } from '@/components/gc/post-composer';
 import { PostSkeleton } from '@/components/gc/post-skeleton';
+import { VoiceRooms } from '@/components/gc/voice-rooms';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { EmptyState, Widget } from '@/components/gc/widget';
@@ -323,6 +324,13 @@ export default function CommunityShow({
             ) : (
                 <div className="mt-5 flex flex-col gap-5 xl:flex-row">
                     <aside className="w-full shrink-0 space-y-4 xl:sticky xl:top-[76px] xl:order-last xl:h-fit xl:w-[320px]">
+                        {membership?.status === 'active' && (
+                            <VoiceRooms
+                                owner={{ type: 'community', id: community.id }}
+                                label={community.name}
+                                href={`/c/${community.slug}`}
+                            />
+                        )}
                         {community.description && (
                             <Widget title="Інформація" icon={Info}>
                                 <p className="px-1 text-sm leading-relaxed whitespace-pre-line text-white/75">

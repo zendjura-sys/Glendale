@@ -22,6 +22,7 @@ import { ModuleIcon } from '@/components/gc/module-icon';
 import { NotificationsMenu } from '@/components/gc/notifications-menu';
 import { QuickSearch } from '@/components/gc/quick-search';
 import { UserAvatar } from '@/components/gc/user-avatar';
+import { VoiceBar } from '@/components/gc/voice-bar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { PlayerBar } from '@/components/music/player-bar';
 import {
@@ -554,6 +555,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                     <PageTransition>{children}</PageTransition>
                 </main>
             </div>
+            <VoiceBar />
             {modules.includes('music') && <PlayerBar />}
             <MobileNav />
         </div>

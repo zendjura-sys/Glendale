@@ -11,6 +11,7 @@ import {
     Wallet,
 } from 'lucide-react';
 import { FamilyShell } from '@/components/families/family-shell';
+import { VoiceRooms } from '@/components/gc/voice-rooms';
 import {
     Amount,
     Empty,
@@ -191,6 +192,11 @@ export default function FamilyOverview(props: Props) {
                 </div>
 
                 <div className="space-y-4">
+                    <VoiceRooms
+                        owner={{ type: 'family', id: family.id }}
+                        label={`[${family.tag}] ${family.name}`}
+                        href={`/f/${family.slug}`}
+                    />
                     <Panel
                         title="Найближчі події"
                         icon={CalendarDays}
