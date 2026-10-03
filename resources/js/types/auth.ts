@@ -14,6 +14,8 @@ export type User = {
     is_admin: boolean;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;
+    /** Ключі розділів нижньої панелі на телефоні (без «Меню»). */
+    nav_tabs: string[];
     created_at: string;
     updated_at: string;
     /** Сумісність зі стартовими компонентами Laravel. */

@@ -3,6 +3,7 @@
 namespace App\Support\Modules;
 
 use App\Models\Module;
+use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
@@ -103,6 +104,21 @@ class ModuleManager
         }
 
         return $items;
+    }
+
+    /**
+     * Розділи нижньої панелі користувача: його вибір без вимкнених модулів, інакше типові.
+     *
+     * @return list<string>
+     */
+    public function navTabsFor(User $user): array
+    {
+        $available = array_column($this->navigation(), 'key');
+        $pick = fn (array $keys): array => array_slice(array_values(array_unique(array_intersect($keys, $available))), 0, User::MAX_NAV);
+
+        $chosen = $pick(is_array($user->nav_tabs) ? $user->nav_tabs : []);
+
+        return $chosen !== [] ? $chosen : $pick(User::DEFAULT_NAV);
     }
 
     /**

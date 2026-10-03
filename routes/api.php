@@ -22,6 +22,7 @@ use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ServerController;
+use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\Settings\ProfileController as SettingsProfileController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\TrackController;
@@ -171,6 +172,7 @@ Route::prefix('v1')->group(function () {
             Route::delete('me/avatar', [ProfileController::class, 'destroyAvatar']);
             Route::post('me/cover', [ProfileController::class, 'updateCover']);
             Route::delete('settings/profile', [SettingsProfileController::class, 'destroy']);
+            Route::put('settings/navigation', [NavigationController::class, 'update']);
 
             Route::prefix('messages')->middleware('module:messages')->whereNumber(['conversation', 'message'])->group(function () {
                 Route::post('{conversation}/settings', [MessengerController::class, 'update']);

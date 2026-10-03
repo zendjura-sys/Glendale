@@ -1,8 +1,9 @@
 import { Link } from '@inertiajs/react';
-import { ShieldCheck, UserRound } from 'lucide-react';
+import { PanelBottom, ShieldCheck, UserRound } from 'lucide-react';
 import type { PropsWithChildren } from 'react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
+import { edit as editNavigation } from '@/routes/navigation';
 import { edit } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import { PageTransition } from '@/components/gc/page-transition';
@@ -19,6 +20,12 @@ const items = [
         description: 'Пароль, 2FA, ключі доступу',
         href: editSecurity(),
         icon: ShieldCheck,
+    },
+    {
+        title: 'Панель',
+        description: 'Розділи панелі на телефоні',
+        href: editNavigation(),
+        icon: PanelBottom,
     },
 ];
 

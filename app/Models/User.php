@@ -52,6 +52,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
  * @property string|null $remember_token
+ * @property list<string>|null $nav_tabs Розділи нижньої панелі (ключі модулів); null — типові.
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -72,6 +73,12 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public const ROLE_ADMIN = 'admin';
 
     public const ROLES = [self::ROLE_USER, self::ROLE_MODERATOR, self::ROLE_ADMIN];
+
+    /** Розділи нижньої панелі на телефоні, якщо користувач нічого не обрав. */
+    public const DEFAULT_NAV = ['profile', 'feed', 'messages', 'friends'];
+
+    /** Скільки розділів поміщається в панелі поруч із «Меню». */
+    public const MAX_NAV = 4;
 
     public const MESSAGES_EVERYONE = 'everyone';
 
@@ -99,6 +106,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'banned_at' => 'datetime',
             'is_verified' => 'boolean',
             'is_private' => 'boolean',
+            'nav_tabs' => 'array',
         ];
     }
 

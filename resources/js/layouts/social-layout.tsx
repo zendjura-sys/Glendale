@@ -5,6 +5,7 @@ import {
     LayoutGrid,
     LogOut,
     Megaphone,
+    PanelBottom,
     MessageCircle,
     Settings,
     ShieldCheck,
@@ -33,6 +34,7 @@ import {
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useUnreadMessages } from '@/lib/inbox';
 import { usePlayer } from '@/lib/player';
+import { MOBILE_LABEL } from '@/lib/nav';
 import { cn } from '@/lib/utils';
 import { PageTransition } from '@/components/gc/page-transition';
 import { PlayStoreLink } from '@/components/gc/play-store';
@@ -278,15 +280,6 @@ function Topbar() {
     );
 }
 
-const PRIMARY_MOBILE = ['feed', 'messages', 'friends', 'profile'];
-
-const MOBILE_LABEL: Record<string, string> = {
-    profile: 'Сторінка',
-    messages: 'Чати',
-    friends: 'Друзі',
-    feed: 'Новини',
-};
-
 function useNavItems() {
     const { nav, auth, counters } = usePage().props;
     const unreadMessages = useUnreadMessages();
@@ -303,16 +296,23 @@ function useNavItems() {
     }));
 }
 
+/** Закріплені користувачем розділи — у панелі (в його порядку), решта — у «Меню». */
+function useMobileSplit<T extends { key: string }>(items: T[]) {
+    const { auth } = usePage().props;
+    const tabs = auth.user.nav_tabs ?? [];
+    const primary = tabs
+        .map((key) => items.find((i) => i.key === key))
+        .filter((i): i is T => i !== undefined);
+
+    return { primary, rest: items.filter((i) => !primary.includes(i)) };
+}
+
 function MobileNav() {
     const isActive = useIsActive();
     const items = useNavItems();
     const [open, setOpen] = useState(false);
 
-    const primary = [
-        ...items.filter((i) => PRIMARY_MOBILE.includes(i.key)),
-        ...items.filter((i) => !PRIMARY_MOBILE.includes(i.key)),
-    ].slice(0, 4);
-    const rest = items.filter((i) => !primary.includes(i));
+    const { primary, rest } = useMobileSplit(items);
     const restActive = rest.some((i) => isActive(i.href, i.key));
     const restBadge = rest.reduce((sum, i) => sum + i.badge, 0);
 
@@ -386,7 +386,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
     const { auth } = usePage().props;
     const user = auth.user;
     const isActive = useIsActive();
-    const items = useNavItems();
+    const { rest: items } = useMobileSplit(useNavItems());
 
     useEffect(() => {
         const offNavigate = router.on('start', onClose);
@@ -403,6 +403,11 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
     }, [onClose]);
 
     const extra = [
+        {
+            href: '/settings/navigation',
+            label: 'Налаштувати нижню панель',
+            icon: PanelBottom,
+        },
         { href: '/settings/profile', label: 'Налаштування', icon: Settings },
         ...(user.is_admin
             ? [{ href: '/admin', label: 'Адмін-панель', icon: ShieldCheck }]

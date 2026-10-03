@@ -78,6 +78,7 @@ class HandleInertiaRequests extends Middleware
                     'role' => $user->role,
                     'is_admin' => $user->isAdmin(),
                     'cover_url' => $user->cover_url,
+                    'nav_tabs' => $this->modules->navTabsFor($user),
                     'created_at' => $user->created_at,
                     'updated_at' => $user->updated_at,
                 ] : null,

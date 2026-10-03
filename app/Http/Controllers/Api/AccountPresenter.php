@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\User;
+use App\Support\Modules\ModuleManager;
 
 class AccountPresenter
 {
@@ -33,6 +34,7 @@ class AccountPresenter
             'is_private' => $user->is_private,
             'message_privacy' => $user->message_privacy,
             'role' => $user->role,
+            'nav_tabs' => app(ModuleManager::class)->navTabsFor($user),
             'two_factor' => $user->two_factor_confirmed_at !== null,
             'discord' => filled($user->discord_id),
             'discord_username' => $user->discord_username,
