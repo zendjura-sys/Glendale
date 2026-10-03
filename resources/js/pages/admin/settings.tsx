@@ -85,7 +85,12 @@ function SwitchRow({
     );
 }
 
-type MailStatus = { mailer: string; from: string; ready: boolean };
+type MailStatus = {
+    mailer: string;
+    from: string;
+    social: string;
+    ready: boolean;
+};
 
 function MailSection({ mail }: { mail: MailStatus }) {
     const [email, setEmail] = useState(usePage().props.auth.user?.email ?? '');
@@ -104,7 +109,7 @@ function MailSection({ mail }: { mail: MailStatus }) {
         <Section
             icon={Mail}
             title="Пошта"
-            description="Листи підтвердження та сповіщення. Сервер відправляє їх через sendmail (Postfix) — налаштування: deploy/mail/setup-mail.sh."
+            description="Службові листи (пароль, підтвердження пошти) йдуть в «Оповіщення», події друзів і коментарів — в «Соцмережі»."
         >
             <div
                 className={cn(
@@ -117,7 +122,14 @@ function MailSection({ mail }: { mail: MailStatus }) {
                 {mail.ready ? (
                     <>
                         Відправка: <b className="text-white">{mail.mailer}</b>
-                        {' · '}від <b className="text-white">{mail.from}</b>
+                        <span className="mt-1 block">
+                            Оповіщення:{' '}
+                            <b className="text-white">{mail.from}</b>
+                        </span>
+                        <span className="mt-1 block">
+                            Соцмережі:{' '}
+                            <b className="text-white">{mail.social}</b>
+                        </span>
                     </>
                 ) : (
                     <>
@@ -147,7 +159,7 @@ function MailSection({ mail }: { mail: MailStatus }) {
                         className="shrink-0"
                     >
                         {sending && <Spinner />}
-                        Надіслати тестовий лист
+                        Надіслати обидва листи
                     </Button>
                 </div>
             </div>

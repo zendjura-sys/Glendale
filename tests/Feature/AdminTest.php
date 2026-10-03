@@ -192,6 +192,7 @@ class AdminTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->where('mail.mailer', 'array')
                 ->where('mail.from', 'no-reply@gamecon.online')
+                ->where('mail.social', 'social@gamecon.online')
                 ->where('mail.ready', false));
 
         $this->actingAs($user)->post(route('admin.settings.mail-test'), ['email' => 'x@example.com'])->assertForbidden();
@@ -200,8 +201,10 @@ class AdminTest extends TestCase
         $this->actingAs($admin)->post(route('admin.settings.mail-test'), ['email' => 'owner@example.com'])->assertRedirect();
 
         $messages = app('mail.manager')->mailer('array')->getSymfonyTransport()->messages();
-        $this->assertCount(1, $messages);
-        $this->assertSame('owner@example.com', $messages[0]->getEnvelope()->getRecipients()[0]->getAddress());
+        $this->assertCount(2, $messages);
+        foreach ($messages as $message) {
+            $this->assertSame('owner@example.com', $message->getEnvelope()->getRecipients()[0]->getAddress());
+        }
     }
 
     public function test_email_verification_setting_gates_the_site(): void

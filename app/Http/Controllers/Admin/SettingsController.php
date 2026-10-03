@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\SocialActivityMail;
+use App\Support\Mail\MailCategory;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,7 +27,8 @@ class SettingsController extends Controller
             'settings' => $this->settings->public(),
             'mail' => [
                 'mailer' => $mailer,
-                'from' => (string) config('mail.from.address'),
+                'from' => MailCategory::address(MailCategory::UPDATES),
+                'social' => MailCategory::address(MailCategory::SOCIAL),
                 // log/array лише записують листи у файл — нікому нічого не надходить.
                 'ready' => ! in_array($mailer, ['log', 'array'], true),
             ],
@@ -37,11 +40,23 @@ class SettingsController extends Controller
     {
         $data = $request->validate(['email' => ['required', 'email', 'max:190']]);
 
+        $app = (string) config('app.name');
+
         try {
             Mail::raw(
-                'Це тестовий лист від '.config('app.name').'. Якщо ви його отримали — пошта сайту працює, і листи підтвердження теж дійдуть.',
-                fn (Message $message) => $message->to($data['email'])->subject(config('app.name').': перевірка пошти'),
+                'Це службовий лист '.$app.': підтвердження пошти та скидання пароля приходять із цієї адреси.',
+                function (Message $message) use ($data, $app) {
+                    $message->to($data['email'])->subject($app.': сповіщення акаунта');
+                    $message->getSymfonyMessage()->getHeaders()->addTextHeader('X-GameCon-Category', MailCategory::UPDATES);
+                },
             );
+
+            Mail::to($data['email'])->sendNow(new SocialActivityMail(
+                subjectLine: 'Гравець хоче додати вас у друзі',
+                intro: 'Гравець хоче додати вас у друзі. Листи про друзів, коментарі та спільноти приходять із цієї адреси.',
+                actionUrl: url('/notifications'),
+                fromName: 'Гравець',
+            ));
         } catch (Throwable $e) {
             Inertia::flash('toast', ['type' => 'error', 'message' => 'Лист не відправлено: '.Str::limit($e->getMessage(), 200)]);
 
@@ -49,8 +64,8 @@ class SettingsController extends Controller
         }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => config('mail.default') === 'log'
-            ? 'Пошта в режимі log: лист записано в журнал, а не відправлено. Налаштуйте sendmail.'
-            : 'Тестовий лист відправлено на '.$data['email'].'. Перевірте вхідні та «Спам».']);
+            ? 'Пошта в режимі log: листи записано в журнал, а не відправлено. Налаштуйте sendmail.'
+            : 'Надіслано два листи на '.$data['email'].': службовий (Оповіщення) і соціальний (Соцмережі).']);
 
         return back();
     }

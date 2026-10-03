@@ -83,6 +83,9 @@ cat <<EOF
     MAIL_FROM_ADDRESS="no-reply@$DOMAIN"
 потім: php artisan optimize && sudo systemctl restart gamecon-queue
 
+Службові листи йдуть з no-reply@$DOMAIN («Оповіщення»),
+події друзів і стрічки — з social@$DOMAIN («Соцмережі»). DKIM уже підписує обидві адреси.
+
 Додайте DNS-записи для $DOMAIN (без них листи потраплятимуть у спам):
     TXT  @                         v=spf1 a mx ip4:$IP ~all
     TXT  $SELECTOR._domainkey      $DKIM
