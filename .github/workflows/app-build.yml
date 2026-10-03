@@ -30,6 +30,8 @@ concurrency:
 
 permissions:
   contents: read
+  # Видалення старих збірок після нової (див. крок «Прибрати старі збірки»).
+  actions: write
 
 jobs:
   android:
@@ -126,3 +128,14 @@ jobs:
           name: gamecon-${{ steps.version.outputs.full }}
           path: ${{ runner.temp }}/out/
           retention-days: 30
+
+      # Старі версії лише займають сховище Actions: лишаємо дві останні збірки застосунку.
+      - name: Прибрати старі збірки
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${{ github.repository }}/actions/artifacts?per_page=100" \
+            --jq '[.artifacts[] | select(.name | startswith("gamecon-"))] | sort_by(.created_at) | reverse | .[2:] | .[].id' \
+          | while read -r id; do
+              gh api -X DELETE "repos/${{ github.repository }}/actions/artifacts/$id" && echo "Видалено збірку $id"
+            done
