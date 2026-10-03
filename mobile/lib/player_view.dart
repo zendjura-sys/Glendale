@@ -120,7 +120,9 @@ Future<void> showFullPlayer(BuildContext context, TrackPlayer player) {
         final session = player.session;
         final own = track.id != null && session != null && (track.userId == session.myId || session.isAdmin);
         final details = [track.album, track.genre].whereType<String>().join(' · ');
-        return SingleChildScrollView(
+        return _PullToClose(
+          child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
           padding: const EdgeInsets.fromLTRB(24, 6, 24, 28),
           child: Column(
             children: [
@@ -206,10 +208,50 @@ Future<void> showFullPlayer(BuildContext context, TrackPlayer player) {
               ],
             ],
           ),
+          ),
         );
       },
     ),
   );
+}
+
+/// Свайп униз будь-де по плеєру закриває його, коли вміст прокручено до самого верху.
+class _PullToClose extends StatefulWidget {
+  const _PullToClose({required this.child});
+  final Widget child;
+
+  @override
+  State<_PullToClose> createState() => _PullToCloseState();
+}
+
+class _PullToCloseState extends State<_PullToClose> {
+  double pulled = 0;
+
+  void _close() {
+    pulled = 0;
+    Navigator.of(context).maybePop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: (n) {
+        if (n.depth != 0) return false;
+        if (n is OverscrollNotification && n.overscroll < 0 && n.dragDetails != null) {
+          pulled -= n.overscroll;
+          if (pulled > 72) _close();
+        } else if (n is ScrollEndNotification) {
+          // Швидкий змах униз від верху теж закриває.
+          if (n.metrics.pixels <= 0 && (n.dragDetails?.primaryVelocity ?? 0) > 700) _close();
+          pulled = 0;
+        } else if (n is ScrollStartNotification) {
+          pulled = 0;
+        }
+        return false;
+      },
+      child: widget.child,
+    );
+  }
 }
 
 class _QueueRow extends StatelessWidget {

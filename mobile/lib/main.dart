@@ -43,6 +43,14 @@ Future<void> main() async {
         if (fixed != null) player.updateMeta(fixed);
       }).catchError((_) {});
   await GcAudioHandler.attach(player);
+  // Лише для перевірки фонової музики на емуляторі в CI (.github/workflows/app-audio-check.yml):
+  // збірка з --dart-define=GC_AUDIO_TEST_URL=… одразу вмикає трек. У звичайних збірках порожньо.
+  const audioTestUrl = String.fromEnvironment('GC_AUDIO_TEST_URL');
+  if (audioTestUrl.isNotEmpty) {
+    debugPrint('GC_AUDIO_TEST failure=${GcAudioHandler.failure}');
+    player.engine.playerStateStream.listen((s) => debugPrint('GC_AUDIO_TEST state=${s.processingState.name} playing=${s.playing}'));
+    unawaited(player.play(audioTestUrl, 'GameCon CI', 'Background audio'));
+  }
   await session.boot();
   final links = AppLinks();
   links.uriLinkStream.listen(session.takeLink);
