@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Іконку сповіщень шукають за назвою (FCM і локальні сповіщення) — не даємо R8 її вирізати. -->
+<!--
+  Ресурси, які шукають за назвою (getIdentifier), R8 вважає невикористаними й вирізає з релізу:
+  - ic_notification — іконка сповіщень (FCM, локальні сповіщення, плеєр у шторці);
+  - audio_service_* — кнопки плеєра audio_service. Без audio_service_stop Android 13+ відхиляє
+    кожне оновлення медіасесії (CustomAction без іконки), і музика не працює у фоні.
+-->
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@drawable/ic_notification" />
+    tools:keep="@drawable/ic_notification,@drawable/audio_service_*" />
