@@ -160,6 +160,8 @@ class VoiceRooms
 
     public function create(Family|Community $owner, User $user, string $name): VoiceRoom
     {
+        // Спершу стандартні кімнати («Загальна», шаблони адмінки), щоб нова не зайняла їхнє місце.
+        $this->list($owner);
         [$type, $id] = $this->key($owner);
         $count = VoiceRoom::query()->where('owner_type', $type)->where('owner_id', $id)->count();
         if ($count >= VoiceRoom::MAX_ROOMS) {
