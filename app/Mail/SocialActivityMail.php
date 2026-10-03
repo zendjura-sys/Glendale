@@ -25,6 +25,7 @@ class SocialActivityMail extends Mailable implements ShouldQueue, ShouldQueueAft
         public string $intro,
         public string $actionUrl,
         public string $fromName,
+        public ?string $unsubscribeUrl = null,
     ) {}
 
     public function envelope(): Envelope
@@ -37,9 +38,14 @@ class SocialActivityMail extends Mailable implements ShouldQueue, ShouldQueueAft
 
     public function headers(): Headers
     {
-        return new Headers(text: [
+        // Відписка одним натисканням і ідентифікатор розсилки — сигнали, за якими Gmail відносить листи до «Соцмереж».
+        return new Headers(text: array_filter([
             'X-GameCon-Category' => MailCategory::SOCIAL,
-        ]);
+            'List-Id' => config('app.name').' activity <social.'.(parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'localhost').'>',
+            'Precedence' => 'bulk',
+            'List-Unsubscribe' => $this->unsubscribeUrl ? '<'.$this->unsubscribeUrl.'>' : null,
+            'List-Unsubscribe-Post' => $this->unsubscribeUrl ? 'List-Unsubscribe=One-Click' : null,
+        ]));
     }
 
     public function content(): Content

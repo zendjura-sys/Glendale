@@ -45,9 +45,14 @@ class AccountMail
     {
         return (new MailMessage)
             ->subject($subject)
-            ->line($intro)
-            ->action($action, $url)
-            ->line($outro)
+            // Фірмовий шаблон сайту замість стандартного листа Laravel.
+            ->view(['html' => 'mail.account-notice', 'text' => 'mail.account-notice-text'], [
+                'title' => $subject,
+                'intro' => $intro,
+                'actionText' => $action,
+                'actionUrl' => $url,
+                'outro' => $outro,
+            ])
             ->withSymfonyMessage(function (Email $email) {
                 $email->getHeaders()->addTextHeader('X-GameCon-Category', MailCategory::UPDATES);
             });

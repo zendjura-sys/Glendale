@@ -58,7 +58,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  */
 #[Fillable([
     'username', 'first_name', 'last_name', 'email', 'password',
-    'status', 'about', 'city', 'birthday', 'gender', 'website', 'is_private', 'message_privacy',
+    'status', 'about', 'city', 'birthday', 'gender', 'website', 'is_private', 'message_privacy', 'email_social',
 ])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'email', 'ban_reason', 'google_email'])]
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
@@ -106,6 +106,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'banned_at' => 'datetime',
             'is_verified' => 'boolean',
             'is_private' => 'boolean',
+            'email_social' => 'boolean',
             'nav_tabs' => 'array',
         ];
     }

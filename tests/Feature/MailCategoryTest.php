@@ -81,6 +81,58 @@ class MailCategoryTest extends TestCase
         $this->assertStringContainsString('оцінив(-ла) ваш запис', $email->getSubject());
     }
 
+    public function test_social_letter_offers_one_click_unsubscribe_that_stops_activity_mail(): void
+    {
+        $from = User::factory()->create();
+        $to = User::factory()->create();
+
+        $this->actingAs($from)->post(route('friends.store', $to))->assertRedirect();
+
+        $email = $this->onlyEmail();
+        $headers = $email->getHeaders();
+        $this->assertSame('bulk', $headers->get('Precedence')->getBodyAsString());
+        $this->assertSame('List-Unsubscribe=One-Click', $headers->get('List-Unsubscribe-Post')->getBodyAsString());
+        $this->assertTrue($headers->has('List-Id'));
+        $url = trim($headers->get('List-Unsubscribe')->getBodyAsString(), '<>');
+        $this->assertStringContainsString('/mail/unsubscribe/'.$to->id, $url);
+        $this->assertStringContainsString('Не надсилати листи про активність', (string) $email->getHtmlBody());
+
+        // Без підпису — відмова; з підписом — Gmail відписує одним POST без CSRF-токена.
+        $this->post('/mail/unsubscribe/'.$to->id)->assertForbidden();
+        $this->post($url)->assertOk();
+        $this->assertFalse($to->fresh()->email_social);
+
+        $this->actingAs(User::factory()->create())->post(route('friends.store', $to))->assertRedirect();
+        $this->assertCount(1, app('mail.manager')->mailer('array')->getSymfonyTransport()->messages());
+    }
+
+    public function test_account_letter_uses_site_layout(): void
+    {
+        $user = User::factory()->create();
+
+        $this->post(route('password.email'), ['email' => $user->email])->assertRedirect();
+
+        $html = (string) $this->onlyEmail()->getHtmlBody();
+        $this->assertStringContainsString('#10142A', $html);
+        $this->assertStringContainsString('Задати новий пароль', $html);
+        $this->assertStringNotContainsString('Не надсилати листи про активність', $html);
+    }
+
+    public function test_activity_mail_can_be_toggled_in_profile_settings(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->patch(route('profile.update'), [
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
+            'username' => $user->username,
+            'email' => $user->email,
+            'email_social' => false,
+        ])->assertSessionHasNoErrors();
+
+        $this->assertFalse($user->fresh()->email_social);
+    }
+
     private function assertBranded(Email $email): void
     {
         $html = $email->getHtmlBody();

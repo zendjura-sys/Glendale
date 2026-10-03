@@ -2,6 +2,7 @@
 
 namespace App\Support\Mail;
 
+use App\Http\Controllers\Mail\UnsubscribeController;
 use App\Mail\SocialActivityMail;
 use App\Models\Community;
 use App\Models\Family;
@@ -18,7 +19,7 @@ class SocialMailer
 {
     public function notification(object $notifiable, DatabaseNotification $notification): void
     {
-        if (! $notifiable instanceof User || $notifiable->banned_at !== null) {
+        if (! $notifiable instanceof User || $notifiable->banned_at !== null || ! $notifiable->email_social) {
             return;
         }
 
@@ -53,6 +54,7 @@ class SocialMailer
             intro: Str::limit($intro, 500),
             actionUrl: $actionUrl,
             fromName: Str::limit($sender, 80),
+            unsubscribeUrl: UnsubscribeController::url($notifiable),
         ));
     }
 

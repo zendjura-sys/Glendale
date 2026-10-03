@@ -30,6 +30,9 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 
+        // «Відписатися одним натисканням» з Gmail надсилає POST без CSRF-токена; посилання підписане.
+        $middleware->validateCsrfTokens(except: ['mail/unsubscribe/*']);
+
         $middleware->alias([
             'module' => EnsureModuleEnabled::class,
             'auth.api' => AuthenticateApiToken::class,

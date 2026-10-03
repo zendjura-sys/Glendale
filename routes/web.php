@@ -9,6 +9,7 @@ use App\Http\Controllers\CommunityMemberController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FriendController;
+use App\Http\Controllers\Mail\UnsubscribeController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
 use App\Http\Controllers\MusicController;
@@ -334,6 +335,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
 require __DIR__.'/settings.php';
 
 // Колбек Spotify поза сесією браузера: застосунок передає користувача в state.
+Route::match(['get', 'post'], 'mail/unsubscribe/{user:id}', UnsubscribeController::class)
+    ->whereNumber('user')->middleware(['signed', 'throttle:20,1'])->name('mail.unsubscribe');
+
 Route::get('music/spotify/callback', [SpotifyController::class, 'callback'])
     ->middleware('module:music')
     ->name('spotify.callback');

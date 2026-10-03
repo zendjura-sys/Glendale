@@ -1,5 +1,5 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { AtSign, Globe, Lock, MapPin, MessageCircle } from 'lucide-react';
+import { AtSign, Globe, Lock, Mail, MapPin, MessageCircle } from 'lucide-react';
 import type { FormEvent } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import { ConnectedAccounts } from '@/components/auth/connected-accounts';
@@ -28,6 +28,7 @@ type ProfileForm = {
     website: string;
     is_private: boolean;
     message_privacy: string;
+    email_social: boolean;
 };
 
 type Props = {
@@ -61,6 +62,7 @@ export default function Profile({
         website: profile.website ?? '',
         is_private: !!profile.is_private,
         message_privacy: profile.message_privacy ?? 'everyone',
+        email_social: profile.email_social !== false,
     });
     const { data, setData, errors, processing } = form;
 
@@ -303,6 +305,31 @@ export default function Profile({
                                 checked={data.is_private}
                                 onChange={(e) =>
                                     setData('is_private', e.target.checked)
+                                }
+                                className="peer sr-only"
+                            />
+                            <span className="relative mt-2 h-6 w-11 shrink-0 rounded-full bg-white/10 transition peer-checked:bg-gradient-brand after:absolute after:top-0.5 after:left-0.5 after:size-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5" />
+                        </label>
+
+                        <label className="flex cursor-pointer items-start gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 transition hover:border-white/15">
+                            <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.05]">
+                                <Mail className="size-[18px] text-[#a58bff]" />
+                            </span>
+                            <span className="flex-1">
+                                <span className="block text-sm font-semibold text-white">
+                                    Листи про активність
+                                </span>
+                                <span className="mt-0.5 block text-xs leading-relaxed text-white/45">
+                                    Друзі, коментарі, спільноти й сім’ї — на
+                                    пошту. Службові листи (підтвердження,
+                                    пароль) приходять завжди.
+                                </span>
+                            </span>
+                            <input
+                                type="checkbox"
+                                checked={data.email_social}
+                                onChange={(e) =>
+                                    setData('email_social', e.target.checked)
                                 }
                                 className="peer sr-only"
                             />

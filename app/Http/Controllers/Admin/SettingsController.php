@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Mail\UnsubscribeController;
 use App\Mail\SocialActivityMail;
 use App\Support\Mail\MailCategory;
 use App\Support\Settings\SiteSettings;
@@ -45,7 +46,12 @@ class SettingsController extends Controller
         try {
             Mail::send(
                 ['html' => 'mail.account-notice', 'text' => 'mail.account-notice-text'],
-                ['intro' => 'Це службовий лист '.$app.': підтвердження пошти та скидання пароля приходять із цієї адреси.'],
+                [
+                    'title' => 'Пошта '.$app.' працює',
+                    'intro' => 'Це службовий лист '.$app.': підтвердження пошти та скидання пароля приходять із цієї адреси.',
+                    'actionText' => 'Відкрити '.$app,
+                    'actionUrl' => url('/'),
+                ],
                 function (Message $message) use ($data, $app) {
                     $message->to($data['email'])->subject($app.': сповіщення акаунта');
                     $message->getSymfonyMessage()->getHeaders()->addTextHeader('X-GameCon-Category', MailCategory::UPDATES);
@@ -57,6 +63,7 @@ class SettingsController extends Controller
                 intro: 'Гравець хоче додати вас у друзі. Листи про друзів, коментарі та спільноти приходять із цієї адреси.',
                 actionUrl: url('/notifications'),
                 fromName: 'Гравець',
+                unsubscribeUrl: UnsubscribeController::url($request->user()),
             ));
         } catch (Throwable $e) {
             Inertia::flash('toast', ['type' => 'error', 'message' => 'Лист не відправлено: '.Str::limit($e->getMessage(), 200)]);

@@ -95,3 +95,15 @@ cat <<EOF
 Перевірка: Адмін-панель → Налаштування → Пошта → «Надіслати тестовий лист»,
 журнал відправки: sudo tail -f /var/log/mail.log
 EOF
+
+cat <<EOF
+
+Аватар-логотип замість літери в Gmail (BIMI):
+  1. DMARC має бути строгим: змініть _dmarc на
+       v=DMARC1; p=quarantine; pct=100; rua=mailto:postmaster@$DOMAIN
+     (спершу переконайтеся, що листи проходять SPF і DKIM — інакше вони підуть у спам).
+  2. TXT  default._bimi   v=BIMI1; l=https://$DOMAIN/bimi/gamecon.svg; a=
+  3. Gmail показує логотип лише з сертифікатом VMC або CMC (DigiCert, Entrust, GlobalSign):
+     після його отримання вкажіть адресу .pem у a=…
+  Yahoo, AOL, Fastmail та Apple Mail (з iOS 16) показують логотип і без сертифіката.
+EOF
