@@ -15,6 +15,7 @@ import 'api.dart';
 import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
+import 'voice_room.dart';
 
 const _messages = AndroidNotificationChannel(
   'messages',
@@ -29,6 +30,16 @@ const _activity = AndroidNotificationChannel(
   importance: Importance.high,
 );
 
+/// Вхідні дзвінки: максимальна важливість, мелодія дзвінка телефону, показ поверх екрана блокування.
+const _calls = AndroidNotificationChannel(
+  'calls',
+  'Дзвінки',
+  description: 'Вхідні особисті й групові дзвінки',
+  importance: Importance.max,
+  sound: UriAndroidNotificationSound('content://settings/system/ringtone'),
+  audioAttributesUsage: AudioAttributesUsage.notificationRingtone,
+);
+
 const _initSettings = InitializationSettings(
   android: AndroidInitializationSettings('ic_notification'),
   iOS: DarwinInitializationSettings(requestAlertPermission: false, requestBadgePermission: false, requestSoundPermission: false),
@@ -40,10 +51,15 @@ const _initSettings = InitializationSettings(
 Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
   DartPluginRegistrant.ensureInitialized();
   await Firebase.initializeApp();
-  if (message.notification != null || message.data['type'] != 'message') return;
+  final type = message.data['type'];
+  if (message.notification != null || !const ['message', 'call', 'call_ended'].contains(type)) return;
   final local = FlutterLocalNotificationsPlugin();
   await local.initialize(settings: _initSettings, onDidReceiveBackgroundNotificationResponse: notificationActionInBackground);
-  await ChatNotifications(local, await SharedPreferences.getInstance()).incoming(message.data);
+  if (type == 'message') {
+    await ChatNotifications(local, await SharedPreferences.getInstance()).incoming(message.data);
+  } else {
+    await CallNotifications(local).incoming(message.data);
+  }
 }
 
 /// «Відповісти» / «Прочитано» з шторки, коли інтерфейс застосунку не запущено.
@@ -52,6 +68,7 @@ Future<void> notificationActionInBackground(NotificationResponse response) async
   DartPluginRegistrant.ensureInitialized();
   final local = FlutterLocalNotificationsPlugin();
   await local.initialize(settings: _initSettings);
+  if (await CallNotifications(local).act(response)) return;
   await ChatNotifications(local, await SharedPreferences.getInstance()).act(response);
 }
 
@@ -63,6 +80,79 @@ String? _urlOf(String? payload) {
     return text((jsonDecode(payload) as Map)['url']);
   } catch (_) {
     return null;
+  }
+}
+
+/// Вхідний дзвінок у шторці: «Відповісти» відкриває застосунок і підключає розмову,
+/// «Відхилити» спрацьовує без відкриття. Дзвонить, доки не відповіли, або 45 секунд.
+class CallNotifications {
+  CallNotifications(this.local);
+  final FlutterLocalNotificationsPlugin local;
+
+  static int idFor(String call) => 'call-$call'.hashCode & 0x7fffffff;
+
+  Future<void> incoming(Map<String, dynamic> data) async {
+    final call = text(data['call_id']);
+    if (call == null) return;
+    if (data['type'] == 'call_ended') {
+      await local.cancel(id: idFor(call), tag: 'call-$call');
+      return;
+    }
+    final group = data['group'] == '1';
+    await local.show(
+      id: idFor(call),
+      title: text(data['title']) ?? text(data['caller']) ?? 'Дзвінок',
+      body: text(data['body']) ?? (group ? 'Груповий дзвінок' : 'Вхідний дзвінок'),
+      payload: jsonEncode({...data, 'kind': 'call'}),
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          _calls.id,
+          _calls.name,
+          channelDescription: _calls.description,
+          importance: Importance.max,
+          priority: Priority.max,
+          category: AndroidNotificationCategory.call,
+          fullScreenIntent: true,
+          ongoing: true,
+          autoCancel: false,
+          timeoutAfter: 45000,
+          // FLAG_INSISTENT: мелодія повторюється, доки дзвінок не прийняли чи не відхилили.
+          additionalFlags: Int32List.fromList([4]),
+          audioAttributesUsage: AudioAttributesUsage.notificationRingtone,
+          icon: 'ic_notification',
+          color: primary,
+          tag: 'call-$call',
+          actions: const [
+            AndroidNotificationAction('call_decline', 'Відхилити', titleColor: danger),
+            AndroidNotificationAction('call_accept', 'Відповісти', titleColor: green, showsUserInterface: true),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Дані дзвінка з натиснутого сповіщення (null — це не дзвінок).
+  static Map<String, dynamic>? payloadOf(NotificationResponse response) {
+    try {
+      final data = Map<String, dynamic>.from(jsonDecode(response.payload ?? '') as Map);
+      return data['kind'] == 'call' ? data : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// «Відхилити» без відкриття застосунку. Повертає true, якщо дію оброблено.
+  Future<bool> act(NotificationResponse response) async {
+    final data = payloadOf(response);
+    if (data == null || response.actionId != 'call_decline') return false;
+    final call = text(data['call_id']);
+    if (call == null) return true;
+    await local.cancel(id: idFor(call), tag: 'call-$call');
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
+    final token = prefs.getString('token');
+    if (token != null) await Api(() => token).post('/api/v1/calls/$call/decline').catchError((_) => <String, dynamic>{});
+    return true;
   }
 }
 
@@ -219,6 +309,7 @@ class Push {
 
   final _local = FlutterLocalNotificationsPlugin();
   late final _chats = ChatNotifications(_local, session.prefs);
+  late final _callNotes = CallNotifications(_local);
   bool _ready = false;
   String? _registeredFor;
   StreamSubscription<String>? _refresh;
@@ -240,6 +331,8 @@ class Push {
     await _local.initialize(
       settings: _initSettings,
       onDidReceiveNotificationResponse: (response) async {
+        if (await _callNotes.act(response)) return;
+        if (_answer(response)) return;
         if (await _chats.act(response)) return;
         _open(response.payload);
       },
@@ -248,6 +341,7 @@ class Push {
     final android = _local.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     await android?.createNotificationChannel(_messages);
     await android?.createNotificationChannel(_activity);
+    await android?.createNotificationChannel(_calls);
 
     await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(alert: false, badge: true, sound: false);
     FirebaseMessaging.onMessage.listen(_foreground);
@@ -257,6 +351,9 @@ class Push {
     final initial = await FirebaseMessaging.instance.getInitialMessage();
     final launch = await _local.getNotificationAppLaunchDetails();
     final response = launch?.didNotificationLaunchApp == true ? launch?.notificationResponse : null;
+    if (response != null && response.actionId == 'call_accept') {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _answer(response));
+    }
     final url = initial?.data['url'] ?? (response != null && response.actionId == null ? response.payload : null);
     if (url != null) WidgetsBinding.instance.addPostFrameCallback((_) => _open(url));
 
@@ -305,6 +402,12 @@ class Push {
     unawaited(session.refreshCounters());
     final data = message.data;
     final url = data['url'];
+    if (data['type'] == 'call' || data['type'] == 'call_ended') {
+      // Уже в цій розмові — не дзвонимо.
+      if (data['type'] == 'call' && VoiceCall.instance.callId == int.tryParse('${data['call_id']}')) return;
+      await _callNotes.incoming(data);
+      return;
+    }
     final chat = data['type'] == 'message';
     // Бесіда вже відкрита — повідомлення й так з’явиться на екрані.
     if (chat && url != null && _location == url) return;
@@ -337,6 +440,23 @@ class Push {
         iOS: const DarwinNotificationDetails(presentAlert: true, presentSound: true, threadIdentifier: 'gamecon'),
       ),
     );
+  }
+
+  /// «Відповісти» на вхідний дзвінок: відкриваємо бесіду й підключаємо розмову.
+  bool _answer(NotificationResponse response) {
+    final data = CallNotifications.payloadOf(response);
+    if (data == null) return false;
+    final call = int.tryParse('${data['call_id']}');
+    final conversation = int.tryParse('${data['conversation_id']}');
+    if (call == null || conversation == null || session.token == null) return true;
+    unawaited(_local.cancel(id: CallNotifications.idFor('$call'), tag: 'call-$call'));
+    final target = '/messages/$conversation';
+    if (_location != target) router.push(target);
+    if (response.actionId == 'call_accept') {
+      final title = text(data['title']) ?? text(data['caller']) ?? 'Дзвінок';
+      unawaited(VoiceCall.instance.answer(session.api, call, conversation, title));
+    }
+    return true;
   }
 
   void _open(String? payload) {

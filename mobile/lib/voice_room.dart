@@ -23,10 +23,16 @@ class VoiceCall extends ChangeNotifier {
 
   Room? _room;
   EventsListener<RoomEvent>? _events;
+  Api? _api;
 
   /// idle | connecting | connected
   String status = 'idle';
+
+  /// room — голосова кімната сім’ї чи спільноти; call — дзвінок у бесіді.
+  String? kind;
   int? roomId;
+  int? callId;
+  int? conversationId;
   String roomName = '';
   String label = '';
   String route = '';
@@ -34,29 +40,90 @@ class VoiceCall extends ChangeNotifier {
   bool micBlocked = false;
   bool deafened = false;
   Set<String> speaking = {};
+  DateTime? connectedAt;
 
   bool get active => status != 'idle';
 
+  /// Голосова кімната сім’ї чи спільноти.
   Future<void> join(Api api, Map<String, dynamic> room, {required String label, required String route, void Function(Object error)? onError}) async {
     final id = intOf(room['id']);
-    if (roomId == id && active) return;
-    if (_room != null) await leave();
+    if (kind == 'room' && roomId == id && active) return;
+    await _connect(
+      api,
+      () => api.post('/api/v1/voice/rooms/$id/join'),
+      onError: onError,
+      failure: 'Не вдалося підключитися до голосової кімнати.',
+      meta: () {
+        kind = 'room';
+        roomId = id;
+        roomName = text(room['name']) ?? 'Кімната';
+        this.label = label;
+        this.route = route;
+      },
+    );
+  }
 
+  /// Подзвонити в бесіду або приєднатися до дзвінка, що вже триває.
+  Future<void> call(Api api, int conversation, String title, {void Function(Object error)? onError}) async {
+    if (kind == 'call' && conversationId == conversation && active) return;
+    await _connect(
+      api,
+      () => api.post('/api/v1/messages/$conversation/call'),
+      onError: onError,
+      failure: 'Не вдалося зателефонувати.',
+      meta: () => _callMeta(conversation, title),
+    );
+  }
+
+  /// Відповісти на вхідний дзвінок.
+  Future<void> answer(Api api, int call, int conversation, String title, {void Function(Object error)? onError}) async {
+    if (kind == 'call' && callId == call && active) return;
+    await _connect(
+      api,
+      () => api.post('/api/v1/calls/$call/join'),
+      onError: onError,
+      failure: 'Не вдалося відповісти на дзвінок.',
+      meta: () {
+        _callMeta(conversation, title);
+        callId = call;
+      },
+    );
+  }
+
+  void _callMeta(int conversation, String title) {
+    kind = 'call';
+    conversationId = conversation;
+    roomName = title;
+    label = 'Дзвінок';
+    route = '/messages/$conversation';
+  }
+
+  /// Якість звуку: Opus 96 кбіт/с, RED (надлишкові пакети від втрат), DTX (тиша не передається),
+  /// шумо- й ехоподавлення, автопідсилення й фільтр низьких частот.
+  static const _options = RoomOptions(
+    adaptiveStream: true,
+    dynacast: true,
+    defaultAudioCaptureOptions: AudioCaptureOptions(noiseSuppression: true, echoCancellation: true, autoGainControl: true, highPassFilter: true),
+    defaultAudioPublishOptions: AudioPublishOptions(encoding: AudioEncoding.presetMusicHighQuality, dtx: true, red: true),
+  );
+
+  Future<void> _connect(Api api, Future<Map<String, dynamic>> Function() access, {required void Function() meta, required String failure, void Function(Object error)? onError}) async {
+    if (_room != null) await leave();
+    _api = api;
+    meta();
     status = 'connecting';
-    roomId = id;
-    roomName = text(room['name']) ?? 'Кімната';
-    this.label = label;
-    this.route = route;
     notifyListeners();
 
     try {
       final recorder = AudioRecorder();
       final allowed = await recorder.hasPermission();
       await recorder.dispose();
-      if (!allowed) throw ApiException('Дозвольте мікрофон, щоб говорити в голосових кімнатах.');
+      if (!allowed) throw ApiException('Дозвольте мікрофон, щоб говорити.');
 
-      final access = await api.post('/api/v1/voice/rooms/$id/join');
-      final next = Room(roomOptions: const RoomOptions(adaptiveStream: true, dynacast: true));
+      final data = await access();
+      final call = mapOf(data['call']);
+      if (call.isNotEmpty) callId = intOf(call['id']);
+      final next = Room(roomOptions: _options);
       _room = next;
       final events = next.createListener();
       _events = events;
@@ -80,7 +147,7 @@ class VoiceCall extends ChangeNotifier {
           unawaited(_reset());
         });
 
-      await next.connect(text(access['url']) ?? '', text(access['token']) ?? '');
+      await next.connect(text(data['url']) ?? '', text(data['token']) ?? '');
       if (_room != next) {
         await next.disconnect();
         return;
@@ -88,20 +155,25 @@ class VoiceCall extends ChangeNotifier {
       await _keepAlive(true);
       micBlocked = next.localParticipant?.permissions.canPublish == false;
       status = 'connected';
+      connectedAt = DateTime.now();
       notifyListeners();
       if (!micBlocked) await _setMic(true);
     } catch (e) {
       await _room?.disconnect();
       await _reset();
-      onError?.call(e is ApiException ? e : 'Не вдалося підключитися до голосової кімнати.');
+      onError?.call(e is ApiException ? e : failure);
     }
   }
 
   Future<void> leave() async {
     final room = _room;
+    final call = kind == 'call' ? callId : null;
+    final api = _api;
     _room = null;
     await room?.disconnect();
     await _reset();
+    // Співрозмовник побачить кінець дзвінка одразу, не чекаючи вебхука LiveKit.
+    if (call != null && api != null) unawaited(api.post('/api/v1/calls/$call/leave').then((_) => null, onError: (_) => null));
   }
 
   Future<void> _reset() async {
@@ -110,7 +182,11 @@ class VoiceCall extends ChangeNotifier {
     _events = null;
     await _keepAlive(false);
     status = 'idle';
+    kind = null;
     roomId = null;
+    callId = null;
+    conversationId = null;
+    connectedAt = null;
     micOn = false;
     micBlocked = false;
     speaking = {};
@@ -124,7 +200,7 @@ class VoiceCall extends ChangeNotifier {
         final ready = await FlutterBackground.initialize(
           androidConfig: const FlutterBackgroundAndroidConfig(
             notificationTitle: 'GameCon',
-            notificationText: 'Ви в голосовій кімнаті',
+            notificationText: 'Ви в голосовій розмові',
             notificationIcon: AndroidResource(name: 'ic_notification', defType: 'drawable'),
             shouldRequestBatteryOptimizationsOff: false,
           ),
@@ -303,7 +379,7 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
   Widget _room(Map<String, dynamic> room, bool enabled, bool manage) {
     final id = intOf(room['id']);
     final locked = room['locked'] == true;
-    final here = call.roomId == id && call.active;
+    final here = call.kind == 'room' && call.roomId == id && call.active;
     final people = maps(room['participants']);
     final count = intOf(room['count']);
 
@@ -391,8 +467,36 @@ class _SheetAction extends StatelessWidget {
 }
 
 /// Панель поточної розмови над нижнім меню: видно на всіх екранах, поки ви в кімнаті.
-class VoiceBar extends StatelessWidget {
+class VoiceBar extends StatefulWidget {
   const VoiceBar({super.key});
+
+  @override
+  State<VoiceBar> createState() => _VoiceBarState();
+}
+
+class _VoiceBarState extends State<VoiceBar> {
+  Timer? _tick;
+
+  @override
+  void initState() {
+    super.initState();
+    // Тривалість дзвінка на панелі оновлюється щосекунди.
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && VoiceCall.instance.kind == 'call') setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  String _elapsed(DateTime? since) {
+    if (since == null) return '';
+    final seconds = DateTime.now().difference(since).inSeconds;
+    return '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -418,7 +522,7 @@ class VoiceBar extends StatelessWidget {
                 Expanded(
                   child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(call.roomName, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w700)),
-                    Text(call.status == 'connecting' ? 'Підключення…' : call.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                    Text(call.status == 'connecting' ? 'Підключення…' : (call.kind == 'call' ? '${call.label} · ${_elapsed(call.connectedAt)}' : call.label), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
                   ]),
                 ),
                 _BarButton(
@@ -438,7 +542,7 @@ class VoiceBar extends StatelessWidget {
                   tooltip: call.deafened ? 'Увімкнути звук' : 'Вимкнути звук',
                   onTap: call.toggleDeafen,
                 ),
-                _BarButton(icon: LucideIcons.phoneOff, tooltip: 'Вийти з кімнати', leave: true, onTap: call.leave),
+                _BarButton(icon: LucideIcons.phoneOff, tooltip: call.kind == 'call' ? 'Покласти слухавку' : 'Вийти з кімнати', leave: true, onTap: call.leave),
               ]),
             ),
           ),

@@ -84,6 +84,7 @@ class CallsTest extends TestCase
         $this->artisan('calls:expire')->assertSuccessful();
         $this->assertSame(Call::STATUS_ENDED, $call->fresh()->status);
         $this->assertSame('Пропущений дзвінок', $this->lastSystemText($conversation));
+        Bus::assertDispatched(SendPushNotification::class, fn ($job) => $job->userId === $this->bob->id && $job->data['type'] === 'call_ended');
     }
 
     public function test_group_call_stays_open_as_voice_channel_and_others_can_join_later(): void

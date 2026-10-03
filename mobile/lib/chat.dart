@@ -17,6 +17,7 @@ import 'push.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'voice_note.dart';
+import 'voice_room.dart';
 import 'widgets.dart';
 
 // ───────────────────────── Список бесід ─────────────────────────
@@ -785,10 +786,12 @@ class _ChatScreenState extends State<ChatScreen> {
                   onPressed: _toggleMute,
                   icon: Icon(chat['is_muted'] == true ? LucideIcons.bellOff : LucideIcons.bell, color: muted),
                 ),
+                _CallButton(chat: chat, conversation: widget.id),
                 if (group) IconButton(onPressed: _showMembers, icon: const Icon(LucideIcons.info, color: muted)),
               ]),
             ),
             Divider(height: 1, color: line),
+            _CallBanner(chat: chat, conversation: widget.id),
             Expanded(
               child: messages.isEmpty
                   ? const QuietEmpty(icon: LucideIcons.hand, text: 'Напишіть перше повідомлення')
@@ -1758,6 +1761,81 @@ class _GroupInfoState extends State<_GroupInfo> {
         const SizedBox(height: 12),
         if (me != null) DangerButton(label: 'Вийти з бесіди', icon: LucideIcons.logOut, expand: true, onPressed: () => _remove(me)),
       ],
+    );
+  }
+}
+
+/// Зателефонувати / покласти слухавку в шапці бесіди.
+class _CallButton extends StatelessWidget {
+  const _CallButton({required this.chat, required this.conversation});
+  final Map<String, dynamic> chat;
+  final int conversation;
+
+  @override
+  Widget build(BuildContext context) {
+    final voice = VoiceCall.instance;
+    return ListenableBuilder(
+      listenable: voice,
+      builder: (context, _) {
+        final here = voice.kind == 'call' && voice.conversationId == conversation && voice.active;
+        final canCall = chat['can_call'] == true && chat['calls_enabled'] == true;
+        if (!here && !canCall) return const SizedBox.shrink();
+        return IconButton(
+          tooltip: here ? 'Покласти слухавку' : (chat['call'] is Map ? 'Приєднатися до дзвінка' : 'Зателефонувати'),
+          onPressed: () => here
+              ? voice.leave()
+              : voice.call(AppScope.read(context).session.api, conversation, text(chat['title']) ?? 'Дзвінок', onError: (e) {
+                  if (context.mounted) toast(context, e);
+                }),
+          icon: Icon(here ? LucideIcons.phoneOff : LucideIcons.phone, color: here ? danger : muted),
+        );
+      },
+    );
+  }
+}
+
+/// «Іде дзвінок» під шапкою, поки в бесіді триває розмова, до якої ви ще не приєдналися.
+class _CallBanner extends StatelessWidget {
+  const _CallBanner({required this.chat, required this.conversation});
+  final Map<String, dynamic> chat;
+  final int conversation;
+
+  @override
+  Widget build(BuildContext context) {
+    final voice = VoiceCall.instance;
+    return ListenableBuilder(
+      listenable: voice,
+      builder: (context, _) {
+        final call = chat['call'] is Map ? mapOf(chat['call']) : null;
+        final joined = maps(call?['joined']);
+        final here = voice.kind == 'call' && voice.conversationId == conversation && voice.active;
+        if (call == null || joined.isEmpty || here) return const SizedBox.shrink();
+        final canCall = chat['can_call'] == true && chat['calls_enabled'] == true;
+        return Container(
+          color: green.withValues(alpha: 0.08),
+          padding: const EdgeInsets.fromLTRB(14, 8, 10, 8),
+          child: Row(children: [
+            const Icon(LucideIcons.phone, size: 16, color: green),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                '${chat['type'] == 'group' ? 'Іде груповий дзвінок' : 'Іде дзвінок'} · ${joined.map((p) => text(p['name']) ?? '').join(', ')}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: body(13, color: soft),
+              ),
+            ),
+            if (canCall)
+              TextButton(
+                onPressed: () => voice.call(AppScope.read(context).session.api, conversation, text(chat['title']) ?? 'Дзвінок', onError: (e) {
+                  if (context.mounted) toast(context, e);
+                }),
+                style: TextButton.styleFrom(backgroundColor: green, foregroundColor: Colors.white, minimumSize: const Size(0, 34), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                child: Text('Приєднатися', style: body(13, color: Colors.white, weight: FontWeight.w700)),
+              ),
+          ]),
+        );
+      },
     );
   }
 }

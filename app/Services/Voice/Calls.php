@@ -286,6 +286,10 @@ class Calls
             return;
         }
         $call->refresh();
+        // Кому ще дзвонило — прибрати вхідний дзвінок зі шторки телефона.
+        foreach ($call->participants()->where('state', CallParticipant::STATE_INVITED)->pluck('user_id') as $userId) {
+            SendPushNotification::dispatch((int) $userId, 'Дзвінок завершено', '', ['type' => 'call_ended', 'call_id' => (string) $call->id], PushNotifier::CHANNEL_CALLS, 'call-'.$call->id, dataOnly: true);
+        }
         $call->participants()->where('state', CallParticipant::STATE_JOINED)->update(['state' => CallParticipant::STATE_LEFT, 'left_at' => now()]);
         $this->livekit->deleteRoom($call->livekitName());
 
