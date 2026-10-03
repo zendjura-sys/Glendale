@@ -223,8 +223,8 @@ class _AuthScreenState extends State<AuthScreen> {
     if (raw.contains('canceled') || raw.contains('12501') || raw.contains('sign_in_cancelled')) {
       return null;
     }
-    // Код Google Play Services з «ApiException: 10: …» — показуємо його, щоб було видно причину.
-    final code = RegExp(r'ApiException: (\d+)').firstMatch(raw)?.group(1);
+    // Код Google Play Services з «ApiException: 10: …»; у релізі R8 скорочує назву класу («w3: 10: »).
+    final code = RegExp(r'(?:^|\s)(\d+):').firstMatch(error.message ?? '')?.group(1);
     if (code == '10') {
       // DEVELOPER_ERROR: підпис застосунку не зареєстровано у Firebase — показуємо, який саме.
       final sha1 = await _signingSha1();
