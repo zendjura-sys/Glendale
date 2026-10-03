@@ -97,8 +97,14 @@ jobs:
           n=gamecon_${{ steps.version.outputs.name }}
           cp build/app/outputs/flutter-apk/app-release.apk "$RUNNER_TEMP/out/$n.apk"
           cp build/app/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/out/$n.aab"
+          # keytool -printcert мовчить для підпису v2/v3, тож читаємо сертифікат через apksigner.
           # Має збігатися з 24:E9:3E:4D:A8:AE:34:57:3E:7F:C0:2B:F0:E4:84:B6:FE:41:35:82
-          keytool -printcert -jarfile "$RUNNER_TEMP/out/$n.apk" | grep -E 'SHA1|SHA-1' | tee "$RUNNER_TEMP/out/signature.txt"
+          "$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner" verify --print-certs "$RUNNER_TEMP/out/$n.apk" | grep -E 'SHA-1|SHA-256' | tee "$RUNNER_TEMP/out/signature.txt"
+          if ! test -s "$RUNNER_TEMP/out/signature.txt"; then
+            echo "::error::apksigner не показав відбитки підпису — перевірте збірку."
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/out/signature.txt" >> "$GITHUB_STEP_SUMMARY"
           rm -f "$GAMECON_STORE_FILE"
 
       - uses: actions/upload-artifact@v4
