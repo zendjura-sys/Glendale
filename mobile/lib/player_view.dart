@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import 'audio.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'track_edit.dart';
@@ -181,6 +182,10 @@ Future<void> showFullPlayer(BuildContext context, TrackPlayer player) {
                   IconButton(tooltip: 'Повтор треку', onPressed: player.toggleRepeat, icon: Icon(player.repeat ? LucideIcons.repeat1 : LucideIcons.repeat, color: player.repeat ? primary : muted)),
                 ],
               ),
+              if (GcAudioHandler.failure != null) ...[
+                const SizedBox(height: 10),
+                Text('Фонове відтворення недоступне: ${GcAudioHandler.failure}', textAlign: TextAlign.center, style: body(11, color: faint)),
+              ],
               if (player.queue.length > 1) ...[
                 const SizedBox(height: 18),
                 Row(children: [

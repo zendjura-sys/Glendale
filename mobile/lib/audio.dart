@@ -20,6 +20,9 @@ class GcAudioHandler extends BaseAudioHandler with SeekHandler {
 
   final TrackPlayer player;
   QueueTrack? _shown;
+
+  /// Чому медіасесія не запустилася (тоді немає фонового відтворення й плеєра у шторці) — показується в плеєрі.
+  static String? failure;
   int _shownLength = -1;
 
   static Future<void> attach(TrackPlayer player) async {
@@ -36,6 +39,7 @@ class GcAudioHandler extends BaseAudioHandler with SeekHandler {
         ),
       );
     } catch (e) {
+      failure = '$e';
       debugPrint('Медіасесія недоступна: $e');
     }
   }
