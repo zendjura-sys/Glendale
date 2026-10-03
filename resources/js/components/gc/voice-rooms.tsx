@@ -64,12 +64,22 @@ export function VoiceRooms({
     const voice = useVoice();
     const [busy, setBusy] = useState(false);
     const [data, setData] = useState<VoiceState | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     const load = useCallback(
         () =>
             api<VoiceState>('GET', `/voice/${owner.type}/${owner.id}`)
-                .then(setData)
-                .catch(() => undefined),
+                .then((state) => {
+                    setData(state);
+                    setError(null);
+                })
+                .catch((e: unknown) =>
+                    setError(
+                        e instanceof ApiError
+                            ? e.message
+                            : 'Голосові кімнати зараз недоступні',
+                    ),
+                ),
         [owner.type, owner.id],
     );
 
@@ -86,7 +96,17 @@ export function VoiceRooms({
         if (voice.status !== 'connecting') void load();
     }, [voice.status, voice.roomId, load]);
 
-    if (!data) return null;
+    if (!data) {
+        // Помилку показуємо, а не ховаємо панель, — інакше незрозуміло, куди вона поділась.
+        return error ? (
+            <section className={cn('glass rounded-3xl p-4', className)}>
+                <div className="flex items-center gap-2 text-sm text-white/55">
+                    <Volume2 className="size-4 text-white/35" />
+                    {error}
+                </div>
+            </section>
+        ) : null;
+    }
 
     const run = async (fn: () => Promise<VoiceState>) => {
         setBusy(true);

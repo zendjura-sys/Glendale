@@ -91,6 +91,13 @@ export default function FamilyOverview(props: Props) {
                 />
             </div>
 
+            {/* Голосові кімнати — одразу під показниками, щоб на телефоні не губились унизу. */}
+            <VoiceRooms
+                owner={{ type: 'family', id: family.id }}
+                label={`[${family.tag}] ${family.name}`}
+                href={`/f/${family.slug}`}
+            />
+
             <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
                 <div className="space-y-4">
                     <Link
@@ -192,11 +199,6 @@ export default function FamilyOverview(props: Props) {
                 </div>
 
                 <div className="space-y-4">
-                    <VoiceRooms
-                        owner={{ type: 'family', id: family.id }}
-                        label={`[${family.tag}] ${family.name}`}
-                        href={`/f/${family.slug}`}
-                    />
                     <Panel
                         title="Найближчі події"
                         icon={CalendarDays}
