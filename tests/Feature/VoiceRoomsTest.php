@@ -9,11 +9,13 @@ use App\Models\GtaServer;
 use App\Models\User;
 use App\Models\VoiceParticipant;
 use App\Models\VoiceRoom;
+use App\Models\VoiceRoomTemplate;
 use App\Services\CommunityService;
 use App\Services\Families\FamilyService;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 class VoiceRoomsTest extends TestCase
@@ -77,7 +79,7 @@ class VoiceRoomsTest extends TestCase
         return json_decode((string) base64_decode(strtr($parts[1], '-_', '+/')), true);
     }
 
-    private function signedWebhook(array $event, string $secret = self::SECRET): \Illuminate\Testing\TestResponse
+    private function signedWebhook(array $event, string $secret = self::SECRET): TestResponse
     {
         $body = (string) json_encode($event);
         $b64 = fn (string $v) => rtrim(strtr(base64_encode($v), '+/', '-_'), '=');
@@ -203,5 +205,62 @@ class VoiceRoomsTest extends TestCase
             ->assertJsonPath('owner.type', 'community');
 
         $this->actingAs(User::factory()->create())->getJson(route('voice.index', ['community', $community->id]))->assertForbidden();
+    }
+
+    public function test_admin_room_templates_appear_in_every_family_with_rank_access(): void
+    {
+        $this->configure();
+        Http::fake(['voice.gamecon.test/twirp/*' => Http::response([], 200)]);
+        $admin = User::factory()->admin()->create();
+        $recruit = $this->member(1);
+        $soldier = $this->member(3);
+
+        $this->actingAs($recruit)->post(route('admin.voice-templates.store'), ['name' => 'Бізвар', 'ranks' => [3, 4, 5]])->assertForbidden();
+        $this->actingAs($admin)->post(route('admin.voice-templates.store'), ['name' => 'Бізвар', 'ranks' => [3, 4, 5]])->assertSessionHasNoErrors();
+
+        // Новачок бачить кімнату із замком, але зайти не може; боєць — може, лідер — завжди.
+        $this->actingAs($recruit)->getJson(route('voice.index', ['family', $this->family->id]))
+            ->assertOk()
+            ->assertJsonPath('rooms.0.name', 'Бізвар')
+            ->assertJsonPath('rooms.0.locked', true)
+            ->assertJsonPath('rooms.0.system', true);
+        $room = VoiceRoom::query()->where('name', 'Бізвар')->sole();
+        $this->actingAs($recruit)->postJson(route('voice.join', $room))->assertForbidden();
+        $this->actingAs($soldier)->postJson(route('voice.join', $room))->assertOk();
+        $this->actingAs($this->leader)->postJson(route('voice.join', $room))->assertOk();
+
+        // Сім’я не видаляє кімнату адмінки, лише перейменовує.
+        $this->actingAs($this->leader)->deleteJson(route('voice.destroy', $room))->assertUnprocessable();
+
+        // Адмінка перейменовує й за запитом застосовує доступ до всіх сімей.
+        $template = VoiceRoomTemplate::query()->sole();
+        $this->actingAs($admin)->patch(route('admin.voice-templates.update', $template), ['name' => 'Бізвар 24/7', 'ranks' => [1, 2, 3], 'apply_ranks' => true])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('Бізвар 24/7', $room->fresh()->name);
+        $this->assertSame([1, 2, 3], $room->fresh()->ranks);
+
+        $this->actingAs($admin)->delete(route('admin.voice-templates.destroy', $template))->assertSessionHasNoErrors();
+        $this->assertNull(VoiceRoom::query()->find($room->id));
+    }
+
+    public function test_family_sets_room_access_in_rank_permissions(): void
+    {
+        $this->configure();
+        $recruit = $this->member(1);
+        $room = VoiceRoom::query()->create(['owner_type' => 'family', 'owner_id' => $this->family->id, 'name' => 'Бізвар']);
+
+        $this->actingAs($recruit)->postJson(route('voice.join', $room))->assertOk();
+
+        $matrix = $this->family->permissionMatrix();
+        $matrix['voice.room.'.$room->id] = [5, 6, 7, 8, 9];
+        $this->actingAs($this->leader)->put(route('families.ranks.update', $this->family), [
+            'titles' => array_values($this->family->rankTitles()),
+            'matrix' => $matrix,
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame([5, 6, 7, 8, 9], $room->fresh()->ranks);
+        $this->actingAs($recruit)->postJson(route('voice.join', $room))->assertForbidden();
+        $this->actingAs($recruit)->getJson(route('voice.index', ['family', $this->family->id]))
+            ->assertJsonPath('rooms.0.locked', true);
     }
 }

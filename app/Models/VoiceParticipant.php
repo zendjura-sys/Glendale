@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * Хто зараз у голосовій кімнаті (оновлюється вебхуками LiveKit).
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $voice_room_id
  * @property int $user_id
  * @property bool $muted
- * @property \Illuminate\Support\Carbon $joined_at
+ * @property Carbon $joined_at
  */
 #[Fillable(['voice_room_id', 'user_id', 'muted', 'joined_at'])]
 class VoiceParticipant extends Model

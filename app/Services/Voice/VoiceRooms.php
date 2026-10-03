@@ -8,6 +8,7 @@ use App\Models\Family;
 use App\Models\User;
 use App\Models\VoiceParticipant;
 use App\Models\VoiceRoom;
+use App\Models\VoiceRoomTemplate;
 use App\Services\Families\FamilyGate;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -15,6 +16,7 @@ use Illuminate\Validation\ValidationException;
 /**
  * Голосові кімнати сімей і спільнот: хто може зайти й керувати, список із присутніми, вхід через LiveKit.
  * Права сім’ї — з матриці рангів (voice.manage), спільноти — керівні ролі; адміністратор сайту може все.
+ * Кімнати з шаблонів адмінки з’являються в кожній сім’ї; хто може зайти — ранги кімнати (права сім’ї).
  */
 class VoiceRooms
 {
@@ -48,6 +50,21 @@ class VoiceRooms
             : (bool) $owner->membershipFor($user)?->isActive();
     }
 
+    /** Чи може людина зайти саме в цю кімнату: у сім’ї — за рангами кімнати. */
+    public function canEnter(?User $user, VoiceRoom $room, Family|Community|null $owner = null): bool
+    {
+        $owner ??= $this->ownerOf($room);
+        if (! $this->canJoin($user, $owner)) {
+            return false;
+        }
+        if (! $owner instanceof Family) {
+            return true;
+        }
+        $member = $this->gate->member($owner, $user);
+
+        return $member !== null && ($member->user_id === $owner->owner_id || $room->allowsRank($member->rank));
+    }
+
     public function canManage(?User $user, Family|Community $owner): bool
     {
         if (! $user) {
@@ -63,13 +80,17 @@ class VoiceRooms
     }
 
     /**
-     * Кімнати з присутніми; першого разу створює «Загальну».
+     * Кімнати з присутніми; першого разу створює «Загальну». Закриті для людини кімнати
+     * показуємо із замком і без списку присутніх (керівники бачать усіх).
      *
      * @return list<array<string, mixed>>
      */
-    public function list(Family|Community $owner): array
+    public function list(Family|Community $owner, ?User $viewer = null): array
     {
         [$type, $id] = $this->key($owner);
+        if ($owner instanceof Family) {
+            $this->syncTemplates($owner);
+        }
         $rooms = VoiceRoom::query()->where('owner_type', $type)->where('owner_id', $id)
             ->orderBy('position')->orderBy('id')
             ->with(['participants' => fn ($q) => $q->orderBy('joined_at'), 'participants.user'])
@@ -78,8 +99,9 @@ class VoiceRooms
         if ($rooms->isEmpty()) {
             VoiceRoom::query()->create(['owner_type' => $type, 'owner_id' => $id, 'name' => 'Загальна', 'position' => 0]);
 
-            return $this->list($owner);
+            return $this->list($owner, $viewer);
         }
+        $manager = $this->canManage($viewer, $owner);
 
         $userIds = [];
         foreach ($rooms as $room) {
@@ -91,6 +113,7 @@ class VoiceRooms
 
         $list = [];
         foreach ($rooms as $room) {
+            $locked = ! $this->canEnter($viewer, $room, $owner);
             $people = [];
             foreach ($room->participants as $participant) {
                 $user = $participant->user;
@@ -104,7 +127,15 @@ class VoiceRooms
                     'joined_at' => $participant->joined_at->toIso8601String(),
                 ];
             }
-            $list[] = ['id' => $room->id, 'name' => $room->name, 'participants' => $people];
+            $list[] = [
+                'id' => $room->id,
+                'name' => $room->name,
+                'locked' => $locked,
+                'system' => $room->template_id !== null,
+                'ranks' => $room->ranks,
+                'count' => count($people),
+                'participants' => $locked && ! $manager ? [] : $people,
+            ];
         }
 
         return $list;
@@ -123,7 +154,7 @@ class VoiceRooms
             'owner' => ['type' => $type, 'id' => $id],
             'enabled' => $this->livekit->configured(),
             'can_manage' => $this->canManage($user, $owner),
-            'rooms' => $this->list($owner),
+            'rooms' => $this->list($owner, $user),
         ];
     }
 
@@ -157,6 +188,9 @@ class VoiceRooms
     {
         $owner = $this->ownerOf($room);
         [$type, $id] = $this->key($owner);
+        if ($room->template_id !== null) {
+            throw ValidationException::withMessages(['room' => 'Цю кімнату додала адміністрація сайту — її можна лише перейменувати.']);
+        }
         if (VoiceRoom::query()->where('owner_type', $type)->where('owner_id', $id)->count() <= 1) {
             throw ValidationException::withMessages(['room' => 'Остання кімната лишається — її можна лише перейменувати.']);
         }
@@ -164,6 +198,108 @@ class VoiceRooms
         $this->livekit->deleteRoom($room->livekitName());
         $room->delete();
         $this->changed($owner);
+    }
+
+    /**
+     * Кімнати сім’ї для матриці прав: ключ voice.room.{id} → ранги, яким відкрита.
+     *
+     * @return array{labels: array<string, string>, matrix: array<string, list<int>>}
+     */
+    public function familyAccess(Family $family): array
+    {
+        $this->syncTemplates($family);
+        $labels = [];
+        $matrix = [];
+        foreach (VoiceRoom::query()->where('owner_type', VoiceRoom::OWNER_FAMILY)->where('owner_id', $family->id)->orderBy('position')->orderBy('id')->get() as $room) {
+            $labels[$room->permissionKey()] = 'Голосова кімната «'.$room->name.'»: заходити';
+            $matrix[$room->permissionKey()] = $room->ranks ?? range(1, 9);
+        }
+
+        return ['labels' => $labels, 'matrix' => $matrix];
+    }
+
+    /**
+     * Зберігає доступ до кімнат із матриці прав. Повертає [було, стало] для аудиту.
+     *
+     * @param  array<string, list<int>>  $matrix  ключі voice.room.{id}
+     * @return array{0: array<string, list<int>|null>, 1: array<string, list<int>|null>}
+     */
+    public function saveFamilyAccess(Family $family, array $matrix): array
+    {
+        $before = [];
+        $after = [];
+        $rooms = VoiceRoom::query()->where('owner_type', VoiceRoom::OWNER_FAMILY)->where('owner_id', $family->id)->get();
+        foreach ($rooms as $room) {
+            if (! array_key_exists($room->permissionKey(), $matrix)) {
+                continue;
+            }
+            $ranks = VoiceRoomTemplate::normalizeRanks($matrix[$room->permissionKey()]);
+            if ($ranks !== $room->ranks) {
+                $before[$room->name] = $room->ranks;
+                $after[$room->name] = $ranks;
+                $room->update(['ranks' => $ranks]);
+            }
+        }
+        if ($after !== []) {
+            $this->changed($family);
+        }
+
+        return [$before, $after];
+    }
+
+    /** Додає в сім’ю кімнати з шаблонів адмінки, яких у неї ще немає. */
+    public function syncTemplates(Family $family): void
+    {
+        $have = VoiceRoom::query()->where('owner_type', VoiceRoom::OWNER_FAMILY)->where('owner_id', $family->id)
+            ->whereNotNull('template_id')->pluck('template_id')->all();
+
+        foreach (VoiceRoomTemplate::query()->whereNotIn('id', $have)->orderBy('position')->orderBy('id')->get() as $template) {
+            VoiceRoom::query()->create([
+                'owner_type' => VoiceRoom::OWNER_FAMILY,
+                'owner_id' => $family->id,
+                'name' => $template->name,
+                'position' => $template->position,
+                'ranks' => $template->ranks,
+                'template_id' => $template->id,
+            ]);
+        }
+    }
+
+    /**
+     * Адмінка змінила шаблон: назва — в усіх сім’ях, доступ — лише якщо просили застосувати.
+     *
+     * @param  list<int>|null  $ranks
+     */
+    public function updateTemplate(VoiceRoomTemplate $template, string $name, ?array $ranks, bool $applyRanks): void
+    {
+        $template->update(['name' => $name, 'ranks' => VoiceRoomTemplate::normalizeRanks($ranks)]);
+        $template->rooms()->update(['name' => $name]);
+        if ($applyRanks) {
+            $template->rooms()->update(['ranks' => $template->ranks === null ? null : json_encode($template->ranks)]);
+        }
+        $this->templateChanged($template);
+    }
+
+    /** Шаблон видалено: кімнати зникають з усіх сімей, розмови в них завершуються. */
+    public function deleteTemplate(VoiceRoomTemplate $template): void
+    {
+        $families = [];
+        foreach ($template->rooms()->get() as $room) {
+            $this->livekit->deleteRoom($room->livekitName());
+            $families[$room->owner_id] = true;
+        }
+        $template->delete();
+        foreach (Family::query()->whereIn('id', array_keys($families))->get() as $family) {
+            $this->changed($family);
+        }
+    }
+
+    private function templateChanged(VoiceRoomTemplate $template): void
+    {
+        $ids = $template->rooms()->distinct()->pluck('owner_id')->all();
+        foreach (Family::query()->whereIn('id', $ids)->get() as $family) {
+            $this->changed($family);
+        }
     }
 
     /**

@@ -64,6 +64,7 @@ class VoiceController extends Controller
     {
         $owner = $this->voice->ownerOf($room);
         abort_unless($this->voice->canJoin($request->user(), $owner), 403, 'Голосові кімнати — лише для учасників.');
+        abort_unless($this->voice->canEnter($request->user(), $room, $owner), 403, 'Ця кімната закрита для вашого рангу.');
         abort_unless($this->livekit->configured(), 503, 'Голосові кімнати ще не налаштовані адміністратором.');
 
         return response()->json($this->voice->join($room, $request->user()));

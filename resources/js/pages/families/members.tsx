@@ -48,6 +48,7 @@ type Props = FamilyShellProps & {
     applications: Application[];
     permissions: Record<string, string>;
     matrix: Record<string, number[]>;
+    voice_rooms: Record<string, string>;
     warn_limit: number;
 };
 
@@ -61,6 +62,7 @@ export default function FamilyMembers(props: Props) {
         applications,
         permissions,
         matrix,
+        voice_rooms,
         warn_limit,
     } = props;
     const base = `/f/${family.slug}`;
@@ -324,6 +326,7 @@ export default function FamilyMembers(props: Props) {
                     action={`${base}/ranks`}
                     titles={family.rank_titles}
                     permissions={permissions}
+                    voiceRooms={voice_rooms}
                     matrix={matrix}
                     maxRank={can.owner ? 9 : me.rank - 1}
                     onClose={() => setRanksOpen(false)}
@@ -534,6 +537,7 @@ function RanksDialog({
     action,
     titles,
     permissions,
+    voiceRooms,
     matrix,
     maxRank,
     onClose,
@@ -541,6 +545,7 @@ function RanksDialog({
     action: string;
     titles: Record<string, string>;
     permissions: Record<string, string>;
+    voiceRooms: Record<string, string>;
     matrix: Record<string, number[]>;
     maxRank: number;
     onClose: () => void;
@@ -550,6 +555,36 @@ function RanksDialog({
         matrix,
     });
     const ranks = Array.from({ length: 9 }, (_, i) => i + 1);
+
+    const row = (perm: string, label: string) => (
+        <tr key={perm}>
+            <td className="py-2 pr-2 text-white/70">{label}</td>
+            {ranks.map((r) => {
+                const on = (form.data.matrix[perm] ?? []).includes(r);
+                const locked = r > maxRank;
+
+                return (
+                    <td key={r} className="text-center">
+                        <button
+                            type="button"
+                            disabled={locked}
+                            onClick={() => toggle(perm, r)}
+                            className={cn(
+                                'size-6 rounded-md transition disabled:cursor-not-allowed',
+                                on
+                                    ? 'bg-gradient-brand text-white'
+                                    : 'bg-white/[0.05] hover:bg-white/10',
+                                locked && 'opacity-30',
+                            )}
+                            aria-label={`${label}: ранг ${r}`}
+                        >
+                            {on && <Check className="mx-auto size-3.5" />}
+                        </button>
+                    </td>
+                );
+            })}
+        </tr>
+    );
 
     const toggle = (perm: string, rank: number) => {
         const current = form.data.matrix[perm] ?? [];
@@ -631,41 +666,22 @@ function RanksDialog({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/[0.05]">
-                        {Object.entries(permissions).map(([perm, label]) => (
-                            <tr key={perm}>
-                                <td className="py-2 pr-2 text-white/70">
-                                    {label}
+                        {Object.entries(permissions).map(([perm, label]) =>
+                            row(perm, label),
+                        )}
+                        {Object.keys(voiceRooms).length > 0 && (
+                            <tr>
+                                <td
+                                    colSpan={10}
+                                    className="pt-4 pb-1 text-[11px] font-semibold tracking-wide text-white/45 uppercase"
+                                >
+                                    Голосові кімнати — хто може заходити
                                 </td>
-                                {ranks.map((r) => {
-                                    const on = (
-                                        form.data.matrix[perm] ?? []
-                                    ).includes(r);
-                                    const locked = r > maxRank;
-
-                                    return (
-                                        <td key={r} className="text-center">
-                                            <button
-                                                type="button"
-                                                disabled={locked}
-                                                onClick={() => toggle(perm, r)}
-                                                className={cn(
-                                                    'size-6 rounded-md transition disabled:cursor-not-allowed',
-                                                    on
-                                                        ? 'bg-gradient-brand text-white'
-                                                        : 'bg-white/[0.05] hover:bg-white/10',
-                                                    locked && 'opacity-30',
-                                                )}
-                                                aria-label={`${label}: ранг ${r}`}
-                                            >
-                                                {on && (
-                                                    <Check className="mx-auto size-3.5" />
-                                                )}
-                                            </button>
-                                        </td>
-                                    );
-                                })}
                             </tr>
-                        ))}
+                        )}
+                        {Object.entries(voiceRooms).map(([perm, label]) =>
+                            row(perm, label),
+                        )}
                     </tbody>
                 </table>
             </div>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Family;
 use App\Models\FamilyMember;
 use App\Models\FamilyReport;
+use App\Models\VoiceRoomTemplate;
 use App\Services\Families\FamilyService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -53,6 +54,8 @@ class FamilyController extends Controller
                 'reports_week' => FamilyReport::query()->where('created_at', '>=', now()->subWeek())->count(),
             ],
             'statuses' => Family::STATUSES,
+            'voice_templates' => VoiceRoomTemplate::query()->withCount('rooms')->orderBy('position')->orderBy('id')->get()
+                ->map(fn (VoiceRoomTemplate $t) => ['id' => $t->id, 'name' => $t->name, 'ranks' => $t->ranks, 'families' => (int) $t->getAttribute('rooms_count')]),
         ]);
     }
 

@@ -2,6 +2,8 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Ban, Crown, FileText, Search, ShieldCheck, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { FamilyLogo } from '@/components/families/family-logo';
+import { VoiceTemplates } from '@/components/families/voice-templates';
+import type { VoiceTemplate } from '@/components/families/voice-templates';
 import { PageHeader, Pagination, Pill, StatCard } from '@/components/gc/admin';
 import { timeAgo } from '@/lib/format';
 import { uah } from '@/lib/money';
@@ -27,6 +29,7 @@ type Props = {
     counts: Record<Status, number>;
     stats: { members: number; reports_week: number };
     statuses: Record<Status, string>;
+    voice_templates: VoiceTemplate[];
 };
 
 export default function AdminFamilies({
@@ -35,6 +38,7 @@ export default function AdminFamilies({
     counts,
     stats,
     statuses,
+    voice_templates,
 }: Props) {
     const [q, setQ] = useState(filters.q);
 
@@ -95,6 +99,8 @@ export default function AdminFamilies({
                     delay={120}
                 />
             </div>
+
+            <VoiceTemplates templates={voice_templates} />
 
             <div className="glass mb-4 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
                 <div className="flex rounded-xl bg-white/[0.04] p-1 text-sm">

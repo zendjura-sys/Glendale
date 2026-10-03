@@ -7,6 +7,7 @@ use App\Models\FamilyMember;
 use App\Models\FamilyPunishment;
 use App\Services\Families\FamilyAudit;
 use App\Services\Families\FamilyService;
+use App\Services\Voice\VoiceRooms;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -14,7 +15,7 @@ use Inertia\Response;
 
 class FamilyMemberController extends FamilyBaseController
 {
-    public function index(Request $request, Family $family): Response
+    public function index(Request $request, Family $family, VoiceRooms $voice): Response
     {
         $member = $this->member($request, $family);
         $can = $this->gate->abilities($member, $family);
@@ -38,6 +39,8 @@ class FamilyMemberController extends FamilyBaseController
                 'last_seen_at' => $m->user->last_seen_at?->toIso8601String(),
             ]);
 
+        $access = $can['ranks.manage'] ? $voice->familyAccess($family) : ['labels' => [], 'matrix' => []];
+
         return $this->page($family, $member, 'families/members', 'members', [
             'tab' => $tab,
             'members' => $members,
@@ -46,7 +49,8 @@ class FamilyMemberController extends FamilyBaseController
                     ->map(fn (FamilyMember $m) => [...$m->toCard($family), 'note' => $m->application_note, 'applied_at' => $m->updated_at->toIso8601String()])
                 : [],
             'permissions' => Family::PERMISSIONS,
-            'matrix' => $family->permissionMatrix(),
+            'voice_rooms' => $access['labels'],
+            'matrix' => [...$family->permissionMatrix(), ...$access['matrix']],
             'warn_limit' => (int) $family->setting('discipline.warn_limit', 3),
         ]);
     }
@@ -122,7 +126,7 @@ class FamilyMemberController extends FamilyBaseController
         return back();
     }
 
-    public function ranks(Request $request, Family $family, FamilyAudit $audit): RedirectResponse
+    public function ranks(Request $request, Family $family, FamilyAudit $audit, VoiceRooms $voice): RedirectResponse
     {
         $actor = $this->member($request, $family, 'ranks.manage', write: true);
         $data = $request->validate([
@@ -147,6 +151,24 @@ class FamilyMemberController extends FamilyBaseController
                 $ranks = array_values(array_filter($ranks, fn (int $r) => $r < $actor->rank || in_array($r, $family->permissionMatrix()[$permission], true)));
             }
             $matrix[$permission] = $ranks;
+        }
+
+        // Доступ до голосових кімнат (voice.room.{id}) — у тій самій матриці, з тим самим обмеженням.
+        $current = $voice->familyAccess($family)['matrix'];
+        $rooms = [];
+        foreach ($current as $key => $allowed) {
+            if (! array_key_exists($key, $data['matrix'])) {
+                continue;
+            }
+            $ranks = array_values(array_unique(array_map('intval', (array) $data['matrix'][$key])));
+            if ($actor->user_id !== $family->owner_id) {
+                $ranks = array_values(array_filter($ranks, fn (int $r) => $r < $actor->rank || in_array($r, $allowed, true)));
+            }
+            $rooms[$key] = $ranks;
+        }
+        [$roomsBefore, $roomsAfter] = $voice->saveFamilyAccess($family, $rooms);
+        if ($roomsAfter !== []) {
+            $audit->log($family, 'VOICE_ACCESS_UPDATE', $actor, null, ['from' => $roomsBefore, 'to' => $roomsAfter]);
         }
 
         $before = ['titles' => $family->rankTitles(), 'matrix' => $family->permissionMatrix()];
