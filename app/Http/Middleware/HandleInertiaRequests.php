@@ -58,7 +58,7 @@ class HandleInertiaRequests extends Middleware
                 'name' => $this->settings->get('site_name'),
                 'tagline' => $this->settings->get('tagline'),
                 'description' => $this->settings->seoDescription(),
-                'play_store' => transform($this->settings->playStoreUrl(), fn (string $url) => ['url' => $url]),
+                'play_store' => transform($this->settings->playStoreUrl(), fn (string $url) => ['url' => $url, 'badge' => $this->settings->playStoreBadge()]),
                 'registration_open' => (bool) $this->settings->get('registration_open'),
                 'max_attachments' => (int) $this->settings->get('max_attachments'),
                 'max_message_file_mb' => (int) $this->settings->get('max_message_file_mb'),

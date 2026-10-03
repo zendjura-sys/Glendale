@@ -17,7 +17,10 @@ declare module '@inertiajs/core' {
                 name: string;
                 tagline: string | null;
                 description: string;
-                play_store: { url: string } | null;
+                play_store: {
+                    url: string;
+                    badge: 'get' | 'preregister';
+                } | null;
                 registration_open: boolean;
                 max_attachments: number;
                 max_message_file_mb: number;

@@ -28,6 +28,7 @@ class SettingsController extends Controller
             'seo_description' => ['nullable', 'string', 'max:300'],
             'play_store_enabled' => ['boolean'],
             'play_store_url' => ['nullable', 'string', 'max:300', 'url:http,https'],
+            'play_store_badge' => ['nullable', 'in:get,preregister'],
             'registration_open' => ['boolean'],
             'email_verification' => ['boolean'],
             'max_post_length' => ['required', 'integer', 'min:100', 'max:50000'],

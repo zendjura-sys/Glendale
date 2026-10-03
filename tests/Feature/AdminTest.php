@@ -169,7 +169,17 @@ class AdminTest extends TestCase
 
         $this->actingAs($admin)->get(route('feed'))
             ->assertInertia(fn (Assert $page) => $page
-                ->where('site.play_store.url', $payload['play_store_url']));
+                ->where('site.play_store.url', $payload['play_store_url'])
+                ->where('site.play_store.badge', 'get'));
+
+        $this->actingAs($admin)->put(route('admin.settings.update'), [...$payload, 'play_store_badge' => 'beta'])
+            ->assertSessionHasErrors('play_store_badge');
+
+        $this->actingAs($admin)->put(route('admin.settings.update'), [...$payload, 'play_store_badge' => 'preregister'])
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($admin)->get(route('feed'))
+            ->assertInertia(fn (Assert $page) => $page->where('site.play_store.badge', 'preregister'));
     }
 
     public function test_email_verification_setting_gates_the_site(): void

@@ -18,6 +18,7 @@ class SiteSettings
         'seo_description' => 'GameCon — соціальна мережа для геймерів і кіноманів: друзі, спільноти, музика, кіно, сімʼї та ігрові сервери.',
         'play_store_enabled' => false,
         'play_store_url' => null,
+        'play_store_badge' => 'get',
         'registration_open' => true,
         'email_verification' => false,
         'max_post_length' => 5000,
@@ -118,6 +119,12 @@ class SiteSettings
         $url = $this->get('play_store_url');
 
         return is_string($url) && preg_match('#\Ahttps?://#i', $url) === 1 ? $url : null;
+    }
+
+    /** Офіційний значок Google Play: «Get it on» (застосунок опубліковано) або «Pre-register» (попередня реєстрація). */
+    public function playStoreBadge(): string
+    {
+        return $this->get('play_store_badge') === 'preregister' ? 'preregister' : 'get';
     }
 
     /**
