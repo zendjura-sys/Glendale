@@ -76,7 +76,8 @@ class PlayingController extends Controller
     public function auto(Request $request): RedirectResponse
     {
         $data = $request->validate(['auto' => ['required', 'boolean']]);
-        $user = $this->user($request);
+        // Свіжі дані: статус міг поставити бот чи Steam після завантаження сесії.
+        $user = $this->user($request)->fresh() ?? $this->user($request);
         $user->forceFill(['playing_auto' => (bool) $data['auto']])->save();
         if (! $data['auto'] && $user->playing_source !== null && $user->playing_source !== PlayingStatus::SOURCE_MANUAL) {
             $this->status->clear($user);

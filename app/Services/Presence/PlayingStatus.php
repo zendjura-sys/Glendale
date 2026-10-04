@@ -119,19 +119,24 @@ class PlayingStatus
     }
 
     /**
-     * Гра з телефона (застосунок GameCon на Android): спершу за пакетом із посилання Google Play
-     * в каталозі, потім за назвою застосунку (мобільні проєкти GTA — серед серверів).
+     * Гра з телефона (застосунок GameCon на Android): мобільний проєкт GTA за назвою застосунку —
+     * як сервер; інакше гра каталогу за пакетом Google Play або за назвою.
      *
      * @return array{kind: string, id: int|null, label: string, icon: string|null, url: string|null, note: string|null}|null
      */
     public function fromPackage(string $package, ?string $label): ?array
     {
+        $label = $label !== null ? trim($label) : '';
+        // Мобільний проєкт GTA показуємо як сервер (там сім’ї й хто грає), навіть якщо він є й у каталозі ігор.
+        $server = $label !== '' ? $this->matchServer($label) : null;
+        if ($server !== null) {
+            return [...$this->serverTarget($server), 'note' => null];
+        }
         $gameId = $this->playPackages()[$package] ?? null;
         $game = $gameId !== null ? Game::query()->find($gameId) : null;
         if ($game instanceof Game) {
             return [...$this->gameTarget($game), 'note' => null];
         }
-        $label = $label !== null ? trim($label) : '';
 
         return $label !== '' ? $this->fromActivity($label) : null;
     }
