@@ -102,7 +102,7 @@ class GameEventSync
                 $byDay[$key]['day'] = $day;
                 $platform = Igdb::PLATFORMS[(int) ($row['platform'] ?? 0)] ?? null;
                 if ($platform !== null) {
-                    $byDay[$key]['platforms'][$platform] = Game::PLATFORMS[$platform] ?? $platform;
+                    $byDay[$key]['platforms'][$platform] = Game::PLATFORMS[$platform];
                 }
             }
         }
