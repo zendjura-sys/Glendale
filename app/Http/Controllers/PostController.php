@@ -13,6 +13,7 @@ use App\Notifications\PostInteraction;
 use App\Services\CommunityService;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
+use App\Services\Moderation\ContentFilter;
 use App\Services\PostPresenter;
 use App\Services\Spotify\SpotifyClient;
 use App\Support\Settings\SiteSettings;
@@ -58,6 +59,7 @@ class PostController extends Controller
     public function publish(Request $request): Post
     {
         $user = $request->user();
+        app(ContentFilter::class)->ensureCanPost($user);
         $maxFiles = (int) $this->settings->get('max_attachments');
         $maxKb = (int) $this->settings->get('max_upload_mb') * 1024;
 
@@ -117,7 +119,7 @@ class PostController extends Controller
                 'wall_type' => $wallOwner->getMorphClass(),
                 'wall_id' => $wallOwner->id,
                 'as_community' => $asCommunity,
-                'body' => isset($data['body']) ? trim($data['body']) : null,
+                'body' => isset($data['body']) ? app(ContentFilter::class)->clean(trim($data['body'])) : null,
                 'music' => $music,
                 'movie_id' => $movieId,
                 'visibility' => $data['visibility'],

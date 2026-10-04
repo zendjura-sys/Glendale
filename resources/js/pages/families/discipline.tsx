@@ -36,6 +36,7 @@ type Props = FamilyShellProps & {
     scope: 'me' | 'family';
     punishments: Punishment[];
     types: Record<string, string>;
+    mute_hours?: number[];
     config: {
         warn_days: number;
         warn_limit: number;
@@ -51,6 +52,7 @@ const typeTones: Record<string, string> = {
     fine: 'bg-rose-400/10 text-rose-200',
     demote: 'bg-violet-400/10 text-violet-200',
     kick: 'bg-rose-500/20 text-rose-100',
+    mute: 'bg-sky-400/10 text-sky-200',
 };
 
 export default function FamilyDiscipline(props: Props) {
@@ -62,6 +64,7 @@ export default function FamilyDiscipline(props: Props) {
         type: 'warn',
         reason: '',
         amount: '',
+        hours: 3,
     });
     const target = roster.find((m) => m.id === form.data.member_id);
 
@@ -140,6 +143,32 @@ export default function FamilyDiscipline(props: Props) {
                                 className={inputClass}
                             />
                         </Field>
+                        {form.data.type === 'mute' && (
+                            <Field label="На скільки" error={form.errors.hours}>
+                                <select
+                                    value={form.data.hours}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            'hours',
+                                            Number(e.target.value),
+                                        )
+                                    }
+                                    className={inputClass}
+                                >
+                                    {(
+                                        props.mute_hours ?? [
+                                            1, 3, 6, 12, 24, 72, 168,
+                                        ]
+                                    ).map((h) => (
+                                        <option key={h} value={h}>
+                                            {h < 24
+                                                ? `${h} год`
+                                                : `${h / 24} дн`}
+                                        </option>
+                                    ))}
+                                </select>
+                            </Field>
+                        )}
                         <Field label="Сума, ₴" error={form.errors.amount}>
                             <input
                                 value={form.data.amount}

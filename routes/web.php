@@ -116,6 +116,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::delete('{conversation}/members/{user}', [MessengerController::class, 'removeMember'])->name('members.destroy');
             Route::patch('{conversation}/messages/{message}', [MessageController::class, 'update'])->name('messages.update');
             Route::delete('{conversation}/messages/{message}', [MessageController::class, 'destroy'])->name('messages.destroy');
+            Route::post('{conversation}/messages/{message}/report', [MessageController::class, 'report'])->middleware('throttle:20,1')->name('messages.report');
             // Дзвінки в бесіді (звук — через LiveKit).
             Route::get('{conversation}/call', [CallController::class, 'show'])->name('call.show');
             Route::post('{conversation}/call', [CallController::class, 'start'])->middleware('throttle:20,1')->name('call.start');
@@ -444,6 +445,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::put('features', [Admin\GameController::class, 'features'])->name('features');
             Route::post('sync', [Admin\GameController::class, 'sync'])->middleware('throttle:5,1')->name('sync');
             Route::patch('{game:id}', [Admin\GameController::class, 'update'])->whereNumber('game')->name('update');
+        });
+        Route::prefix('moderation')->name('moderation.')->group(function () {
+            Route::get('/', [Admin\ModerationController::class, 'index'])->name('index');
+            Route::put('settings', [Admin\ModerationController::class, 'settings'])->name('settings');
+            Route::post('reports/{report}', [Admin\ModerationController::class, 'resolve'])->whereNumber('report')->name('resolve');
+            Route::post('users/{user:id}/unmute', [Admin\ModerationController::class, 'unmute'])->whereNumber('user')->name('unmute');
         });
         Route::get('families', [Admin\FamilyController::class, 'index'])->name('families.index');
         Route::patch('families/{family:id}', [Admin\FamilyController::class, 'update'])->whereNumber('family')->name('families.update');

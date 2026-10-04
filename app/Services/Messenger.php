@@ -337,6 +337,21 @@ class Messenger
             403,
         );
 
+        $this->remove($message);
+    }
+
+    /** Видалення модератором за скаргою: без перевірки прав учасника. */
+    public function moderatorDelete(Message $message): void
+    {
+        if (! $message->trashed()) {
+            $this->remove($message);
+        }
+    }
+
+    private function remove(Message $message): void
+    {
+        $conversation = $message->conversation;
+
         DB::transaction(function () use ($message, $conversation) {
             $message->delete();
 

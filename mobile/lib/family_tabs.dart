@@ -1018,6 +1018,7 @@ class DisciplineTab extends StatefulWidget {
 class _DisciplineTabState extends State<DisciplineTab> {
   int? member;
   String type = 'warn';
+  int muteHours = 24;
   final reason = TextEditingController();
   final amount = TextEditingController();
 
@@ -1068,6 +1069,18 @@ class _DisciplineTabState extends State<DisciplineTab> {
               const SizedBox(height: 8),
               LabeledField(label: 'Сума, ₴', child: GcField(controller: amount, label: 'Сума штрафу', keyboard: TextInputType.number, dense: true)),
             ],
+            if (type == 'mute') ...[
+              const SizedBox(height: 8),
+              LabeledField(
+                label: 'Мут у чаті сім’ї на',
+                child: GcSelect<int>(
+                  value: muteHours,
+                  expand: true,
+                  items: [for (final h in (ctx.data['mute_hours'] is List ? (ctx.data['mute_hours'] as List).map((e) => intOf(e)) : const [1, 3, 6, 12, 24, 72, 168])) (h, h < 24 || h % 24 != 0 ? '$h год' : '${h ~/ 24} дн.')],
+                  onChanged: (v) => setState(() => muteHours = v ?? muteHours),
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             PrimaryButton(
               label: 'Видати',
@@ -1079,6 +1092,7 @@ class _DisciplineTabState extends State<DisciplineTab> {
                             'type': type,
                             'reason': reason.text.trim(),
                             if (type == 'fine') 'amount': amount.text.trim(),
+                            if (type == 'mute') 'hours': muteHours,
                           }), keep: {'scope': scope});
                       if (ok) {
                         reason.clear();

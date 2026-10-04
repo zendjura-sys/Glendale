@@ -41,6 +41,7 @@ import type {
 import { Composer } from './composer';
 import { ConversationAvatar } from './conversation-avatar';
 import { MessageBubble, SystemMessage } from './message-bubble';
+import { ReportDialog } from './report-dialog';
 import type { BubbleActions } from './message-bubble';
 
 const EDIT_WINDOW_MS = 24 * 3600 * 1000;
@@ -526,6 +527,7 @@ export function ChatView({
         !!message.body &&
         Date.now() - new Date(message.created_at).getTime() < EDIT_WINDOW_MS;
 
+    const [reportUrl, setReportUrl] = useState<string | null>(null);
     const actions: BubbleActions = {
         onReply: (message) => {
             setEditing(null);
@@ -548,6 +550,10 @@ export function ChatView({
                     toast.error('Не вдалося видалити повідомлення.');
                 });
         },
+        onReport: (message) =>
+            setReportUrl(
+                `/messages/${active.id}/messages/${message.id}/report`,
+            ),
         onRetry: (message) => message.local_id && deliver(message.local_id),
         onCopy: (message) => {
             void navigator.clipboard
@@ -941,6 +947,7 @@ export function ChatView({
                     onClose={() => setLightbox(null)}
                 />
             )}
+            <ReportDialog url={reportUrl} onClose={() => setReportUrl(null)} />
         </section>
     );
 }

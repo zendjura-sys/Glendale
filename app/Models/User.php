@@ -63,6 +63,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $playing_source manual | discord | steam
  * @property bool $playing_auto Ставити статус автоматично з Discord і Steam
  * @property string|null $steam_id
+ * @property Carbon|null $muted_until Тимчасовий мут на всьому сайті
+ * @property string|null $mute_reason
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -115,6 +117,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'last_seen_at' => 'datetime',
             'playing_until' => 'datetime',
             'playing_auto' => 'boolean',
+            'muted_until' => 'datetime',
             'banned_at' => 'datetime',
             'is_verified' => 'boolean',
             'is_private' => 'boolean',
@@ -273,6 +276,11 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'status' => $this->status,
             'playing' => $this->playing(),
         ];
+    }
+
+    public function isMuted(): bool
+    {
+        return $this->muted_until !== null && $this->muted_until->isFuture();
     }
 
     /**

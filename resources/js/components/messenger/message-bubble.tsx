@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import {
+    Flag,
     AlertCircle,
     Check,
     CheckCheck,
@@ -25,6 +26,8 @@ export type BubbleActions = {
     onReply: (message: ChatMessage) => void;
     onEdit: (message: ChatMessage) => void;
     onDelete: (message: ChatMessage) => void;
+    /** Скарга модераторам (лише на чужі повідомлення). */
+    onReport?: (message: ChatMessage) => void;
     onRetry: (message: ChatMessage) => void;
     onCopy: (message: ChatMessage) => void;
     onJump: (id: number) => void;
@@ -429,6 +432,16 @@ export function MessageBubble({
                             title="Видалити"
                         >
                             <Trash2 className="size-3.5" />
+                        </button>
+                    )}
+                    {!own && actions.onReport && (
+                        <button
+                            type="button"
+                            className={cn(toolButton, 'hover:text-amber-300')}
+                            onClick={() => actions.onReport?.(message)}
+                            title="Поскаржитися"
+                        >
+                            <Flag className="size-3.5" />
                         </button>
                     )}
                 </div>

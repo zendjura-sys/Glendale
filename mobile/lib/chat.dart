@@ -705,6 +705,7 @@ class _ChatScreenState extends State<ChatScreen> {
           if (hasText) SheetAction(icon: LucideIcons.copy, label: 'Копіювати текст', onTap: () => Navigator.pop(sheet, 'copy')),
           if (own && hasText && message['type'] == 'text') SheetAction(icon: LucideIcons.pencil, label: 'Редагувати', onTap: () => Navigator.pop(sheet, 'edit')),
           if (own) SheetAction(icon: LucideIcons.trash2, label: 'Видалити', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
+          if (!own) SheetAction(icon: LucideIcons.flag, label: 'Поскаржитися', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'report')),
         ]),
       ),
     );
@@ -728,7 +729,29 @@ class _ChatScreenState extends State<ChatScreen> {
         if (await attempt(context, () => api.delete(Api.site('/messages/${widget.id}/messages/${message['id']}')))) {
           setState(() => messages.removeWhere((m) => m['id'] == message['id']));
         }
+      case 'report':
+        await _report(message);
     }
+  }
+
+  /// Скарга на повідомлення — потрапляє в Адмінку → Модерація (а в чаті сім’ї — ще й керівництву).
+  Future<void> _report(Map<String, dynamic> message) async {
+    const reasons = [('spam', 'Спам або реклама'), ('abuse', 'Образи чи мат'), ('scam', 'Шахрайство'), ('other', 'Інше')];
+    final reason = await showGcSheet<String>(
+      context,
+      builder: (sheet) => Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          for (final r in reasons) SheetAction(icon: LucideIcons.flag, label: r.$2, onTap: () => Navigator.pop(sheet, r.$1)),
+        ]),
+      ),
+    );
+    if (!mounted || reason == null) return;
+    await attempt(
+      context,
+      () => api.post(Api.site('/messages/${widget.id}/messages/${message['id']}/report'), {'reason': reason}),
+      success: 'Дякуємо! Скаргу надіслано модераторам.',
+    );
   }
 
   Future<void> _toggleMute() async {

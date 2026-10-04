@@ -43,6 +43,7 @@ class SiteSettings
         'discord_bot_token' => null,
         'discord_guild_id' => null,
         'steam_api_key' => null,
+        'moderation' => [],
         'shikimori_enabled' => true,
         'shikimori_url' => null,
         'cinema_auto' => [],

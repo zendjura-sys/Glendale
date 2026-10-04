@@ -423,6 +423,7 @@ class GroupsApiController extends ApiController
                     ->map(fn (FamilyMember $m) => ['id' => $m->id, 'display' => $m->displayName()])->values()
                 : [],
             'types' => FamilyPunishment::TYPES,
+            'mute_hours' => FamilyPunishment::MUTE_HOURS,
         ]);
     }
 
@@ -436,9 +437,10 @@ class GroupsApiController extends ApiController
             'type' => ['required', Rule::in(array_keys(FamilyPunishment::TYPES))],
             'reason' => ['required', 'string', 'min:3', 'max:500'],
             'amount' => ['nullable', 'required_if:type,fine', 'numeric', 'min:1', 'max:10000000'],
+            'hours' => ['nullable', 'required_if:type,mute', 'integer', Rule::in(FamilyPunishment::MUTE_HOURS)],
         ]);
         $target = FamilyMember::query()->where('family_id', $family->id)->where('status', FamilyMember::STATUS_ACTIVE)->findOrFail($request->integer('member_id'));
-        $discipline->issue($family, $issuer, $target, $data['type'], $data['reason'], isset($data['amount']) ? Money::toMinor($data['amount']) : null);
+        $discipline->issue($family, $issuer, $target, $data['type'], $data['reason'], isset($data['amount']) ? Money::toMinor($data['amount']) : null, isset($data['hours']) ? (int) $data['hours'] : null);
 
         return response()->json(['ok' => true], 201);
     }

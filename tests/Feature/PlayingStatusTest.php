@@ -111,6 +111,8 @@ class PlayingStatusTest extends TestCase
 
     public function test_android_app_reports_mobile_game_by_play_package_or_name(): void
     {
+        // Список серверів кешується на 10 хвилин — сервер має бути до першого звіту.
+        GtaServer::query()->create(['slug' => 'black-russia', 'name' => 'Black Russia', 'platform' => 'mobile', 'multiplayer' => 'crmp', 'status' => GtaServer::STATUS_PUBLISHED, 'origin' => 'seed']);
         $user = User::factory()->create();
         $token = $this->token($user);
         $brawl = Game::query()->where('slug', 'brawl-stars')->sole();
@@ -127,8 +129,7 @@ class PlayingStatusTest extends TestCase
         $this->withToken($token)->postJson('/api/v1/me/playing/mobile', ['package' => $package, 'label' => 'Brawl Stars'])
             ->assertOk()->assertJsonPath('playing.url', '/games/brawl-stars');
 
-        // Мобільний проєкт GTA, якого немає в каталозі ігор, — за назвою застосунку.
-        GtaServer::query()->create(['slug' => 'black-russia', 'name' => 'Black Russia', 'platform' => 'mobile', 'multiplayer' => 'crmp', 'status' => GtaServer::STATUS_PUBLISHED, 'origin' => 'seed']);
+        // Мобільний проєкт GTA — як сервер (за назвою застосунку), навіть якщо він є й у каталозі ігор.
         $this->withToken($token)->postJson('/api/v1/me/playing/mobile', ['package' => 'com.br.top', 'label' => 'BLACK RUSSIA'])
             ->assertOk()->assertJsonPath('playing.url', '/servers/black-russia');
 

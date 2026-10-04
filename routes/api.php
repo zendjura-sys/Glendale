@@ -266,6 +266,7 @@ Route::prefix('v1')->group(function () {
                 Route::delete('{conversation}/members/{user}', [MessengerController::class, 'removeMember']);
                 Route::patch('{conversation}/messages/{message}', [MessageController::class, 'update']);
                 Route::delete('{conversation}/messages/{message}', [MessageController::class, 'destroy']);
+                Route::post('{conversation}/messages/{message}/report', [MessageController::class, 'report'])->middleware('throttle:20,1');
             });
 
             Route::prefix('me/playing')->group(function () {
