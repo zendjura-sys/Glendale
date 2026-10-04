@@ -11,4 +11,6 @@ export const MOBILE_LABEL: Record<string, string> = {
     music: 'Музика',
     cinema: 'Кіно',
     families: 'Сім’ї',
+    games: 'Ігри',
+    clans: 'Клани',
 };

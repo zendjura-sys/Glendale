@@ -10,6 +10,7 @@ use App\Http\Controllers\CommunityMemberController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FriendController;
+use App\Http\Controllers\GameController;
 use App\Http\Controllers\Mail\UnsubscribeController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
@@ -209,6 +210,13 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('{movie}/comments', [CinemaController::class, 'comments'])->name('comments.index');
         Route::post('{movie}/comments', [CinemaController::class, 'comment'])->middleware('throttle:30,1')->name('comments.store');
         Route::post('{movie}/watch', [WatchPartyController::class, 'store'])->middleware('throttle:10,1')->name('watch.store');
+    });
+
+    // Каталог мультиплеєрних ігор.
+    Route::prefix('games')->name('games.')->middleware('module:games')->group(function () {
+        Route::get('/', [GameController::class, 'index'])->name('index');
+        Route::get('search', [GameController::class, 'search'])->middleware('throttle:120,1')->name('search');
+        Route::get('{game}', [GameController::class, 'show'])->name('show');
     });
 
     // Спільний перегляд: доступ за посиланням із кодом.

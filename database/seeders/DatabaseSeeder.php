@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Module;
+use App\Services\Games\GameCatalog;
 use App\Support\Modules\ModuleManager;
 use Illuminate\Database\Seeder;
 
@@ -23,5 +24,8 @@ class DatabaseSeeder extends Seeder
         }
 
         $modules->flush();
+
+        // Стартовий каталог мультиплеєрних ігор (лише відсутні; далі оновлює games:sync).
+        app(GameCatalog::class)->seed();
     }
 }

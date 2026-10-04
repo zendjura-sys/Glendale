@@ -13,6 +13,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityMemberController;
 use App\Http\Controllers\Families;
+use App\Http\Controllers\GameController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
 use App\Http\Controllers\MusicController;
@@ -117,6 +118,13 @@ Route::prefix('v1')->group(function () {
             Route::post('{conversation}/mute', [ChatApiController::class, 'mute'])->whereNumber('conversation');
             Route::get('{conversation}/call', [CallController::class, 'show'])->whereNumber('conversation');
             Route::post('{conversation}/call', [CallController::class, 'start'])->whereNumber('conversation')->middleware('throttle:20,1');
+        });
+
+        // Каталог мультиплеєрних ігор.
+        Route::prefix('games')->middleware('module:games')->group(function () {
+            Route::get('/', [GameController::class, 'index']);
+            Route::get('search', [GameController::class, 'search'])->middleware('throttle:120,1');
+            Route::get('{game}', [GameController::class, 'show']);
         });
 
         // Спільний перегляд у застосунку: ті самі дії, стан — опитуванням.

@@ -102,3 +102,15 @@ export type Paginated<T> = {
     to: number | null;
     links: { url: string | null; label: string; active: boolean }[];
 };
+
+export type GameCard = {
+    id: number;
+    slug: string;
+    name: string;
+    category: 'pc' | 'mobile' | 'console';
+    category_label: string;
+    platforms: { key: string; label: string }[];
+    genres: string[];
+    cover: string | null;
+    year: number | null;
+};

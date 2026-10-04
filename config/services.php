@@ -88,6 +88,11 @@ return [
         'image_url' => env('TMDB_IMAGE_URL', 'https://image.tmdb.org/t/p'),
     ],
 
+    'rawg' => [
+        'key' => env('RAWG_KEY'),
+        'url' => env('RAWG_API_URL', 'https://api.rawg.io/api'),
+    ],
+
     'omdb' => [
         'key' => env('OMDB_KEY'),
         'api_url' => env('OMDB_API_URL', 'https://www.omdbapi.com'),

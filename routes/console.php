@@ -18,3 +18,4 @@ Schedule::command('families:tick --digest')->weeklyOn(0, '23:59')->timezone('Eur
 
 Schedule::command('calls:expire')->everyMinute()->withoutOverlapping(5);
 Schedule::command('stories:prune')->hourly()->withoutOverlapping(30);
+Schedule::command('games:sync')->dailyAt('04:40')->timezone('Europe/Kyiv')->withoutOverlapping(120)->runInBackground();

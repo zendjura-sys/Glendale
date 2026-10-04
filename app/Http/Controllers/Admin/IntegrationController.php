@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Game;
 use App\Models\MovieSource;
 use App\Models\PushDevice;
 use App\Models\SpotifyAccount;
@@ -18,6 +19,7 @@ use App\Services\Cinema\KodikClient;
 use App\Services\Cinema\Metadata\OmdbProvider;
 use App\Services\Cinema\Metadata\ShikimoriProvider;
 use App\Services\Cinema\Metadata\TmdbProvider;
+use App\Services\Games\GameCatalog;
 use App\Services\Push\FcmClient;
 use App\Services\Spotify\SpotifyClient;
 use App\Services\Voice\LiveKit;
@@ -45,6 +47,7 @@ class IntegrationController extends Controller
         private readonly FirebaseAuth $firebase,
         private readonly FcmClient $fcm,
         private readonly LiveKit $livekit,
+        private readonly GameCatalog $games,
     ) {}
 
     public function index(): Response
@@ -332,6 +335,24 @@ class IntegrationController extends Controller
                     ['name' => 'api_secret', 'setting' => 'livekit_api_secret', 'type' => 'secret', 'label' => 'API Secret',
                         'env' => config('services.livekit.secret'),
                         'rules' => ['nullable', 'string', 'min:16', 'max:128'], 'message' => 'Секрет LiveKit — щонайменше 16 символів.'],
+                ],
+            ],
+            'rawg' => [
+                'label' => 'Каталог ігор (RAWG)',
+                'group' => 'games',
+                'description' => 'Щоденне оновлення каталогу мультиплеєрних ігор: ПК, телефони й консолі — обкладинки, жанри й посилання на Steam, Google Play, App Store та інші магазини.',
+                'docs' => 'https://rawg.io/apidocs',
+                'steps' => [
+                    'Зареєструйтеся на rawg.io і відкрийте rawg.io/apidocs → «Get API Key» (безкоштовно, до 20 000 запитів на місяць).',
+                    'Вставте ключ нижче й натисніть «Перевірити».',
+                    'Каталог оновлюється щодня о 04:40; першу синхронізацію можна запустити одразу: php artisan games:sync',
+                ],
+                'configured' => $this->games->configured(),
+                'stat' => Game::query()->count().' ігор у каталозі',
+                'test' => fn () => $this->games->test(),
+                'fields' => [
+                    ['name' => 'key', 'setting' => 'rawg_key', 'type' => 'secret', 'label' => 'API Key', 'env' => config('services.rawg.key'),
+                        'rules' => ['nullable', 'string', 'regex:/^[a-f0-9]{32}$/'], 'message' => 'Ключ RAWG — 32 символи (цифри й літери a–f).'],
                 ],
             ],
             'kodik' => [
