@@ -254,7 +254,7 @@ class ClanController extends Controller
     {
         $this->feature($clan, 'events');
         $data = $request->validate(['title' => ['required', 'string', 'max:120'], 'description' => ['nullable', 'string', 'max:1000'], 'starts_at' => ['required', 'date', 'after:now']]);
-        $this->clans->createEvent($clan, $this->me($request, $clan), trim($data['title']), $data['description'] ?? null, Carbon::parse($data['starts_at']));
+        $this->clans->createEvent($clan, $this->me($request, $clan), trim($data['title']), $data['description'] ?? null, Carbon::parse($data['starts_at'], 'Europe/Kyiv')->utc());
 
         return $this->done('Захід створено.');
     }

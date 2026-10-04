@@ -164,7 +164,7 @@ class Clan extends Model
     {
         $matrix = [];
         foreach (self::DEFAULT_PERMISSIONS as $key => $ranks) {
-            $matrix[$key] = array_map('intval', array_values((array) ($this->permissions[$key] ?? $ranks)));
+            $matrix[$key] = array_map('intval', (array) ($this->permissions[$key] ?? $ranks));
         }
 
         return $matrix;

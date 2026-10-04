@@ -11,10 +11,12 @@ import 'audio.dart';
 import 'auth_screen.dart';
 import 'chat.dart';
 import 'cinema.dart';
+import 'clans.dart';
 import 'communities.dart';
 import 'families.dart';
 import 'family_widget.dart';
 import 'feed.dart';
+import 'games.dart';
 import 'music.dart';
 import 'people.dart';
 import 'photos.dart';
@@ -145,6 +147,21 @@ Future<void> main() async {
             builder: (_, _) => const ServersScreen(),
             routes: [
               GoRoute(path: ':slug', builder: (_, state) => ServerScreen(slug: state.pathParameters['slug']!)),
+            ],
+          ),
+          GoRoute(
+            path: '/games',
+            builder: (_, _) => const GamesScreen(),
+            routes: [
+              GoRoute(path: ':slug', builder: (_, state) => GameScreen(key: ValueKey(state.pathParameters['slug']), slug: state.pathParameters['slug']!)),
+            ],
+          ),
+          GoRoute(
+            path: '/clans',
+            builder: (_, state) => ClansScreen(game: state.uri.queryParameters['game']),
+            routes: [
+              GoRoute(path: 'create', builder: (_, state) => ClanCreateScreen(game: state.uri.queryParameters['game'])),
+              GoRoute(path: ':slug', builder: (_, state) => ClanScreen(key: ValueKey(state.pathParameters['slug']), slug: state.pathParameters['slug']!)),
             ],
           ),
           GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
