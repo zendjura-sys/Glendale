@@ -3,12 +3,14 @@
 namespace App\Services\Voice;
 
 use App\Events\VoiceRoomsChanged;
+use App\Models\Clan;
 use App\Models\Community;
 use App\Models\Family;
 use App\Models\User;
 use App\Models\VoiceParticipant;
 use App\Models\VoiceRoom;
 use App\Models\VoiceRoomTemplate;
+use App\Services\Clans\ClanService;
 use App\Services\Families\FamilyGate;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -23,35 +25,39 @@ class VoiceRooms
     public function __construct(
         private readonly FamilyGate $gate,
         private readonly LiveKit $livekit,
+        private readonly ClanService $clans,
     ) {}
 
-    public function owner(string $type, int $id): Family|Community
+    public function owner(string $type, int $id): Family|Community|Clan
     {
         return match ($type) {
             VoiceRoom::OWNER_FAMILY => Family::query()->findOrFail($id),
             VoiceRoom::OWNER_COMMUNITY => Community::query()->findOrFail($id),
+            VoiceRoom::OWNER_CLAN => Clan::query()->findOrFail($id),
             default => abort(404),
         };
     }
 
-    public function ownerOf(VoiceRoom $room): Family|Community
+    public function ownerOf(VoiceRoom $room): Family|Community|Clan
     {
         return $this->owner($room->owner_type, $room->owner_id);
     }
 
-    public function canJoin(?User $user, Family|Community $owner): bool
+    public function canJoin(?User $user, Family|Community|Clan $owner): bool
     {
         if (! $user || $user->banned_at !== null) {
             return false;
         }
 
-        return $owner instanceof Family
-            ? $this->gate->member($owner, $user) !== null
-            : (bool) $owner->membershipFor($user)?->isActive();
+        return match (true) {
+            $owner instanceof Family => $this->gate->member($owner, $user) !== null,
+            $owner instanceof Clan => $owner->has('voice') && $this->clans->member($owner, $user) !== null,
+            default => (bool) $owner->membershipFor($user)?->isActive(),
+        };
     }
 
     /** Чи може людина зайти саме в цю кімнату: у сім’ї — за рангами кімнати. */
-    public function canEnter(?User $user, VoiceRoom $room, Family|Community|null $owner = null): bool
+    public function canEnter(?User $user, VoiceRoom $room, Family|Community|Clan|null $owner = null): bool
     {
         $owner ??= $this->ownerOf($room);
         if (! $this->canJoin($user, $owner)) {
@@ -65,7 +71,7 @@ class VoiceRooms
         return $member !== null && ($member->user_id === $owner->owner_id || $room->allowsRank($member->rank));
     }
 
-    public function canManage(?User $user, Family|Community $owner): bool
+    public function canManage(?User $user, Family|Community|Clan $owner): bool
     {
         if (! $user) {
             return false;
@@ -74,9 +80,11 @@ class VoiceRooms
             return true;
         }
 
-        return $owner instanceof Family
-            ? $this->gate->can($this->gate->member($owner, $user), $owner, 'voice.manage')
-            : (bool) $owner->membershipFor($user)?->isManager();
+        return match (true) {
+            $owner instanceof Family => $this->gate->can($this->gate->member($owner, $user), $owner, 'voice.manage'),
+            $owner instanceof Clan => $this->clans->can($this->clans->member($owner, $user), $owner, 'voice.manage'),
+            default => (bool) $owner->membershipFor($user)?->isManager(),
+        };
     }
 
     /**
@@ -85,7 +93,7 @@ class VoiceRooms
      *
      * @return list<array<string, mixed>>
      */
-    public function list(Family|Community $owner, ?User $viewer = null): array
+    public function list(Family|Community|Clan $owner, ?User $viewer = null): array
     {
         [$type, $id] = $this->key($owner);
         if ($owner instanceof Family) {
@@ -146,7 +154,7 @@ class VoiceRooms
      *
      * @return array<string, mixed>
      */
-    public function state(Family|Community $owner, ?User $user): array
+    public function state(Family|Community|Clan $owner, ?User $user): array
     {
         [$type, $id] = $this->key($owner);
 
@@ -158,7 +166,7 @@ class VoiceRooms
         ];
     }
 
-    public function create(Family|Community $owner, User $user, string $name): VoiceRoom
+    public function create(Family|Community|Clan $owner, User $user, string $name): VoiceRoom
     {
         // Спершу стандартні кімнати («Загальна», шаблони адмінки), щоб нова не зайняла їхнє місце.
         $this->list($owner);
@@ -388,7 +396,7 @@ class VoiceRooms
         return preg_match('/^u(\d+)$/', $identity, $m) === 1 ? (int) $m[1] : null;
     }
 
-    private function changed(Family|Community $owner): void
+    private function changed(Family|Community|Clan $owner): void
     {
         [$type, $id] = $this->key($owner);
         rescue(fn () => broadcast(new VoiceRoomsChanged($type, $id)), report: false);
@@ -397,9 +405,13 @@ class VoiceRooms
     /**
      * @return array{0: string, 1: int}
      */
-    private function key(Family|Community $owner): array
+    private function key(Family|Community|Clan $owner): array
     {
-        return $owner instanceof Family ? [VoiceRoom::OWNER_FAMILY, $owner->id] : [VoiceRoom::OWNER_COMMUNITY, $owner->id];
+        return match (true) {
+            $owner instanceof Family => [VoiceRoom::OWNER_FAMILY, $owner->id],
+            $owner instanceof Clan => [VoiceRoom::OWNER_CLAN, $owner->id],
+            default => [VoiceRoom::OWNER_COMMUNITY, $owner->id],
+        };
     }
 
     /**

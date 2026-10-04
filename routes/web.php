@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\CallController;
 use App\Http\Controllers\CinemaController;
+use App\Http\Controllers\ClanController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityMemberController;
@@ -217,6 +218,29 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('/', [GameController::class, 'index'])->name('index');
         Route::get('search', [GameController::class, 'search'])->middleware('throttle:120,1')->name('search');
         Route::get('{game}', [GameController::class, 'show'])->name('show');
+    });
+
+    // Клани й гільдії мультиплеєрних ігор.
+    Route::prefix('clans')->name('clans.')->middleware('module:clans')->group(function () {
+        Route::get('/', [ClanController::class, 'index'])->name('index');
+        Route::get('create', [ClanController::class, 'create'])->name('create');
+        Route::post('/', [ClanController::class, 'store'])->middleware('throttle:10,1')->name('store');
+        Route::prefix('{clan}')->group(function () {
+            Route::get('/', [ClanController::class, 'show'])->name('show');
+            Route::post('join', [ClanController::class, 'join'])->middleware('throttle:20,1')->name('join');
+            Route::post('leave', [ClanController::class, 'leave'])->name('leave');
+            Route::post('members/{member}', [ClanController::class, 'member'])->whereNumber('member')->name('members.update');
+            Route::post('settings', [ClanController::class, 'update'])->name('update');
+            Route::post('news', [ClanController::class, 'news'])->middleware('throttle:20,1')->name('news.store');
+            Route::delete('news/{news}', [ClanController::class, 'deleteNews'])->whereNumber('news')->name('news.destroy');
+            Route::post('events', [ClanController::class, 'event'])->middleware('throttle:20,1')->name('events.store');
+            Route::post('events/{event}/rsvp', [ClanController::class, 'rsvp'])->whereNumber('event')->name('events.rsvp');
+            Route::delete('events/{event}', [ClanController::class, 'deleteEvent'])->whereNumber('event')->name('events.destroy');
+            Route::post('contributions', [ClanController::class, 'contribute'])->middleware('throttle:30,1')->name('contributions.store');
+            Route::post('contributions/{contribution}', [ClanController::class, 'review'])->whereNumber('contribution')->name('contributions.review');
+            Route::post('spend', [ClanController::class, 'spend'])->middleware('throttle:30,1')->name('spend');
+            Route::get('chat', [ClanController::class, 'chat'])->name('chat');
+        });
     });
 
     // Спільний перегляд: доступ за посиланням із кодом.

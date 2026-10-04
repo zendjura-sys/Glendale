@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Clan;
 use App\Models\Game;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -66,7 +67,8 @@ class GameController extends Controller
                 'rating' => $game->rating,
                 'links' => $game->storeLinks(),
             ],
-            'clans' => [],
+            'clans' => Clan::query()->where('game_id', $game->id)->orderByDesc('members_count')->limit(30)->get()
+                ->map(fn (Clan $c) => $c->toCard())->values(),
         ];
 
         return $request->expectsJson() && ! $request->header('X-Inertia')

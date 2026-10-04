@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\PushApiController;
 use App\Http\Controllers\Api\SocialApiController;
 use App\Http\Controllers\CallController;
 use App\Http\Controllers\CinemaController;
+use App\Http\Controllers\ClanController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityMemberController;
@@ -242,6 +243,29 @@ Route::prefix('v1')->group(function () {
                 Route::delete('{conversation}/members/{user}', [MessengerController::class, 'removeMember']);
                 Route::patch('{conversation}/messages/{message}', [MessageController::class, 'update']);
                 Route::delete('{conversation}/messages/{message}', [MessageController::class, 'destroy']);
+            });
+
+            // Клани й гільдії мультиплеєрних ігор.
+            Route::prefix('clans')->middleware('module:clans')->group(function () {
+                Route::get('/', [ClanController::class, 'index']);
+                Route::get('create', [ClanController::class, 'create']);
+                Route::post('/', [ClanController::class, 'store'])->middleware('throttle:10,1');
+                Route::prefix('{clan}')->group(function () {
+                    Route::get('/', [ClanController::class, 'show']);
+                    Route::post('join', [ClanController::class, 'join'])->middleware('throttle:20,1');
+                    Route::post('leave', [ClanController::class, 'leave']);
+                    Route::post('members/{member}', [ClanController::class, 'member'])->whereNumber('member');
+                    Route::post('settings', [ClanController::class, 'update']);
+                    Route::post('news', [ClanController::class, 'news'])->middleware('throttle:20,1');
+                    Route::delete('news/{news}', [ClanController::class, 'deleteNews'])->whereNumber('news');
+                    Route::post('events', [ClanController::class, 'event'])->middleware('throttle:20,1');
+                    Route::post('events/{event}/rsvp', [ClanController::class, 'rsvp'])->whereNumber('event');
+                    Route::delete('events/{event}', [ClanController::class, 'deleteEvent'])->whereNumber('event');
+                    Route::post('contributions', [ClanController::class, 'contribute'])->middleware('throttle:30,1');
+                    Route::post('contributions/{contribution}', [ClanController::class, 'review'])->whereNumber('contribution');
+                    Route::post('spend', [ClanController::class, 'spend'])->middleware('throttle:30,1');
+                    Route::get('chat', [ClanController::class, 'chat']);
+                });
             });
 
             Route::middleware('module:communities')->group(function () {
