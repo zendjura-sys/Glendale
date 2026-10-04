@@ -341,6 +341,13 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                         ),
                     ],
                     [
+                        'translate',
+                        tr('Переклад'),
+                        tr(
+                            'Автопереклад інтерфейсу на інші мови й кнопка «Перекласти» під записами.',
+                        ),
+                    ],
+                    [
                         'metadata',
                         tr('Кіно: метадані'),
                         tr(

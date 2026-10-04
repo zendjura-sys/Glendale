@@ -21,6 +21,7 @@ use App\Services\Cinema\Metadata\ShikimoriProvider;
 use App\Services\Cinema\Metadata\TmdbProvider;
 use App\Services\Games\GameCatalog;
 use App\Services\Games\Igdb;
+use App\Services\I18n\DeepL;
 use App\Services\Presence\SteamPresence;
 use App\Services\Push\FcmClient;
 use App\Services\Spotify\SpotifyClient;
@@ -52,6 +53,7 @@ class IntegrationController extends Controller
         private readonly GameCatalog $games,
         private readonly Igdb $igdb,
         private readonly SteamPresence $steam,
+        private readonly DeepL $deepl,
     ) {}
 
     public function index(): Response
@@ -477,6 +479,23 @@ class IntegrationController extends Controller
                 'fields' => [
                     ['name' => 'key', 'setting' => 'steam_api_key', 'type' => 'secret', 'label' => 'Web API Key', 'env' => config('services.steam.key'),
                         'rules' => ['nullable', 'string', 'regex:/^[A-F0-9]{32}$/'], 'message' => 'Ключ Steam — 32 символи (цифри й літери A–F).'],
+                ],
+            ],
+            'deepl' => [
+                'label' => 'DeepL',
+                'group' => 'translate',
+                'description' => 'Автопереклад інтерфейсу на додані мови (Адмінка → Мови) і кнопка «Перекласти» під записами та коментарями.',
+                'docs' => 'https://www.deepl.com/pro-api',
+                'steps' => [
+                    'Зареєструйтеся на deepl.com → DeepL API (Free — до 500 000 символів на місяць безкоштовно, або Pro).',
+                    'Account → API Keys → скопіюйте ключ. Ключ Free закінчується на «:fx».',
+                    'Вставте ключ нижче й натисніть «Перевірити», потім додайте мови в Адмінці → Мови.',
+                ],
+                'configured' => $this->deepl->configured(),
+                'test' => fn () => $this->deepl->test(),
+                'fields' => [
+                    ['name' => 'key', 'setting' => 'deepl_key', 'type' => 'secret', 'label' => 'Authentication Key', 'env' => config('services.deepl.key'),
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9\-]{30,48}(:fx)?$/'], 'message' => 'Ключ DeepL має вигляд xxxxxxxx-xxxx-…:fx'],
                 ],
             ],
             'omdb' => [

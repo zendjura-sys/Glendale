@@ -18,6 +18,7 @@ use App\Services\CommunityService;
 use App\Services\Families\FamilyGate;
 use App\Services\FriendshipService;
 use App\Services\Push\PushNotifier;
+use App\Support\I18n\CatalogLoader;
 use App\Support\I18n\Locales;
 use App\Support\I18n\Translations;
 use App\Support\Mail\AccountMail;
@@ -27,6 +28,7 @@ use App\Support\Mail\SocialMailer;
 use App\Support\Modules\ModuleManager;
 use App\Support\Settings\SiteSettings;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Translation\Loader;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Mail\Events\MessageSending;
@@ -50,6 +52,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(ModuleManager::class, fn () => new ModuleManager(config('modules')));
         $this->app->singleton(SiteSettings::class);
         $this->app->scoped(Translations::class);
+        // Повідомлення валідації для мов без файлів у lang/ — з каталогу перекладів.
+        $this->app->extend('translation.loader', fn (Loader $loader) => new CatalogLoader($loader));
         $this->app->scoped(FriendshipService::class);
         $this->app->scoped(CommunityService::class);
         $this->app->scoped(FamilyGate::class);

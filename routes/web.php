@@ -454,6 +454,18 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('sync', [Admin\GameController::class, 'sync'])->middleware('throttle:5,1')->name('sync');
             Route::patch('{game:id}', [Admin\GameController::class, 'update'])->whereNumber('game')->name('update');
         });
+        Route::prefix('languages')->name('languages.')->group(function () {
+            Route::get('/', [Admin\LanguageController::class, 'index'])->name('index');
+            Route::post('/', [Admin\LanguageController::class, 'store'])->name('store');
+            Route::put('settings', [Admin\LanguageController::class, 'settings'])->name('settings');
+            Route::where(['code' => '[A-Za-z]{2,3}(-[A-Za-z0-9]{2,4}){0,2}'])->group(function () {
+                Route::patch('{code}', [Admin\LanguageController::class, 'update'])->name('update');
+                Route::delete('{code}', [Admin\LanguageController::class, 'destroy'])->name('destroy');
+                Route::post('{code}/translate', [Admin\LanguageController::class, 'translate'])->middleware('throttle:10,1')->name('translate');
+                Route::get('{code}/strings', [Admin\LanguageController::class, 'strings'])->name('strings');
+                Route::put('{code}/strings', [Admin\LanguageController::class, 'updateString'])->name('strings.update');
+            });
+        });
         Route::prefix('moderation')->name('moderation.')->group(function () {
             Route::get('/', [Admin\ModerationController::class, 'index'])->name('index');
             Route::put('settings', [Admin\ModerationController::class, 'settings'])->name('settings');

@@ -66,7 +66,7 @@ function webKeys() {
 function serverKeys() {
     const out = execFileSync(
         'php',
-        ['scripts/i18n/extract-php.php', 'app', 'routes'],
+        ['scripts/i18n/extract-php.php', 'app', 'routes', 'lang/uk'],
         { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
     );
     const keys = new Set(JSON.parse(out));

@@ -43,6 +43,7 @@ class SiteSettings
         'discord_bot_token' => null,
         'discord_guild_id' => null,
         'steam_api_key' => null,
+        'deepl_key' => null,
         'moderation' => [],
         // Мови інтерфейсу: [{code, enabled}], українська — завжди; типова — для решти відвідувачів.
         'languages' => [],
@@ -66,7 +67,7 @@ class SiteSettings
     ];
 
     /** Ключі, які не можна віддавати у фронтенд. */
-    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key'];
+    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key', 'deepl_key'];
 
     /** @var array<string, mixed>|null */
     private ?array $values = null;

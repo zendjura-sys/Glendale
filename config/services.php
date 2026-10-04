@@ -43,6 +43,11 @@ return [
         'api_url' => env('SPOTIFY_API_URL', 'https://api.spotify.com/v1'),
     ],
 
+    'deepl' => [
+        'key' => env('DEEPL_KEY'),
+        'url' => env('DEEPL_URL'),
+    ],
+
     'discord' => [
         'client_id' => env('DISCORD_CLIENT_ID'),
         'client_secret' => env('DISCORD_CLIENT_SECRET'),
