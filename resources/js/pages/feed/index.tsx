@@ -20,6 +20,7 @@ import { PersonRow } from '@/components/gc/person-card';
 import { PostCard } from '@/components/gc/post-card';
 import { PostComposer } from '@/components/gc/post-composer';
 import { PostSkeleton } from '@/components/gc/post-skeleton';
+import { StoriesBar } from '@/components/gc/stories';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
 import { formatDate } from '@/lib/format';
@@ -102,6 +103,7 @@ export default function Feed({
             <Head title="Новини" />
             <div className="flex gap-5">
                 <div className="min-w-0 flex-1 space-y-4 xl:max-w-[640px]">
+                    <StoriesBar />
                     <PostComposer />
                     <FeedTabs tab={tab} hasFriends={hasFriends} />
 
