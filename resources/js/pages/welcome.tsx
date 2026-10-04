@@ -388,8 +388,17 @@ export default function Welcome({
             </main>
 
             <footer className="border-t border-white/[0.05] py-8 text-center text-xs text-white/30">
-                © {new Date().getFullYear()} GameCon · Соціальна мережа нового
-                покоління
+                <Link href="/terms" className="hover:text-white">
+                    Умови
+                </Link>
+                <span className="px-2 text-white/20">·</span>
+                <Link href="/privacy" className="hover:text-white">
+                    Конфіденційність
+                </Link>
+                <p className="mt-2">
+                    © {new Date().getFullYear()} GameCon · Соціальна мережа
+                    нового покоління
+                </p>
             </footer>
         </>
     );

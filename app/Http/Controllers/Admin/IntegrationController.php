@@ -256,6 +256,8 @@ class IntegrationController extends Controller
                 'steps' => [
                     'Discord Developer Portal → New Application → OAuth2.',
                     'Додайте Redirect: '.$this->discord->redirectUri(),
+                    'Terms of Service: '.url('/terms').'. Privacy Policy: '.url('/privacy').'.',
+                    'Interactions Endpoint URL і Linked Roles Verification URL залиште порожніми: бот слухає Gateway, прив’язані ролі не використовуються.',
                     'Скопіюйте Client ID і Client Secret сюди.',
                     'Для статусу «Граю в…»: у тому ж застосунку → Bot → Reset Token, скопіюйте токен; увімкніть Presence Intent і Server Members Intent.',
                     'OAuth2 → URL Generator → scope «bot» → відкрийте посилання й додайте бота на Discord-сервер GameCon. ID сервера: ПКМ по серверу → «Копіювати ID» (потрібен режим розробника).',
