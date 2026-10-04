@@ -29,6 +29,8 @@ import { UserAvatar } from '@/components/gc/user-avatar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { EmptyState, Widget } from '@/components/gc/widget';
 import { NowPlayingCard } from '@/components/music/now-playing';
+import { AchievementsCard } from '@/components/gc/achievements';
+import type { AchievementsData } from '@/components/gc/achievements';
 import { compactNumber, formatDate, lastSeen, plural } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type {
@@ -68,6 +70,7 @@ type Props = {
     friends: UserCard[];
     photos: { id: number; url: string; href: string }[];
     photosHref: string | null;
+    achievements?: AchievementsData;
     audio: { href: string; tracks: number } | null;
     nowPlaying?: NowPlaying | null;
     posts: ScrollData<PostItem>;
@@ -154,6 +157,7 @@ export default function ProfileShow({
     friends,
     photos,
     photosHref,
+    achievements,
     audio,
     nowPlaying,
     posts,
@@ -362,6 +366,13 @@ export default function ProfileShow({
                                     {profile.about}
                                 </p>
                             </Widget>
+                        )}
+
+                        {achievements && (
+                            <AchievementsCard
+                                data={achievements}
+                                isSelf={isSelf}
+                            />
                         )}
 
                         {audio && (

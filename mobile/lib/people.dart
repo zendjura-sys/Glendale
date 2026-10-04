@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'achievements.dart';
 import 'api.dart';
 import 'feed.dart';
 import 'posts.dart';
@@ -689,6 +690,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Text('Слухати →', style: body(13, color: muted)),
             ]),
           ),
+        ],
+        if (data['achievements'] is Map) ...[
+          const SizedBox(height: 12),
+          AchievementsPanel(data: mapOf(data['achievements']), isSelf: data['relation'] == 'self'),
         ],
         if (open && photos.isNotEmpty) ...[
           const SizedBox(height: 12),

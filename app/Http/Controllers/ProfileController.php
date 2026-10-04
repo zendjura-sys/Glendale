@@ -7,6 +7,7 @@ use App\Models\PhotoAlbum;
 use App\Models\Post;
 use App\Models\PostAttachment;
 use App\Models\User;
+use App\Services\Achievements;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
 use App\Services\Messenger;
@@ -111,6 +112,7 @@ class ProfileController extends Controller
                 ->map->toCard()
                 ->all() : [],
             'photos' => $photoItems,
+            'achievements' => app(Achievements::class)->for($user),
             'photosHref' => $modules->enabled('photos') ? '/photos/u/'.$user->username : null,
             'audio' => $modules->enabled('music') && $canSeeContent ? [
                 'href' => '/music/u/'.$user->username,

@@ -134,7 +134,7 @@ class EventCalendar
         $members = FamilyMember::query()->with('family')->where('user_id', $user->id)->where('status', FamilyMember::STATUS_ACTIVE)->get();
         foreach ($members as $member) {
             $family = $member->family;
-            if ($family instanceof Family && $family->server_id === $server->id && $this->gate->can($member, $family, 'events.manage')) {
+            if ($family->server_id === $server->id && $this->gate->can($member, $family, 'events.manage')) {
                 $hosts[] = ['id' => $family->id, 'name' => "[{$family->tag}] {$family->name}"];
             }
         }
