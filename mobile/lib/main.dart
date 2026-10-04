@@ -4,6 +4,7 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'audio.dart';
@@ -12,6 +13,7 @@ import 'chat.dart';
 import 'cinema.dart';
 import 'communities.dart';
 import 'families.dart';
+import 'family_widget.dart';
 import 'feed.dart';
 import 'music.dart';
 import 'people.dart';
@@ -53,6 +55,9 @@ Future<void> main() async {
     unawaited(player.play(audioTestUrl, 'GameCon CI', 'Background audio'));
   }
   await session.boot();
+  // Віджет «Моя сім'я»: фонове оновлення й свіжі дані при кожному запуску.
+  await HomeWidget.registerInteractivityCallback(familyWidgetBackground);
+  unawaited(FamilyWidget.refresh(session.token == null ? null : session.api, prefs).then((_) => null, onError: (_) => null));
   final links = AppLinks();
   links.uriLinkStream.listen(session.takeLink);
   final initial = await links.getInitialLink();

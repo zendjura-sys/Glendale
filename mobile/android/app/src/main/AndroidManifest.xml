@@ -84,6 +84,26 @@
                 <action android:name="android.intent.action.MEDIA_BUTTON"/>
             </intent-filter>
         </receiver>
+        <!-- Віджет «Моя сім'я» на головному екрані. -->
+        <receiver
+            android:name=".FamilyWidgetProvider"
+            android:label="@string/family_widget_label"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/family_widget_info"/>
+        </receiver>
+        <!-- Кнопка «Оновити» й планове оновлення віджета: завантаження даних у фоні (home_widget). -->
+        <receiver
+            android:name="es.antonborri.home_widget.HomeWidgetBackgroundReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="es.antonborri.home_widget.action.BACKGROUND"/>
+            </intent-filter>
+        </receiver>
         <!-- Push (Firebase Cloud Messaging): іконка, колір і канал за замовчуванням. -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"

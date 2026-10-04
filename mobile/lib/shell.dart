@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
+import 'family_widget.dart';
 import 'nav_items.dart';
 import 'player_view.dart';
 import 'state.dart';
@@ -92,7 +93,15 @@ class _AppShellState extends State<AppShell> {
 
   void _onSession() {
     final uri = widget.session.handoff;
-    if (!mounted || uri == null || uri.host != 'spotify') return;
+    if (!mounted || uri == null) return;
+    // Натискання на віджет «Моя сім'я» — відкриваємо сім'ю.
+    final fromWidget = FamilyWidget.routeFor(uri);
+    if (fromWidget != null) {
+      widget.session.consumeLink();
+      context.push(fromWidget);
+      return;
+    }
+    if (uri.host != 'spotify') return;
     widget.session.consumeLink();
     final failed = uri.queryParameters['error'];
     final ok = failed == null || failed.isEmpty;

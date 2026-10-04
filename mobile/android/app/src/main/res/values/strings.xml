@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="family_widget_label">Моя сім'я</string>
+    <string name="family_widget_description">Рахунок у банку сім'ї, заробіток за тиждень, місце в рейтингу й найближча подія</string>
+</resources>

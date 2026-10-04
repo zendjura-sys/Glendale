@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
+import 'family_widget.dart';
 import 'nav_items.dart';
 import 'shell.dart';
 import 'state.dart';
@@ -193,7 +194,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           id: tab,
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: switch (tab) {
             'security' => _security(),
-            'app' => const [NavEditor()],
+            'app' => const [NavEditor(), SizedBox(height: 12), FamilyWidgetSettings()],
             _ => _profile(),
           }),
         ),
