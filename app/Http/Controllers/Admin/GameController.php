@@ -46,7 +46,7 @@ class GameController extends Controller
             ->through(fn (Game $g) => [
                 ...$g->toCard(),
                 'is_published' => $g->is_published,
-                'source' => $g->igdb_id ? 'IGDB' : ($g->rawg_id ? 'RAWG' : 'Стартовий список'),
+                'source' => collect([$g->igdb_id ? 'IGDB' : null, $g->rawg_id ? 'RAWG' : null])->filter()->implode(' · ') ?: 'Стартовий список',
                 'clans_count' => Clan::query()->where('game_id', $g->id)->count(),
                 'updated_at' => $g->updated_at?->toIso8601String(),
             ]);
@@ -87,12 +87,12 @@ class GameController extends Controller
     {
         $seeded = $this->catalog->seed();
         if (! $this->catalog->configured()) {
-            Inertia::flash('toast', ['type' => 'error', 'message' => 'Спершу додайте ключі IGDB в Інтеграціях. Зі стартового списку: +'.$seeded]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'Спершу додайте ключі IGDB або RAWG в Інтеграціях. Зі стартового списку: +'.$seeded]);
 
             return back();
         }
         set_time_limit(300);
-        $result = $this->catalog->sync(1);
+        $result = $this->catalog->sync(1, 40);
         Cache::forget('games.genres');
         Inertia::flash('toast', ['type' => 'success', 'message' => "Джерело: {$this->catalog->source()}. Ігор оновлено: {$result['games']}, посилань: {$result['links']}."]);
 

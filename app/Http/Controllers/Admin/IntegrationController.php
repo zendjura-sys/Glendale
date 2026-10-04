@@ -377,7 +377,7 @@ class IntegrationController extends Controller
             'rawg' => [
                 'label' => 'Каталог ігор (RAWG)',
                 'group' => 'games',
-                'description' => 'Запасне джерело каталогу ігор: використовується, лише якщо IGDB не налаштовано.',
+                'description' => 'Друге джерело каталогу. Разом з IGDB: ігри, яких немає в IGDB, додаткові платформи й посилання на магазини. Картка гри з IGDB лишається основною.',
                 'docs' => 'https://rawg.io/apidocs',
                 'steps' => [
                     'Зареєструйтеся на rawg.io і відкрийте rawg.io/apidocs → «Get API Key» (безкоштовно, до 20 000 запитів на місяць).',
