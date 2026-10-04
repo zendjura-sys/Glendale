@@ -24,6 +24,7 @@ declare module '@inertiajs/core' {
                     badge: 'get' | 'preregister';
                 } | null;
                 registration_open: boolean;
+                translate: boolean;
                 max_attachments: number;
                 max_message_file_mb: number;
                 announcement: string | null;

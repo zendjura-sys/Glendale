@@ -10,6 +10,10 @@ import type { CommentItem } from '@/types';
 import { LikeButton } from './like-button';
 import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
+import {
+    TranslateToggle,
+    useContentTranslation,
+} from '@/components/gc/translate';
 import { tr } from '@/lib/i18n';
 
 type Props = {
@@ -166,7 +170,10 @@ export function Comments({
                                             {parent.user.first_name},
                                         </span>
                                     )}
-                                    {comment.body}
+                                    <CommentText
+                                        id={comment.id}
+                                        body={comment.body}
+                                    />
                                 </p>
                             </div>
                             <div className="mt-1 flex items-center gap-3 pl-2 text-xs text-white/40">
@@ -260,5 +267,21 @@ export function Comments({
                 </div>
             )}
         </div>
+    );
+}
+
+/** Текст коментаря з кнопкою «Перекласти». */
+function CommentText({ id, body }: { id: number; body: string }) {
+    const translation = useContentTranslation('comment', id);
+
+    return (
+        <>
+            {translation.text ?? body}
+            {translation.enabled && (
+                <span className="mt-0.5 block">
+                    <TranslateToggle state={translation} />
+                </span>
+            )}
+        </>
     );
 }

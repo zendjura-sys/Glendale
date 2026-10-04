@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Cache;
 class Translations
 {
     /** Поля з текстом користувачів — їх не чіпаємо. */
-    private const USER_CONTENT = ['body', 'content', 'bio', 'caption', 'lyrics', 'excerpt', 'preview', 'last_message', 'native'];
+    private const USER_CONTENT = ['body', 'content', 'bio', 'caption', 'lyrics', 'excerpt', 'preview', 'last_message', 'native', 'translation'];
 
     /** @var array<string, array<string, string>> */
     private array $dicts = [];

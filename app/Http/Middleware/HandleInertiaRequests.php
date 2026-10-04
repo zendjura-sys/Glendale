@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Services\Auth\DiscordOAuth;
 use App\Services\Auth\FirebaseAuth;
 use App\Services\FriendshipService;
+use App\Services\I18n\ContentTranslator;
 use App\Services\Messenger;
 use App\Services\Spotify\SpotifyClient;
 use App\Support\I18n\Locales;
@@ -63,6 +64,7 @@ class HandleInertiaRequests extends Middleware
                 'description' => $this->settings->seoDescription(),
                 'play_store' => transform($this->settings->playStoreUrl(), fn (string $url) => ['url' => $url, 'badge' => $this->settings->playStoreBadge()]),
                 'registration_open' => (bool) $this->settings->get('registration_open'),
+                'translate' => app(ContentTranslator::class)->enabled(),
                 'max_attachments' => (int) $this->settings->get('max_attachments'),
                 'max_message_file_mb' => (int) $this->settings->get('max_message_file_mb'),
                 'announcement' => $this->settings->get('maintenance_message'),

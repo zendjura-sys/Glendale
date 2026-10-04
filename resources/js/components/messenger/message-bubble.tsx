@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import {
     Flag,
+    Languages,
     AlertCircle,
     Check,
     CheckCheck,
@@ -21,6 +22,7 @@ import {
     FileAttachment,
     VoicePlayer,
 } from './message-media';
+import { useContentTranslation } from '@/components/gc/translate';
 import { tr } from '@/lib/i18n';
 
 export type BubbleActions = {
@@ -147,6 +149,7 @@ export function MessageBubble({
         bare ||
         (hasImages && !message.body && !message.reply_to && !files.length);
     const pending = message.pending;
+    const translation = useContentTranslation('message', message.id);
 
     const meta = (
         <span
@@ -369,7 +372,7 @@ export function MessageBubble({
                         >
                             {message.body && (
                                 <span className="break-words whitespace-pre-wrap">
-                                    {message.body}
+                                    {translation.text ?? message.body}
                                 </span>
                             )}
                             <span className="float-right mt-1.5 ml-2.5 translate-y-0.5">
@@ -434,6 +437,23 @@ export function MessageBubble({
                             title={tr('Видалити')}
                         >
                             <Trash2 className="size-3.5" />
+                        </button>
+                    )}
+                    {!own && message.body && translation.enabled && (
+                        <button
+                            type="button"
+                            className={cn(
+                                toolButton,
+                                translation.shown && 'text-[#a5b4fc]',
+                            )}
+                            onClick={translation.toggle}
+                            title={
+                                translation.shown
+                                    ? tr('Показати оригінал')
+                                    : tr('Перекласти')
+                            }
+                        >
+                            <Languages className="size-3.5" />
                         </button>
                     )}
                     {!own && actions.onReport && (

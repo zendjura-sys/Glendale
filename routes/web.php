@@ -32,6 +32,7 @@ use App\Http\Controllers\ServerController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StoryController;
 use App\Http\Controllers\TrackController;
+use App\Http\Controllers\TranslateController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Controllers\WatchPartyController;
 use App\Http\Controllers\WelcomeController;
@@ -264,6 +265,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('invite', [WatchPartyController::class, 'invite'])->middleware('throttle:10,1')->name('invite');
         Route::delete('/', [WatchPartyController::class, 'end'])->name('end');
     });
+
+    // «Перекласти» під записами, коментарями й повідомленнями (DeepL).
+    Route::post('translate', TranslateController::class)->middleware('throttle:60,1')->name('translate');
 
     // Календар подій: сім’ї, клани, сервери, ігри.
     Route::prefix('events')->name('events.')->middleware('module:events')->group(function () {

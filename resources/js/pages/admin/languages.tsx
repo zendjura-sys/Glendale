@@ -38,6 +38,7 @@ type Props = {
         usage: { used: number; limit: number } | null;
     };
     catalog: number;
+    content_translation: boolean;
 };
 
 const pct = (a: number, b: number) =>
@@ -50,6 +51,7 @@ export default function AdminLanguages({
     suggested,
     deepl,
     catalog,
+    content_translation,
 }: Props) {
     const form = useForm({ code: '' });
     const running = languages.some((l) => l.progress.running);
@@ -133,6 +135,37 @@ export default function AdminLanguages({
                     </Link>
                 </p>
             )}
+
+            <section className="glass mb-6 flex flex-wrap items-center gap-3 rounded-3xl p-4 sm:p-5">
+                <div className="min-w-[min(100%,18rem)] flex-1">
+                    <h2 className="font-display text-lg font-semibold text-white">
+                        {tr('Кнопка «Перекласти»')}
+                    </h2>
+                    <p className="text-sm text-white/50">
+                        {tr(
+                            'Під записами, коментарями й повідомленнями: DeepL перекладає текст мовою інтерфейсу людини. Переклади зберігаються, тож символи витрачаються один раз.',
+                        )}
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    onClick={() =>
+                        router.put(
+                            '/admin/languages/settings',
+                            { content_translation: !content_translation },
+                            { preserveScroll: true },
+                        )
+                    }
+                    className={cn(
+                        'h-9 rounded-xl px-3 text-sm font-semibold transition',
+                        content_translation
+                            ? 'bg-emerald-500/15 text-emerald-200'
+                            : 'bg-white/[0.06] text-white/60 hover:text-white',
+                    )}
+                >
+                    {content_translation ? tr('Увімкнено') : tr('Вимкнено')}
+                </button>
+            </section>
 
             <section className="glass mb-6 rounded-3xl p-4 sm:p-5">
                 <h2 className="mb-1 font-display text-lg font-semibold text-white">

@@ -54,6 +54,7 @@ class LanguageController extends Controller
                 'usage' => $this->deepl->configured() ? $this->deepl->usage() : null,
             ],
             'catalog' => count($this->translations->catalog()),
+            'content_translation' => $this->settings->get('content_translation') !== false,
         ]);
     }
 
@@ -135,9 +136,12 @@ class LanguageController extends Controller
 
     public function settings(Request $request): RedirectResponse
     {
-        $data = $request->validate(['default_locale' => ['required', 'string', Rule::in($this->locales->enabled())]]);
-        $this->settings->put(['default_locale' => $data['default_locale']]);
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Типову мову збережено.']);
+        $data = $request->validate([
+            'default_locale' => ['sometimes', 'string', Rule::in($this->locales->enabled())],
+            'content_translation' => ['sometimes', 'boolean'],
+        ]);
+        $this->settings->put(array_map(fn ($v) => is_string($v) ? $v : (bool) $v, $data));
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Налаштування мов збережено.']);
 
         return back();
     }

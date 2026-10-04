@@ -39,11 +39,13 @@ class GeoIp
      */
     public function status(): array
     {
+        $exists = is_file($this->path());
+
         return [
-            'available' => $this->available(),
+            'available' => $exists,
             'source' => is_string($s = $this->settings->get('geo_db_source')) ? $s : null,
             'updated_at' => is_string($u = $this->settings->get('geo_db_updated_at')) ? $u : null,
-            'size' => $this->available() ? (int) filesize($this->path()) : 0,
+            'size' => $exists ? (int) filesize($this->path()) : 0,
         ];
     }
 

@@ -48,6 +48,8 @@ class SiteSettings
         // Мови інтерфейсу: [{code, enabled}], українська — завжди; типова — для решти відвідувачів.
         'languages' => [],
         'default_locale' => 'uk',
+        // Кнопка «Перекласти» під записами (потрібен ключ DeepL).
+        'content_translation' => true,
         // Блокування країн: ISO-коди; база IP → країна; Cloudflare визначає країну сам.
         'geo_blocked' => [],
         'geo_trust_cloudflare' => false,

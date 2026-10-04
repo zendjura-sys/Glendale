@@ -33,6 +33,10 @@ import { LikeButton } from './like-button';
 import { MediaGrid } from './media-grid';
 import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
+import {
+    TranslateToggle,
+    useContentTranslation,
+} from '@/components/gc/translate';
 import { tr } from '@/lib/i18n';
 
 const visibilityMeta = {
@@ -62,7 +66,8 @@ export function PostCard({
 
     const Visibility = visibilityMeta[post.visibility].icon;
     const publisherHref = post.publisher?.href ?? `/${post.author.username}`;
-    const body = post.body ?? '';
+    const translation = useContentTranslation('post', post.id);
+    const body = translation.text ?? post.body ?? '';
     const isLong = body.length > LONG_TEXT;
 
     const toggleLike = async () => {
@@ -212,6 +217,12 @@ export function PostCard({
                             {tr('Показати повністю')}
                         </button>
                     )}
+                    <div>
+                        <TranslateToggle
+                            state={translation}
+                            className="mt-1.5"
+                        />
+                    </div>
                 </div>
             )}
 

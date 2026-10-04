@@ -34,6 +34,7 @@ use App\Http\Controllers\Settings\ProfileController as SettingsProfileController
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StoryController;
 use App\Http\Controllers\TrackController;
+use App\Http\Controllers\TranslateController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Controllers\WatchPartyController;
 use App\Http\Middleware\BridgeSiteAction;
@@ -58,6 +59,7 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth.api', 'verified.site'])->group(function () {
         Route::get('me', [AuthController::class, 'me']);
         Route::post('me/locale', [LocaleController::class, 'update'])->middleware('throttle:30,1');
+        Route::post('translate', TranslateController::class)->middleware('throttle:60,1');
         Route::post('logout', [AuthController::class, 'logout']);
         Route::patch('me', [SocialApiController::class, 'updateProfile']);
         Route::put('me/password', [SocialApiController::class, 'password']);

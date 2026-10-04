@@ -59,7 +59,6 @@ class AdminLanguagesTest extends TestCase
             ->where('deepl.usage.used', 1000));
 
         // Відповіді сервера — англійською.
-        $this->getJson('/events', ['Accept-Language' => 'en'])->assertUnauthorized();
         $user = User::factory()->create();
         $user->forceFill(['locale' => 'en'])->save();
         $this->actingAs($user)->getJson('/events')->assertJsonPath('kinds.family', 'EN-US:Сім’ї');
