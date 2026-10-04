@@ -38,7 +38,7 @@ class MessageReports
 
         $family = $conversation->family_id !== null ? Family::query()->find($conversation->family_id) : null;
         if ($family instanceof Family) {
-            $author = $message->user?->name ?? 'учасника';
+            $author = $message->user->name ?? 'учасника';
             $this->notifier->holders($family, 'sanctions.issue', 'report', "Скарга на повідомлення {$author} у чаті сім’ї: «".Str::limit((string) $message->body, 80).'»', route('families.discipline', $family, absolute: false));
         }
 

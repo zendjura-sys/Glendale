@@ -51,9 +51,9 @@ class ModerationController extends Controller
                         'body' => $message->body,
                         'type' => $message->type,
                         'deleted' => $message->trashed(),
-                        'created_at' => $message->created_at?->toIso8601String(),
+                        'created_at' => $message->created_at->toIso8601String(),
                         'author' => $message->user?->toCard(),
-                        'chat' => $message->conversation?->title ?? ($message->conversation?->family_id ? 'Чат сім’ї' : 'Особисте листування'),
+                        'chat' => $message->conversation->title ?? ($message->conversation->family_id ? 'Чат сім’ї' : 'Особисте листування'),
                     ] : null,
                 ];
             })->values();
