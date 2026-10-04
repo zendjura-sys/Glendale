@@ -31,7 +31,7 @@ class ContentTranslateTest extends TestCase
         ]);
     }
 
-    private function post(User $author, string $body, string $visibility = 'public'): Post
+    private function makePost(User $author, string $body, string $visibility = 'public'): Post
     {
         return Post::query()->create(['author_id' => $author->id, 'wall_type' => 'user', 'wall_id' => $author->id, 'body' => $body, 'visibility' => $visibility]);
     }
@@ -40,7 +40,7 @@ class ContentTranslateTest extends TestCase
     {
         $author = User::factory()->create();
         $reader = User::factory()->create();
-        $post = $this->post($author, 'Hello world');
+        $post = $this->makePost($author, 'Hello world');
 
         $this->actingAs($reader)->get('/feed')->assertInertia(fn ($page) => $page->where('site.translate', true));
         $this->actingAs($reader)->postJson('/translate', ['type' => 'post', 'id' => $post->id])
@@ -49,10 +49,10 @@ class ContentTranslateTest extends TestCase
         Http::assertSentCount(2); // мови DeepL + один переклад
 
         // Текст уже українською.
-        $uk = $this->post($author, 'Привіт усім');
+        $uk = $this->makePost($author, 'Привіт усім');
         $this->actingAs($reader)->postJson('/translate', ['type' => 'post', 'id' => $uk->id])->assertJsonPath('same', true);
 
-        $hidden = $this->post($author, 'Only friends', 'friends');
+        $hidden = $this->makePost($author, 'Only friends', 'friends');
         $this->actingAs($reader)->postJson('/translate', ['type' => 'post', 'id' => $hidden->id])->assertNotFound();
 
         app(SiteSettings::class)->put(['content_translation' => false]);
