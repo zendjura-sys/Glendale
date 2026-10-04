@@ -52,7 +52,8 @@ class ServerLanguageTest extends TestCase
 
         // Українською — українські; вибір мови вручну.
         $uk = User::factory()->create();
-        $this->actingAs($uk)->get('/servers')
+        // Тестовий клієнт за замовчуванням надсилає Accept-Language: en-us.
+        $this->actingAs($uk)->get('/servers', ['Accept-Language' => 'uk-UA,uk;q=0.9'])
             ->assertInertia(fn (Assert $page) => $page->where('filters.lang', 'uk')->where('heading', 'Українські')->has('servers', 2));
         $this->actingAs($uk)->get('/servers?lang=de')
             ->assertInertia(fn (Assert $page) => $page->where('filters.lang', 'de')->has('servers', 1));
