@@ -165,7 +165,7 @@ class Locales
     {
         $name = Locale::getDisplayLanguage($code, 'en');
 
-        return $name !== '' && strtolower($name) !== strtolower(self::primary($code));
+        return is_string($name) && strtolower($name) !== strtolower(self::primary($code));
     }
 
     /** «English», «Deutsch», «português (Brasil)» — назва мови нею самою. */
@@ -173,7 +173,7 @@ class Locales
     {
         $name = Locale::getDisplayName($code, $code);
 
-        return $name === '' || $name === $code ? $code : mb_convert_case(mb_substr($name, 0, 1), MB_CASE_UPPER).mb_substr($name, 1);
+        return ! is_string($name) || $name === $code ? $code : mb_convert_case(mb_substr($name, 0, 1), MB_CASE_UPPER).mb_substr($name, 1);
     }
 
     /** Назва українською — для адмінки. */
@@ -181,6 +181,6 @@ class Locales
     {
         $name = Locale::getDisplayName($code, 'uk');
 
-        return $name === '' ? $code : $name;
+        return is_string($name) ? $name : $code;
     }
 }

@@ -64,6 +64,7 @@ type Props = {
     options: {
         platforms: Record<string, string>;
         multiplayers: Record<string, string>;
+        languages: Record<string, string>;
     };
     auto_publish: boolean;
 };
@@ -98,6 +99,7 @@ const toForm = (s?: AdminServer): FormData => ({
               name: s.name,
               platform: s.platform,
               multiplayer: s.multiplayer,
+              language: s.language,
               tagline: s.tagline ?? '',
               description: s.description ?? '',
               website: s.website ?? '',
@@ -484,6 +486,7 @@ export default function AdminServers({
                     key={editing === 'new' ? 'new' : editing.id}
                     server={editing === 'new' ? null : editing}
                     multiplayers={options.multiplayers}
+                    languages={options.languages}
                     onClose={() => setEditing(null)}
                 />
             )}
@@ -566,10 +569,12 @@ function IconButton({
 function ServerDialog({
     server,
     multiplayers,
+    languages,
     onClose,
 }: {
     server: AdminServer | null;
     multiplayers: Record<string, string>;
+    languages: Record<string, string>;
     onClose: () => void;
 }) {
     const form = useForm<FormData>(toForm(server ?? undefined));
@@ -645,6 +650,7 @@ function ServerDialog({
                         setData={form.setData}
                         errors={form.errors}
                         multiplayers={multiplayers}
+                        languages={languages}
                     />
                 </div>
 

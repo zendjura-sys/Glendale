@@ -13,6 +13,7 @@ use App\Services\Presence\PlayingStatus;
 use App\Services\Servers\DiscordInvites;
 use App\Services\Servers\ServerDirectory;
 use App\Services\Servers\ServerIconFetcher;
+use App\Support\I18n\Locales;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,10 +36,17 @@ class ServerController extends Controller
             'platform' => ['nullable', Rule::in(array_keys(GtaServer::PLATFORMS))],
             'q' => ['nullable', 'string', 'max:60'],
             'sort' => ['nullable', Rule::in(['online', 'name', 'new', 'families'])],
+            'lang' => ['nullable', 'string', Rule::in(['all', ...array_keys(GtaServer::LANGUAGES)])],
         ]);
         $sort = $filters['sort'] ?? 'online';
 
-        $servers = GtaServer::query()->published()
+        // Мова серверів: вибрана або мова інтерфейсу, якщо такі сервери є; інакше — усі.
+        $languages = GtaServer::query()->published()->selectRaw('language, count(*) as total')->groupBy('language')->pluck('total', 'language')->map(fn ($n) => (int) $n);
+        $mine = Locales::primary(app()->getLocale());
+        $lang = $filters['lang'] ?? ($languages->has($mine) ? $mine : 'all');
+        $byLanguage = fn (Builder $q) => $lang === 'all' ? $q : $q->where('language', $lang);
+
+        $servers = GtaServer::query()->published()->tap($byLanguage)
             ->withCount(['families' => fn (Builder $q) => $q->where('status', Family::STATUS_VERIFIED)])
             ->when($filters['platform'] ?? null, fn (Builder $q, string $p) => $q->where('platform', $p))
             ->when($filters['q'] ?? null, fn (Builder $q, string $term) => $q->where('name', 'like', '%'.str_replace(['%', '_'], ['\%', '\_'], $term).'%'))
@@ -51,11 +59,14 @@ class ServerController extends Controller
             default => $servers->sortBy(fn (GtaServer $s) => [$s->is_featured ? 0 : 1, -1 * ($s->players_online ?? -1), -1 * ($s->discord_online ?? 0), $s->position]),
         };
 
-        $all = GtaServer::query()->published();
+        $all = GtaServer::query()->published()->tap($byLanguage);
 
         return Inertia::render('servers/index', [
             'servers' => $servers->values()->map(fn (GtaServer $s) => $s->toCard()),
-            'filters' => ['platform' => $filters['platform'] ?? null, 'q' => $filters['q'] ?? '', 'sort' => $sort],
+            'filters' => ['platform' => $filters['platform'] ?? null, 'q' => $filters['q'] ?? '', 'sort' => $sort, 'lang' => $lang],
+            // «Німецькі» — перекладається мовою інтерфейсу; «усі» — без прикметника.
+            'heading' => $lang === 'all' ? null : GtaServer::LANGUAGES[$lang],
+            'languages' => $languages->sortDesc()->map(fn (int $count, string $code) => ['code' => $code, 'native' => Locales::nativeName($code), 'count' => $count])->values(),
             'stats' => [
                 'servers' => (clone $all)->count(),
                 'pc' => (clone $all)->where('platform', 'pc')->count(),
@@ -71,6 +82,7 @@ class ServerController extends Controller
             'options' => [
                 'platforms' => GtaServer::PLATFORMS,
                 'multiplayers' => GtaServer::MULTIPLAYERS,
+                'languages' => GtaServer::languageOptions(),
             ],
         ]);
     }
@@ -152,6 +164,7 @@ class ServerController extends Controller
             'name' => ['required', 'string', 'min:2', 'max:80'],
             'platform' => ['required', Rule::in(array_keys(GtaServer::PLATFORMS))],
             'multiplayer' => ['required', Rule::in(array_keys(GtaServer::MULTIPLAYERS))],
+            'language' => ['nullable', Rule::in(array_keys(GtaServer::LANGUAGES))],
             'tagline' => ['nullable', 'string', 'max:160'],
             'description' => ['nullable', 'string', 'max:3000'],
             'website' => ['nullable', 'string', 'max:255', 'url:http,https'],
@@ -201,6 +214,7 @@ class ServerController extends Controller
             'telegram' => $telegram,
             'connect' => filled($data['connect'] ?? null) ? trim((string) $data['connect']) : null,
             'icon_url' => $data['icon_url'] ?? null,
+            ...(isset($data['language']) ? ['language' => (string) $data['language']] : []),
         ];
     }
 

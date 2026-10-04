@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\I18n\Locales;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -42,6 +43,7 @@ use Illuminate\Support\Facades\Storage;
  * @property int $position
  * @property int|null $families_count
  * @property string|null $discord_guild_id
+ * @property string $language
  * @property Carbon|null $discord_events_at
  * @property Carbon $created_at
  * @property-read string|null $icon
@@ -49,13 +51,58 @@ use Illuminate\Support\Facades\Storage;
 #[Fillable([
     'slug', 'name', 'platform', 'multiplayer', 'tagline', 'description', 'website', 'discord_invite', 'telegram',
     'connect', 'icon_url', 'status', 'origin', 'review_note', 'suggested_by', 'is_featured', 'position',
-    'discord_guild_id', 'discord_events_at',
+    'discord_guild_id', 'discord_events_at', 'language',
 ])]
 class GtaServer extends Model
 {
     use SoftDeletes;
 
     public const PLATFORMS = ['pc' => 'ПК', 'mobile' => 'Мобільний'];
+
+    /**
+     * Мови серверів і заголовок каталогу («Німецькі GTA RP сервери») — українською,
+     * перекладається разом з інтерфейсом.
+     */
+    public const LANGUAGES = [
+        'uk' => 'Українські',
+        'en' => 'Англомовні',
+        'de' => 'Німецькі',
+        'fr' => 'Франкомовні',
+        'es' => 'Іспаномовні',
+        'it' => 'Італійські',
+        'pl' => 'Польські',
+        'pt' => 'Португаломовні',
+        'ru' => 'Російськомовні',
+        'tr' => 'Турецькі',
+        'cs' => 'Чеські',
+        'ro' => 'Румунські',
+        'nl' => 'Нідерландські',
+        'hu' => 'Угорські',
+        'sv' => 'Шведські',
+        'kk' => 'Казахські',
+        'ar' => 'Арабомовні',
+        'zh' => 'Китайські',
+        'ja' => 'Японські',
+        'ko' => 'Корейські',
+        'vi' => 'В’єтнамські',
+        'th' => 'Тайські',
+        'id' => 'Індонезійські',
+    ];
+
+    /**
+     * Мови для форм: код → назва мовою самою («Deutsch», «日本語»).
+     *
+     * @return array<string, string>
+     */
+    public static function languageOptions(): array
+    {
+        $out = [];
+        foreach (array_keys(self::LANGUAGES) as $code) {
+            $out[$code] = Locales::nativeName($code);
+        }
+
+        return $out;
+    }
 
     public const MULTIPLAYERS = [
         'ragemp' => 'RAGE:MP',
@@ -147,6 +194,7 @@ class GtaServer extends Model
             'platform_label' => self::PLATFORMS[$this->platform] ?? $this->platform,
             'multiplayer' => $this->multiplayer,
             'multiplayer_label' => self::MULTIPLAYERS[$this->multiplayer] ?? $this->multiplayer,
+            'language' => $this->language,
             'tagline' => $this->tagline,
             'icon' => $this->icon,
             'website' => $this->website,

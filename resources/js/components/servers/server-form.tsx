@@ -7,6 +7,7 @@ export type ServerFormData = {
     name: string;
     platform: 'pc' | 'mobile';
     multiplayer: string;
+    language: string;
     tagline: string;
     description: string;
     website: string;
@@ -20,6 +21,7 @@ export const emptyServer: ServerFormData = {
     name: '',
     platform: 'pc',
     multiplayer: 'ragemp',
+    language: 'uk',
     tagline: '',
     description: '',
     website: '',
@@ -72,6 +74,7 @@ export function ServerFormFields({
     setData,
     errors,
     multiplayers,
+    languages,
     compact = false,
 }: {
     data: ServerFormData;
@@ -81,6 +84,7 @@ export function ServerFormFields({
     ) => void;
     errors: Partial<Record<string, string>>;
     multiplayers: Record<string, string>;
+    languages?: Record<string, string>;
     compact?: boolean;
 }) {
     return (
@@ -145,6 +149,21 @@ export function ServerFormFields({
                     ))}
                 </select>
             </Field>
+            {languages && (
+                <Field label={tr('Мова сервера')} error={errors.language}>
+                    <select
+                        value={data.language}
+                        onChange={(e) => setData('language', e.target.value)}
+                        className={cn(selectClass, 'h-11 w-full')}
+                    >
+                        {Object.entries(languages).map(([value, label]) => (
+                            <option key={value} value={value}>
+                                {label}
+                            </option>
+                        ))}
+                    </select>
+                </Field>
+            )}
             <Field
                 label={tr('Адреса підключення')}
                 hint={tr('ip:port, домен:port або код cfx.re')}

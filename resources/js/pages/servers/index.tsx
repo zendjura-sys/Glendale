@@ -31,7 +31,14 @@ import { LOCALE, tr } from '@/lib/i18n';
 
 type Props = {
     servers: GtaServerCard[];
-    filters: { platform: 'pc' | 'mobile' | null; q: string; sort: string };
+    filters: {
+        platform: 'pc' | 'mobile' | null;
+        q: string;
+        sort: string;
+        lang: string;
+    };
+    heading: string | null;
+    languages: { code: string; native: string; count: number }[];
     stats: {
         servers: number;
         pc: number;
@@ -48,6 +55,7 @@ type Props = {
     options: {
         platforms: Record<string, string>;
         multiplayers: Record<string, string>;
+        languages: Record<string, string>;
     };
 };
 
@@ -61,13 +69,19 @@ const sorts = [
 export default function Servers({
     servers,
     filters,
+    heading,
+    languages,
     stats,
     my_suggestions,
     options,
 }: Props) {
     const [q, setQ] = useState(filters.q);
     const [suggesting, setSuggesting] = useState(false);
-    const form = useForm({ ...emptyServer });
+    const myLanguage = LOCALE.split('-')[0];
+    const form = useForm({
+        ...emptyServer,
+        language: myLanguage in options.languages ? myLanguage : 'uk',
+    });
 
     const visit = (patch: Partial<Props['filters']>) => {
         const next = { ...filters, q, ...patch };
@@ -77,6 +91,7 @@ export default function Servers({
                 platform: next.platform || undefined,
                 q: next.q || undefined,
                 sort: next.sort === 'online' ? undefined : next.sort,
+                lang: next.lang,
             },
             { preserveState: true, preserveScroll: true, replace: true },
         );
@@ -128,7 +143,7 @@ export default function Servers({
                                 {tr('🇺🇦 Зроблено в Україні')}
                             </span>
                             <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
-                                {tr('Українські')}{' '}
+                                {heading ?? tr('Усі')}{' '}
                                 <span className="text-gradient">
                                     {tr('GTA RP сервери')}
                                 </span>
@@ -202,6 +217,23 @@ export default function Servers({
                                 className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
                             />
                         </label>
+                        {languages.length > 1 && (
+                            <select
+                                value={filters.lang}
+                                onChange={(e) =>
+                                    visit({ lang: e.target.value })
+                                }
+                                className={cn(selectClass, 'h-11')}
+                                aria-label={tr('Мова серверів')}
+                            >
+                                <option value="all">{tr('Усі мови')}</option>
+                                {languages.map((l) => (
+                                    <option key={l.code} value={l.code}>
+                                        {l.native} · {l.count}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
                         <select
                             value={filters.sort}
                             onChange={(e) => visit({ sort: e.target.value })}
@@ -325,6 +357,7 @@ export default function Servers({
                             setData={form.setData}
                             errors={form.errors}
                             multiplayers={options.multiplayers}
+                            languages={options.languages}
                             compact
                         />
                     </div>
