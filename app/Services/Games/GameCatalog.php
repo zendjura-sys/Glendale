@@ -9,8 +9,9 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 /**
- * Каталог мультиплеєрних ігор: стартовий список і щоденне оновлення з IGDB (основне джерело) або RAWG.
+ * Каталог мультиплеєрних ігор: стартовий список і щоденне оновлення з усіх налаштованих джерел (IGDB і RAWG).
  * Ключі — в адмінці (Інтеграції → Каталог ігор) або в .env (IGDB_CLIENT_ID / IGDB_CLIENT_SECRET, RAWG_KEY).
+ * Якщо гра є в обох базах, картка IGDB лишається основною, а RAWG додає платформи й відсутні посилання.
  */
 class GameCatalog
 {
@@ -48,7 +49,12 @@ class GameCatalog
 
     public function source(): ?string
     {
-        return $this->igdb->configured() ? 'IGDB' : ($this->key() !== null ? 'RAWG' : null);
+        $names = array_values(array_filter([
+            $this->igdb->configured() ? 'IGDB' : null,
+            $this->key() !== null ? 'RAWG' : null,
+        ]));
+
+        return $names === [] ? null : implode(' + ', $names);
     }
 
     /** Перевірка ключа RAWG з адмінки. */
@@ -64,21 +70,46 @@ class GameCatalog
      */
     public function sync(int $pages = 5, int $linkLimit = 150): array
     {
+        $games = 0;
+        $links = 0;
         if ($this->igdb->configured()) {
-            return $this->syncIgdb($pages);
+            $igdb = $this->syncIgdb($pages);
+            $games += $igdb['games'];
+            $links += $igdb['links'];
         }
-        if ($this->key() === null) {
-            return ['games' => 0, 'links' => 0];
+        if ($this->key() !== null) {
+            $rawg = $this->syncRawg($pages, $linkLimit);
+            $games += $rawg['games'];
+            $links += $rawg['links'];
         }
 
+        return ['games' => $games, 'links' => $links];
+    }
+
+    /**
+     * RAWG доповнює каталог іграми, яких немає в IGDB, і відсутніми посиланнями на магазини.
+     *
+     * @return array{games: int, links: int}
+     */
+    private function syncRawg(int $pages, int $linkLimit): array
+    {
         $count = 0;
+        $needLinks = [];
         foreach (self::GROUPS as $category => $filter) {
             for ($page = 1; $page <= $pages; $page++) {
                 $data = $this->request('games', [...$filter, 'tags' => 'multiplayer', 'ordering' => '-added', 'page_size' => 40, 'page' => $page]);
                 $results = is_array($data['results'] ?? null) ? $data['results'] : [];
                 foreach ($results as $row) {
-                    if (is_array($row) && $this->upsert($row, $category)) {
-                        $count++;
+                    if (! is_array($row)) {
+                        continue;
+                    }
+                    $saved = $this->upsert($row, $category);
+                    if ($saved === null) {
+                        continue;
+                    }
+                    $count++;
+                    if ($saved['links']) {
+                        $needLinks[] = $saved['id'];
                     }
                 }
                 if (empty($data['next'])) {
@@ -89,7 +120,7 @@ class GameCatalog
 
         $links = 0;
         Game::query()->whereNotNull('rawg_id')
-            ->where(fn ($q) => $q->whereNull('links_checked_at')->orWhere('links_checked_at', '<', now()->subDays(30)))
+            ->where(fn ($q) => $q->whereNull('links_checked_at')->orWhere('links_checked_at', '<', now()->subDays(30))->orWhereIn('id', $needLinks))
             ->orderByDesc('popularity')
             ->limit($linkLimit)
             ->get()
@@ -103,10 +134,13 @@ class GameCatalog
                         $found[$store] = ['store' => $store, 'url' => $url];
                     }
                 }
-                // Посилання зі стартового списку (офіційний сайт тощо) лишаються, нові — додаються.
+                // Уже збережені посилання (стартовий список, IGDB) не замінюємо — додаємо лише нові магазини.
                 $merged = [];
-                foreach ([...($game->links ?? []), ...array_values($found)] as $link) {
+                foreach ($game->links ?? [] as $link) {
                     $merged[$link['store']] = $link;
+                }
+                foreach ($found as $store => $link) {
+                    $merged[$store] ??= $link;
                 }
                 $game->update(['links' => array_values($merged), 'links_checked_at' => now()]);
                 $links++;
@@ -226,14 +260,15 @@ class GameCatalog
 
     /**
      * @param  array<string, mixed>  $row
+     * @return array{id: int, links: bool}|null
      */
-    private function upsert(array $row, string $category): bool
+    private function upsert(array $row, string $category): ?array
     {
         $rawgId = (int) ($row['id'] ?? 0);
         $name = trim((string) ($row['name'] ?? ''));
         $slug = Str::limit((string) ($row['slug'] ?? Str::slug($name)), 120, '');
         if ($rawgId === 0 || $name === '' || $slug === '') {
-            return false;
+            return null;
         }
 
         $platforms = [];
@@ -253,25 +288,35 @@ class GameCatalog
         $game = Game::query()->where('rawg_id', $rawgId)->first()
             ?? Game::query()->where('slug', $slug)->whereNull('rawg_id')->first()
             ?? new Game(['slug' => $slug, 'category' => $category]);
+        $needsLinks = ! $game->exists || $game->rawg_id === null;
+        $fromIgdb = $game->igdb_id !== null;
+        foreach ($game->platforms ?? [] as $platform) {
+            $platforms[$platform] = $platform;
+        }
 
         // Якщо гра є і на ПК, і на телефонах — розділ лишається той, де її знайшли першою (ПК раніше).
-        $game->fill([
-            'name' => Str::limit($name, 160, ''),
-            'letter' => Game::letterOf($name),
+        // Картку з IGDB не перезаписуємо англійськими жанрами й обкладинкою RAWG.
+        $fill = [
             'platforms' => array_values($platforms) ?: $game->platforms,
-            'genres' => array_slice($genres, 0, 5) ?: $game->genres,
-            'cover' => is_string($row['background_image'] ?? null) ? $row['background_image'] : $game->cover,
-            'released' => is_string($row['released'] ?? null) ? $row['released'] : $game->released,
-            'rating' => is_numeric($row['rating'] ?? null) ? round((float) $row['rating'], 2) : $game->rating,
             'popularity' => max((int) ($row['added'] ?? 0), $game->popularity ?? 0),
             'rawg_id' => $rawgId,
-        ]);
+        ];
+        if (! $fromIgdb) {
+            $image = $row['background_image'] ?? null;
+            $fill['name'] = Str::limit($name, 160, '');
+            $fill['letter'] = Game::letterOf($name);
+            $fill['genres'] = $game->genres ?: array_slice($genres, 0, 5);
+            $fill['cover'] = $game->cover ?: (is_string($image) ? $image : null);
+            $fill['released'] = is_string($row['released'] ?? null) ? $row['released'] : $game->released;
+            $fill['rating'] = is_numeric($row['rating'] ?? null) ? round((float) $row['rating'], 2) : $game->rating;
+        }
+        $game->fill($fill);
         if (! $game->exists && Game::query()->where('slug', $slug)->exists()) {
             $game->slug = Str::limit($slug, 110, '').'-'.$rawgId;
         }
         $game->save();
 
-        return true;
+        return ['id' => $game->id, 'links' => $needsLinks];
     }
 
     /**

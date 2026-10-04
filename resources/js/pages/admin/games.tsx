@@ -86,14 +86,14 @@ export default function AdminGames({
             <Head title="Ігри — адмінка" />
             <PageHeader
                 title="Каталог ігор"
-                description="Що показувати в каталозі й на сторінці гри, оновлення з IGDB і приховування окремих ігор."
+                description="Що показувати в каталозі й на сторінці гри, оновлення з IGDB і RAWG, приховування окремих ігор."
                 actions={
                     <>
                         <Link
                             href="/admin/integrations"
                             className="glass inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white"
                         >
-                            <PlugZap className="size-4" /> Ключі IGDB
+                            <PlugZap className="size-4" /> Ключі каталогу
                         </Link>
                         <button
                             type="button"
