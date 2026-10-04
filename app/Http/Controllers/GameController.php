@@ -64,7 +64,7 @@ class GameController extends Controller
 
         $query = $this->query($filters, $on['alias_search']);
         match ($sort) {
-            'rating' => $query->whereNotNull('rating')->orderByDesc('rating')->orderByDesc('popularity'),
+            'rating' => $query->orderByRaw('rating is null')->orderByDesc('rating')->orderByDesc('popularity'),
             'new' => $query->whereNotNull('released')->where('released', '<=', now())->orderByDesc('released'),
             'name' => $query->orderBy('name'),
             default => $query->orderByDesc('popularity')->orderBy('name'),
