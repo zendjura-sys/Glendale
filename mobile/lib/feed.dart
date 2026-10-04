@@ -8,6 +8,7 @@ import 'api.dart';
 import 'people.dart';
 import 'posts.dart';
 import 'state.dart';
+import 'stories.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -87,7 +88,10 @@ class _FeedScreenState extends State<FeedScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _reload());
   }
 
+  final stories = GlobalKey<StoriesStripState>();
+
   Future<void> _reload() async {
+    unawaited(stories.currentState?.reload());
     try {
       await pager.reset();
       error = null;
@@ -111,6 +115,7 @@ class _FeedScreenState extends State<FeedScreen> {
     return ScreenScroll(
       onRefresh: _reload,
       children: [
+        StoriesStrip(key: stories),
         Composer(onPosted: _reload),
         const SizedBox(height: 12),
         Segmented(

@@ -51,7 +51,7 @@ class Stories
             ->orderBy('created_at')
             ->get();
 
-        return $this->group($stories->all(), $viewer);
+        return $this->group(array_values($stories->all()), $viewer);
     }
 
     /**
@@ -65,7 +65,7 @@ class Stories
             ->filter(fn (Story $s) => $this->canView($s, $viewer))
             ->values();
 
-        return $this->group($stories->all(), $viewer)[0] ?? null;
+        return $this->group(array_values($stories->all()), $viewer)[0] ?? null;
     }
 
     public function create(User $user, UploadedFile $file, ?string $caption, string $privacy, ?int $duration): Story
