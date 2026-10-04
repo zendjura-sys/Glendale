@@ -154,14 +154,11 @@ class PlayingStatus
      */
     public function playingNow(string $kind, int $id, array $friendIds = [], int $limit = 24): array
     {
-        return array_values(User::query()
-            ->where('playing_kind', $kind)->where('playing_ref_id', $id)->where('playing_until', '>', now())
-            ->orderByRaw('case when id in ('.(implode(',', array_map('intval', $friendIds)) ?: '0').') then 0 else 1 end')
-            ->orderByDesc('last_seen_at')
-            ->limit($limit)
-            ->get()
-            ->map(fn (User $u) => $u->toCard())
-            ->all());
+        $base = fn () => User::query()->where('playing_kind', $kind)->where('playing_ref_id', $id)->where('playing_until', '>', now());
+        $friends = $base()->whereIn('id', $friendIds ?: [0])->orderByDesc('last_seen_at')->limit($limit)->get();
+        $others = $base()->whereNotIn('id', $friends->pluck('id')->all() ?: [0])->orderByDesc('last_seen_at')->limit(max(0, $limit - $friends->count()))->get();
+
+        return array_values($friends->concat($others)->map(fn (User $u) => $u->toCard())->all());
     }
 
     public function countNow(string $kind, int $id): int

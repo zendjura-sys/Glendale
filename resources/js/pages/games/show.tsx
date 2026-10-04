@@ -20,8 +20,9 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { PlayingNow } from '@/components/gc/playing';
 import { cn } from '@/lib/utils';
-import type { ClanCard, GameCard } from '@/types';
+import type { ClanCard, GameCard, UserCard } from '@/types';
 import { GameCover } from './index';
 
 type Details = {
@@ -82,6 +83,8 @@ type Props = {
     similar: GameCard[];
     clans: ClanCard[];
     features: Record<string, boolean>;
+    playing_now: UserCard[];
+    playing_count: number;
 };
 
 const STORE_STYLE: Record<string, string> = {
@@ -158,7 +161,14 @@ function Score({
 }
 
 /** Сторінка гри: опис, медіа, мультиплеєр, рейтинги, компанії, мови, магазини, спільнота й клани. */
-export default function GameShow({ game, similar, clans, features }: Props) {
+export default function GameShow({
+    game,
+    similar,
+    clans,
+    features,
+    playing_now,
+    playing_count,
+}: Props) {
     const d = game.details ?? {};
     const [video, setVideo] = useState<string | null>(null);
     const [shot, setShot] = useState<string | null>(null);
@@ -306,6 +316,10 @@ export default function GameShow({ game, similar, clans, features }: Props) {
                         </p>
                     )}
                 </div>
+            </div>
+
+            <div className="mt-4">
+                <PlayingNow users={playing_now} count={playing_count} />
             </div>
 
             {(d.videos?.length || d.screenshots?.length) && (

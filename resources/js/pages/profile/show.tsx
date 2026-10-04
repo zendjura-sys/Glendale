@@ -9,6 +9,7 @@ import {
 import {
     CalendarDays,
     Camera,
+    Gamepad2,
     Cake,
     Globe,
     ImageIcon,
@@ -20,7 +21,7 @@ import {
     ShieldCheck,
     UsersRound,
 } from 'lucide-react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { FriendButton } from '@/components/gc/friend-button';
 import { PostCard } from '@/components/gc/post-card';
 import { PostComposer } from '@/components/gc/post-composer';
@@ -30,6 +31,7 @@ import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { EmptyState, Widget } from '@/components/gc/widget';
 import { NowPlayingCard } from '@/components/music/now-playing';
 import { AchievementsCard } from '@/components/gc/achievements';
+import { PlayingBadge, PlayingDialog } from '@/components/gc/playing';
 import type { AchievementsData } from '@/components/gc/achievements';
 import { compactNumber, formatDate, lastSeen, plural } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -164,6 +166,7 @@ export default function ProfileShow({
 }: Props) {
     const { modules } = usePage().props;
     const isSelf = relation === 'self';
+    const [playingOpen, setPlayingOpen] = useState(false);
     const roleBadge =
         profile.role === 'admin'
             ? 'Адміністратор'
@@ -233,6 +236,33 @@ export default function ProfileShow({
                                 <p className="mt-1.5 text-[15px] text-white/75">
                                     {profile.status}
                                 </p>
+                            )}
+                            {(profile.playing || isSelf) && (
+                                <div className="mt-2 flex flex-wrap items-center gap-2">
+                                    {profile.playing && (
+                                        <PlayingBadge
+                                            playing={profile.playing}
+                                        />
+                                    )}
+                                    {isSelf && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setPlayingOpen(true)}
+                                            className="inline-flex items-center gap-1 rounded-full bg-white/[0.05] px-2.5 py-1 text-xs text-white/60 hover:text-white"
+                                        >
+                                            <Gamepad2 className="size-3.5" />
+                                            {profile.playing
+                                                ? 'Змінити'
+                                                : 'Граю в…'}
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                            {isSelf && (
+                                <PlayingDialog
+                                    open={playingOpen}
+                                    onOpenChange={setPlayingOpen}
+                                />
                             )}
                             <p className="mt-1.5 flex items-center gap-1.5 text-xs text-white/45">
                                 {profile.is_online ? (

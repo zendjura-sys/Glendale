@@ -87,7 +87,7 @@ class SteamPresence
         $playing = 0;
         User::query()->whereNotNull('steam_id')->where('playing_auto', true)->orderBy('id')
             ->chunk(100, function ($users) use (&$playing) {
-                $players = $this->summaries($users->pluck('steam_id')->filter()->values()->all());
+                $players = $this->summaries(array_values(array_map('strval', $users->pluck('steam_id')->filter()->all())));
                 if ($players === null) {
                     return;
                 }

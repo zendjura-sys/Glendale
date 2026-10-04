@@ -8,6 +8,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'achievements.dart';
+import 'playing.dart';
 import 'api.dart';
 import 'feed.dart';
 import 'posts.dart';
@@ -625,6 +626,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       if (profile['is_verified'] == true) ...[const SizedBox(width: 6), const Icon(LucideIcons.badgeCheck, color: primary, size: 20)],
                     ]),
                     if (text(profile['status']) != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(text(profile['status'])!, style: body(14, color: soft))),
+                    if (profile['playing'] is Map || self)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Wrap(spacing: 8, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                          if (profile['playing'] is Map) PlayingBadge(mapOf(profile['playing'])),
+                          if (self)
+                            GestureDetector(
+                              onTap: () async {
+                                await context.push('/playing');
+                                _load();
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(20)),
+                                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                  const Icon(LucideIcons.gamepad2, size: 14, color: muted),
+                                  const SizedBox(width: 5),
+                                  Text(profile['playing'] is Map ? 'Змінити' : 'Граю в…', style: body(12.5, color: soft)),
+                                ]),
+                              ),
+                            ),
+                        ]),
+                      ),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,

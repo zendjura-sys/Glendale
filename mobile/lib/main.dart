@@ -22,6 +22,7 @@ import 'listen_together.dart';
 import 'music.dart';
 import 'people.dart';
 import 'photos.dart';
+import 'playing.dart';
 import 'push.dart';
 import 'servers.dart';
 import 'settings.dart';
@@ -133,6 +134,7 @@ Future<void> main() async {
             ],
           ),
           GoRoute(path: '/events', builder: (_, _) => const EventsScreen()),
+          GoRoute(path: '/playing', builder: (_, _) => const PlayingSettingsScreen()),
           GoRoute(path: '/listen/:code', builder: (_, state) => ListenScreen(key: ValueKey(state.pathParameters['code']), code: state.pathParameters['code']!)),
           GoRoute(path: '/watch/:code', builder: (_, state) => WatchPartyScreen(key: ValueKey(state.pathParameters['code']), code: state.pathParameters['code']!)),
           GoRoute(

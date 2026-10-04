@@ -10,13 +10,14 @@ import {
 } from 'lucide-react';
 import { EventList, ServerEventForm } from '@/components/events/event-card';
 import type { CalendarEvent } from '@/components/events/event-card';
+import { PlayingNow } from '@/components/gc/playing';
 import { EmptyState } from '@/components/gc/widget';
 import { FamilyLogo } from '@/components/families/family-logo';
 import { ConnectButton, ServerLinks } from '@/components/servers/server-card';
 import { OnlineMeter, ServerIcon } from '@/components/servers/server-icon';
 import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import type { FamilyCard, GtaServerCard } from '@/types';
+import type { FamilyCard, GtaServerCard, UserCard } from '@/types';
 
 type Props = {
     server: GtaServerCard & {
@@ -28,6 +29,8 @@ type Props = {
     events: CalendarEvent[];
     event_hosts: { id: number | null; name: string }[];
     event_types: Record<string, string>;
+    playing_now: UserCard[];
+    playing_count: number;
 };
 
 export default function ServerShow({
@@ -36,6 +39,8 @@ export default function ServerShow({
     events,
     event_hosts,
     event_types,
+    playing_now,
+    playing_count,
 }: Props) {
     return (
         <>
@@ -129,6 +134,7 @@ export default function ServerShow({
                     )}
                 </section>
 
+                <PlayingNow users={playing_now} count={playing_count} />
                 <section className="glass rounded-3xl p-5">
                     <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
                         <CalendarDays className="size-5 text-[#a5b4fc]" /> Події

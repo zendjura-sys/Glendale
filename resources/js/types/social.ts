@@ -1,6 +1,17 @@
 import type { PostMovie } from './cinema';
 import type { TrackCard } from './music';
 
+export type PlayingInfo = {
+    kind: 'server' | 'game';
+    id: number | null;
+    label: string;
+    icon: string | null;
+    url: string | null;
+    note: string | null;
+    until: string;
+    auto: boolean;
+};
+
 export type UserCard = {
     id: number;
     username: string;
@@ -10,6 +21,8 @@ export type UserCard = {
     is_online: boolean;
     is_verified: boolean;
     status: string | null;
+    /** «Граю в…»: сервер GTA або гра (автоматично чи вручну). */
+    playing?: PlayingInfo | null;
     /** Лише в чаті сім’ї. */
     family_rank?: { rank: number; title: string | null; tag: string };
 };
