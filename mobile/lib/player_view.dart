@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'audio.dart';
+import 'listen_together.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'track_edit.dart';
@@ -130,7 +131,19 @@ Future<void> showFullPlayer(BuildContext context, TrackPlayer player) {
               const SizedBox(height: 18),
               Row(
                 children: [
-                  const SizedBox(width: 44),
+                  SizedBox(
+                    width: 44,
+                    child: track.id != null
+                        ? IconButton(
+                            tooltip: 'Слухати разом',
+                            onPressed: () {
+                              Navigator.pop(sheet);
+                              startListening(context, trackId: track.id);
+                            },
+                            icon: const Icon(LucideIcons.headphones, size: 20, color: soft),
+                          )
+                        : null,
+                  ),
                   Expanded(
                     child: Column(children: [
                       Text(track.title, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: display(20)),

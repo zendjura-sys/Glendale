@@ -15,6 +15,7 @@ use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityMemberController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\ListenPartyController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
 use App\Http\Controllers\MusicController;
@@ -140,6 +141,23 @@ Route::prefix('v1')->group(function () {
                 Route::post('voice', [WatchPartyController::class, 'voice'])->middleware('throttle:20,1');
                 Route::post('invite', [WatchPartyController::class, 'invite'])->middleware('throttle:10,1');
                 Route::delete('/', [WatchPartyController::class, 'end']);
+            });
+        });
+
+        // Спільне прослуховування в застосунку: ті самі дії, стан — опитуванням.
+        Route::middleware('module:music')->group(function () {
+            Route::post('music/together', [ListenPartyController::class, 'store'])->middleware('throttle:10,1');
+            Route::prefix('listen/{party}')->group(function () {
+                Route::get('/', [ListenPartyController::class, 'show']);
+                Route::get('state', [ListenPartyController::class, 'poll']);
+                Route::post('state', [ListenPartyController::class, 'control'])->middleware('throttle:240,1');
+                Route::post('queue', [ListenPartyController::class, 'enqueue'])->middleware('throttle:60,1');
+                Route::delete('queue/{index}', [ListenPartyController::class, 'dequeue'])->whereNumber('index');
+                Route::post('next', [ListenPartyController::class, 'next'])->middleware('throttle:60,1');
+                Route::post('shared', [ListenPartyController::class, 'shared']);
+                Route::post('invite', [ListenPartyController::class, 'invite'])->middleware('throttle:10,1');
+                Route::post('share', [ListenPartyController::class, 'share'])->middleware('throttle:10,1');
+                Route::delete('/', [ListenPartyController::class, 'end']);
             });
         });
 

@@ -4,6 +4,7 @@ import {
     Bell,
     BellOff,
     ChevronLeft,
+    Headphones,
     Info,
     Loader2,
     Phone,
@@ -25,6 +26,7 @@ import { useRealtime } from '@/hooks/use-realtime';
 import { api, ApiError } from '@/lib/api';
 import { dayLabel, lastSeen, plural } from '@/lib/format';
 import { inbox } from '@/lib/inbox';
+import { getPlayerState } from '@/lib/player';
 import { cn } from '@/lib/utils';
 import { leaveVoice, startCall, useVoice } from '@/lib/voice';
 import type { CallState } from '@/lib/voice';
@@ -76,7 +78,7 @@ export function ChatView({
     onOpenInfo,
     onTypingChange,
 }: Props) {
-    const { auth } = usePage().props;
+    const { auth, modules } = usePage().props;
     const me = auth.user;
     const isGroup = active.type === 'group';
     const canManage = active.my_role === 'owner' || active.my_role === 'admin';
@@ -704,6 +706,25 @@ export function ChatView({
                         ) : (
                             <Phone className="size-[18px]" />
                         )}
+                    </button>
+                )}
+                {modules.includes('music') && (
+                    <button
+                        type="button"
+                        onClick={() =>
+                            router.post('/music/together', {
+                                conversation_id: active.id,
+                                track_id:
+                                    getPlayerState().current?.source === 'local'
+                                        ? getPlayerState().current?.id
+                                        : null,
+                            })
+                        }
+                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
+                        aria-label="Слухати музику разом"
+                        title="Слухати музику разом"
+                    >
+                        <Headphones className="size-[18px]" />
                     </button>
                 )}
                 {isGroup && (

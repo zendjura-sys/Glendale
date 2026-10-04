@@ -1,5 +1,6 @@
-import { usePage } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import {
+    Headphones,
     ListMusic,
     Loader2,
     Pause,
@@ -15,6 +16,7 @@ import {
     X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useCurrentUrl } from '@/hooks/use-current-url';
 import { formatDuration } from '@/lib/format';
 import {
     closePlayer,
@@ -99,6 +101,7 @@ function IconButton({
 export function PlayerBar({ standalone }: { standalone?: boolean }) {
     const player = usePlayer();
     const { music } = usePage().props;
+    const { currentUrl } = useCurrentUrl();
     const [queueOpen, setQueueOpen] = useState(false);
     const track = player.current;
 
@@ -336,6 +339,19 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                                     className="w-24"
                                 />
                             </div>
+                            {track?.source === 'local' &&
+                                !currentUrl.startsWith('/listen/') && (
+                                    <IconButton
+                                        onClick={() =>
+                                            router.post('/music/together', {
+                                                track_id: track.id,
+                                            })
+                                        }
+                                        label="Слухати разом"
+                                    >
+                                        <Headphones className="size-[18px]" />
+                                    </IconButton>
+                                )}
                             <IconButton
                                 onClick={() => setQueueOpen((open) => !open)}
                                 label="Черга"

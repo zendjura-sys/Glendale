@@ -17,6 +17,7 @@ import 'families.dart';
 import 'family_widget.dart';
 import 'feed.dart';
 import 'games.dart';
+import 'listen_together.dart';
 import 'music.dart';
 import 'people.dart';
 import 'photos.dart';
@@ -130,6 +131,7 @@ Future<void> main() async {
               GoRoute(path: ':slug', builder: (_, state) => MovieScreen(key: ValueKey(state.pathParameters['slug']), slug: state.pathParameters['slug']!, autoplay: state.uri.queryParameters['play'] == '1')),
             ],
           ),
+          GoRoute(path: '/listen/:code', builder: (_, state) => ListenScreen(key: ValueKey(state.pathParameters['code']), code: state.pathParameters['code']!)),
           GoRoute(path: '/watch/:code', builder: (_, state) => WatchPartyScreen(key: ValueKey(state.pathParameters['code']), code: state.pathParameters['code']!)),
           GoRoute(
             path: '/families',

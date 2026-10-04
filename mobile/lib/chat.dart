@@ -12,6 +12,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'listen_together.dart';
 import 'posts.dart';
 import 'push.dart';
 import 'state.dart';
@@ -785,6 +786,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   tooltip: chat['is_muted'] == true ? 'Увімкнути сповіщення' : 'Вимкнути сповіщення',
                   onPressed: _toggleMute,
                   icon: Icon(chat['is_muted'] == true ? LucideIcons.bellOff : LucideIcons.bell, color: muted),
+                ),
+                IconButton(
+                  tooltip: 'Слухати музику разом',
+                  onPressed: () => startListening(context, trackId: AppScope.read(context).player.current?.id, conversationId: widget.id),
+                  icon: const Icon(LucideIcons.headphones, color: muted),
                 ),
                 _CallButton(chat: chat, conversation: widget.id),
                 if (group) IconButton(onPressed: _showMembers, icon: const Icon(LucideIcons.info, color: muted)),

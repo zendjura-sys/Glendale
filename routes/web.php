@@ -12,6 +12,7 @@ use App\Http\Controllers\Families;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\ListenPartyController;
 use App\Http\Controllers\Mail\UnsubscribeController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
@@ -170,6 +171,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::delete('now-playing', [NowPlayingController::class, 'destroy'])->name('music.now-playing.destroy');
 
         Route::post('tracks', [TrackController::class, 'store'])->middleware('throttle:60,1')->name('tracks.store');
+        Route::post('together', [ListenPartyController::class, 'store'])->middleware('throttle:10,1')->name('listen.store');
         Route::post('playlists', [PlaylistController::class, 'store'])->middleware('throttle:20,1')->name('playlists.store');
 
         Route::whereNumber(['track', 'playlist'])->group(function () {
@@ -253,6 +255,20 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('voice', [WatchPartyController::class, 'voice'])->middleware('throttle:20,1')->name('voice');
         Route::post('invite', [WatchPartyController::class, 'invite'])->middleware('throttle:10,1')->name('invite');
         Route::delete('/', [WatchPartyController::class, 'end'])->name('end');
+    });
+
+    // Спільне прослуховування: доступ за посиланням із кодом.
+    Route::prefix('listen/{party}')->name('listen.')->middleware('module:music')->group(function () {
+        Route::get('/', [ListenPartyController::class, 'show'])->name('show');
+        Route::get('state', [ListenPartyController::class, 'poll'])->name('poll');
+        Route::post('state', [ListenPartyController::class, 'control'])->middleware('throttle:240,1')->name('control');
+        Route::post('queue', [ListenPartyController::class, 'enqueue'])->middleware('throttle:60,1')->name('queue');
+        Route::delete('queue/{index}', [ListenPartyController::class, 'dequeue'])->whereNumber('index')->name('dequeue');
+        Route::post('next', [ListenPartyController::class, 'next'])->middleware('throttle:60,1')->name('next');
+        Route::post('shared', [ListenPartyController::class, 'shared'])->name('shared');
+        Route::post('invite', [ListenPartyController::class, 'invite'])->middleware('throttle:10,1')->name('invite');
+        Route::post('share', [ListenPartyController::class, 'share'])->middleware('throttle:10,1')->name('share');
+        Route::delete('/', [ListenPartyController::class, 'end'])->name('end');
     });
 
     Route::prefix('servers')->name('servers.')->middleware('module:servers')->group(function () {

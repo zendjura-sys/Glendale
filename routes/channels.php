@@ -4,6 +4,7 @@ use App\Models\ClanMember;
 use App\Models\CommunityMember;
 use App\Models\ConversationParticipant;
 use App\Models\FamilyMember;
+use App\Models\ListenPartyMember;
 use App\Models\User;
 use App\Models\WatchPartyMember;
 use Illuminate\Support\Facades\Broadcast;
@@ -40,6 +41,11 @@ Broadcast::channel('conversation.{conversationId}', function (User $user, int $c
 // Спільний перегляд: стан плеєра, чат і хто дивиться — для тих, хто відкрив посилання.
 Broadcast::channel('watch.{partyId}', function (User $user, int $partyId) {
     return WatchPartyMember::query()->where('watch_party_id', $partyId)->where('user_id', $user->id)->exists();
+});
+
+// Спільне прослуховування: стан плеєра, черга й хто слухає — для тих, хто відкрив посилання.
+Broadcast::channel('listen.{partyId}', function (User $user, int $partyId) {
+    return ListenPartyMember::query()->where('listen_party_id', $partyId)->where('user_id', $user->id)->exists();
 });
 
 // Клан: голосові кімнати (хто зайшов і вийшов).
