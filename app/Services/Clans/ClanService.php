@@ -362,7 +362,7 @@ class ClanService
     public function syncChat(Clan $clan): ?Conversation
     {
         $clan->refresh();
-        if (! $clan->has('chat')) {
+        if (! $clan->hasFeature('chat')) {
             return null;
         }
         $conversation = $clan->conversation_id ? Conversation::query()->find($clan->conversation_id) : null;
@@ -380,7 +380,7 @@ class ClanService
             foreach ($members as $member) {
                 $row = ConversationParticipant::query()->firstOrNew(['conversation_id' => $conversation->id, 'user_id' => $member->user_id]);
                 if (! $row->exists || $row->left_at !== null) {
-                    $row->joined_at = now();
+                    $row->joined_at = Carbon::now();
                     $row->last_read_message_id = $conversation->last_message_id;
                 }
                 $row->left_at = null;
@@ -407,7 +407,7 @@ class ClanService
     private function joined(Clan $clan, ClanMember $member, User $user, ?ClanMember $actor = null): void
     {
         $this->recount($clan);
-        $this->log($clan, $actor?->user ?? $user, 'join', "{$user->name} приєднався(-лась)");
+        $this->log($clan, $actor === null ? $user : $actor->user, 'join', "{$user->name} приєднався(-лась)");
         $this->syncChat($clan);
         $this->announce($clan, "{$user->name} приєднався(-лась) до клану. Ласкаво просимо! 🎉");
     }
@@ -415,7 +415,7 @@ class ClanService
     private function left(Clan $clan, ClanMember $member, ?ClanMember $actor, string $how): void
     {
         $this->recount($clan);
-        $this->log($clan, $actor?->user ?? $member->user, 'leave', ($member->user->name ?? '')." {$how}");
+        $this->log($clan, $actor === null ? $member->user : $actor->user, 'leave', ($member->user->name ?? '')." {$how}");
         $this->syncChat($clan);
     }
 
@@ -430,7 +430,7 @@ class ClanService
 
     private function announce(Clan $clan, string $text): void
     {
-        $conversation = $clan->has('chat') && $clan->conversation_id ? Conversation::query()->find($clan->conversation_id) : null;
+        $conversation = $clan->hasFeature('chat') && $clan->conversation_id ? Conversation::query()->find($clan->conversation_id) : null;
         if ($conversation) {
             rescue(fn () => $this->messenger->announce($conversation, $text, ['clan' => true]), report: false);
         }

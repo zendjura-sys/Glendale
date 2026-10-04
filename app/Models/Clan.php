@@ -134,7 +134,7 @@ class Clan extends Model
         return $this->members()->where('status', ClanMember::STATUS_ACTIVE);
     }
 
-    public function has(string $feature): bool
+    public function hasFeature(string $feature): bool
     {
         return in_array($feature, $this->features, true);
     }
@@ -164,7 +164,7 @@ class Clan extends Model
     {
         $matrix = [];
         foreach (self::DEFAULT_PERMISSIONS as $key => $ranks) {
-            $matrix[$key] = array_values(array_map('intval', (array) ($this->permissions[$key] ?? $ranks)));
+            $matrix[$key] = array_map('intval', array_values((array) ($this->permissions[$key] ?? $ranks)));
         }
 
         return $matrix;
@@ -176,7 +176,7 @@ class Clan extends Model
     }
 
     /**
-     * @return Attribute<string, never>
+     * @return Attribute<non-falsy-string, never>
      */
     protected function displayName(): Attribute
     {

@@ -114,3 +114,19 @@ export type GameCard = {
     cover: string | null;
     year: number | null;
 };
+
+export type ClanCard = {
+    id: number;
+    slug: string;
+    type: 'clan' | 'guild';
+    type_label: string;
+    name: string;
+    display_name: string;
+    tag: string;
+    logo_url: string | null;
+    members_count: number;
+    is_recruiting: boolean;
+    join_mode: 'open' | 'request' | 'closed';
+    game: GameCard | null;
+    pending?: boolean;
+};

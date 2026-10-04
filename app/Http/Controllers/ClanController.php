@@ -109,7 +109,7 @@ class ClanController extends Controller
         $application = $me ? null : ClanMember::query()->where('clan_id', $clan->id)->where('user_id', $user->id)->where('status', ClanMember::STATUS_PENDING)->first();
         $member = $me !== null;
 
-        $events = $member && $clan->has('events')
+        $events = $member && $clan->hasFeature('events')
             ? ClanEvent::query()->where('clan_id', $clan->id)->where('starts_at', '>=', now()->subHours(6))->withCount('going')
                 ->with(['going' => fn ($q) => $q->where('users.id', $user->id)])
                 ->orderBy('starts_at')->limit(20)->get()
@@ -124,13 +124,13 @@ class ClanController extends Controller
             'clan' => [
                 ...$clan->toCard(),
                 'description' => $clan->description,
-                'rules' => $clan->has('rules') ? $clan->rules : null,
+                'rules' => $clan->hasFeature('rules') ? $clan->rules : null,
                 'features' => $clan->features,
                 'currency' => $clan->currency,
-                'treasury' => $member && $clan->has('treasury') ? $clan->treasury : null,
+                'treasury' => $member && $clan->hasFeature('treasury') ? $clan->treasury : null,
                 'owner' => $clan->owner?->toCard(),
                 'rank_titles' => $clan->rankTitles(),
-                'conversation_id' => $member && $clan->has('chat') ? $clan->conversation_id : null,
+                'conversation_id' => $member && $clan->hasFeature('chat') ? $clan->conversation_id : null,
                 'created_at' => $clan->created_at?->toIso8601String(),
             ],
             'me' => $me ? [...$me->toCard($clan), 'can' => $can] : null,
@@ -143,18 +143,18 @@ class ClanController extends Controller
             'applications' => $can['members.manage']
                 ? ClanMember::query()->with('user')->where('clan_id', $clan->id)->where('status', ClanMember::STATUS_PENDING)->oldest()->get()->map(fn (ClanMember $m) => $m->toCard($clan))->values()
                 : [],
-            'news' => $member && $clan->has('news')
+            'news' => $member && $clan->hasFeature('news')
                 ? ClanNews::query()->with('user')->where('clan_id', $clan->id)->orderByDesc('is_pinned')->latest('id')->limit(30)->get()
                     ->map(fn (ClanNews $n) => ['id' => $n->id, 'title' => $n->title, 'body' => $n->body, 'is_pinned' => $n->is_pinned, 'user' => $n->user?->toCard(), 'created_at' => $n->created_at->toIso8601String(), 'mine' => $n->user_id === $user->id])
                 : [],
             'events' => $events,
-            'contributions' => $member && $clan->has('treasury')
+            'contributions' => $member && $clan->hasFeature('treasury')
                 ? ClanContribution::query()->with('user')->where('clan_id', $clan->id)
                     ->when(! $can['treasury.manage'], fn (Builder $q) => $q->where(fn (Builder $w) => $w->where('status', ClanContribution::STATUS_APPROVED)->orWhere('user_id', $user->id)))
                     ->latest('id')->limit(40)->get()
                     ->map(fn (ClanContribution $c) => ['id' => $c->id, 'amount' => $c->amount, 'comment' => $c->comment, 'status' => $c->status, 'user' => $c->user?->toCard(), 'created_at' => $c->created_at->toIso8601String()])
                 : [],
-            'rating' => $member && $clan->has('rating') ? array_slice($this->clans->rating($clan), 0, 50) : [],
+            'rating' => $member && $clan->hasFeature('rating') ? array_slice($this->clans->rating($clan), 0, 50) : [],
             'permissions' => $can['settings.manage'] ? ['labels' => Clan::PERMISSIONS, 'matrix' => $clan->permissionMatrix()] : null,
             'settings' => $can['settings.manage'] ? [
                 'name' => $clan->name, 'tag' => $clan->tag, 'description' => $clan->description, 'rules' => $clan->rules,
@@ -311,7 +311,7 @@ class ClanController extends Controller
 
     private function feature(Clan $clan, string $feature): void
     {
-        abort_unless($clan->has($feature), 404, 'Цей розділ у клані вимкнено.');
+        abort_unless($clan->hasFeature($feature), 404, 'Цей розділ у клані вимкнено.');
     }
 
     private function me(Request $request, Clan $clan): ClanMember

@@ -105,7 +105,7 @@ class Game extends Model
             'name' => $this->name,
             'category' => $this->category,
             'category_label' => self::CATEGORIES[$this->category] ?? $this->category,
-            'platforms' => array_values(array_map(fn (string $p) => ['key' => $p, 'label' => self::PLATFORMS[$p] ?? $p], $this->platforms ?? [])),
+            'platforms' => array_map(fn (string $p) => ['key' => $p, 'label' => self::PLATFORMS[$p] ?? $p], $this->platforms ?? []),
             'genres' => array_slice($this->genres ?? [], 0, 3),
             'cover' => $this->cover,
             'year' => $this->released?->year,
@@ -117,10 +117,10 @@ class Game extends Model
      */
     public function storeLinks(): array
     {
-        return array_values(array_map(fn (array $l) => [
+        return array_map(fn (array $l) => [
             'store' => $l['store'],
             'label' => self::STORES[$l['store']] ?? $l['store'],
             'url' => $l['url'],
-        ], array_filter($this->links ?? [], fn ($l) => is_array($l) && isset($l['store'], $l['url']))));
+        ], $this->links ?? []);
     }
 }

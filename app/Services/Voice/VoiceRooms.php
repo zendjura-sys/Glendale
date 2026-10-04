@@ -51,7 +51,7 @@ class VoiceRooms
 
         return match (true) {
             $owner instanceof Family => $this->gate->member($owner, $user) !== null,
-            $owner instanceof Clan => $owner->has('voice') && $this->clans->member($owner, $user) !== null,
+            $owner instanceof Clan => $owner->hasFeature('voice') && $this->clans->member($owner, $user) !== null,
             default => (bool) $owner->membershipFor($user)?->isActive(),
         };
     }
