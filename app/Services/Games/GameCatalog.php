@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 /**
- * Каталог мультиплеєрних ігор: стартовий список і щоденне оновлення з RAWG (rawg.io).
- * Ключ RAWG — в адмінці (Інтеграції → Каталог ігор) або в .env (RAWG_KEY).
+ * Каталог мультиплеєрних ігор: стартовий список і щоденне оновлення з IGDB (основне джерело) або RAWG.
+ * Ключі — в адмінці (Інтеграції → Каталог ігор) або в .env (IGDB_CLIENT_ID / IGDB_CLIENT_SECRET, RAWG_KEY).
  */
 class GameCatalog
 {
@@ -31,7 +31,7 @@ class GameCatalog
         'xbox-series-x' => 'xbox', 'xbox-one' => 'xbox', 'xbox360' => 'xbox', 'nintendo-switch' => 'switch',
     ];
 
-    public function __construct(private readonly SiteSettings $settings) {}
+    public function __construct(private readonly SiteSettings $settings, private readonly Igdb $igdb) {}
 
     public function key(): ?string
     {
@@ -40,12 +40,18 @@ class GameCatalog
         return is_string($value) && $value !== '' ? $value : null;
     }
 
+    /** Чи є хоч одне джерело для автооновлення. */
     public function configured(): bool
     {
-        return $this->key() !== null;
+        return $this->igdb->configured() || $this->key() !== null;
     }
 
-    /** Перевірка ключа з адмінки. */
+    public function source(): ?string
+    {
+        return $this->igdb->configured() ? 'IGDB' : ($this->key() !== null ? 'RAWG' : null);
+    }
+
+    /** Перевірка ключа RAWG з адмінки. */
     public function test(): bool
     {
         return $this->request('games', ['page_size' => 1]) !== null;
@@ -58,7 +64,10 @@ class GameCatalog
      */
     public function sync(int $pages = 5, int $linkLimit = 150): array
     {
-        if (! $this->configured()) {
+        if ($this->igdb->configured()) {
+            return $this->syncIgdb($pages);
+        }
+        if ($this->key() === null) {
             return ['games' => 0, 'links' => 0];
         }
 
@@ -104,6 +113,89 @@ class GameCatalog
             });
 
         return ['games' => $count, 'links' => $links];
+    }
+
+    /**
+     * IGDB віддає разом з грою все для її картки, тож окремий прохід по посиланнях не потрібен.
+     *
+     * @return array{games: int, links: int}
+     */
+    private function syncIgdb(int $pages): array
+    {
+        $count = 0;
+        $links = 0;
+        foreach (array_keys(Igdb::GROUPS) as $category) {
+            for ($page = 0; $page < $pages; $page++) {
+                $rows = $this->igdb->games($category, $page * 250);
+                $beat = $this->igdb->timeToBeat(array_values(array_filter(array_map(fn (array $r) => (int) ($r['id'] ?? 0), $rows ?? []))));
+                foreach ($rows ?? [] as $row) {
+                    $found = $this->upsertIgdb($row, $category, $beat[(int) ($row['id'] ?? 0)] ?? null);
+                    if ($found !== null) {
+                        $count++;
+                        $links += $found;
+                    }
+                }
+                if ($rows === null || count($rows) < 250) {
+                    break;
+                }
+                usleep(300_000); // IGDB дозволяє 4 запити на секунду.
+            }
+        }
+
+        return ['games' => $count, 'links' => $links];
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     * @param  array{hastily: int|null, normally: int|null, completely: int|null}|null  $timeToBeat
+     * @return int|null null — пропущено; інакше кількість знайдених посилань на магазини
+     */
+    private function upsertIgdb(array $row, string $category, ?array $timeToBeat): ?int
+    {
+        $igdbId = (int) ($row['id'] ?? 0);
+        $name = trim((string) ($row['name'] ?? ''));
+        $slug = Str::limit(Str::slug((string) ($row['slug'] ?? $name)), 120, '');
+        if ($igdbId === 0 || $name === '' || $slug === '') {
+            return null;
+        }
+        $data = IgdbMapper::map($row);
+        $details = $data['details'];
+        if ($timeToBeat !== null && array_filter($timeToBeat) !== []) {
+            $details['time_to_beat'] = array_filter($timeToBeat);
+        }
+
+        $game = Game::query()->where('igdb_id', $igdbId)->first()
+            ?? Game::query()->where('slug', $slug)->whereNull('igdb_id')->first()
+            ?? new Game(['slug' => $slug, 'category' => $category]);
+
+        // Посилання зі стартового списку лишаються, знайдені в IGDB — додаються або оновлюються.
+        $merged = [];
+        foreach ([...($game->links ?? []), ...array_values($data['links'])] as $link) {
+            $merged[$link['store']] = $link;
+        }
+        $game->fill([
+            'name' => Str::limit($name, 160, ''),
+            'aliases' => $data['aliases'],
+            'letter' => Game::letterOf($name),
+            'platforms' => $data['platforms'] ?: $game->platforms,
+            'genres' => $data['genres'] ?: $game->genres,
+            'modes' => $data['modes'] ?: $game->modes,
+            // Обкладинки зі стартового списку (банери Steam) лишаються — вони ширші й чіткіші.
+            'cover' => $game->cover ?? $data['cover'],
+            'released' => $data['released'] ?? $game->released,
+            'rating' => $data['rating'] ?? $game->rating,
+            'popularity' => max($data['popularity'], $game->popularity ?? 0),
+            'links' => array_values($merged),
+            'details' => $details,
+            'links_checked_at' => now(),
+            'igdb_id' => $igdbId,
+        ]);
+        if (! $game->exists && Game::query()->where('slug', $slug)->exists()) {
+            $game->slug = Str::limit($slug, 110, '').'-'.$igdbId;
+        }
+        $game->save();
+
+        return count($data['links']);
     }
 
     /**

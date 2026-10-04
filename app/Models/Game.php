@@ -17,16 +17,20 @@ use Illuminate\Support\Carbon;
  * @property string $category
  * @property list<string>|null $platforms
  * @property list<string>|null $genres
+ * @property list<string>|null $modes
+ * @property string|null $aliases
+ * @property array<string, mixed>|null $details
  * @property list<array{store: string, url: string}>|null $links
  * @property string|null $cover
  * @property Carbon|null $released
  * @property float|null $rating
  * @property int $popularity
  * @property int|null $rawg_id
+ * @property int|null $igdb_id
  * @property Carbon|null $links_checked_at
  * @property bool $is_published
  */
-#[Fillable(['slug', 'name', 'letter', 'category', 'platforms', 'genres', 'links', 'cover', 'released', 'rating', 'popularity', 'rawg_id', 'links_checked_at', 'is_published'])]
+#[Fillable(['slug', 'name', 'letter', 'category', 'platforms', 'genres', 'modes', 'aliases', 'details', 'links', 'cover', 'released', 'rating', 'popularity', 'rawg_id', 'igdb_id', 'links_checked_at', 'is_published'])]
 class Game extends Model
 {
     /** Розділи каталогу — від ПК до мобільних. */
@@ -47,6 +51,63 @@ class Game extends Model
         'switch' => 'Nintendo Switch',
     ];
 
+    /** Ігрові режими (IGDB game_modes) — фільтр каталогу. */
+    public const MODES = [
+        'multiplayer' => 'Мультиплеєр',
+        'coop' => 'Кооператив',
+        'mmo' => 'MMO',
+        'battle_royale' => 'Королівська битва',
+        'split_screen' => 'Розділений екран',
+        'single' => 'Одиночна гра',
+    ];
+
+    /**
+     * Можливості каталогу й картки гри, які адмін вмикає чи вимикає (Адмінка → Ігри).
+     * Вимкнене відрізається на сервері — однаково для сайту й застосунку.
+     */
+    public const FEATURES = [
+        'summary' => ['label' => 'Опис і сюжет', 'text' => 'Короткий опис гри та розгорнутий сюжет.'],
+        'media' => ['label' => 'Трейлери й скриншоти', 'text' => 'Відео з YouTube, скриншоти й арти.'],
+        'multiplayer' => ['label' => 'Мультиплеєр', 'text' => 'Скільки гравців онлайн і локально, кооператив, LAN, розділений екран.'],
+        'ratings' => ['label' => 'Рейтинги', 'text' => 'Оцінки критиків, гравців і загальна.'],
+        'about' => ['label' => 'Про гру', 'text' => 'Розробник, видавець, рушій, серія, камера, теми, скільки гравців чекають.'],
+        'age_ratings' => ['label' => 'Вікові рейтинги', 'text' => 'PEGI та ESRB.'],
+        'release_dates' => ['label' => 'Дати виходу', 'text' => 'Окремо для кожної платформи.'],
+        'languages' => ['label' => 'Мови', 'text' => 'Інтерфейс, субтитри й озвучення; наявність української — окремо.'],
+        'time_to_beat' => ['label' => 'Час проходження', 'text' => 'Швидко, зазвичай і на 100% — за даними гравців.'],
+        'websites' => ['label' => 'Спільнота й посилання', 'text' => 'Офіційний сайт, Discord, Twitch, YouTube, Reddit, вікі тощо.'],
+        'similar' => ['label' => 'Схожі ігри', 'text' => 'Ігри з каталогу, схожі на цю.'],
+        'clans' => ['label' => 'Клани на сторінці гри', 'text' => 'Список кланів гри й кнопка «Створити».'],
+        'filter_modes' => ['label' => 'Фільтр за режимом', 'text' => 'MMO, королівська битва, кооператив, розділений екран.'],
+        'filter_genres' => ['label' => 'Фільтр за жанром', 'text' => 'Список найпоширеніших жанрів каталогу.'],
+        'sorting' => ['label' => 'Сортування', 'text' => 'Популярні, за рейтингом, нові, A–Z.'],
+        'alias_search' => ['label' => 'Пошук за іншими назвами', 'text' => 'Знаходить гру за альтернативними й локалізованими назвами.'],
+    ];
+
+    /**
+     * Стан можливостей: усе, чого немає в збереженому, — увімкнено.
+     *
+     * @return array<string, bool>
+     */
+    public static function features(mixed $stored): array
+    {
+        $stored = is_array($stored) ? $stored : [];
+        $out = [];
+        foreach (array_keys(self::FEATURES) as $key) {
+            $out[$key] = ! array_key_exists($key, $stored) || (bool) $stored[$key];
+        }
+
+        return $out;
+    }
+
+    /** Сортування каталогу. */
+    public const SORTS = [
+        'popular' => 'Популярні',
+        'rating' => 'За рейтингом',
+        'new' => 'Нові',
+        'name' => 'A–Z',
+    ];
+
     public const STORES = [
         'steam' => 'Steam',
         'epic' => 'Epic Games',
@@ -65,6 +126,8 @@ class Game extends Model
         return [
             'platforms' => 'array',
             'genres' => 'array',
+            'modes' => 'array',
+            'details' => 'array',
             'links' => 'array',
             'released' => 'date',
             'rating' => 'float',
@@ -109,6 +172,8 @@ class Game extends Model
             'genres' => array_slice($this->genres ?? [], 0, 3),
             'cover' => $this->cover,
             'year' => $this->released?->year,
+            'rating' => $this->rating,
+            'modes' => array_values(array_intersect(array_keys(self::MODES), $this->modes ?? [])),
         ];
     }
 

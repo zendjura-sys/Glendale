@@ -37,6 +37,9 @@ class SiteSettings
         'tmdb_language' => 'uk-UA',
         'omdb_key' => null,
         'rawg_key' => null,
+        'igdb_client_id' => null,
+        'igdb_client_secret' => null,
+        'games_features' => [],
         'shikimori_enabled' => true,
         'shikimori_url' => null,
         'cinema_auto' => [],
@@ -56,7 +59,7 @@ class SiteSettings
     ];
 
     /** Ключі, які не можна віддавати у фронтенд. */
-    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key'];
+    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret'];
 
     /** @var array<string, mixed>|null */
     private ?array $values = null;

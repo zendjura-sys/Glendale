@@ -22,8 +22,14 @@ type Props = {
         category: Category | null;
         platform: string | null;
         letter: string | null;
+        genre: string | null;
+        mode: string | null;
+        sort: string;
     };
     categories: Record<Category, string>;
+    modes: Record<string, string>;
+    sorts: Record<string, string>;
+    genres: string[];
     platforms: Record<string, string>;
     letters: string[];
     total: number;
@@ -67,6 +73,9 @@ export default function GamesIndex({
     games,
     filters,
     categories,
+    modes,
+    sorts,
+    genres,
     letters,
     total,
 }: Props) {
@@ -113,7 +122,7 @@ export default function GamesIndex({
                     <input
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
-                        placeholder="Назва гри"
+                        placeholder="Назва гри або альтернативна назва"
                         className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
                     />
                 </label>
@@ -152,6 +161,63 @@ export default function GamesIndex({
                         );
                     })}
                 </div>
+            </div>
+
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap gap-1.5">
+                    {Object.entries(modes)
+                        .filter(([key]) => key !== 'single')
+                        .map(([key, label]) => (
+                            <button
+                                key={key}
+                                type="button"
+                                onClick={() =>
+                                    visit({
+                                        mode: filters.mode === key ? null : key,
+                                    })
+                                }
+                                className={cn(
+                                    'h-8 rounded-lg px-3 text-xs font-semibold transition',
+                                    filters.mode === key
+                                        ? 'bg-gradient-brand text-white'
+                                        : 'glass text-white/65 hover:text-white',
+                                )}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                </div>
+                {genres.length > 0 && (
+                    <select
+                        value={filters.genre ?? ''}
+                        onChange={(e) =>
+                            visit({ genre: e.target.value || null })
+                        }
+                        className="input-glass ml-auto h-9 rounded-lg px-2 text-xs text-white"
+                        aria-label="Жанр"
+                    >
+                        <option value="">Усі жанри</option>
+                        {genres.map((g) => (
+                            <option key={g} value={g}>
+                                {g}
+                            </option>
+                        ))}
+                    </select>
+                )}
+                {Object.keys(sorts).length > 0 && (
+                    <select
+                        value={filters.sort}
+                        onChange={(e) => visit({ sort: e.target.value })}
+                        className="input-glass h-9 rounded-lg px-2 text-xs text-white"
+                        aria-label="Сортування"
+                    >
+                        {Object.entries(sorts).map(([key, label]) => (
+                            <option key={key} value={key}>
+                                {label}
+                            </option>
+                        ))}
+                    </select>
+                )}
             </div>
 
             {/* A–Z: літери без ігор неактивні */}
@@ -236,6 +302,15 @@ export default function GamesIndex({
             <Pagination data={games} />
             <p className="mt-6 text-center text-[11px] text-white/30">
                 Дані каталогу —{' '}
+                <a
+                    href="https://www.igdb.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-white/60"
+                >
+                    IGDB
+                </a>{' '}
+                і{' '}
                 <a
                     href="https://rawg.io"
                     target="_blank"

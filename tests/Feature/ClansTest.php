@@ -71,7 +71,7 @@ class ClansTest extends TestCase
                 ->where('clan.display_name', '[Гільдія] Natus Vincere')
                 ->where('clan.game.slug', 'counter-strike-2')
                 ->where('me.is_owner', true)
-                ->where('me.can.settings.manage', true));
+                ->where('me.can', fn ($can) => ($can['settings.manage'] ?? false) === true));
 
         $this->actingAs($this->leader)->getJson(route('games.show', $this->game))->assertJsonPath('clans.0.tag', 'NAVI');
     }

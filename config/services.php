@@ -88,6 +88,13 @@ return [
         'image_url' => env('TMDB_IMAGE_URL', 'https://image.tmdb.org/t/p'),
     ],
 
+    'igdb' => [
+        'client_id' => env('IGDB_CLIENT_ID'),
+        'client_secret' => env('IGDB_CLIENT_SECRET'),
+        'url' => env('IGDB_API_URL', 'https://api.igdb.com/v4'),
+        'token_url' => env('IGDB_TOKEN_URL', 'https://id.twitch.tv/oauth2/token'),
+    ],
+
     'rawg' => [
         'key' => env('RAWG_KEY'),
         'url' => env('RAWG_API_URL', 'https://api.rawg.io/api'),

@@ -403,6 +403,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
                 Route::post('{server}/restore', [Admin\ServerController::class, 'restore'])->name('restore');
             });
         });
+        Route::prefix('games')->name('games.')->group(function () {
+            Route::get('/', [Admin\GameController::class, 'index'])->name('index');
+            Route::put('features', [Admin\GameController::class, 'features'])->name('features');
+            Route::post('sync', [Admin\GameController::class, 'sync'])->middleware('throttle:5,1')->name('sync');
+            Route::patch('{game:id}', [Admin\GameController::class, 'update'])->whereNumber('game')->name('update');
+        });
         Route::get('families', [Admin\FamilyController::class, 'index'])->name('families.index');
         Route::patch('families/{family:id}', [Admin\FamilyController::class, 'update'])->whereNumber('family')->name('families.update');
         Route::post('families/voice-rooms', [Admin\VoiceTemplateController::class, 'store'])->name('voice-templates.store');
