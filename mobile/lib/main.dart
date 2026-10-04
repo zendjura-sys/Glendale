@@ -23,6 +23,7 @@ import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'track_edit.dart';
+import 'watch_party.dart';
 import 'widgets.dart';
 
 Future<void> main() async {
@@ -122,6 +123,7 @@ Future<void> main() async {
               GoRoute(path: ':slug', builder: (_, state) => MovieScreen(key: ValueKey(state.pathParameters['slug']), slug: state.pathParameters['slug']!, autoplay: state.uri.queryParameters['play'] == '1')),
             ],
           ),
+          GoRoute(path: '/watch/:code', builder: (_, state) => WatchPartyScreen(key: ValueKey(state.pathParameters['code']), code: state.pathParameters['code']!)),
           GoRoute(
             path: '/families',
             builder: (_, _) => const FamiliesScreen(),

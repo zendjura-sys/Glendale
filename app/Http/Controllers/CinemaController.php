@@ -394,7 +394,16 @@ class CinemaController extends Controller
         <meta name="referrer" content="origin">
         <style>html,body,iframe{margin:0;width:100%;height:100%;border:0;background:#000}</style>
         </head>
-        <body><iframe src="{$src}" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="origin"></iframe></body>
+        <body><iframe src="{$src}" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="origin"></iframe>
+        <script>
+        // Міст для спільного перегляду в застосунку: події плеєра — у Flutter, команди — у плеєр.
+        window.addEventListener('message', function (e) {
+            if (window.GcBridge && e.source === document.querySelector('iframe').contentWindow) {
+                try { GcBridge.postMessage(JSON.stringify(e.data)); } catch (_) {}
+            }
+        });
+        window.gcSend = function (msg) { document.querySelector('iframe').contentWindow.postMessage(msg, '*'); };
+        </script></body>
         </html>
         HTML;
 

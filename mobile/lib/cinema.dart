@@ -533,6 +533,17 @@ class _MovieScreenState extends State<MovieScreen> {
     }
   }
 
+  /// Спільний перегляд: створюємо кімнату й відкриваємо її; посилання — друзям.
+  Future<void> _watchTogether() async {
+    try {
+      final result = await api.post('/api/v1/cinema/${widget.slug}/watch', {'player_key': playerKey});
+      final code = text(result['code']);
+      if (code != null && mounted) context.push('/watch/$code');
+    } catch (e) {
+      if (mounted) toast(context, e);
+    }
+  }
+
   void _play(Map<String, dynamic> source) {
     final raw = text(source['link']);
     if (raw == null) return;
@@ -690,7 +701,14 @@ class _MovieScreenState extends State<MovieScreen> {
             key: playerCard,
             padding: const EdgeInsets.fromLTRB(12, 14, 12, 8),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Padding(padding: const EdgeInsets.only(left: 4), child: CardTitle('Дивитися', icon: LucideIcons.clapperboard)),
+              Row(children: [
+                Expanded(child: Padding(padding: const EdgeInsets.only(left: 4), child: CardTitle('Дивитися', icon: LucideIcons.clapperboard))),
+                TextButton.icon(
+                  onPressed: _watchTogether,
+                  icon: const Icon(LucideIcons.popcorn, size: 18, color: primary),
+                  label: Text('Разом', style: body(13.5, color: primary, weight: FontWeight.w700)),
+                ),
+              ]),
               const SizedBox(height: 10),
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),

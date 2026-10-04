@@ -63,6 +63,23 @@ class VoiceCall extends ChangeNotifier {
     );
   }
 
+  /// Голос під час спільного перегляду фільму.
+  Future<void> watch(Api api, String code, String title, {void Function(Object error)? onError}) async {
+    await _connect(
+      api,
+      () => api.post('/api/v1/watch/$code/voice'),
+      onError: onError,
+      failure: 'Не вдалося підключити голос.',
+      meta: () {
+        kind = 'room';
+        roomId = null;
+        roomName = title;
+        label = 'Спільний перегляд';
+        route = '/watch/$code';
+      },
+    );
+  }
+
   /// Подзвонити в бесіду або приєднатися до дзвінка, що вже триває.
   Future<void> call(Api api, int conversation, String title, {void Function(Object error)? onError}) async {
     if (kind == 'call' && conversationId == conversation && active) return;

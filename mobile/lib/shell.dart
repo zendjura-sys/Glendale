@@ -48,6 +48,8 @@ String appPathFor(String? sitePath) {
       return '$path${rest(1) == 'my' ? query : ''}';
     case 'families':
       return rest(1) == 'create' ? '/families/create' : '/families';
+    case 'watch':
+      return '/watch/${rest(1)}';
     case 'servers':
     case 'communities':
     case 'friends':
