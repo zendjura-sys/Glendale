@@ -9,6 +9,7 @@ import 'api.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'i18n.dart';
 
 /// Віджет «Моя сім’я» на головному екрані Android.
 ///
@@ -18,19 +19,19 @@ import 'widgets.dart';
 ///
 /// Нові розділи, що стосуються сім’ї чи грошей, варто додавати сюди як ще один блок на вибір.
 class FamilyWidget {
-  static const androidName = 'online.gamecon.gamecon.FamilyWidgetProvider';
-  static const _familyKey = 'widget.family';
-  static const _blocksKey = 'widget.blocks';
+  static final androidName = 'online.gamecon.gamecon.FamilyWidgetProvider';
+  static final _familyKey = 'widget.family';
+  static final _blocksKey = 'widget.blocks';
 
   /// Блоки віджета: ключ → назва в налаштуваннях.
-  static const blocks = {
-    'balance': 'Мій рахунок у сім’ї',
-    'week': 'Заробіток за тиждень',
-    'place': 'Місце в рейтингу',
-    'bizwar': 'Бізвари за тиждень',
-    'event': 'Найближча подія',
-    'treasury': 'Казна сім’ї (для скарбників)',
-    'warns': 'Попередження',
+  static final blocks = {
+    'balance': tr('Мій рахунок у сім’ї'),
+    'week': tr('Заробіток за тиждень'),
+    'place': tr('Місце в рейтингу'),
+    'bizwar': tr('Бізвари за тиждень'),
+    'event': tr('Найближча подія'),
+    'treasury': tr('Казна сім’ї (для скарбників)'),
+    'warns': tr('Попередження'),
   };
   static const defaultBlocks = ['balance', 'week', 'place', 'bizwar', 'event'];
 
@@ -45,7 +46,7 @@ class FamilyWidget {
   /// Завантажує статистику й перемальовує віджет. Без входу — порожній віджет із підказкою.
   static Future<List<Map<String, dynamic>>> refresh(Api? api, SharedPreferences prefs) async {
     if (api == null) {
-      await _save({'fw_title': 'GameCon', 'fw_rank': 'Увійдіть у застосунок, щоб бачити свою сім’ю', 'fw_slug': ''});
+      await _save({'fw_title': 'GameCon', 'fw_rank': tr('Увійдіть у застосунок, щоб бачити свою сім’ю'), 'fw_slug': ''});
       return const [];
     }
     final data = await api.get('/api/v1/me/family-widget');
@@ -57,8 +58,8 @@ class FamilyWidget {
   static Future<void> render(List<Map<String, dynamic>> families, SharedPreferences prefs) async {
     if (families.isEmpty) {
       await _save({
-        'fw_title': 'Моя сім’я',
-        'fw_rank': 'Ви ще не в сім’ї — оберіть її в розділі «Сім’ї»',
+        'fw_title': tr('Моя сім’я'),
+        'fw_rank': tr('Ви ще не в сім’ї — оберіть її в розділі «Сім’ї»'),
         'fw_slug': '',
         'fw_balance': '',
         'fw_week': '',
@@ -81,7 +82,7 @@ class FamilyWidget {
     final balanceText = show.contains('balance')
         ? hryvnia(w['balance'])
         : (show.contains('treasury') && treasury != null ? hryvnia(treasury) : '');
-    final balanceLabel = show.contains('balance') ? 'Ваш рахунок у сім’ї' : 'Казна сім’ї';
+    final balanceLabel = show.contains('balance') ? tr('Ваш рахунок у сім’ї') : tr('Казна сім’ї');
 
     String eventLine() {
       if (!show.contains('event') || event.isEmpty) return '';
@@ -91,7 +92,7 @@ class FamilyWidget {
     }
 
     final extras = [
-      if (show.contains('treasury') && show.contains('balance') && treasury != null) 'Казна ${hryvnia(treasury)}',
+      if (show.contains('treasury') && show.contains('balance') && treasury != null) tr('Казна {v}', {'v': hryvnia(treasury)}),
       if (show.contains('warns') && warns > 0) '⚠ $warns/${intOf(w['warn_limit'], 3)}',
     ];
     final now = DateTime.now();
@@ -102,11 +103,11 @@ class FamilyWidget {
       'fw_slug': text(family['slug']) ?? '',
       'fw_balance': balanceText,
       'fw_balance_label': balanceLabel,
-      'fw_week': show.contains('week') ? 'Тиждень\n+${hryvniaShort(w['week_earned'])}' : '',
-      'fw_place': show.contains('place') && rating['place'] != null ? 'Місце\n${rating['place']} з ${rating['of']}' : '',
-      'fw_bizwar': show.contains('bizwar') ? 'Бізвари\n${intOf(rating['bizwar_wins'])}–${intOf(rating['bizwar_losses'])}' : '',
+      'fw_week': show.contains('week') ? tr('Тиждень\n+{v}', {'v': hryvniaShort(w['week_earned'])}) : '',
+      'fw_place': show.contains('place') && rating['place'] != null ? tr('Місце\n{v} з {v2}', {'v': rating['place'], 'v2': rating['of']}) : '',
+      'fw_bizwar': show.contains('bizwar') ? tr('Бізвари\n{v}–{v2}', {'v': intOf(rating['bizwar_wins']), 'v2': intOf(rating['bizwar_losses'])}) : '',
       'fw_event': [eventLine(), ...extras].where((s) => s.isNotEmpty).join('   '),
-      'fw_updated': 'Оновлено ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
+      'fw_updated': tr('Оновлено {v}:{v2}', {'v': now.hour.toString().padLeft(2, '0'), 'v2': now.minute.toString().padLeft(2, '0')}),
       'fw_ts': '${now.millisecondsSinceEpoch}',
     });
   }
@@ -184,17 +185,16 @@ class _FamilyWidgetSettingsState extends State<FamilyWidgetSettings> {
 
     return Glass(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const CardTitle('Віджет «Моя сім’я»', icon: LucideIcons.layoutGrid),
+        CardTitle(tr('Віджет «Моя сім’я»'), icon: LucideIcons.layoutGrid),
         const SizedBox(height: 6),
         Text(
-          'Додайте віджет GameCon на головний екран телефона (довге натискання на екран → Віджети). '
-          'Тут оберіть, що на ньому показувати.',
+          tr('Додайте віджет GameCon на головний екран телефона (довге натискання на екран → Віджети). Тут оберіть, що на ньому показувати.'),
           style: body(13, color: muted),
         ),
         if (loading) const Padding(padding: EdgeInsets.all(12), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4))),
         if (!loading && families.length > 1) ...[
           const SizedBox(height: 12),
-          Text('Сім’я', style: body(12.5, color: muted, weight: FontWeight.w700)),
+          Text(tr('Сім’я'), style: body(12.5, color: muted, weight: FontWeight.w700)),
           RadioGroup<String>(
             groupValue: selectedFamily,
             onChanged: (slug) => _apply(family: slug),
@@ -209,7 +209,7 @@ class _FamilyWidgetSettingsState extends State<FamilyWidgetSettings> {
           ),
         ],
         const SizedBox(height: 12),
-        Text('Що показувати', style: body(12.5, color: muted, weight: FontWeight.w700)),
+        Text(tr('Що показувати'), style: body(12.5, color: muted, weight: FontWeight.w700)),
         for (final entry in FamilyWidget.blocks.entries)
           CheckboxListTile(
             contentPadding: EdgeInsets.zero,
@@ -218,7 +218,7 @@ class _FamilyWidgetSettingsState extends State<FamilyWidgetSettings> {
             title: Text(entry.value, style: body(14.5)),
           ),
         const SizedBox(height: 4),
-        GhostButton(label: 'Оновити віджет', icon: LucideIcons.refreshCw, onPressed: () {
+        GhostButton(label: tr('Оновити віджет'), icon: LucideIcons.refreshCw, onPressed: () {
           setState(() => loading = true);
           unawaited(_load());
         }),

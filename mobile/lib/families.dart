@@ -16,6 +16,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'voice_room.dart';
 import 'widgets.dart';
+import 'i18n.dart';
 
 /// Шлях сторінки сім’ї на мосту сайту: `/api/v1/site/f/{slug}/{section}`.
 String familyPath(String slug, [String section = '']) => Api.site('/f/$slug${section.isEmpty || section == 'overview' ? '' : '/$section'}');
@@ -196,22 +197,22 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
           badge: 'FAMILY ERP',
           badgeIcon: LucideIcons.crown,
           tint: gold,
-          title: 'Сім’ї',
+          title: tr('Сім’ї'),
           accent: 'GTA RP',
-          text: 'Звіти про бізвари й контракти, автоматичні виплати, депозити, склад з квотами, дисципліна й рейтинг — без таблиць і ручних підрахунків.',
-          children: [PrimaryButton(label: 'Створити сім’ю', icon: LucideIcons.plus, expand: false, onPressed: () => context.push('/families/create'))],
+          text: tr('Звіти про бізвари й контракти, автоматичні виплати, депозити, склад з квотами, дисципліна й рейтинг — без таблиць і ручних підрахунків.'),
+          children: [PrimaryButton(label: tr('Створити сім’ю'), icon: LucideIcons.plus, expand: false, onPressed: () => context.push('/families/create'))],
         ),
         if (mine.isNotEmpty) ...[
-          const SectionLabel('Мої сім’ї'),
+          SectionLabel(tr('Мої сім’ї')),
           for (final family in mine) Padding(padding: const EdgeInsets.only(bottom: 10), child: _MyFamilyCard(family: family)),
         ],
-        const SectionLabel('Каталог сімей'),
+        SectionLabel(tr('Каталог сімей')),
         Glass(
           padding: const EdgeInsets.all(12),
           child: Column(children: [
             GcField(
               controller: query,
-              label: 'Назва або тег',
+              label: tr('Назва або тег'),
               icon: LucideIcons.search,
               dense: true,
               onChanged: (_) {
@@ -223,7 +224,7 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
             GcSelect<String>(
               value: server,
               expand: true,
-              items: [('', 'Усі сервери'), for (final s in servers) ('${s['slug']}', '${s['name']}')],
+              items: [('', tr('Усі сервери')), for (final s in servers) ('${s['slug']}', '${s['name']}')],
               onChanged: (value) {
                 setState(() => server = value ?? '');
                 _load(reset: true);
@@ -235,7 +236,7 @@ class _FamiliesScreenState extends State<FamiliesScreen> {
         if (loading && families.isEmpty)
           const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
         else if (families.isEmpty)
-          const EmptyState(icon: LucideIcons.crown, title: 'Сімей не знайдено', text: 'Спробуйте інший запит або створіть свою.')
+          EmptyState(icon: LucideIcons.crown, title: tr('Сімей не знайдено'), text: tr('Спробуйте інший запит або створіть свою.'))
         else ...[
           for (final family in families) Padding(padding: const EdgeInsets.only(bottom: 10), child: FamilyCard(family: family)),
           LoadMore(more: more && !loading, onMore: _load),
@@ -272,7 +273,7 @@ class _MyFamilyCard extends StatelessWidget {
             Text(text(membership['display']) ?? '', style: body(12, color: muted).copyWith(fontFamily: 'monospace')),
             const SizedBox(height: 6),
             Row(children: [
-              if (pending) const Pill(label: 'Заявка на розгляді', color: gold) else RankPill(rank: membership['rank'], title: text(membership['rank_title'])),
+              if (pending) Pill(label: tr('Заявка на розгляді'), color: gold) else RankPill(rank: membership['rank'], title: text(membership['rank_title'])),
               const SizedBox(width: 8),
               if (!pending && membership['balance'] != null) Text(hryvnia(membership['balance']), style: body(13, color: green, weight: FontWeight.w700)),
             ]),
@@ -338,7 +339,7 @@ class FamilyCard extends StatelessWidget {
               const SizedBox(width: 4),
               Text('${family['members_count'] ?? 0}', style: body(12, color: muted)),
               const Spacer(),
-              if (family['is_recruiting'] == true) const Pill(label: 'Набір відкрито', color: green),
+              if (family['is_recruiting'] == true) Pill(label: tr('Набір відкрито'), color: green),
             ]),
           ]),
         ),
@@ -408,7 +409,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
         'static_id': staticId.text.trim(),
       }, files);
       if (!mounted) return;
-      toast(context, text(result['message']) ?? 'Сім’ю створено!');
+      toast(context, text(result['message']) ?? tr('Сім’ю створено!'));
       context.go(appPathFor(text(result['redirect'])));
     } catch (e) {
       if (mounted) toast(context, e);
@@ -425,16 +426,16 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
         Row(children: [
           RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.canPop() ? context.pop() : context.go('/families')),
           const SizedBox(width: 8),
-          Text('Нова сім’я', style: display(19)),
+          Text(tr('Нова сім’я'), style: display(19)),
         ]),
         const SizedBox(height: 12),
         Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const CardTitle('Сервер і назва', icon: LucideIcons.server),
+            CardTitle(tr('Сервер і назва'), icon: LucideIcons.server),
             const SizedBox(height: 12),
             LabeledField(
-              label: 'Сервер',
-              child: GcSelect<int>(value: serverId, hint: 'Оберіть сервер', expand: true, items: [for (final s in servers) (intOf(s['id']), '${s['name']}')], onChanged: (v) => setState(() => serverId = v)),
+              label: tr('Сервер'),
+              child: GcSelect<int>(value: serverId, hint: tr('Оберіть сервер'), expand: true, items: [for (final s in servers) (intOf(s['id']), '${s['name']}')], onChanged: (v) => setState(() => serverId = v)),
             ),
             const SizedBox(height: 10),
             Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -449,40 +450,40 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                   child: logo == null
                       ? Container(
                           decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
-                          child: const Icon(LucideIcons.imagePlus, color: muted),
+                          child: Icon(LucideIcons.imagePlus, color: muted),
                         )
                       : ClipRRect(borderRadius: BorderRadius.circular(18), child: Image(image: XFileImage(logo!), fit: BoxFit.cover)),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: Column(children: [
-                  GcField(controller: name, label: 'Назва, напр. BlackRock', dense: true, onChanged: (_) => setState(() {})),
-                  const SizedBox(height: 8),
-                  GcField(controller: tag, label: 'Тег, напр. BLACK', dense: true, onChanged: (_) => setState(() {})),
+                  GcField(controller: name, label: tr('Назва, напр. BlackRock'), dense: true, onChanged: (_) => setState(() {})),
+                  SizedBox(height: 8),
+                  GcField(controller: tag, label: tr('Тег, напр. BLACK'), dense: true, onChanged: (_) => setState(() {})),
                 ]),
               ),
             ]),
-            const SizedBox(height: 10),
-            LabeledField(label: 'Опис', child: GcField(controller: description, label: 'Чим живе ваша сім’я', maxLines: 5, minLines: 3)),
+            SizedBox(height: 10),
+            LabeledField(label: tr('Опис'), child: GcField(controller: description, label: tr('Чим живе ваша сім’я'), maxLines: 5, minLines: 3)),
           ]),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const CardTitle('Ваш персонаж', icon: LucideIcons.idCard),
-            const SizedBox(height: 6),
-            Text('Так вас бачитимуть у сім’ї, звітах і чаті.', style: body(12.5, color: muted)),
-            const SizedBox(height: 12),
-            GcField(controller: nickname, label: 'Нікнейм: Ім’я_Прізвище', dense: true, onChanged: (_) => setState(() {})),
-            const SizedBox(height: 8),
+            CardTitle(tr('Ваш персонаж'), icon: LucideIcons.idCard),
+            SizedBox(height: 6),
+            Text(tr('Так вас бачитимуть у сім’ї, звітах і чаті.'), style: body(12.5, color: muted)),
+            SizedBox(height: 12),
+            GcField(controller: nickname, label: tr('Нікнейм: Ім’я_Прізвище'), dense: true, onChanged: (_) => setState(() {})),
+            SizedBox(height: 8),
             GcField(controller: staticId, label: 'Static ID', dense: true, keyboard: TextInputType.number, onChanged: (_) => setState(() {})),
           ]),
         ),
-        const SizedBox(height: 14),
-        Text('Після створення сім’я пройде верифікацію платформою — тоді відкриються набір і чат.', style: body(12.5, color: muted)),
-        const SizedBox(height: 10),
-        PrimaryButton(label: 'Створити сім’ю', icon: LucideIcons.check, busy: busy, onPressed: ready ? _submit : null),
+        SizedBox(height: 14),
+        Text(tr('Після створення сім’я пройде верифікацію платформою — тоді відкриються набір і чат.'), style: body(12.5, color: muted)),
+        SizedBox(height: 10),
+        PrimaryButton(label: tr('Створити сім’ю'), icon: LucideIcons.check, busy: busy, onPressed: ready ? _submit : null),
       ],
     );
   }
@@ -490,18 +491,18 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
 
 // ───────────────────────── Сторінка сім’ї ─────────────────────────
 
-const familySections = [
-  ('overview', 'Огляд', LucideIcons.layoutGrid),
-  ('reports', 'Звіти', LucideIcons.fileText),
-  ('queue', 'Перевірка', LucideIcons.listChecks),
-  ('bank', 'Банк', LucideIcons.wallet),
-  ('warehouse', 'Склад', LucideIcons.package),
-  ('members', 'Учасники', LucideIcons.usersRound),
-  ('discipline', 'Дисципліна', LucideIcons.gavel),
-  ('events', 'Події', LucideIcons.calendarDays),
-  ('rating', 'Рейтинг', LucideIcons.chartNoAxesColumnIncreasing),
-  ('audit', 'Аудит', LucideIcons.receipt),
-  ('settings', 'Налаштування', LucideIcons.settings),
+final familySections = [
+  ('overview', tr('Огляд'), LucideIcons.layoutGrid),
+  ('reports', tr('Звіти'), LucideIcons.fileText),
+  ('queue', tr('Перевірка'), LucideIcons.listChecks),
+  ('bank', tr('Банк'), LucideIcons.wallet),
+  ('warehouse', tr('Склад'), LucideIcons.package),
+  ('members', tr('Учасники'), LucideIcons.usersRound),
+  ('discipline', tr('Дисципліна'), LucideIcons.gavel),
+  ('events', tr('Події'), LucideIcons.calendarDays),
+  ('rating', tr('Рейтинг'), LucideIcons.chartNoAxesColumnIncreasing),
+  ('audit', tr('Аудит'), LucideIcons.receipt),
+  ('settings', tr('Налаштування'), LucideIcons.settings),
 ];
 
 class FamilyScreen extends StatefulWidget {
@@ -591,7 +592,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
     if (page == null) {
       return error == null
           ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
-          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.crown, title: 'Сім’я недоступна', text: '$error', action: 'Спробувати знову', onAction: load)));
+          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.crown, title: tr('Сім’я недоступна'), text: '$error', action: tr('Спробувати знову'), onAction: load)));
     }
     if (page['me'] == null) return FamilyPublic(slug: widget.slug, data: page, onChanged: load);
 
@@ -643,12 +644,12 @@ class _FamilyScreenState extends State<FamilyScreen> {
           if (loading) const LinearProgressIndicator(minHeight: 2, color: primary, backgroundColor: Colors.transparent) else const SizedBox(height: 2),
           const SizedBox(height: 10),
           if (family['status'] == 'pending') ...[
-            const Glass(
+            Glass(
               border: gold,
               child: Row(children: [
                 Icon(LucideIcons.hourglass, color: gold),
                 SizedBox(width: 10),
-                Expanded(child: Text('Сім’я очікує верифікації платформою. Чат і набір відкриються після перевірки.')),
+                Expanded(child: Text(tr('Сім’я очікує верифікації платформою. Чат і набір відкриються після перевірки.'))),
               ]),
             ),
             const SizedBox(height: 10),
@@ -656,7 +657,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
           if (family['status'] == 'suspended') ...[
             Glass(
               border: danger,
-              child: Text('Сім’ю призупинено платформою${text(family['status_reason']) != null ? ': ${family['status_reason']}' : ''}. Зміни недоступні.', style: body(13.5, color: dangerSoft)),
+              child: Text(tr('Сім’ю призупинено платформою{v}. Зміни недоступні.', {'v': text(family['status_reason']) != null ? ': ${family['status_reason']}' : ''}), style: body(13.5, color: dangerSoft)),
             ),
             const SizedBox(height: 10),
           ],
@@ -684,7 +685,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
         bottom: 16 + ShellChrome.bottomOf(context),
         child: DecoratedBox(
           decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), boxShadow: [BoxShadow(color: indigo.withValues(alpha: 0.5), blurRadius: 24, offset: const Offset(0, 10), spreadRadius: -8)]),
-          child: PrimaryButton(label: 'Звіт', icon: LucideIcons.filePlus, expand: false, onPressed: _report),
+          child: PrimaryButton(label: tr('Звіт'), icon: LucideIcons.filePlus, expand: false, onPressed: _report),
         ),
       ),
     ]);
@@ -791,7 +792,7 @@ class _FamilyHeader extends StatelessWidget {
                         const SizedBox(width: 3),
                         Text('${family['members_count'] ?? 0}', style: body(12, color: muted)),
                       ]),
-                      Text('Скарбниця: ${hryvnia(family['treasury'])}', style: body(12, color: muted)),
+                      Text(tr('Скарбниця: {v}', {'v': hryvnia(family['treasury'])}), style: body(12, color: muted)),
                     ]),
                   ]),
                 ),
@@ -814,7 +815,7 @@ class _FamilyHeader extends StatelessWidget {
                       ),
                       Container(width: 1, height: 32, color: line, margin: const EdgeInsets.symmetric(horizontal: 10)),
                       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text('БАЛАНС', style: body(10, color: muted, weight: FontWeight.w700)),
+                        Text(tr('БАЛАНС'), style: body(10, color: muted, weight: FontWeight.w700)),
                         Text(hryvniaShort(me['balance']), maxLines: 1, softWrap: false, style: body(15, color: green, weight: FontWeight.w800)),
                       ]),
                     ]),
@@ -822,7 +823,7 @@ class _FamilyHeader extends StatelessWidget {
                 ),
                 if (onChat != null) ...[
                   const SizedBox(width: 8),
-                  GhostButton(label: 'Чат', icon: LucideIcons.messagesSquare, compact: true, expand: false, onPressed: onChat),
+                  GhostButton(label: tr('Чат'), icon: LucideIcons.messagesSquare, compact: true, expand: false, onPressed: onChat),
                 ],
               ]),
             ),
@@ -847,19 +848,19 @@ class FamilyPublic extends StatelessWidget {
     final note = TextEditingController();
     final sent = await showGcSheet<bool>(
       context,
-      title: 'Заявка на вступ',
-      subtitle: 'Офіцери сім’ї побачать ваш RP-нікнейм і Static ID.',
+      title: tr('Заявка на вступ'),
+      subtitle: tr('Офіцери сім’ї побачать ваш RP-нікнейм і Static ID.'),
       builder: (sheet) => SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          GcField(controller: nickname, label: 'Нікнейм: Ім’я_Прізвище'),
+          GcField(controller: nickname, label: tr('Нікнейм: Ім’я_Прізвище')),
           const SizedBox(height: 10),
           GcField(controller: staticId, label: 'Static ID', keyboard: TextInputType.number),
           const SizedBox(height: 10),
-          GcField(controller: note, label: 'Кілька слів про себе (необов’язково)', maxLines: 4, minLines: 2),
+          GcField(controller: note, label: tr('Кілька слів про себе (необов’язково)'), maxLines: 4, minLines: 2),
           const SizedBox(height: 16),
           PrimaryButton(
-            label: 'Надіслати заявку',
+            label: tr('Надіслати заявку'),
             onPressed: () async {
               final ok = await attempt(sheet, () => AppScope.read(sheet).session.api.post(familyPath(slug, 'apply'), {
                     'rp_nickname': nickname.text.trim(),
@@ -892,29 +893,29 @@ class FamilyPublic extends StatelessWidget {
               Text(text(family['description'])!, style: body(14, color: soft).copyWith(height: 1.5)),
               const SizedBox(height: 12),
             ],
-            Text('Створена ${fullDate(family['created_at'])}', style: body(12.5, color: muted)),
+            Text(tr('Створена {v}', {'v': fullDate(family['created_at'])}), style: body(12.5, color: muted)),
             const SizedBox(height: 14),
             if (status == 'pending') ...[
-              Text('Заявку надіслано як ${application!['display']}. Офіцери розглянуть її найближчим часом.', style: body(13.5, color: gold)),
+              Text(tr('Заявку надіслано як {v}. Офіцери розглянуть її найближчим часом.', {'v': application!['display']}), style: body(13.5, color: gold)),
               const SizedBox(height: 10),
               GhostButton(
-                label: 'Відкликати заявку',
+                label: tr('Відкликати заявку'),
                 icon: LucideIcons.undo2,
                 onPressed: () async {
                   if (await attempt(context, () => AppScope.read(context).session.api.delete(familyPath(slug, 'apply')))) await onChanged();
                 },
               ),
             ] else if (family['status'] != 'verified')
-              Text('Сім’я ще не пройшла верифікацію.', style: body(13.5, color: muted))
+              Text(tr('Сім’я ще не пройшла верифікацію.'), style: body(13.5, color: muted))
             else if (family['is_recruiting'] == true) ...[
-              if (status == 'declined' || status == 'kicked' || status == 'left') Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(status == 'declined' ? 'Попередню заявку відхилено.' : 'Ви вже були в цій сім’ї.', style: body(12.5, color: muted))),
-              PrimaryButton(label: 'Подати заявку', icon: LucideIcons.userRoundCheck, onPressed: () => _apply(context)),
+              if (status == 'declined' || status == 'kicked' || status == 'left') Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(status == 'declined' ? tr('Попередню заявку відхилено.') : tr('Ви вже були в цій сім’ї.'), style: body(12.5, color: muted))),
+              PrimaryButton(label: tr('Подати заявку'), icon: LucideIcons.userRoundCheck, onPressed: () => _apply(context)),
             ] else
-              Text('Набір зараз закрито.', style: body(13.5, color: muted)),
+              Text(tr('Набір зараз закрито.'), style: body(13.5, color: muted)),
           ]),
         ),
         if (leaders.isNotEmpty) ...[
-          const SectionLabel('Керівництво'),
+          SectionLabel(tr('Керівництво')),
           Glass(
             padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
             child: Column(children: [for (final m in leaders) MemberTile(member: m)]),
@@ -980,15 +981,15 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
       route: '/families/${ctx.slug}',
     ),
     Row(children: [
-      Expanded(child: MetricTile(caps: true, label: 'Заробив за тиждень', value: hryvniaShort(stats['week_earned']), icon: LucideIcons.trendingUp, color: green)),
+      Expanded(child: MetricTile(caps: true, label: tr('Заробив за тиждень'), value: hryvniaShort(stats['week_earned']), icon: LucideIcons.trendingUp, color: green)),
       const SizedBox(width: 8),
-      Expanded(child: MetricTile(caps: true, label: 'Виплати сім’ї (тиждень)', value: hryvniaShort(stats['week_total']), icon: LucideIcons.banknote)),
+      Expanded(child: MetricTile(caps: true, label: tr('Виплати сім’ї (тиждень)'), value: hryvniaShort(stats['week_total']), icon: LucideIcons.banknote)),
     ]),
     const SizedBox(height: 8),
     Row(children: [
-      Expanded(child: MetricTile(caps: true, label: 'Мої звіти на перевірці', value: '${stats['pending_reports'] ?? 0}', icon: LucideIcons.clock, color: gold)),
+      Expanded(child: MetricTile(caps: true, label: tr('Мої звіти на перевірці'), value: '${stats['pending_reports'] ?? 0}', icon: LucideIcons.clock, color: gold)),
       const SizedBox(width: 8),
-      Expanded(child: MetricTile(caps: true, label: 'Попередження', value: '${stats['warns'] ?? 0}/${stats['warn_limit'] ?? 3}', icon: LucideIcons.triangleAlert, color: intOf(stats['warns']) > 0 ? dangerSoft : ink)),
+      Expanded(child: MetricTile(caps: true, label: tr('Попередження'), value: '${stats['warns'] ?? 0}/${stats['warn_limit'] ?? 3}', icon: LucideIcons.triangleAlert, color: intOf(stats['warns']) > 0 ? dangerSoft : ink)),
     ]),
     const SizedBox(height: 12),
     Glass(
@@ -1003,20 +1004,20 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Подати звіт', style: display(16)),
+            Text(tr('Подати звіт'), style: display(16)),
             const SizedBox(height: 2),
-            Text('Бізвар, контракти, інвестиція — за себе чи за друга', style: body(12.5, color: muted)),
+            Text(tr('Бізвар, контракти, інвестиція — за себе чи за друга'), style: body(12.5, color: muted)),
           ]),
         ),
       ]),
     ),
     const SizedBox(height: 12),
     _OverviewCard(
-      title: 'Лідери тижня',
+      title: tr('Лідери тижня'),
       icon: LucideIcons.chartNoAxesColumnIncreasing,
-      action: 'Увесь рейтинг',
+      action: tr('Увесь рейтинг'),
       onAction: () => go('rating'),
-      empty: (LucideIcons.chartColumn, 'Схвалених звітів цього тижня ще немає'),
+      empty: (LucideIcons.chartColumn, tr('Схвалених звітів цього тижня ще немає')),
       children: [
         for (final l in leaders)
           Padding(
@@ -1024,27 +1025,27 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
             child: Row(children: [
               SizedBox(width: 22, child: Text('${l['place']}', style: body(13, color: intOf(l['place']) <= 3 ? gold : muted, weight: FontWeight.w800))),
               Expanded(child: Text(text(l['display']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5).copyWith(fontFamily: 'monospace'))),
-              Text('${l['points']} балів', style: body(12.5, color: const Color(0xFF9AA6FF), weight: FontWeight.w700)),
+              Text(tr('{v} балів', {'v': l['points']}), style: body(12.5, color: const Color(0xFF9AA6FF), weight: FontWeight.w700)),
             ]),
           ),
       ],
     ),
     const SizedBox(height: 12),
     _OverviewCard(
-      title: 'Мої операції',
+      title: tr('Мої операції'),
       icon: LucideIcons.wallet,
-      action: 'Банк',
+      action: tr('Банк'),
       onAction: () => go('bank'),
-      empty: (LucideIcons.wallet, 'Операцій ще не було'),
+      empty: (LucideIcons.wallet, tr('Операцій ще не було')),
       children: [for (final t in transactions) TransactionRow(tx: t)],
     ),
     const SizedBox(height: 12),
     _OverviewCard(
-      title: 'Найближчі події',
+      title: tr('Найближчі події'),
       icon: LucideIcons.calendarDays,
-      action: 'Усі',
+      action: tr('Усі'),
       onAction: () => go('events'),
-      empty: (LucideIcons.calendarDays, 'Запланованих подій немає'),
+      empty: (LucideIcons.calendarDays, tr('Запланованих подій немає')),
       children: [
         for (final e in events)
           ListTile(
@@ -1059,9 +1060,9 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
     if (lowStock.isNotEmpty) ...[
       const SizedBox(height: 12),
       _OverviewCard(
-        title: 'Закінчується на складі',
+        title: tr('Закінчується на складі'),
         icon: LucideIcons.package,
-        action: 'Склад',
+        action: tr('Склад'),
         onAction: () => go('warehouse'),
         empty: (LucideIcons.package, ''),
         children: [
@@ -1079,9 +1080,9 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
     if (activity.isNotEmpty) ...[
       const SizedBox(height: 12),
       _OverviewCard(
-        title: 'Остання активність',
+        title: tr('Остання активність'),
         icon: LucideIcons.receipt,
-        action: 'Журнал',
+        action: tr('Журнал'),
         onAction: () => go('audit'),
         empty: (LucideIcons.receipt, ''),
         children: [for (final a in activity) AuditRow(entry: a, compact: true)],
@@ -1104,7 +1105,7 @@ class _OverviewCard extends StatelessWidget {
     return Glass(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         CardTitle(title, icon: icon, caps: false, trailing: action, onTrailing: onAction),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         if (children.isEmpty) QuietEmpty(icon: empty.$1, text: empty.$2) else ...children,
       ]),
     );
@@ -1113,24 +1114,24 @@ class _OverviewCard extends StatelessWidget {
 
 // ───────────────────────── Звіти ─────────────────────────
 
-const reportStatus = {
-  'pending': ('Очікує', gold),
-  'approved': ('Схвалено', green),
-  'rejected': ('Відхилено', dangerSoft),
+final reportStatus = {
+  'pending': (tr('Очікує'), gold),
+  'approved': (tr('Схвалено'), green),
+  'rejected': (tr('Відхилено'), dangerSoft),
 };
 
 List<Widget> reportsTab(FamilyContext ctx, {required VoidCallback onReport}) {
   final listing = Listing.parse(ctx.data['reports']);
   final status = text(ctx.data['status']) ?? '';
   return [
-    PrimaryButton(label: 'Подати звіт', icon: LucideIcons.filePlus, onPressed: onReport),
-    const SizedBox(height: 12),
+    PrimaryButton(label: tr('Подати звіт'), icon: LucideIcons.filePlus, onPressed: onReport),
+    SizedBox(height: 12),
     Glass(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const CardTitle('Мої звіти', icon: LucideIcons.fileText, caps: false),
-        const SizedBox(height: 10),
+        CardTitle(tr('Мої звіти'), icon: LucideIcons.fileText, caps: false),
+        SizedBox(height: 10),
         Segmented(
-          options: const [SegmentOption('', 'Усі'), SegmentOption('pending', 'Очікують'), SegmentOption('approved', 'Схвалені'), SegmentOption('rejected', 'Відхилені')],
+          options: [SegmentOption('', tr('Усі')), SegmentOption('pending', tr('Очікують')), SegmentOption('approved', tr('Схвалені')), SegmentOption('rejected', tr('Відхилені'))],
           selected: status,
           scroll: true,
           onSelect: (value) => ctx.reload(extra: {if (value.isNotEmpty) 'status': value}),
@@ -1140,13 +1141,13 @@ List<Widget> reportsTab(FamilyContext ctx, {required VoidCallback onReport}) {
           id: status,
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             if (listing.items.isEmpty)
-              const QuietEmpty(icon: LucideIcons.fileText, text: 'Звітів ще немає — подайте перший')
+              QuietEmpty(icon: LucideIcons.fileText, text: tr('Звітів ще немає — подайте перший'))
             else
               for (final r in listing.items) ReportCard(report: r, slug: ctx.slug),
             if (listing.more)
               TextButton(
                 onPressed: () => ctx.reload(extra: {if (status.isNotEmpty) 'status': status, 'page': '${listing.current + 1}'}),
-                child: Text('Наступна сторінка', style: body(13, color: primary)),
+                child: Text(tr('Наступна сторінка'), style: body(13, color: primary)),
               ),
           ]),
         ),
@@ -1158,10 +1159,10 @@ List<Widget> reportsTab(FamilyContext ctx, {required VoidCallback onReport}) {
 String reportSummary(Map<String, dynamic> r) {
   final data = mapOf(r['data']);
   return switch (r['type']) {
-    'bizwar' => 'Перемог: ${data['wins'] ?? 0} · поразок: ${data['losses'] ?? 0}${(data['hours'] as List?)?.isNotEmpty == true ? ' · ${(data['hours'] as List).map((h) => '$h:00').join(', ')}' : ''}',
+    'bizwar' => tr('Перемог: {v} · поразок: {v2}{v3}', {'v': data['wins'] ?? 0, 'v2': data['losses'] ?? 0, 'v3': (data['hours'] as List?)?.isNotEmpty == true ? ' · ${(data['hours'] as List).map((h) => '$h:00').join(', ')}' : ''}),
     'contract' => '${{'light': 'Легкий', 'medium': 'Середній', 'heavy': 'Важкий'}[data['tier']] ?? data['tier']} × ${data['count'] ?? 1}',
-    'investment' => 'Інвестиція ${hryvnia(data['amount'])}',
-    _ => text(r['description']) ?? 'Інше',
+    'investment' => tr('Інвестиція {v}', {'v': hryvnia(data['amount'])}),
+    _ => text(r['description']) ?? tr('Інше'),
   };
 }
 
@@ -1193,13 +1194,13 @@ class ReportCard extends StatelessWidget {
         if (report['type'] != 'other' && text(report['description']) != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(text(report['description'])!, style: body(12.5, color: muted))),
         const SizedBox(height: 6),
         Wrap(spacing: 10, runSpacing: 4, children: [
-          Text('Дата: ${fullDate(report['event_date'])}', style: body(12, color: muted)),
-          if (report['for_friend'] == true) Text('За: ${mapOf(report['beneficiary'])['display']}', style: body(12, color: muted)),
-          if (report['for_friend'] == true) Text('Подав: ${mapOf(report['submitter'])['display']}', style: body(12, color: muted)),
+          Text(tr('Дата: {v}', {'v': fullDate(report['event_date'])}), style: body(12, color: muted)),
+          if (report['for_friend'] == true) Text(tr('За: {v}', {'v': mapOf(report['beneficiary'])['display']}), style: body(12, color: muted)),
+          if (report['for_friend'] == true) Text(tr('Подав: {v}', {'v': mapOf(report['submitter'])['display']}), style: body(12, color: muted)),
           if (intOf(report['reward']) > 0) Text(hryvnia(report['reward']), style: body(12.5, color: green, weight: FontWeight.w700)),
-          if (intOf(report['points']) > 0) Text('${report['points']} балів', style: body(12, color: const Color(0xFF9AA6FF))),
+          if (intOf(report['points']) > 0) Text(tr('{v} балів', {'v': report['points']}), style: body(12, color: const Color(0xFF9AA6FF))),
         ]),
-        if (flags['similar_reports'] != null) Padding(padding: const EdgeInsets.only(top: 6), child: Pill(label: 'Скріншот схожий на попередні', icon: LucideIcons.triangleAlert, color: gold)),
+        if (flags['similar_reports'] != null) Padding(padding: const EdgeInsets.only(top: 6), child: Pill(label: tr('Скріншот схожий на попередні'), icon: LucideIcons.triangleAlert, color: gold)),
         if (paths.isNotEmpty) ...[
           const SizedBox(height: 8),
           SizedBox(
@@ -1215,7 +1216,7 @@ class ReportCard extends StatelessWidget {
         if (report['reviewer'] != null)
           Padding(
             padding: const EdgeInsets.only(top: 6),
-            child: Text('Перевірив: ${mapOf(report['reviewer'])['display']}${text(report['review_comment']) != null ? ' — «${report['review_comment']}»' : ''}', style: body(12, color: muted)),
+            child: Text(tr('Перевірив: {v}{v2}', {'v': mapOf(report['reviewer'])['display'], 'v2': text(report['review_comment']) != null ? ' — «${report['review_comment']}»' : ''}), style: body(12, color: muted)),
           ),
         ?footer,
       ]),
@@ -1229,7 +1230,7 @@ Future<bool?> showReportSheet(BuildContext context, String slug) {
   return AppScope.read(context).player.coverWhile(
         () => showGcSheet<bool>(
           context,
-          title: 'Подати звіт',
+          title: tr('Подати звіт'),
           height: MediaQuery.sizeOf(context).height * 0.9,
           builder: (sheet) => _ReportForm(slug: slug, onDone: () => Navigator.pop(sheet, true)),
         ),
@@ -1291,7 +1292,7 @@ class _ReportFormState extends State<_ReportForm> {
   Future<void> _submit() async {
     final config = mapOf(page?['config']);
     if (config['require_proof'] == true && proofs.isEmpty) {
-      toast(context, 'Додайте хоча б один скріншот.');
+      toast(context, tr('Додайте хоча б один скріншот.'));
       return;
     }
     final api = AppScope.read(context).session.api;
@@ -1315,7 +1316,7 @@ class _ReportFormState extends State<_ReportForm> {
       }
       final files = [for (final p in proofs) await http.MultipartFile.fromPath('proofs[]', p.path, filename: p.name)];
       final result = await api.upload(familyPath(widget.slug, 'reports'), fields, files);
-      if (mounted) toast(context, text(result['message']) ?? 'Звіт надіслано.');
+      if (mounted) toast(context, text(result['message']) ?? tr('Звіт надіслано.'));
       widget.onDone();
     } catch (e) {
       if (mounted) toast(context, e);
@@ -1365,20 +1366,20 @@ class _ReportFormState extends State<_ReportForm> {
               ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Segmented(
-          options: const [SegmentOption('self', 'За себе', icon: LucideIcons.userRound), SegmentOption('friend', 'За друга', icon: LucideIcons.usersRound)],
+          options: [SegmentOption('self', tr('За себе'), icon: LucideIcons.userRound), SegmentOption('friend', tr('За друга'), icon: LucideIcons.usersRound)],
           selected: forWhom,
           onSelect: (value) => setState(() => forWhom = value),
         ),
         if (forWhom == 'friend') ...[
           const SizedBox(height: 10),
-          GcSelect<int>(value: beneficiary, hint: 'Оберіть учасника', expand: true, items: [for (final m in roster) (intOf(m['id']), '${m['display']}')], onChanged: (v) => setState(() => beneficiary = v)),
+          GcSelect<int>(value: beneficiary, hint: tr('Оберіть учасника'), expand: true, items: [for (final m in roster) (intOf(m['id']), '${m['display']}')], onChanged: (v) => setState(() => beneficiary = v)),
         ],
         const SizedBox(height: 12),
         LabeledField(
-          label: 'Дата події',
-          hint: 'Звіт можна подати протягом ${config['deadline_hours']} год',
+          label: tr('Дата події'),
+          hint: tr('Звіт можна подати протягом {v} год', {'v': config['deadline_hours']}),
           child: GhostButton(
             label: '${date.day} ${monthsGenitive[date.month - 1]} ${date.year}',
             icon: LucideIcons.calendar,
@@ -1391,12 +1392,12 @@ class _ReportFormState extends State<_ReportForm> {
         const SizedBox(height: 12),
         if (type == 'bizwar') ...[
           Row(children: [
-            Expanded(child: _Stepper(label: 'Перемоги', hint: hryvnia(intOf(rates['bizwar_win']) * 100), value: wins, onChanged: (v) => setState(() => wins = v))),
+            Expanded(child: _Stepper(label: tr('Перемоги'), hint: hryvnia(intOf(rates['bizwar_win']) * 100), value: wins, onChanged: (v) => setState(() => wins = v))),
             const SizedBox(width: 10),
-            Expanded(child: _Stepper(label: 'Поразки', hint: hryvnia(intOf(rates['bizwar_loss']) * 100), value: losses, onChanged: (v) => setState(() => losses = v))),
+            Expanded(child: _Stepper(label: tr('Поразки'), hint: hryvnia(intOf(rates['bizwar_loss']) * 100), value: losses, onChanged: (v) => setState(() => losses = v))),
           ]),
           const SizedBox(height: 10),
-          Text('Години стріл', style: body(13, color: muted)),
+          Text(tr('Години стріл'), style: body(13, color: muted)),
           const SizedBox(height: 6),
           Wrap(spacing: 6, runSpacing: 6, children: [
             for (final h in allHours) SelectPill(label: '$h:00', selected: hours.contains(h), onTap: () => setState(() => hours.contains(h) ? hours.remove(h) : hours.add(h))),
@@ -1409,19 +1410,19 @@ class _ReportFormState extends State<_ReportForm> {
             onSelect: (value) => setState(() => tier = value),
           ),
           const SizedBox(height: 6),
-          Text('Ставка: ${hryvnia(intOf(rates['contract_$tier']) * 100)} за контракт · ліміт $limit на день кожного рівня', style: body(12, color: muted)),
+          Text(tr('Ставка: {v} за контракт · ліміт {limit} на день кожного рівня', {'v': hryvnia(intOf(rates['contract_$tier']) * 100), 'limit': limit}), style: body(12, color: muted)),
           const SizedBox(height: 10),
-          _Stepper(label: 'Кількість', value: count, min: 1, max: 10, onChanged: (v) => setState(() => count = v)),
+          _Stepper(label: tr('Кількість'), value: count, min: 1, max: 10, onChanged: (v) => setState(() => count = v)),
         ],
         if (type == 'investment') ...[
-          GcField(controller: amount, label: 'Сума інвестиції, ₴', keyboard: TextInputType.number),
-          if ((rates['investment_cashback'] ?? 0) != 0) Padding(padding: const EdgeInsets.only(top: 6), child: Text('Кешбек: ${rates['investment_cashback']}%', style: body(12, color: muted))),
+          GcField(controller: amount, label: tr('Сума інвестиції, ₴'), keyboard: TextInputType.number),
+          if ((rates['investment_cashback'] ?? 0) != 0) Padding(padding: const EdgeInsets.only(top: 6), child: Text(tr('Кешбек: {v}%', {'v': rates['investment_cashback']}), style: body(12, color: muted))),
         ],
         const SizedBox(height: 12),
-        GcField(controller: description, label: type == 'other' ? 'Що сталося (обов’язково)' : 'Коментар (необов’язково)', maxLines: 4, minLines: 2),
+        GcField(controller: description, label: type == 'other' ? tr('Що сталося (обов’язково)') : tr('Коментар (необов’язково)'), maxLines: 4, minLines: 2),
         const SizedBox(height: 12),
         Row(children: [
-          Text('Скріншоти ${config['require_proof'] == true ? '(обов’язково)' : ''}', style: body(13, color: muted)),
+          Text(tr('Скріншоти {v}', {'v': config['require_proof'] == true ? '(обов’язково)' : ''}), style: body(13, color: muted)),
           const Spacer(),
           Text('${proofs.length}/$maxProofs', style: body(12, color: faint)),
         ]),
@@ -1461,7 +1462,7 @@ class _ReportFormState extends State<_ReportForm> {
         ),
         const SizedBox(height: 16),
         PrimaryButton(
-          label: 'Надіслати на перевірку',
+          label: tr('Надіслати на перевірку'),
           icon: LucideIcons.send,
           busy: busy,
           onPressed: (forWhom == 'friend' && beneficiary == null) || (type == 'bizwar' && wins + losses == 0) ? null : _submit,

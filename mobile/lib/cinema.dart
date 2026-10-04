@@ -13,8 +13,9 @@ import 'posts.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'i18n.dart';
 
-const _sorts = [('new', 'Нові на сайті'), ('popular', 'Популярні'), ('rating', 'За рейтингом'), ('year', 'За роком')];
+final _sorts = [('new', tr('Нові на сайті')), ('popular', tr('Популярні')), ('rating', tr('За рейтингом')), ('year', tr('За роком'))];
 
 String? _ratingLabel(dynamic value) {
   final rating = value is num ? value.toDouble() : double.tryParse('$value');
@@ -115,7 +116,7 @@ class _CinemaScreenState extends State<CinemaScreen> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             GcField(
               controller: query,
-              label: 'Назва фільму, серіалу чи аніме',
+              label: tr('Назва фільму, серіалу чи аніме'),
               icon: LucideIcons.search,
               dense: true,
               onChanged: (_) {
@@ -125,7 +126,7 @@ class _CinemaScreenState extends State<CinemaScreen> {
             ),
             const SizedBox(height: 10),
             GhostButton(
-              label: intOf(myCounts['all']) > 0 ? 'Мої списки · ${myCounts['all']}' : 'Мої списки',
+              label: intOf(myCounts['all']) > 0 ? tr('Мої списки · {v}', {'v': myCounts['all']}) : tr('Мої списки'),
               icon: LucideIcons.bookmark,
               onPressed: () => context.push('/cinema/my'),
             ),
@@ -133,7 +134,7 @@ class _CinemaScreenState extends State<CinemaScreen> {
             Segmented(
               scroll: true,
               options: [
-                SegmentOption('', 'Усе', count: total),
+                SegmentOption('', tr('Усе'), count: total),
                 for (final t in types) SegmentOption('${t['key']}', '${t['label']}', count: typeCounts['${t['key']}']),
               ],
               selected: type ?? '',
@@ -146,7 +147,7 @@ class _CinemaScreenState extends State<CinemaScreen> {
             Wrap(spacing: 8, runSpacing: 8, children: [
               GcSelect<String>(
                 value: genre ?? '',
-                items: [('', 'Усі жанри'), for (final g in genres) ('${g['name']}', '${g['name']}')],
+                items: [('', tr('Усі жанри')), for (final g in genres) ('${g['name']}', '${g['name']}')],
                 onChanged: (value) {
                   setState(() => genre = (value ?? '').isEmpty ? null : value);
                   _load(reset: true);
@@ -154,7 +155,7 @@ class _CinemaScreenState extends State<CinemaScreen> {
               ),
               GcSelect<int>(
                 value: year ?? 0,
-                items: [(0, 'Будь-який рік'), for (final y in years) (y, '$y')],
+                items: [(0, tr('Будь-який рік')), for (final y in years) (y, '$y')],
                 onChanged: (value) {
                   setState(() => year = value == 0 ? null : value);
                   _load(reset: true);
@@ -182,7 +183,7 @@ class _CinemaScreenState extends State<CinemaScreen> {
                   child: Row(children: [
                     if (row['key'] == 'continue') const Padding(padding: EdgeInsets.only(right: 6), child: Icon(LucideIcons.play, color: Color(0xFF9AA6FF))),
                     Expanded(child: Text('${row['title']}', style: display(17))),
-                    if (row['key'] == 'continue') GestureDetector(onTap: () => context.push('/cinema/my?status=watching'), child: Text('Усі', style: body(13, color: primary, weight: FontWeight.w600))),
+                    if (row['key'] == 'continue') GestureDetector(onTap: () => context.push('/cinema/my?status=watching'), child: Text(tr('Усі'), style: body(13, color: primary, weight: FontWeight.w600))),
                   ]),
                 ),
                 const SizedBox(height: 12),
@@ -199,19 +200,19 @@ class _CinemaScreenState extends State<CinemaScreen> {
             ),
             const SizedBox(height: 12),
           ],
-        if (filtered) Padding(padding: const EdgeInsets.only(left: 4, bottom: 10), child: Text('Знайдено: ${data['total'] ?? movies.length}', style: body(13, color: muted))),
+        if (filtered) Padding(padding: const EdgeInsets.only(left: 4, bottom: 10), child: Text(tr('Знайдено: {v}', {'v': data['total'] ?? movies.length}), style: body(13, color: muted))),
         if (filtered || rows.isEmpty) ...[
-          if (filtered) const SizedBox.shrink() else const SectionLabel('Каталог'),
+          if (filtered) const SizedBox.shrink() else SectionLabel(tr('Каталог')),
           if (loading && movies.isEmpty)
             const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
           else if (movies.isEmpty)
-            const EmptyState(icon: LucideIcons.clapperboard, title: 'Нічого не знайдено', text: 'Спробуйте змінити фільтри або запит.')
+            EmptyState(icon: LucideIcons.clapperboard, title: tr('Нічого не знайдено'), text: tr('Спробуйте змінити фільтри або запит.'))
           else ...[
             PosterGrid(movies: movies),
             LoadMore(more: more && !loading, onMore: _load),
           ],
         ] else ...[
-          const SectionLabel('Увесь каталог'),
+          SectionLabel(tr('Увесь каталог')),
           PosterGrid(movies: movies),
           LoadMore(more: more && !loading, onMore: _load),
         ],
@@ -266,7 +267,7 @@ class _FeaturedState extends State<_Featured> {
                 Padding(
                   padding: const EdgeInsets.all(18),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Pill(label: 'РЕКОМЕНДУЄМО', icon: LucideIcons.sparkles, color: gold),
+                    Pill(label: tr('РЕКОМЕНДУЄМО'), icon: LucideIcons.sparkles, color: gold),
                     const Spacer(),
                     Text(text(movie['title']) ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: display(26)),
                     if (text(movie['title_original']) != null) Text(text(movie['title_original'])!, style: body(13, color: muted)),
@@ -275,7 +276,7 @@ class _FeaturedState extends State<_Featured> {
                       if (rating != null) _RatingBadge(rating),
                       if (movie['year'] != null) Text('${movie['year']}', style: body(12.5, color: soft)),
                       if (text(movie['type_label']) != null) Text(text(movie['type_label'])!, style: body(12.5, color: soft)),
-                      if (intOf(movie['duration']) > 0) Text('${movie['duration']} хв', style: body(12.5, color: soft)),
+                      if (intOf(movie['duration']) > 0) Text(tr('{v} хв', {'v': movie['duration']}), style: body(12.5, color: soft)),
                       if (text(movie['age_rating']) != null) Pill(label: text(movie['age_rating'])!),
                     ]),
                     if ((movie['genres'] as List?)?.isNotEmpty == true) Padding(padding: const EdgeInsets.only(top: 6), child: Text((movie['genres'] as List).join(' · '), style: body(12, color: muted))),
@@ -283,9 +284,9 @@ class _FeaturedState extends State<_Featured> {
                       Padding(padding: const EdgeInsets.only(top: 8), child: Text(text(movie['description'])!, maxLines: 3, overflow: TextOverflow.ellipsis, style: body(13.5, color: soft).copyWith(height: 1.4))),
                     const SizedBox(height: 14),
                     Row(children: [
-                      Expanded(child: PrimaryButton(label: 'Дивитися', icon: LucideIcons.play, onPressed: () => context.push('/cinema/${movie['slug']}?play=1'))),
+                      Expanded(child: PrimaryButton(label: tr('Дивитися'), icon: LucideIcons.play, onPressed: () => context.push('/cinema/${movie['slug']}?play=1'))),
                       const SizedBox(width: 10),
-                      Expanded(child: GhostButton(label: 'Детальніше', icon: LucideIcons.info, onPressed: () => context.push('/cinema/${movie['slug']}'))),
+                      Expanded(child: GhostButton(label: tr('Детальніше'), icon: LucideIcons.info, onPressed: () => context.push('/cinema/${movie['slug']}'))),
                     ]),
                   ]),
                 ),
@@ -452,15 +453,15 @@ class _MyCinemaScreenState extends State<MyCinemaScreen> {
         Row(children: [
           RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.pop()),
           const SizedBox(width: 8),
-          Text('Мої списки', style: display(19)),
+          Text(tr('Мої списки'), style: display(19)),
         ]),
         const SizedBox(height: 12),
         Segmented(
           scroll: true,
           options: [
-            SegmentOption('all', 'Усі', count: counts['all']),
+            SegmentOption('all', tr('Усі'), count: counts['all']),
             for (final s in statuses) SegmentOption('${s['key']}', '${s['label']}', count: counts['${s['key']}']),
-            SegmentOption('rated', 'Оцінені', count: counts['rated']),
+            SegmentOption('rated', tr('Оцінені'), count: counts['rated']),
           ],
           selected: status,
           onSelect: (value) {
@@ -472,7 +473,7 @@ class _MyCinemaScreenState extends State<MyCinemaScreen> {
         if (loading && movies.isEmpty)
           const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
         else if (movies.isEmpty)
-          EmptyState(icon: LucideIcons.bookmark, title: 'Список порожній', text: 'Позначайте фільми статусами «Буду дивитися», «Дивлюся» тощо — вони з’являться тут.', action: 'До каталогу', onAction: () => context.go('/cinema'))
+          EmptyState(icon: LucideIcons.bookmark, title: tr('Список порожній'), text: tr('Позначайте фільми статусами «Буду дивитися», «Дивлюся» тощо — вони з’являться тут.'), action: tr('До каталогу'), onAction: () => context.go('/cinema'))
         else ...[
           PosterGrid(
             movies: movies,
@@ -622,7 +623,7 @@ class _MovieScreenState extends State<MovieScreen> {
     if (page == null) {
       return error == null
           ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
-          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.film, title: 'Фільм недоступний', text: '$error')));
+          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.film, title: tr('Фільм недоступний'), text: '$error')));
     }
     final movie = mapOf(page['movie']);
     final players = maps(page['players']);
@@ -670,8 +671,8 @@ class _MovieScreenState extends State<MovieScreen> {
                       Wrap(spacing: 8, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
                         if (movie['year'] != null) Text('${movie['year']}', style: body(12.5, color: soft)),
                         if (text(movie['type_label']) != null) Text(text(movie['type_label'])!, style: body(12.5, color: soft)),
-                        if (intOf(movie['duration']) > 0) Text('${movie['duration']} хв', style: body(12.5, color: soft)),
-                        if (intOf(movie['episodes_count']) > 0) Text('${movie['episodes_count']} еп.', style: body(12.5, color: soft)),
+                        if (intOf(movie['duration']) > 0) Text(tr('{v} хв', {'v': movie['duration']}), style: body(12.5, color: soft)),
+                        if (intOf(movie['episodes_count']) > 0) Text(tr('{v} еп.', {'v': movie['episodes_count']}), style: body(12.5, color: soft)),
                         if (text(movie['age_rating']) != null) Pill(label: text(movie['age_rating'])!),
                       ]),
                     ]),
@@ -681,7 +682,7 @@ class _MovieScreenState extends State<MovieScreen> {
                 Wrap(spacing: 8, runSpacing: 8, children: [
                   for (final entry in ratings.entries) Pill(label: '${entry.key.toUpperCase()} ${_ratingLabel(entry.value) ?? '—'}', icon: LucideIcons.star, color: gold),
                   if (_ratingLabel(movie['user_rating']) != null) Pill(label: 'GameCon ${_ratingLabel(movie['user_rating'])} · ${movie['ratings_count']}', icon: LucideIcons.usersRound, color: const Color(0xFF9AA6FF)),
-                  Pill(label: '${compact(movie['views_count'])} переглядів', icon: LucideIcons.eye),
+                  Pill(label: tr('{v} переглядів', {'v': compact(movie['views_count'])}), icon: LucideIcons.eye),
                 ]),
                 if (text(movie['tagline']) != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text('«${text(movie['tagline'])}»', style: body(14, color: soft).copyWith(fontStyle: FontStyle.italic))),
                 if (genres.isNotEmpty || countries.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 10), child: Text([...genres, ...countries].join(' · '), style: body(12.5, color: muted))),
@@ -689,7 +690,7 @@ class _MovieScreenState extends State<MovieScreen> {
                 if (text(movie['trailer_url']) != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
-                    child: GhostButton(label: 'Трейлер', icon: LucideIcons.monitorPlay, expand: false, compact: true, onPressed: () => launchUrl(Uri.parse(text(movie['trailer_url'])!), mode: LaunchMode.externalApplication)),
+                    child: GhostButton(label: tr('Трейлер'), icon: LucideIcons.monitorPlay, expand: false, compact: true, onPressed: () => launchUrl(Uri.parse(text(movie['trailer_url'])!), mode: LaunchMode.externalApplication)),
                   ),
               ]),
             ),
@@ -702,11 +703,11 @@ class _MovieScreenState extends State<MovieScreen> {
             padding: const EdgeInsets.fromLTRB(12, 14, 12, 8),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Expanded(child: Padding(padding: const EdgeInsets.only(left: 4), child: CardTitle('Дивитися', icon: LucideIcons.clapperboard))),
+                Expanded(child: Padding(padding: const EdgeInsets.only(left: 4), child: CardTitle(tr('Дивитися'), icon: LucideIcons.clapperboard))),
                 TextButton.icon(
                   onPressed: _watchTogether,
                   icon: const Icon(LucideIcons.popcorn, size: 18, color: primary),
-                  label: Text('Разом', style: body(13.5, color: primary, weight: FontWeight.w700)),
+                  label: Text(tr('Разом'), style: body(13.5, color: primary, weight: FontWeight.w700)),
                 ),
               ]),
               const SizedBox(height: 10),
@@ -736,8 +737,8 @@ class _MovieScreenState extends State<MovieScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 4, 0, 0),
                 child: Row(children: [
-                  Expanded(child: Text(web != null ? 'Якщо плеєр не завантажився — оберіть інше джерело нижче.' : 'Натисніть, щоб почати перегляд.', style: body(11.5, color: faint))),
-                  IconButton(onPressed: web != null ? _fullscreen : null, tooltip: 'На весь екран', icon: Icon(LucideIcons.maximize, color: web != null ? soft : faint)),
+                  Expanded(child: Text(web != null ? tr('Якщо плеєр не завантажився — оберіть інше джерело нижче.') : tr('Натисніть, щоб почати перегляд.'), style: body(11.5, color: faint))),
+                  IconButton(onPressed: web != null ? _fullscreen : null, tooltip: tr('На весь екран'), icon: Icon(LucideIcons.maximize, color: web != null ? soft : faint)),
                 ]),
               ),
             ]),
@@ -746,7 +747,7 @@ class _MovieScreenState extends State<MovieScreen> {
         const SizedBox(height: 12),
         Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const CardTitle('Мій список', icon: LucideIcons.bookmark),
+            CardTitle(tr('Мій список'), icon: LucideIcons.bookmark),
             const SizedBox(height: 10),
             Wrap(spacing: 8, runSpacing: 8, children: [
               for (final s in statuses)
@@ -758,9 +759,9 @@ class _MovieScreenState extends State<MovieScreen> {
             ]),
             const SizedBox(height: 14),
             Row(children: [
-              Text('Моя оцінка', style: body(13, color: muted)),
+              Text(tr('Моя оцінка'), style: body(13, color: muted)),
               const Spacer(),
-              if (state['rating'] != null) TextButton(onPressed: () => _rate(null), child: Text('Скинути', style: body(12.5, color: muted))),
+              if (state['rating'] != null) TextButton(onPressed: () => _rate(null), child: Text(tr('Скинути'), style: body(12.5, color: muted))),
             ]),
             const SizedBox(height: 4),
             Row(children: [
@@ -783,13 +784,13 @@ class _MovieScreenState extends State<MovieScreen> {
           Glass(
             padding: const EdgeInsets.fromLTRB(12, 14, 12, 8),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Padding(padding: EdgeInsets.only(left: 4), child: CardTitle('Джерела й озвучки', icon: LucideIcons.languages)),
+              Padding(padding: EdgeInsets.only(left: 4), child: CardTitle(tr('Джерела й озвучки'), icon: LucideIcons.languages)),
               const SizedBox(height: 6),
               for (final source in players)
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                   leading: Icon(playerKey == text(source['key']) ? LucideIcons.circlePlay600 : LucideIcons.circlePlay, color: playerKey == text(source['key']) ? primary : muted),
-                  title: Text(text(source['translation']) ?? text(source['provider_label']) ?? 'Плеєр', style: body(14, weight: FontWeight.w600)),
+                  title: Text(text(source['translation']) ?? text(source['provider_label']) ?? tr('Плеєр'), style: body(14, weight: FontWeight.w600)),
                   subtitle: Text([text(source['provider_label']), text(source['quality'])].whereType<String>().join(' · '), style: body(12, color: muted)),
                   onTap: () => _play(source),
                 ),
@@ -801,7 +802,7 @@ class _MovieScreenState extends State<MovieScreen> {
           Glass(
             padding: const EdgeInsets.fromLTRB(12, 14, 12, 8),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Padding(padding: const EdgeInsets.only(left: 4), child: CardTitle('Друзі дивляться', icon: LucideIcons.usersRound, trailing: '${friends['total']}')),
+              Padding(padding: const EdgeInsets.only(left: 4), child: CardTitle(tr('Друзі дивляться'), icon: LucideIcons.usersRound, trailing: '${friends['total']}')),
               for (final user in maps(friends['users']))
                 UserTile(
                   user: user,
@@ -817,7 +818,7 @@ class _MovieScreenState extends State<MovieScreen> {
         const SizedBox(height: 12),
         Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            CardTitle('Обговорення', icon: LucideIcons.messagesSquare, trailing: intOf(movie['comments_count']) > 0 ? '${movie['comments_count']}' : null),
+            CardTitle(tr('Обговорення'), icon: LucideIcons.messagesSquare, trailing: intOf(movie['comments_count']) > 0 ? '${movie['comments_count']}' : null),
             const SizedBox(height: 8),
             CommentsThread(
               endpoint: Api.site('/cinema/${widget.slug}/comments'),
@@ -829,7 +830,7 @@ class _MovieScreenState extends State<MovieScreen> {
           ]),
         ),
         if (similar.isNotEmpty) ...[
-          const SectionLabel('Схоже'),
+          SectionLabel(tr('Схоже')),
           SizedBox(
             height: 250,
             child: ListView.separated(

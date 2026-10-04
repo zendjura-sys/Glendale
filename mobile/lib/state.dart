@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api.dart';
 import 'nav_items.dart';
+import 'i18n.dart';
 
 class Session extends ChangeNotifier {
   Session(this.prefs) : api = Api(() => _token) {
@@ -172,7 +173,7 @@ class QueueTrack {
     return QueueTrack(
       id: track['id'] is int ? track['id'] as int : int.tryParse('${track['id']}'),
       url: url,
-      title: text(track['title']) ?? 'Без назви',
+      title: text(track['title']) ?? tr('Без назви'),
       artist: text(track['artist']) ?? '',
       cover: absolute(track['cover_url']),
       album: text(track['album']),

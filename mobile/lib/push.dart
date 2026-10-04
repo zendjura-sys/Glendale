@@ -16,25 +16,26 @@ import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'voice_room.dart';
+import 'i18n.dart';
 
-const _messages = AndroidNotificationChannel(
+final _messages = AndroidNotificationChannel(
   'messages',
-  'Повідомлення',
-  description: 'Нові повідомлення в особистих і групових чатах',
+  tr('Повідомлення'),
+  description: tr('Нові повідомлення в особистих і групових чатах'),
   importance: Importance.high,
 );
-const _activity = AndroidNotificationChannel(
+final _activity = AndroidNotificationChannel(
   'activity',
-  'Сповіщення',
-  description: 'Лайки, коментарі, заявки в друзі, події сімей і спільнот',
+  tr('Сповіщення'),
+  description: tr('Лайки, коментарі, заявки в друзі, події сімей і спільнот'),
   importance: Importance.high,
 );
 
 /// Вхідні дзвінки: максимальна важливість, мелодія дзвінка телефону, показ поверх екрана блокування.
-const _calls = AndroidNotificationChannel(
+final _calls = AndroidNotificationChannel(
   'calls',
-  'Дзвінки',
-  description: 'Вхідні особисті й групові дзвінки',
+  tr('Дзвінки'),
+  description: tr('Вхідні особисті й групові дзвінки'),
   importance: Importance.max,
   sound: UriAndroidNotificationSound('content://settings/system/ringtone'),
   audioAttributesUsage: AudioAttributesUsage.notificationRingtone,
@@ -52,7 +53,7 @@ Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
   DartPluginRegistrant.ensureInitialized();
   await Firebase.initializeApp();
   final type = message.data['type'];
-  if (message.notification != null || !const ['message', 'call', 'call_ended'].contains(type)) return;
+  if (message.notification != null || !['message', 'call', 'call_ended'].contains(type)) return;
   final local = FlutterLocalNotificationsPlugin();
   await local.initialize(settings: _initSettings, onDidReceiveBackgroundNotificationResponse: notificationActionInBackground);
   if (type == 'message') {
@@ -101,8 +102,8 @@ class CallNotifications {
     final group = data['group'] == '1';
     await local.show(
       id: idFor(call),
-      title: text(data['title']) ?? text(data['caller']) ?? 'Дзвінок',
-      body: text(data['body']) ?? (group ? 'Груповий дзвінок' : 'Вхідний дзвінок'),
+      title: text(data['title']) ?? text(data['caller']) ?? tr('Дзвінок'),
+      body: text(data['body']) ?? (group ? tr('Груповий дзвінок') : tr('Вхідний дзвінок')),
       payload: jsonEncode({...data, 'kind': 'call'}),
       notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
@@ -122,9 +123,9 @@ class CallNotifications {
           icon: 'ic_notification',
           color: primary,
           tag: 'call-$call',
-          actions: const [
-            AndroidNotificationAction('call_decline', 'Відхилити', titleColor: danger),
-            AndroidNotificationAction('call_accept', 'Відповісти', titleColor: green, showsUserInterface: true),
+          actions: [
+            AndroidNotificationAction('call_decline', tr('Відхилити'), titleColor: danger),
+            AndroidNotificationAction('call_accept', tr('Відповісти'), titleColor: green, showsUserInterface: true),
           ],
         ),
       ),
@@ -162,7 +163,7 @@ class ChatNotifications {
   final FlutterLocalNotificationsPlugin local;
   final SharedPreferences prefs;
 
-  static const _historyLimit = 8;
+  static final _historyLimit = 8;
 
   static int idFor(String conversation) => 'chat-$conversation'.hashCode & 0x7fffffff;
 
@@ -198,7 +199,7 @@ class ChatNotifications {
     if (history.isEmpty) return;
     final group = data['group'] == '1' || data['group'] == true;
     final title = text(data['title']) ?? 'GameCon';
-    const me = Person(name: 'Ви', key: 'me');
+    final me = Person(name: tr('Ви'), key: 'me');
     final payload = jsonEncode({
       'url': text(data['url']) ?? '/messages/$conversation',
       'conversation_id': conversation,
@@ -237,16 +238,16 @@ class ChatNotifications {
                 ),
             ],
           ),
-          actions: const [
+          actions: [
             AndroidNotificationAction(
               'reply',
-              'Відповісти',
-              inputs: [AndroidNotificationActionInput(label: 'Повідомлення')],
+              tr('Відповісти'),
+              inputs: [AndroidNotificationActionInput(label: tr('Повідомлення'))],
               allowGeneratedReplies: true,
               cancelNotification: false,
               semanticAction: SemanticAction.reply,
             ),
-            AndroidNotificationAction('read', 'Прочитано', semanticAction: SemanticAction.markAsRead),
+            AndroidNotificationAction('read', tr('Прочитано'), semanticAction: SemanticAction.markAsRead),
           ],
         ),
       ),
@@ -286,9 +287,9 @@ class ChatNotifications {
     try {
       await api.post('/api/v1/messages/$conversation', {'body': reply});
       if (messageId != null) unawaited(api.post('/api/v1/messages/$conversation/read', {'message_id': messageId}).catchError((_) => <String, dynamic>{}));
-      await _remember(conversation, {'author': 'Ви', 'text': reply, 'me': true, 'at': DateTime.now().millisecondsSinceEpoch});
+      await _remember(conversation, {'author': tr('Ви'), 'text': reply, 'me': true, 'at': DateTime.now().millisecondsSinceEpoch});
     } catch (e) {
-      await _remember(conversation, {'author': 'GameCon', 'text': 'Не надіслано: $reply', 'at': DateTime.now().millisecondsSinceEpoch});
+      await _remember(conversation, {'author': 'GameCon', 'text': tr('Не надіслано: {reply}', {'reply': reply}), 'at': DateTime.now().millisecondsSinceEpoch});
     }
     await _render(conversation, data, alert: false);
     return true;
@@ -453,7 +454,7 @@ class Push {
     final target = '/messages/$conversation';
     if (_location != target) router.push(target);
     if (response.actionId == 'call_accept') {
-      final title = text(data['title']) ?? text(data['caller']) ?? 'Дзвінок';
+      final title = text(data['title']) ?? text(data['caller']) ?? tr('Дзвінок');
       unawaited(VoiceCall.instance.answer(session.api, call, conversation, title));
     }
     return true;

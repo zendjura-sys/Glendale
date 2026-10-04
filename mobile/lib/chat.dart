@@ -20,6 +20,7 @@ import 'theme.dart';
 import 'voice_note.dart';
 import 'voice_room.dart';
 import 'widgets.dart';
+import 'i18n.dart';
 
 // ───────────────────────── Список бесід ─────────────────────────
 
@@ -83,11 +84,11 @@ class _MessagesScreenState extends State<MessagesScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(children: [
-                Expanded(child: Text('Повідомлення', style: display(20))),
-                RoundIcon(icon: LucideIcons.squarePen, tooltip: 'Нове повідомлення', color: soft, onTap: () => showNewConversation(context)),
+                Expanded(child: Text(tr('Повідомлення'), style: display(20))),
+                RoundIcon(icon: LucideIcons.squarePen, tooltip: tr('Нове повідомлення'), color: soft, onTap: () => showNewConversation(context)),
               ]),
               const SizedBox(height: 12),
-              GcField(controller: query, label: 'Пошук', icon: LucideIcons.search, dense: true, onChanged: (_) => setState(() {})),
+              GcField(controller: query, label: tr('Пошук'), icon: LucideIcons.search, dense: true, onChanged: (_) => setState(() {})),
               const SizedBox(height: 8),
               if (loading)
                 const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)))
@@ -95,14 +96,14 @@ class _MessagesScreenState extends State<MessagesScreen> {
                 EmptyState(
                   boxed: false,
                   icon: LucideIcons.messageCircle,
-                  title: 'Повідомлень поки немає',
-                  text: 'Напишіть другу або створіть бесіду для своєї компанії.',
-                  action: 'Нове повідомлення',
+                  title: tr('Повідомлень поки немає'),
+                  text: tr('Напишіть другу або створіть бесіду для своєї компанії.'),
+                  action: tr('Нове повідомлення'),
                   actionIcon: LucideIcons.pencil,
                   onAction: () => showNewConversation(context),
                 )
               else if (shown.isEmpty)
-                const QuietEmpty(icon: LucideIcons.searchX, text: 'Нічого не знайдено')
+                QuietEmpty(icon: LucideIcons.searchX, text: tr('Нічого не знайдено'))
               else
                 for (final conversation in shown) _ConversationRow(conversation: conversation),
             ],
@@ -123,8 +124,8 @@ class _ConversationRow extends StatelessWidget {
     final peer = conversation['peer'] is Map ? mapOf(conversation['peer']) : null;
     final group = conversation['type'] == 'group';
     final unread = intOf(conversation['unread']);
-    final title = text(conversation['title']) ?? 'Бесіда';
-    final prefix = last == null ? '' : (last['is_own'] == true ? 'Ви: ' : (group && text(last['author']) != null ? '${last['author']}: ' : ''));
+    final title = text(conversation['title']) ?? tr('Бесіда');
+    final prefix = last == null ? '' : (last['is_own'] == true ? tr('Ви: ') : (group && text(last['author']) != null ? '${last['author']}: ' : ''));
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: () => context.push('/messages/${conversation['id']}'),
@@ -156,7 +157,7 @@ class _ConversationRow extends StatelessWidget {
                       child: Text.rich(
                         TextSpan(children: [
                           TextSpan(text: prefix, style: body(13, color: soft.withValues(alpha: 0.8))),
-                          TextSpan(text: text(last?['preview']) ?? 'Немає повідомлень'),
+                          TextSpan(text: text(last?['preview']) ?? tr('Немає повідомлень')),
                         ]),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -186,8 +187,8 @@ class _ConversationRow extends StatelessWidget {
 Future<void> showNewConversation(BuildContext context) async {
   final id = await showGcSheet<int>(
     context,
-    title: 'Нове повідомлення',
-    subtitle: 'Оберіть друга, якому хочете написати, або створіть груповий чат.',
+    title: tr('Нове повідомлення'),
+    subtitle: tr('Оберіть друга, якому хочете написати, або створіть груповий чат.'),
     height: MediaQuery.sizeOf(context).height * 0.82,
     builder: (sheet) => _NewConversation(onOpen: (id) => Navigator.pop(sheet, id)),
   );
@@ -267,17 +268,17 @@ class _NewConversationState extends State<_NewConversation> {
     final q = query.text.trim().toLowerCase();
     final shown = friends.where((f) => q.isEmpty || '${f['name']} ${f['username']}'.toLowerCase().contains(q)).toList();
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+      padding: EdgeInsets.fromLTRB(16, 4, 16, 16),
       child: Column(
         children: [
           Segmented(
-            options: const [SegmentOption('direct', 'Повідомлення', icon: LucideIcons.messageCircle), SegmentOption('group', 'Нова бесіда', icon: LucideIcons.usersRound)],
+            options: [SegmentOption('direct', tr('Повідомлення'), icon: LucideIcons.messageCircle), SegmentOption('group', tr('Нова бесіда'), icon: LucideIcons.usersRound)],
             selected: mode,
             onSelect: (value) => setState(() => mode = value),
           ),
           const SizedBox(height: 12),
           if (mode == 'group') ...[
-            GcField(controller: title, label: 'Назва бесіди', dense: true, onChanged: (_) => setState(() {})),
+            GcField(controller: title, label: tr('Назва бесіди'), dense: true, onChanged: (_) => setState(() {})),
             if (picked.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 10),
@@ -297,13 +298,13 @@ class _NewConversationState extends State<_NewConversation> {
               ),
             const SizedBox(height: 10),
           ],
-          GcField(controller: query, label: 'Пошук серед друзів', icon: LucideIcons.search, dense: true, onChanged: (_) => setState(() {})),
+          GcField(controller: query, label: tr('Пошук серед друзів'), icon: LucideIcons.search, dense: true, onChanged: (_) => setState(() {})),
           const SizedBox(height: 8),
           Expanded(
             child: loading
                 ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
                 : shown.isEmpty
-                    ? const QuietEmpty(icon: LucideIcons.usersRound, text: 'Друзів не знайдено. Писати можна друзям і тим, хто приймає повідомлення від усіх.')
+                    ? QuietEmpty(icon: LucideIcons.usersRound, text: tr('Друзів не знайдено. Писати можна друзям і тим, хто приймає повідомлення від усіх.'))
                     : ListView(
                         children: [
                           for (final user in shown)
@@ -327,7 +328,7 @@ class _NewConversationState extends State<_NewConversation> {
                       ),
           ),
           if (mode == 'group')
-            PrimaryButton(label: 'Створити бесіду', busy: busy, onPressed: title.text.trim().isNotEmpty && picked.isNotEmpty ? _group : null),
+            PrimaryButton(label: tr('Створити бесіду'), busy: busy, onPressed: title.text.trim().isNotEmpty && picked.isNotEmpty ? _group : null),
         ],
       ),
     );
@@ -532,7 +533,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final ok = await recorder.start();
     if (!mounted) return;
     if (!ok) {
-      toast(context, 'Дозвольте доступ до мікрофона в налаштуваннях, щоб записувати голосові.');
+      toast(context, tr('Дозвольте доступ до мікрофона в налаштуваннях, щоб записувати голосові.'));
       return;
     }
     // Палець відпустили, поки система питала дозвіл.
@@ -551,7 +552,7 @@ class _ChatScreenState extends State<ChatScreen> {
     drag = Offset.zero;
     if (!send || tooShort) {
       await recorder.cancel();
-      if (send && tooShort && mounted) toast(context, 'Утримуйте мікрофон, щоб записати голосове.');
+      if (send && tooShort && mounted) toast(context, tr('Утримуйте мікрофон, щоб записати голосове.'));
       return;
     }
     final note = await recorder.finish();
@@ -637,7 +638,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (!known) await _older();
       await WidgetsBinding.instance.endOfFrame;
     }
-    if (mounted) toast(context, 'Повідомлення не знайдено.');
+    if (mounted) toast(context, tr('Повідомлення не знайдено.'));
   }
 
   Future<void> _attach() async {
@@ -646,9 +647,9 @@ class _ChatScreenState extends State<ChatScreen> {
       builder: (sheet) => Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          _AttachOption(icon: LucideIcons.image, color: const Color(0xFF38BDF8), title: 'Фото', subtitle: 'JPG, PNG, WebP, GIF', onTap: () => Navigator.pop(sheet, 'photo')),
-          _AttachOption(icon: LucideIcons.file, color: violet, title: 'Файл', subtitle: 'до 50 МБ', onTap: () => Navigator.pop(sheet, 'file')),
-          _AttachOption(icon: LucideIcons.userRound, color: const Color(0xFF2DD4BF), title: 'Контакт', subtitle: 'Пошук на GameCon', onTap: () => Navigator.pop(sheet, 'contact')),
+          _AttachOption(icon: LucideIcons.image, color: Color(0xFF38BDF8), title: tr('Фото'), subtitle: 'JPG, PNG, WebP, GIF', onTap: () => Navigator.pop(sheet, 'photo')),
+          _AttachOption(icon: LucideIcons.file, color: violet, title: tr('Файл'), subtitle: tr('до 50 МБ'), onTap: () => Navigator.pop(sheet, 'file')),
+          _AttachOption(icon: LucideIcons.userRound, color: Color(0xFF2DD4BF), title: tr('Контакт'), subtitle: tr('Пошук на GameCon'), onTap: () => Navigator.pop(sheet, 'contact')),
         ]),
       ),
     );
@@ -669,7 +670,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<Map<String, dynamic>?> _pickContact() {
     return showGcSheet<Map<String, dynamic>>(
       context,
-      title: 'Надіслати контакт',
+      title: tr('Надіслати контакт'),
       height: MediaQuery.sizeOf(context).height * 0.7,
       builder: (sheet) => _ContactPicker(onPick: (user) => Navigator.pop(sheet, user)),
     );
@@ -699,13 +700,14 @@ class _ChatScreenState extends State<ChatScreen> {
     final choice = await showGcSheet<String>(
       context,
       builder: (sheet) => Padding(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+        padding: EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          SheetAction(icon: LucideIcons.reply, label: 'Відповісти', onTap: () => Navigator.pop(sheet, 'reply')),
-          if (hasText) SheetAction(icon: LucideIcons.copy, label: 'Копіювати текст', onTap: () => Navigator.pop(sheet, 'copy')),
-          if (own && hasText && message['type'] == 'text') SheetAction(icon: LucideIcons.pencil, label: 'Редагувати', onTap: () => Navigator.pop(sheet, 'edit')),
-          if (own) SheetAction(icon: LucideIcons.trash2, label: 'Видалити', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
-          if (!own) SheetAction(icon: LucideIcons.flag, label: 'Поскаржитися', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'report')),
+          SheetAction(icon: LucideIcons.reply, label: tr('Відповісти'), onTap: () => Navigator.pop(sheet, 'reply')),
+          if (hasText) SheetAction(icon: LucideIcons.copy, label: tr('Копіювати текст'), onTap: () => Navigator.pop(sheet, 'copy')),
+          if (own && hasText && message['type'] == 'text') SheetAction(icon: LucideIcons.pencil, label: tr('Редагувати'), onTap: () => Navigator.pop(sheet, 'edit')),
+          if (own) SheetAction(icon: LucideIcons.trash2, label: tr('Видалити'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
+          if (!own && hasText && I18n.translate) SheetAction(icon: LucideIcons.languages, label: tr('Перекласти'), onTap: () => Navigator.pop(sheet, 'translate')),
+          if (!own) SheetAction(icon: LucideIcons.flag, label: tr('Поскаржитися'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'report')),
         ]),
       ),
     );
@@ -715,7 +717,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _reply(message);
       case 'copy':
         await Clipboard.setData(ClipboardData(text: text(message['body']) ?? ''));
-        if (mounted) toast(context, 'Скопійовано.');
+        if (mounted) toast(context, tr('Скопійовано.'));
       case 'edit':
         setState(() {
           replyTo = null;
@@ -724,19 +726,43 @@ class _ChatScreenState extends State<ChatScreen> {
         });
         focus.requestFocus();
       case 'delete':
-        if (!await confirm(context, 'Видалити повідомлення?', text: 'Його не побачить ніхто з учасників.', action: 'Видалити', danger: true)) return;
+        if (!await confirm(context, tr('Видалити повідомлення?'), text: tr('Його не побачить ніхто з учасників.'), action: tr('Видалити'), danger: true)) return;
         if (!mounted) return;
         if (await attempt(context, () => api.delete(Api.site('/messages/${widget.id}/messages/${message['id']}')))) {
           setState(() => messages.removeWhere((m) => m['id'] == message['id']));
         }
       case 'report':
         await _report(message);
+      case 'translate':
+        await _translate(message);
+    }
+  }
+
+  /// Переклад повідомлення мовою інтерфейсу (DeepL, кешується на сервері).
+  Future<void> _translate(Map<String, dynamic> message) async {
+    try {
+      final result = await api.post('/api/v1/translate', {'type': 'message', 'id': message['id']});
+      if (!mounted) return;
+      if (result['same'] == true) {
+        toast(context, tr('Текст уже вашою мовою.'));
+        return;
+      }
+      await showGcSheet<void>(
+        context,
+        title: tr('Переклад'),
+        builder: (sheet) => Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          child: SelectableText(text(result['translation']) ?? '', style: body(15, color: ink).copyWith(height: 1.45)),
+        ),
+      );
+    } catch (e) {
+      if (mounted) toast(context, e);
     }
   }
 
   /// Скарга на повідомлення — потрапляє в Адмінку → Модерація (а в чаті сім’ї — ще й керівництву).
   Future<void> _report(Map<String, dynamic> message) async {
-    const reasons = [('spam', 'Спам або реклама'), ('abuse', 'Образи чи мат'), ('scam', 'Шахрайство'), ('other', 'Інше')];
+    final reasons = [('spam', tr('Спам або реклама')), ('abuse', tr('Образи чи мат')), ('scam', tr('Шахрайство')), ('other', tr('Інше'))];
     final reason = await showGcSheet<String>(
       context,
       builder: (sheet) => Padding(
@@ -750,13 +776,13 @@ class _ChatScreenState extends State<ChatScreen> {
     await attempt(
       context,
       () => api.post(Api.site('/messages/${widget.id}/messages/${message['id']}/report'), {'reason': reason}),
-      success: 'Дякуємо! Скаргу надіслано модераторам.',
+      success: tr('Дякуємо! Скаргу надіслано модераторам.'),
     );
   }
 
   Future<void> _toggleMute() async {
     final next = conversation?['is_muted'] != true;
-    if (await attempt(context, () => api.post('/api/v1/messages/${widget.id}/mute', {'muted': next}), success: next ? 'Сповіщення вимкнено.' : 'Сповіщення увімкнено.')) {
+    if (await attempt(context, () => api.post('/api/v1/messages/${widget.id}/mute', {'muted': next}), success: next ? tr('Сповіщення вимкнено.') : tr('Сповіщення увімкнено.'))) {
       setState(() => conversation?['is_muted'] = next);
     }
   }
@@ -766,7 +792,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final chat = conversation;
     if (chat == null) {
       return error != null
-          ? Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.messageCircle, title: 'Бесіда недоступна', text: '$error', action: 'Назад', onAction: () => context.go('/messages'))))
+          ? Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.messageCircle, title: tr('Бесіда недоступна'), text: '$error', action: tr('Назад'), onAction: () => context.go('/messages'))))
           : const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
     }
     final group = chat['type'] == 'group';
@@ -775,7 +801,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final reversed = messages.reversed.toList();
     final subtitle = group
         ? '${chat['members_count']} ${plural(intOf(chat['members_count']), 'учасник', 'учасники', 'учасників')}'
-        : (peer?['is_online'] == true ? 'онлайн' : (text(peer?['last_seen_at']) != null ? 'був(-ла) ${ago(peer?['last_seen_at'])}' : ''));
+        : (peer?['is_online'] == true ? tr('онлайн') : (text(peer?['last_seen_at']) != null ? tr('був(-ла) {v}', {'v': ago(peer?['last_seen_at'])}) : ''));
 
     return Padding(
       padding: EdgeInsets.fromLTRB(10, siteHeaderInset(context) + 4, 10, 0),
@@ -798,7 +824,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(text(chat['title']) ?? 'Бесіда', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w700)),
+                          Text(text(chat['title']) ?? tr('Бесіда'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w700)),
                           if (subtitle.isNotEmpty) Text(subtitle, style: body(12, color: peer?['is_online'] == true ? green : muted)),
                         ]),
                       ),
@@ -806,12 +832,12 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ),
                 IconButton(
-                  tooltip: chat['is_muted'] == true ? 'Увімкнути сповіщення' : 'Вимкнути сповіщення',
+                  tooltip: chat['is_muted'] == true ? tr('Увімкнути сповіщення') : tr('Вимкнути сповіщення'),
                   onPressed: _toggleMute,
                   icon: Icon(chat['is_muted'] == true ? LucideIcons.bellOff : LucideIcons.bell, color: muted),
                 ),
                 IconButton(
-                  tooltip: 'Слухати музику разом',
+                  tooltip: tr('Слухати музику разом'),
                   onPressed: () => startListening(context, trackId: AppScope.read(context).player.current?.id, conversationId: widget.id),
                   icon: const Icon(LucideIcons.headphones, color: muted),
                 ),
@@ -823,7 +849,7 @@ class _ChatScreenState extends State<ChatScreen> {
             _CallBanner(chat: chat, conversation: widget.id),
             Expanded(
               child: messages.isEmpty
-                  ? const QuietEmpty(icon: LucideIcons.hand, text: 'Напишіть перше повідомлення')
+                  ? QuietEmpty(icon: LucideIcons.hand, text: tr('Напишіть перше повідомлення'))
                   : ListView.builder(
                       controller: scroll,
                       reverse: true,
@@ -858,7 +884,7 @@ class _ChatScreenState extends State<ChatScreen> {
             if (chat['can_write'] == false)
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('Ви не можете написати цьому користувачу.', textAlign: TextAlign.center, style: body(13, color: muted)),
+                child: Text(tr('Ви не можете написати цьому користувачу.'), textAlign: TextAlign.center, style: body(13, color: muted)),
               )
             else
               _composer(),
@@ -875,9 +901,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _composer() {
     final banner = editing != null
-        ? ('Редагування', text(editing!['body']) ?? '', LucideIcons.pencil)
+        ? (tr('Редагування'), text(editing!['body']) ?? '', LucideIcons.pencil)
         : replyTo != null
-            ? ('Відповідь ${text(mapOf(replyTo!['user'])['first_name']) ?? ''}', text(replyTo!['preview']) ?? '', LucideIcons.reply)
+            ? (tr('Відповідь {v}', {'v': text(mapOf(replyTo!['user'])['first_name']) ?? ''}), text(replyTo!['preview']) ?? '', LucideIcons.reply)
             : null;
     return Container(
       padding: EdgeInsets.fromLTRB(8, 6, 8, 8 + ShellChrome.bottomOf(context)),
@@ -944,7 +970,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 child: recorder.active
                     ? _recordingBar()
                     : Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                        if (editing == null) RoundIcon(icon: LucideIcons.paperclip, onTap: _attach, color: soft, tooltip: 'Вкладення'),
+                        if (editing == null) RoundIcon(icon: LucideIcons.paperclip, onTap: _attach, color: soft, tooltip: tr('Вкладення')),
                         const SizedBox(width: 4),
                         Expanded(child: _field()),
                       ]),
@@ -961,14 +987,14 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _trailing() {
     final empty = input.text.trim().isEmpty && images.isEmpty && files.isEmpty;
     if (recorder.active && locked) {
-      return RoundIcon(icon: LucideIcons.send, onTap: sending ? null : () => _stopVoice(send: true), filled: true, size: 44, tooltip: 'Надіслати голосове');
+      return RoundIcon(icon: LucideIcons.send, onTap: sending ? null : () => _stopVoice(send: true), filled: true, size: 44, tooltip: tr('Надіслати голосове'));
     }
     if (editing != null || !empty) {
       return RoundIcon(icon: editing != null ? LucideIcons.check : LucideIcons.send, onTap: sending || empty ? null : _send, filled: true, size: 44);
     }
     final recording = recorder.active;
     return Tooltip(
-      message: 'Утримуйте, щоб записати голосове',
+      message: tr('Утримуйте, щоб записати голосове'),
       child: GestureDetector(
         onTap: sending ? null : () => _startVoice(hold: false),
         onLongPressStart: sending ? null : (_) => _startVoice(hold: true),
@@ -1005,7 +1031,7 @@ class _ChatScreenState extends State<ChatScreen> {
         if (locked)
           IconButton(
             visualDensity: VisualDensity.compact,
-            tooltip: 'Скасувати',
+            tooltip: tr('Скасувати'),
             onPressed: () => _stopVoice(send: false),
             icon: const Icon(LucideIcons.trash2, size: 19, color: dangerSoft),
           )
@@ -1030,7 +1056,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   opacity: cancelHint,
                   child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                     const Icon(LucideIcons.chevronLeft, size: 16, color: muted),
-                    Flexible(child: Text('Вліво — скасувати', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted))),
+                    Flexible(child: Text(tr('Вліво — скасувати'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted))),
                     const SizedBox(width: 8),
                     const Icon(LucideIcons.lock, size: 14, color: faint),
                     const Icon(LucideIcons.chevronUp, size: 14, color: faint),
@@ -1052,7 +1078,7 @@ class _ChatScreenState extends State<ChatScreen> {
       onChanged: (_) => setState(() {}),
       style: body(16),
       decoration: InputDecoration(
-        hintText: 'Напишіть повідомлення…',
+        hintText: tr('Напишіть повідомлення…'),
         hintStyle: body(14.5, color: faint),
         filled: true,
         fillColor: field,
@@ -1073,7 +1099,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (chat == null || chat['type'] != 'group') return;
     await showGcSheet<void>(
       context,
-      title: text(chat['title']) ?? 'Бесіда',
+      title: text(chat['title']) ?? tr('Бесіда'),
       subtitle: '${chat['members_count']} ${plural(intOf(chat['members_count']), 'учасник', 'учасники', 'учасників')}',
       height: MediaQuery.sizeOf(context).height * 0.8,
       builder: (sheet) => _GroupInfo(
@@ -1151,9 +1177,9 @@ class _DayLabel extends StatelessWidget {
     if (date == null) return const SizedBox.shrink();
     final now = DateTime.now();
     final label = DateUtils.isSameDay(date, now)
-        ? 'Сьогодні'
+        ? tr('Сьогодні')
         : DateUtils.isSameDay(date, now.subtract(const Duration(days: 1)))
-            ? 'Вчора'
+            ? tr('Вчора')
             : '${date.day} ${monthsGenitive[date.month - 1]}${date.year == now.year ? '' : ' ${date.year}'}';
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -1305,7 +1331,7 @@ class _Bubble extends StatelessWidget {
     final reply = message['reply_to'] is Map ? mapOf(message['reply_to']) : null;
     final bodyText = text(message['body']);
     final meta = Row(mainAxisSize: MainAxisSize.min, children: [
-      if (message['edited_at'] != null) Text('ред. ', style: body(10.5, color: own ? Colors.white60 : faint)),
+      if (message['edited_at'] != null) Text(tr('ред. '), style: body(10.5, color: own ? Colors.white60 : faint)),
       Text(clock(message['created_at']), style: body(10.5, color: own ? Colors.white70 : faint)),
       if (own) ...[const SizedBox(width: 3), Icon(read ? LucideIcons.checkCheck : LucideIcons.check, size: 14, color: Colors.white70)],
     ]);
@@ -1335,7 +1361,7 @@ class _Bubble extends StatelessWidget {
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(text(reply['author']) ?? '', style: body(11.5, color: own ? Colors.white : const Color(0xFF9AA8FF), weight: FontWeight.w700)),
-                Text(reply['deleted'] == true ? 'Повідомлення видалено' : (text(reply['preview']) ?? ''), maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12, color: own ? Colors.white70 : muted)),
+                Text(reply['deleted'] == true ? tr('Повідомлення видалено') : (text(reply['preview']) ?? ''), maxLines: 2, overflow: TextOverflow.ellipsis, style: body(12, color: own ? Colors.white70 : muted)),
               ]),
             ),
           ),
@@ -1409,7 +1435,7 @@ class _FileChip extends StatelessWidget {
     try {
       final bytes = await api.bytes('/api/v1/messages/attachments/${file['id']}');
       final saved = await FilePicker.platform.saveFile(fileName: text(file['name']) ?? 'file', bytes: Uint8List.fromList(bytes));
-      if (saved != null && context.mounted) toast(context, 'Файл збережено.');
+      if (saved != null && context.mounted) toast(context, tr('Файл збережено.'));
     } catch (e) {
       if (context.mounted) toast(context, e);
     }
@@ -1418,7 +1444,7 @@ class _FileChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = intOf(file['size']);
-    final label = size > 1024 * 1024 ? '${(size / 1024 / 1024).toStringAsFixed(1)} МБ' : '${(size / 1024).ceil()} КБ';
+    final label = size > 1024 * 1024 ? tr('{v} МБ', {'v': (size / 1024 / 1024).toStringAsFixed(1)}) : tr('{v} КБ', {'v': (size / 1024).ceil()});
     return GestureDetector(
       onTap: () => _save(context),
       child: Container(
@@ -1435,7 +1461,7 @@ class _FileChip extends StatelessWidget {
           const SizedBox(width: 10),
           Flexible(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(text(file['name']) ?? 'Файл', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, weight: FontWeight.w600)),
+              Text(text(file['name']) ?? tr('Файл'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, weight: FontWeight.w600)),
               Text(label, style: body(11.5, color: own ? Colors.white70 : muted)),
             ]),
           ),
@@ -1491,7 +1517,7 @@ class _VoiceClipState extends State<_VoiceClip> {
         // Наступне натискання пробує ще раз з новим програвачем.
         player = null;
         await audio.dispose();
-        if (mounted) toast(context, 'Не вдалося відтворити запис.');
+        if (mounted) toast(context, tr('Не вдалося відтворити запис.'));
         return;
       }
     }
@@ -1588,7 +1614,7 @@ class _ContactPickerState extends State<_ContactPicker> {
       child: Column(children: [
         GcField(
           controller: query,
-          label: 'Пошук на GameCon',
+          label: tr('Пошук на GameCon'),
           icon: LucideIcons.search,
           dense: true,
           onChanged: (_) {
@@ -1599,7 +1625,7 @@ class _ContactPickerState extends State<_ContactPicker> {
         const SizedBox(height: 8),
         Expanded(
           child: users.isEmpty
-              ? const QuietEmpty(icon: LucideIcons.userRoundSearch, text: 'Введіть ім’я або нікнейм')
+              ? QuietEmpty(icon: LucideIcons.userRoundSearch, text: tr('Введіть ім’я або нікнейм'))
               : ListView(children: [for (final user in users) UserTile(user: user, onTap: () => widget.onPick(user))]),
         ),
       ]),
@@ -1642,8 +1668,8 @@ class _StickerPickerState extends State<_StickerPicker> {
         Segmented(
           scroll: true,
           options: [
-            const SegmentOption('emoji', 'Емодзі'),
-            for (final p in packs) SegmentOption('pack-${p['id']}', text(p['name']) ?? 'Стікери'),
+            SegmentOption('emoji', tr('Емодзі')),
+            for (final p in packs) SegmentOption('pack-${p['id']}', text(p['name']) ?? tr('Стікери')),
           ],
           selected: tab,
           onSelect: (value) => setState(() => tab = value),
@@ -1694,7 +1720,7 @@ class _GroupInfoState extends State<_GroupInfo> {
   Api get api => AppScope.read(context).session.api;
 
   Future<void> _rename() async {
-    final next = await askText(context, 'Назва бесіди', initial: title);
+    final next = await askText(context, tr('Назва бесіди'), initial: title);
     if (next == null || next.isEmpty || !mounted) return;
     if (await attempt(context, () => api.post(Api.site('/messages/$id/settings'), {'title': next}))) {
       setState(() => title = next);
@@ -1707,7 +1733,7 @@ class _GroupInfoState extends State<_GroupInfo> {
     if (picked == null || !mounted) return;
     final file = await http.MultipartFile.fromPath('avatar', picked.path, filename: picked.name);
     if (!mounted) return;
-    if (await attempt(context, () => api.upload(Api.site('/messages/$id/settings'), {}, [file]), success: 'Фото бесіди оновлено.')) await widget.onChanged();
+    if (await attempt(context, () => api.upload(Api.site('/messages/$id/settings'), {}, [file]), success: tr('Фото бесіди оновлено.'))) await widget.onChanged();
   }
 
   Future<void> _add() async {
@@ -1718,7 +1744,7 @@ class _GroupInfoState extends State<_GroupInfo> {
     final chosen = <Map<String, dynamic>>{};
     final ok = await showGcSheet<bool>(
       context,
-      title: 'Додати учасників',
+      title: tr('Додати учасників'),
       height: MediaQuery.sizeOf(context).height * 0.7,
       builder: (sheet) => StatefulBuilder(
         builder: (context, set) => Padding(
@@ -1726,7 +1752,7 @@ class _GroupInfoState extends State<_GroupInfo> {
           child: Column(children: [
             Expanded(
               child: candidates.isEmpty
-                  ? const QuietEmpty(icon: LucideIcons.usersRound, text: 'Усі ваші друзі вже в бесіді')
+                  ? QuietEmpty(icon: LucideIcons.usersRound, text: tr('Усі ваші друзі вже в бесіді'))
                   : ListView(children: [
                       for (final user in candidates)
                         UserTile(
@@ -1736,7 +1762,7 @@ class _GroupInfoState extends State<_GroupInfo> {
                         ),
                     ]),
             ),
-            PrimaryButton(label: 'Додати', onPressed: chosen.isEmpty ? null : () => Navigator.pop(sheet, true)),
+            PrimaryButton(label: tr('Додати'), onPressed: chosen.isEmpty ? null : () => Navigator.pop(sheet, true)),
           ]),
         ),
       ),
@@ -1751,7 +1777,7 @@ class _GroupInfoState extends State<_GroupInfo> {
 
   Future<void> _remove(Map<String, dynamic> member) async {
     final self = intOf(member['id']) == widget.myId;
-    if (!await confirm(context, self ? 'Вийти з бесіди?' : 'Видалити ${member['name']} з бесіди?', action: self ? 'Вийти' : 'Видалити', danger: true)) return;
+    if (!await confirm(context, self ? tr('Вийти з бесіди?') : tr('Видалити {v} з бесіди?', {'v': member['name']}), action: self ? tr('Вийти') : tr('Видалити'), danger: true)) return;
     if (!mounted) return;
     if (await attempt(context, () => api.delete(Api.site('/messages/$id/members/${member['username']}')))) {
       if (self) return widget.onLeft();
@@ -1768,19 +1794,19 @@ class _GroupInfoState extends State<_GroupInfo> {
       children: [
         if (manager)
           Row(children: [
-            Expanded(child: GhostButton(label: 'Назва', icon: LucideIcons.pencil, compact: true, onPressed: _rename)),
+            Expanded(child: GhostButton(label: tr('Назва'), icon: LucideIcons.pencil, compact: true, onPressed: _rename)),
             const SizedBox(width: 8),
-            Expanded(child: GhostButton(label: 'Фото', icon: LucideIcons.camera, compact: true, onPressed: _photo)),
+            Expanded(child: GhostButton(label: tr('Фото'), icon: LucideIcons.camera, compact: true, onPressed: _photo)),
             const SizedBox(width: 8),
-            Expanded(child: PrimaryButton(label: 'Додати', icon: LucideIcons.userRoundPlus, compact: true, onPressed: _add)),
+            Expanded(child: PrimaryButton(label: tr('Додати'), icon: LucideIcons.userRoundPlus, compact: true, onPressed: _add)),
           ]),
         const SizedBox(height: 10),
         for (final member in members)
           UserTile(
             user: member,
             subtitle: switch (member['role']) {
-              'owner' => 'Власник',
-              'admin' => 'Адміністратор',
+              'owner' => tr('Власник'),
+              'admin' => tr('Адміністратор'),
               _ => '@${member['username']}',
             },
             trailing: manager && intOf(member['id']) != widget.myId && member['role'] != 'owner'
@@ -1788,7 +1814,7 @@ class _GroupInfoState extends State<_GroupInfo> {
                 : null,
           ),
         const SizedBox(height: 12),
-        if (me != null) DangerButton(label: 'Вийти з бесіди', icon: LucideIcons.logOut, expand: true, onPressed: () => _remove(me)),
+        if (me != null) DangerButton(label: tr('Вийти з бесіди'), icon: LucideIcons.logOut, expand: true, onPressed: () => _remove(me)),
       ],
     );
   }
@@ -1810,10 +1836,10 @@ class _CallButton extends StatelessWidget {
         final canCall = chat['can_call'] == true && chat['calls_enabled'] == true;
         if (!here && !canCall) return const SizedBox.shrink();
         return IconButton(
-          tooltip: here ? 'Покласти слухавку' : (chat['call'] is Map ? 'Приєднатися до дзвінка' : 'Зателефонувати'),
+          tooltip: here ? tr('Покласти слухавку') : (chat['call'] is Map ? tr('Приєднатися до дзвінка') : tr('Зателефонувати')),
           onPressed: () => here
               ? voice.leave()
-              : voice.call(AppScope.read(context).session.api, conversation, text(chat['title']) ?? 'Дзвінок', onError: (e) {
+              : voice.call(AppScope.read(context).session.api, conversation, text(chat['title']) ?? tr('Дзвінок'), onError: (e) {
                   if (context.mounted) toast(context, e);
                 }),
           icon: Icon(here ? LucideIcons.phoneOff : LucideIcons.phone, color: here ? danger : muted),
@@ -1856,11 +1882,11 @@ class _CallBanner extends StatelessWidget {
             ),
             if (canCall)
               TextButton(
-                onPressed: () => voice.call(AppScope.read(context).session.api, conversation, text(chat['title']) ?? 'Дзвінок', onError: (e) {
+                onPressed: () => voice.call(AppScope.read(context).session.api, conversation, text(chat['title']) ?? tr('Дзвінок'), onError: (e) {
                   if (context.mounted) toast(context, e);
                 }),
                 style: TextButton.styleFrom(backgroundColor: green, foregroundColor: Colors.white, minimumSize: const Size(0, 34), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                child: Text('Приєднатися', style: body(13, color: Colors.white, weight: FontWeight.w700)),
+                child: Text(tr('Приєднатися'), style: body(13, color: Colors.white, weight: FontWeight.w700)),
               ),
           ]),
         );

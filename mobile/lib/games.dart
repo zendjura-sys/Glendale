@@ -11,8 +11,9 @@ import 'events.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'i18n.dart';
 
-const _categories = [('', 'Усі'), ('pc', 'ПК'), ('mobile', 'Мобільні'), ('console', 'Консолі')];
+final _categories = [('', tr('Усі')), ('pc', tr('ПК')), ('mobile', tr('Мобільні')), ('console', tr('Консолі'))];
 
 /// Обкладинка гри або заглушка з іконкою.
 class GameCover extends StatelessWidget {
@@ -130,22 +131,22 @@ class _GamesScreenState extends State<GamesScreen> {
       onRefresh: _load,
       children: [
         HeroCard(
-          badge: 'МУЛЬТИПЛЕЄР',
-          title: 'Каталог',
-          accent: 'ігор',
-          text: 'ПК, мобільні й консольні ігри для гри разом. Каталог поповнюється автоматично; у кожної гри — пряме посилання й клани.',
+          badge: tr('МУЛЬТИПЛЕЄР'),
+          title: tr('Каталог'),
+          accent: tr('ігор'),
+          text: tr('ПК, мобільні й консольні ігри для гри разом. Каталог поповнюється автоматично; у кожної гри — пряме посилання й клани.'),
           children: [
             Row(children: [
-              Expanded(child: MetricTile(label: 'Ігор у каталозі', value: compact(total))),
+              Expanded(child: MetricTile(label: tr('Ігор у каталозі'), value: compact(total))),
               const SizedBox(width: 8),
               Expanded(
-                child: GhostButton(label: 'Клани', icon: LucideIcons.swords, compact: true, onPressed: () => context.push('/clans')),
+                child: GhostButton(label: tr('Клани'), icon: LucideIcons.swords, compact: true, onPressed: () => context.push('/clans')),
               ),
             ]),
             const SizedBox(height: 12),
             GcField(
               controller: query,
-              label: 'Пошук гри',
+              label: tr('Пошук гри'),
               icon: LucideIcons.search,
               dense: true,
               onChanged: (_) {
@@ -198,7 +199,7 @@ class _GamesScreenState extends State<GamesScreen> {
                 child: GcSelect<String>(
                   value: genre ?? '',
                   expand: true,
-                  items: [('', 'Усі жанри'), for (final g in genres) (g, g)],
+                  items: [('', tr('Усі жанри')), for (final g in genres) (g, g)],
                   onChanged: (value) {
                     setState(() => genre = (value ?? '').isEmpty ? null : value);
                     _load();
@@ -234,7 +235,7 @@ class _GamesScreenState extends State<GamesScreen> {
           ),
         const SizedBox(height: 12),
         if (games.isEmpty && !loading)
-          const EmptyState(icon: LucideIcons.gamepad2, title: 'Нічого не знайдено', text: 'Спробуйте іншу назву або букву.')
+          EmptyState(icon: LucideIcons.gamepad2, title: tr('Нічого не знайдено'), text: tr('Спробуйте іншу назву або букву.'))
         else
           for (final g in games)
             Padding(
@@ -258,7 +259,7 @@ class _GamesScreenState extends State<GamesScreen> {
               ),
             ),
         if (page < last) const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4))),
-        const Padding(padding: EdgeInsets.only(top: 8), child: Text('Дані про ігри: IGDB і RAWG', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: faint))),
+        Padding(padding: EdgeInsets.only(top: 8), child: Text(tr('Дані про ігри: IGDB і RAWG'), textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: faint))),
       ],
     );
   }
@@ -328,34 +329,34 @@ class GameScreen extends StatelessWidget {
         final artwork = _strings(d['artworks']).firstOrNull;
 
         final mpRows = <(String, String)>[
-          if (intOf(mp['online_max']) > 0) ('Онлайн', 'до ${mp['online_max']} гравців'),
-          if (intOf(mp['online_coop_max']) > 0) ('Онлайн-кооператив', 'до ${mp['online_coop_max']}'),
-          if (intOf(mp['offline_max']) > 0) ('На одному пристрої', 'до ${mp['offline_max']}'),
-          if (intOf(mp['offline_coop_max']) > 0) ('Локальний кооператив', 'до ${mp['offline_coop_max']}'),
+          if (intOf(mp['online_max']) > 0) (tr('Онлайн'), tr('до {v} гравців', {'v': mp['online_max']})),
+          if (intOf(mp['online_coop_max']) > 0) (tr('Онлайн-кооператив'), tr('до {v}', {'v': mp['online_coop_max']})),
+          if (intOf(mp['offline_max']) > 0) (tr('На одному пристрої'), tr('до {v}', {'v': mp['offline_max']})),
+          if (intOf(mp['offline_coop_max']) > 0) (tr('Локальний кооператив'), tr('до {v}', {'v': mp['offline_coop_max']})),
         ];
         final mpFlags = [
-          if (mp['online_coop'] == true) 'Онлайн-кооператив',
-          if (mp['offline_coop'] == true) 'Локальний кооператив',
-          if (mp['campaign_coop'] == true) 'Сюжет у кооперативі',
+          if (mp['online_coop'] == true) tr('Онлайн-кооператив'),
+          if (mp['offline_coop'] == true) tr('Локальний кооператив'),
+          if (mp['campaign_coop'] == true) tr('Сюжет у кооперативі'),
           if (mp['lan'] == true) 'LAN',
-          if (mp['split_screen'] == true) 'Розділений екран',
-          if (mp['drop_in'] == true) 'Вхід посеред гри',
+          if (mp['split_screen'] == true) tr('Розділений екран'),
+          if (mp['drop_in'] == true) tr('Вхід посеред гри'),
         ];
         final about = <(String, String)>[
-          if (_strings(d['developers']).isNotEmpty) ('Розробник', _strings(d['developers']).join(', ')),
-          if (_strings(d['publishers']).isNotEmpty) ('Видавець', _strings(d['publishers']).join(', ')),
-          if (text(game['released']) != null) ('Вихід', _date(game['released'])),
-          if (_strings(d['engines']).isNotEmpty) ('Рушій', _strings(d['engines']).join(', ')),
-          if (_strings(d['franchises']).isNotEmpty) ('Серія', _strings(d['franchises']).join(', ')),
-          if (_strings(d['perspectives']).isNotEmpty) ('Камера', _strings(d['perspectives']).join(', ')),
-          if (_strings(d['themes']).isNotEmpty) ('Теми', _strings(d['themes']).join(', ')),
+          if (_strings(d['developers']).isNotEmpty) (tr('Розробник'), _strings(d['developers']).join(', ')),
+          if (_strings(d['publishers']).isNotEmpty) (tr('Видавець'), _strings(d['publishers']).join(', ')),
+          if (text(game['released']) != null) (tr('Вихід'), _date(game['released'])),
+          if (_strings(d['engines']).isNotEmpty) (tr('Рушій'), _strings(d['engines']).join(', ')),
+          if (_strings(d['franchises']).isNotEmpty) (tr('Серія'), _strings(d['franchises']).join(', ')),
+          if (_strings(d['perspectives']).isNotEmpty) (tr('Камера'), _strings(d['perspectives']).join(', ')),
+          if (_strings(d['themes']).isNotEmpty) (tr('Теми'), _strings(d['themes']).join(', ')),
           if (beat.isNotEmpty)
-            ('Проходження', [
-              if (beat['hastily'] != null) 'швидко ${beat['hastily']} год',
-              if (beat['normally'] != null) 'зазвичай ${beat['normally']} год',
-              if (beat['completely'] != null) 'на 100% ${beat['completely']} год',
+            (tr('Проходження'), [
+              if (beat['hastily'] != null) tr('швидко {v} год', {'v': beat['hastily']}),
+              if (beat['normally'] != null) tr('зазвичай {v} год', {'v': beat['normally']}),
+              if (beat['completely'] != null) tr('на 100% {v} год', {'v': beat['completely']}),
             ].join(' · ')),
-          if (intOf(d['hypes']) > 0) ('Очікують', '${d['hypes']} гравців'),
+          if (intOf(d['hypes']) > 0) (tr('Очікують'), tr('{v} гравців', {'v': d['hypes']})),
         ];
 
         Widget score(String label, String key) {
@@ -366,7 +367,7 @@ class GameScreen extends StatelessWidget {
             child: Column(children: [
               Text('$value', style: display(24, color: color)),
               Text(label, style: body(12, color: muted)),
-              if (intOf(ratings['${key}_count']) > 0) Text('${ratings['${key}_count']} оцінок', style: body(11, color: faint)),
+              if (intOf(ratings['${key}_count']) > 0) Text(tr('{v} оцінок', {'v': ratings['${key}_count']}), style: body(11, color: faint)),
             ]),
           );
         }
@@ -386,7 +387,7 @@ class GameScreen extends StatelessWidget {
                       const SizedBox(height: 6),
                       Text(platformsLabel(game, 8), style: body(12.5, color: muted)),
                       Row(children: [
-                        if (game['year'] != null) Text('${game['year']} р.  ', style: body(12.5, color: faint)),
+                        if (game['year'] != null) Text(tr('{v} р.  ', {'v': game['year']}), style: body(12.5, color: faint)),
                         if (game['rating'] != null) ...[
                           const Icon(LucideIcons.star, size: 13, color: gold),
                           Text(' ${(game['rating'] as num).toStringAsFixed(1)}  ', style: body(12.5, color: soft)),
@@ -412,13 +413,13 @@ class GameScreen extends StatelessWidget {
                   for (final l in links)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
-                      child: PrimaryButton(label: text(l['label']) ?? 'Відкрити', icon: LucideIcons.externalLink, compact: true, onPressed: () => _open(text(l['url'])!)),
+                      child: PrimaryButton(label: text(l['label']) ?? tr('Відкрити'), icon: LucideIcons.externalLink, compact: true, onPressed: () => _open(text(l['url'])!)),
                     ),
                 ],
               ]),
             ),
             if (videos.isNotEmpty || shots.isNotEmpty)
-              _section('Трейлери й скриншоти', LucideIcons.images, [
+              _section(tr('Трейлери й скриншоти'), LucideIcons.images, [
                 SizedBox(
                   height: 120,
                   child: ListView(
@@ -450,56 +451,56 @@ class GameScreen extends StatelessWidget {
                 ),
               ]),
             if (mpRows.isNotEmpty || mpFlags.isNotEmpty)
-              _section('Мультиплеєр', LucideIcons.usersRound, [
+              _section(tr('Мультиплеєр'), LucideIcons.usersRound, [
                 for (final r in mpRows) _fact(r.$1, r.$2),
                 if (mpFlags.isNotEmpty) Wrap(spacing: 6, runSpacing: 6, children: [for (final f in mpFlags) Pill(label: f, color: green)]),
               ]),
             if (intOf(ratings['total']) > 0 || intOf(ratings['critics']) > 0 || intOf(ratings['players']) > 0)
-              _section('Рейтинги', LucideIcons.star, [
-                Row(children: [score('Загальний', 'total'), score('Критики', 'critics'), score('Гравці', 'players')]),
+              _section(tr('Рейтинги'), LucideIcons.star, [
+                Row(children: [score(tr('Загальний'), 'total'), score(tr('Критики'), 'critics'), score(tr('Гравці'), 'players')]),
               ]),
             if (about.isNotEmpty || text(d['storyline']) != null)
-              _section('Про гру', LucideIcons.gamepad2, [
+              _section(tr('Про гру'), LucideIcons.gamepad2, [
                 for (final r in about) _fact(r.$1, r.$2),
                 if (text(d['storyline']) != null)
                   Theme(
                     data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                     child: ExpansionTile(
                       tilePadding: EdgeInsets.zero,
-                      title: Text('Сюжет', style: body(14, weight: FontWeight.w600)),
+                      title: Text(tr('Сюжет'), style: body(14, weight: FontWeight.w600)),
                       children: [Text(text(d['storyline'])!, style: body(13.5, color: soft).copyWith(height: 1.45))],
                     ),
                   ),
               ]),
             if (maps(d['release_dates']).length > 1)
-              _section('Дати виходу', LucideIcons.calendarDays, [
+              _section(tr('Дати виходу'), LucideIcons.calendarDays, [
                 for (final r in maps(d['release_dates'])) _fact(text(r['platform']) ?? '', _date(r['date'])),
               ]),
             if (langs.isNotEmpty)
-              _section('Мови', LucideIcons.languages, [
+              _section(tr('Мови'), LucideIcons.languages, [
                 Pill(
                   label: ua == null
-                      ? 'Української локалізації немає'
-                      : 'Українська: ${[if (ua['interface'] == true) 'інтерфейс', if (ua['subtitles'] == true) 'субтитри', if (ua['audio'] == true) 'озвучення'].join(', ')}',
+                      ? tr('Української локалізації немає')
+                      : tr('Українська: {v}', {'v': [if (ua['interface'] == true) 'інтерфейс', if (ua['subtitles'] == true) 'субтитри', if (ua['audio'] == true) 'озвучення'].join(', ')}),
                   color: ua == null ? muted : green,
                 ),
                 const SizedBox(height: 10),
                 for (final l in langs)
                   _fact(text(l['name']) ?? '', [
-                    if (l['interface'] == true) 'інтерфейс',
-                    if (l['subtitles'] == true) 'субтитри',
-                    if (l['audio'] == true) 'озвучення',
+                    if (l['interface'] == true) tr('інтерфейс'),
+                    if (l['subtitles'] == true) tr('субтитри'),
+                    if (l['audio'] == true) tr('озвучення'),
                   ].join(', ')),
               ]),
             if (sites.isNotEmpty || text(d['igdb_url']) != null)
-              _section('Спільнота й посилання', LucideIcons.globe, [
+              _section(tr('Спільнота й посилання'), LucideIcons.globe, [
                 Wrap(spacing: 8, runSpacing: 8, children: [
                   for (final w in sites) GhostButton(label: text(w['label']) ?? '', icon: LucideIcons.externalLink, expand: false, compact: true, onPressed: () => _open(text(w['url'])!)),
                   if (text(d['igdb_url']) != null) GhostButton(label: 'IGDB', icon: LucideIcons.externalLink, expand: false, compact: true, onPressed: () => _open(text(d['igdb_url'])!)),
                 ]),
               ]),
             if (events.isNotEmpty) ...[
-              SectionLabel('Події гри', trailing: 'Календар', onTrailing: () => context.push('/events')),
+              SectionLabel(tr('Події гри'), trailing: tr('Календар'), onTrailing: () => context.push('/events')),
               for (final e in events)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
@@ -514,14 +515,14 @@ class GameScreen extends StatelessWidget {
               const SizedBox(height: 4),
             ],
             if (features['clans'] != false) ...[
-              SectionLabel('Клани й гільдії', trailing: 'Створити', onTrailing: () => context.push('/clans/create?game=$slug')),
+              SectionLabel(tr('Клани й гільдії'), trailing: tr('Створити'), onTrailing: () => context.push('/clans/create?game=$slug')),
               if (clans.isEmpty)
-                EmptyState(icon: LucideIcons.swords, title: 'Кланів ще немає', text: 'Створіть перший клан або гільдію для цієї гри.', action: 'Створити', onAction: () => context.push('/clans/create?game=$slug'))
+                EmptyState(icon: LucideIcons.swords, title: tr('Кланів ще немає'), text: tr('Створіть перший клан або гільдію для цієї гри.'), action: tr('Створити'), onAction: () => context.push('/clans/create?game=$slug'))
               else
                 for (final c in clans) Padding(padding: const EdgeInsets.only(bottom: 8), child: ClanTile(c)),
             ],
             if (similar.isNotEmpty) ...[
-              const SectionLabel('Схожі ігри'),
+              SectionLabel(tr('Схожі ігри')),
               SizedBox(
                 height: 150,
                 child: ListView(

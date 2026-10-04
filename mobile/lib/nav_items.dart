@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'i18n.dart';
 
 /// Розділ, який можна закріпити в нижній панелі.
 class NavItem {
@@ -15,24 +16,24 @@ class NavItem {
   final IconData activeIcon;
 }
 
-const navCatalog = [
-  NavItem('/profile', 'Сторінка', 'Моя сторінка', LucideIcons.userRound, LucideIcons.userRound500),
-  NavItem('/feed', 'Новини', 'Новини', LucideIcons.newspaper, LucideIcons.newspaper500),
-  NavItem('/messages', 'Чати', 'Повідомлення', LucideIcons.messageCircle, LucideIcons.messageCircle500),
-  NavItem('/friends', 'Друзі', 'Друзі', LucideIcons.usersRound, LucideIcons.usersRound500),
-  NavItem('/people', 'Пошук', 'Пошук людей', LucideIcons.search, LucideIcons.search500),
-  NavItem('/communities', 'Спільноти', 'Спільноти', LucideIcons.shield, LucideIcons.shield500),
-  NavItem('/photos', 'Фото', 'Фотографії', LucideIcons.image, LucideIcons.image500),
-  NavItem('/servers', 'Сервери', 'Сервери GTA', LucideIcons.server, LucideIcons.server500),
-  NavItem('/music', 'Музика', 'Музика', LucideIcons.music, LucideIcons.music500),
-  NavItem('/cinema', 'Кіно', 'Кіно', LucideIcons.film, LucideIcons.film500),
-  NavItem('/families', 'Сім’ї', 'Сім’ї', LucideIcons.crown, LucideIcons.crown500),
-  NavItem('/games', 'Ігри', 'Каталог ігор', LucideIcons.gamepad2, LucideIcons.gamepad2500),
-  NavItem('/clans', 'Клани', 'Клани й гільдії', LucideIcons.swords, LucideIcons.swords500),
-  NavItem('/events', 'Події', 'Календар подій', LucideIcons.calendarDays, LucideIcons.calendarDays500),
+final navCatalog = [
+  NavItem('/profile', tr('Сторінка'), tr('Моя сторінка'), LucideIcons.userRound, LucideIcons.userRound500),
+  NavItem('/feed', tr('Новини'), tr('Новини'), LucideIcons.newspaper, LucideIcons.newspaper500),
+  NavItem('/messages', tr('Чати'), tr('Повідомлення'), LucideIcons.messageCircle, LucideIcons.messageCircle500),
+  NavItem('/friends', tr('Друзі'), tr('Друзі'), LucideIcons.usersRound, LucideIcons.usersRound500),
+  NavItem('/people', tr('Пошук'), tr('Пошук людей'), LucideIcons.search, LucideIcons.search500),
+  NavItem('/communities', tr('Спільноти'), tr('Спільноти'), LucideIcons.shield, LucideIcons.shield500),
+  NavItem('/photos', tr('Фото'), tr('Фотографії'), LucideIcons.image, LucideIcons.image500),
+  NavItem('/servers', tr('Сервери'), tr('Сервери GTA'), LucideIcons.server, LucideIcons.server500),
+  NavItem('/music', tr('Музика'), tr('Музика'), LucideIcons.music, LucideIcons.music500),
+  NavItem('/cinema', tr('Кіно'), tr('Кіно'), LucideIcons.film, LucideIcons.film500),
+  NavItem('/families', tr('Сім’ї'), tr('Сім’ї'), LucideIcons.crown, LucideIcons.crown500),
+  NavItem('/games', tr('Ігри'), tr('Каталог ігор'), LucideIcons.gamepad2, LucideIcons.gamepad2500),
+  NavItem('/clans', tr('Клани'), tr('Клани й гільдії'), LucideIcons.swords, LucideIcons.swords500),
+  NavItem('/events', tr('Події'), tr('Календар подій'), LucideIcons.calendarDays, LucideIcons.calendarDays500),
 ];
 
-const navMenu = NavItem('/menu', 'Меню', 'Меню', LucideIcons.layoutGrid, LucideIcons.layoutGrid500);
+final navMenu = NavItem('/menu', tr('Меню'), tr('Меню'), LucideIcons.layoutGrid, LucideIcons.layoutGrid500);
 
 const defaultNav = ['/profile', '/feed', '/messages', '/friends'];
 

@@ -11,6 +11,7 @@ import 'api.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'i18n.dart';
 
 /// Метадані треку з тегів, назви файлу чи каталогу; [cover] — обкладинка альбому з каталогу.
 class TrackTags {
@@ -43,7 +44,7 @@ bool junkMeta(String? value) {
 /// Виконавець для показу: «.» і подібне сміття — це «Невідомий виконавець».
 String artistOf(dynamic artist, [String fallback = 'Невідомий виконавець']) {
   final value = text(artist);
-  return junkMeta(value) ? fallback : value!;
+  return junkMeta(value) ? tr(fallback) : value!;
 }
 
 final _repairing = <int>{};
@@ -401,7 +402,7 @@ class _CatalogSearchState extends State<CatalogSearch> {
     setState(() {
       searching = false;
       results = found;
-      note = found.isEmpty ? 'Нічого не знайдено. Спробуйте «виконавець назва» або іншу частину назви.' : null;
+      note = found.isEmpty ? tr('Нічого не знайдено. Спробуйте «виконавець назва» або іншу частину назви.') : null;
     });
     if (found.isNotEmpty) _pick(found.first);
   }
@@ -415,17 +416,17 @@ class _CatalogSearchState extends State<CatalogSearch> {
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       LabeledField(
-        label: 'Що відомо про пісню',
+        label: tr('Що відомо про пісню'),
         child: Row(children: [
-          Expanded(child: GcField(controller: query, label: 'Виконавець, назва чи її частина', icon: LucideIcons.search, onSubmit: _search)),
+          Expanded(child: GcField(controller: query, label: tr('Виконавець, назва чи її частина'), icon: LucideIcons.search, onSubmit: _search)),
           const SizedBox(width: 8),
-          GhostButton(label: 'Знайти', expand: false, compact: true, onPressed: searching ? null : _search),
+          GhostButton(label: tr('Знайти'), expand: false, compact: true, onPressed: searching ? null : _search),
         ]),
       ),
       if (searching)
         Padding(
           padding: const EdgeInsets.only(top: 8),
-          child: Row(children: [const SizedBox.square(dimension: 14, child: CircularProgressIndicator(strokeWidth: 2)), const SizedBox(width: 8), Text('Шукаю в каталозі…', style: body(12.5, color: muted))]),
+          child: Row(children: [const SizedBox.square(dimension: 14, child: CircularProgressIndicator(strokeWidth: 2)), const SizedBox(width: 8), Text(tr('Шукаю в каталозі…'), style: body(12.5, color: muted))]),
         ),
       if (note != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(note!, style: body(12, color: muted))),
       for (final tags in results)
@@ -488,7 +489,7 @@ class CoverPreview extends StatelessWidget {
 Future<Map<String, dynamic>?> editTrackSheet(BuildContext context, Map<String, dynamic> track) {
   return showGcSheet<Map<String, dynamic>>(
     context,
-    title: 'Редагувати трек',
+    title: tr('Редагувати трек'),
     builder: (sheet) => _TrackEditor(track: track, onSaved: (card) => Navigator.pop(sheet, card)),
   );
 }
@@ -544,7 +545,7 @@ class _TrackEditorState extends State<_TrackEditor> {
     }
     setState(() {
       searching = false;
-      note = filled > 0 ? 'Заповнено й виправлено полів: $filled. Перевірте й збережіть.' : (quiet ? null : 'Нічого нового не знайдено — опишіть пісню в пошуку нижче.');
+      note = filled > 0 ? tr('Заповнено й виправлено полів: {filled}. Перевірте й збережіть.', {'filled': filled}) : (quiet ? null : tr('Нічого нового не знайдено — опишіть пісню в пошуку нижче.'));
     });
   }
 
@@ -552,7 +553,7 @@ class _TrackEditorState extends State<_TrackEditor> {
     applyMeta(tags, title: title, artist: artist, album: album, genre: genre, overwrite: true);
     setState(() {
       if (tags.cover != null) coverUrl = tags.cover;
-      note = 'Підставлено з каталогу. Перевірте й збережіть.';
+      note = tr('Підставлено з каталогу. Перевірте й збережіть.');
     });
   }
 
@@ -567,7 +568,7 @@ class _TrackEditorState extends State<_TrackEditor> {
         if (coverUrl != null) 'cover_url': coverUrl,
       });
       if (!mounted) return;
-      toast(context, 'Збережено.');
+      toast(context, tr('Збережено.'));
       widget.onSaved(mapOf(result['track']).isEmpty ? {...widget.track, 'title': title.text.trim(), 'artist': artist.text.trim(), 'album': album.text.trim(), 'genre': genre.text.trim()} : mapOf(result['track']));
     } catch (e) {
       if (mounted) toast(context, e);
@@ -582,10 +583,10 @@ class _TrackEditorState extends State<_TrackEditor> {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        GhostButton(label: searching ? 'Шукаю метадані…' : 'Заповнити автоматично', icon: LucideIcons.wandSparkles, onPressed: searching || busy ? null : _autofill),
+        GhostButton(label: searching ? tr('Шукаю метадані…') : tr('Заповнити автоматично'), icon: LucideIcons.wandSparkles, onPressed: searching || busy ? null : _autofill),
         Padding(
           padding: const EdgeInsets.only(top: 6, bottom: 10),
-          child: Text(note ?? 'Теги файлу, назва файлу й каталог iTunes: назва, виконавець, альбом, жанр і обкладинка.', style: body(12, color: note == null ? faint : muted)),
+          child: Text(note ?? tr('Теги файлу, назва файлу й каталог iTunes: назва, виконавець, альбом, жанр і обкладинка.'), style: body(12, color: note == null ? faint : muted)),
         ),
         CatalogSearch(onPick: _picked),
         const SizedBox(height: 12),
@@ -594,22 +595,22 @@ class _TrackEditorState extends State<_TrackEditor> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              coverUrl != null ? 'Обкладинка з каталогу — збережеться разом із треком.' : (currentCover != null ? 'Поточна обкладинка.' : 'Обкладинки поки немає — знайдіть пісню в пошуку вище.'),
+              coverUrl != null ? tr('Обкладинка з каталогу — збережеться разом із треком.') : (currentCover != null ? tr('Поточна обкладинка.') : tr('Обкладинки поки немає — знайдіть пісню в пошуку вище.')),
               style: body(12.5, color: muted),
             ),
           ),
-          if (coverUrl != null) IconButton(tooltip: 'Не змінювати обкладинку', onPressed: () => setState(() => coverUrl = null), icon: const Icon(LucideIcons.x, size: 18, color: muted)),
+          if (coverUrl != null) IconButton(tooltip: tr('Не змінювати обкладинку'), onPressed: () => setState(() => coverUrl = null), icon: const Icon(LucideIcons.x, size: 18, color: muted)),
         ]),
         const SizedBox(height: 12),
-        LabeledField(label: 'Назва', child: GcField(controller: title, label: 'Назва', onChanged: (_) => setState(() {}))),
+        LabeledField(label: tr('Назва'), child: GcField(controller: title, label: tr('Назва'), onChanged: (_) => setState(() {}))),
         const SizedBox(height: 10),
-        LabeledField(label: 'Виконавець', child: GcField(controller: artist, label: 'Виконавець', onChanged: (_) => setState(() {}))),
+        LabeledField(label: tr('Виконавець'), child: GcField(controller: artist, label: tr('Виконавець'), onChanged: (_) => setState(() {}))),
         const SizedBox(height: 10),
-        LabeledField(label: 'Альбом', child: GcField(controller: album, label: 'Необов’язково')),
+        LabeledField(label: tr('Альбом'), child: GcField(controller: album, label: tr('Необов’язково'))),
         const SizedBox(height: 10),
-        LabeledField(label: 'Жанр', child: GcField(controller: genre, label: 'Необов’язково')),
+        LabeledField(label: tr('Жанр'), child: GcField(controller: genre, label: tr('Необов’язково'))),
         const SizedBox(height: 16),
-        PrimaryButton(label: 'Зберегти', icon: LucideIcons.check, busy: busy, onPressed: ready && !searching ? _save : null),
+        PrimaryButton(label: tr('Зберегти'), icon: LucideIcons.check, busy: busy, onPressed: ready && !searching ? _save : null),
       ]),
     );
   }

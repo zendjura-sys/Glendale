@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'api.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'i18n.dart';
 
 const _icons = <String, IconData>{
   'pen-line': LucideIcons.penLine,
@@ -59,7 +60,7 @@ class _AchievementsPanelState extends State<AchievementsPanel> {
             height: 48,
             decoration: BoxDecoration(gradient: buttonGradient, borderRadius: BorderRadius.circular(16)),
             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Text('РІВ.', style: body(8.5, color: Colors.white70, weight: FontWeight.w700)),
+              Text(tr('РІВ.'), style: body(8.5, color: Colors.white70, weight: FontWeight.w700)),
               Text('$level', style: body(18, color: Colors.white, weight: FontWeight.w800)),
             ]),
           ),
@@ -77,18 +78,18 @@ class _AchievementsPanelState extends State<AchievementsPanel> {
                 child: LinearProgressIndicator(value: percent, minHeight: 6, backgroundColor: Colors.white.withValues(alpha: 0.08), color: primary),
               ),
               const SizedBox(height: 4),
-              Text('$xp / $to досвіду до рівня ${level + 1}', style: body(11, color: faint)),
+              Text(tr('{xp} / {to} досвіду до рівня {v}', {'xp': xp, 'to': to, 'v': level + 1}), style: body(11, color: faint)),
             ]),
           ),
         ]),
         const SizedBox(height: 14),
         Row(children: [
-          Expanded(child: Text('Досягнення ${d['earned'] ?? 0}/${d['total'] ?? 0}', style: body(13.5, color: soft, weight: FontWeight.w700))),
-          GestureDetector(onTap: () => setState(() => all = !all), child: Text(all ? 'Лише отримані' : 'Усі', style: body(12.5, color: primary, weight: FontWeight.w600))),
+          Expanded(child: Text(tr('Досягнення {v}/{v2}', {'v': d['earned'] ?? 0, 'v2': d['total'] ?? 0}), style: body(13.5, color: soft, weight: FontWeight.w700))),
+          GestureDetector(onTap: () => setState(() => all = !all), child: Text(all ? tr('Лише отримані') : tr('Усі'), style: body(12.5, color: primary, weight: FontWeight.w600))),
         ]),
         const SizedBox(height: 10),
         if (shown.isEmpty)
-          Text(widget.isSelf ? 'Перші бейджі — за пост, друзів і вступ до сім’ї.' : 'Бейджів поки немає.', style: body(13, color: muted))
+          Text(widget.isSelf ? tr('Перші бейджі — за пост, друзів і вступ до сім’ї.') : tr('Бейджів поки немає.'), style: body(13, color: muted))
         else
           GridView.count(
             crossAxisCount: 4,

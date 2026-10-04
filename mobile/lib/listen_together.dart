@@ -9,6 +9,7 @@ import 'api.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'i18n.dart';
 
 /// Почати спільне прослуховування (з треку або з чату) і відкрити кімнату.
 Future<void> startListening(BuildContext context, {int? trackId, int? conversationId}) async {
@@ -152,17 +153,17 @@ class _ListenScreenState extends State<ListenScreen> {
   Future<void> _invite() async {
     await showGcSheet<void>(
       context,
-      title: 'Запросити друзів',
-      subtitle: 'Кожному прийде повідомлення з посиланням.',
+      title: tr('Запросити друзів'),
+      subtitle: tr('Кожному прийде повідомлення з посиланням.'),
       builder: (sheet) => Column(children: [
-        if (friends.isEmpty) const QuietEmpty(icon: LucideIcons.usersRound, text: 'Друзів поки немає.'),
+        if (friends.isEmpty) QuietEmpty(icon: LucideIcons.usersRound, text: tr('Друзів поки немає.')),
         for (final f in friends)
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: Avatar(url: text(f['avatar_url']), name: text(f['name']) ?? '?', size: 38),
             title: Text(text(f['name']) ?? '', style: body(14)),
             trailing: const Icon(LucideIcons.userPlus, color: muted, size: 18),
-            onTap: () => attempt(context, () => api.post('$base/invite', {'user_ids': [f['id']]}), success: 'Запрошення надіслано: ${f['name']}'),
+            onTap: () => attempt(context, () => api.post('$base/invite', {'user_ids': [f['id']]}), success: tr('Запрошення надіслано: {v}', {'v': f['name']})),
           ),
       ]),
     );
@@ -205,13 +206,13 @@ class _ListenScreenState extends State<ListenScreen> {
                   : Container(width: 190, height: 190, color: raised, child: const Icon(LucideIcons.headphones, color: faint, size: 56)),
             ),
             const SizedBox(height: 14),
-            Text(ended ? 'СЛУХАЄМО РАЗОМ · ЗАВЕРШЕНО' : 'СЛУХАЄМО РАЗОМ', style: body(11.5, color: primary, weight: FontWeight.w700)),
+            Text(ended ? tr('СЛУХАЄМО РАЗОМ · ЗАВЕРШЕНО') : tr('СЛУХАЄМО РАЗОМ'), style: body(11.5, color: primary, weight: FontWeight.w700)),
             const SizedBox(height: 6),
-            Text(text(track['title']) ?? 'Нічого не грає', textAlign: TextAlign.center, style: display(20)),
+            Text(text(track['title']) ?? tr('Нічого не грає'), textAlign: TextAlign.center, style: display(20)),
             const SizedBox(height: 4),
-            Text(text(track['artist']) ?? 'Додайте трек у чергу — він заграє одразу', textAlign: TextAlign.center, style: body(13.5, color: muted)),
+            Text(text(track['artist']) ?? tr('Додайте трек у чергу — він заграє одразу'), textAlign: TextAlign.center, style: body(13.5, color: muted)),
             const SizedBox(height: 6),
-            Text('Ведучий: ${mapOf(p['host'])['name'] ?? ''}${state['shared_control'] == true ? ' · керують усі' : ''}', style: body(12, color: faint)),
+            Text(tr('Ведучий: {v}{v2}', {'v': mapOf(p['host'])['name'] ?? '', 'v2': state['shared_control'] == true ? ' · керують усі' : ''}), style: body(12, color: faint)),
             if (track.isNotEmpty) ...[
               Slider(
                 value: position.clamp(0, intOf(track['duration']).toDouble()).toDouble(),
@@ -235,7 +236,7 @@ class _ListenScreenState extends State<ListenScreen> {
                 ])
               else
                 GhostButton(
-                  label: synced ? 'Синхронно з ведучим' : 'Увімкнути синхронізацію',
+                  label: synced ? tr('Синхронно з ведучим') : tr('Увімкнути синхронізацію'),
                   icon: LucideIcons.headphones,
                   color: synced ? green : ink,
                   onPressed: () {
@@ -251,21 +252,21 @@ class _ListenScreenState extends State<ListenScreen> {
           Row(children: [
             Expanded(
               child: GhostButton(
-                label: 'Посилання',
+                label: tr('Посилання'),
                 icon: LucideIcons.copy,
                 compact: true,
                 onPressed: () async {
                   await Clipboard.setData(ClipboardData(text: text(p['url']) ?? ''));
-                  if (context.mounted) toast(context, 'Посилання скопійовано');
+                  if (context.mounted) toast(context, tr('Посилання скопійовано'));
                 },
               ),
             ),
             const SizedBox(width: 8),
-            Expanded(child: PrimaryButton(label: 'Запросити', icon: LucideIcons.userPlus, compact: true, onPressed: _invite)),
+            Expanded(child: PrimaryButton(label: tr('Запросити'), icon: LucideIcons.userPlus, compact: true, onPressed: _invite)),
           ]),
         ],
-        SectionLabel('Черга', trailing: '${queue.length}'),
-        if (queue.isEmpty) const QuietEmpty(icon: LucideIcons.listMusic, text: 'Черга порожня. Знайдіть трек нижче — додати може кожен.'),
+        SectionLabel(tr('Черга'), trailing: '${queue.length}'),
+        if (queue.isEmpty) QuietEmpty(icon: LucideIcons.listMusic, text: tr('Черга порожня. Знайдіть трек нижче — додати може кожен.')),
         for (var i = 0; i < queue.length; i++)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
@@ -292,7 +293,7 @@ class _ListenScreenState extends State<ListenScreen> {
           const SizedBox(height: 6),
           GcField(
             controller: search,
-            label: 'Знайти трек на GameCon',
+            label: tr('Знайти трек на GameCon'),
             icon: LucideIcons.search,
             dense: true,
             onChanged: (_) {
@@ -312,11 +313,11 @@ class _ListenScreenState extends State<ListenScreen> {
               trailing: const Icon(LucideIcons.plus, color: primary),
               onTap: () async {
                 await _act(() => api.post('$base/queue', {'track_id': t['id']}));
-                if (context.mounted) toast(context, '«${t['title']}» у черзі');
+                if (context.mounted) toast(context, tr('«{v}» у черзі', {'v': t['title']}));
               },
             ),
         ],
-        SectionLabel('Слухають', trailing: '${members.length}'),
+        SectionLabel(tr('Слухають'), trailing: '${members.length}'),
         Glass(
           child: Column(children: [
             for (final m in members)
@@ -339,14 +340,14 @@ class _ListenScreenState extends State<ListenScreen> {
                 contentPadding: EdgeInsets.zero,
                 value: state['shared_control'] == true,
                 activeThumbColor: primary,
-                title: Text('Керувати можуть усі', style: body(14)),
+                title: Text(tr('Керувати можуть усі'), style: body(14)),
                 onChanged: (v) => _act(() => api.post('$base/shared', {'shared': v})),
               ),
               DangerButton(
-                label: 'Завершити для всіх',
+                label: tr('Завершити для всіх'),
                 icon: LucideIcons.x,
                 onPressed: () async {
-                  if (await confirm(context, 'Завершити для всіх?', danger: true, action: 'Завершити')) {
+                  if (await confirm(context, tr('Завершити для всіх?'), danger: true, action: tr('Завершити'))) {
                     await _act(() async {
                       await api.delete(base);
                       return {'ended': true};

@@ -9,6 +9,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'track_edit.dart';
 import 'widgets.dart';
+import 'i18n.dart';
 
 class TrackCover extends StatelessWidget {
   const TrackCover({required this.url, required this.seed, this.size = 48, this.radius = 14, super.key});
@@ -135,7 +136,7 @@ Future<void> showFullPlayer(BuildContext context, TrackPlayer player) {
                     width: 44,
                     child: track.id != null
                         ? IconButton(
-                            tooltip: 'Слухати разом',
+                            tooltip: tr('Слухати разом'),
                             onPressed: () {
                               Navigator.pop(sheet);
                               startListening(context, trackId: track.id);
@@ -159,7 +160,7 @@ Future<void> showFullPlayer(BuildContext context, TrackPlayer player) {
                     width: 44,
                     child: own
                         ? IconButton(
-                            tooltip: 'Редагувати метадані',
+                            tooltip: tr('Редагувати метадані'),
                             onPressed: () async {
                               final card = await editTrackSheet(context, track.toCard());
                               if (card != null) player.updateMeta(card);
@@ -190,24 +191,24 @@ Future<void> showFullPlayer(BuildContext context, TrackPlayer player) {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  IconButton(tooltip: 'Перемішати', onPressed: player.toggleShuffle, icon: Icon(LucideIcons.shuffle, color: player.shuffle ? primary : muted)),
+                  IconButton(tooltip: tr('Перемішати'), onPressed: player.toggleShuffle, icon: Icon(LucideIcons.shuffle, color: player.shuffle ? primary : muted)),
                   IconButton(onPressed: player.prev, icon: const Icon(LucideIcons.skipBack, size: 32, color: ink)),
                   RoundIcon(icon: player.playing ? LucideIcons.pause : LucideIcons.play, onTap: player.toggle, filled: true, size: 68),
                   IconButton(onPressed: player.next, icon: const Icon(LucideIcons.skipForward, size: 32, color: ink)),
-                  IconButton(tooltip: 'Повтор треку', onPressed: player.toggleRepeat, icon: Icon(player.repeat ? LucideIcons.repeat1 : LucideIcons.repeat, color: player.repeat ? primary : muted)),
+                  IconButton(tooltip: tr('Повтор треку'), onPressed: player.toggleRepeat, icon: Icon(player.repeat ? LucideIcons.repeat1 : LucideIcons.repeat, color: player.repeat ? primary : muted)),
                 ],
               ),
               if (GcAudioHandler.failure != null) ...[
                 const SizedBox(height: 10),
-                Text('Фонове відтворення недоступне: ${GcAudioHandler.failure}', textAlign: TextAlign.center, style: body(11, color: faint)),
+                Text(tr('Фонове відтворення недоступне: {failure}', {'failure': GcAudioHandler.failure}), textAlign: TextAlign.center, style: body(11, color: faint)),
               ],
               if (player.queue.length > 1) ...[
                 const SizedBox(height: 18),
                 Row(children: [
-                  const Expanded(child: CardTitle('Черга відтворення', icon: LucideIcons.listMusic)),
+                  Expanded(child: CardTitle(tr('Черга відтворення'), icon: LucideIcons.listMusic)),
                   Text('${player.index + 1} / ${player.queue.length}', style: body(12, color: faint)),
                 ]),
-                Align(alignment: Alignment.centerLeft, child: Text('Торкніться, щоб увімкнути; перетягніть за ⋮⋮, щоб змінити порядок.', style: body(12, color: faint))),
+                Align(alignment: Alignment.centerLeft, child: Text(tr('Торкніться, щоб увімкнути; перетягніть за ⋮⋮, щоб змінити порядок.'), style: body(12, color: faint))),
                 const SizedBox(height: 6),
                 ReorderableListView.builder(
                   shrinkWrap: true,
@@ -302,7 +303,7 @@ class _QueueRow extends StatelessWidget {
                 Text(artistOf(track.artist), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
               ]),
             ),
-            IconButton(tooltip: 'Прибрати з черги', visualDensity: VisualDensity.compact, onPressed: () => player.removeAt(i), icon: const Icon(LucideIcons.x, size: 18, color: faint)),
+            IconButton(tooltip: tr('Прибрати з черги'), visualDensity: VisualDensity.compact, onPressed: () => player.removeAt(i), icon: const Icon(LucideIcons.x, size: 18, color: faint)),
             ReorderableDragStartListener(
               index: i,
               child: const Padding(padding: EdgeInsets.symmetric(horizontal: 6, vertical: 8), child: Icon(LucideIcons.gripVertical, size: 18, color: muted)),

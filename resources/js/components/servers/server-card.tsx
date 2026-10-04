@@ -118,7 +118,9 @@ export function ServerCard({
                             {server.multiplayer_label}
                         </span>
                         <span className="rounded-full bg-[#facc15]/10 px-2 py-0.5 text-[#fde68a]">
-                            🇺🇦 UA
+                            {server.language === 'uk'
+                                ? '🇺🇦 UA'
+                                : server.language.toUpperCase()}
                         </span>
                     </div>
                 </div>

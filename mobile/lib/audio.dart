@@ -7,6 +7,7 @@ import 'package:just_audio/just_audio.dart';
 
 import 'state.dart';
 import 'track_edit.dart';
+import 'i18n.dart';
 
 /// Медіасесія Android/iOS для [TrackPlayer]: музика грає у фоні (foreground-сервіс),
 /// а в шторці й на заблокованому екрані з’являється плеєр з обкладинкою й кнопками.
@@ -29,10 +30,10 @@ class GcAudioHandler extends BaseAudioHandler with SeekHandler {
     try {
       await AudioService.init(
         builder: () => GcAudioHandler(player),
-        config: const AudioServiceConfig(
+        config: AudioServiceConfig(
           androidNotificationChannelId: 'online.gamecon.app.audio',
-          androidNotificationChannelName: 'Музика',
-          androidNotificationChannelDescription: 'Плеєр GameCon у шторці та на заблокованому екрані',
+          androidNotificationChannelName: tr('Музика'),
+          androidNotificationChannelDescription: tr('Плеєр GameCon у шторці та на заблокованому екрані'),
           androidNotificationIcon: 'drawable/ic_notification',
           androidStopForegroundOnPause: true,
           notificationColor: Color(0xFF6D7DFF),

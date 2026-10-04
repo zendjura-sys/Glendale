@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\I18n\ContentTranslator;
 use App\Support\I18n\Locales;
 use App\Support\I18n\Translations;
 use Illuminate\Http\JsonResponse;
@@ -59,6 +60,7 @@ class LocaleController extends Controller
             'locales' => $this->locales->options(),
             'version' => $this->translations->version($locale),
             'dict' => (object) $this->translations->scoped($locale, 'app'),
+            'translate' => app(ContentTranslator::class)->enabled(),
         ]);
     }
 }

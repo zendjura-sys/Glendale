@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'i18n.dart';
+
 class ApiException implements Exception {
   ApiException(this.message);
   final String message;
@@ -18,7 +20,7 @@ class Listing {
   bool get more => current < last;
 
   static Listing parse(dynamic block) {
-    if (block is! Map) return Listing(const [], 1, 1);
+    if (block is! Map) return Listing([], 1, 1);
     final raw = block['data'];
     final items = raw is List
         ? raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList()
@@ -34,7 +36,7 @@ int _int(dynamic value, int fallback) {
 }
 
 List<Map<String, dynamic>> maps(dynamic value) {
-  if (value is! List) return const [];
+  if (value is! List) return [];
   return value.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
 }
 
@@ -66,7 +68,7 @@ String hryvniaShort(dynamic minor) {
   final value = minor is int ? minor : int.tryParse('$minor') ?? 0;
   final whole = value.abs() ~/ 100;
   if (whole < 100000) return hryvnia(value - value % 100);
-  final (unit, suffix) = whole >= 1000000000 ? (1000000000, 'млрд') : (whole >= 1000000 ? (1000000, 'М') : (1000, 'к'));
+  final (unit, suffix) = whole >= 1000000000 ? (1000000000, tr('млрд')) : (whole >= 1000000 ? (1000000, tr('М')) : (1000, tr('к')));
   final scaled = whole / unit;
   final digits = scaled < 10 ? ((scaled * 10).floor() / 10).toString().replaceFirst(RegExp(r'\.0$'), '').replaceAll('.', ',') : '${scaled.floor()}';
   return '${value < 0 ? '−' : ''}$digits$suffix ₴';
@@ -75,8 +77,8 @@ String hryvniaShort(dynamic minor) {
 String joinedLabel(dynamic iso) {
   final dt = DateTime.tryParse(text(iso) ?? '');
   if (dt == null) return '';
-  const months = ['січня', 'лютого', 'березня', 'квітня', 'травня', 'червня', 'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня'];
-  return 'В GameCon з ${dt.day} ${months[dt.month - 1]} ${dt.year} р.';
+  final months = [tr('січня'), tr('лютого'), tr('березня'), tr('квітня'), tr('травня'), tr('червня'), tr('липня'), tr('серпня'), tr('вересня'), tr('жовтня'), tr('листопада'), tr('грудня')];
+  return tr('В GameCon з {day} {v} {year} р.', {'day': dt.day, 'v': months[dt.month - 1], 'year': dt.year});
 }
 
 String? absolute(dynamic value) {
@@ -109,6 +111,7 @@ class Api {
     if (method != 'POST') request.fields['_method'] = method;
     request.headers['Accept'] = 'application/json';
     request.headers['User-Agent'] = 'GameCon/1.0 (Flutter)';
+    request.headers['X-Locale'] = I18n.requested;
     final bearer = token();
     if (bearer != null) request.headers['Authorization'] = 'Bearer $bearer';
     request.fields.addAll(fields);
@@ -119,7 +122,7 @@ class Api {
       response = await http.Response.fromStream(streamed);
     } catch (e) {
       if (e is ApiException) rethrow;
-      throw ApiException('Немає зв’язку з GameCon.');
+      throw ApiException(tr('Немає зв’язку з GameCon.'));
     }
     if (response.statusCode >= 400) throw ApiException(_explain(response.body));
     if (response.body.isEmpty) return {};
@@ -132,7 +135,7 @@ class Api {
   Future<Map<String, dynamic>> me() async {
     final json = await get('/api/v1/me');
     final user = json['user'];
-    if (user is! Map) throw ApiException('Профіль не повернувся.');
+    if (user is! Map) throw ApiException(tr('Профіль не повернувся.'));
     return Map<String, dynamic>.from(user);
   }
 
@@ -141,6 +144,7 @@ class Api {
     final headers = {
       'Accept': 'application/json',
       'User-Agent': 'GameCon/1.0 (Flutter)',
+      'X-Locale': I18n.requested,
       if (body != null) 'Content-Type': 'application/json',
       if (token() != null) 'Authorization': 'Bearer ${token()}',
     };
@@ -153,11 +157,11 @@ class Api {
         'PUT' => http.put(uri, headers: headers, body: encoded),
         'PATCH' => http.patch(uri, headers: headers, body: encoded),
         'DELETE' => http.delete(uri, headers: headers, body: encoded),
-        _ => throw ApiException('Невідомий метод.'),
+        _ => throw ApiException(tr('Невідомий метод.')),
       }.timeout(const Duration(seconds: 40));
     } catch (e) {
       if (e is ApiException) rethrow;
-      throw ApiException('Немає зв’язку з GameCon.');
+      throw ApiException(tr('Немає зв’язку з GameCon.'));
     }
     if (response.statusCode >= 400) {
       throw ApiException(_explain(response.body));
@@ -183,7 +187,7 @@ class Api {
         if (message != null) return message;
       }
     } catch (_) {}
-    return 'Щось пішло не так.';
+    return tr('Щось пішло не так.');
   }
 
   /// Завантаження файлу з авторизацією (докази звітів, вкладення чату).
@@ -192,7 +196,7 @@ class Api {
       'User-Agent': 'GameCon/1.0 (Flutter)',
       if (token() != null) 'Authorization': 'Bearer ${token()}',
     });
-    if (response.statusCode >= 400) throw ApiException('Файл недоступний.');
+    if (response.statusCode >= 400) throw ApiException(tr('Файл недоступний.'));
     return response.bodyBytes;
   }
 }

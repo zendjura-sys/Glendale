@@ -11,6 +11,7 @@ import 'api.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'i18n.dart';
 
 /// Висота панелі розмови над міні-плеєром.
 const voiceBarExtent = 64.0;
@@ -52,11 +53,11 @@ class VoiceCall extends ChangeNotifier {
       api,
       () => api.post('/api/v1/voice/rooms/$id/join'),
       onError: onError,
-      failure: 'Не вдалося підключитися до голосової кімнати.',
+      failure: tr('Не вдалося підключитися до голосової кімнати.'),
       meta: () {
         kind = 'room';
         roomId = id;
-        roomName = text(room['name']) ?? 'Кімната';
+        roomName = text(room['name']) ?? tr('Кімната');
         this.label = label;
         this.route = route;
       },
@@ -69,12 +70,12 @@ class VoiceCall extends ChangeNotifier {
       api,
       () => api.post('/api/v1/watch/$code/voice'),
       onError: onError,
-      failure: 'Не вдалося підключити голос.',
+      failure: tr('Не вдалося підключити голос.'),
       meta: () {
         kind = 'room';
         roomId = null;
         roomName = title;
-        label = 'Спільний перегляд';
+        label = tr('Спільний перегляд');
         route = '/watch/$code';
       },
     );
@@ -87,7 +88,7 @@ class VoiceCall extends ChangeNotifier {
       api,
       () => api.post('/api/v1/messages/$conversation/call'),
       onError: onError,
-      failure: 'Не вдалося зателефонувати.',
+      failure: tr('Не вдалося зателефонувати.'),
       meta: () => _callMeta(conversation, title),
     );
   }
@@ -99,7 +100,7 @@ class VoiceCall extends ChangeNotifier {
       api,
       () => api.post('/api/v1/calls/$call/join'),
       onError: onError,
-      failure: 'Не вдалося відповісти на дзвінок.',
+      failure: tr('Не вдалося відповісти на дзвінок.'),
       meta: () {
         _callMeta(conversation, title);
         callId = call;
@@ -111,7 +112,7 @@ class VoiceCall extends ChangeNotifier {
     kind = 'call';
     conversationId = conversation;
     roomName = title;
-    label = 'Дзвінок';
+    label = tr('Дзвінок');
     route = '/messages/$conversation';
   }
 
@@ -135,7 +136,7 @@ class VoiceCall extends ChangeNotifier {
       final recorder = AudioRecorder();
       final allowed = await recorder.hasPermission();
       await recorder.dispose();
-      if (!allowed) throw ApiException('Дозвольте мікрофон, щоб говорити.');
+      if (!allowed) throw ApiException(tr('Дозвольте мікрофон, щоб говорити.'));
 
       final data = await access();
       final call = mapOf(data['call']);
@@ -160,7 +161,7 @@ class VoiceCall extends ChangeNotifier {
         })
         ..on<RoomDisconnectedEvent>((e) {
           if (_room != next) return;
-          if (e.reason == DisconnectReason.participantRemoved) onError?.call('Вас виключили з голосової кімнати.');
+          if (e.reason == DisconnectReason.participantRemoved) onError?.call(tr('Вас виключили з голосової кімнати.'));
           unawaited(_reset());
         });
 
@@ -215,9 +216,9 @@ class VoiceCall extends ChangeNotifier {
     try {
       if (on) {
         final ready = await FlutterBackground.initialize(
-          androidConfig: const FlutterBackgroundAndroidConfig(
+          androidConfig: FlutterBackgroundAndroidConfig(
             notificationTitle: 'GameCon',
-            notificationText: 'Ви в голосовій розмові',
+            notificationText: tr('Ви в голосовій розмові'),
             notificationIcon: AndroidResource(name: 'ic_notification', defType: 'drawable'),
             shouldRequestBatteryOptimizationsOff: false,
           ),
@@ -245,7 +246,7 @@ class VoiceCall extends ChangeNotifier {
 
   /// Повертає текст підказки, якщо мікрофон забрав модератор.
   String? toggleMic() {
-    if (micBlocked) return 'Модератор вимкнув вам мікрофон.';
+    if (micBlocked) return tr('Модератор вимкнув вам мікрофон.');
     unawaited(_setMic(!micOn));
     return null;
   }
@@ -327,7 +328,7 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
   }
 
   Future<void> _create() async {
-    final name = (await askText(context, 'Нова кімната', hint: 'Назва', action: 'Створити'))?.trim();
+    final name = (await askText(context, tr('Нова кімната'), hint: tr('Назва'), action: tr('Створити')))?.trim();
     if (name != null && name.isNotEmpty) await _run(() => api.post(path, {'name': name}));
   }
 
@@ -336,16 +337,16 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
       context,
       title: text(room['name']),
       builder: (sheet) => Column(mainAxisSize: MainAxisSize.min, children: [
-        _SheetAction(icon: LucideIcons.pencil, label: 'Перейменувати', onTap: () => Navigator.pop(sheet, 'rename')),
-        if (room['system'] != true) _SheetAction(icon: LucideIcons.trash2, label: 'Видалити', danger: true, onTap: () => Navigator.pop(sheet, 'delete')),
+        _SheetAction(icon: LucideIcons.pencil, label: tr('Перейменувати'), onTap: () => Navigator.pop(sheet, 'rename')),
+        if (room['system'] != true) _SheetAction(icon: LucideIcons.trash2, label: tr('Видалити'), danger: true, onTap: () => Navigator.pop(sheet, 'delete')),
       ]),
     );
     if (!mounted || action == null) return;
     final id = intOf(room['id']);
     if (action == 'rename') {
-      final name = (await askText(context, 'Нова назва', initial: text(room['name']) ?? ''))?.trim();
+      final name = (await askText(context, tr('Нова назва'), initial: text(room['name']) ?? ''))?.trim();
       if (name != null && name.isNotEmpty) await _run(() => api.patch('/api/v1/voice/rooms/$id', {'name': name}));
-    } else if (action == 'delete' && await confirm(context, 'Видалити кімнату «${text(room['name'])}»?', danger: true, action: 'Видалити')) {
+    } else if (action == 'delete' && await confirm(context, tr('Видалити кімнату «{v}»?', {'v': text(room['name'])}), danger: true, action: tr('Видалити'))) {
       await _run(() => api.delete('/api/v1/voice/rooms/$id'));
     }
   }
@@ -356,8 +357,8 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
       context,
       title: text(person['name']),
       builder: (sheet) => Column(mainAxisSize: MainAxisSize.min, children: [
-        _SheetAction(icon: muted ? LucideIcons.mic : LucideIcons.micOff, label: muted ? 'Дозволити мікрофон' : 'Вимкнути мікрофон', onTap: () => Navigator.pop(sheet, muted ? 'unmute' : 'mute')),
-        _SheetAction(icon: LucideIcons.userX, label: 'Виключити з кімнати', danger: true, onTap: () => Navigator.pop(sheet, 'kick')),
+        _SheetAction(icon: muted ? LucideIcons.mic : LucideIcons.micOff, label: muted ? tr('Дозволити мікрофон') : tr('Вимкнути мікрофон'), onTap: () => Navigator.pop(sheet, muted ? 'unmute' : 'mute')),
+        _SheetAction(icon: LucideIcons.userX, label: tr('Виключити з кімнати'), danger: true, onTap: () => Navigator.pop(sheet, 'kick')),
       ]),
     );
     if (!mounted || action == null) return;
@@ -379,13 +380,13 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
           Row(children: [
             const Icon(LucideIcons.volume2, size: 18, color: primary),
             const SizedBox(width: 8),
-            Expanded(child: Text('Голосові кімнати', style: body(15, weight: FontWeight.w700))),
-            if (manage) IconButton(onPressed: _create, icon: const Icon(LucideIcons.plus, size: 20, color: muted), tooltip: 'Нова кімната'),
+            Expanded(child: Text(tr('Голосові кімнати'), style: body(15, weight: FontWeight.w700))),
+            if (manage) IconButton(onPressed: _create, icon: const Icon(LucideIcons.plus, size: 20, color: muted), tooltip: tr('Нова кімната')),
           ]),
           if (!enabled)
             Padding(
               padding: const EdgeInsets.only(top: 4, bottom: 6, right: 6),
-              child: Text('Голосовий сервер ще не підключено адміністрацією сайту.', style: body(12.5, color: muted)),
+              child: Text(tr('Голосовий сервер ще не підключено адміністрацією сайту.'), style: body(12.5, color: muted)),
             ),
           for (final room in maps(page['rooms'])) _room(room, enabled, manage),
         ]),
@@ -407,7 +408,7 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
           onTap: locked || !enabled || here
-              ? (locked ? () => toast(context, 'Ця кімната закрита для вашого рангу.') : null)
+              ? (locked ? () => toast(context, tr('Ця кімната закрита для вашого рангу.')) : null)
               : () => call.join(api, room, label: widget.label, route: widget.route, onError: (e) {
                     if (mounted) toast(context, e);
                   }),
@@ -539,13 +540,13 @@ class _VoiceBarState extends State<VoiceBar> {
                 Expanded(
                   child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(call.roomName, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w700)),
-                    Text(call.status == 'connecting' ? 'Підключення…' : (call.kind == 'call' ? '${call.label} · ${_elapsed(call.connectedAt)}' : call.label), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                    Text(call.status == 'connecting' ? tr('Підключення…') : (call.kind == 'call' ? '${call.label} · ${_elapsed(call.connectedAt)}' : call.label), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
                   ]),
                 ),
                 _BarButton(
                   icon: call.micOn ? LucideIcons.mic : LucideIcons.micOff,
                   active: call.micOn,
-                  tooltip: call.micOn ? 'Вимкнути мікрофон' : 'Увімкнути мікрофон',
+                  tooltip: call.micOn ? tr('Вимкнути мікрофон') : tr('Увімкнути мікрофон'),
                   onTap: call.status == 'connected'
                       ? () {
                           final hint = call.toggleMic();
@@ -556,10 +557,10 @@ class _VoiceBarState extends State<VoiceBar> {
                 _BarButton(
                   icon: call.deafened ? LucideIcons.headphoneOff : LucideIcons.headphones,
                   active: !call.deafened,
-                  tooltip: call.deafened ? 'Увімкнути звук' : 'Вимкнути звук',
+                  tooltip: call.deafened ? tr('Увімкнути звук') : tr('Вимкнути звук'),
                   onTap: call.toggleDeafen,
                 ),
-                _BarButton(icon: LucideIcons.phoneOff, tooltip: call.kind == 'call' ? 'Покласти слухавку' : 'Вийти з кімнати', leave: true, onTap: call.leave),
+                _BarButton(icon: LucideIcons.phoneOff, tooltip: call.kind == 'call' ? tr('Покласти слухавку') : tr('Вийти з кімнати'), leave: true, onTap: call.leave),
               ]),
             ),
           ),

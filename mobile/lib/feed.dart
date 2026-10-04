@@ -11,6 +11,7 @@ import 'state.dart';
 import 'stories.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'i18n.dart';
 
 /// Сторінки записів з підвантаженням: стрічка, стіна профілю, спільнота.
 class PostPager {
@@ -117,9 +118,9 @@ class _FeedScreenState extends State<FeedScreen> {
       children: [
         StoriesStrip(key: stories),
         Composer(onPosted: _reload),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Segmented(
-          options: const [SegmentOption('friends', 'Друзі', icon: LucideIcons.usersRound), SegmentOption('discover', 'Рекомендації', icon: LucideIcons.flame)],
+          options: [SegmentOption('friends', tr('Друзі'), icon: LucideIcons.usersRound), SegmentOption('discover', tr('Рекомендації'), icon: LucideIcons.flame)],
           selected: tab,
           onSelect: (value) {
             setState(() {
@@ -136,7 +137,7 @@ class _FeedScreenState extends State<FeedScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CardTitle('Зараз онлайн', icon: LucideIcons.radio, trailing: '${online.length}'),
+                CardTitle(tr('Зараз онлайн'), icon: LucideIcons.radio, trailing: '${online.length}'),
                 const SizedBox(height: 10),
                 SizedBox(
                   height: 78,
@@ -155,13 +156,13 @@ class _FeedScreenState extends State<FeedScreen> {
         if (!ready)
           const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)))
         else if (error != null)
-          EmptyState(icon: LucideIcons.wifiOff, title: 'Не вдалося завантажити', text: '$error', action: 'Спробувати знову', onAction: _reload)
+          EmptyState(icon: LucideIcons.wifiOff, title: tr('Не вдалося завантажити'), text: '$error', action: tr('Спробувати знову'), onAction: _reload)
         else if (pager.posts.isEmpty)
           EmptyState(
             icon: tab == 'discover' ? LucideIcons.compass : LucideIcons.newspaper,
-            title: tab == 'discover' ? 'Тут ще нічого немає' : 'Стрічка поки порожня',
-            text: 'Напишіть перший запис або знайдіть друзів — і стрічка оживе.',
-            action: 'Знайти друзів',
+            title: tab == 'discover' ? tr('Тут ще нічого немає') : tr('Стрічка поки порожня'),
+            text: tr('Напишіть перший запис або знайдіть друзів — і стрічка оживе.'),
+            action: tr('Знайти друзів'),
             actionIcon: LucideIcons.userRoundPlus,
             onAction: () => context.push('/people'),
           )
@@ -176,7 +177,7 @@ class _FeedScreenState extends State<FeedScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CardTitle('Можливо, ви знайомі', icon: LucideIcons.userRoundPlus, trailing: 'Усі', onTrailing: () => context.push('/people')),
+                CardTitle(tr('Можливо, ви знайомі'), icon: LucideIcons.userRoundPlus, trailing: tr('Усі'), onTrailing: () => context.push('/people')),
                 const SizedBox(height: 6),
                 for (final user in suggestions)
                   UserTile(
@@ -234,7 +235,7 @@ class PostScreen extends StatelessWidget {
             children: [
               RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.canPop() ? context.pop() : context.go('/feed')),
               const SizedBox(width: 8),
-              Text('Запис', style: display(18)),
+              Text(tr('Запис'), style: display(18)),
             ],
           ),
           const SizedBox(height: 10),
@@ -317,7 +318,7 @@ class _SearchScreenState extends State<SearchScreen> {
             Expanded(
               child: GcField(
                 controller: query,
-                label: 'Пошук людей і спільнот',
+                label: tr('Пошук людей і спільнот'),
                 icon: LucideIcons.search,
                 autofocus: widget.initial.isEmpty,
                 dense: true,
@@ -335,9 +336,9 @@ class _SearchScreenState extends State<SearchScreen> {
         if (loading && users.isEmpty && communities.isEmpty)
           const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
         else if (q.length < 2)
-          const QuietEmpty(icon: LucideIcons.search, text: 'Введіть щонайменше 2 символи')
+          QuietEmpty(icon: LucideIcons.search, text: tr('Введіть щонайменше 2 символи'))
         else if (users.isEmpty && communities.isEmpty)
-          QuietEmpty(icon: LucideIcons.userRoundSearch, text: 'За запитом «$q» нічого не знайдено')
+          QuietEmpty(icon: LucideIcons.userRoundSearch, text: tr('За запитом «{q}» нічого не знайдено', {'q': q}))
         else ...[
           if (users.isNotEmpty)
             Glass(
@@ -345,7 +346,7 @@ class _SearchScreenState extends State<SearchScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Padding(padding: EdgeInsets.only(left: 4), child: CardTitle('Люди', icon: LucideIcons.usersRound)),
+                  Padding(padding: EdgeInsets.only(left: 4), child: CardTitle(tr('Люди'), icon: LucideIcons.usersRound)),
                   const SizedBox(height: 4),
                   for (final user in users) UserTile(user: user, trailing: FriendAction(username: '${user['username']}', relation: text(user['relation']) ?? 'none', compact: true)),
                 ],
@@ -358,7 +359,7 @@ class _SearchScreenState extends State<SearchScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Padding(padding: EdgeInsets.only(left: 4), child: CardTitle('Спільноти', icon: LucideIcons.usersRound)),
+                  Padding(padding: EdgeInsets.only(left: 4), child: CardTitle(tr('Спільноти'), icon: LucideIcons.usersRound)),
                   const SizedBox(height: 4),
                   for (final community in communities)
                     ListTile(
@@ -373,7 +374,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ],
           const SizedBox(height: 12),
-          GhostButton(label: 'Розширений пошук людей', icon: LucideIcons.slidersHorizontal, onPressed: () => context.push('/people?q=${Uri.encodeQueryComponent(q)}')),
+          GhostButton(label: tr('Розширений пошук людей'), icon: LucideIcons.slidersHorizontal, onPressed: () => context.push('/people?q=${Uri.encodeQueryComponent(q)}')),
         ],
       ],
     );

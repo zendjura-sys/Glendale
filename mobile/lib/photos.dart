@@ -11,11 +11,12 @@ import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'i18n.dart';
 
-const albumPrivacy = {
-  'public': (LucideIcons.globe, 'Усім'),
-  'friends': (LucideIcons.usersRound, 'Друзям'),
-  'private': (LucideIcons.lock, 'Тільки мені'),
+final albumPrivacy = {
+  'public': (LucideIcons.globe, tr('Усім')),
+  'friends': (LucideIcons.usersRound, tr('Друзям')),
+  'private': (LucideIcons.lock, tr('Тільки мені')),
 };
 
 // ───────────────────────── Фото користувача / спільноти ─────────────────────────
@@ -80,7 +81,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
     if (data == null) {
       return error == null
           ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
-          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.images, title: 'Фото недоступні', text: '$error')));
+          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.images, title: tr('Фото недоступні'), text: '$error')));
     }
     final owner = mapOf(data['owner']);
     final albums = maps(data['albums']);
@@ -99,7 +100,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 const Icon(LucideIcons.arrowLeft, size: 14, color: muted),
                 const SizedBox(width: 4),
-                Text(owner['type'] == 'community' ? 'До спільноти' : 'До профілю', style: body(12, color: muted)),
+                Text(owner['type'] == 'community' ? tr('До спільноти') : tr('До профілю'), style: body(12, color: muted)),
               ]),
             ),
             const SizedBox(height: 10),
@@ -116,7 +117,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
             ]),
             if (canCreate) ...[
               const SizedBox(height: 14),
-              PrimaryButton(label: 'Створити альбом', icon: LucideIcons.folderPlus, onPressed: _create),
+              PrimaryButton(label: tr('Створити альбом'), icon: LucideIcons.folderPlus, onPressed: _create),
             ],
           ]),
         ),
@@ -124,14 +125,14 @@ class _PhotosScreenState extends State<PhotosScreen> {
         if (albums.isEmpty)
           EmptyState(
             icon: LucideIcons.camera,
-            title: 'Тут поки немає альбомів',
-            text: canCreate ? 'Створіть перший альбом і поділіться найкращими кадрами.' : 'Альбомів, доступних вам, поки немає.',
-            action: canCreate ? 'Створити альбом' : null,
+            title: tr('Тут поки немає альбомів'),
+            text: canCreate ? tr('Створіть перший альбом і поділіться найкращими кадрами.') : tr('Альбомів, доступних вам, поки немає.'),
+            action: canCreate ? tr('Створити альбом') : null,
             onAction: _create,
           )
         else ...[
           Segmented(
-            options: [SegmentOption('albums', 'Альбоми', count: albums.length), SegmentOption('photos', 'Усі фото', count: total)],
+            options: [SegmentOption('albums', tr('Альбоми'), count: albums.length), SegmentOption('photos', tr('Усі фото'), count: total)],
             selected: tab,
             onSelect: (value) => setState(() => tab = value),
           ),
@@ -218,7 +219,7 @@ class PhotoGrid extends StatelessWidget {
 Future<int?> editAlbum(BuildContext context, {Map<String, dynamic>? album, String? community, List<String> privacyOptions = const ['public', 'friends', 'private']}) {
   return showGcSheet<int>(
     context,
-    title: album == null ? 'Новий альбом' : 'Налаштування альбому',
+    title: album == null ? tr('Новий альбом') : tr('Налаштування альбому'),
     builder: (sheet) => _AlbumForm(album: album, community: community, privacyOptions: privacyOptions, onDone: (id) => Navigator.pop(sheet, id)),
   );
 }
@@ -279,11 +280,11 @@ class _AlbumFormState extends State<_AlbumForm> {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        LabeledField(label: 'Назва', child: GcField(controller: title, label: 'Наприклад, «Літо 2026»', onChanged: (_) => setState(() {}))),
+        LabeledField(label: tr('Назва'), child: GcField(controller: title, label: tr('Наприклад, «Літо 2026»'), onChanged: (_) => setState(() {}))),
         const SizedBox(height: 10),
-        LabeledField(label: 'Опис', child: GcField(controller: description, label: 'Необов’язково', maxLines: 4, minLines: 2)),
+        LabeledField(label: tr('Опис'), child: GcField(controller: description, label: tr('Необов’язково'), maxLines: 4, minLines: 2)),
         const SizedBox(height: 12),
-        Text('Хто бачить', style: body(13, color: muted)),
+        Text(tr('Хто бачить'), style: body(13, color: muted)),
         const SizedBox(height: 6),
         Segmented(
           options: [
@@ -297,11 +298,11 @@ class _AlbumFormState extends State<_AlbumForm> {
         SwitchListTile(
           value: comments,
           contentPadding: EdgeInsets.zero,
-          title: Text('Дозволити коментарі', style: body(14.5)),
+          title: Text(tr('Дозволити коментарі'), style: body(14.5)),
           onChanged: (value) => setState(() => comments = value),
         ),
         const SizedBox(height: 8),
-        PrimaryButton(label: widget.album == null ? 'Створити альбом' : 'Зберегти', busy: busy, onPressed: title.text.trim().isEmpty ? null : _save),
+        PrimaryButton(label: widget.album == null ? tr('Створити альбом') : tr('Зберегти'), busy: busy, onPressed: title.text.trim().isEmpty ? null : _save),
       ]),
     );
   }
@@ -374,7 +375,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
     try {
       final files = [for (final image in picked.take(limit)) await http.MultipartFile.fromPath('photos[]', image.path, filename: image.name)];
       final result = await api.upload(Api.site('/albums/${widget.id}/photos'), {}, files);
-      if (mounted) toast(context, text(result['message']) ?? 'Фото завантажено.');
+      if (mounted) toast(context, text(result['message']) ?? tr('Фото завантажено.'));
       await _load(reset: true);
     } catch (e) {
       if (mounted) toast(context, e);
@@ -390,8 +391,8 @@ class _AlbumScreenState extends State<AlbumScreen> {
       builder: (sheet) => Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          SheetAction(icon: LucideIcons.pencil, label: 'Редагувати альбом', onTap: () => Navigator.pop(sheet, 'edit')),
-          SheetAction(icon: LucideIcons.trash2, label: 'Видалити альбом', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
+          SheetAction(icon: LucideIcons.pencil, label: tr('Редагувати альбом'), onTap: () => Navigator.pop(sheet, 'edit')),
+          SheetAction(icon: LucideIcons.trash2, label: tr('Видалити альбом'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
         ]),
       ),
     );
@@ -401,7 +402,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
       if (saved != null) _load(reset: true);
     } else {
       final count = intOf(album['photos_count']);
-      if (!await confirm(context, 'Видалити альбом?', text: count > 0 ? 'Разом з ним зникнуть $count фото.' : null, action: 'Видалити', danger: true)) return;
+      if (!await confirm(context, tr('Видалити альбом?'), text: count > 0 ? tr('Разом з ним зникнуть {count} фото.', {'count': count}) : null, action: tr('Видалити'), danger: true)) return;
       if (!mounted) return;
       if (await attempt(context, () => api.delete(Api.site('/albums/${widget.id}')))) {
         if (mounted) context.pop();
@@ -415,7 +416,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
     if (data == null) {
       return error == null
           ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
-          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.images, title: 'Альбом недоступний', text: '$error')));
+          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.images, title: tr('Альбом недоступний'), text: '$error')));
     }
     final album = mapOf(data['album']);
     final owner = mapOf(album['owner']);
@@ -440,13 +441,13 @@ class _AlbumScreenState extends State<AlbumScreen> {
             if (text(album['description']) != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(text(album['description'])!, style: body(14, color: soft))),
             const SizedBox(height: 10),
             Wrap(spacing: 8, runSpacing: 6, children: [
-              Pill(label: '$count фото', icon: LucideIcons.image),
+              Pill(label: tr('{count} фото', {'count': count}), icon: LucideIcons.image),
               if (privacy != null) Pill(label: privacy.$2, icon: privacy.$1),
-              if (album['comments_enabled'] == false) const Pill(label: 'Без коментарів', icon: LucideIcons.messageCircleOff),
+              if (album['comments_enabled'] == false) Pill(label: tr('Без коментарів'), icon: LucideIcons.messageCircleOff),
             ]),
             if (can['upload'] == true) ...[
               const SizedBox(height: 14),
-              PrimaryButton(label: uploading ? 'Завантажуємо…' : 'Додати фото', icon: LucideIcons.imagePlus, busy: uploading, onPressed: uploading ? null : _upload),
+              PrimaryButton(label: uploading ? tr('Завантажуємо…') : tr('Додати фото'), icon: LucideIcons.imagePlus, busy: uploading, onPressed: uploading ? null : _upload),
             ],
           ]),
         ),
@@ -454,9 +455,9 @@ class _AlbumScreenState extends State<AlbumScreen> {
         if (photos.isEmpty)
           EmptyState(
             icon: LucideIcons.camera,
-            title: 'Альбом порожній',
-            text: can['upload'] == true ? 'Додайте перші фотографії.' : null,
-            action: can['upload'] == true ? 'Додати фото' : null,
+            title: tr('Альбом порожній'),
+            text: can['upload'] == true ? tr('Додайте перші фотографії.') : null,
+            action: can['upload'] == true ? tr('Додати фото') : null,
             onAction: _upload,
           )
         else ...[
@@ -552,22 +553,22 @@ class _PhotoScreenState extends State<PhotoScreen> {
       builder: (sheet) => Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          if (can['edit'] == true) SheetAction(icon: LucideIcons.textAlignStart, label: 'Змінити підпис', onTap: () => Navigator.pop(sheet, 'caption')),
-          if (can['cover'] == true && photo['is_cover'] != true) SheetAction(icon: LucideIcons.image, label: 'Зробити обкладинкою альбому', onTap: () => Navigator.pop(sheet, 'cover')),
-          if (can['delete'] == true) SheetAction(icon: LucideIcons.trash2, label: 'Видалити фото', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
+          if (can['edit'] == true) SheetAction(icon: LucideIcons.textAlignStart, label: tr('Змінити підпис'), onTap: () => Navigator.pop(sheet, 'caption')),
+          if (can['cover'] == true && photo['is_cover'] != true) SheetAction(icon: LucideIcons.image, label: tr('Зробити обкладинкою альбому'), onTap: () => Navigator.pop(sheet, 'cover')),
+          if (can['delete'] == true) SheetAction(icon: LucideIcons.trash2, label: tr('Видалити фото'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
         ]),
       ),
     );
     if (!mounted || choice == null) return;
     switch (choice) {
       case 'caption':
-        final caption = await askText(context, 'Підпис до фото', initial: text(photo['caption']) ?? '', maxLines: 3);
+        final caption = await askText(context, tr('Підпис до фото'), initial: text(photo['caption']) ?? '', maxLines: 3);
         if (caption == null || !mounted) return;
         if (await attempt(context, () => api.patch(Api.site('/photos/$id'), {'caption': caption}))) _load();
       case 'cover':
-        if (await attempt(context, () => api.post(Api.site('/photos/$id/cover')), success: 'Обкладинку змінено.')) _load();
+        if (await attempt(context, () => api.post(Api.site('/photos/$id/cover')), success: tr('Обкладинку змінено.'))) _load();
       case 'delete':
-        if (!await confirm(context, 'Видалити фото?', action: 'Видалити', danger: true)) return;
+        if (!await confirm(context, tr('Видалити фото?'), action: tr('Видалити'), danger: true)) return;
         if (!mounted) return;
         if (await attempt(context, () => api.delete(Api.site('/photos/$id')))) {
           if (mounted) Navigator.pop(context);
@@ -588,7 +589,7 @@ class _PhotoScreenState extends State<PhotoScreen> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: Text(photo.isEmpty ? '' : '${photo['position']} з ${album['photos_count']}', style: body(15)),
+        title: Text(photo.isEmpty ? '' : tr('{v} з {v2}', {'v': photo['position'], 'v2': album['photos_count']}), style: body(15)),
         actions: [
           if (can['edit'] == true || can['delete'] == true || can['cover'] == true) IconButton(onPressed: _menu, icon: const Icon(LucideIcons.ellipsisVertical)),
         ],

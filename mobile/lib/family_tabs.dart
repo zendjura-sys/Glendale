@@ -9,6 +9,7 @@ import 'families.dart';
 import 'posts.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'i18n.dart';
 
 /// Дані відкритого розділу сім’ї (props сторінки сайту) і спосіб його перезавантажити.
 class FamilyContext {
@@ -56,7 +57,7 @@ class TransactionRow extends StatelessWidget {
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Text('${shown > 0 ? '+' : ''}${hryvnia(shown)}', style: body(13.5, color: shown > 0 ? green : (shown < 0 ? dangerSoft : muted), weight: FontWeight.w700)),
           if (!family && tx['balance_after'] != null) Text('= ${hryvnia(tx['balance_after'])}', style: body(11.5, color: faint)),
-          if (family && tx['treasury_after'] != null && treasury != 0) Text('казна ${hryvnia(tx['treasury_after'])}', style: body(11.5, color: faint)),
+          if (family && tx['treasury_after'] != null && treasury != 0) Text(tr('казна {v}', {'v': hryvnia(tx['treasury_after'])}), style: body(11.5, color: faint)),
         ]),
       ]),
     );
@@ -145,17 +146,17 @@ class _QueueTabState extends State<QueueTab> {
       final ok = await showDialog<bool>(
         context: context,
         builder: (dialog) => AlertDialog(
-          title: Text(approve ? 'Схвалити звіт #${report['id']}' : 'Відхилити звіт #${report['id']}'),
+          title: Text(approve ? tr('Схвалити звіт #{v}', {'v': report['id']}) : tr('Відхилити звіт #{v}', {'v': report['id']})),
           content: Column(mainAxisSize: MainAxisSize.min, children: [
             if (approve && report['type'] == 'other') ...[
-              GcField(controller: rewardController, label: 'Винагорода, ₴', keyboard: TextInputType.number),
+              GcField(controller: rewardController, label: tr('Винагорода, ₴'), keyboard: TextInputType.number),
               const SizedBox(height: 10),
             ],
-            GcField(controller: controller, label: approve ? 'Коментар (необов’язково)' : 'Причина відмови', maxLines: 3),
+            GcField(controller: controller, label: approve ? tr('Коментар (необов’язково)') : tr('Причина відмови'), maxLines: 3),
           ]),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialog, false), child: Text('Скасувати', style: body(14, color: muted))),
-            TextButton(onPressed: () => Navigator.pop(dialog, true), child: Text(approve ? 'Схвалити' : 'Відхилити', style: body(14, color: approve ? green : dangerSoft, weight: FontWeight.w700))),
+            TextButton(onPressed: () => Navigator.pop(dialog, false), child: Text(tr('Скасувати'), style: body(14, color: muted))),
+            TextButton(onPressed: () => Navigator.pop(dialog, true), child: Text(approve ? tr('Схвалити') : tr('Відхилити'), style: body(14, color: approve ? green : dangerSoft, weight: FontWeight.w700))),
           ],
         ),
       );
@@ -181,16 +182,16 @@ class _QueueTabState extends State<QueueTab> {
     XFile? proof;
     final ok = await showGcSheet<bool>(
       context,
-      title: 'Видати ${hryvnia(cashout['amount'])}',
+      title: tr('Видати {v}', {'v': hryvnia(cashout['amount'])}),
       subtitle: '${mapOf(cashout['member'])['display']}${text(cashout['note']) != null ? ' · «${cashout['note']}»' : ''}',
       builder: (sheet) => StatefulBuilder(
         builder: (context, set) => Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
-            GcField(controller: comment, label: 'Коментар (необов’язково)'),
+            GcField(controller: comment, label: tr('Коментар (необов’язково)')),
             const SizedBox(height: 10),
             GhostButton(
-              label: proof == null ? 'Скріншот видачі (необов’язково)' : 'Скріншот додано',
+              label: proof == null ? tr('Скріншот видачі (необов’язково)') : tr('Скріншот додано'),
               icon: LucideIcons.image,
               onPressed: () async {
                 final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 90);
@@ -198,7 +199,7 @@ class _QueueTabState extends State<QueueTab> {
               },
             ),
             const SizedBox(height: 14),
-            PrimaryButton(label: 'Підтвердити видачу', icon: LucideIcons.check, onPressed: () => Navigator.pop(sheet, true)),
+            PrimaryButton(label: tr('Підтвердити видачу'), icon: LucideIcons.check, onPressed: () => Navigator.pop(sheet, true)),
           ]),
         ),
       ),
@@ -210,7 +211,7 @@ class _QueueTabState extends State<QueueTab> {
   }
 
   Future<void> _cancel(Map<String, dynamic> cashout) async {
-    final reason = await askText(context, 'Скасувати заявку?', hint: 'Причина', action: 'Скасувати заявку');
+    final reason = await askText(context, tr('Скасувати заявку?'), hint: tr('Причина'), action: tr('Скасувати заявку'));
     if (reason == null || !mounted) return;
     await ctx.act(context, () => ctx.api.post(ctx.path('bank/cashouts/${cashout['id']}/cancel'), {'reason': reason}), keep: const {'tab': 'cashouts'});
   }
@@ -225,8 +226,8 @@ class _QueueTabState extends State<QueueTab> {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Segmented(
         options: [
-          SegmentOption('reports', 'Звіти', count: reports.isEmpty ? null : reports.length),
-          if (ctx.allowed('treasury.manage')) SegmentOption('cashouts', 'Виплати', count: cashouts.isEmpty ? null : cashouts.length),
+          SegmentOption('reports', tr('Звіти'), count: reports.isEmpty ? null : reports.length),
+          if (ctx.allowed('treasury.manage')) SegmentOption('cashouts', tr('Виплати'), count: cashouts.isEmpty ? null : cashouts.length),
         ],
         selected: tab,
         onSelect: (value) => ctx.reload(extra: {'tab': value}),
@@ -235,7 +236,7 @@ class _QueueTabState extends State<QueueTab> {
       Swap(id: tab, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       if (tab == 'reports') ...[
         if (reports.isEmpty)
-          const Glass(child: QuietEmpty(icon: LucideIcons.listChecks, text: 'Черга порожня — усі звіти перевірено 🎉'))
+          Glass(child: QuietEmpty(icon: LucideIcons.listChecks, text: tr('Черга порожня — усі звіти перевірено 🎉')))
         else ...[
           if (bulkable.length > 1)
             Padding(
@@ -243,11 +244,11 @@ class _QueueTabState extends State<QueueTab> {
               child: Row(children: [
                 TextButton(
                   onPressed: () => setState(() => selected.length == bulkable.length ? selected.clear() : selected.addAll(bulkable)),
-                  child: Text(selected.length == bulkable.length ? 'Зняти вибір' : 'Вибрати всі', style: body(13, color: primary)),
+                  child: Text(selected.length == bulkable.length ? tr('Зняти вибір') : tr('Вибрати всі'), style: body(13, color: primary)),
                 ),
                 const Spacer(),
                 PrimaryButton(
-                  label: 'Схвалити ${selected.length}',
+                  label: tr('Схвалити {v}', {'v': selected.length}),
                   compact: true,
                   expand: false,
                   onPressed: selected.isEmpty
@@ -268,13 +269,13 @@ class _QueueTabState extends State<QueueTab> {
                 padding: const EdgeInsets.only(top: 10),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   Wrap(spacing: 10, runSpacing: 4, children: [
-                    Text('За 30 днів: ✅ ${mapOf(r['history'])['approved'] ?? 0} · ❌ ${mapOf(r['history'])['rejected'] ?? 0}', style: body(12, color: muted)),
-                    if (r['contracts_used'] != null) Text('Контрактів цього рівня за день: ${r['contracts_used']}/$limit', style: body(12, color: intOf(r['contracts_used']) > limit ? dangerSoft : muted)),
-                    Text('Дедлайн: ${shortStamp(r['deadline'])} ${clock(r['deadline'])}', style: body(12, color: muted)),
+                    Text(tr('За 30 днів: ✅ {v} · ❌ {v2}', {'v': mapOf(r['history'])['approved'] ?? 0, 'v2': mapOf(r['history'])['rejected'] ?? 0}), style: body(12, color: muted)),
+                    if (r['contracts_used'] != null) Text(tr('Контрактів цього рівня за день: {v}/{limit}', {'v': r['contracts_used'], 'limit': limit}), style: body(12, color: intOf(r['contracts_used']) > limit ? dangerSoft : muted)),
+                    Text(tr('Дедлайн: {v} {v2}', {'v': shortStamp(r['deadline']), 'v2': clock(r['deadline'])}), style: body(12, color: muted)),
                   ]),
                   const SizedBox(height: 8),
                   if (r['self_review'] == true)
-                    Text('Власний звіт перевіряє інший офіцер.', style: body(12.5, color: gold))
+                    Text(tr('Власний звіт перевіряє інший офіцер.'), style: body(12.5, color: gold))
                   else
                     Row(children: [
                       if (bulkable.contains(intOf(r['id'])))
@@ -282,9 +283,9 @@ class _QueueTabState extends State<QueueTab> {
                           value: selected.contains(intOf(r['id'])),
                           onChanged: (v) => setState(() => v == true ? selected.add(intOf(r['id'])) : selected.remove(intOf(r['id']))),
                         ),
-                      Expanded(child: GhostButton(label: 'Відхилити', icon: LucideIcons.x, compact: true, color: dangerSoft, onPressed: () => _review(r, false))),
+                      Expanded(child: GhostButton(label: tr('Відхилити'), icon: LucideIcons.x, compact: true, color: dangerSoft, onPressed: () => _review(r, false))),
                       const SizedBox(width: 8),
-                      Expanded(child: PrimaryButton(label: 'Схвалити', icon: LucideIcons.check, compact: true, onPressed: () => _review(r, true))),
+                      Expanded(child: PrimaryButton(label: tr('Схвалити'), icon: LucideIcons.check, compact: true, onPressed: () => _review(r, true))),
                     ]),
                 ]),
               ),
@@ -292,10 +293,10 @@ class _QueueTabState extends State<QueueTab> {
         ],
       ] else
         _card(
-          title: 'Заявки на виплату',
+          title: tr('Заявки на виплату'),
           icon: LucideIcons.wallet,
           children: [
-            if (cashouts.isEmpty) const QuietEmpty(icon: LucideIcons.wallet, text: 'Нових заявок немає'),
+            if (cashouts.isEmpty) QuietEmpty(icon: LucideIcons.wallet, text: tr('Нових заявок немає')),
             for (final c in cashouts)
               Container(
                 margin: const EdgeInsets.only(bottom: 10),
@@ -310,9 +311,9 @@ class _QueueTabState extends State<QueueTab> {
                   Text(ago(c['created_at']), style: body(11.5, color: faint)),
                   const SizedBox(height: 8),
                   Row(children: [
-                    Expanded(child: GhostButton(label: 'Скасувати', compact: true, color: dangerSoft, onPressed: () => _cancel(c))),
+                    Expanded(child: GhostButton(label: tr('Скасувати'), compact: true, color: dangerSoft, onPressed: () => _cancel(c))),
                     const SizedBox(width: 8),
-                    Expanded(child: PrimaryButton(label: 'Видано', icon: LucideIcons.check, compact: true, onPressed: () => _pay(c))),
+                    Expanded(child: PrimaryButton(label: tr('Видано'), icon: LucideIcons.check, compact: true, onPressed: () => _pay(c))),
                   ]),
                 ]),
               ),
@@ -374,36 +375,36 @@ class _BankTabState extends State<BankTab> {
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Row(children: [
-        Expanded(child: MetricTile(caps: true, label: 'Мій баланс', value: hryvniaShort(ctx.me['balance']), color: green, icon: LucideIcons.wallet)),
+        Expanded(child: MetricTile(caps: true, label: tr('Мій баланс'), value: hryvniaShort(ctx.me['balance']), color: green, icon: LucideIcons.wallet)),
         const SizedBox(width: 8),
-        Expanded(child: MetricTile(caps: true, label: 'Скарбниця', value: hryvniaShort(ctx.family['treasury']), icon: LucideIcons.landmark)),
+        Expanded(child: MetricTile(caps: true, label: tr('Скарбниця'), value: hryvniaShort(ctx.family['treasury']), icon: LucideIcons.landmark)),
       ]),
       if (totals != null) ...[
         const SizedBox(height: 8),
         Row(children: [
-          Expanded(child: MetricTile(caps: true, label: 'Борг перед учасниками', value: hryvniaShort(totals['balances']), icon: LucideIcons.usersRound)),
+          Expanded(child: MetricTile(caps: true, label: tr('Борг перед учасниками'), value: hryvniaShort(totals['balances']), icon: LucideIcons.usersRound)),
           const SizedBox(width: 8),
-          Expanded(child: MetricTile(caps: true, label: 'Депозити', value: hryvniaShort(totals['deposits']), icon: LucideIcons.piggyBank)),
+          Expanded(child: MetricTile(caps: true, label: tr('Депозити'), value: hryvniaShort(totals['deposits']), icon: LucideIcons.piggyBank)),
         ]),
         const SizedBox(height: 6),
-        Text('На видачу: ${hryvnia(totals['pending_cashouts'])} · видано за тиждень: ${hryvnia(totals['paid_week'])}', style: body(12, color: muted)),
+        Text(tr('На видачу: {v} · видано за тиждень: {v2}', {'v': hryvnia(totals['pending_cashouts']), 'v2': hryvnia(totals['paid_week'])}), style: body(12, color: muted)),
       ],
       const SizedBox(height: 12),
       _card(
-        title: 'Вивести гроші в грі',
+        title: tr('Вивести гроші в грі'),
         icon: LucideIcons.banknote,
-        subtitle: 'Сума резервується з вашого балансу, офіцер видає її в грі й підтверджує. Мінімум — ${config['cashout_min'] ?? 100} ₴.',
+        subtitle: tr('Сума резервується з вашого балансу, офіцер видає її в грі й підтверджує. Мінімум — {v} ₴.', {'v': config['cashout_min'] ?? 100}),
         children: [
           Row(children: [
-            Expanded(child: GcField(controller: cashout, label: 'Сума, ₴', keyboard: TextInputType.number, dense: true)),
+            Expanded(child: GcField(controller: cashout, label: tr('Сума, ₴'), keyboard: TextInputType.number, dense: true)),
             const SizedBox(width: 8),
-            GhostButton(label: 'Усе', compact: true, expand: false, onPressed: () => cashout.text = '${intOf(ctx.me['balance']) ~/ 100}'),
+            GhostButton(label: tr('Усе'), compact: true, expand: false, onPressed: () => cashout.text = '${intOf(ctx.me['balance']) ~/ 100}'),
           ]),
           const SizedBox(height: 8),
-          GcField(controller: note, label: 'Примітка: коли зручно отримати', dense: true),
+          GcField(controller: note, label: tr('Примітка: коли зручно отримати'), dense: true),
           const SizedBox(height: 10),
           PrimaryButton(
-            label: 'Запросити',
+            label: tr('Запросити'),
             icon: LucideIcons.download,
             onPressed: () async {
               if (await ctx.act(context, () => ctx.api.post(ctx.path('bank/cashouts'), {'amount': cashout.text.trim(), 'note': note.text.trim()}), keep: keep)) {
@@ -420,13 +421,13 @@ class _BankTabState extends State<BankTab> {
                 child: Row(children: [
                   Expanded(child: Text('${hryvnia(c['amount'])} · ${ago(c['created_at'])}', style: body(13))),
                   Pill(
-                    label: switch (c['status']) { 'paid' => 'Видано', 'cancelled' => 'Скасовано', _ => 'Очікує' },
+                    label: switch (c['status']) { 'paid' => tr('Видано'), 'cancelled' => tr('Скасовано'), _ => tr('Очікує') },
                     color: switch (c['status']) { 'paid' => green, 'cancelled' => muted, _ => gold },
                   ),
                   if (c['status'] == 'pending')
                     IconButton(
                       visualDensity: VisualDensity.compact,
-                      tooltip: 'Скасувати',
+                      tooltip: tr('Скасувати'),
                       onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('bank/cashouts/${c['id']}/cancel')), keep: keep),
                       icon: const Icon(LucideIcons.x, size: 18, color: muted),
                     ),
@@ -443,14 +444,14 @@ class _BankTabState extends State<BankTab> {
       ),
       if (deposits['enabled'] == true)
         _card(
-          title: 'Депозит',
+          title: tr('Депозит'),
           icon: LucideIcons.piggyBank,
-          subtitle: '${deposits['daily_rate']}% на день або ${deposits['weekly_rate']}% на тиждень. Дострокове закриття повертає лише тіло депозиту.',
+          subtitle: tr('{v}% на день або {v2}% на тиждень. Дострокове закриття повертає лише тіло депозиту.', {'v': deposits['daily_rate'], 'v2': deposits['weekly_rate']}),
           children: [
-            GcField(controller: deposit, label: 'Від ${deposits['min_amount']} ₴', keyboard: TextInputType.number, dense: true),
-            const SizedBox(height: 8),
+            GcField(controller: deposit, label: tr('Від {v} ₴', {'v': deposits['min_amount']}), keyboard: TextInputType.number, dense: true),
+            SizedBox(height: 8),
             Segmented(
-              options: const [SegmentOption('daily', 'Дні'), SegmentOption('weekly', 'Тижні')],
+              options: [SegmentOption('daily', tr('Дні')), SegmentOption('weekly', tr('Тижні'))],
               selected: period,
               onSelect: (value) => setState(() => period = value),
             ),
@@ -466,10 +467,10 @@ class _BankTabState extends State<BankTab> {
               ),
               Text('${periods.round()} ${period == 'daily' ? 'дн.' : 'тиж.'}', style: body(13, weight: FontWeight.w700)),
             ]),
-            Text('Ставка $rate% за ${period == 'daily' ? 'день' : 'тиждень'}. Суму до виплати сервер покаже після відкриття.', style: body(12, color: muted)),
+            Text(tr('Ставка {rate}% за {v}. Суму до виплати сервер покаже після відкриття.', {'rate': rate, 'v': period == 'daily' ? 'день' : 'тиждень'}), style: body(12, color: muted)),
             const SizedBox(height: 10),
             PrimaryButton(
-              label: 'Відкрити депозит',
+              label: tr('Відкрити депозит'),
               onPressed: () async {
                 if (await ctx.act(context, () => ctx.api.post(ctx.path('bank/deposits'), {'amount': deposit.text.trim(), 'period': period, 'periods': periods.round()}), keep: keep)) {
                   deposit.clear();
@@ -479,53 +480,53 @@ class _BankTabState extends State<BankTab> {
             for (final d in myDeposits)
               Container(
                 margin: const EdgeInsets.only(top: 10),
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(12), border: Border.all(color: line)),
                 child: Row(children: [
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text('${hryvnia(d['amount'])} → ${hryvnia(d['payout'])}', style: body(13.5, weight: FontWeight.w700)),
-                      Text('${d['rate']}% · ${d['periods']} ${d['period'] == 'daily' ? 'дн.' : 'тиж.'} · до ${shortStamp(d['matures_at'])}', style: body(12, color: muted)),
-                      if (intOf(d['accrued']) > 0) Text('Нараховано ${hryvnia(d['accrued'])}', style: body(12, color: green)),
+                      Text(tr('{v}% · {v2} {v3} · до {v4}', {'v': d['rate'], 'v2': d['periods'], 'v3': d['period'] == 'daily' ? 'дн.' : 'тиж.', 'v4': shortStamp(d['matures_at'])}), style: body(12, color: muted)),
+                      if (intOf(d['accrued']) > 0) Text(tr('Нараховано {v}', {'v': hryvnia(d['accrued'])}), style: body(12, color: green)),
                     ]),
                   ),
                   if (d['status'] == 'active')
                     TextButton(
                       onPressed: () async {
-                        if (await confirm(context, 'Закрити депозит достроково?', text: 'Тіло повернеться на баланс, відсотки не нараховуються.', action: 'Закрити', danger: true) && context.mounted) {
+                        if (await confirm(context, tr('Закрити депозит достроково?'), text: tr('Тіло повернеться на баланс, відсотки не нараховуються.'), action: tr('Закрити'), danger: true) && context.mounted) {
                           await ctx.act(context, () => ctx.api.post(ctx.path('bank/deposits/${d['id']}/close')), keep: keep);
                         }
                       },
-                      child: Text('Закрити', style: body(13, color: dangerSoft)),
+                      child: Text(tr('Закрити'), style: body(13, color: dangerSoft)),
                     )
                   else
-                    Pill(label: d['status'] == 'matured' ? 'Виплачено' : 'Закрито', color: muted),
+                    Pill(label: d['status'] == 'matured' ? tr('Виплачено') : tr('Закрито'), color: muted),
                 ]),
               ),
           ],
         ),
       if (ctx.allowed('treasury.manage'))
         _card(
-          title: 'Ручна операція',
+          title: tr('Ручна операція'),
           icon: LucideIcons.slidersHorizontal,
-          subtitle: 'Нарахування чи списання з балансу учасника або скарбниці з обов’язковим коментарем.',
-          trailing: TextButton(onPressed: () => setState(() => manualOpen = !manualOpen), child: Text(manualOpen ? 'Згорнути' : 'Розгорнути', style: body(12.5, color: primary))),
+          subtitle: tr('Нарахування чи списання з балансу учасника або скарбниці з обов’язковим коментарем.'),
+          trailing: TextButton(onPressed: () => setState(() => manualOpen = !manualOpen), child: Text(manualOpen ? tr('Згорнути') : tr('Розгорнути'), style: body(12.5, color: primary))),
           children: [
             if (manualOpen) ...[
-              Segmented(options: const [SegmentOption('member', 'Учасник'), SegmentOption('treasury', 'Скарбниця')], selected: target, onSelect: (v) => setState(() => target = v)),
+              Segmented(options: [SegmentOption('member', tr('Учасник')), SegmentOption('treasury', tr('Скарбниця'))], selected: target, onSelect: (v) => setState(() => target = v)),
               if (target == 'member') ...[
                 const SizedBox(height: 8),
-                GcSelect<int>(value: manualMember, hint: 'Оберіть учасника', expand: true, items: [for (final m in roster) (intOf(m['id']), '${m['display']}')], onChanged: (v) => setState(() => manualMember = v)),
+                GcSelect<int>(value: manualMember, hint: tr('Оберіть учасника'), expand: true, items: [for (final m in roster) (intOf(m['id']), '${m['display']}')], onChanged: (v) => setState(() => manualMember = v)),
               ],
+              SizedBox(height: 8),
+              Segmented(options: [SegmentOption('credit', tr('Нарахувати')), SegmentOption('debit', tr('Списати'))], selected: direction, onSelect: (v) => setState(() => direction = v)),
               const SizedBox(height: 8),
-              Segmented(options: const [SegmentOption('credit', 'Нарахувати'), SegmentOption('debit', 'Списати')], selected: direction, onSelect: (v) => setState(() => direction = v)),
+              GcField(controller: manualAmount, label: tr('Сума, ₴'), keyboard: TextInputType.number, dense: true),
               const SizedBox(height: 8),
-              GcField(controller: manualAmount, label: 'Сума, ₴', keyboard: TextInputType.number, dense: true),
-              const SizedBox(height: 8),
-              GcField(controller: manualComment, label: 'Коментар (потрапить у журнал аудиту)', dense: true),
-              const SizedBox(height: 10),
+              GcField(controller: manualComment, label: tr('Коментар (потрапить у журнал аудиту)'), dense: true),
+              SizedBox(height: 10),
               PrimaryButton(
-                label: 'Провести',
+                label: tr('Провести'),
                 onPressed: () async {
                   final ok = await ctx.act(
                     context,
@@ -548,22 +549,22 @@ class _BankTabState extends State<BankTab> {
           ],
         ),
       _card(
-        title: 'Журнал операцій',
+        title: tr('Журнал операцій'),
         icon: LucideIcons.receipt,
         trailing: ctx.allowed('treasury.manage')
             ? SizedBox(
                 width: 170,
                 child: Segmented(
-                  options: const [SegmentOption('me', 'Мої'), SegmentOption('family', 'Уся сім’я')],
+                  options: [SegmentOption('me', tr('Мої')), SegmentOption('family', tr('Уся сім’я'))],
                   selected: scope,
                   onSelect: (v) => ctx.reload(extra: {'scope': v}),
                 ),
               )
             : null,
         children: [
-          if (ledger.items.isEmpty) const QuietEmpty(icon: LucideIcons.receipt, text: 'Операцій ще немає'),
+          if (ledger.items.isEmpty) QuietEmpty(icon: LucideIcons.receipt, text: tr('Операцій ще немає')),
           for (final t in ledger.items) TransactionRow(tx: t, family: scope == 'family'),
-          if (ledger.more) TextButton(onPressed: () => ctx.reload(extra: {'scope': scope, 'page': '${ledger.current + 1}'}), child: Text('Старіші операції', style: body(13, color: primary))),
+          if (ledger.more) TextButton(onPressed: () => ctx.reload(extra: {'scope': scope, 'page': '${ledger.current + 1}'}), child: Text(tr('Старіші операції'), style: body(13, color: primary))),
         ],
       ),
     ]);
@@ -583,17 +584,17 @@ class WarehouseTab extends StatelessWidget {
     final ok = await showGcSheet<bool>(
       context,
       title: '${action == 'take' ? 'Взяти' : 'Покласти'}: ${item['name']}',
-      subtitle: 'На складі ${item['quantity']} ${item['unit'] ?? 'шт'}${item['hourly_quota'] != null ? ' · квота ${item['hourly_quota']}/год' : ''}',
+      subtitle: tr('На складі {v} {v2}{v3}', {'v': item['quantity'], 'v2': item['unit'] ?? 'шт', 'v3': item['hourly_quota'] != null ? ' · квота ${item['hourly_quota']}/год' : ''}),
       builder: (sheet) => StatefulBuilder(
         builder: (context, set) => Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            GcField(controller: quantity, label: 'Кількість', keyboard: TextInputType.number),
+            GcField(controller: quantity, label: tr('Кількість'), keyboard: TextInputType.number),
             const SizedBox(height: 8),
-            GcField(controller: comment, label: 'Коментар (необов’язково)'),
+            GcField(controller: comment, label: tr('Коментар (необов’язково)')),
             const SizedBox(height: 8),
             GhostButton(
-              label: proof == null ? 'Скріншот (необов’язково)' : 'Скріншот додано',
+              label: proof == null ? tr('Скріншот (необов’язково)') : tr('Скріншот додано'),
               icon: LucideIcons.image,
               onPressed: () async {
                 final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 90);
@@ -601,7 +602,7 @@ class WarehouseTab extends StatelessWidget {
               },
             ),
             const SizedBox(height: 14),
-            PrimaryButton(label: action == 'take' ? 'Взяти' : 'Покласти', onPressed: () => Navigator.pop(sheet, true)),
+            PrimaryButton(label: action == 'take' ? tr('Взяти') : tr('Покласти'), onPressed: () => Navigator.pop(sheet, true)),
           ]),
         ),
       ),
@@ -627,33 +628,33 @@ class WarehouseTab extends StatelessWidget {
     var archived = item?['is_archived'] == true;
     final ok = await showGcSheet<bool>(
       context,
-      title: item == null ? 'Нова позиція' : 'Редагувати позицію',
+      title: item == null ? tr('Нова позиція') : tr('Редагувати позицію'),
       builder: (sheet) => StatefulBuilder(
         builder: (context, set) => SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             GcSelect<String>(value: categories.containsKey(category) ? category : null, expand: true, items: [for (final e in categories.entries) (e.key, '${e.value}')], onChanged: (v) => set(() => category = v ?? category)),
             const SizedBox(height: 8),
-            GcField(controller: name, label: 'Назва'),
+            GcField(controller: name, label: tr('Назва')),
             const SizedBox(height: 8),
             Row(children: [
-              Expanded(child: GcField(controller: quantity, label: 'Кількість', keyboard: TextInputType.number, dense: true)),
+              Expanded(child: GcField(controller: quantity, label: tr('Кількість'), keyboard: TextInputType.number, dense: true)),
               const SizedBox(width: 8),
-              Expanded(child: GcField(controller: unit, label: 'Одиниця (шт)', dense: true)),
+              Expanded(child: GcField(controller: unit, label: tr('Одиниця (шт)'), dense: true)),
             ]),
             const SizedBox(height: 8),
             Row(children: [
-              Expanded(child: GcField(controller: quota, label: 'Квота за годину', keyboard: TextInputType.number, dense: true)),
+              Expanded(child: GcField(controller: quota, label: tr('Квота за годину'), keyboard: TextInputType.number, dense: true)),
               const SizedBox(width: 8),
-              Expanded(child: GcField(controller: minStock, label: 'Мінімальний залишок', keyboard: TextInputType.number, dense: true)),
+              Expanded(child: GcField(controller: minStock, label: tr('Мінімальний залишок'), keyboard: TextInputType.number, dense: true)),
             ]),
             if (item != null) ...[
               const SizedBox(height: 8),
-              GcField(controller: comment, label: 'Коментар до інвентаризації', dense: true),
-              SwitchListTile(contentPadding: EdgeInsets.zero, value: archived, title: Text('В архіві', style: body(14)), onChanged: (v) => set(() => archived = v)),
+              GcField(controller: comment, label: tr('Коментар до інвентаризації'), dense: true),
+              SwitchListTile(contentPadding: EdgeInsets.zero, value: archived, title: Text(tr('В архіві'), style: body(14)), onChanged: (v) => set(() => archived = v)),
             ],
             const SizedBox(height: 12),
-            PrimaryButton(label: 'Зберегти', onPressed: () => Navigator.pop(sheet, true)),
+            PrimaryButton(label: tr('Зберегти'), onPressed: () => Navigator.pop(sheet, true)),
           ]),
         ),
       ),
@@ -688,9 +689,9 @@ class WarehouseTab extends StatelessWidget {
       if (ctx.allowed('warehouse.logs'))
         Segmented(
           options: [
-            const SegmentOption('stock', 'Залишки'),
-            const SegmentOption('log', 'Журнал'),
-            SegmentOption('alerts', 'Підозрілі', count: intOf(mapOf(ctx.data['badges'])['alerts']) > 0 ? mapOf(ctx.data['badges'])['alerts'] : null),
+            SegmentOption('stock', tr('Залишки')),
+            SegmentOption('log', tr('Журнал')),
+            SegmentOption('alerts', tr('Підозрілі'), count: intOf(mapOf(ctx.data['badges'])['alerts']) > 0 ? mapOf(ctx.data['badges'])['alerts'] : null),
           ],
           selected: tab,
           onSelect: (v) => ctx.reload(extra: {'tab': v}),
@@ -698,9 +699,9 @@ class WarehouseTab extends StatelessWidget {
       const SizedBox(height: 10),
       Swap(id: tab, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       if (tab == 'stock') ...[
-        if (manage) Align(alignment: Alignment.centerRight, child: GhostButton(label: 'Позиція', icon: LucideIcons.plus, compact: true, expand: false, onPressed: () => _editItem(context))),
+        if (manage) Align(alignment: Alignment.centerRight, child: GhostButton(label: tr('Позиція'), icon: LucideIcons.plus, compact: true, expand: false, onPressed: () => _editItem(context))),
         const SizedBox(height: 10),
-        if (items.isEmpty) const Glass(child: QuietEmpty(icon: LucideIcons.package, text: 'Склад порожній')),
+        if (items.isEmpty) Glass(child: QuietEmpty(icon: LucideIcons.package, text: tr('Склад порожній'))),
         for (final entry in grouped.entries)
           _card(
             title: '${categories[entry.key] ?? entry.key}',
@@ -720,18 +721,18 @@ class WarehouseTab extends StatelessWidget {
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text('${item['name']}${item['is_archived'] == true ? ' (архів)' : ''}', style: body(14, weight: FontWeight.w600)),
-                          if (item['hourly_quota'] != null) Text('квота ${item['hourly_quota']}/год', style: body(11.5, color: muted)),
+                          if (item['hourly_quota'] != null) Text(tr('квота {v}/год', {'v': item['hourly_quota']}), style: body(11.5, color: muted)),
                         ]),
                       ),
                       Text('${item['quantity']}', style: display(18, color: item['low'] == true ? dangerSoft : ink)),
                       const SizedBox(width: 4),
-                      Text(text(item['unit']) ?? 'шт', style: body(12, color: muted)),
+                      Text(text(item['unit']) ?? tr('шт'), style: body(12, color: muted)),
                     ]),
                     const SizedBox(height: 8),
                     Row(children: [
-                      Expanded(child: GhostButton(label: 'Взяти', icon: LucideIcons.upload, compact: true, onPressed: intOf(item['quantity']) > 0 && item['is_archived'] != true ? () => _move(context, item, 'take') : null)),
+                      Expanded(child: GhostButton(label: tr('Взяти'), icon: LucideIcons.upload, compact: true, onPressed: intOf(item['quantity']) > 0 && item['is_archived'] != true ? () => _move(context, item, 'take') : null)),
                       const SizedBox(width: 8),
-                      Expanded(child: GhostButton(label: 'Покласти', icon: LucideIcons.download, compact: true, onPressed: item['is_archived'] != true ? () => _move(context, item, 'put') : null)),
+                      Expanded(child: GhostButton(label: tr('Покласти'), icon: LucideIcons.download, compact: true, onPressed: item['is_archived'] != true ? () => _move(context, item, 'put') : null)),
                       if (manage) IconButton(visualDensity: VisualDensity.compact, onPressed: () => _editItem(context, item: item), icon: const Icon(LucideIcons.pencil, size: 18, color: muted)),
                     ]),
                   ]),
@@ -741,7 +742,7 @@ class WarehouseTab extends StatelessWidget {
       ],
       if (takers.isNotEmpty && tab != 'stock')
         _card(
-          title: 'Найбільше брали за добу',
+          title: tr('Найбільше брали за добу'),
           icon: LucideIcons.trendingUp,
           children: [
             for (final t in takers)
@@ -749,16 +750,16 @@ class WarehouseTab extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 3),
                 child: Row(children: [
                   Expanded(child: Text(text(t['display']) ?? '', style: body(13).copyWith(fontFamily: 'monospace'))),
-                  Text('${t['total']} шт · ${t['times']} раз', style: body(12, color: muted)),
+                  Text(tr('{v} шт · {v2} раз', {'v': t['total'], 'v2': t['times']}), style: body(12, color: muted)),
                 ]),
               ),
           ],
         ),
       _card(
-        title: tab == 'stock' ? 'Мої останні дії' : (tab == 'alerts' ? 'Підозріла активність' : 'Журнал складу'),
+        title: tab == 'stock' ? tr('Мої останні дії') : (tab == 'alerts' ? tr('Підозріла активність') : tr('Журнал складу')),
         icon: tab == 'alerts' ? LucideIcons.triangleAlert : LucideIcons.history,
         children: [
-          if (logs.isEmpty) const QuietEmpty(icon: LucideIcons.package, text: 'Записів немає'),
+          if (logs.isEmpty) QuietEmpty(icon: LucideIcons.package, text: tr('Записів немає')),
           for (final l in logs)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
@@ -774,7 +775,7 @@ class WarehouseTab extends StatelessWidget {
                     Text('${l['action_label']} ${l['quantity']} × ${l['item']}', style: body(13.5, weight: FontWeight.w600)),
                     if (text(l['member']) != null) Text(text(l['member'])!, style: body(12, color: soft).copyWith(fontFamily: 'monospace')),
                     if (text(l['comment']) != null) Text(text(l['comment'])!, style: body(12, color: muted)),
-                    Text('Залишок ${l['quantity_after']} · ${ago(l['created_at'])}', style: body(11.5, color: faint)),
+                    Text(tr('Залишок {v} · {v2}', {'v': l['quantity_after'], 'v2': ago(l['created_at'])}), style: body(11.5, color: faint)),
                   ]),
                 ),
                 if (text(l['proof_url']) != null)
@@ -819,12 +820,12 @@ class _MembersTabState extends State<MembersTab> {
       builder: (sheet) => Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          if (member['manageable'] == true) SheetAction(icon: LucideIcons.medal, label: 'Змінити ранг', onTap: () => Navigator.pop(sheet, 'rank')),
-          if (member['manageable'] == true || (self && ctx.allowed('ranks.manage'))) SheetAction(icon: LucideIcons.idCard, label: 'Обов’язки', onTap: () => Navigator.pop(sheet, 'duties')),
-          if (ctx.allowed('members.manage') && (self || member['manageable'] == true)) SheetAction(icon: LucideIcons.idCard, label: 'RP-дані (нік і Static ID)', onTap: () => Navigator.pop(sheet, 'identity')),
-          if (ctx.allowed('owner') && !self) SheetAction(icon: LucideIcons.crown, label: 'Передати лідерство', color: gold, onTap: () => Navigator.pop(sheet, 'transfer')),
-          if (member['manageable'] == true) SheetAction(icon: LucideIcons.userRoundMinus, label: 'Виключити', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'kick')),
-          if (text(member['username']) != null) SheetAction(icon: LucideIcons.userRound, label: 'Профіль GameCon', onTap: () => Navigator.pop(sheet, 'profile')),
+          if (member['manageable'] == true) SheetAction(icon: LucideIcons.medal, label: tr('Змінити ранг'), onTap: () => Navigator.pop(sheet, 'rank')),
+          if (member['manageable'] == true || (self && ctx.allowed('ranks.manage'))) SheetAction(icon: LucideIcons.idCard, label: tr('Обов’язки'), onTap: () => Navigator.pop(sheet, 'duties')),
+          if (ctx.allowed('members.manage') && (self || member['manageable'] == true)) SheetAction(icon: LucideIcons.idCard, label: tr('RP-дані (нік і Static ID)'), onTap: () => Navigator.pop(sheet, 'identity')),
+          if (ctx.allowed('owner') && !self) SheetAction(icon: LucideIcons.crown, label: tr('Передати лідерство'), color: gold, onTap: () => Navigator.pop(sheet, 'transfer')),
+          if (member['manageable'] == true) SheetAction(icon: LucideIcons.userRoundMinus, label: tr('Виключити'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'kick')),
+          if (text(member['username']) != null) SheetAction(icon: LucideIcons.userRound, label: tr('Профіль GameCon'), onTap: () => Navigator.pop(sheet, 'profile')),
         ]),
       ),
     );
@@ -834,7 +835,7 @@ class _MembersTabState extends State<MembersTab> {
       case 'rank':
         final rank = await showGcSheet<int>(
           context,
-          title: 'Новий ранг',
+          title: tr('Новий ранг'),
           builder: (sheet) => ListView(shrinkWrap: true, padding: const EdgeInsets.fromLTRB(12, 0, 12, 20), children: [
             for (var r = 9; r >= 1; r--)
               ListTile(
@@ -846,20 +847,20 @@ class _MembersTabState extends State<MembersTab> {
         );
         if (rank != null && mounted) await ctx.act(context, () => ctx.api.patch(path, {'rank': rank}), keep: const {'tab': 'members'});
       case 'duties':
-        final duties = await askText(context, 'Обов’язки', initial: text(member['duties']) ?? '', hint: 'Напр. «Склад і контракти»');
+        final duties = await askText(context, tr('Обов’язки'), initial: text(member['duties']) ?? '', hint: tr('Напр. «Склад і контракти»'));
         if (duties != null && mounted) await ctx.act(context, () => ctx.api.patch(path, {'duties': duties}), keep: const {'tab': 'members'});
       case 'identity':
-        final nick = await askText(context, 'RP-нікнейм', initial: text(member['nickname']) ?? '', hint: 'Ім’я_Прізвище');
+        final nick = await askText(context, tr('RP-нікнейм'), initial: text(member['nickname']) ?? '', hint: tr('Ім’я_Прізвище'));
         if (nick == null || !mounted) return;
-        final id = await askText(context, 'Static ID', initial: text(member['static_id']) ?? '', hint: 'Лише цифри');
+        final id = await askText(context, 'Static ID', initial: text(member['static_id']) ?? '', hint: tr('Лише цифри'));
         if (id == null || !mounted) return;
         await ctx.act(context, () => ctx.api.patch(path, {'rp_nickname': nick, 'static_id': id}), keep: const {'tab': 'members'});
       case 'transfer':
-        if (await confirm(context, 'Передати лідерство ${member['display']}?', text: 'Ви залишитеся в сім’ї з рангом заступника.', action: 'Передати', danger: true) && mounted) {
+        if (await confirm(context, tr('Передати лідерство {v}?', {'v': member['display']}), text: tr('Ви залишитеся в сім’ї з рангом заступника.'), action: tr('Передати'), danger: true) && mounted) {
           await ctx.act(context, () => ctx.api.post('$path/transfer'));
         }
       case 'kick':
-        final reason = await askText(context, 'Виключити ${member['display']}?', hint: 'Причина (обов’язково)', action: 'Виключити');
+        final reason = await askText(context, tr('Виключити {v}?', {'v': member['display']}), hint: tr('Причина (обов’язково)'), action: tr('Виключити'));
         if (reason != null && reason.length >= 3 && mounted) await ctx.act(context, () => ctx.api.post('$path/kick', {'reason': reason}), keep: const {'tab': 'members'});
       case 'profile':
         context.push('/u/${member['username']}');
@@ -874,8 +875,8 @@ class _MembersTabState extends State<MembersTab> {
     final editable = ctx.allowed('ranks.manage');
     final saved = await showGcSheet<bool>(
       context,
-      title: 'Ранги й права',
-      subtitle: 'Ранг 10 і власник можуть усе. Відмітьте, які ранги мають кожне право.',
+      title: tr('Ранги й права'),
+      subtitle: tr('Ранг 10 і власник можуть усе. Відмітьте, які ранги мають кожне право.'),
       height: MediaQuery.sizeOf(context).height * 0.9,
       builder: (sheet) => StatefulBuilder(
         builder: (context, set) => ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 24), children: [
@@ -885,7 +886,7 @@ class _MembersTabState extends State<MembersTab> {
               child: Row(children: [
                 SizedBox(width: 34, child: RankPill(rank: r)),
                 const SizedBox(width: 10),
-                Expanded(child: GcField(controller: controllers[r]!, label: 'Назва рангу', dense: true, enabled: editable)),
+                Expanded(child: GcField(controller: controllers[r]!, label: tr('Назва рангу'), dense: true, enabled: editable)),
               ]),
             ),
           const SizedBox(height: 10),
@@ -905,7 +906,7 @@ class _MembersTabState extends State<MembersTab> {
                 ]),
               ]),
             ),
-          if (editable) PrimaryButton(label: 'Зберегти', onPressed: () => Navigator.pop(sheet, true)),
+          if (editable) PrimaryButton(label: tr('Зберегти'), onPressed: () => Navigator.pop(sheet, true)),
         ]),
       ),
     );
@@ -930,8 +931,8 @@ class _MembersTabState extends State<MembersTab> {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Segmented(
         options: [
-          SegmentOption('members', 'Учасники', count: maps(ctx.data['members']).length),
-          if (ctx.allowed('members.manage')) SegmentOption('applications', 'Заявки', count: applications.isEmpty ? null : applications.length),
+          SegmentOption('members', tr('Учасники'), count: maps(ctx.data['members']).length),
+          if (ctx.allowed('members.manage')) SegmentOption('applications', tr('Заявки'), count: applications.isEmpty ? null : applications.length),
         ],
         selected: tab,
         onSelect: (v) => ctx.reload(extra: {'tab': v}),
@@ -939,9 +940,9 @@ class _MembersTabState extends State<MembersTab> {
       const SizedBox(height: 10),
       Swap(id: tab, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       if (tab == 'members') ...[
-        GcField(controller: query, label: 'Нік, ID або обов’язки', icon: LucideIcons.search, dense: true, onChanged: (_) => setState(() {})),
+        GcField(controller: query, label: tr('Нік, ID або обов’язки'), icon: LucideIcons.search, dense: true, onChanged: (_) => setState(() {})),
         const SizedBox(height: 8),
-        Align(alignment: Alignment.centerRight, child: GhostButton(label: 'Ранги й права', icon: LucideIcons.keyRound, compact: true, expand: false, onPressed: _ranks)),
+        Align(alignment: Alignment.centerRight, child: GhostButton(label: tr('Ранги й права'), icon: LucideIcons.keyRound, compact: true, expand: false, onPressed: _ranks)),
         const SizedBox(height: 8),
         Glass(
           padding: const EdgeInsets.fromLTRB(10, 6, 6, 6),
@@ -950,7 +951,7 @@ class _MembersTabState extends State<MembersTab> {
               MemberTile(
                 member: m,
                 subtitle: [
-                  if (m['is_online'] == true) 'онлайн' else if (text(m['last_seen_at']) != null) 'був(-ла) ${ago(m['last_seen_at'])}',
+                  if (m['is_online'] == true) tr('онлайн') else if (text(m['last_seen_at']) != null) tr('був(-ла) {v}', {'v': ago(m['last_seen_at'])}),
                   if (intOf(m['warns']) > 0) '⚠ ${m['warns']}/$warnLimit',
                 ].join(' · '),
                 trailing: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -963,38 +964,38 @@ class _MembersTabState extends State<MembersTab> {
         const SizedBox(height: 12),
         if (!ctx.allowed('owner'))
           GhostButton(
-            label: 'Покинути сім’ю',
+            label: tr('Покинути сім’ю'),
             icon: LucideIcons.logOut,
             color: dangerSoft,
             onPressed: () async {
-              if (await confirm(context, 'Покинути сім’ю?', text: 'Баланс залишиться в сім’ї. Повернутися можна лише через нову заявку.', action: 'Покинути', danger: true) && context.mounted) {
+              if (await confirm(context, tr('Покинути сім’ю?'), text: tr('Баланс залишиться в сім’ї. Повернутися можна лише через нову заявку.'), action: tr('Покинути'), danger: true) && context.mounted) {
                 if (await attempt(context, () => ctx.api.post(ctx.path('leave'))) && context.mounted) context.go('/families');
               }
             },
           ),
       ] else ...[
-        if (applications.isEmpty) const Glass(child: QuietEmpty(icon: LucideIcons.inbox, text: 'Нових заявок немає')),
+        if (applications.isEmpty) Glass(child: QuietEmpty(icon: LucideIcons.inbox, text: tr('Нових заявок немає'))),
         for (final a in applications)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Glass(
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                MemberTile(member: a, subtitle: 'заявка ${ago(a['applied_at'])}'),
+                MemberTile(member: a, subtitle: tr('заявка {v}', {'v': ago(a['applied_at'])})),
                 if (text(a['note']) != null) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text('«${a['note']}»', style: body(13, color: soft))),
                 Row(children: [
                   Expanded(
                     child: GhostButton(
-                      label: 'Відхилити',
+                      label: tr('Відхилити'),
                       compact: true,
                       color: dangerSoft,
                       onPressed: () async {
-                        final reason = await askText(context, 'Відхилити заявку?', hint: 'Причина (необов’язково)', action: 'Відхилити');
+                        final reason = await askText(context, tr('Відхилити заявку?'), hint: tr('Причина (необов’язково)'), action: tr('Відхилити'));
                         if (reason != null && context.mounted) await ctx.act(context, () => ctx.api.post(ctx.path('members/${a['id']}/decline'), {'reason': reason}), keep: const {'tab': 'applications'});
                       },
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Expanded(child: PrimaryButton(label: 'Прийняти', compact: true, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('members/${a['id']}/accept')), keep: const {'tab': 'applications'}))),
+                  Expanded(child: PrimaryButton(label: tr('Прийняти'), compact: true, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('members/${a['id']}/accept')), keep: const {'tab': 'applications'}))),
                 ]),
               ]),
             ),
@@ -1042,48 +1043,48 @@ class _DisciplineTabState extends State<DisciplineTab> {
     final myWarns = intOf(ctx.data['my_warns']);
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Row(children: [
-        Expanded(child: MetricTile(caps: true, label: 'Мої попередження', value: '$myWarns/$limit', color: myWarns > 0 ? dangerSoft : green, icon: LucideIcons.shield)),
+        Expanded(child: MetricTile(caps: true, label: tr('Мої попередження'), value: '$myWarns/$limit', color: myWarns > 0 ? dangerSoft : green, icon: LucideIcons.shield)),
         const SizedBox(width: 8),
-        Expanded(child: MetricTile(caps: true, label: 'Термін дії попередження', value: '${config['warn_days'] ?? 30} дн.', icon: LucideIcons.gavel)),
+        Expanded(child: MetricTile(caps: true, label: tr('Термін дії попередження'), value: tr('{v} дн.', {'v': config['warn_days'] ?? 30}), icon: LucideIcons.gavel)),
       ]),
       const SizedBox(height: 8),
-      MetricTile(caps: true, label: 'При досягненні ліміту', value: config['escalation'] == 'kick' ? 'Виключення' : 'Пониження рангу'),
+      MetricTile(caps: true, label: tr('При досягненні ліміту'), value: config['escalation'] == 'kick' ? tr('Виключення') : tr('Пониження рангу')),
       const SizedBox(height: 12),
       if (ctx.allowed('sanctions.issue'))
         _card(
-          title: 'Видати покарання',
+          title: tr('Видати покарання'),
           icon: LucideIcons.gavel,
           children: [
             LabeledField(
-              label: 'Учасник',
-              child: GcSelect<int>(value: member, hint: 'Оберіть…', expand: true, items: [for (final m in roster) (intOf(m['id']), '${m['display']}${intOf(m['warns']) > 0 ? ' · ⚠${m['warns']}' : ''}')], onChanged: (v) => setState(() => member = v)),
+              label: tr('Учасник'),
+              child: GcSelect<int>(value: member, hint: tr('Оберіть…'), expand: true, items: [for (final m in roster) (intOf(m['id']), '${m['display']}${intOf(m['warns']) > 0 ? ' · ⚠${m['warns']}' : ''}')], onChanged: (v) => setState(() => member = v)),
             ),
             const SizedBox(height: 8),
             LabeledField(
-              label: 'Тип',
+              label: tr('Тип'),
               child: GcSelect<String>(value: type, expand: true, items: [for (final e in types.entries) (e.key, '${e.value}')], onChanged: (v) => setState(() => type = v ?? type)),
             ),
             const SizedBox(height: 8),
-            LabeledField(label: 'Причина', child: GcField(controller: reason, label: 'Пункт статуту або опис порушення', dense: true)),
+            LabeledField(label: tr('Причина'), child: GcField(controller: reason, label: tr('Пункт статуту або опис порушення'), dense: true)),
             if (type == 'fine') ...[
               const SizedBox(height: 8),
-              LabeledField(label: 'Сума, ₴', child: GcField(controller: amount, label: 'Сума штрафу', keyboard: TextInputType.number, dense: true)),
+              LabeledField(label: tr('Сума, ₴'), child: GcField(controller: amount, label: tr('Сума штрафу'), keyboard: TextInputType.number, dense: true)),
             ],
             if (type == 'mute') ...[
               const SizedBox(height: 8),
               LabeledField(
-                label: 'Мут у чаті сім’ї на',
+                label: tr('Мут у чаті сім’ї на'),
                 child: GcSelect<int>(
                   value: muteHours,
                   expand: true,
-                  items: [for (final h in (ctx.data['mute_hours'] is List ? (ctx.data['mute_hours'] as List).map((e) => intOf(e)) : const [1, 3, 6, 12, 24, 72, 168])) (h, h < 24 || h % 24 != 0 ? '$h год' : '${h ~/ 24} дн.')],
+                  items: [for (final h in (ctx.data['mute_hours'] is List ? (ctx.data['mute_hours'] as List).map((e) => intOf(e)) : const [1, 3, 6, 12, 24, 72, 168])) (h, h < 24 || h % 24 != 0 ? tr('{h} год', {'h': h}) : tr('{v} дн.', {'v': h ~/ 24}))],
                   onChanged: (v) => setState(() => muteHours = v ?? muteHours),
                 ),
               ),
             ],
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             PrimaryButton(
-              label: 'Видати',
+              label: tr('Видати'),
               onPressed: member == null
                   ? null
                   : () async {
@@ -1104,16 +1105,16 @@ class _DisciplineTabState extends State<DisciplineTab> {
           ],
         ),
       _card(
-        title: 'Історія',
+        title: tr('Історія'),
         icon: LucideIcons.shield,
         trailing: ctx.allowed('sanctions.issue')
             ? SizedBox(
                 width: 160,
-                child: Segmented(options: const [SegmentOption('family', 'Уся сім’я'), SegmentOption('me', 'Мої')], selected: scope, onSelect: (v) => ctx.reload(extra: {'scope': v})),
+                child: Segmented(options: [SegmentOption('family', tr('Уся сім’я')), SegmentOption('me', tr('Мої'))], selected: scope, onSelect: (v) => ctx.reload(extra: {'scope': v})),
               )
             : null,
         children: [
-          if (list.isEmpty) const QuietEmpty(icon: LucideIcons.shieldCheck, text: 'Порушень немає — так тримати'),
+          if (list.isEmpty) QuietEmpty(icon: LucideIcons.shieldCheck, text: tr('Порушень немає — так тримати')),
           for (final p in list)
             Container(
               margin: const EdgeInsets.only(bottom: 8),
@@ -1124,21 +1125,21 @@ class _DisciplineTabState extends State<DisciplineTab> {
                   Text(text(p['type_label']) ?? '', style: body(13.5, weight: FontWeight.w700, color: p['active'] == true ? dangerSoft : soft)),
                   if (intOf(p['amount']) > 0) Text(' · ${hryvnia(p['amount'])}', style: body(13, color: gold)),
                   const Spacer(),
-                  if (p['revoked_at'] != null) const Pill(label: 'Знято', color: muted) else if (p['active'] != true) const Pill(label: 'Минуло', color: muted),
+                  if (p['revoked_at'] != null) Pill(label: tr('Знято'), color: muted) else if (p['active'] != true) Pill(label: tr('Минуло'), color: muted),
                 ]),
                 if (scope == 'family') Text(text(p['member']) ?? '', style: body(12.5, color: soft).copyWith(fontFamily: 'monospace')),
                 Text(text(p['reason']) ?? '', style: body(13, color: soft)),
                 Text('${p['issuer'] ?? '—'} · ${ago(p['created_at'])}${p['expires_at'] != null && p['active'] == true ? ' · діє до ${shortStamp(p['expires_at'])}' : ''}', style: body(11.5, color: faint)),
-                if (text(p['revoke_reason']) != null) Text('Знято: ${p['revoke_reason']}', style: body(11.5, color: muted)),
+                if (text(p['revoke_reason']) != null) Text(tr('Знято: {v}', {'v': p['revoke_reason']}), style: body(11.5, color: muted)),
                 if (p['active'] == true && ctx.allowed('sanctions.issue') && p['type'] != 'kick')
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () async {
-                        final why = await askText(context, 'Зняти покарання?', hint: 'Причина (обов’язково)', action: 'Зняти');
+                        final why = await askText(context, tr('Зняти покарання?'), hint: tr('Причина (обов’язково)'), action: tr('Зняти'));
                         if (why != null && why.length >= 3 && context.mounted) await ctx.act(context, () => ctx.api.post(ctx.path('discipline/${p['id']}/revoke'), {'reason': why}), keep: {'scope': scope});
                       },
-                      child: Text('Зняти', style: body(13, color: primary)),
+                      child: Text(tr('Зняти'), style: body(13, color: primary)),
                     ),
                   ),
               ]),
@@ -1165,18 +1166,18 @@ class EventsTab extends StatelessWidget {
     var when = DateTime.now().add(const Duration(hours: 2));
     final ok = await showGcSheet<bool>(
       context,
-      title: 'Нова подія',
-      subtitle: 'Подію буде анонсовано в чаті сім’ї.',
+      title: tr('Нова подія'),
+      subtitle: tr('Подію буде анонсовано в чаті сім’ї.'),
       builder: (sheet) => StatefulBuilder(
         builder: (context, set) => SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            GcField(controller: title, label: 'Назва'),
+            GcField(controller: title, label: tr('Назва')),
             const SizedBox(height: 8),
             GcSelect<String>(value: type, expand: true, items: [for (final e in types.entries) (e.key, '${e.value}')], onChanged: (v) => set(() => type = v ?? type)),
             const SizedBox(height: 8),
             GhostButton(
-              label: '${when.day} ${monthsGenitive[when.month - 1]}, ${when.hour.toString().padLeft(2, '0')}:${when.minute.toString().padLeft(2, '0')} (Київ)',
+              label: tr('{day} {v}, {v2}:{v3} (Київ)', {'day': when.day, 'v': monthsGenitive[when.month - 1], 'v2': when.hour.toString().padLeft(2, '0'), 'v3': when.minute.toString().padLeft(2, '0')}),
               icon: LucideIcons.clock,
               onPressed: () async {
                 final day = await showDatePicker(context: context, initialDate: when, firstDate: DateTime.now().subtract(const Duration(days: 1)), lastDate: DateTime.now().add(const Duration(days: 365)));
@@ -1187,15 +1188,15 @@ class EventsTab extends StatelessWidget {
               },
             ),
             const SizedBox(height: 8),
-            GcField(controller: description, label: 'Опис (необов’язково)', maxLines: 3),
+            GcField(controller: description, label: tr('Опис (необов’язково)'), maxLines: 3),
             const SizedBox(height: 8),
             Row(children: [
-              Expanded(child: GcField(controller: points, label: 'Бали', keyboard: TextInputType.number, dense: true)),
+              Expanded(child: GcField(controller: points, label: tr('Бали'), keyboard: TextInputType.number, dense: true)),
               const SizedBox(width: 8),
-              Expanded(child: GcField(controller: reward, label: 'Нагорода, ₴', keyboard: TextInputType.number, dense: true)),
+              Expanded(child: GcField(controller: reward, label: tr('Нагорода, ₴'), keyboard: TextInputType.number, dense: true)),
             ]),
             const SizedBox(height: 14),
-            PrimaryButton(label: 'Створити', onPressed: () => Navigator.pop(sheet, true)),
+            PrimaryButton(label: tr('Створити'), onPressed: () => Navigator.pop(sheet, true)),
           ]),
         ),
       ),
@@ -1217,8 +1218,8 @@ class EventsTab extends StatelessWidget {
     final attended = {for (final a in maps(event['attendance'])) intOf(a['member_id'])};
     final ok = await showGcSheet<String>(
       context,
-      title: 'Підсумок: ${event['title']}',
-      subtitle: 'Відмітьте присутніх — їм нарахуються бали й нагорода.',
+      title: tr('Підсумок: {v}', {'v': event['title']}),
+      subtitle: tr('Відмітьте присутніх — їм нарахуються бали й нагорода.'),
       height: MediaQuery.sizeOf(context).height * 0.8,
       builder: (sheet) => StatefulBuilder(
         builder: (context, set) => Column(children: [
@@ -1235,9 +1236,9 @@ class EventsTab extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
             child: Row(children: [
-              Expanded(child: GhostButton(label: 'Скасувати подію', color: dangerSoft, compact: true, onPressed: () => Navigator.pop(sheet, 'cancel'))),
+              Expanded(child: GhostButton(label: tr('Скасувати подію'), color: dangerSoft, compact: true, onPressed: () => Navigator.pop(sheet, 'cancel'))),
               const SizedBox(width: 8),
-              Expanded(child: PrimaryButton(label: 'Зберегти (${attended.length})', compact: true, onPressed: () => Navigator.pop(sheet, 'close'))),
+              Expanded(child: PrimaryButton(label: tr('Зберегти ({v})', {'v': attended.length}), compact: true, onPressed: () => Navigator.pop(sheet, 'close'))),
             ]),
           ),
         ]),
@@ -1269,25 +1270,25 @@ class EventsTab extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               [
-                '${e['points']} балів',
+                tr('{v} балів', {'v': e['points']}),
                 if (intOf(e['reward']) > 0) hryvnia(e['reward']),
                 '${attendance.length} ${isPlanned ? 'йдуть' : 'були'}',
-                if (text(e['creator']) != null) 'створив ${e['creator']}',
+                if (text(e['creator']) != null) tr('створив {v}', {'v': e['creator']}),
               ].join(' · '),
               style: body(12, color: faint),
             ),
-            if (!isPlanned) Padding(padding: const EdgeInsets.only(top: 6), child: Pill(label: e['status'] == 'done' ? 'Завершено' : 'Скасовано', color: e['status'] == 'done' ? green : muted)),
+            if (!isPlanned) Padding(padding: const EdgeInsets.only(top: 6), child: Pill(label: e['status'] == 'done' ? tr('Завершено') : tr('Скасовано'), color: e['status'] == 'done' ? green : muted)),
             if (isPlanned) ...[
               const SizedBox(height: 10),
               Row(children: [
                 Expanded(
                   child: e['going'] == true
-                      ? GhostButton(label: 'Не піду', compact: true, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('events/${e['id']}/rsvp'), {'going': false})))
-                      : PrimaryButton(label: 'Піду', icon: LucideIcons.check, compact: true, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('events/${e['id']}/rsvp'), {'going': true}))),
+                      ? GhostButton(label: tr('Не піду'), compact: true, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('events/${e['id']}/rsvp'), {'going': false})))
+                      : PrimaryButton(label: tr('Піду'), icon: LucideIcons.check, compact: true, onPressed: () => ctx.act(context, () => ctx.api.post(ctx.path('events/${e['id']}/rsvp'), {'going': true}))),
                 ),
                 if (ctx.allowed('events.manage')) ...[
                   const SizedBox(width: 8),
-                  Expanded(child: GhostButton(label: 'Підсумок', icon: LucideIcons.listChecks, compact: true, onPressed: () => _close(context, e))),
+                  Expanded(child: GhostButton(label: tr('Підсумок'), icon: LucideIcons.listChecks, compact: true, onPressed: () => _close(context, e))),
                 ],
               ]),
             ],
@@ -1298,14 +1299,14 @@ class EventsTab extends StatelessWidget {
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Row(children: [
-        Expanded(child: Text('Заплановані', style: display(18))),
-        if (ctx.allowed('events.manage')) PrimaryButton(label: 'Нова подія', icon: LucideIcons.calendarDays, compact: true, expand: false, onPressed: () => _create(context)),
+        Expanded(child: Text(tr('Заплановані'), style: display(18))),
+        if (ctx.allowed('events.manage')) PrimaryButton(label: tr('Нова подія'), icon: LucideIcons.calendarDays, compact: true, expand: false, onPressed: () => _create(context)),
       ]),
       const SizedBox(height: 10),
-      if (planned.isEmpty) const Glass(child: QuietEmpty(icon: LucideIcons.calendarDays, text: 'Запланованих подій немає')),
+      if (planned.isEmpty) Glass(child: QuietEmpty(icon: LucideIcons.calendarDays, text: tr('Запланованих подій немає'))),
       for (final e in planned) eventCard(e),
       if (past.isNotEmpty) ...[
-        const SectionLabel('Минулі'),
+        SectionLabel(tr('Минулі')),
         for (final e in past) eventCard(e),
       ],
     ]);
@@ -1320,19 +1321,19 @@ List<Widget> ratingTab(FamilyContext ctx) {
   final rows = maps(ctx.data['leaderboard']);
   final config = mapOf(ctx.data['config']);
   final counted = [
-    if (config['bizwar'] == true) 'бізвари',
-    if (config['contracts'] == true) 'контракти',
-    if (config['investments'] == true) 'інвестиції',
-    if (config['events'] == true) 'події',
+    if (config['bizwar'] == true) tr('бізвари'),
+    if (config['contracts'] == true) tr('контракти'),
+    if (config['investments'] == true) tr('інвестиції'),
+    if (config['events'] == true) tr('події'),
   ];
   final podium = rows.take(3).toList();
   const medals = [gold, Color(0xFFC0C7D9), Color(0xFFCD7F32)];
   return [
     Segmented(options: [for (final e in periods.entries) SegmentOption(e.key, '${e.value}')], selected: period, onSelect: (v) => ctx.reload(extra: {'period': v})),
     const SizedBox(height: 6),
-    Text('Враховуються: ${counted.join(', ')}', textAlign: TextAlign.right, style: body(11.5, color: muted)),
+    Text(tr('Враховуються: {v}', {'v': counted.join(', ')}), textAlign: TextAlign.right, style: body(11.5, color: muted)),
     const SizedBox(height: 10),
-    if (rows.isEmpty) const Glass(child: QuietEmpty(icon: LucideIcons.chartNoAxesColumnIncreasing, text: 'Даних за цей період ще немає')),
+    if (rows.isEmpty) Glass(child: QuietEmpty(icon: LucideIcons.chartNoAxesColumnIncreasing, text: tr('Даних за цей період ще немає'))),
     for (var i = 0; i < podium.length; i++)
       Padding(
         padding: const EdgeInsets.only(bottom: 10),
@@ -1347,7 +1348,7 @@ List<Widget> ratingTab(FamilyContext ctx) {
             RankPill(rank: podium[i]['rank'], title: text(podium[i]['rank_title'])),
             const SizedBox(height: 8),
             Text('${podium[i]['points']}', style: display(26)),
-            Text('балів · ${hryvnia(podium[i]['earned'])}', style: body(12, color: muted)),
+            Text(tr('балів · {v}', {'v': hryvnia(podium[i]['earned'])}), style: body(12, color: muted)),
           ]),
         ),
       ),
@@ -1357,10 +1358,10 @@ List<Widget> ratingTab(FamilyContext ctx) {
         child: Column(children: [
           Row(children: [
             SizedBox(width: 26, child: Text('#', style: body(11, color: faint))),
-            Expanded(child: Text('УЧАСНИК', style: body(11, color: faint, weight: FontWeight.w700))),
-            SizedBox(width: 56, child: Text('БІЗВАРИ', textAlign: TextAlign.center, style: body(10, color: faint, weight: FontWeight.w700))),
-            SizedBox(width: 44, child: Text('КОНТР.', textAlign: TextAlign.center, style: body(10, color: faint, weight: FontWeight.w700))),
-            SizedBox(width: 44, child: Text('БАЛИ', textAlign: TextAlign.right, style: body(10, color: faint, weight: FontWeight.w700))),
+            Expanded(child: Text(tr('УЧАСНИК'), style: body(11, color: faint, weight: FontWeight.w700))),
+            SizedBox(width: 56, child: Text(tr('БІЗВАРИ'), textAlign: TextAlign.center, style: body(10, color: faint, weight: FontWeight.w700))),
+            SizedBox(width: 44, child: Text(tr('КОНТР.'), textAlign: TextAlign.center, style: body(10, color: faint, weight: FontWeight.w700))),
+            SizedBox(width: 44, child: Text(tr('БАЛИ'), textAlign: TextAlign.right, style: body(10, color: faint, weight: FontWeight.w700))),
           ]),
           const Divider(color: line),
           for (final r in rows)
@@ -1394,27 +1395,27 @@ List<Widget> auditTab(FamilyContext ctx) {
   return [
     Glass(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Text('Журнал аудиту', style: display(18)),
+        Text(tr('Журнал аудиту'), style: display(18)),
         const SizedBox(height: 10),
         GcSelect<String>(
           value: action,
           expand: true,
-          items: [('', 'Усі дії'), for (final e in actions.entries) (e.key, '${e.value}')],
+          items: [('', tr('Усі дії')), for (final e in actions.entries) (e.key, '${e.value}')],
           onChanged: (v) => ctx.reload(extra: {if ((v ?? '').isNotEmpty) 'action': v!}),
         ),
         const SizedBox(height: 8),
         Row(children: [
           const Icon(LucideIcons.lock, size: 14, color: muted),
           const SizedBox(width: 6),
-          Expanded(child: Text('Записи незмінні: їх не може відредагувати чи видалити навіть лідер.', style: body(12, color: muted))),
+          Expanded(child: Text(tr('Записи незмінні: їх не може відредагувати чи видалити навіть лідер.'), style: body(12, color: muted))),
         ]),
         const SizedBox(height: 10),
-        if (logs.items.isEmpty) const QuietEmpty(icon: LucideIcons.receipt, text: 'Записів немає'),
+        if (logs.items.isEmpty) QuietEmpty(icon: LucideIcons.receipt, text: tr('Записів немає')),
         for (final entry in logs.items) AuditRow(entry: entry),
         if (logs.more)
           TextButton(
             onPressed: () => ctx.reload(extra: {if (action.isNotEmpty) 'action': action, 'page': '${logs.current + 1}'}),
-            child: Text('Старіші записи', style: body(13, color: primary)),
+            child: Text(tr('Старіші записи'), style: body(13, color: primary)),
           ),
       ]),
     ),
@@ -1516,19 +1517,19 @@ class _SettingsTabState extends State<SettingsTab> {
     final digest = mapOf(ctx.data['digest']);
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       _card(
-        title: 'Профіль сім’ї',
+        title: tr('Профіль сім’ї'),
         icon: LucideIcons.settings,
         children: [
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Column(children: [
               logo != null ? ClipRRect(borderRadius: BorderRadius.circular(20), child: Image(image: XFileImage(logo!), width: 84, height: 84, fit: BoxFit.cover)) : FamilyLogo(family: ctx.family, size: 84),
               const SizedBox(height: 8),
-              GhostButton(label: 'Логотип', icon: LucideIcons.image, compact: true, expand: false, onPressed: () async {
+              GhostButton(label: tr('Логотип'), icon: LucideIcons.image, compact: true, expand: false, onPressed: () async {
                 final p = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1000, imageQuality: 90);
                 if (p != null) setState(() => logo = p);
               }),
               const SizedBox(height: 6),
-              GhostButton(label: cover == null ? 'Обкладинка' : 'Обрано', icon: LucideIcons.wallpaper, compact: true, expand: false, onPressed: () async {
+              GhostButton(label: cover == null ? tr('Обкладинка') : tr('Обрано'), icon: LucideIcons.wallpaper, compact: true, expand: false, onPressed: () async {
                 final p = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 2400, imageQuality: 90);
                 if (p != null) setState(() => cover = p);
               }),
@@ -1536,97 +1537,97 @@ class _SettingsTabState extends State<SettingsTab> {
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                LabeledField(label: 'Назва', child: GcField(controller: name, label: 'Назва', dense: true)),
+                LabeledField(label: tr('Назва'), child: GcField(controller: name, label: tr('Назва'), dense: true)),
                 const SizedBox(height: 8),
-                LabeledField(label: 'Тег', child: GcField(controller: tag, label: 'TAG', dense: true)),
+                LabeledField(label: tr('Тег'), child: GcField(controller: tag, label: 'TAG', dense: true)),
               ]),
             ),
           ]),
-          const SizedBox(height: 8),
-          LabeledField(label: 'Опис', child: GcField(controller: description, label: 'Опис', maxLines: 5, minLines: 3)),
-          SwitchListTile(contentPadding: EdgeInsets.zero, value: recruiting, title: Text('Набір відкрито', style: body(14)), onChanged: (v) => setState(() => recruiting = v)),
-          PrimaryButton(label: 'Зберегти профіль', onPressed: _saveProfile),
+          SizedBox(height: 8),
+          LabeledField(label: tr('Опис'), child: GcField(controller: description, label: tr('Опис'), maxLines: 5, minLines: 3)),
+          SwitchListTile(contentPadding: EdgeInsets.zero, value: recruiting, title: Text(tr('Набір відкрито'), style: body(14)), onChanged: (v) => setState(() => recruiting = v)),
+          PrimaryButton(label: tr('Зберегти профіль'), onPressed: _saveProfile),
         ],
       ),
       _card(
-        title: 'Правила й ставки',
+        title: tr('Правила й ставки'),
         icon: LucideIcons.listChecks,
-        subtitle: 'Кожна зміна записується в журнал аудиту (було → стало). Нові ставки діють для звітів, схвалених після збереження.',
+        subtitle: tr('Кожна зміна записується в журнал аудиту (було → стало). Нові ставки діють для звітів, схвалених після збереження.'),
         children: [
-          _group('Ставки винагород', [
-            _number('rates.bizwar_win', 'Бізвар — перемога, ₴'),
-            _number('rates.bizwar_loss', 'Бізвар — поразка, ₴'),
-            _number('rates.contract_light', 'Контракт легкий, ₴'),
-            _number('rates.contract_medium', 'Контракт середній, ₴'),
-            _number('rates.contract_heavy', 'Контракт важкий, ₴'),
-            _number('rates.investment_cashback', 'Кешбек з інвестицій, %'),
+          _group(tr('Ставки винагород'), [
+            _number('rates.bizwar_win', tr('Бізвар — перемога, ₴')),
+            _number('rates.bizwar_loss', tr('Бізвар — поразка, ₴')),
+            _number('rates.contract_light', tr('Контракт легкий, ₴')),
+            _number('rates.contract_medium', tr('Контракт середній, ₴')),
+            _number('rates.contract_heavy', tr('Контракт важкий, ₴')),
+            _number('rates.investment_cashback', tr('Кешбек з інвестицій, %')),
           ]),
-          _group('Звіти', [
-            _number('reports.deadline_hours', 'Дедлайн подання, год'),
-            _number('reports.contract_daily_limit', 'Ліміт контрактів на день (кожного рівня)'),
-            _toggle('reports.require_proof', 'Скріншот обов’язковий'),
-            _number('reports.max_proofs', 'Максимум скріншотів'),
+          _group(tr('Звіти'), [
+            _number('reports.deadline_hours', tr('Дедлайн подання, год')),
+            _number('reports.contract_daily_limit', tr('Ліміт контрактів на день (кожного рівня)')),
+            _toggle('reports.require_proof', tr('Скріншот обов’язковий')),
+            _number('reports.max_proofs', tr('Максимум скріншотів')),
           ]),
-          _group('Депозити', [
-            _toggle('deposits.enabled', 'Депозити увімкнено'),
-            _number('deposits.daily_rate', 'Ставка на день, %'),
-            _number('deposits.weekly_rate', 'Ставка на тиждень, %'),
-            _number('deposits.min_amount', 'Мінімальна сума, ₴'),
-            _number('deposits.max_days', 'Максимум днів'),
-            _number('deposits.max_weeks', 'Максимум тижнів'),
+          _group(tr('Депозити'), [
+            _toggle('deposits.enabled', tr('Депозити увімкнено')),
+            _number('deposits.daily_rate', tr('Ставка на день, %')),
+            _number('deposits.weekly_rate', tr('Ставка на тиждень, %')),
+            _number('deposits.min_amount', tr('Мінімальна сума, ₴')),
+            _number('deposits.max_days', tr('Максимум днів')),
+            _number('deposits.max_weeks', tr('Максимум тижнів')),
           ]),
-          _group('Рейтинг', [
-            _toggle('rating.bizwar', 'Враховувати бізвари'),
-            _toggle('rating.contracts', 'Враховувати контракти'),
-            _toggle('rating.investments', 'Враховувати інвестиції'),
-            _toggle('rating.events', 'Враховувати події'),
-            _number('rating.points_bizwar_win', 'Бали: перемога'),
-            _number('rating.points_bizwar_loss', 'Бали: поразка'),
-            _number('rating.points_contract_light', 'Бали: легкий контракт'),
-            _number('rating.points_contract_medium', 'Бали: середній контракт'),
-            _number('rating.points_contract_heavy', 'Бали: важкий контракт'),
-            _number('rating.points_per_1000', 'Бали за кожні 1000 ₴ інвестицій'),
-            _number('rating.points_event', 'Бали за подію (типово)'),
+          _group(tr('Рейтинг'), [
+            _toggle('rating.bizwar', tr('Враховувати бізвари')),
+            _toggle('rating.contracts', tr('Враховувати контракти')),
+            _toggle('rating.investments', tr('Враховувати інвестиції')),
+            _toggle('rating.events', tr('Враховувати події')),
+            _number('rating.points_bizwar_win', tr('Бали: перемога')),
+            _number('rating.points_bizwar_loss', tr('Бали: поразка')),
+            _number('rating.points_contract_light', tr('Бали: легкий контракт')),
+            _number('rating.points_contract_medium', tr('Бали: середній контракт')),
+            _number('rating.points_contract_heavy', tr('Бали: важкий контракт')),
+            _number('rating.points_per_1000', tr('Бали за кожні 1000 ₴ інвестицій')),
+            _number('rating.points_event', tr('Бали за подію (типово)')),
           ]),
-          _group('Дисципліна', [
-            _number('discipline.warn_days', 'Попередження діє, днів'),
-            _number('discipline.warn_limit', 'Ліміт попереджень'),
+          _group(tr('Дисципліна'), [
+            _number('discipline.warn_days', tr('Попередження діє, днів')),
+            _number('discipline.warn_limit', tr('Ліміт попереджень')),
             LabeledField(
-              label: 'Після ліміту',
+              label: tr('Після ліміту'),
               child: GcSelect<String>(
                 value: '${values['discipline.escalation'] ?? 'demote'}',
                 expand: true,
-                items: const [('demote', 'Знизити ранг'), ('kick', 'Виключити')],
+                items: [('demote', tr('Знизити ранг')), ('kick', tr('Виключити'))],
                 onChanged: (v) => setState(() => values['discipline.escalation'] = v ?? 'demote'),
               ),
             ),
           ]),
-          _group('Виплати', [_number('cashout.min_amount', 'Мінімальний вивід, ₴')]),
-          _group('Тижневий звіт', [
-            _toggle('digest.enabled', 'Щотижневий звіт (нд 23:59)'),
-            _toggle('digest.chat', 'Публікувати в чат сім’ї'),
+          _group(tr('Виплати'), [_number('cashout.min_amount', tr('Мінімальний вивід, ₴'))]),
+          _group(tr('Тижневий звіт'), [
+            _toggle('digest.enabled', tr('Щотижневий звіт (нд 23:59)')),
+            _toggle('digest.chat', tr('Публікувати в чат сім’ї')),
           ]),
-          PrimaryButton(label: 'Зберегти правила', onPressed: _saveRules),
+          PrimaryButton(label: tr('Зберегти правила'), onPressed: _saveRules),
         ],
       ),
       _card(
-        title: 'Боти Discord і Telegram',
+        title: tr('Боти Discord і Telegram'),
         icon: LucideIcons.bot,
-        subtitle: 'Сюди надходитимуть тижневі звіти, схвалення великих виплат і анонси подій.',
-        trailing: GhostButton(label: 'Тест', compact: true, expand: false, onPressed: () => attempt(context, () => ctx.api.post(ctx.path('settings/webhooks/test')))),
+        subtitle: tr('Сюди надходитимуть тижневі звіти, схвалення великих виплат і анонси подій.'),
+        trailing: GhostButton(label: tr('Тест'), compact: true, expand: false, onPressed: () => attempt(context, () => ctx.api.post(ctx.path('settings/webhooks/test')))),
         children: [
-          LabeledField(label: 'Вебхук Discord', hint: text(hooks['discord']) ?? 'Налаштування каналу → Інтеграції → Вебхуки', child: GcField(controller: discord, label: 'https://discord.com/api/webhooks/…', dense: true)),
+          LabeledField(label: tr('Вебхук Discord'), hint: text(hooks['discord']) ?? tr('Налаштування каналу → Інтеграції → Вебхуки'), child: GcField(controller: discord, label: 'https://discord.com/api/webhooks/…', dense: true)),
           const SizedBox(height: 8),
-          LabeledField(label: 'Токен Telegram-бота', hint: text(hooks['telegram_token']) ?? 'Створіть бота в @BotFather', child: GcField(controller: telegramToken, label: '123456789:AA…', dense: true)),
+          LabeledField(label: tr('Токен Telegram-бота'), hint: text(hooks['telegram_token']) ?? tr('Створіть бота в @BotFather'), child: GcField(controller: telegramToken, label: '123456789:AA…', dense: true)),
           const SizedBox(height: 8),
           LabeledField(label: 'Chat ID', child: GcField(controller: telegramChat, label: '-1001234567890', dense: true)),
           const SizedBox(height: 10),
           Row(children: [
-            if (hooks['discord'] != null) TextButton(onPressed: () => ctx.act(context, () => ctx.api.put(ctx.path('settings/webhooks'), {'clear': 'discord'})), child: Text('Прибрати Discord', style: body(12.5, color: dangerSoft))),
-            if (hooks['telegram_token'] != null) TextButton(onPressed: () => ctx.act(context, () => ctx.api.put(ctx.path('settings/webhooks'), {'clear': 'telegram'})), child: Text('Прибрати Telegram', style: body(12.5, color: dangerSoft))),
+            if (hooks['discord'] != null) TextButton(onPressed: () => ctx.act(context, () => ctx.api.put(ctx.path('settings/webhooks'), {'clear': 'discord'})), child: Text(tr('Прибрати Discord'), style: body(12.5, color: dangerSoft))),
+            if (hooks['telegram_token'] != null) TextButton(onPressed: () => ctx.act(context, () => ctx.api.put(ctx.path('settings/webhooks'), {'clear': 'telegram'})), child: Text(tr('Прибрати Telegram'), style: body(12.5, color: dangerSoft))),
             const Spacer(),
             PrimaryButton(
-              label: 'Зберегти',
+              label: tr('Зберегти'),
               compact: true,
               expand: false,
               onPressed: () => ctx.act(context, () => ctx.api.put(ctx.path('settings/webhooks'), {
@@ -1639,16 +1640,16 @@ class _SettingsTabState extends State<SettingsTab> {
         ],
       ),
       _card(
-        title: 'Тижневий звіт',
+        title: tr('Тижневий звіт'),
         icon: LucideIcons.clipboardList,
-        subtitle: 'Попередній перегляд: ${digest['members'] ?? 0} учасників · разом ${hryvnia(digest['total'])}',
+        subtitle: tr('Попередній перегляд: {v} учасників · разом {v2}', {'v': digest['members'] ?? 0, 'v2': hryvnia(digest['total'])}),
         trailing: GhostButton(
-          label: 'Надіслати зараз',
+          label: tr('Надіслати зараз'),
           icon: LucideIcons.send,
           compact: true,
           expand: false,
           onPressed: () async {
-            if (await confirm(context, 'Надіслати тижневий звіт зараз?', action: 'Надіслати') && context.mounted) {
+            if (await confirm(context, tr('Надіслати тижневий звіт зараз?'), action: tr('Надіслати')) && context.mounted) {
               await ctx.act(context, () => ctx.api.post(ctx.path('settings/digest')));
             }
           },

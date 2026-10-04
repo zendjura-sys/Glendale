@@ -12,6 +12,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'voice_room.dart';
 import 'widgets.dart';
+import 'i18n.dart';
 
 /// Розходження з ведучим, після якого перемотуємо (секунди).
 const _drift = 2.5;
@@ -131,7 +132,7 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
       lastStateSig = sig;
       if (!initial) _apply();
     }
-    if (!wasEnded && fresh['ended'] == true && !initial) toast(context, 'Ведучий завершив спільний перегляд');
+    if (!wasEnded && fresh['ended'] == true && !initial) toast(context, tr('Ведучий завершив спільний перегляд'));
   }
 
   double _expected() {
@@ -247,10 +248,10 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
     final picked = <int>{};
     final send = await showGcSheet<bool>(
       context,
-      title: 'Запросити друзів',
+      title: tr('Запросити друзів'),
       builder: (sheet) => StatefulBuilder(
         builder: (sheet, setSheet) => Column(mainAxisSize: MainAxisSize.min, children: [
-          if (friends.isEmpty) Padding(padding: const EdgeInsets.all(16), child: Text('Друзів поки немає — надішліть посилання.', style: body(13.5, color: muted))),
+          if (friends.isEmpty) Padding(padding: const EdgeInsets.all(16), child: Text(tr('Друзів поки немає — надішліть посилання.'), style: body(13.5, color: muted))),
           for (final f in friends)
             CheckboxListTile(
               value: picked.contains(intOf(f['id'])),
@@ -259,21 +260,21 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
               title: Text(text(f['name']) ?? '', style: body(14.5)),
             ),
           const SizedBox(height: 8),
-          PrimaryButton(label: 'Надіслати', icon: LucideIcons.send, onPressed: () => Navigator.pop(sheet, true)),
+          PrimaryButton(label: tr('Надіслати'), icon: LucideIcons.send, onPressed: () => Navigator.pop(sheet, true)),
         ]),
       ),
     );
     if (send != true || picked.isEmpty || !mounted) return;
     try {
       final result = await api.post('$base/invite', {'user_ids': picked.toList()});
-      if (mounted) toast(context, 'Запрошення надіслано: ${result['sent']}');
+      if (mounted) toast(context, tr('Запрошення надіслано: {v}', {'v': result['sent']}));
     } catch (e) {
       if (mounted) toast(context, e);
     }
   }
 
   Future<void> _end() async {
-    if (!await confirm(context, 'Завершити спільний перегляд для всіх?', danger: true, action: 'Завершити')) return;
+    if (!await confirm(context, tr('Завершити спільний перегляд для всіх?'), danger: true, action: tr('Завершити'))) return;
     try {
       await api.delete(base);
       if (mounted) context.pop();
@@ -288,13 +289,13 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
     if (film == null) {
       return error == null
           ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
-          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.popcorn, title: 'Перегляд недоступний', text: '$error', action: 'Спробувати знову', onAction: _load)));
+          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.popcorn, title: tr('Перегляд недоступний'), text: '$error', action: tr('Спробувати знову'), onAction: _load)));
     }
     final ended = party['ended'] == true;
     final members = maps(party['members']);
     final playing = state['playing'] == true;
     final inVoice = voice.kind == 'room' && voice.route == '/watch/${widget.code}' && voice.active;
-    final title = text(film['title']) ?? 'Фільм';
+    final title = text(film['title']) ?? tr('Фільм');
 
     return ScreenScroll(
       onRefresh: _poll,
@@ -304,15 +305,15 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(16, weight: FontWeight.w700)),
-              Text('Разом · ведучий ${text(mapOf(party['host'])['name']) ?? '—'}', style: body(12, color: muted)),
+              Text(tr('Разом · ведучий {v}', {'v': text(mapOf(party['host'])['name']) ?? '—'}), style: body(12, color: muted)),
             ]),
           ),
-          if (!ended) IconButton(tooltip: 'Запросити', onPressed: _invite, icon: const Icon(LucideIcons.userPlus, color: primary)),
+          if (!ended) IconButton(tooltip: tr('Запросити'), onPressed: _invite, icon: const Icon(LucideIcons.userPlus, color: primary)),
           IconButton(
-            tooltip: 'Скопіювати посилання',
+            tooltip: tr('Скопіювати посилання'),
             onPressed: () {
               Clipboard.setData(ClipboardData(text: text(party['url']) ?? ''));
-              toast(context, 'Посилання скопійовано');
+              toast(context, tr('Посилання скопійовано'));
             },
             icon: const Icon(LucideIcons.copy, color: muted),
           ),
@@ -321,7 +322,7 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
         if (ended)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: Glass(child: Text('Спільний перегляд завершено.', style: body(13.5, color: soft))),
+            child: Glass(child: Text(tr('Спільний перегляд завершено.'), style: body(13.5, color: soft))),
           ),
         Glass(
           padding: EdgeInsets.zero,
@@ -342,11 +343,11 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     Icon(playing ? LucideIcons.play : LucideIcons.pause, size: 14, color: playing ? green : muted),
                     const SizedBox(width: 6),
-                    Text('Ведучий: ${_clock(_expected())}', style: body(12.5, color: playing ? green : muted, weight: FontWeight.w600)),
+                    Text(tr('Ведучий: {v}', {'v': _clock(_expected())}), style: body(12.5, color: playing ? green : muted, weight: FontWeight.w600)),
                   ]),
                 ),
                 Text(
-                  kodik ? (synced ? 'Синхронізовано' : 'Натисніть Play у плеєрі') : 'Тисніть Play разом за сигналом «Старт»',
+                  kodik ? (synced ? tr('Синхронізовано') : tr('Натисніть Play у плеєрі')) : tr('Тисніть Play разом за сигналом «Старт»'),
                   style: body(12, color: kodik ? muted : gold),
                 ),
                 if (control) ...[
@@ -354,13 +355,13 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
                     onPressed: () => _post(true, kodik ? localTime : 0),
                     style: FilledButton.styleFrom(backgroundColor: green, minimumSize: const Size(0, 36)),
                     icon: const Icon(LucideIcons.play, size: 16),
-                    label: const Text('Старт разом'),
+                    label: Text(tr('Старт разом')),
                   ),
                   OutlinedButton.icon(
                     onPressed: () => _post(false, kodik ? localTime : _expected()),
                     style: OutlinedButton.styleFrom(minimumSize: const Size(0, 36), foregroundColor: soft),
                     icon: const Icon(LucideIcons.pause, size: 16),
-                    label: const Text('Пауза для всіх'),
+                    label: Text(tr('Пауза для всіх')),
                   ),
                 ],
               ]),
@@ -389,10 +390,10 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
                   await api.post('$base/shared', {'shared': on}).catchError((_) => <String, dynamic>{});
                   await _poll();
                 },
-                title: Text('Керувати можуть усі', style: body(13.5, color: soft)),
+                title: Text(tr('Керувати можуть усі'), style: body(13.5, color: soft)),
               ),
             ),
-            TextButton.icon(onPressed: _end, icon: const Icon(LucideIcons.x, color: dangerSoft, size: 18), label: Text('Завершити', style: body(13.5, color: dangerSoft))),
+            TextButton.icon(onPressed: _end, icon: const Icon(LucideIcons.x, color: dangerSoft, size: 18), label: Text(tr('Завершити'), style: body(13.5, color: dangerSoft))),
           ]),
         const SizedBox(height: 10),
         Glass(
@@ -400,7 +401,7 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
             Row(children: [
               const Icon(LucideIcons.users, size: 18, color: primary),
               const SizedBox(width: 8),
-              Expanded(child: Text('Дивляться (${members.length})', style: body(14.5, weight: FontWeight.w700))),
+              Expanded(child: Text(tr('Дивляться ({v})', {'v': members.length}), style: body(14.5, weight: FontWeight.w700))),
               if (party['voice_enabled'] == true && !ended)
                 FilledButton.icon(
                   onPressed: () => inVoice
@@ -410,7 +411,7 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
                         }),
                   style: FilledButton.styleFrom(backgroundColor: inVoice ? danger : green, minimumSize: const Size(0, 34)),
                   icon: const Icon(LucideIcons.headphones, size: 16),
-                  label: Text(inVoice ? 'Вийти з голосу' : 'Голос'),
+                  label: Text(inVoice ? tr('Вийти з голосу') : tr('Голос')),
                 ),
             ]),
             const SizedBox(height: 8),
@@ -436,10 +437,10 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
             Row(children: [
               const Icon(LucideIcons.messageCircle, size: 18, color: primary),
               const SizedBox(width: 8),
-              Text('Чат перегляду', style: body(14.5, weight: FontWeight.w700)),
+              Text(tr('Чат перегляду'), style: body(14.5, weight: FontWeight.w700)),
             ]),
             const SizedBox(height: 8),
-            if (messages.isEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text('Обговорюйте фільм тут', textAlign: TextAlign.center, style: body(12.5, color: muted))),
+            if (messages.isEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(tr('Обговорюйте фільм тут'), textAlign: TextAlign.center, style: body(12.5, color: muted))),
             for (final m in messages.length > 40 ? messages.sublist(messages.length - 40) : messages)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 3),
@@ -459,7 +460,7 @@ class _WatchPartyScreenState extends State<WatchPartyScreen> {
                     maxLength: 500,
                     textInputAction: TextInputAction.send,
                     onSubmitted: (_) => _say(),
-                    decoration: const InputDecoration(hintText: 'Повідомлення', counterText: '', isDense: true),
+                    decoration: InputDecoration(hintText: tr('Повідомлення'), counterText: '', isDense: true),
                   ),
                 ),
                 IconButton(onPressed: _say, icon: const Icon(LucideIcons.send, color: primary)),

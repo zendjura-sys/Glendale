@@ -82,19 +82,22 @@ function serverKeys() {
 }
 
 function appKeys() {
+    // Рядки Dart: \n, \t, \$, \' тощо — як у самому тексті.
+    const decode = (raw) =>
+        raw.replace(
+            /\\(.)/g,
+            (m, c) => ({ n: '\n', t: '\t', r: '\r' })[c] ?? c,
+        );
     const keys = new Set();
     for (const file of walk('mobile/lib', (p) => p.endsWith('.dart'))) {
         const src = fs.readFileSync(file, 'utf8');
-        for (const m of src.matchAll(/\btr\(\s*'((?:[^'\\]|\\.)*)'/g))
-            keys.add(m[1].replace(/\\(.)/g, '$1'));
+        for (const m of src.matchAll(/\btr\(\s*'((?:[^'\\]|\\.)*)'/g)) {
+            keys.add(decode(m[1]));
+        }
         for (const m of src.matchAll(
             /\bplural\(\s*[^,]+,\s*'((?:[^'\\]|\\.)*)',\s*'((?:[^'\\]|\\.)*)',\s*'((?:[^'\\]|\\.)*)'/g,
         )) {
-            keys.add(
-                [m[1], m[2], m[3]]
-                    .map((s) => s.replace(/\\(.)/g, '$1'))
-                    .join('|'),
-            );
+            keys.add([m[1], m[2], m[3]].map(decode).join('|'));
         }
     }
     return [...keys];

@@ -10,6 +10,7 @@ import 'api.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'i18n.dart';
 
 /// Кільце довкола аватарки: кольорове — є нові історії, сіре — усе переглянуто.
 class _Ring extends StatelessWidget {
@@ -96,7 +97,7 @@ class StoriesStripState extends State<StoriesStrip> {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             children: [
               _Tile(
-                label: 'Ваша історія',
+                label: tr('Ваша історія'),
                 onTap: ownIndex >= 0 ? () => _open(ownIndex) : _compose,
                 badge: GestureDetector(
                   onTap: _compose,
@@ -121,7 +122,7 @@ class StoriesStripState extends State<StoriesStrip> {
                   ),
                 ),
               if (others.isEmpty)
-                Center(child: Padding(padding: const EdgeInsets.only(left: 8), child: Text('Історії друзів — тут на 24 години', style: body(12.5, color: muted)))),
+                Center(child: Padding(padding: const EdgeInsets.only(left: 8), child: Text(tr('Історії друзів — тут на 24 години'), style: body(12.5, color: muted)))),
             ],
           ),
         ),
@@ -160,11 +161,11 @@ class _Tile extends StatelessWidget {
 Future<bool?> showStoryComposer(BuildContext context, Api api) async {
   final kind = await showGcSheet<String>(
     context,
-    title: 'Нова історія',
+    title: tr('Нова історія'),
     builder: (sheet) => Column(mainAxisSize: MainAxisSize.min, children: [
-      ListTile(leading: const Icon(LucideIcons.image, color: primary), title: Text('Фото', style: body(15)), onTap: () => Navigator.pop(sheet, 'image')),
-      ListTile(leading: const Icon(LucideIcons.video, color: primary), title: Text('Відео до 60 с', style: body(15)), onTap: () => Navigator.pop(sheet, 'video')),
-      ListTile(leading: const Icon(LucideIcons.camera, color: primary), title: Text('Зняти фото', style: body(15)), onTap: () => Navigator.pop(sheet, 'camera')),
+      ListTile(leading: const Icon(LucideIcons.image, color: primary), title: Text(tr('Фото'), style: body(15)), onTap: () => Navigator.pop(sheet, 'image')),
+      ListTile(leading: const Icon(LucideIcons.video, color: primary), title: Text(tr('Відео до 60 с'), style: body(15)), onTap: () => Navigator.pop(sheet, 'video')),
+      ListTile(leading: const Icon(LucideIcons.camera, color: primary), title: Text(tr('Зняти фото'), style: body(15)), onTap: () => Navigator.pop(sheet, 'camera')),
     ]),
   );
   if (kind == null) return false;
@@ -188,7 +189,7 @@ Future<bool?> showStoryComposer(BuildContext context, Api api) async {
       await probe.dispose();
     }
     if (duration != null && duration > 60) {
-      if (context.mounted) toast(context, 'Відео довше за 60 секунд — оберіть коротше.');
+      if (context.mounted) toast(context, tr('Відео довше за 60 секунд — оберіть коротше.'));
       return false;
     }
   }
@@ -198,18 +199,18 @@ Future<bool?> showStoryComposer(BuildContext context, Api api) async {
   var privacy = 'friends';
   final publish = await showGcSheet<bool>(
     context,
-    title: video ? 'Відео в історію' : 'Фото в історію',
+    title: video ? tr('Відео в історію') : tr('Фото в історію'),
     builder: (sheet) => StatefulBuilder(
       builder: (sheet, setSheet) => Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        TextField(controller: caption, maxLength: 200, decoration: const InputDecoration(hintText: 'Підпис (необов’язково)')),
-        const SizedBox(height: 8),
+        TextField(controller: caption, maxLength: 200, decoration: InputDecoration(hintText: tr('Підпис (необов’язково)'))),
+        SizedBox(height: 8),
         Segmented(
-          options: const [SegmentOption('friends', 'Друзям', icon: LucideIcons.users), SegmentOption('everyone', 'Усім', icon: LucideIcons.globe)],
+          options: [SegmentOption('friends', tr('Друзям'), icon: LucideIcons.users), SegmentOption('everyone', tr('Усім'), icon: LucideIcons.globe)],
           selected: privacy,
           onSelect: (v) => setSheet(() => privacy = v),
         ),
         const SizedBox(height: 14),
-        PrimaryButton(label: 'Опублікувати', icon: LucideIcons.send, onPressed: () => Navigator.pop(sheet, true)),
+        PrimaryButton(label: tr('Опублікувати'), icon: LucideIcons.send, onPressed: () => Navigator.pop(sheet, true)),
       ]),
     ),
   );
@@ -224,7 +225,7 @@ Future<bool?> showStoryComposer(BuildContext context, Api api) async {
       },
       [await http.MultipartFile.fromPath('media', file.path, filename: file.name)],
     );
-    if (context.mounted) toast(context, 'Історію опубліковано на 24 години');
+    if (context.mounted) toast(context, tr('Історію опубліковано на 24 години'));
     return true;
   } catch (e) {
     if (context.mounted) toast(context, e);
@@ -349,7 +350,7 @@ class _StoryViewerPageState extends State<StoryViewerPage> with SingleTickerProv
   Future<void> _react(String reaction) async {
     try {
       await widget.api.post('/api/v1/stories/${story['id']}/react', {'reaction': reaction});
-      if (mounted) toast(context, '$reaction надіслано');
+      if (mounted) toast(context, tr('{reaction} надіслано', {'reaction': reaction}));
     } catch (e) {
       if (mounted) toast(context, e);
     }
@@ -362,7 +363,7 @@ class _StoryViewerPageState extends State<StoryViewerPage> with SingleTickerProv
       await widget.api.post('/api/v1/stories/${story['id']}/reply', {'body': body});
       reply.clear();
       focus.unfocus();
-      if (mounted) toast(context, 'Відповідь надіслано в особисті');
+      if (mounted) toast(context, tr('Відповідь надіслано в особисті'));
     } catch (e) {
       if (mounted) toast(context, e);
     }
@@ -370,7 +371,7 @@ class _StoryViewerPageState extends State<StoryViewerPage> with SingleTickerProv
 
   Future<void> _delete() async {
     _pause();
-    if (!await confirm(context, 'Видалити історію?', danger: true, action: 'Видалити')) {
+    if (!await confirm(context, tr('Видалити історію?'), danger: true, action: tr('Видалити'))) {
       _resume();
       return;
     }
@@ -390,9 +391,9 @@ class _StoryViewerPageState extends State<StoryViewerPage> with SingleTickerProv
       final list = maps(data['viewers']);
       await showGcSheet<void>(
         context,
-        title: 'Переглянули (${list.length})',
+        title: tr('Переглянули ({v})', {'v': list.length}),
         builder: (sheet) => Column(mainAxisSize: MainAxisSize.min, children: [
-          if (list.isEmpty) Padding(padding: const EdgeInsets.all(16), child: Text('Ще ніхто не переглянув', style: body(13.5, color: muted))),
+          if (list.isEmpty) Padding(padding: const EdgeInsets.all(16), child: Text(tr('Ще ніхто не переглянув'), style: body(13.5, color: muted))),
           for (final v in list)
             ListTile(
               leading: Avatar(name: text(v['name']) ?? '', url: absolute(v['avatar_url']), size: 38),
@@ -500,7 +501,7 @@ class _StoryViewerPageState extends State<StoryViewerPage> with SingleTickerProv
                     child: TextButton.icon(
                       onPressed: _viewers,
                       icon: const Icon(LucideIcons.eye, color: Colors.white70, size: 18),
-                      label: Text('${intOf(current['views_count'])} переглядів', style: body(13.5, color: Colors.white70)),
+                      label: Text(tr('{v} переглядів', {'v': intOf(current['views_count'])}), style: body(13.5, color: Colors.white70)),
                     ),
                   )
                 : Column(mainAxisSize: MainAxisSize.min, children: [
@@ -519,7 +520,7 @@ class _StoryViewerPageState extends State<StoryViewerPage> with SingleTickerProv
                           textInputAction: TextInputAction.send,
                           onSubmitted: (_) => _reply(),
                           decoration: InputDecoration(
-                            hintText: 'Відповісти ${text(user['first_name']) ?? ''}',
+                            hintText: tr('Відповісти {v}', {'v': text(user['first_name']) ?? ''}),
                             counterText: '',
                             isDense: true,
                             hintStyle: body(14, color: Colors.white54),

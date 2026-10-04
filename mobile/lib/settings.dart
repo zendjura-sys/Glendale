@@ -11,6 +11,8 @@ import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'i18n.dart';
+import 'language_picker.dart';
 
 // ───────────────────────── Сповіщення ─────────────────────────
 
@@ -26,7 +28,7 @@ class NotificationsScreen extends StatelessWidget {
         child: Row(children: [
           RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.canPop() ? context.pop() : context.go('/feed')),
           const SizedBox(width: 8),
-          Text('Сповіщення', style: display(19)),
+          Text(tr('Сповіщення'), style: display(19)),
         ]),
       ),
       Expanded(child: NotificationsList(session: session, onOpen: (path) => context.push(appPathFor(path)))),
@@ -45,7 +47,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  late String tab = const ['profile', 'security', 'app'].contains(widget.initialTab) ? widget.initialTab! : 'profile';
+  late String tab = ['profile', 'security', 'app'].contains(widget.initialTab) ? widget.initialTab! : 'profile';
   final first = TextEditingController();
   final last = TextEditingController();
   final username = TextEditingController();
@@ -125,7 +127,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         'message_privacy': messages,
       });
       await session.refreshMe();
-      if (mounted) toast(context, 'Профіль оновлено.');
+      if (mounted) toast(context, tr('Профіль оновлено.'));
     } catch (e) {
       if (mounted) toast(context, e);
     } finally {
@@ -144,7 +146,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       current.clear();
       next.clear();
       confirmation.clear();
-      if (mounted) toast(context, 'Пароль змінено.');
+      if (mounted) toast(context, tr('Пароль змінено.'));
     } catch (e) {
       if (mounted) toast(context, e);
     } finally {
@@ -153,16 +155,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _unlink(Map<String, dynamic> connection) async {
-    if (!await confirm(context, 'Від’єднати ${connection['label']}?', text: 'Входити через нього більше не вийде. Переконайтеся, що пам’ятаєте пароль.', action: 'Від’єднати', danger: true)) return;
+    if (!await confirm(context, tr('Від’єднати {v}?', {'v': connection['label']}), text: tr('Входити через нього більше не вийде. Переконайтеся, що пам’ятаєте пароль.'), action: tr('Від’єднати'), danger: true)) return;
     if (!mounted) return;
-    if (await attempt(context, () => session.api.delete('/api/v1/me/connections/${connection['provider']}'), success: '${connection['label']} від’єднано.')) {
+    if (await attempt(context, () => session.api.delete('/api/v1/me/connections/${connection['provider']}'), success: tr('{v} від’єднано.', {'v': connection['label']}))) {
       _connections();
       session.refreshMe();
     }
   }
 
   Future<void> _deleteAccount() async {
-    final password = await askText(context, 'Видалити акаунт назавжди?', hint: 'Пароль для підтвердження', action: 'Видалити');
+    final password = await askText(context, tr('Видалити акаунт назавжди?'), hint: tr('Пароль для підтвердження'), action: tr('Видалити'));
     if (password == null || password.isEmpty || !mounted) return;
     final player = AppScope.read(context).player;
     try {
@@ -178,13 +180,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return ScreenScroll(
       children: [
-        PageTitle('Налаштування', subtitle: 'Керуйте сторінкою, приватністю та безпекою акаунта'),
-        const SizedBox(height: 12),
+        PageTitle(tr('Налаштування'), subtitle: tr('Керуйте сторінкою, приватністю та безпекою акаунта')),
+        SizedBox(height: 12),
         Segmented(
-          options: const [
-            SegmentOption('profile', 'Профіль', icon: LucideIcons.userRound),
-            SegmentOption('security', 'Безпека', icon: LucideIcons.shield),
-            SegmentOption('app', 'Застосунок', icon: LucideIcons.smartphone),
+          options: [
+            SegmentOption('profile', tr('Профіль'), icon: LucideIcons.userRound),
+            SegmentOption('security', tr('Безпека'), icon: LucideIcons.shield),
+            SegmentOption('app', tr('Застосунок'), icon: LucideIcons.smartphone),
           ],
           selected: tab,
           onSelect: (value) => setState(() => tab = value),
@@ -204,32 +206,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   List<Widget> _profile() {
     return [
+      if (I18n.locales.length > 1) ...[
+        Glass(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            CardTitle(tr('Мова'), icon: LucideIcons.languages),
+            const SizedBox(height: 12),
+            LanguagePicker(api: session.api),
+          ]),
+        ),
+        const SizedBox(height: 12),
+      ],
       Glass(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const CardTitle('Основне', icon: LucideIcons.idCard),
+          CardTitle(tr('Основне'), icon: LucideIcons.idCard),
           const SizedBox(height: 12),
           Row(children: [
-            Expanded(child: LabeledField(label: 'Ім’я', child: GcField(controller: first, label: 'Ім’я'))),
+            Expanded(child: LabeledField(label: tr('Ім’я'), child: GcField(controller: first, label: tr('Ім’я')))),
             const SizedBox(width: 10),
-            Expanded(child: LabeledField(label: 'Прізвище', child: GcField(controller: last, label: 'Прізвище'))),
+            Expanded(child: LabeledField(label: tr('Прізвище'), child: GcField(controller: last, label: tr('Прізвище')))),
           ]),
           const SizedBox(height: 10),
-          LabeledField(label: 'Адреса сторінки', hint: 'gamecon.online/${username.text}', child: GcField(controller: username, label: 'nickname', prefixText: '@', onChanged: (_) => setState(() {}))),
+          LabeledField(label: tr('Адреса сторінки'), hint: 'gamecon.online/${username.text}', child: GcField(controller: username, label: 'nickname', prefixText: '@', onChanged: (_) => setState(() {}))),
           const SizedBox(height: 10),
-          LabeledField(label: 'Статус', child: GcField(controller: status, label: 'Що у вас нового?')),
+          LabeledField(label: tr('Статус'), child: GcField(controller: status, label: tr('Що у вас нового?'))),
           const SizedBox(height: 10),
-          LabeledField(label: 'Про себе', child: GcField(controller: about, label: 'Кілька слів про себе', maxLines: 6, minLines: 3)),
-          const SizedBox(height: 10),
+          LabeledField(label: tr('Про себе'), child: GcField(controller: about, label: tr('Кілька слів про себе'), maxLines: 6, minLines: 3)),
+          SizedBox(height: 10),
           Row(children: [
-            Expanded(child: LabeledField(label: 'Місто', child: GcField(controller: city, label: 'Місто'))),
-            const SizedBox(width: 10),
+            Expanded(child: LabeledField(label: tr('Місто'), child: GcField(controller: city, label: tr('Місто')))),
+            SizedBox(width: 10),
             Expanded(
               child: LabeledField(
-                label: 'Стать',
+                label: tr('Стать'),
                 child: GcSelect<String>(
                   value: gender ?? '',
                   expand: true,
-                  items: const [('', 'Не вказано'), ('male', 'Чоловіча'), ('female', 'Жіноча')],
+                  items: [('', tr('Не вказано')), ('male', tr('Чоловіча')), ('female', tr('Жіноча'))],
                   onChanged: (value) => setState(() => gender = (value ?? '').isEmpty ? null : value),
                 ),
               ),
@@ -237,9 +249,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ]),
           const SizedBox(height: 10),
           LabeledField(
-            label: 'День народження',
+            label: tr('День народження'),
             child: GhostButton(
-              label: birthday == null ? 'Не вказано' : '${birthday!.day} ${monthsGenitive[birthday!.month - 1]} ${birthday!.year}',
+              label: birthday == null ? tr('Не вказано') : '${birthday!.day} ${monthsGenitive[birthday!.month - 1]} ${birthday!.year}',
               icon: LucideIcons.cake,
               onPressed: () async {
                 final picked = await showDatePicker(
@@ -252,34 +264,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
           ),
-          if (birthday != null) Align(alignment: Alignment.centerRight, child: TextButton(onPressed: () => setState(() => birthday = null), child: Text('Прибрати дату', style: body(12.5, color: muted)))),
+          if (birthday != null) Align(alignment: Alignment.centerRight, child: TextButton(onPressed: () => setState(() => birthday = null), child: Text(tr('Прибрати дату'), style: body(12.5, color: muted)))),
           const SizedBox(height: 10),
-          LabeledField(label: 'Вебсайт', child: GcField(controller: website, label: 'https://', keyboard: TextInputType.url)),
+          LabeledField(label: tr('Вебсайт'), child: GcField(controller: website, label: 'https://', keyboard: TextInputType.url)),
         ]),
       ),
       const SizedBox(height: 12),
       Glass(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const CardTitle('Приватність', icon: LucideIcons.lock),
+          CardTitle(tr('Приватність'), icon: LucideIcons.lock),
           SwitchListTile(
             value: private,
             contentPadding: EdgeInsets.zero,
-            title: Text('Закритий профіль', style: body(14.5, weight: FontWeight.w600)),
-            subtitle: Text('Записи, друзів і фото бачитимуть лише ваші друзі.', style: body(12.5, color: muted)),
+            title: Text(tr('Закритий профіль'), style: body(14.5, weight: FontWeight.w600)),
+            subtitle: Text(tr('Записи, друзів і фото бачитимуть лише ваші друзі.'), style: body(12.5, color: muted)),
             onChanged: (value) => setState(() => private = value),
           ),
           const SizedBox(height: 6),
-          Text('Хто може писати мені', style: body(13, color: muted)),
-          const SizedBox(height: 6),
+          Text(tr('Хто може писати мені'), style: body(13, color: muted)),
+          SizedBox(height: 6),
           Segmented(
-            options: const [SegmentOption('everyone', 'Усі'), SegmentOption('friends', 'Лише друзі')],
+            options: [SegmentOption('everyone', tr('Усі')), SegmentOption('friends', tr('Лише друзі'))],
             selected: messages,
             onSelect: (value) => setState(() => messages = value),
           ),
         ]),
       ),
       const SizedBox(height: 14),
-      PrimaryButton(label: 'Зберегти зміни', icon: LucideIcons.check, busy: saving, onPressed: _save),
+      PrimaryButton(label: tr('Зберегти зміни'), icon: LucideIcons.check, busy: saving, onPressed: _save),
     ];
   }
 
@@ -288,59 +300,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return [
       Glass(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const CardTitle('Пароль', icon: LucideIcons.keyRound),
+          CardTitle(tr('Пароль'), icon: LucideIcons.keyRound),
           const SizedBox(height: 12),
-          GcField(controller: current, label: 'Поточний пароль', obscure: true),
+          GcField(controller: current, label: tr('Поточний пароль'), obscure: true),
           const SizedBox(height: 10),
-          GcField(controller: next, label: 'Новий пароль', obscure: true),
+          GcField(controller: next, label: tr('Новий пароль'), obscure: true),
           const SizedBox(height: 10),
-          GcField(controller: confirmation, label: 'Повторіть новий пароль', obscure: true),
+          GcField(controller: confirmation, label: tr('Повторіть новий пароль'), obscure: true),
           const SizedBox(height: 14),
-          PrimaryButton(label: 'Змінити пароль', busy: changing, onPressed: _password),
+          PrimaryButton(label: tr('Змінити пароль'), busy: changing, onPressed: _password),
         ]),
       ),
       const SizedBox(height: 12),
       Glass(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const CardTitle('Під’єднані акаунти', icon: LucideIcons.link),
+          CardTitle(tr('Під’єднані акаунти'), icon: LucideIcons.link),
           const SizedBox(height: 6),
-          if (connections.isEmpty) Text('Завантаження…', style: body(13, color: muted)),
+          if (connections.isEmpty) Text(tr('Завантаження…'), style: body(13, color: muted)),
           for (final c in connections.where((c) => c['available'] == true || c['connected'] == true))
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: Icon(c['provider'] == 'discord' ? LucideIcons.messagesSquare : Icons.g_mobiledata_rounded, color: c['connected'] == true ? primary : muted, size: 28),
               title: Text('${c['label']}', style: body(14.5, weight: FontWeight.w600)),
-              subtitle: Text(c['connected'] == true ? (text(c['account']) ?? 'Під’єднано') : 'Не під’єднано', style: body(12.5, color: muted)),
+              subtitle: Text(c['connected'] == true ? (text(c['account']) ?? tr('Під’єднано')) : tr('Не під’єднано'), style: body(12.5, color: muted)),
               trailing: c['connected'] == true
-                  ? TextButton(onPressed: () => _unlink(c), child: Text('Від’єднати', style: body(13, color: dangerSoft)))
+                  ? TextButton(onPressed: () => _unlink(c), child: Text(tr('Від’єднати'), style: body(13, color: dangerSoft)))
                   : TextButton(
                       onPressed: () => launchUrl(Uri.parse('${Api.root}/settings/security'), mode: LaunchMode.externalApplication),
-                      child: Text('На сайті', style: body(13, color: primary)),
+                      child: Text(tr('На сайті'), style: body(13, color: primary)),
                     ),
             ),
           const SizedBox(height: 4),
-          Text('Під’єднати новий акаунт можна на сайті — вхід через Google і Discord потім працюватиме й тут.', style: body(12, color: faint)),
+          Text(tr('Під’єднати новий акаунт можна на сайті — вхід через Google і Discord потім працюватиме й тут.'), style: body(12, color: faint)),
         ]),
       ),
       const SizedBox(height: 12),
       Glass(
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const CardTitle('Двофакторний захист', icon: LucideIcons.shieldCheck),
+          CardTitle(tr('Двофакторний захист'), icon: LucideIcons.shieldCheck),
           const SizedBox(height: 8),
-          Text(me['two_factor'] == true ? 'Увімкнено. Під час входу застосунок попросить код.' : 'Вимкнено. Увімкніть на сайті в розділі «Безпека».', style: body(13.5, color: soft)),
+          Text(me['two_factor'] == true ? tr('Увімкнено. Під час входу застосунок попросить код.') : tr('Вимкнено. Увімкніть на сайті в розділі «Безпека».'), style: body(13.5, color: soft)),
           const SizedBox(height: 10),
-          GhostButton(label: 'Відкрити на сайті', icon: LucideIcons.externalLink, onPressed: () => launchUrl(Uri.parse('${Api.root}/settings/security'), mode: LaunchMode.externalApplication)),
+          GhostButton(label: tr('Відкрити на сайті'), icon: LucideIcons.externalLink, onPressed: () => launchUrl(Uri.parse('${Api.root}/settings/security'), mode: LaunchMode.externalApplication)),
         ]),
       ),
       const SizedBox(height: 12),
       Glass(
         border: danger.withValues(alpha: 0.3),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const CardTitle('Видалення акаунта', icon: LucideIcons.triangleAlert),
+          CardTitle(tr('Видалення акаунта'), icon: LucideIcons.triangleAlert),
           const SizedBox(height: 8),
-          Text('Профіль, записи, фото й повідомлення зникнуть назавжди. Цю дію не можна скасувати.', style: body(13, color: muted)),
+          Text(tr('Профіль, записи, фото й повідомлення зникнуть назавжди. Цю дію не можна скасувати.'), style: body(13, color: muted)),
           const SizedBox(height: 12),
-          DangerButton(label: 'Видалити акаунт', icon: LucideIcons.trash2, expand: true, onPressed: _deleteAccount),
+          DangerButton(label: tr('Видалити акаунт'), icon: LucideIcons.trash2, expand: true, onPressed: _deleteAccount),
         ]),
       ),
     ];
@@ -369,13 +381,13 @@ class NavEditor extends StatelessWidget {
 
         return Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const CardTitle('Нижня панель', icon: LucideIcons.panelBottom),
+            CardTitle(tr('Нижня панель'), icon: LucideIcons.panelBottom),
             const SizedBox(height: 6),
-            Text('До $maxNav розділів поруч із «Меню». Те, що приберете з панелі, буде в меню.', style: body(13, color: muted)),
+            Text(tr('До {maxNav} розділів поруч із «Меню». Те, що приберете з панелі, буде в меню.', {'maxNav': maxNav}), style: body(13, color: muted)),
             const SizedBox(height: 14),
             _NavPreview(tabs: tabs),
             const SizedBox(height: 16),
-            Text('У панелі', style: body(12.5, color: muted, weight: FontWeight.w700)),
+            Text(tr('У панелі'), style: body(12.5, color: muted, weight: FontWeight.w700)),
             const SizedBox(height: 6),
             ReorderableListView.builder(
               shrinkWrap: true,
@@ -405,7 +417,7 @@ class NavEditor extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(child: Text(item.title, style: body(14.5, weight: FontWeight.w600))),
                       IconButton(
-                        tooltip: 'Прибрати в меню',
+                        tooltip: tr('Прибрати в меню'),
                         onPressed: tabs.length <= 1 ? null : () => save([...tabs]..removeAt(i)),
                         icon: Icon(LucideIcons.circleMinus, size: 20, color: tabs.length <= 1 ? faint : dangerSoft),
                       ),
@@ -416,8 +428,8 @@ class NavEditor extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Row(children: [
-              Expanded(child: Text('У меню', style: body(12.5, color: muted, weight: FontWeight.w700))),
-              if (full) Text('Панель заповнена', style: body(11.5, color: faint)),
+              Expanded(child: Text(tr('У меню'), style: body(12.5, color: muted, weight: FontWeight.w700))),
+              if (full) Text(tr('Панель заповнена'), style: body(11.5, color: faint)),
             ]),
             const SizedBox(height: 8),
             Wrap(spacing: 8, runSpacing: 8, children: [
@@ -428,13 +440,13 @@ class NavEditor extends StatelessWidget {
                     label: item.title,
                     icon: item.icon,
                     selected: false,
-                    onTap: () => full ? toast(context, 'Спочатку приберіть розділ із панелі.') : save([...tabs, item.path]),
+                    onTap: () => full ? toast(context, tr('Спочатку приберіть розділ із панелі.')) : save([...tabs, item.path]),
                   ),
                 ),
             ]),
             if (!listEquals(tabs, defaultNav)) ...[
               const SizedBox(height: 14),
-              GhostButton(label: 'Повернути як було', icon: LucideIcons.rotateCcw, compact: true, onPressed: () => save(defaultNav)),
+              GhostButton(label: tr('Повернути як було'), icon: LucideIcons.rotateCcw, compact: true, onPressed: () => save(defaultNav)),
             ],
           ]),
         );

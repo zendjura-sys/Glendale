@@ -14,6 +14,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'voice_room.dart';
 import 'widgets.dart';
+import 'i18n.dart';
 
 /// Переводить посилання сайту (`/f/black`, `/c/clan`, `/tonny.morales`) у маршрути застосунку.
 String appPathFor(String? sitePath) {
@@ -112,7 +113,7 @@ class _AppShellState extends State<AppShell> {
     widget.session.consumeLink();
     final failed = uri.queryParameters['error'];
     final ok = failed == null || failed.isEmpty;
-    toast(context, ok ? 'Spotify підключено.' : 'Spotify не підключився.');
+    toast(context, ok ? tr('Spotify підключено.') : tr('Spotify не підключився.'));
     if (ok) widget.session.noteSpotify();
   }
 
@@ -245,7 +246,7 @@ class _AppShellState extends State<AppShell> {
                   },
                   child: Row(
                     children: [
-                      Avatar(url: text(me['avatar_url']), name: text(me['name']) ?? 'Я', size: 44, online: true),
+                      Avatar(url: text(me['avatar_url']), name: text(me['name']) ?? tr('Я'), size: 44, online: true),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -286,18 +287,18 @@ class _AppShellState extends State<AppShell> {
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Column(
                     children: [
-                      _MenuLink(icon: LucideIcons.panelBottom, label: 'Налаштувати нижню панель', onTap: () {
+                      _MenuLink(icon: LucideIcons.panelBottom, label: tr('Налаштувати нижню панель'), onTap: () {
                         Navigator.pop(sheet);
                         context.go('/settings?tab=app');
                       }),
-                      _MenuLink(icon: LucideIcons.settings, label: 'Налаштування', onTap: () {
+                      _MenuLink(icon: LucideIcons.settings, label: tr('Налаштування'), onTap: () {
                         Navigator.pop(sheet);
                         context.go('/settings');
                       }),
                       if (widget.session.isAdmin)
                         _MenuLink(
                           icon: LucideIcons.shield,
-                          label: 'Адмін-панель',
+                          label: tr('Адмін-панель'),
                           onTap: () {
                             Navigator.pop(sheet);
                             launchUrl(Uri.parse('${Api.root}/admin'), mode: LaunchMode.externalApplication);
@@ -305,7 +306,7 @@ class _AppShellState extends State<AppShell> {
                         ),
                       _MenuLink(
                         icon: LucideIcons.logOut,
-                        label: 'Вийти',
+                        label: tr('Вийти'),
                         color: dangerSoft,
                         onTap: () async {
                           Navigator.pop(sheet);
@@ -357,7 +358,7 @@ class _SiteBar extends StatelessWidget {
                         children: [
                           const Icon(LucideIcons.search, color: muted, size: 18),
                           const SizedBox(width: 8),
-                          Expanded(child: Text('Пошук людей і спільнот...', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, color: muted))),
+                          Expanded(child: Text(tr('Пошук людей і спільнот...'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, color: muted))),
                         ],
                       ),
                     ),
@@ -375,7 +376,7 @@ class _SiteBar extends StatelessWidget {
               ),
               GestureDetector(
                 onTap: () => context.go('/profile'),
-                child: Avatar(url: text(me?['avatar_url']), name: text(me?['name']) ?? 'Я', size: 38),
+                child: Avatar(url: text(me?['avatar_url']), name: text(me?['name']) ?? tr('Я'), size: 38),
               ),
             ],
           ),
@@ -430,7 +431,7 @@ const _noticeKinds = <String, (IconData, Color)>{
 Future<void> showNotifications(BuildContext context, Session session) {
   return showGcSheet<void>(
     context,
-    title: 'Сповіщення',
+    title: tr('Сповіщення'),
     height: MediaQuery.sizeOf(context).height * 0.78,
     builder: (sheet) => NotificationsList(session: session, onOpen: (path) {
       Navigator.pop(sheet);
@@ -468,12 +469,12 @@ class _NotificationsListState extends State<NotificationsList> {
                     await widget.session.refreshCounters();
                   },
                   icon: const Icon(LucideIcons.checkCheck, size: 16, color: primary),
-                  label: Text('Прочитати всі', style: body(13, color: primary, weight: FontWeight.w600)),
+                  label: Text(tr('Прочитати всі'), style: body(13, color: primary, weight: FontWeight.w600)),
                 ),
               ),
             Expanded(
               child: rows.isEmpty
-                  ? const QuietEmpty(icon: LucideIcons.bell, text: 'Сповіщень поки немає')
+                  ? QuietEmpty(icon: LucideIcons.bell, text: tr('Сповіщень поки немає'))
                   : ListView.separated(
                       padding: EdgeInsets.fromLTRB(12, 0, 12, 20 + ShellChrome.bottomOf(context)),
                       itemCount: rows.length,
@@ -599,8 +600,8 @@ class _SideNav extends StatelessWidget {
               badge: nav.path == '/messages' ? session.unreadChats : 0,
             ),
           const Padding(padding: EdgeInsets.symmetric(vertical: 6), child: Divider(height: 1, color: line)),
-          item(LucideIcons.settings, 'Налаштування', path.startsWith('/settings'), () => context.go('/settings')),
-          item(LucideIcons.layoutGrid, 'Ще', false, onMore),
+          item(LucideIcons.settings, tr('Налаштування'), path.startsWith('/settings'), () => context.go('/settings')),
+          item(LucideIcons.layoutGrid, tr('Ще'), false, onMore),
         ],
       ),
     );

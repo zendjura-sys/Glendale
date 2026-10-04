@@ -8,6 +8,8 @@ import 'api.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'i18n.dart';
+import 'language_picker.dart';
 
 const googleWebClientId = '142512043248-9aa67rq1ki4lucintlei0fena6hm98iq.apps.googleusercontent.com';
 
@@ -75,7 +77,7 @@ class _AuthScreenState extends State<AuthScreen> {
         return;
       }
       final token = text(json['token']);
-      if (token == null) throw ApiException('Сервер не повернув сесію.');
+      if (token == null) throw ApiException(tr('Сервер не повернув сесію.'));
       final user = json['user'] is Map ? Map<String, dynamic>.from(json['user'] as Map) : null;
       await widget.session.saveToken(token, user);
     } catch (e) {
@@ -123,17 +125,17 @@ class _AuthScreenState extends State<AuthScreen> {
             const SizedBox(height: 14),
             const Center(child: Wordmark(size: 26)),
             const SizedBox(height: 8),
-            Text('Соцмережа українського гейм-ком’юніті', textAlign: TextAlign.center, style: body(13.5, color: muted)),
+            Text(tr('Соцмережа українського гейм-ком’юніті'), textAlign: TextAlign.center, style: body(13.5, color: muted)),
             const SizedBox(height: 26),
             Glass(
-              padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
+              padding: EdgeInsets.fromLTRB(18, 20, 18, 18),
               radius: 26,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (ticket == null) ...[
                     Segmented(
-                      options: const [SegmentOption('login', 'Вхід', icon: LucideIcons.logIn), SegmentOption('register', 'Реєстрація', icon: LucideIcons.userRoundPlus)],
+                      options: [SegmentOption('login', tr('Вхід'), icon: LucideIcons.logIn), SegmentOption('register', tr('Реєстрація'), icon: LucideIcons.userRoundPlus)],
                       selected: register ? 'register' : 'login',
                       onSelect: (value) => setState(() {
                         register = value == 'register';
@@ -142,10 +144,10 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                     const SizedBox(height: 18),
                   ],
-                  Text(ticket != null ? 'Код підтвердження' : (register ? 'Створіть акаунт' : 'З поверненням'), style: display(22)),
+                  Text(ticket != null ? tr('Код підтвердження') : (register ? tr('Створіть акаунт') : tr('З поверненням')), style: display(22)),
                   const SizedBox(height: 4),
                   Text(
-                    ticket != null ? 'Введіть 6 цифр із застосунку-автентифікатора або резервний код.' : (register ? 'Кілька секунд — і ви в GameCon.' : 'Увійдіть, щоб продовжити.'),
+                    ticket != null ? tr('Введіть 6 цифр із застосунку-автентифікатора або резервний код.') : (register ? tr('Кілька секунд — і ви в GameCon.') : tr('Увійдіть, щоб продовжити.')),
                     style: body(13, color: muted),
                   ),
                   const SizedBox(height: 16),
@@ -158,34 +160,36 @@ class _AuthScreenState extends State<AuthScreen> {
                     const SizedBox(height: 12),
                   ],
                   if (ticket != null) ...[
-                    GcField(controller: code, label: 'Код', icon: LucideIcons.rectangleEllipsis, keyboard: TextInputType.number, autofocus: true, onSubmit: _submit),
+                    GcField(controller: code, label: tr('Код'), icon: LucideIcons.rectangleEllipsis, keyboard: TextInputType.number, autofocus: true, onSubmit: _submit),
                     const SizedBox(height: 14),
-                    PrimaryButton(label: 'Підтвердити', busy: busy, onPressed: _submit),
-                    TextButton(onPressed: () => setState(() => ticket = null), child: Text('Назад', style: body(13, color: muted))),
+                    PrimaryButton(label: tr('Підтвердити'), busy: busy, onPressed: _submit),
+                    TextButton(onPressed: () => setState(() => ticket = null), child: Text(tr('Назад'), style: body(13, color: muted))),
                   ] else ...[
                     if (register) ...[
                       Row(children: [
-                        Expanded(child: GcField(controller: first, label: 'Ім’я', icon: LucideIcons.userRound)),
+                        Expanded(child: GcField(controller: first, label: tr('Ім’я'), icon: LucideIcons.userRound)),
                         const SizedBox(width: 10),
-                        Expanded(child: GcField(controller: last, label: 'Прізвище')),
+                        Expanded(child: GcField(controller: last, label: tr('Прізвище'))),
                       ]),
                       const SizedBox(height: 10),
                     ],
-                    GcField(controller: email, label: 'Пошта', icon: LucideIcons.atSign, keyboard: TextInputType.emailAddress),
+                    GcField(controller: email, label: tr('Пошта'), icon: LucideIcons.atSign, keyboard: TextInputType.emailAddress),
                     const SizedBox(height: 10),
-                    GcField(controller: password, label: 'Пароль', icon: LucideIcons.lock, obscure: true, onSubmit: _submit),
+                    GcField(controller: password, label: tr('Пароль'), icon: LucideIcons.lock, obscure: true, onSubmit: _submit),
                     const SizedBox(height: 16),
-                    PrimaryButton(label: register ? 'Створити акаунт' : 'Увійти', busy: busy, onPressed: _submit),
+                    PrimaryButton(label: register ? tr('Створити акаунт') : tr('Увійти'), busy: busy, onPressed: _submit),
                     const SizedBox(height: 18),
                     Row(children: [
                       const Expanded(child: Divider(color: lineStrong)),
-                      Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text('або', style: body(12, color: muted))),
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text(tr('або'), style: body(12, color: muted))),
                       const Expanded(child: Divider(color: lineStrong)),
                     ]),
                     const SizedBox(height: 14),
-                    GhostButton(label: 'Продовжити з Google', icon: Icons.g_mobiledata_rounded, onPressed: busy ? null : _google),
+                    GhostButton(label: tr('Продовжити з Google'), icon: Icons.g_mobiledata_rounded, onPressed: busy ? null : _google),
                     const SizedBox(height: 8),
-                    GhostButton(label: 'Продовжити з Discord', icon: LucideIcons.messagesSquare, iconColor: const Color(0xFF8B9AFF), onPressed: busy ? null : _discord),
+                    GhostButton(label: tr('Продовжити з Discord'), icon: LucideIcons.messagesSquare, iconColor: const Color(0xFF8B9AFF), onPressed: busy ? null : _discord),
+                    const SizedBox(height: 16),
+                    LanguagePicker(api: widget.session.api, signedIn: false),
                   ],
                 ],
               ),
@@ -206,13 +210,13 @@ class _AuthScreenState extends State<AuthScreen> {
       final account = await google.signIn();
       if (account == null) return;
       final idToken = (await account.authentication).idToken;
-      if (idToken == null) throw ApiException('Google не повернув токен.');
+      if (idToken == null) throw ApiException(tr('Google не повернув токен.'));
       await _run(() => widget.session.api.post('/api/v1/auth/google', {'google_token': idToken, 'device': 'GameCon Flutter'}));
     } on PlatformException catch (e) {
       final message = await _googleFailure(e);
       if (mounted) setState(() => error = message);
     } catch (e) {
-      if (mounted) setState(() => error = e is ApiException ? e.message : 'Не вдалося увійти через Google.\n$e');
+      if (mounted) setState(() => error = e is ApiException ? e.message : tr('Не вдалося увійти через Google.\n{e}', {'e': e}));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -228,12 +232,10 @@ class _AuthScreenState extends State<AuthScreen> {
     if (code == '10') {
       // DEVELOPER_ERROR: підпис застосунку не зареєстровано у Firebase — показуємо, який саме.
       final sha1 = await _signingSha1();
-      return 'Google не приймає вхід у цій збірці (код 10). Увійдіть поштою або через Discord.'
-          '${sha1 == null ? '' : '\nПідпис: $sha1'}';
+      return tr('Google не приймає вхід у цій збірці (код 10). Увійдіть поштою або через Discord.{v}', {'v': sha1 == null ? '' : '\nПідпис: $sha1'});
     }
     // Без коду Google показуємо сирий текст помилки — інакше причину не видно.
-    return 'Не вдалося увійти через Google${code == null ? '' : ' (код $code)'}. Спробуйте пошту або Discord.'
-        '${code == null ? '\n${error.code}: ${error.message ?? ''}' : ''}';
+    return tr('Не вдалося увійти через Google{v}. Спробуйте пошту або Discord.{v2}', {'v': code == null ? '' : ' (код $code)', 'v2': code == null ? '\n${error.code}: ${error.message ?? ''}' : ''});
   }
 
   Future<String?> _signingSha1() async {
@@ -253,9 +255,9 @@ class _AuthScreenState extends State<AuthScreen> {
     try {
       final json = await widget.session.api.post('/api/v1/auth/discord');
       final url = text(json['url']);
-      if (url == null) throw ApiException('Discord не відповів.');
+      if (url == null) throw ApiException(tr('Discord не відповів.'));
       final opened = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-      if (!opened) throw ApiException('Не вдалося відкрити Discord.');
+      if (!opened) throw ApiException(tr('Не вдалося відкрити Discord.'));
     } catch (e) {
       if (mounted) setState(() => error = '$e');
     } finally {

@@ -15,11 +15,13 @@ import 'state.dart';
 import 'theme.dart';
 import 'track_edit.dart';
 import 'widgets.dart';
+import 'i18n.dart';
+import 'language_picker.dart';
 
-const _visibility = {
-  'public': (LucideIcons.globe, 'Усім'),
-  'friends': (LucideIcons.usersRound, 'Друзям'),
-  'private': (LucideIcons.lock, 'Тільки мені'),
+final _visibility = {
+  'public': (LucideIcons.globe, tr('Усім')),
+  'friends': (LucideIcons.usersRound, tr('Друзям')),
+  'private': (LucideIcons.lock, tr('Тільки мені')),
 };
 
 // ───────────────────────── Картка запису ─────────────────────────
@@ -72,7 +74,7 @@ class _PostCardState extends State<PostCard> {
 
   void _copyLink() {
     Clipboard.setData(ClipboardData(text: '${Api.root}/posts/${post['id']}'));
-    toast(context, 'Посилання скопійовано.');
+    toast(context, tr('Посилання скопійовано.'));
   }
 
   Future<void> _menu() async {
@@ -85,14 +87,14 @@ class _PostCardState extends State<PostCard> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _SheetAction(icon: LucideIcons.link, label: 'Копіювати посилання', onTap: () => Navigator.pop(sheet, 'link')),
+            _SheetAction(icon: LucideIcons.link, label: tr('Копіювати посилання'), onTap: () => Navigator.pop(sheet, 'link')),
             if (can['pin'] == true)
               _SheetAction(
                 icon: post['is_pinned'] == true ? LucideIcons.pinOff : LucideIcons.pin,
-                label: post['is_pinned'] == true ? 'Відкріпити' : 'Закріпити',
+                label: post['is_pinned'] == true ? tr('Відкріпити') : tr('Закріпити'),
                 onTap: () => Navigator.pop(sheet, 'pin'),
               ),
-            if (can['delete'] == true) _SheetAction(icon: LucideIcons.trash2, label: 'Видалити запис', color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
+            if (can['delete'] == true) _SheetAction(icon: LucideIcons.trash2, label: tr('Видалити запис'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
           ],
         ),
       ),
@@ -107,7 +109,7 @@ class _PostCardState extends State<PostCard> {
       return;
     }
     if (choice == 'delete') {
-      if (!await confirm(context, 'Видалити запис?', action: 'Видалити', danger: true)) return;
+      if (!await confirm(context, tr('Видалити запис?'), action: tr('Видалити'), danger: true)) return;
       if (!mounted) return;
       if (await attempt(context, () => api.delete('/api/v1/posts/${post['id']}'))) {
         setState(() => deleted = true);
@@ -188,7 +190,7 @@ class _PostCardState extends State<PostCard> {
                           Icon(vis.$1, size: 13, color: muted),
                           if (post['is_pinned'] == true) ...[
                             const SizedBox(width: 8),
-                            const Pill(label: 'Закріплено', icon: LucideIcons.pin, color: Color(0xFF9FB6FF)),
+                            Pill(label: tr('Закріплено'), icon: LucideIcons.pin, color: Color(0xFF9FB6FF)),
                           ],
                         ],
                       ),
@@ -201,14 +203,20 @@ class _PostCardState extends State<PostCard> {
             if (bodyText.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 12),
-                child: GestureDetector(
-                  onTap: long ? () => setState(() => fullText = true) : null,
-                  child: Text.rich(
-                    TextSpan(children: [
-                      TextSpan(text: long ? '${bodyText.substring(0, 420).trimRight()}… ' : bodyText),
-                      if (long) TextSpan(text: 'Показати повністю', style: body(15, color: const Color(0xFF9AA8FF), weight: FontWeight.w600)),
-                    ]),
-                    style: body(15, color: ink.withValues(alpha: 0.92)).copyWith(height: 1.5),
+                child: Translatable(
+                  api: AppScope.read(context).session.api,
+                  type: 'post',
+                  id: intOf(post['id']),
+                  original: bodyText,
+                  builder: (context, shownText) => GestureDetector(
+                    onTap: long ? () => setState(() => fullText = true) : null,
+                    child: Text.rich(
+                      TextSpan(children: [
+                        TextSpan(text: long && shownText.length > 420 ? '${shownText.substring(0, 420).trimRight()}… ' : shownText),
+                        if (long) TextSpan(text: tr('Показати повністю'), style: body(15, color: const Color(0xFF9AA8FF), weight: FontWeight.w600)),
+                      ]),
+                      style: body(15, color: ink.withValues(alpha: 0.92)).copyWith(height: 1.5),
+                    ),
                   ),
                 ),
               ),
@@ -406,7 +414,7 @@ class _PhotoViewerState extends State<PhotoViewer> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: Text('${index + 1} з ${widget.urls.length}', style: body(15)),
+        title: Text(tr('{v} з {v2}', {'v': index + 1, 'v2': widget.urls.length}), style: body(15)),
       ),
       body: Stack(
         children: [
@@ -490,7 +498,7 @@ class MusicAttachment extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(text(track['title']) ?? 'Трек', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w700)),
+                    Text(text(track['title']) ?? tr('Трек'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w700)),
                     Text(artistOf(track['artist']), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
                   ],
                 ),
@@ -637,7 +645,7 @@ class _CommentsThreadState extends State<CommentsThread> {
   }
 
   Future<void> _remove(Map<String, dynamic> comment) async {
-    if (!await confirm(context, 'Видалити коментар?', action: 'Видалити', danger: true)) return;
+    if (!await confirm(context, tr('Видалити коментар?'), action: tr('Видалити'), danger: true)) return;
     try {
       final path = widget.deletePath?.call(comment['id']) ?? Api.site('/comments/${comment['id']}');
       final data = await api.delete(path);
@@ -676,7 +684,7 @@ class _CommentsThreadState extends State<CommentsThread> {
         if (!loadedAll && widget.total > comments.length)
           TextButton(
             onPressed: _loadAll,
-            child: Text('Показати всі ${widget.total} ${plural(widget.total, 'коментар', 'коментарі', 'коментарів')}', style: body(13, color: const Color(0xFF9AA8FF), weight: FontWeight.w600)),
+            child: Text(tr('Показати всі {total} {v}', {'total': widget.total, 'v': plural(widget.total, 'коментар', 'коментарі', 'коментарів')}), style: body(13, color: const Color(0xFF9AA8FF), weight: FontWeight.w600)),
           ),
         for (final comment in comments) _comment(comment, byId[text(comment['parent_id']) ?? '']),
         if (widget.canComment) ...[
@@ -686,14 +694,14 @@ class _CommentsThreadState extends State<CommentsThread> {
               child: Row(children: [
                 const Icon(LucideIcons.cornerDownRight, size: 14, color: muted),
                 const SizedBox(width: 4),
-                Expanded(child: Text('Відповідь ${text(mapOf(replyTo!['user'])['first_name']) ?? ''}', style: body(12, color: muted))),
+                Expanded(child: Text(tr('Відповідь {v}', {'v': text(mapOf(replyTo!['user'])['first_name']) ?? ''}), style: body(12, color: muted))),
                 GestureDetector(onTap: () => setState(() => replyTo = null), child: const Icon(LucideIcons.x, size: 16, color: muted)),
               ]),
             ),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Avatar(url: text(me['avatar_url']), name: text(me['name']) ?? 'Я', size: 34),
+              Avatar(url: text(me['avatar_url']), name: text(me['name']) ?? tr('Я'), size: 34),
               const SizedBox(width: 10),
               Expanded(
                 child: TextField(
@@ -703,7 +711,7 @@ class _CommentsThreadState extends State<CommentsThread> {
                   maxLines: 5,
                   style: body(16),
                   decoration: InputDecoration(
-                    hintText: 'Написати коментар…',
+                    hintText: tr('Написати коментар…'),
                     hintStyle: body(14.5, color: faint),
                     filled: true,
                     fillColor: field,
@@ -726,7 +734,7 @@ class _CommentsThreadState extends State<CommentsThread> {
 
   Widget _comment(Map<String, dynamic> comment, Map<String, dynamic>? parent) {
     final user = mapOf(comment['user']);
-    final name = text(user['name']) ?? 'Гравець';
+    final name = text(user['name']) ?? tr('Гравець');
     return Padding(
       padding: EdgeInsets.only(bottom: 10, left: comment['parent_id'] != null ? 36 : 0),
       child: Row(
@@ -749,12 +757,18 @@ class _CommentsThreadState extends State<CommentsThread> {
                     children: [
                       Text(name, style: body(13, weight: FontWeight.w700)),
                       const SizedBox(height: 2),
-                      Text.rich(
-                        TextSpan(children: [
-                          if (parent != null) TextSpan(text: '${text(mapOf(parent['user'])['first_name']) ?? ''}, ', style: body(14, color: const Color(0xFF9AA8FF))),
-                          TextSpan(text: text(comment['body']) ?? ''),
-                        ]),
-                        style: body(14, color: ink.withValues(alpha: 0.88)).copyWith(height: 1.35),
+                      Translatable(
+                        api: AppScope.read(context).session.api,
+                        type: 'comment',
+                        id: intOf(comment['id']),
+                        original: text(comment['body']) ?? '',
+                        builder: (context, shownText) => Text.rich(
+                          TextSpan(children: [
+                            if (parent != null) TextSpan(text: '${text(mapOf(parent['user'])['first_name']) ?? ''}, ', style: body(14, color: const Color(0xFF9AA8FF))),
+                            TextSpan(text: shownText),
+                          ]),
+                          style: body(14, color: ink.withValues(alpha: 0.88)).copyWith(height: 1.35),
+                        ),
                       ),
                     ],
                   ),
@@ -771,7 +785,7 @@ class _CommentsThreadState extends State<CommentsThread> {
                             setState(() => replyTo = comment);
                             focus.requestFocus();
                           },
-                          child: Text('Відповісти', style: body(11.5, color: muted, weight: FontWeight.w600)),
+                          child: Text(tr('Відповісти'), style: body(11.5, color: muted, weight: FontWeight.w600)),
                         ),
                       ],
                       if (comment['can_delete'] == true) ...[
@@ -878,10 +892,10 @@ class _ComposerState extends State<Composer> {
     final me = AppScope.of(context).session.me ?? {};
     final first = text(me['first_name']) ?? text(me['name']) ?? '';
     final placeholder = widget.community != null
-        ? (asCommunity ? 'Новина від імені «${widget.communityName ?? ''}»…' : 'Напишіть у спільноту…')
+        ? (asCommunity ? tr('Новина від імені «{v}»…', {'v': widget.communityName ?? ''}) : tr('Напишіть у спільноту…'))
         : widget.wall != null
-            ? 'Напишіть щось ${widget.wallName ?? ''}…'
-            : (first.isEmpty ? 'Що нового?' : 'Що нового, $first?');
+            ? tr('Напишіть щось {v}…', {'v': widget.wallName ?? ''})
+            : (first.isEmpty ? tr('Що нового?') : tr('Що нового, {first}?', {'first': first}));
     final expanded = focused || ready;
     return Glass(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
@@ -894,7 +908,7 @@ class _ComposerState extends State<Composer> {
             children: [
               asCommunity && widget.community != null
                   ? Avatar(url: widget.communityAvatar, name: widget.communityName ?? '?', size: 40, square: true)
-                  : Avatar(url: text(me['avatar_url']), name: text(me['name']) ?? 'Я', size: 40),
+                  : Avatar(url: text(me['avatar_url']), name: text(me['name']) ?? tr('Я'), size: 40),
               const SizedBox(width: 12),
               Expanded(
                 child: Focus(
@@ -948,8 +962,8 @@ class _ComposerState extends State<Composer> {
           const SizedBox(height: 10),
           Row(
             children: [
-              _ToolIcon(icon: LucideIcons.image, onTap: _pickImages, tooltip: 'Фото'),
-              _ToolIcon(icon: LucideIcons.music, onTap: _pickMusic, tooltip: 'Музика'),
+              _ToolIcon(icon: LucideIcons.image, onTap: _pickImages, tooltip: tr('Фото')),
+              _ToolIcon(icon: LucideIcons.music, onTap: _pickMusic, tooltip: tr('Музика')),
               if (widget.wall == null && widget.community == null) ...[
                 const SizedBox(width: 6),
                 Container(
@@ -978,11 +992,11 @@ class _ComposerState extends State<Composer> {
                   onTap: () => setState(() => asCommunity = !asCommunity),
                   child: Padding(
                     padding: const EdgeInsets.only(left: 6),
-                    child: Pill(label: asCommunity ? 'Від спільноти' : 'Від себе', icon: LucideIcons.arrowLeftRight, color: const Color(0xFF9AA6FF)),
+                    child: Pill(label: asCommunity ? tr('Від спільноти') : tr('Від себе'), icon: LucideIcons.arrowLeftRight, color: const Color(0xFF9AA6FF)),
                   ),
                 ),
               const Spacer(),
-              PrimaryButton(label: 'Пост', icon: LucideIcons.sparkles, onPressed: ready ? _publish : null, busy: busy, expand: false, compact: true),
+              PrimaryButton(label: tr('Пост'), icon: LucideIcons.sparkles, onPressed: ready ? _publish : null, busy: busy, expand: false, compact: true),
             ],
           ),
         ],
@@ -1064,8 +1078,8 @@ Map<String, String> musicFields(Map<String, dynamic>? track) {
 Future<Map<String, dynamic>?> pickMusic(BuildContext context) {
   return showGcSheet<Map<String, dynamic>>(
     context,
-    title: 'Прикріпити музику',
-    subtitle: 'Оберіть трек — він з’явиться у записі з плеєром.',
+    title: tr('Прикріпити музику'),
+    subtitle: tr('Оберіть трек — він з’явиться у записі з плеєром.'),
     height: MediaQuery.sizeOf(context).height * 0.8,
     builder: (sheet) => _MusicPicker(onPick: (track) => Navigator.pop(sheet, track)),
   );
@@ -1133,11 +1147,11 @@ class _MusicPickerState extends State<_MusicPicker> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+      padding: EdgeInsets.fromLTRB(16, 4, 16, 16),
       child: Column(
         children: [
           Segmented(
-            options: const [SegmentOption('mine', 'Мої'), SegmentOption('all', 'Усі на GameCon'), SegmentOption('spotify', 'Spotify')],
+            options: [SegmentOption('mine', tr('Мої')), SegmentOption('all', tr('Усі на GameCon')), SegmentOption('spotify', 'Spotify')],
             selected: source,
             onSelect: (value) {
               setState(() => source = value);
@@ -1147,7 +1161,7 @@ class _MusicPickerState extends State<_MusicPicker> {
           const SizedBox(height: 12),
           GcField(
             controller: query,
-            label: source == 'spotify' ? 'Пошук у Spotify' : 'Назва або виконавець',
+            label: source == 'spotify' ? tr('Пошук у Spotify') : tr('Назва або виконавець'),
             icon: LucideIcons.search,
             dense: true,
             onChanged: (_) {
@@ -1164,7 +1178,7 @@ class _MusicPickerState extends State<_MusicPicker> {
                     : tracks.isEmpty
                         ? QuietEmpty(
                             icon: source == 'spotify' ? LucideIcons.audioLines : LucideIcons.volumeOff,
-                            text: source == 'spotify' && query.text.trim().isEmpty ? 'Почніть вводити назву треку' : 'Нічого не знайдено',
+                            text: source == 'spotify' && query.text.trim().isEmpty ? tr('Почніть вводити назву треку') : tr('Нічого не знайдено'),
                           )
                         : ListView.builder(
                             itemCount: tracks.length,
@@ -1208,7 +1222,7 @@ class TrackRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(text(track['title']) ?? 'Без назви', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, color: playing ? const Color(0xFF9AA6FF) : ink, weight: FontWeight.w600)),
+                  Text(text(track['title']) ?? tr('Без назви'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, color: playing ? const Color(0xFF9AA6FF) : ink, weight: FontWeight.w600)),
                   Text(artistOf(track['artist'], '—'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
                 ],
               ),

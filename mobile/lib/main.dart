@@ -14,6 +14,7 @@ import 'cinema.dart';
 import 'clans.dart';
 import 'communities.dart';
 import 'families.dart';
+import 'i18n.dart';
 import 'events.dart';
 import 'family_widget.dart';
 import 'feed.dart';
@@ -45,6 +46,8 @@ Future<void> main() async {
     systemNavigationBarContrastEnforced: false,
   ));
   final prefs = await SharedPreferences.getInstance();
+  // Словник мови — до першого кадру (збережений на телефоні), свіжий — із сервера у фоні.
+  await I18n.restore(prefs);
   final session = Session(prefs);
   final player = TrackPlayer()..session = session;
   player.onStart = (track) => repairTrackMeta(session, track.toCard()).then((fixed) {
@@ -177,7 +180,12 @@ Future<void> main() async {
     ],
   );
 
-  runApp(GameConApp(router: router));
+  unawaited(refreshLanguage(session.api));
+  // Зміна мови перебудовує весь застосунок.
+  runApp(ValueListenableBuilder<int>(
+    valueListenable: I18n.revision,
+    builder: (_, revision, _) => KeyedSubtree(key: ValueKey(revision), child: GameConApp(router: router)),
+  ));
   // Після першого кадру: дозвіл на сповіщення й реєстрація пристрою для push.
   unawaited(Push(session, router).start());
 }
@@ -197,11 +205,11 @@ class _Lost extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Сторінку не знайдено', style: unbounded.copyWith(fontSize: 26)),
+              Text(tr('Сторінку не знайдено'), style: unbounded.copyWith(fontSize: 26)),
               const SizedBox(height: 8),
-              const Text('Це посилання не веде на розділ GameCon.', style: TextStyle(color: muted, fontFamily: 'Onest')),
+              Text(tr('Це посилання не веде на розділ GameCon.'), style: TextStyle(color: muted, fontFamily: 'Onest')),
               const SizedBox(height: 20),
-              PrimaryButton(label: 'На головну', onPressed: onHome),
+              PrimaryButton(label: tr('На головну'), onPressed: onHome),
             ],
           ),
         ),

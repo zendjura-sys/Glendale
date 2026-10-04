@@ -79,7 +79,9 @@ export default function ServerShow({
                                     {server.multiplayer_label}
                                 </span>
                                 <span className="rounded-full bg-[#facc15]/10 px-2 py-0.5 text-[#fde68a]">
-                                    {tr('🇺🇦 Україна')}
+                                    {server.language === 'uk'
+                                        ? tr('🇺🇦 Україна')
+                                        : server.language.toUpperCase()}
                                 </span>
                             </div>
                             <h1 className="mt-2 font-display text-3xl font-bold text-white sm:text-4xl">

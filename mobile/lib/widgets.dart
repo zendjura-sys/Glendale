@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'api.dart';
 import 'state.dart';
 import 'theme.dart';
+import 'i18n.dart';
 
 // ───────────────────────── Тло й логотип ─────────────────────────
 
@@ -1174,9 +1175,9 @@ class _RemoteState extends State<Remote> {
               padding: const EdgeInsets.all(24),
               child: EmptyState(
                 icon: LucideIcons.wifiOff,
-                title: 'Не вдалося завантажити',
+                title: tr('Не вдалося завантажити'),
                 text: '${snapshot.error}',
-                action: 'Спробувати знову',
+                action: tr('Спробувати знову'),
                 onAction: _reload,
               ),
             ),
@@ -1268,7 +1269,7 @@ class SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 22, bottom: 12, left: 2, right: 2),
+      padding: EdgeInsets.only(top: 22, bottom: 12, left: 2, right: 2),
       child: Row(
         children: [
           Expanded(child: Text(label, style: display(19))),
@@ -1298,7 +1299,7 @@ Future<T?> showGcSheet<T>(BuildContext context, {String? title, String? subtitle
     isScrollControlled: true,
     useSafeArea: true,
     backgroundColor: popover,
-    shape: const RoundedRectangleBorder(
+    shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       side: BorderSide(color: lineStrong),
     ),
@@ -1312,7 +1313,7 @@ Future<T?> showGcSheet<T>(BuildContext context, {String? title, String? subtitle
         children: [
           Center(
             child: Container(
-              margin: const EdgeInsets.only(top: 10, bottom: 6),
+              margin: EdgeInsets.only(top: 10, bottom: 6),
               width: 40,
               height: 4,
               decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(4)),
@@ -1320,7 +1321,7 @@ Future<T?> showGcSheet<T>(BuildContext context, {String? title, String? subtitle
           ),
           if (title != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 8, 6),
+              padding: EdgeInsets.fromLTRB(20, 8, 8, 6),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1329,11 +1330,11 @@ Future<T?> showGcSheet<T>(BuildContext context, {String? title, String? subtitle
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(title, style: display(19)),
-                        if (subtitle != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(subtitle, style: body(13, color: muted).copyWith(height: 1.4))),
+                        if (subtitle != null) Padding(padding: EdgeInsets.only(top: 6), child: Text(subtitle, style: body(13, color: muted).copyWith(height: 1.4))),
                       ],
                     ),
                   ),
-                  IconButton(onPressed: () => Navigator.pop(sheet), icon: const Icon(LucideIcons.x, color: muted)),
+                  IconButton(onPressed: () => Navigator.pop(sheet), icon: Icon(LucideIcons.x, color: muted)),
                 ],
               ),
             ),
@@ -1359,8 +1360,8 @@ Future<bool> confirm(BuildContext context, String title, {String? text, String a
       title: Text(title),
       content: text == null ? null : Text(text),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(dialog, false), child: Text('Скасувати', style: body(14, color: muted))),
-        TextButton(onPressed: () => Navigator.pop(dialog, true), child: Text(action, style: body(14, color: danger ? dangerSoft : primary, weight: FontWeight.w700))),
+        TextButton(onPressed: () => Navigator.pop(dialog, false), child: Text(tr('Скасувати'), style: body(14, color: muted))),
+        TextButton(onPressed: () => Navigator.pop(dialog, true), child: Text(tr(action), style: body(14, color: danger ? dangerSoft : primary, weight: FontWeight.w700))),
       ],
     ),
   );
@@ -1376,8 +1377,8 @@ Future<String?> askText(BuildContext context, String title, {String hint = '', S
       title: Text(title),
       content: GcField(controller: controller, label: hint, maxLines: maxLines, autofocus: true),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(dialog, false), child: Text('Скасувати', style: body(14, color: muted))),
-        TextButton(onPressed: () => Navigator.pop(dialog, true), child: Text(action, style: body(14, color: primary, weight: FontWeight.w700))),
+        TextButton(onPressed: () => Navigator.pop(dialog, false), child: Text(tr('Скасувати'), style: body(14, color: muted))),
+        TextButton(onPressed: () => Navigator.pop(dialog, true), child: Text(tr(action), style: body(14, color: primary, weight: FontWeight.w700))),
       ],
     ),
   );
@@ -1409,10 +1410,21 @@ String clock(dynamic iso) {
   return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 }
 
-const _monthsShort = ['січ.', 'лют.', 'бер.', 'квіт.', 'трав.', 'черв.', 'лип.', 'серп.', 'вер.', 'жовт.', 'лист.', 'груд.'];
-const monthsGenitive = ['січня', 'лютого', 'березня', 'квітня', 'травня', 'червня', 'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня'];
+final _monthsShort = [tr('січ.'), tr('лют.'), tr('бер.'), tr('квіт.'), tr('трав.'), tr('черв.'), tr('лип.'), tr('серп.'), tr('вер.'), tr('жовт.'), tr('лист.'), tr('груд.')];
+final monthsGenitive = [tr('січня'), tr('лютого'), tr('березня'), tr('квітня'), tr('травня'), tr('червня'), tr('липня'), tr('серпня'), tr('вересня'), tr('жовтня'), tr('листопада'), tr('грудня')];
 
+/// Множина: форми українські («друг / друзі / друзів»), переклад — ті самі три форми через «|».
 String plural(int n, String one, String few, String many) {
+  final translated = I18n.lookup('$one|$few|$many')?.split('|');
+  if (translated != null && translated.length == 3 && I18n.locale != 'uk') {
+    // Більшість мов: 1 — однина, решта — множина; слов’янські — як українська.
+    const slavic = {'pl', 'cs', 'sk', 'ru', 'be', 'hr', 'sr', 'bs', 'sl'};
+    final primary = I18n.locale.split('-').first;
+    if (!slavic.contains(primary)) return n == 1 ? translated[0] : translated[2];
+    one = translated[0];
+    few = translated[1];
+    many = translated[2];
+  }
   final mod10 = n % 10;
   final mod100 = n % 100;
   if (mod10 == 1 && mod100 != 11) return one;
@@ -1427,14 +1439,14 @@ String ago(dynamic iso) {
   if (dt == null) return '';
   final now = DateTime.now();
   final diff = now.difference(dt);
-  if (diff.inSeconds < 60) return 'щойно';
-  if (diff.inMinutes < 60) return '${diff.inMinutes} ${plural(diff.inMinutes, 'хвилину', 'хвилини', 'хвилин')} тому';
-  if (diff.inHours < 12) return '${diff.inHours} ${plural(diff.inHours, 'годину', 'години', 'годин')} тому';
+  if (diff.inSeconds < 60) return tr('щойно');
+  if (diff.inMinutes < 60) return tr('{inMinutes} {v} тому', {'inMinutes': diff.inMinutes, 'v': plural(diff.inMinutes, 'хвилину', 'хвилини', 'хвилин')});
+  if (diff.inHours < 12) return tr('{inHours} {v} тому', {'inHours': diff.inHours, 'v': plural(diff.inHours, 'годину', 'години', 'годин')});
   final time = clock(raw);
-  if (DateUtils.isSameDay(dt, now)) return 'сьогодні о $time';
-  if (DateUtils.isSameDay(dt, now.subtract(const Duration(days: 1)))) return 'вчора о $time';
+  if (DateUtils.isSameDay(dt, now)) return tr('сьогодні о {time}', {'time': time});
+  if (DateUtils.isSameDay(dt, now.subtract(const Duration(days: 1)))) return tr('вчора о {time}', {'time': time});
   final date = '${dt.day} ${_monthsShort[dt.month - 1]}${dt.year == now.year ? '' : ' ${dt.year}'}';
-  return '$date о $time';
+  return tr('{date} о {time}', {'date': date, 'time': time});
 }
 
 /// Коротка мітка для списку чатів: «13:32», «вчора», «3 жовт.».
@@ -1444,7 +1456,7 @@ String shortStamp(dynamic iso) {
   if (dt == null) return '';
   final now = DateTime.now();
   if (DateUtils.isSameDay(dt, now)) return clock(raw);
-  if (DateUtils.isSameDay(dt, now.subtract(const Duration(days: 1)))) return 'вчора';
+  if (DateUtils.isSameDay(dt, now.subtract(const Duration(days: 1)))) return tr('вчора');
   return '${dt.day} ${_monthsShort[dt.month - 1]}';
 }
 
@@ -1452,7 +1464,7 @@ String fullDate(dynamic iso) {
   final raw = text(iso);
   final dt = raw == null ? null : DateTime.tryParse(raw)?.toLocal();
   if (dt == null) return '';
-  return '${dt.day} ${monthsGenitive[dt.month - 1]} ${dt.year} р.';
+  return tr('{day} {v} {year} р.', {'day': dt.day, 'v': monthsGenitive[dt.month - 1], 'year': dt.year});
 }
 
 String duration(dynamic seconds) {

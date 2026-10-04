@@ -12,6 +12,7 @@ import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'i18n.dart';
 
 const _channel = MethodChannel('gamecon/app');
 
@@ -38,7 +39,7 @@ class PlayingBadge extends StatelessWidget {
           const SizedBox(width: 6),
           Flexible(
             child: Text(
-              'Грає в ${playing['label']}${note != null ? ' · $note' : ''}',
+              tr('Грає в {v}{v2}', {'v': playing['label'], 'v2': note != null ? ' · $note' : ''}),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: body(12.5, color: const Color(0xFFA7F3D0), weight: FontWeight.w600),
@@ -140,10 +141,9 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
     if (on && !usageAccess) {
       final go = await confirm(
         context,
-        'Доступ до використання',
-        text: 'Щоб GameCon бачив, у яку гру ви граєте на телефоні, дозвольте «Доступ до використання» для GameCon у налаштуваннях, що відкриються. '
-            'На сервер надсилається лише гра, що на екрані (застосунки категорії «Ігри» або з каталогу GameCon), — нічого іншого.',
-        action: 'Відкрити налаштування',
+        tr('Доступ до використання'),
+        text: tr('Щоб GameCon бачив, у яку гру ви граєте на телефоні, дозвольте «Доступ до використання» для GameCon у налаштуваннях, що відкриються. На сервер надсилається лише гра, що на екрані (застосунки категорії «Ігри» або з каталогу GameCon), — нічого іншого.'),
+        action: tr('Відкрити налаштування'),
       );
       if (!go) return;
       _awaitingAccess = true;
@@ -163,7 +163,7 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
       if (on) await _channel.invokeMethod('playingCheck');
       if (!mounted) return;
       setState(() => mobile = on);
-      toast(context, on ? 'Готово: гра з телефона з’являтиметься в статусі.' : 'Ігри з телефона більше не показуються.');
+      toast(context, on ? tr('Готово: гра з телефона з’являтиметься в статусі.') : tr('Ігри з телефона більше не показуються.'));
       await _load();
     } catch (e) {
       if (mounted) toast(context, e);
@@ -182,14 +182,14 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
     return ScreenScroll(
       onRefresh: _load,
       children: [
-        const PageTitle('Граю в…', subtitle: 'Статус біля аватарки: де ви зараз граєте. Ставиться сам або вручну.'),
+        PageTitle(tr('Граю в…'), subtitle: tr('Статус біля аватарки: де ви зараз граєте. Ставиться сам або вручну.')),
         if (playing != null)
           Glass(
             child: Row(children: [
               Expanded(child: Align(alignment: Alignment.centerLeft, child: PlayingBadge(playing))),
-              Text(playing['auto'] == true ? 'автоматично' : 'вручну', style: body(11.5, color: faint)),
+              Text(playing['auto'] == true ? tr('автоматично') : tr('вручну'), style: body(11.5, color: faint)),
               IconButton(
-                tooltip: 'Прибрати',
+                tooltip: tr('Прибрати'),
                 onPressed: () => _act(() => api.delete(Api.site('/me/playing'))),
                 icon: const Icon(LucideIcons.x, size: 18, color: muted),
               ),
@@ -199,11 +199,11 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
         Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              Expanded(child: Text('Автоматично', style: body(15, weight: FontWeight.w700))),
+              Expanded(child: Text(tr('Автоматично'), style: body(15, weight: FontWeight.w700))),
               GcSwitch(value: d['auto'] == true, onChanged: (v) => _act(() => api.put(Api.site('/me/playing/auto'), {'auto': v}))),
             ]),
             const SizedBox(height: 6),
-            Text('Статус ставиться сам, щойно ви запускаєте гру.', style: body(12.5, color: muted)),
+            Text(tr('Статус ставиться сам, щойно ви запускаєте гру.'), style: body(12.5, color: muted)),
             const SizedBox(height: 12),
             if (Platform.isAndroid) ...[
               Row(children: [
@@ -211,8 +211,8 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('Ігри на цьому телефоні', style: body(14, weight: FontWeight.w600)),
-                    Text(usageAccess ? 'Доступ до використання надано' : 'Потрібен «Доступ до використання»', style: body(12, color: usageAccess ? green : faint)),
+                    Text(tr('Ігри на цьому телефоні'), style: body(14, weight: FontWeight.w600)),
+                    Text(usageAccess ? tr('Доступ до використання надано') : tr('Потрібен «Доступ до використання»'), style: body(12, color: usageAccess ? green : faint)),
                   ]),
                 ),
                 GcSwitch(value: mobile && usageAccess, onChanged: _setMobile),
@@ -227,8 +227,8 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
                   Text('Discord', style: body(14, weight: FontWeight.w600)),
                   Text(
                     discord['linked'] == true
-                        ? 'Прив’язано. Будьте на Discord-сервері GameCon і ввімкніть показ активності.'
-                        : 'Прив’яжіть Discord — гра й сервер GTA підтягнуться з вашого статусу в Discord.',
+                        ? tr('Прив’язано. Будьте на Discord-сервері GameCon і ввімкніть показ активності.')
+                        : tr('Прив’яжіть Discord — гра й сервер GTA підтягнуться з вашого статусу в Discord.'),
                     style: body(12, color: faint),
                   ),
                 ]),
@@ -236,7 +236,7 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
               if (discord['linked'] != true)
                 TextButton(
                   onPressed: () => launchUrl(Uri.parse('${Api.root}/auth/discord'), mode: LaunchMode.externalApplication),
-                  child: Text('Прив’язати', style: body(13, color: primary, weight: FontWeight.w700)),
+                  child: Text(tr('Прив’язати'), style: body(13, color: primary, weight: FontWeight.w700)),
                 ),
             ]),
             if (steamInfo['available'] == true) ...[
@@ -244,34 +244,34 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
               Row(children: [
                 const Icon(LucideIcons.monitor, size: 18, color: primary),
                 const SizedBox(width: 10),
-                Expanded(child: Text('Steam (ігри на ПК)', style: body(14, weight: FontWeight.w600))),
+                Expanded(child: Text(tr('Steam (ігри на ПК)'), style: body(14, weight: FontWeight.w600))),
                 if (steamInfo['linked'] == true)
                   TextButton(
                     onPressed: () => _act(() => api.delete(Api.site('/me/playing/steam'))),
-                    child: Text('Відв’язати', style: body(13, color: dangerSoft)),
+                    child: Text(tr('Відв’язати'), style: body(13, color: dangerSoft)),
                   ),
               ]),
               if (steamInfo['linked'] != true) ...[
                 const SizedBox(height: 8),
                 Row(children: [
-                  Expanded(child: GcField(controller: steam, label: 'Посилання на профіль Steam', dense: true)),
+                  Expanded(child: GcField(controller: steam, label: tr('Посилання на профіль Steam'), dense: true)),
                   const SizedBox(width: 8),
                   PrimaryButton(
-                    label: 'Прив’язати',
+                    label: tr('Прив’язати'),
                     expand: false,
                     compact: true,
                     onPressed: () => _act(() => api.post(Api.site('/me/playing/steam'), {'profile': steam.text.trim()})),
                   ),
                 ]),
               ] else
-                Text('Прив’язано', style: body(12, color: green)),
+                Text(tr('Прив’язано'), style: body(12, color: green)),
             ],
           ]),
         ),
-        const SectionLabel('Вручну'),
+        SectionLabel(tr('Вручну')),
         GcField(
           controller: search,
-          label: 'Сервер GTA або гра',
+          label: tr('Сервер GTA або гра'),
           icon: LucideIcons.search,
           dense: true,
           onChanged: (_) {
@@ -294,12 +294,12 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
           ),
         if (picked != null) ...[
           const SizedBox(height: 8),
-          GcField(controller: note, label: 'Підпис: сім’я, персонаж… (необов’язково)'),
+          GcField(controller: note, label: tr('Підпис: сім’я, персонаж… (необов’язково)')),
           const SizedBox(height: 8),
-          ChipRow(options: [for (final h in hoursList) ('$h', 'на $h год')], selected: '$hours', onSelect: (v) => setState(() => hours = int.parse(v))),
+          ChipRow(options: [for (final h in hoursList) ('$h', tr('на {h} год', {'h': h}))], selected: '$hours', onSelect: (v) => setState(() => hours = int.parse(v))),
           const SizedBox(height: 10),
           PrimaryButton(
-            label: 'Поставити «Граю в ${picked!['label']}»',
+            label: tr('Поставити «Граю в {v}»', {'v': picked!['label']}),
             icon: LucideIcons.gamepad2,
             onPressed: () => _act(() => api.put(Api.site('/me/playing'), {'kind': picked!['kind'], 'id': picked!['id'], 'note': note.text.trim(), 'hours': hours})),
           ),
