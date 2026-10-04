@@ -235,7 +235,12 @@ function Topbar() {
 
     return (
         <header className="pointer-events-none fixed inset-x-0 top-0 z-40 bg-transparent [view-transition-name:gc-topbar]">
-            <div className="pointer-events-auto mx-auto flex h-16 max-w-[1320px] items-center gap-2 px-3 sm:gap-4 sm:px-5">
+            {/* Підкладка: контент, що прокручується під шапку, не накладається на пошук і кнопки. */}
+            <div
+                aria-hidden
+                className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#05070f]/95 via-[#05070f]/80 to-transparent [mask-image:linear-gradient(to_bottom,black_65%,transparent)] backdrop-blur-xl"
+            />
+            <div className="pointer-events-auto relative mx-auto flex h-16 max-w-[1320px] items-center gap-2 px-3 sm:gap-4 sm:px-5">
                 <Link href="/feed" className="shrink-0 lg:w-[232px]">
                     <Logo className="hidden sm:inline-flex" />
                     <LogoMark className="sm:hidden" />

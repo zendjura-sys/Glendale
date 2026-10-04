@@ -15,8 +15,9 @@ export function PageHeader({
     actions?: ReactNode;
 }) {
     return (
-        <div className="mb-6 flex flex-wrap items-end gap-4">
-            <div className="min-w-0 flex-1">
+        <div className="mb-6 flex flex-wrap items-end gap-x-4 gap-y-3">
+            {/* На телефоні заголовок займає весь рядок, а кнопки переносяться під нього. */}
+            <div className="min-w-[min(100%,18rem)] flex-1">
                 <h1 className="font-display text-[26px] leading-tight font-bold text-white">
                     {title}
                 </h1>
@@ -24,7 +25,11 @@ export function PageHeader({
                     <p className="mt-1 text-sm text-white/45">{description}</p>
                 )}
             </div>
-            {actions}
+            {actions && (
+                <div className="flex flex-wrap items-center gap-2">
+                    {actions}
+                </div>
+            )}
         </div>
     );
 }

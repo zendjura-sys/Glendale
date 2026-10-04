@@ -8,6 +8,7 @@ import {
     Tv,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Pagination } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
 import { cn } from '@/lib/utils';
@@ -68,6 +69,34 @@ export function GameCover({
     );
 }
 
+function Chip({
+    active,
+    small,
+    onClick,
+    children,
+}: {
+    active: boolean;
+    small?: boolean;
+    onClick: () => void;
+    children: ReactNode;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={cn(
+                'inline-flex shrink-0 items-center gap-1.5 rounded-lg font-medium whitespace-nowrap transition',
+                small ? 'h-8 px-3 text-xs' : 'h-9 px-3 text-sm',
+                active
+                    ? 'bg-gradient-brand text-white'
+                    : 'bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white',
+            )}
+        >
+            {children}
+        </button>
+    );
+}
+
 /** Каталог мультиплеєрних ігор: пошук, розділи від ПК до мобільних, покажчик A–Z. */
 export default function GamesIndex({
     games,
@@ -116,147 +145,144 @@ export default function GamesIndex({
                 </div>
             </div>
 
-            <div className="glass mb-3 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
-                <label className="input-glass flex h-10 min-w-[220px] flex-1 items-center gap-2 rounded-xl px-3">
-                    <Search className="size-4 text-white/35" />
+            <div className="glass mb-4 space-y-3 rounded-2xl p-3">
+                <label className="input-glass flex h-11 w-full items-center gap-2 rounded-xl px-3">
+                    <Search className="size-4 shrink-0 text-white/35" />
                     <input
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
-                        placeholder="Назва гри або альтернативна назва"
+                        placeholder="Назва гри"
                         className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
                     />
                 </label>
-                <div className="flex rounded-xl bg-white/[0.04] p-1 text-sm">
-                    <button
-                        type="button"
+
+                <div className="-mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1">
+                    <Chip
+                        active={!filters.category}
                         onClick={() => visit({ category: null })}
-                        className={cn(
-                            'rounded-lg px-3 py-1.5 transition',
-                            !filters.category
-                                ? 'bg-gradient-brand text-white'
-                                : 'text-white/55 hover:text-white',
-                        )}
                     >
                         Усі
-                    </button>
+                    </Chip>
                     {(Object.keys(categories) as Category[]).map((c) => {
                         const Icon = CATEGORY_ICONS[c];
 
                         return (
-                            <button
+                            <Chip
                                 key={c}
-                                type="button"
+                                active={filters.category === c}
                                 onClick={() =>
                                     visit({ category: c, letter: null })
                                 }
-                                className={cn(
-                                    'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition',
-                                    filters.category === c
-                                        ? 'bg-gradient-brand text-white'
-                                        : 'text-white/55 hover:text-white',
-                                )}
                             >
                                 <Icon className="size-4" /> {categories[c]}
+                            </Chip>
+                        );
+                    })}
+                </div>
+
+                {Object.keys(modes).length > 0 && (
+                    <div className="-mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1">
+                        {Object.entries(modes)
+                            .filter(([key]) => key !== 'single')
+                            .map(([key, label]) => (
+                                <Chip
+                                    key={key}
+                                    small
+                                    active={filters.mode === key}
+                                    onClick={() =>
+                                        visit({
+                                            mode:
+                                                filters.mode === key
+                                                    ? null
+                                                    : key,
+                                        })
+                                    }
+                                >
+                                    {label}
+                                </Chip>
+                            ))}
+                    </div>
+                )}
+
+                {(genres.length > 0 || Object.keys(sorts).length > 0) && (
+                    <div className="grid grid-cols-2 gap-2">
+                        {genres.length > 0 && (
+                            <select
+                                value={filters.genre ?? ''}
+                                onChange={(e) =>
+                                    visit({ genre: e.target.value || null })
+                                }
+                                className="input-glass h-10 w-full min-w-0 rounded-xl px-3 text-sm text-white"
+                                aria-label="Жанр"
+                            >
+                                <option value="">Усі жанри</option>
+                                {genres.map((g) => (
+                                    <option key={g} value={g}>
+                                        {g}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                        {Object.keys(sorts).length > 0 && (
+                            <select
+                                value={filters.sort}
+                                onChange={(e) =>
+                                    visit({ sort: e.target.value })
+                                }
+                                className={cn(
+                                    'input-glass h-10 w-full min-w-0 rounded-xl px-3 text-sm text-white',
+                                    genres.length === 0 && 'col-span-2',
+                                )}
+                                aria-label="Сортування"
+                            >
+                                {Object.entries(sorts).map(([key, label]) => (
+                                    <option key={key} value={key}>
+                                        {label}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
+                )}
+
+                {/* A–Z: на телефоні — один рядок з прокруткою, на ширших екранах — переноситься. Літери без ігор неактивні. */}
+                <div className="-mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto border-t border-white/[0.06] px-1 pt-3 sm:flex-wrap">
+                    <button
+                        type="button"
+                        onClick={() => visit({ letter: null })}
+                        className={cn(
+                            'h-8 shrink-0 rounded-lg px-2.5 text-xs font-semibold transition',
+                            !filters.letter
+                                ? 'bg-gradient-brand text-white'
+                                : 'text-white/60 hover:bg-white/10',
+                        )}
+                    >
+                        A–Z
+                    </button>
+                    {ALPHABET.map((l) => {
+                        const has = letters.includes(l);
+
+                        return (
+                            <button
+                                key={l}
+                                type="button"
+                                disabled={!has}
+                                onClick={() => {
+                                    setQ('');
+                                    visit({ letter: l, q: '' });
+                                }}
+                                className={cn(
+                                    'size-8 shrink-0 rounded-lg text-xs font-semibold transition disabled:cursor-default disabled:opacity-25',
+                                    filters.letter === l
+                                        ? 'bg-gradient-brand text-white'
+                                        : 'text-white/70 hover:bg-white/10',
+                                )}
+                            >
+                                {l}
                             </button>
                         );
                     })}
                 </div>
-            </div>
-
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-                <div className="flex flex-wrap gap-1.5">
-                    {Object.entries(modes)
-                        .filter(([key]) => key !== 'single')
-                        .map(([key, label]) => (
-                            <button
-                                key={key}
-                                type="button"
-                                onClick={() =>
-                                    visit({
-                                        mode: filters.mode === key ? null : key,
-                                    })
-                                }
-                                className={cn(
-                                    'h-8 rounded-lg px-3 text-xs font-semibold transition',
-                                    filters.mode === key
-                                        ? 'bg-gradient-brand text-white'
-                                        : 'glass text-white/65 hover:text-white',
-                                )}
-                            >
-                                {label}
-                            </button>
-                        ))}
-                </div>
-                {genres.length > 0 && (
-                    <select
-                        value={filters.genre ?? ''}
-                        onChange={(e) =>
-                            visit({ genre: e.target.value || null })
-                        }
-                        className="input-glass ml-auto h-9 rounded-lg px-2 text-xs text-white"
-                        aria-label="Жанр"
-                    >
-                        <option value="">Усі жанри</option>
-                        {genres.map((g) => (
-                            <option key={g} value={g}>
-                                {g}
-                            </option>
-                        ))}
-                    </select>
-                )}
-                {Object.keys(sorts).length > 0 && (
-                    <select
-                        value={filters.sort}
-                        onChange={(e) => visit({ sort: e.target.value })}
-                        className="input-glass h-9 rounded-lg px-2 text-xs text-white"
-                        aria-label="Сортування"
-                    >
-                        {Object.entries(sorts).map(([key, label]) => (
-                            <option key={key} value={key}>
-                                {label}
-                            </option>
-                        ))}
-                    </select>
-                )}
-            </div>
-
-            {/* A–Z: літери без ігор неактивні */}
-            <div className="glass mb-4 flex flex-wrap gap-1 rounded-2xl p-2">
-                <button
-                    type="button"
-                    onClick={() => visit({ letter: null })}
-                    className={cn(
-                        'h-8 rounded-lg px-2.5 text-xs font-semibold transition',
-                        !filters.letter
-                            ? 'bg-gradient-brand text-white'
-                            : 'text-white/60 hover:bg-white/10',
-                    )}
-                >
-                    A–Z
-                </button>
-                {ALPHABET.map((l) => {
-                    const has = letters.includes(l);
-
-                    return (
-                        <button
-                            key={l}
-                            type="button"
-                            disabled={!has}
-                            onClick={() => {
-                                setQ('');
-                                visit({ letter: l, q: '' });
-                            }}
-                            className={cn(
-                                'size-8 rounded-lg text-xs font-semibold transition disabled:cursor-default disabled:opacity-25',
-                                filters.letter === l
-                                    ? 'bg-gradient-brand text-white'
-                                    : 'text-white/70 hover:bg-white/10',
-                            )}
-                        >
-                            {l}
-                        </button>
-                    );
-                })}
             </div>
 
             {games.data.length === 0 ? (
