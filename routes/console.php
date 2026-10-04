@@ -15,6 +15,8 @@ Schedule::command('servers:sync --discover --icons')->dailyAt('05:30')->timezone
 
 Schedule::command('families:tick')->everyFifteenMinutes()->withoutOverlapping(30);
 Schedule::command('families:tick --digest')->weeklyOn(0, '23:59')->timezone('Europe/Kyiv')->withoutOverlapping(30);
+// Особиста зведення рахунку в банку сім’ї — у неділю ввечері, поки тиждень ще не закінчився.
+Schedule::command('families:bank-digest')->weeklyOn(0, '20:00')->timezone('Europe/Kyiv')->withoutOverlapping(60);
 
 Schedule::command('calls:expire')->everyMinute()->withoutOverlapping(5);
 Schedule::command('events:remind')->everyFiveMinutes()->withoutOverlapping(10);
