@@ -26,6 +26,7 @@ use App\Http\Controllers\ServerController;
 use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\Settings\ProfileController as SettingsProfileController;
 use App\Http\Controllers\SpotifyController;
+use App\Http\Controllers\StoryController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Controllers\WatchPartyController;
@@ -53,6 +54,18 @@ Route::prefix('v1')->group(function () {
         Route::put('me/password', [SocialApiController::class, 'password']);
         Route::get('me/connections', [SocialApiController::class, 'connections']);
         Route::delete('me/connections/{provider}', [SocialApiController::class, 'unlink'])->whereIn('provider', ['discord', 'google']);
+
+        // Історії на 24 години.
+        Route::prefix('stories')->middleware('module:feed')->group(function () {
+            Route::get('/', [StoryController::class, 'index']);
+            Route::post('/', [StoryController::class, 'store'])->middleware('throttle:20,1');
+            Route::get('u/{user}', [StoryController::class, 'ofUser']);
+            Route::post('{story}/view', [StoryController::class, 'view'])->whereNumber('story')->middleware('throttle:240,1');
+            Route::post('{story}/react', [StoryController::class, 'react'])->whereNumber('story')->middleware('throttle:30,1');
+            Route::post('{story}/reply', [StoryController::class, 'reply'])->whereNumber('story')->middleware('throttle:30,1');
+            Route::get('{story}/viewers', [StoryController::class, 'viewers'])->whereNumber('story');
+            Route::delete('{story}', [StoryController::class, 'destroy'])->whereNumber('story');
+        });
 
         // Голосові кімнати сімей і спільнот (звук — через LiveKit).
         Route::prefix('voice')->group(function () {

@@ -17,3 +17,4 @@ Schedule::command('families:tick')->everyFifteenMinutes()->withoutOverlapping(30
 Schedule::command('families:tick --digest')->weeklyOn(0, '23:59')->timezone('Europe/Kyiv')->withoutOverlapping(30);
 
 Schedule::command('calls:expire')->everyMinute()->withoutOverlapping(5);
+Schedule::command('stories:prune')->hourly()->withoutOverlapping(30);

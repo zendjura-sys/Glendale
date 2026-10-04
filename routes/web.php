@@ -24,6 +24,7 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\SpotifyController;
+use App\Http\Controllers\StoryController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Controllers\WatchPartyController;
@@ -61,6 +62,18 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('friends/{user}', [FriendController::class, 'store'])->middleware('throttle:60,1')->name('friends.store');
         Route::post('friends/{user}/accept', [FriendController::class, 'accept'])->name('friends.accept');
         Route::delete('friends/{user}', [FriendController::class, 'destroy'])->name('friends.destroy');
+    });
+
+    // Історії на 24 години.
+    Route::prefix('stories')->name('stories.')->middleware('module:feed')->group(function () {
+        Route::get('/', [StoryController::class, 'index'])->name('index');
+        Route::post('/', [StoryController::class, 'store'])->middleware('throttle:20,1')->name('store');
+        Route::get('u/{user}', [StoryController::class, 'ofUser'])->name('user');
+        Route::post('{story}/view', [StoryController::class, 'view'])->whereNumber('story')->middleware('throttle:240,1')->name('view');
+        Route::post('{story}/react', [StoryController::class, 'react'])->whereNumber('story')->middleware('throttle:30,1')->name('react');
+        Route::post('{story}/reply', [StoryController::class, 'reply'])->whereNumber('story')->middleware('throttle:30,1')->name('reply');
+        Route::get('{story}/viewers', [StoryController::class, 'viewers'])->whereNumber('story')->name('viewers');
+        Route::delete('{story}', [StoryController::class, 'destroy'])->whereNumber('story')->name('destroy');
     });
 
     // Голосові кімнати сімей і спільнот (звук — через LiveKit).
