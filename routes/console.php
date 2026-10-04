@@ -28,5 +28,7 @@ Schedule::command('discord:presence')->everyMinute()->withoutOverlapping(60)->ru
 Schedule::command('steam:presence')->everyTwoMinutes()->withoutOverlapping(5);
 // Нові рядки інтерфейсу після оновлень — докладаємо переклади щоночі.
 Schedule::command('i18n:translate')->dailyAt('03:20')->timezone('Europe/Kyiv')->withoutOverlapping(120)->runInBackground();
+// База «IP → країна» для блокування країн — щотижня.
+Schedule::command('geoip:update')->weeklyOn(3, '04:10')->timezone('Europe/Kyiv')->withoutOverlapping(60)->runInBackground();
 Schedule::command('stories:prune')->hourly()->withoutOverlapping(30);
 Schedule::command('games:sync')->dailyAt('04:40')->timezone('Europe/Kyiv')->withoutOverlapping(120)->runInBackground();

@@ -72,7 +72,7 @@ class DeepL
             return self::TARGETS;
         }
 
-        $cached = Cache::remember('deepl.targets', now()->addDay(), function () {
+        return Cache::remember('deepl.targets', now()->addDay(), function () {
             $rows = $this->request('get', '/v2/languages', ['type' => 'target']);
             $codes = [];
             foreach (is_array($rows) ? $rows : [] as $row) {
@@ -83,8 +83,6 @@ class DeepL
 
             return $codes === [] ? self::TARGETS : array_values(array_unique([...$codes, 'ZH-HANS', 'ZH-HANT']));
         });
-
-        return is_array($cached) ? array_values(array_map('strval', $cached)) : self::TARGETS;
     }
 
     /**

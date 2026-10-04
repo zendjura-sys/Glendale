@@ -43,6 +43,11 @@ return [
         'api_url' => env('SPOTIFY_API_URL', 'https://api.spotify.com/v1'),
     ],
 
+    'geoip' => [
+        'dbip_url' => env('GEOIP_DBIP_URL', 'https://download.db-ip.com/free/dbip-country-lite-{month}.mmdb.gz'),
+        'maxmind_url' => env('GEOIP_MAXMIND_URL', 'https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz'),
+    ],
+
     'deepl' => [
         'key' => env('DEEPL_KEY'),
         'url' => env('DEEPL_URL'),

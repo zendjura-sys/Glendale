@@ -454,6 +454,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('sync', [Admin\GameController::class, 'sync'])->middleware('throttle:5,1')->name('sync');
             Route::patch('{game:id}', [Admin\GameController::class, 'update'])->whereNumber('game')->name('update');
         });
+        Route::prefix('geo')->name('geo.')->group(function () {
+            Route::get('/', [Admin\GeoController::class, 'index'])->name('index');
+            Route::put('/', [Admin\GeoController::class, 'update'])->name('update');
+            Route::put('maxmind', [Admin\GeoController::class, 'maxmind'])->name('maxmind');
+            Route::post('refresh', [Admin\GeoController::class, 'refresh'])->middleware('throttle:5,1')->name('refresh');
+        });
         Route::prefix('languages')->name('languages.')->group(function () {
             Route::get('/', [Admin\LanguageController::class, 'index'])->name('index');
             Route::post('/', [Admin\LanguageController::class, 'store'])->name('store');
