@@ -224,6 +224,21 @@ export async function joinVoice(
     );
 }
 
+/** Голос під час спільного перегляду фільму. */
+export async function joinWatchVoice(code: string, title: string) {
+    await connect(
+        () => api<Access>('POST', `/watch/${code}/voice`),
+        {
+            kind: 'room',
+            roomId: null,
+            roomName: title,
+            label: 'Спільний перегляд',
+            href: `/watch/${code}`,
+        },
+        'Не вдалося підключити голос',
+    );
+}
+
 /** Подзвонити в бесіду або приєднатися до дзвінка, що вже триває. */
 export async function startCall(conversation: { id: number; title: string }) {
     if (

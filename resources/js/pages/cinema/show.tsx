@@ -1,5 +1,6 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import {
+    Popcorn,
     ArrowLeft,
     Bookmark,
     Check,
@@ -428,6 +429,24 @@ export default function CinemaShow({
                                                 ? 'Продовжити'
                                                 : 'Дивитися'}
                                         </a>
+                                    )}
+                                    {players.length > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                router.post(
+                                                    `/cinema/${movie.slug}/watch`,
+                                                    {
+                                                        player_key:
+                                                            player?.key ?? null,
+                                                    },
+                                                )
+                                            }
+                                            className="inline-flex h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.08] px-4 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15"
+                                        >
+                                            <Popcorn className="size-4" />
+                                            Дивитися разом
+                                        </button>
                                     )}
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>

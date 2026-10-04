@@ -157,6 +157,7 @@ class WatchParties
             ->latest('id')->limit(self::CHAT_LIMIT)->get()->reverse()->values();
 
         return [
+            'id' => $party->id,
             'code' => $party->code,
             'url' => url('/watch/'.$party->code),
             'host' => $party->host?->toCard(),
