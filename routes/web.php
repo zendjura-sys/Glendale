@@ -13,6 +13,7 @@ use App\Http\Controllers\Families;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\ListenPartyController;
 use App\Http\Controllers\Mail\UnsubscribeController;
 use App\Http\Controllers\MessageController;
@@ -38,6 +39,8 @@ use App\Models\VoiceRoom;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', WelcomeController::class)->name('home');
+Route::get('terms', [LegalController::class, 'terms'])->name('legal.terms');
+Route::get('privacy', [LegalController::class, 'privacy'])->name('legal.privacy');
 
 Route::redirect('dashboard', '/feed')->name('dashboard');
 

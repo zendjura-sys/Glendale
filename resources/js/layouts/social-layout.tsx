@@ -145,6 +145,15 @@ function Sidebar() {
             <div className="mt-auto px-3 pt-4 text-[11px] leading-relaxed text-white/30">
                 © {new Date().getFullYear()} GameCon · Соціальна мережа нового
                 покоління
+                <span className="mt-1 block">
+                    <Link href="/terms" className="hover:text-white">
+                        Умови
+                    </Link>
+                    <span className="px-1 text-white/20">·</span>
+                    <Link href="/privacy" className="hover:text-white">
+                        Конфіденційність
+                    </Link>
+                </span>
             </div>
         </aside>
     );

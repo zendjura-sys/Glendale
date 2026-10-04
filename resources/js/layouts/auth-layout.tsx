@@ -132,7 +132,16 @@ export default function AuthLayout({
                     </div>
 
                     <p className="mt-6 text-center text-[11px] text-white/30">
-                        © {new Date().getFullYear()} {site?.name ?? 'GameCon'}
+                        <Link href="/terms" className="hover:text-white">
+                            Умови
+                        </Link>
+                        <span className="px-1.5 text-white/20">·</span>
+                        <Link href="/privacy" className="hover:text-white">
+                            Конфіденційність
+                        </Link>
+                        <span className="mt-1 block">
+                            © {new Date().getFullYear()} {site?.name ?? 'GameCon'}
+                        </span>
                     </p>
                 </div>
             </div>
