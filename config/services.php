@@ -49,6 +49,10 @@ return [
         'redirect' => env('DISCORD_REDIRECT_URI'),
         'api_url' => env('DISCORD_API_URL', 'https://discord.com/api'),
         'authorize_url' => env('DISCORD_AUTHORIZE_URL', 'https://discord.com/oauth2/authorize'),
+        // Бот для статусу «Граю в…» (Rich Presence учасників Discord-сервера GameCon).
+        'bot_token' => env('DISCORD_BOT_TOKEN'),
+        'guild_id' => env('DISCORD_GUILD_ID'),
+        'gateway' => env('DISCORD_GATEWAY_URL', 'wss://gateway.discord.gg/?v=10&encoding=json'),
     ],
 
     // Сервер голосових кімнат (LiveKit); можна задати в адмінці → Інтеграції.
@@ -86,6 +90,11 @@ return [
         'token' => env('TMDB_TOKEN'),
         'api_url' => env('TMDB_API_URL', 'https://api.themoviedb.org/3'),
         'image_url' => env('TMDB_IMAGE_URL', 'https://image.tmdb.org/t/p'),
+    ],
+
+    'steam' => [
+        'key' => env('STEAM_API_KEY'),
+        'url' => env('STEAM_API_URL', 'https://api.steampowered.com'),
     ],
 
     'igdb' => [

@@ -21,6 +21,7 @@ use App\Services\Cinema\Metadata\ShikimoriProvider;
 use App\Services\Cinema\Metadata\TmdbProvider;
 use App\Services\Games\GameCatalog;
 use App\Services\Games\Igdb;
+use App\Services\Presence\SteamPresence;
 use App\Services\Push\FcmClient;
 use App\Services\Spotify\SpotifyClient;
 use App\Services\Voice\LiveKit;
@@ -50,6 +51,7 @@ class IntegrationController extends Controller
         private readonly LiveKit $livekit,
         private readonly GameCatalog $games,
         private readonly Igdb $igdb,
+        private readonly SteamPresence $steam,
     ) {}
 
     public function index(): Response
@@ -249,12 +251,15 @@ class IntegrationController extends Controller
             'discord' => [
                 'label' => 'Discord',
                 'group' => 'auth',
-                'description' => 'Вхід і реєстрація в один клік, прив’язка Discord до профілю та RP-сімей.',
+                'description' => 'Вхід і реєстрація в один клік, прив’язка Discord до профілю та RP-сімей. З ботом — автоматичний статус «Граю в…» з Discord Rich Presence.',
                 'docs' => 'https://discord.com/developers/applications',
                 'steps' => [
                     'Discord Developer Portal → New Application → OAuth2.',
                     'Додайте Redirect: '.$this->discord->redirectUri(),
                     'Скопіюйте Client ID і Client Secret сюди.',
+                    'Для статусу «Граю в…»: у тому ж застосунку → Bot → Reset Token, скопіюйте токен; увімкніть Presence Intent і Server Members Intent.',
+                    'OAuth2 → URL Generator → scope «bot» → відкрийте посилання й додайте бота на Discord-сервер GameCon. ID сервера: ПКМ по серверу → «Копіювати ID» (потрібен режим розробника).',
+                    'Гравці мають прив’язати Discord у GameCon, бути на цьому Discord-сервері й увімкнути показ активності.',
                 ],
                 'configured' => $this->discord->configured(),
                 'stat' => User::query()->whereNotNull('discord_id')->count().' профілів із Discord',
@@ -264,6 +269,10 @@ class IntegrationController extends Controller
                         'rules' => ['nullable', 'string', 'regex:/^\d{15,22}$/'], 'message' => 'Client ID Discord — це 15–22 цифри.'],
                     ['name' => 'client_secret', 'setting' => 'discord_client_secret', 'type' => 'secret', 'label' => 'Client Secret', 'env' => config('services.discord.client_secret'),
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_\-]{20,64}$/'], 'message' => 'Client Secret містить недопустимі символи.'],
+                    ['name' => 'bot_token', 'setting' => 'discord_bot_token', 'type' => 'secret', 'label' => 'Bot Token (статус «Граю в…»)', 'env' => config('services.discord.bot_token'),
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_\-\.]{50,100}$/'], 'message' => 'Токен бота Discord має вигляд «MTA…xxx.yyy.zzz».'],
+                    ['name' => 'guild_id', 'setting' => 'discord_guild_id', 'type' => 'text', 'label' => 'ID Discord-сервера GameCon', 'placeholder' => '123456789012345678',
+                        'rules' => ['nullable', 'string', 'regex:/^\d{15,22}$/'], 'message' => 'ID сервера Discord — це 15–22 цифри.'],
                 ],
             ],
             'firebase' => [
@@ -449,6 +458,24 @@ class IntegrationController extends Controller
                 'fields' => [
                     ['name' => 'enabled', 'setting' => 'shikimori_enabled', 'type' => 'bool', 'label' => 'Використовувати Shikimori', 'rules' => ['required', 'boolean']],
                     ['name' => 'url', 'setting' => 'shikimori_url', 'type' => 'url', 'label' => 'Дзеркало', 'placeholder' => 'https://shikimori.one', 'rules' => $url],
+                ],
+            ],
+            'steam' => [
+                'label' => 'Steam',
+                'group' => 'games',
+                'description' => 'Автоматичний статус «Граю в…» для ПК-ігор: хто прив’язав профіль Steam, у того статус ставиться сам.',
+                'docs' => 'https://steamcommunity.com/dev/apikey',
+                'steps' => [
+                    'Відкрийте steamcommunity.com/dev/apikey (потрібен акаунт Steam), домен — gamecon.online.',
+                    'Скопіюйте ключ сюди й натисніть «Перевірити».',
+                    'Гравці прив’язують профіль у Налаштування → «Граю в…»; профіль і «Деталі гри» в Steam мають бути відкриті.',
+                ],
+                'configured' => $this->steam->configured(),
+                'stat' => User::query()->whereNotNull('steam_id')->count().' профілів зі Steam',
+                'test' => fn () => $this->steam->test(),
+                'fields' => [
+                    ['name' => 'key', 'setting' => 'steam_api_key', 'type' => 'secret', 'label' => 'Web API Key', 'env' => config('services.steam.key'),
+                        'rules' => ['nullable', 'string', 'regex:/^[A-F0-9]{32}$/'], 'message' => 'Ключ Steam — 32 символи (цифри й літери A–F).'],
                 ],
             ],
             'omdb' => [

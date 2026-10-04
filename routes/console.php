@@ -18,5 +18,8 @@ Schedule::command('families:tick --digest')->weeklyOn(0, '23:59')->timezone('Eur
 
 Schedule::command('calls:expire')->everyMinute()->withoutOverlapping(5);
 Schedule::command('events:remind')->everyFiveMinutes()->withoutOverlapping(10);
+// «Граю в…»: бот Discord слухає до 55 хв і перезапускається; Steam опитуємо що дві хвилини.
+Schedule::command('discord:presence')->everyMinute()->withoutOverlapping(60)->runInBackground();
+Schedule::command('steam:presence')->everyTwoMinutes()->withoutOverlapping(5);
 Schedule::command('stories:prune')->hourly()->withoutOverlapping(30);
 Schedule::command('games:sync')->dailyAt('04:40')->timezone('Europe/Kyiv')->withoutOverlapping(120)->runInBackground();

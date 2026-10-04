@@ -23,6 +23,7 @@ use App\Http\Controllers\MusicController;
 use App\Http\Controllers\NowPlayingController;
 use App\Http\Controllers\PhotoAlbumController;
 use App\Http\Controllers\PhotoController;
+use App\Http\Controllers\PlayingController;
 use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
@@ -213,6 +214,9 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('module:families')->group(function () {
             Route::get('me/family-widget', [GroupsApiController::class, 'familyWidget']);
+            // Застосунок на Android: гра на екрані → «Граю в…».
+            Route::post('me/playing/mobile', [PlayingController::class, 'mobile'])->middleware('throttle:30,1');
+            Route::get('me/playing/packages', [PlayingController::class, 'packages']);
             Route::get('families', [GroupsApiController::class, 'families']);
             Route::get('families/{family}', [GroupsApiController::class, 'family']);
             Route::post('families/{family}/apply', [GroupsApiController::class, 'applyFamily'])->middleware('throttle:10,1');
@@ -262,6 +266,16 @@ Route::prefix('v1')->group(function () {
                 Route::delete('{conversation}/members/{user}', [MessengerController::class, 'removeMember']);
                 Route::patch('{conversation}/messages/{message}', [MessageController::class, 'update']);
                 Route::delete('{conversation}/messages/{message}', [MessageController::class, 'destroy']);
+            });
+
+            Route::prefix('me/playing')->group(function () {
+                Route::get('/', [PlayingController::class, 'show']);
+                Route::get('search', [PlayingController::class, 'search'])->middleware('throttle:120,1');
+                Route::put('/', [PlayingController::class, 'update'])->middleware('throttle:30,1');
+                Route::delete('/', [PlayingController::class, 'destroy']);
+                Route::put('auto', [PlayingController::class, 'auto']);
+                Route::post('steam', [PlayingController::class, 'linkSteam'])->middleware('throttle:10,1');
+                Route::delete('steam', [PlayingController::class, 'unlinkSteam']);
             });
 
             // Календар подій.

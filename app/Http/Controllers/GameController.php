@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Clan;
 use App\Models\Game;
+use App\Services\FriendshipService;
+use App\Services\Presence\PlayingStatus;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -104,7 +106,7 @@ class GameController extends Controller
             : Inertia::render('games/index', $props);
     }
 
-    public function show(Request $request, Game $game): Response|JsonResponse
+    public function show(Request $request, Game $game, PlayingStatus $playing, FriendshipService $friendships): Response|JsonResponse
     {
         abort_unless($game->is_published || $request->user()?->isStaff(), 404);
 
@@ -139,6 +141,8 @@ class GameController extends Controller
             'clans' => ! $on['clans'] ? [] : Clan::query()->where('game_id', $game->id)->orderByDesc('members_count')->limit(30)->get()
                 ->map(fn (Clan $c) => $c->toCard())->values(),
             'features' => $on,
+            'playing_now' => $request->user() ? $playing->playingNow('game', $game->id, $friendships->friendIds($request->user())) : [],
+            'playing_count' => $playing->countNow('game', $game->id),
         ];
 
         return $request->expectsJson() && ! $request->header('X-Inertia')

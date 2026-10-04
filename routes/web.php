@@ -23,6 +23,7 @@ use App\Http\Controllers\NowPlayingController;
 use App\Http\Controllers\PeopleController;
 use App\Http\Controllers\PhotoAlbumController;
 use App\Http\Controllers\PhotoController;
+use App\Http\Controllers\PlayingController;
 use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
@@ -358,6 +359,16 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('notifications/read', [NotificationController::class, 'markAllRead'])->name('notifications.read');
 
     Route::get('me', [ProfileController::class, 'me'])->name('profile.me');
+    // «Граю в…»: ручний статус, автоматичний (Discord, Steam, телефон).
+    Route::prefix('me/playing')->name('playing.')->group(function () {
+        Route::get('/', [PlayingController::class, 'show'])->name('show');
+        Route::get('search', [PlayingController::class, 'search'])->middleware('throttle:120,1')->name('search');
+        Route::put('/', [PlayingController::class, 'update'])->middleware('throttle:30,1')->name('update');
+        Route::delete('/', [PlayingController::class, 'destroy'])->name('destroy');
+        Route::put('auto', [PlayingController::class, 'auto'])->name('auto');
+        Route::post('steam', [PlayingController::class, 'linkSteam'])->middleware('throttle:10,1')->name('steam');
+        Route::delete('steam', [PlayingController::class, 'unlinkSteam'])->name('steam.destroy');
+    });
     Route::post('me/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
     Route::delete('me/avatar', [ProfileController::class, 'destroyAvatar'])->name('profile.avatar.destroy');
     Route::post('me/cover', [ProfileController::class, 'updateCover'])->name('profile.cover');

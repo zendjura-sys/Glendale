@@ -53,6 +53,16 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $two_factor_confirmed_at
  * @property string|null $remember_token
  * @property list<string>|null $nav_tabs Розділи нижньої панелі (ключі модулів); null — типові.
+ * @property string|null $playing_kind «Граю в…»: server | game
+ * @property int|null $playing_ref_id
+ * @property string|null $playing_label
+ * @property string|null $playing_icon
+ * @property string|null $playing_url
+ * @property string|null $playing_note
+ * @property Carbon|null $playing_until
+ * @property string|null $playing_source manual | discord | steam
+ * @property bool $playing_auto Ставити статус автоматично з Discord і Steam
+ * @property string|null $steam_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -103,6 +113,8 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'two_factor_confirmed_at' => 'datetime',
             'birthday' => 'date',
             'last_seen_at' => 'datetime',
+            'playing_until' => 'datetime',
+            'playing_auto' => 'boolean',
             'banned_at' => 'datetime',
             'is_verified' => 'boolean',
             'is_private' => 'boolean',
@@ -259,6 +271,30 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'is_online' => $this->is_online,
             'is_verified' => $this->is_verified,
             'status' => $this->status,
+            'playing' => $this->playing(),
+        ];
+    }
+
+    /**
+     * «Граю в…»: де людина зараз, поки статус не сплив.
+     *
+     * @return array{kind: string, id: int|null, label: string, icon: string|null, url: string|null, note: string|null, until: string, auto: bool}|null
+     */
+    public function playing(): ?array
+    {
+        if ($this->playing_kind === null || $this->playing_label === null || $this->playing_until === null || $this->playing_until->isPast()) {
+            return null;
+        }
+
+        return [
+            'kind' => $this->playing_kind,
+            'id' => $this->playing_ref_id,
+            'label' => $this->playing_label,
+            'icon' => $this->playing_icon,
+            'url' => $this->playing_url,
+            'note' => $this->playing_note,
+            'until' => $this->playing_until->toIso8601String(),
+            'auto' => $this->playing_source !== null && $this->playing_source !== 'manual',
         ];
     }
 }

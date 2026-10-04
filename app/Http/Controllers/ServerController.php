@@ -7,6 +7,8 @@ use App\Models\GtaServer;
 use App\Models\ServerEvent;
 use App\Services\EventCalendar;
 use App\Services\Families\FamilyRating;
+use App\Services\FriendshipService;
+use App\Services\Presence\PlayingStatus;
 use App\Services\Servers\DiscordInvites;
 use App\Services\Servers\ServerDirectory;
 use App\Services\Servers\ServerIconFetcher;
@@ -72,7 +74,7 @@ class ServerController extends Controller
         ]);
     }
 
-    public function show(Request $request, GtaServer $server, FamilyRating $rating, EventCalendar $calendar): Response
+    public function show(Request $request, GtaServer $server, FamilyRating $rating, EventCalendar $calendar, PlayingStatus $playing, FriendshipService $friendships): Response
     {
         abort_unless($server->status === GtaServer::STATUS_PUBLISHED || $request->user()->isAdmin(), 404);
 
@@ -96,6 +98,8 @@ class ServerController extends Controller
             'events' => $calendar->forServer($server, $request->user()),
             'event_hosts' => $calendar->hosts($server, $request->user()),
             'event_types' => ServerEvent::TYPES,
+            'playing_now' => $playing->playingNow('server', $server->id, $friendships->friendIds($request->user())),
+            'playing_count' => $playing->countNow('server', $server->id),
         ]);
     }
 

@@ -40,6 +40,9 @@ class SiteSettings
         'igdb_client_id' => null,
         'igdb_client_secret' => null,
         'games_features' => [],
+        'discord_bot_token' => null,
+        'discord_guild_id' => null,
+        'steam_api_key' => null,
         'shikimori_enabled' => true,
         'shikimori_url' => null,
         'cinema_auto' => [],
@@ -59,7 +62,7 @@ class SiteSettings
     ];
 
     /** Ключі, які не можна віддавати у фронтенд. */
-    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret'];
+    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key'];
 
     /** @var array<string, mixed>|null */
     private ?array $values = null;
