@@ -77,6 +77,8 @@ export default defineConfig({
             'mobile/**',
             'resources/js/components/ui/*',
             'resources/views/mail/*',
+            // Каталог перекладів генерує scripts/i18n/extract.mjs.
+            'lang/catalog.json',
         ],
         sortTailwindcss: {
             functions: ['clsx', 'cn', 'cva'],
