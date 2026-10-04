@@ -184,6 +184,7 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('module:families')->group(function () {
+            Route::get('me/family-widget', [GroupsApiController::class, 'familyWidget']);
             Route::get('families', [GroupsApiController::class, 'families']);
             Route::get('families/{family}', [GroupsApiController::class, 'family']);
             Route::post('families/{family}/apply', [GroupsApiController::class, 'applyFamily'])->middleware('throttle:10,1');

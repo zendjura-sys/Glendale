@@ -25,6 +25,7 @@ use App\Services\Families\Discipline;
 use App\Services\Families\FamilyAudit;
 use App\Services\Families\FamilyBank;
 use App\Services\Families\FamilyGate;
+use App\Services\Families\MemberStats;
 use App\Services\Families\FamilyRating;
 use App\Services\Families\FamilyService;
 use App\Services\Families\ReportService;
@@ -129,6 +130,24 @@ class GroupsApiController extends ApiController
         $this->communities->leave($community, $this->user($request));
 
         return response()->json(['membership' => null]);
+    }
+
+    /**
+     * Віджет на головному екрані телефона: особиста статистика в кожній сім’ї, де людина активна.
+     */
+    public function familyWidget(Request $request, MemberStats $stats): JsonResponse
+    {
+        $user = $this->user($request);
+        $families = FamilyMember::query()->with('family')
+            ->where('user_id', $user->id)
+            ->where('status', FamilyMember::STATUS_ACTIVE)
+            ->whereHas('family')
+            ->latest('updated_at')
+            ->get()
+            ->map(fn (FamilyMember $m) => $stats->widget($m->family, $m))
+            ->values();
+
+        return response()->json(['families' => $families]);
     }
 
     public function families(Request $request): JsonResponse

@@ -33,7 +33,7 @@ class StoriesTest extends TestCase
         $friendships->accept($this->friend, $this->author);
     }
 
-    private function post(string $privacy = Story::PRIVACY_FRIENDS): Story
+    private function publish(string $privacy = Story::PRIVACY_FRIENDS): Story
     {
         $this->actingAs($this->author)->post(route('stories.store'), [
             'media' => UploadedFile::fake()->image('sunset.jpg', 1080, 1920),
@@ -46,7 +46,7 @@ class StoriesTest extends TestCase
 
     public function test_friends_see_stories_and_strangers_do_not(): void
     {
-        $story = $this->post();
+        $story = $this->publish();
         Storage::disk('public')->assertExists($story->path);
 
         $this->actingAs($this->friend)->getJson(route('stories.index'))
@@ -63,7 +63,7 @@ class StoriesTest extends TestCase
 
     public function test_public_story_is_open_from_profile(): void
     {
-        $this->post(Story::PRIVACY_EVERYONE);
+        $this->publish(Story::PRIVACY_EVERYONE);
 
         $this->actingAs($this->stranger)->getJson(route('stories.user', $this->author))
             ->assertOk()
@@ -72,7 +72,7 @@ class StoriesTest extends TestCase
 
     public function test_views_reactions_and_replies(): void
     {
-        $story = $this->post();
+        $story = $this->publish();
 
         $this->actingAs($this->friend)->postJson(route('stories.view', $story))->assertOk();
         $this->actingAs($this->friend)->postJson(route('stories.view', $story))->assertOk();
@@ -112,7 +112,7 @@ class StoriesTest extends TestCase
 
     public function test_only_author_deletes(): void
     {
-        $story = $this->post();
+        $story = $this->publish();
         $this->actingAs($this->friend)->deleteJson(route('stories.destroy', $story))->assertForbidden();
         $this->actingAs($this->author)->deleteJson(route('stories.destroy', $story))->assertOk();
         $this->assertSame(0, Story::query()->count());
