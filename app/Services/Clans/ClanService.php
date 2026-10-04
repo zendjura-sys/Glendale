@@ -438,7 +438,7 @@ class ClanService
 
     private function recount(Clan $clan): void
     {
-        $clan->update(['members_count' => $clan->activeMembers()->count()]);
+        $clan->forceFill(['members_count' => $clan->activeMembers()->count()])->save();
     }
 
     private function slug(string $name): string
