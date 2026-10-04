@@ -111,7 +111,7 @@ export default function Messages({ conversations, active, history }: Props) {
             <Head title={active ? active.title : 'Повідомлення'} />
             <div
                 className={cn(
-                    'glass flex min-h-0 overflow-clip rounded-3xl max-lg:h-[calc(100dvh-76px)] max-lg:rounded-b-none md:flex-row lg:h-[calc(100dvh-100px)]',
+                    'glass flex min-h-0 overflow-clip rounded-3xl max-lg:h-[calc(100dvh-76px-var(--gc-banner,0px))] max-lg:rounded-b-none md:flex-row lg:h-[calc(100dvh-100px-var(--gc-banner,0px))]',
                     playing ? 'max-lg:-mb-44' : 'max-lg:-mb-24',
                 )}
             >
