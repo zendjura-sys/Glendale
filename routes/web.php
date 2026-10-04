@@ -26,6 +26,7 @@ use App\Http\Controllers\ServerController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\VoiceController;
+use App\Http\Controllers\WatchPartyController;
 use App\Http\Controllers\WelcomeController;
 use App\Models\VoiceRoom;
 use Illuminate\Support\Facades\Route;
@@ -194,6 +195,19 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('{movie}/started', [CinemaController::class, 'started'])->middleware('throttle:30,1')->name('started');
         Route::get('{movie}/comments', [CinemaController::class, 'comments'])->name('comments.index');
         Route::post('{movie}/comments', [CinemaController::class, 'comment'])->middleware('throttle:30,1')->name('comments.store');
+        Route::post('{movie}/watch', [WatchPartyController::class, 'store'])->middleware('throttle:10,1')->name('watch.store');
+    });
+
+    // Спільний перегляд: доступ за посиланням із кодом.
+    Route::prefix('watch/{party}')->name('watch.')->middleware('module:cinema')->group(function () {
+        Route::get('/', [WatchPartyController::class, 'show'])->name('show');
+        Route::get('state', [WatchPartyController::class, 'poll'])->name('poll');
+        Route::post('state', [WatchPartyController::class, 'control'])->middleware('throttle:240,1')->name('control');
+        Route::post('shared', [WatchPartyController::class, 'shared'])->name('shared');
+        Route::post('messages', [WatchPartyController::class, 'message'])->middleware('throttle:30,1')->name('messages');
+        Route::post('voice', [WatchPartyController::class, 'voice'])->middleware('throttle:20,1')->name('voice');
+        Route::post('invite', [WatchPartyController::class, 'invite'])->middleware('throttle:10,1')->name('invite');
+        Route::delete('/', [WatchPartyController::class, 'end'])->name('end');
     });
 
     Route::prefix('servers')->name('servers.')->middleware('module:servers')->group(function () {

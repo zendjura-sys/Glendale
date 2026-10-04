@@ -28,6 +28,7 @@ use App\Http\Controllers\Settings\ProfileController as SettingsProfileController
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\VoiceController;
+use App\Http\Controllers\WatchPartyController;
 use App\Http\Middleware\BridgeSiteAction;
 use App\Models\VoiceRoom;
 use Illuminate\Support\Facades\Route;
@@ -103,6 +104,21 @@ Route::prefix('v1')->group(function () {
             Route::post('{conversation}/mute', [ChatApiController::class, 'mute'])->whereNumber('conversation');
             Route::get('{conversation}/call', [CallController::class, 'show'])->whereNumber('conversation');
             Route::post('{conversation}/call', [CallController::class, 'start'])->whereNumber('conversation')->middleware('throttle:20,1');
+        });
+
+        // Спільний перегляд у застосунку: ті самі дії, стан — опитуванням.
+        Route::middleware('module:cinema')->group(function () {
+            Route::post('cinema/{movie}/watch', [WatchPartyController::class, 'store'])->middleware('throttle:10,1');
+            Route::prefix('watch/{party}')->group(function () {
+                Route::get('/', [WatchPartyController::class, 'show']);
+                Route::get('state', [WatchPartyController::class, 'poll']);
+                Route::post('state', [WatchPartyController::class, 'control'])->middleware('throttle:240,1');
+                Route::post('shared', [WatchPartyController::class, 'shared']);
+                Route::post('messages', [WatchPartyController::class, 'message'])->middleware('throttle:30,1');
+                Route::post('voice', [WatchPartyController::class, 'voice'])->middleware('throttle:20,1');
+                Route::post('invite', [WatchPartyController::class, 'invite'])->middleware('throttle:10,1');
+                Route::delete('/', [WatchPartyController::class, 'end']);
+            });
         });
 
         Route::prefix('calls/{call}')->whereNumber('call')->middleware('module:messages')->group(function () {

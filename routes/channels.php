@@ -4,6 +4,7 @@ use App\Models\CommunityMember;
 use App\Models\ConversationParticipant;
 use App\Models\FamilyMember;
 use App\Models\User;
+use App\Models\WatchPartyMember;
 use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('App.Models.User.{id}', function (User $user, int $id) {
@@ -33,4 +34,9 @@ Broadcast::channel('conversation.{conversationId}', function (User $user, int $c
         ->where('user_id', $user->id)
         ->whereNull('left_at')
         ->exists();
+});
+
+// Спільний перегляд: стан плеєра, чат і хто дивиться — для тих, хто відкрив посилання.
+Broadcast::channel('watch.{partyId}', function (User $user, int $partyId) {
+    return WatchPartyMember::query()->where('watch_party_id', $partyId)->where('user_id', $user->id)->exists();
 });
