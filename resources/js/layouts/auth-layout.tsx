@@ -140,7 +140,8 @@ export default function AuthLayout({
                             Конфіденційність
                         </Link>
                         <span className="mt-1 block">
-                            © {new Date().getFullYear()} {site?.name ?? 'GameCon'}
+                            © {new Date().getFullYear()}{' '}
+                            {site?.name ?? 'GameCon'}
                         </span>
                     </p>
                 </div>

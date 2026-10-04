@@ -97,7 +97,10 @@ const PRIVACY: Section[] = [
     },
 ];
 
-const DOCUMENTS: Record<DocumentId, { title: string; lead: string; sections: Section[] }> = {
+const DOCUMENTS: Record<
+    DocumentId,
+    { title: string; lead: string; sections: Section[] }
+> = {
     terms: {
         title: 'Умови користування',
         lead: 'Правила акаунта, публікацій і підключення Discord, Google, Steam та Spotify.',
@@ -142,13 +145,23 @@ export default function Legal({ document }: { document: DocumentId }) {
                 <h1 className="font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
                     {doc.title}
                 </h1>
-                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/55">{doc.lead}</p>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/55">
+                    {doc.lead}
+                </p>
                 <div className="mt-8 space-y-6">
                     {doc.sections.map((section) => (
-                        <section key={section.title} className="glass rounded-3xl px-5 py-5 sm:px-6">
-                            <h2 className="font-display text-lg font-semibold text-white">{section.title}</h2>
+                        <section
+                            key={section.title}
+                            className="glass rounded-3xl px-5 py-5 sm:px-6"
+                        >
+                            <h2 className="font-display text-lg font-semibold text-white">
+                                {section.title}
+                            </h2>
                             {section.paragraphs.map((paragraph) => (
-                                <p key={paragraph} className="mt-3 text-sm leading-relaxed text-white/70">
+                                <p
+                                    key={paragraph}
+                                    className="mt-3 text-sm leading-relaxed text-white/70"
+                                >
                                     {paragraph}
                                 </p>
                             ))}
@@ -164,7 +177,9 @@ export default function Legal({ document }: { document: DocumentId }) {
                 <Link href="/privacy" className="hover:text-white">
                     Конфіденційність
                 </Link>
-                <p className="mt-2 text-white/30">© {new Date().getFullYear()} GameCon</p>
+                <p className="mt-2 text-white/30">
+                    © {new Date().getFullYear()} GameCon
+                </p>
             </footer>
         </>
     );
