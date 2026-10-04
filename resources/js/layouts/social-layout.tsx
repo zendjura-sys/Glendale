@@ -40,6 +40,11 @@ import { MOBILE_LABEL } from '@/lib/nav';
 import { cn } from '@/lib/utils';
 import { PageTransition } from '@/components/gc/page-transition';
 import { PlayStoreLink } from '@/components/gc/play-store';
+import {
+    LanguageMenu,
+    LanguageSelect,
+} from '@/components/gc/language-switcher';
+import { tr } from '@/lib/i18n';
 
 function useIsActive() {
     const { currentUrl } = useCurrentUrl();
@@ -136,15 +141,15 @@ function Sidebar() {
                     className="glass mt-3 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-white/70 transition hover:text-white"
                 >
                     <ShieldCheck className="size-[18px] text-gold" />
-                    Адмін-панель
+                    {tr('Адмін-панель')}
                 </Link>
             )}
 
             <PlayStoreLink compact className="mt-3 self-center" />
 
             <div className="mt-auto px-3 pt-4 text-[11px] leading-relaxed text-white/30">
-                © {new Date().getFullYear()} GameCon · Соціальна мережа нового
-                покоління
+                © {new Date().getFullYear()}{' '}
+                {tr('GameCon · Соціальна мережа нового покоління')}
             </div>
         </aside>
     );
@@ -164,10 +169,10 @@ function UserMenu() {
                     </span>
                     <span className="block text-[11px] text-white/45">
                         {user.is_admin
-                            ? 'Адміністратор'
+                            ? tr('Адміністратор')
                             : user.role === 'moderator'
-                              ? 'Модератор'
-                              : 'Учасник'}
+                              ? tr('Модератор')
+                              : tr('Учасник')}
                     </span>
                 </span>
                 <ChevronDown className="hidden size-4 text-white/40 xl:block" />
@@ -196,7 +201,7 @@ function UserMenu() {
                     className="rounded-lg focus:bg-white/[0.06]"
                 >
                     <Link href={`/${user.username}`}>
-                        <UserRound /> Моя сторінка
+                        <UserRound /> {tr('Моя сторінка')}
                     </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -204,7 +209,7 @@ function UserMenu() {
                     className="rounded-lg focus:bg-white/[0.06]"
                 >
                     <Link href="/settings/profile">
-                        <Settings /> Налаштування
+                        <Settings /> {tr('Налаштування')}
                     </Link>
                 </DropdownMenuItem>
                 {user.is_admin && (
@@ -213,16 +218,17 @@ function UserMenu() {
                         className="rounded-lg focus:bg-white/[0.06]"
                     >
                         <Link href="/admin">
-                            <LayoutDashboard /> Адмін-панель
+                            <LayoutDashboard /> {tr('Адмін-панель')}
                         </Link>
                     </DropdownMenuItem>
                 )}
+                <LanguageMenu />
                 <DropdownMenuSeparator className="bg-white/5" />
                 <DropdownMenuItem
                     className="rounded-lg text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
                     onSelect={() => router.post('/logout')}
                 >
-                    <LogOut className="text-rose-300" /> Вийти
+                    <LogOut className="text-rose-300" /> {tr('Вийти')}
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
@@ -250,7 +256,7 @@ function Topbar() {
                     <Link
                         href="/friends?tab=requests"
                         className="relative hidden size-10 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white sm:flex"
-                        aria-label="Заявки в друзі"
+                        aria-label={tr('Заявки в друзі')}
                     >
                         <UsersRound className="size-[19px]" />
                         {!!counters?.friend_requests && (
@@ -263,7 +269,7 @@ function Topbar() {
                         <Link
                             href="/messages"
                             className="relative hidden size-10 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white sm:flex"
-                            aria-label="Повідомлення"
+                            aria-label={tr('Повідомлення')}
                         >
                             <MessageCircle className="size-[19px]" />
                             {unreadMessages > 0 && (
@@ -377,7 +383,7 @@ function MobileNav() {
                                     'text-[#8fa0ff] drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]',
                             )}
                         />
-                        Меню
+                        {tr('Меню')}
                     </button>
                 </div>
             </nav>
@@ -409,12 +415,16 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
     const extra = [
         {
             href: '/settings/navigation',
-            label: 'Налаштувати нижню панель',
+            label: tr('Налаштувати нижню панель'),
             icon: PanelBottom,
         },
-        { href: '/settings/profile', label: 'Налаштування', icon: Settings },
+        {
+            href: '/settings/profile',
+            label: tr('Налаштування'),
+            icon: Settings,
+        },
         ...(user.is_admin
-            ? [{ href: '/admin', label: 'Адмін-панель', icon: ShieldCheck }]
+            ? [{ href: '/admin', label: tr('Адмін-панель'), icon: ShieldCheck }]
             : []),
     ];
 
@@ -422,7 +432,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal>
             <button
                 type="button"
-                aria-label="Закрити меню"
+                aria-label={tr('Закрити меню')}
                 onClick={onClose}
                 className="absolute inset-0 animate-in bg-black/60 backdrop-blur-sm fade-in-0"
             />
@@ -450,7 +460,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                     <button
                         type="button"
                         onClick={onClose}
-                        aria-label="Закрити"
+                        aria-label={tr('Закрити')}
                         className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/[0.04] text-white/60"
                     >
                         <X className="size-5" />
@@ -507,13 +517,14 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                         compact
                         className="mx-1.5 my-1.5 justify-self-start"
                     />
+                    <LanguageSelect className="mx-3 my-1.5" />
                     <button
                         type="button"
                         onClick={() => router.post('/logout')}
                         className="flex items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-rose-300 active:bg-rose-500/10"
                     >
                         <LogOut className="size-[18px]" />
-                        Вийти
+                        {tr('Вийти')}
                     </button>
                 </div>
             </div>

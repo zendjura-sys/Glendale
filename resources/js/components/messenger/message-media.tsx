@@ -20,6 +20,7 @@ import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { formatBytes, formatDuration } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { ChatAttachment, ContactCard } from '@/types';
+import { tr } from '@/lib/i18n';
 
 let playing: HTMLAudioElement | null = null;
 
@@ -125,7 +126,7 @@ export function VoicePlayer({
                         ? 'bg-white text-[#5b4cf0]'
                         : 'bg-gradient-brand text-white shadow-[0_0_18px_-4px_rgb(124_92_255/0.9)]',
                 )}
-                aria-label={isPlaying ? 'Пауза' : 'Відтворити'}
+                aria-label={isPlaying ? tr('Пауза') : tr('Відтворити')}
             >
                 {isPlaying ? (
                     <Pause className="size-[18px] fill-current" />
@@ -137,7 +138,7 @@ export function VoicePlayer({
                 <div
                     role="slider"
                     tabIndex={0}
-                    aria-label="Позиція відтворення"
+                    aria-label={tr('Позиція відтворення')}
                     aria-valuemin={0}
                     aria-valuemax={100}
                     aria-valuenow={Math.round(progress * 100)}
@@ -251,7 +252,7 @@ export function FileAttachment({
             </span>
             <span className="min-w-0 flex-1">
                 <span className="block truncate text-[14px] font-medium">
-                    {attachment.name ?? 'Файл'}
+                    {attachment.name ?? tr('Файл')}
                 </span>
                 <span
                     className={cn(
@@ -280,7 +281,7 @@ export function ContactAttachment({
                 <span className="flex size-11 items-center justify-center rounded-full bg-white/10">
                     <UserRound className="size-5" />
                 </span>
-                Акаунт видалено
+                {tr('Акаунт видалено')}
             </div>
         );
     }
@@ -319,7 +320,7 @@ export function ContactAttachment({
                             : 'bg-white/[0.06] hover:bg-white/10',
                     )}
                 >
-                    <UserRound className="size-3.5" /> Профіль
+                    <UserRound className="size-3.5" /> {tr('Профіль')}
                 </Link>
                 <Link
                     href={`/messages/with/${contact.username}`}
@@ -330,7 +331,7 @@ export function ContactAttachment({
                             : 'bg-[#6d5dfc]/20 text-[#c7c0ff] hover:bg-[#6d5dfc]/30',
                     )}
                 >
-                    <MessageCircle className="size-3.5" /> Написати
+                    <MessageCircle className="size-3.5" /> {tr('Написати')}
                 </Link>
             </div>
         </div>

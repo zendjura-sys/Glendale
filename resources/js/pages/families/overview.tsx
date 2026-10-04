@@ -28,6 +28,7 @@ import type {
     LeaderboardRow,
     LedgerEntry,
 } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Props = FamilyShellProps & {
     stats: {
@@ -64,27 +65,27 @@ export default function FamilyOverview(props: Props) {
     const base = `/f/${family.slug}`;
 
     return (
-        <FamilyShell {...props} title="Огляд">
+        <FamilyShell {...props} title={tr('Огляд')}>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <Metric
-                    label="Заробив за тиждень"
+                    label={tr('Заробив за тиждень')}
                     value={uah(stats.week_earned)}
                     tone="text-emerald-300"
                     icon={TrendingUp}
                 />
                 <Metric
-                    label="Виплати сім’ї (тиждень)"
+                    label={tr('Виплати сім’ї (тиждень)')}
                     value={uah(stats.week_total)}
                     icon={Wallet}
                 />
                 <Metric
-                    label="Мої звіти на перевірці"
+                    label={tr('Мої звіти на перевірці')}
                     value={stats.pending_reports}
                     tone="text-amber-200"
                     icon={Clock3}
                 />
                 <Metric
-                    label="Попередження"
+                    label={tr('Попередження')}
                     value={`${stats.warns}/${stats.warn_limit}`}
                     tone={stats.warns > 0 ? 'text-rose-300' : 'text-white'}
                     icon={AlertTriangle}
@@ -109,31 +110,34 @@ export default function FamilyOverview(props: Props) {
                         </span>
                         <div className="min-w-0 flex-1">
                             <div className="font-display text-lg font-semibold text-white">
-                                Подати звіт
+                                {tr('Подати звіт')}
                             </div>
                             <div className="text-sm text-white/50">
-                                Бізвар, контракти, інвестиція — за себе чи за
-                                друга
+                                {tr(
+                                    'Бізвар, контракти, інвестиція — за себе чи за друга',
+                                )}
                             </div>
                         </div>
                     </Link>
 
                     <Panel
-                        title="Лідери тижня"
+                        title={tr('Лідери тижня')}
                         icon={BarChart3}
                         actions={
                             <Link
                                 href={`${base}/rating`}
                                 className="text-xs text-white/50 hover:text-white"
                             >
-                                Увесь рейтинг
+                                {tr('Увесь рейтинг')}
                             </Link>
                         }
                     >
                         {leaders.length === 0 ? (
                             <Empty
                                 icon={BarChart3}
-                                text="Схвалених звітів цього тижня ще немає"
+                                text={tr(
+                                    'Схвалених звітів цього тижня ще немає',
+                                )}
                             />
                         ) : (
                             <ol className="space-y-1.5">
@@ -161,19 +165,22 @@ export default function FamilyOverview(props: Props) {
                     </Panel>
 
                     <Panel
-                        title="Мої операції"
+                        title={tr('Мої операції')}
                         icon={Wallet}
                         actions={
                             <Link
                                 href={`${base}/bank`}
                                 className="text-xs text-white/50 hover:text-white"
                             >
-                                Банк
+                                {tr('Банк')}
                             </Link>
                         }
                     >
                         {transactions.length === 0 ? (
-                            <Empty icon={Wallet} text="Операцій ще не було" />
+                            <Empty
+                                icon={Wallet}
+                                text={tr('Операцій ще не було')}
+                            />
                         ) : (
                             <ul className="divide-y divide-white/[0.05]">
                                 {transactions.map((t) => (
@@ -200,21 +207,21 @@ export default function FamilyOverview(props: Props) {
 
                 <div className="space-y-4">
                     <Panel
-                        title="Найближчі події"
+                        title={tr('Найближчі події')}
                         icon={CalendarDays}
                         actions={
                             <Link
                                 href={`${base}/events`}
                                 className="text-xs text-white/50 hover:text-white"
                             >
-                                Усі
+                                {tr('Усі')}
                             </Link>
                         }
                     >
                         {events.length === 0 ? (
                             <Empty
                                 icon={CalendarDays}
-                                text="Запланованих подій немає"
+                                text={tr('Запланованих подій немає')}
                             />
                         ) : (
                             <ul className="space-y-2">
@@ -240,7 +247,10 @@ export default function FamilyOverview(props: Props) {
                     </Panel>
 
                     {low_stock.length > 0 && (
-                        <Panel title="Закінчується на складі" icon={Package}>
+                        <Panel
+                            title={tr('Закінчується на складі')}
+                            icon={Package}
+                        >
                             <ul className="space-y-1.5">
                                 {low_stock.map((i) => (
                                     <li
@@ -252,8 +262,8 @@ export default function FamilyOverview(props: Props) {
                                         </span>
                                         <span className="font-mono text-rose-200">
                                             {i.quantity}
-                                            {i.unit ? ` ${i.unit}` : ''} / мін.{' '}
-                                            {i.min_stock}
+                                            {i.unit ? ` ${i.unit}` : ''}{' '}
+                                            {tr('/ мін.')} {i.min_stock}
                                         </span>
                                     </li>
                                 ))}
@@ -263,14 +273,14 @@ export default function FamilyOverview(props: Props) {
 
                     {activity.length > 0 && (
                         <Panel
-                            title="Остання активність"
+                            title={tr('Остання активність')}
                             icon={ScrollText}
                             actions={
                                 <Link
                                     href={`${base}/audit`}
                                     className="text-xs text-white/50 hover:text-white"
                                 >
-                                    Журнал
+                                    {tr('Журнал')}
                                 </Link>
                             }
                         >
@@ -315,12 +325,14 @@ export default function FamilyOverview(props: Props) {
                             type="button"
                             onClick={() =>
                                 confirm(
-                                    'Покинути сім’ю? Баланс залишиться в історії, але вивести його вже не вийде.',
+                                    tr(
+                                        'Покинути сім’ю? Баланс залишиться в історії, але вивести його вже не вийде.',
+                                    ),
                                 ) && router.post(`${base}/leave`)
                             }
                             className="w-full rounded-2xl py-2 text-xs text-white/35 transition hover:text-rose-300"
                         >
-                            Покинути сім’ю
+                            {tr('Покинути сім’ю')}
                         </button>
                     )}
                 </div>

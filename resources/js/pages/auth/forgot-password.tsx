@@ -8,11 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { login } from '@/routes';
 import { email } from '@/routes/password';
+import { tr } from '@/lib/i18n';
 
 export default function ForgotPassword({ status }: { status?: string }) {
     return (
         <>
-            <Head title="Відновлення пароля" />
+            <Head title={tr('Відновлення пароля')} />
 
             {status && (
                 <div className="mb-4 text-center text-sm font-medium text-emerald-300">
@@ -25,7 +26,9 @@ export default function ForgotPassword({ status }: { status?: string }) {
                     {({ processing, errors }) => (
                         <>
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Електронна пошта</Label>
+                                <Label htmlFor="email">
+                                    {tr('Електронна пошта')}
+                                </Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -47,7 +50,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
                                     {processing && (
                                         <LoaderCircle className="h-4 w-4 animate-spin" />
                                     )}
-                                    Надіслати посилання
+                                    {tr('Надіслати посилання')}
                                 </Button>
                             </div>
                         </>
@@ -55,8 +58,8 @@ export default function ForgotPassword({ status }: { status?: string }) {
                 </Form>
 
                 <div className="space-x-1 text-center text-sm text-white/45">
-                    <span>Або повернутися до</span>
-                    <TextLink href={login()}>входу</TextLink>
+                    <span>{tr('Або повернутися до')}</span>
+                    <TextLink href={login()}>{tr('входу')}</TextLink>
                 </div>
             </div>
         </>
@@ -64,6 +67,6 @@ export default function ForgotPassword({ status }: { status?: string }) {
 }
 
 ForgotPassword.layout = {
-    title: 'Забули пароль?',
-    description: 'Вкажіть пошту — ми надішлемо посилання для відновлення',
+    title: tr('Забули пароль?'),
+    description: tr('Вкажіть пошту — ми надішлемо посилання для відновлення'),
 };

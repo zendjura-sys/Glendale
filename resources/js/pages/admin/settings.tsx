@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { PLAY_BADGES } from '@/components/gc/play-store';
 import { cn } from '@/lib/utils';
+import { tr } from '@/lib/i18n';
 
 type Settings = {
     site_name: string;
@@ -108,8 +109,10 @@ function MailSection({ mail }: { mail: MailStatus }) {
     return (
         <Section
             icon={Mail}
-            title="Пошта"
-            description="Службові листи (пароль, підтвердження пошти) йдуть в «Оповіщення», події друзів і коментарів — в «Соцмережі»."
+            title={tr('Пошта')}
+            description={tr(
+                'Службові листи (пароль, підтвердження пошти) йдуть в «Оповіщення», події друзів і коментарів — в «Соцмережі».',
+            )}
         >
             <div
                 className={cn(
@@ -121,27 +124,28 @@ function MailSection({ mail }: { mail: MailStatus }) {
             >
                 {mail.ready ? (
                     <>
-                        Відправка: <b className="text-white">{mail.mailer}</b>
+                        {tr('Відправка:')}{' '}
+                        <b className="text-white">{mail.mailer}</b>
                         <span className="mt-1 block">
-                            Оповіщення:{' '}
+                            {tr('Оповіщення:')}{' '}
                             <b className="text-white">{mail.from}</b>
                         </span>
                         <span className="mt-1 block">
-                            Соцмережі:{' '}
+                            {tr('Соцмережі:')}{' '}
                             <b className="text-white">{mail.social}</b>
                         </span>
                     </>
                 ) : (
                     <>
-                        Пошта в режимі <b>{mail.mailer}</b>: листи лише
-                        записуються в журнал і нікому не надходять. Вкажіть у
-                        .env MAIL_MAILER=sendmail і запустіть
-                        deploy/mail/setup-mail.sh на сервері.
+                        {tr('Пошта в режимі')} <b>{mail.mailer}</b>
+                        {tr(
+                            ': листи лише записуються в журнал і нікому не надходять. Вкажіть у .env MAIL_MAILER=sendmail і запустіть deploy/mail/setup-mail.sh на сервері.',
+                        )}
                     </>
                 )}
             </div>
             <div className="grid gap-2">
-                <Label htmlFor="mail_test">Тестовий лист</Label>
+                <Label htmlFor="mail_test">{tr('Тестовий лист')}</Label>
                 <div className="flex flex-col gap-2 sm:flex-row">
                     <Input
                         id="mail_test"
@@ -159,7 +163,7 @@ function MailSection({ mail }: { mail: MailStatus }) {
                         className="shrink-0"
                     >
                         {sending && <Spinner />}
-                        Надіслати обидва листи
+                        {tr('Надіслати обидва листи')}
                     </Button>
                 </div>
             </div>
@@ -196,20 +200,22 @@ export default function AdminSettings({
 
     return (
         <>
-            <Head title="Налаштування — Адмін-панель" />
+            <Head title={tr('Налаштування — Адмін-панель')} />
             <PageHeader
-                title="Налаштування сайту"
-                description="Загальні параметри платформи"
+                title={tr('Налаштування сайту')}
+                description={tr('Загальні параметри платформи')}
             />
 
             <form onSubmit={submit} className="space-y-4">
                 <Section
                     icon={Globe}
-                    title="Загальне"
-                    description="Назва та слоган відображаються в заголовку, на головній і в листах."
+                    title={tr('Загальне')}
+                    description={tr(
+                        'Назва та слоган відображаються в заголовку, на головній і в листах.',
+                    )}
                 >
                     <div className="grid gap-2">
-                        <Label htmlFor="site_name">Назва сайту</Label>
+                        <Label htmlFor="site_name">{tr('Назва сайту')}</Label>
                         <Input
                             id="site_name"
                             value={data.site_name}
@@ -222,7 +228,7 @@ export default function AdminSettings({
                         <InputError message={errors.site_name} />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="tagline">Слоган</Label>
+                        <Label htmlFor="tagline">{tr('Слоган')}</Label>
                         <Input
                             id="tagline"
                             value={data.tagline}
@@ -236,10 +242,12 @@ export default function AdminSettings({
                 <Section
                     icon={Search}
                     title="SEO"
-                    description="Опис для пошуку і превʼю посилання в месенджерах. Картинка — логотип сайту."
+                    description={tr(
+                        'Опис для пошуку і превʼю посилання в месенджерах. Картинка — логотип сайту.',
+                    )}
                 >
                     <div className="grid gap-2">
-                        <Label htmlFor="seo_description">Опис</Label>
+                        <Label htmlFor="seo_description">{tr('Опис')}</Label>
                         <textarea
                             id="seo_description"
                             value={data.seo_description}
@@ -248,14 +256,14 @@ export default function AdminSettings({
                             }
                             rows={3}
                             maxLength={300}
-                            placeholder="Коротко, чим є GameCon"
+                            placeholder={tr('Коротко, чим є GameCon')}
                             className="input-glass w-full resize-y rounded-xl px-3.5 py-3 text-sm text-white placeholder:text-white/30"
                         />
                         <InputError message={errors.seo_description} />
                     </div>
                     <img
                         src="/og.jpg"
-                        alt="Превʼю посилання GameCon"
+                        alt={tr('Превʼю посилання GameCon')}
                         className="aspect-[1200/630] w-full max-w-md rounded-2xl border border-white/10"
                     />
                 </Section>
@@ -263,17 +271,21 @@ export default function AdminSettings({
                 <Section
                     icon={Smartphone}
                     title="Google Play"
-                    description="Кнопка завантаження зʼявляється на головній, у бічному меню і в мобільному меню, коли ввімкнено і вказано посилання."
+                    description={tr(
+                        'Кнопка завантаження зʼявляється на головній, у бічному меню і в мобільному меню, коли ввімкнено і вказано посилання.',
+                    )}
                 >
                     <SwitchRow
-                        title="Показувати кнопку"
-                        text="Вимкнено — кнопка ніде не зʼявляється, навіть якщо посилання збережене."
+                        title={tr('Показувати кнопку')}
+                        text={tr(
+                            'Вимкнено — кнопка ніде не зʼявляється, навіть якщо посилання збережене.',
+                        )}
                         checked={data.play_store_enabled}
                         onChange={(v) => setData('play_store_enabled', v)}
                     />
                     <div className="grid gap-2">
                         <Label htmlFor="play_store_url">
-                            Посилання на Google Play
+                            {tr('Посилання на Google Play')}
                         </Label>
                         <Input
                             id="play_store_url"
@@ -289,7 +301,7 @@ export default function AdminSettings({
                         <InputError message={errors.play_store_url} />
                     </div>
                     <div className="grid gap-2">
-                        <Label>Тип застосунку</Label>
+                        <Label>{tr('Тип застосунку')}</Label>
                         <div className="grid gap-3 sm:grid-cols-2">
                             {PLAY_BADGES.map((badge) => (
                                 <button
@@ -328,18 +340,22 @@ export default function AdminSettings({
 
                 <Section
                     icon={ShieldCheck}
-                    title="Реєстрація"
-                    description="Хто і як може приєднатися до спільноти."
+                    title={tr('Реєстрація')}
+                    description={tr('Хто і як може приєднатися до спільноти.')}
                 >
                     <SwitchRow
-                        title="Відкрита реєстрація"
-                        text="Якщо вимкнено — сторінка реєстрації стане недоступною."
+                        title={tr('Відкрита реєстрація')}
+                        text={tr(
+                            'Якщо вимкнено — сторінка реєстрації стане недоступною.',
+                        )}
                         checked={data.registration_open}
                         onChange={(v) => setData('registration_open', v)}
                     />
                     <SwitchRow
-                        title="Підтвердження пошти"
-                        text="Вимагати підтвердження email перед доступом до сайту."
+                        title={tr('Підтвердження пошти')}
+                        text={tr(
+                            'Вимагати підтвердження email перед доступом до сайту.',
+                        )}
                         checked={data.email_verification}
                         onChange={(v) => setData('email_verification', v)}
                     />
@@ -349,13 +365,13 @@ export default function AdminSettings({
 
                 <Section
                     icon={FileText}
-                    title="Записи та файли"
-                    description="Обмеження для публікацій і завантажень."
+                    title={tr('Записи та файли')}
+                    description={tr('Обмеження для публікацій і завантажень.')}
                 >
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         <div className="grid gap-2">
                             <Label htmlFor="max_post_length">
-                                Довжина запису
+                                {tr('Довжина запису')}
                             </Label>
                             <Input
                                 id="max_post_length"
@@ -374,7 +390,7 @@ export default function AdminSettings({
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="max_attachments">
-                                Фото в записі
+                                {tr('Фото в записі')}
                             </Label>
                             <Input
                                 id="max_attachments"
@@ -393,7 +409,7 @@ export default function AdminSettings({
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="max_upload_mb">
-                                Розмір файлу, МБ
+                                {tr('Розмір файлу, МБ')}
                             </Label>
                             <Input
                                 id="max_upload_mb"
@@ -412,7 +428,7 @@ export default function AdminSettings({
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="max_message_file_mb">
-                                Файли в повідомленнях, МБ
+                                {tr('Файли в повідомленнях, МБ')}
                             </Label>
                             <Input
                                 id="max_message_file_mb"
@@ -431,7 +447,7 @@ export default function AdminSettings({
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="music_max_track_mb">
-                                Аудіотреки, МБ
+                                {tr('Аудіотреки, МБ')}
                             </Label>
                             <Input
                                 id="music_max_track_mb"
@@ -453,12 +469,14 @@ export default function AdminSettings({
 
                 <Section
                     icon={Wrench}
-                    title="Оголошення"
-                    description="Банер для всіх користувачів над стрічкою — наприклад, про технічні роботи."
+                    title={tr('Оголошення')}
+                    description={tr(
+                        'Банер для всіх користувачів над стрічкою — наприклад, про технічні роботи.',
+                    )}
                 >
                     <div className="grid gap-2">
                         <Label htmlFor="maintenance_message">
-                            Текст оголошення
+                            {tr('Текст оголошення')}
                         </Label>
                         <textarea
                             id="maintenance_message"
@@ -468,7 +486,7 @@ export default function AdminSettings({
                             }
                             rows={3}
                             maxLength={500}
-                            placeholder="Порожньо — банер не показується"
+                            placeholder={tr('Порожньо — банер не показується')}
                             className="input-glass w-full resize-y rounded-xl px-3.5 py-3 text-sm text-white placeholder:text-white/30"
                         />
                         <InputError message={errors.maintenance_message} />
@@ -478,17 +496,17 @@ export default function AdminSettings({
                 <div className="glass-strong sticky bottom-4 z-10 flex items-center justify-end gap-3 rounded-2xl p-3">
                     {form.recentlySuccessful && (
                         <span className="text-sm text-emerald-300">
-                            Збережено
+                            {tr('Збережено')}
                         </span>
                     )}
                     {form.isDirty && (
                         <span className="mr-auto pl-2 text-xs text-amber-200/70">
-                            Є незбережені зміни
+                            {tr('Є незбережені зміни')}
                         </span>
                     )}
                     <Button disabled={processing || !form.isDirty}>
                         {processing && <Spinner />}
-                        Зберегти
+                        {tr('Зберегти')}
                     </Button>
                 </div>
             </form>

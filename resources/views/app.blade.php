@@ -56,6 +56,12 @@
 
         @fonts
 
+        @php($locale = app()->getLocale())
+        @if ($locale === 'uk')
+            <script>window.__I18N__={locale:'uk',dict:{}};</script>
+        @else
+            <script src="{{ url('/i18n/'.$locale.'.js') }}?v={{ app(\App\Support\I18n\Translations::class)->version($locale) }}"></script>
+        @endif
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         <x-inertia::head>

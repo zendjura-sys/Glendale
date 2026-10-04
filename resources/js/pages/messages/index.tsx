@@ -13,6 +13,7 @@ import type {
     ConversationDetails,
     ConversationSummary,
 } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     conversations: ConversationSummary[];
@@ -108,7 +109,7 @@ export default function Messages({ conversations, active, history }: Props) {
 
     return (
         <>
-            <Head title={active ? active.title : 'Повідомлення'} />
+            <Head title={active ? active.title : tr('Повідомлення')} />
             <div
                 className={cn(
                     'glass flex min-h-0 overflow-clip rounded-3xl max-lg:h-[calc(100dvh-76px)] max-lg:rounded-b-none md:flex-row lg:h-[calc(100dvh-100px)]',
@@ -146,11 +147,12 @@ export default function Messages({ conversations, active, history }: Props) {
                             </div>
                         </div>
                         <h2 className="font-display text-xl font-semibold text-white">
-                            Оберіть бесіду
+                            {tr('Оберіть бесіду')}
                         </h2>
                         <p className="mt-2 max-w-sm text-sm text-white/45">
-                            Спілкуйтеся з друзями в реальному часі: фото,
-                            відповіді, групові чати до 200 учасників.
+                            {tr(
+                                'Спілкуйтеся з друзями в реальному часі: фото, відповіді, групові чати до 200 учасників.',
+                            )}
                         </p>
                         <button
                             type="button"
@@ -158,7 +160,7 @@ export default function Messages({ conversations, active, history }: Props) {
                             className="btn-glow mt-6 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold"
                         >
                             <PenSquare className="size-4" />
-                            Нове повідомлення
+                            {tr('Нове повідомлення')}
                         </button>
                     </div>
                 )}

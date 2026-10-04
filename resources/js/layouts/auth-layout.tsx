@@ -9,23 +9,29 @@ import {
 import type { ReactNode } from 'react';
 import { Aurora } from '@/components/gc/aurora';
 import { Logo } from '@/components/gc/logo';
+import { LanguageSelect } from '@/components/gc/language-switcher';
+import { tr } from '@/lib/i18n';
 
 const FEATURES = [
     {
         icon: UsersRound,
-        title: 'Друзі та спільноти',
-        text: 'Знаходь своїх людей за інтересами',
+        title: tr('Друзі та спільноти'),
+        text: tr('Знаходь своїх людей за інтересами'),
     },
     {
         icon: MessageCircle,
-        title: 'Стрічка й обговорення',
-        text: 'Пости, фото, коментарі та реакції',
+        title: tr('Стрічка й обговорення'),
+        text: tr('Пости, фото, коментарі та реакції'),
     },
-    { icon: Gamepad2, title: 'Ігри', text: 'Команди, турніри та ігрові клани' },
+    {
+        icon: Gamepad2,
+        title: tr('Ігри'),
+        text: tr('Команди, турніри та ігрові клани'),
+    },
     {
         icon: Clapperboard,
-        title: 'Кіно й серіали',
-        text: 'Дивись разом з друзями',
+        title: tr('Кіно й серіали'),
+        text: tr('Дивись разом з друзями'),
     },
 ];
 
@@ -39,15 +45,17 @@ function Showcase() {
             <div className="relative z-10 max-w-xl">
                 <span className="glass mb-6 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium text-white/75">
                     <Sparkles className="size-3.5 text-[#a58bff]" />
-                    Соціальна мережа нового покоління
+                    {tr('Соціальна мережа нового покоління')}
                 </span>
                 <h2 className="font-display text-[clamp(2.4rem,4.2vw,4rem)] leading-[1.05] font-bold tracking-tight text-white">
-                    Твій всесвіт{' '}
-                    <span className="text-gradient">ігор, кіно</span> та друзів
+                    {tr('Твій всесвіт')}{' '}
+                    <span className="text-gradient">{tr('ігор, кіно')}</span>{' '}
+                    {tr('та друзів')}
                 </h2>
                 <p className="mt-5 max-w-md text-[15px] leading-relaxed text-white/55">
-                    Спілкуйся, діліться моментами, збирай команду і відкривай
-                    нове — все в одному місці.
+                    {tr(
+                        'Спілкуйся, діліться моментами, збирай команду і відкривай нове — все в одному місці.',
+                    )}
                 </p>
 
                 <div className="mt-10 grid grid-cols-2 gap-3">
@@ -83,7 +91,7 @@ function Showcase() {
                         />
                     ))}
                 </div>
-                Приєднуйся до спільноти GameCon
+                {tr('Приєднуйся до спільноти GameCon')}
             </div>
 
             <div className="pointer-events-none absolute top-1/2 right-[-12%] size-[520px] -translate-y-1/2 animate-float rounded-full border border-white/[0.06]" />
@@ -129,6 +137,9 @@ export default function AuthLayout({
                             )}
                         </div>
                         {children}
+                    </div>
+                    <div className="mt-5 flex justify-center">
+                        <LanguageSelect />
                     </div>
 
                     <p className="mt-6 text-center text-[11px] text-white/30">

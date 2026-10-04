@@ -15,6 +15,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { SettingsCard } from '@/layouts/settings/layout';
 import { destroy } from '@/routes/profile';
+import { tr } from '@/lib/i18n';
 
 export default function DeleteUser() {
     const passwordInput = useRef<HTMLInputElement>(null);
@@ -22,8 +23,10 @@ export default function DeleteUser() {
     return (
         <SettingsCard
             tone="danger"
-            title="Видалення акаунта"
-            description="Сторінку, записи, фото й коментарі буде видалено назавжди."
+            title={tr('Видалення акаунта')}
+            description={tr(
+                'Сторінку, записи, фото й коментарі буде видалено назавжди.',
+            )}
         >
             <Dialog>
                 <DialogTrigger asChild>
@@ -31,14 +34,15 @@ export default function DeleteUser() {
                         variant="destructive"
                         data-test="delete-user-button"
                     >
-                        Видалити акаунт
+                        {tr('Видалити акаунт')}
                     </Button>
                 </DialogTrigger>
                 <DialogContent className="glass-strong rounded-3xl border-white/10 text-white">
-                    <DialogTitle>Точно видалити акаунт?</DialogTitle>
+                    <DialogTitle>{tr('Точно видалити акаунт?')}</DialogTitle>
                     <DialogDescription className="text-white/50">
-                        Цю дію неможливо скасувати. Введіть пароль, щоб
-                        підтвердити остаточне видалення.
+                        {tr(
+                            'Цю дію неможливо скасувати. Введіть пароль, щоб підтвердити остаточне видалення.',
+                        )}
                     </DialogDescription>
 
                     <Form
@@ -55,13 +59,13 @@ export default function DeleteUser() {
                                         htmlFor="password"
                                         className="sr-only"
                                     >
-                                        Пароль
+                                        {tr('Пароль')}
                                     </Label>
                                     <PasswordInput
                                         id="password"
                                         name="password"
                                         ref={passwordInput}
-                                        placeholder="Пароль"
+                                        placeholder={tr('Пароль')}
                                         autoComplete="current-password"
                                     />
                                     <InputError message={errors.password} />
@@ -75,7 +79,7 @@ export default function DeleteUser() {
                                                 resetAndClearErrors()
                                             }
                                         >
-                                            Скасувати
+                                            {tr('Скасувати')}
                                         </Button>
                                     </DialogClose>
                                     <Button
@@ -87,7 +91,7 @@ export default function DeleteUser() {
                                             type="submit"
                                             data-test="confirm-delete-user-button"
                                         >
-                                            Видалити назавжди
+                                            {tr('Видалити назавжди')}
                                         </button>
                                     </Button>
                                 </DialogFooter>

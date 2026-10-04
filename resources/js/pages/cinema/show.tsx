@@ -41,6 +41,7 @@ import type {
     MovieState,
     MovieStatus,
 } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     movie: MovieDetail;
@@ -82,7 +83,9 @@ function durationLabel(minutes: number | null) {
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
 
-    return h ? `${h} год${m ? ` ${m} хв` : ''}` : `${m} хв`;
+    return h
+        ? tr('{h} год{v}', { h, v: m ? tr(' {m} хв', { m }) : '' })
+        : tr('{m} хв', { m });
 }
 
 function ScoreRing({ value, label }: { value: number; label: string }) {
@@ -128,7 +131,7 @@ function RatingPicker({
                         onMouseEnter={() => setHover(n)}
                         onClick={() => onChange(n === value ? null : n)}
                         className="p-0.5"
-                        aria-label={`Оцінка ${n}`}
+                        aria-label={tr('Оцінка {n}', { n })}
                     >
                         <Star
                             className={cn(
@@ -203,13 +206,15 @@ export default function CinemaShow({
             );
             if (status) {
                 toast.success(
-                    `Додано до списку «${statuses.find((s) => s.key === status)?.label}».`,
+                    tr('Додано до списку «{label}».', {
+                        label: statuses.find((s) => s.key === status)?.label,
+                    }),
                 );
             }
         } catch (e) {
             setState(previous);
             toast.error(
-                e instanceof ApiError ? e.message : 'Не вдалося зберегти.',
+                e instanceof ApiError ? e.message : tr('Не вдалося зберегти.'),
             );
         }
     };
@@ -229,7 +234,7 @@ export default function CinemaShow({
             );
         } catch {
             setState(previous);
-            toast.error('Не вдалося зберегти оцінку.');
+            toast.error(tr('Не вдалося зберегти оцінку.'));
         }
     };
 
@@ -270,7 +275,9 @@ export default function CinemaShow({
             key: p,
             label: players.find((pl) => pl.provider === p)?.provider_label ?? p,
         })),
-        ...(movie.trailer_url ? [{ key: 'trailer', label: 'Трейлер' }] : []),
+        ...(movie.trailer_url
+            ? [{ key: 'trailer', label: tr('Трейлер') }]
+            : []),
     ];
 
     return (
@@ -297,11 +304,11 @@ export default function CinemaShow({
                                 href="/cinema"
                                 className="inline-flex items-center gap-1.5 rounded-xl bg-black/30 px-3 py-1.5 text-xs font-medium text-white/70 backdrop-blur transition hover:text-white"
                             >
-                                <ArrowLeft className="size-3.5" /> Кіно
+                                <ArrowLeft className="size-3.5" /> {tr('Кіно')}
                             </Link>
                             {!movie.is_published && (
                                 <span className="rounded-full bg-amber-400/15 px-2.5 py-1 text-[11px] font-semibold text-amber-200">
-                                    Приховано
+                                    {tr('Приховано')}
                                 </span>
                             )}
                             {can.manage && (
@@ -309,7 +316,8 @@ export default function CinemaShow({
                                     href={`/admin/cinema/${movie.id}/edit`}
                                     className="ml-auto inline-flex items-center gap-1.5 rounded-xl bg-black/30 px-3 py-1.5 text-xs font-medium text-white/70 backdrop-blur transition hover:text-white"
                                 >
-                                    <Pencil className="size-3.5" /> Редагувати
+                                    <Pencil className="size-3.5" />{' '}
+                                    {tr('Редагувати')}
                                 </a>
                             )}
                         </div>
@@ -426,8 +434,8 @@ export default function CinemaShow({
                                         >
                                             <Play className="size-4 fill-current" />
                                             {state.status === 'watching'
-                                                ? 'Продовжити'
-                                                : 'Дивитися'}
+                                                ? tr('Продовжити')
+                                                : tr('Дивитися')}
                                         </a>
                                     )}
                                     {players.length > 0 && (
@@ -445,7 +453,7 @@ export default function CinemaShow({
                                             className="inline-flex h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.08] px-4 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15"
                                         >
                                             <Popcorn className="size-4" />
-                                            Дивитися разом
+                                            {tr('Дивитися разом')}
                                         </button>
                                     )}
                                     <DropdownMenu>
@@ -465,7 +473,7 @@ export default function CinemaShow({
                                                     <Bookmark className="size-4" />
                                                 )}
                                                 {currentStatus?.label ??
-                                                    'Додати до списку'}
+                                                    tr('Додати до списку')}
                                                 <ChevronDown className="size-4 opacity-60" />
                                             </button>
                                         </DropdownMenuTrigger>
@@ -501,7 +509,7 @@ export default function CinemaShow({
                                                     className="gap-2 rounded-xl px-3 py-2 text-rose-300"
                                                 >
                                                     <X className="size-4" />
-                                                    Прибрати зі списку
+                                                    {tr('Прибрати зі списку')}
                                                 </DropdownMenuItem>
                                             )}
                                         </DropdownMenuContent>
@@ -511,13 +519,14 @@ export default function CinemaShow({
                                         onClick={() => setSharing(true)}
                                         className="inline-flex h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.08] px-4 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15"
                                     >
-                                        <Share2 className="size-4" /> Порадити
+                                        <Share2 className="size-4" />{' '}
+                                        {tr('Порадити')}
                                     </button>
                                 </div>
 
                                 <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-white/50">
                                     <span className="inline-flex items-center gap-2">
-                                        Ваша оцінка:
+                                        {tr('Ваша оцінка:')}
                                         <RatingPicker
                                             value={state.rating}
                                             onChange={rate}
@@ -529,8 +538,10 @@ export default function CinemaShow({
                                     </span>
                                     <span className="inline-flex items-center gap-1.5">
                                         <UsersRound className="size-3.5" />
-                                        {compactNumber(stats.watchers_count)} у
-                                        списках
+                                        {compactNumber(
+                                            stats.watchers_count,
+                                        )}{' '}
+                                        {tr('у списках')}
                                     </span>
                                 </div>
                             </div>
@@ -546,11 +557,12 @@ export default function CinemaShow({
                         <div className="flex aspect-video flex-col items-center justify-center gap-3 bg-black/40 p-6 text-center">
                             <Tv className="size-10 text-white/25" />
                             <p className="font-display text-lg font-semibold text-white">
-                                Плеєр ще не додано
+                                {tr('Плеєр ще не додано')}
                             </p>
                             <p className="max-w-sm text-sm text-white/45">
-                                Додайте фільм до списку «Буду дивитися» — ми
-                                нагадаємо, щойно він з’явиться.
+                                {tr(
+                                    'Додайте фільм до списку «Буду дивитися» — ми нагадаємо, щойно він з’явиться.',
+                                )}
                             </p>
                         </div>
                     ) : (
@@ -580,11 +592,12 @@ export default function CinemaShow({
                                             setPlayerKey(e.target.value)
                                         }
                                         className="input-glass ml-auto h-10 max-w-full rounded-xl px-3 text-sm text-white [color-scheme:dark]"
-                                        aria-label="Озвучка"
+                                        aria-label={tr('Озвучка')}
                                     >
                                         {providerPlayers.map((p) => (
                                             <option key={p.key} value={p.key}>
-                                                {p.translation ?? 'Оригінал'}
+                                                {p.translation ??
+                                                    tr('Оригінал')}
                                                 {p.quality
                                                     ? ` · ${p.quality}`
                                                     : ''}
@@ -629,7 +642,7 @@ export default function CinemaShow({
                         {movie.description && (
                             <section className="glass rounded-3xl p-5">
                                 <h2 className="mb-2 font-display text-lg font-semibold text-white">
-                                    Про що
+                                    {tr('Про що')}
                                 </h2>
                                 <p className="text-[15px] leading-relaxed whitespace-pre-line text-white/75">
                                     {movie.description}
@@ -639,14 +652,14 @@ export default function CinemaShow({
                         <section className="glass rounded-3xl p-5">
                             <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
                                 <MessageCircle className="size-5 text-[#8fa0ff]" />
-                                Обговорення
+                                {tr('Обговорення')}
                                 <span className="text-sm font-normal text-white/40">
                                     {commentsCount}
                                 </span>
                             </h2>
                             {!movie.comments_enabled && (
                                 <p className="mb-3 text-sm text-white/45">
-                                    Коментарі до цього фільму вимкнено.
+                                    {tr('Коментарі до цього фільму вимкнено.')}
                                 </p>
                             )}
                             <Comments
@@ -664,12 +677,13 @@ export default function CinemaShow({
                     <aside className="space-y-5">
                         <section className="glass rounded-3xl p-5">
                             <h2 className="mb-3 font-display text-sm font-semibold tracking-wide text-white/70 uppercase">
-                                Друзі та цей фільм
+                                {tr('Друзі та цей фільм')}
                             </h2>
                             {friends.users.length === 0 ? (
                                 <p className="text-sm text-white/45">
-                                    Ніхто з друзів ще не додав його до списку.
-                                    Будьте першим і порадьте!
+                                    {tr(
+                                        'Ніхто з друзів ще не додав його до списку. Будьте першим і порадьте!',
+                                    )}
                                 </p>
                             ) : (
                                 <ul className="space-y-2.5">
@@ -708,7 +722,7 @@ export default function CinemaShow({
                                     ))}
                                     {friends.total > friends.users.length && (
                                         <li className="pl-1 text-xs text-white/40">
-                                            і ще{' '}
+                                            {tr('і ще')}{' '}
                                             {friends.total -
                                                 friends.users.length}
                                         </li>
@@ -720,7 +734,7 @@ export default function CinemaShow({
                 </div>
 
                 {similar.length > 0 && (
-                    <PosterRow title="Схоже" movies={similar} />
+                    <PosterRow title={tr('Схоже')} movies={similar} />
                 )}
             </div>
 

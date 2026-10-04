@@ -1,13 +1,13 @@
-{!! $title ?? config('app.name') !!}
+{!! $t($title ?? config('app.name')) !!}
 
-{!! $intro !!}
+{!! $t($intro) !!}
 @isset($actionUrl)
 
-{!! $actionText ?? 'Відкрити' !!}: {!! $actionUrl !!}
+{!! $t($actionText ?? 'Відкрити') !!}: {!! $actionUrl !!}
 @endisset
 @isset($outro)
 
-{!! $outro !!}
+{!! $t($outro) !!}
 @endisset
 
 — {!! config('app.name') !!}

@@ -49,7 +49,7 @@
         <tr>
             <td style="padding:20px 8px 0;font-family:{!! $font !!};font-size:12px;line-height:1.6;color:#5C6385;text-align:center;">
                 @yield('footer')
-                <div style="margin-top:8px;">© {{ date('Y') }} {{ config('app.name') }} · Соцмережа українського гейм-ком’юніті</div>
+                <div style="margin-top:8px;">© {{ date('Y') }} {{ config('app.name') }} · {{ $t('Соцмережа українського гейм-ком’юніті') }}</div>
             </td>
         </tr>
     </table>

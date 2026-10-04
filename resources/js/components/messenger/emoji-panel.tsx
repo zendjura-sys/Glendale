@@ -4,6 +4,7 @@ import { api } from '@/lib/api';
 import { EMOJI_CATEGORIES, recentEmoji, rememberEmoji } from '@/lib/emoji';
 import { cn } from '@/lib/utils';
 import type { StickerItem, StickerPackItem } from '@/types';
+import { tr } from '@/lib/i18n';
 
 let packsCache: Promise<StickerPackItem[]> | null = null;
 
@@ -69,10 +70,10 @@ export function EmojiPanel({
                 <div className="flex shrink-0 justify-center gap-1 border-t border-white/[0.06] p-1.5">
                     {(
                         [
-                            { key: 'emoji', label: 'Емодзі', icon: Smile },
+                            { key: 'emoji', label: tr('Емодзі'), icon: Smile },
                             {
                                 key: 'stickers',
-                                label: 'Стікери',
+                                label: tr('Стікери'),
                                 icon: StickerIcon,
                             },
                         ] as const
@@ -107,7 +108,7 @@ function EmojiGrid({ onPick }: { onPick: (emoji: string) => void }) {
 
     const sections = [
         ...(recent.length
-            ? [{ key: 'recent', label: 'Недавні', icon: '', items: recent }]
+            ? [{ key: 'recent', label: tr('Недавні'), icon: '', items: recent }]
             : []),
         ...EMOJI_CATEGORIES,
     ];
@@ -217,7 +218,7 @@ function StickerGrid({ onPick }: { onPick: (sticker: StickerItem) => void }) {
                     <button
                         type="button"
                         onClick={() => setActive('recent')}
-                        title="Недавні"
+                        title={tr('Недавні')}
                         className={cn(
                             'flex size-9 shrink-0 items-center justify-center rounded-lg transition',
                             activeKey === 'recent'
@@ -252,7 +253,7 @@ function StickerGrid({ onPick }: { onPick: (sticker: StickerItem) => void }) {
             <div className="min-h-0 flex-1 overflow-y-auto p-2">
                 {failed ? (
                     <p className="px-4 py-16 text-center text-sm text-white/45">
-                        Не вдалося завантажити стікери.
+                        {tr('Не вдалося завантажити стікери.')}
                     </p>
                 ) : packs === null ? (
                     <div className="grid grid-cols-4 gap-2">
@@ -265,8 +266,9 @@ function StickerGrid({ onPick }: { onPick: (sticker: StickerItem) => void }) {
                     </div>
                 ) : !current?.length ? (
                     <p className="px-4 py-16 text-center text-sm text-white/45">
-                        Стікерів поки немає. Адміністратор може додати набори в
-                        адмін-панелі.
+                        {tr(
+                            'Стікерів поки немає. Адміністратор може додати набори в адмін-панелі.',
+                        )}
                     </p>
                 ) : (
                     <div className="grid grid-cols-4 gap-1.5">

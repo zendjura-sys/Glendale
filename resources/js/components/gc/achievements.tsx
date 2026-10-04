@@ -23,6 +23,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { tr } from '@/lib/i18n';
 
 export type Badge = {
     key: string;
@@ -84,7 +85,7 @@ export function AchievementsCard({
             <div className="flex items-center gap-3">
                 <span className="flex size-12 shrink-0 flex-col items-center justify-center rounded-2xl bg-gradient-brand text-white">
                     <span className="text-[9px] leading-none font-semibold uppercase opacity-80">
-                        рів.
+                        {tr('рів.')}
                     </span>
                     <span className="text-lg leading-tight font-bold">
                         {data.level}
@@ -107,7 +108,7 @@ export function AchievementsCard({
                         />
                     </div>
                     <p className="mt-1 text-[11px] text-white/45">
-                        {data.xp} / {data.next_xp} досвіду до рівня{' '}
+                        {data.xp} / {data.next_xp} {tr('досвіду до рівня')}{' '}
                         {data.level + 1}
                     </p>
                 </div>
@@ -115,7 +116,7 @@ export function AchievementsCard({
 
             <div className="mt-4 flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-white/80">
-                    Досягнення{' '}
+                    {tr('Досягнення')}{' '}
                     <span className="text-white/40">
                         {data.earned}/{data.total}
                     </span>
@@ -125,14 +126,14 @@ export function AchievementsCard({
                     onClick={() => setAll(!all)}
                     className="text-xs text-[#a5b4fc] hover:text-white"
                 >
-                    {all ? 'Лише отримані' : 'Усі'}
+                    {all ? tr('Лише отримані') : tr('Усі')}
                 </button>
             </div>
             {shown.length === 0 ? (
                 <p className="mt-2 text-sm text-white/45">
                     {isSelf
-                        ? 'Перші бейджі — за пост, друзів і вступ до сім’ї.'
-                        : 'Бейджів поки немає.'}
+                        ? tr('Перші бейджі — за пост, друзів і вступ до сім’ї.')
+                        : tr('Бейджів поки немає.')}
                 </p>
             ) : (
                 <div className="mt-2 grid grid-cols-4 gap-2">

@@ -13,6 +13,7 @@ import { Pagination } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
 import { cn } from '@/lib/utils';
 import type { GameCard, Paginated } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Category = GameCard['category'];
 
@@ -131,16 +132,18 @@ export default function GamesIndex({
 
     return (
         <>
-            <Head title="Каталог ігор" />
+            <Head title={tr('Каталог ігор')} />
             <div className="mb-4 flex flex-wrap items-end gap-3">
                 <div className="min-w-0 flex-1">
                     <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
-                        <Gamepad2 className="size-6 text-[#a5b4fc]" /> Каталог
-                        ігор
+                        <Gamepad2 className="size-6 text-[#a5b4fc]" />{' '}
+                        {tr('Каталог ігор')}
                     </h1>
                     <p className="text-sm text-white/50">
-                        {total} мультиплеєрних ігор — від ПК до телефонів.
-                        Оновлюється щодня.
+                        {total}{' '}
+                        {tr(
+                            'мультиплеєрних ігор — від ПК до телефонів. Оновлюється щодня.',
+                        )}
                     </p>
                 </div>
             </div>
@@ -151,7 +154,7 @@ export default function GamesIndex({
                     <input
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
-                        placeholder="Назва гри"
+                        placeholder={tr('Назва гри')}
                         className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
                     />
                 </label>
@@ -161,7 +164,7 @@ export default function GamesIndex({
                         active={!filters.category}
                         onClick={() => visit({ category: null })}
                     >
-                        Усі
+                        {tr('Усі')}
                     </Chip>
                     {(Object.keys(categories) as Category[]).map((c) => {
                         const Icon = CATEGORY_ICONS[c];
@@ -213,9 +216,9 @@ export default function GamesIndex({
                                     visit({ genre: e.target.value || null })
                                 }
                                 className="input-glass h-10 w-full min-w-0 rounded-xl px-3 text-sm text-white"
-                                aria-label="Жанр"
+                                aria-label={tr('Жанр')}
                             >
-                                <option value="">Усі жанри</option>
+                                <option value="">{tr('Усі жанри')}</option>
                                 {genres.map((g) => (
                                     <option key={g} value={g}>
                                         {g}
@@ -233,7 +236,7 @@ export default function GamesIndex({
                                     'input-glass h-10 w-full min-w-0 rounded-xl px-3 text-sm text-white',
                                     genres.length === 0 && 'col-span-2',
                                 )}
-                                aria-label="Сортування"
+                                aria-label={tr('Сортування')}
                             >
                                 {Object.entries(sorts).map(([key, label]) => (
                                     <option key={key} value={key}>
@@ -288,8 +291,8 @@ export default function GamesIndex({
             {games.data.length === 0 ? (
                 <EmptyState
                     icon={SearchX}
-                    title="Нічого не знайшли"
-                    text="Спробуйте іншу назву або розділ."
+                    title={tr('Нічого не знайшли')}
+                    text={tr('Спробуйте іншу назву або розділ.')}
                 />
             ) : (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -327,7 +330,7 @@ export default function GamesIndex({
             )}
             <Pagination data={games} />
             <p className="mt-6 text-center text-[11px] text-white/30">
-                Дані каталогу —{' '}
+                {tr('Дані каталогу —')}{' '}
                 <a
                     href="https://www.igdb.com"
                     target="_blank"
@@ -336,7 +339,7 @@ export default function GamesIndex({
                 >
                     IGDB
                 </a>{' '}
-                і{' '}
+                {tr('і')}{' '}
                 <a
                     href="https://rawg.io"
                     target="_blank"

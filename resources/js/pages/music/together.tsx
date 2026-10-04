@@ -29,6 +29,7 @@ import {
 } from '@/lib/player';
 import { cn } from '@/lib/utils';
 import type { LocalTrack, UserCard } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Playback = {
     track: LocalTrack | null;
@@ -155,7 +156,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
             if (event.members) apply({ members: event.members });
             if (event.ended) {
                 apply({ ended: true });
-                toast('Ведучий завершив спільне прослуховування');
+                toast(tr('Ведучий завершив спільне прослуховування'));
             }
         },
     });
@@ -200,7 +201,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
         void api<Party>('POST', `${base}/queue`, { track_id: track.id })
             .then((fresh) => {
                 apply(fresh);
-                toast.success(`«${track.title}» у черзі`);
+                toast.success(tr('«{title}» у черзі', { title: track.title }));
             })
             .catch((e: Error) => toast.error(e.message));
 
@@ -212,7 +213,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
 
     return (
         <>
-            <Head title="Слухаємо разом" />
+            <Head title={tr('Слухаємо разом')} />
             <div className="mx-auto grid max-w-5xl gap-4 lg:grid-cols-[1fr_340px]">
                 <div className="space-y-4">
                     <section className="glass overflow-hidden rounded-3xl">
@@ -232,20 +233,23 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                             </div>
                             <div className="min-w-0 flex-1 text-center sm:text-left">
                                 <p className="text-xs font-semibold tracking-wider text-[#a5b4fc] uppercase">
-                                    Слухаємо разом
-                                    {party.ended && ' · завершено'}
+                                    {tr('Слухаємо разом')}
+                                    {party.ended && tr(' · завершено')}
                                 </p>
                                 <h1 className="mt-1 truncate font-display text-2xl font-semibold text-white">
-                                    {state.track?.title ?? 'Нічого не грає'}
+                                    {state.track?.title ?? tr('Нічого не грає')}
                                 </h1>
                                 <p className="truncate text-sm text-white/60">
                                     {state.track?.artist ??
-                                        'Додайте трек у чергу — він заграє одразу'}
+                                        tr(
+                                            'Додайте трек у чергу — він заграє одразу',
+                                        )}
                                 </p>
                                 <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-white/45">
                                     <Crown className="size-3.5 text-amber-300" />
-                                    Ведучий: {party.host?.name}
-                                    {state.shared_control && ' · керують усі'}
+                                    {tr('Ведучий:')} {party.host?.name}
+                                    {state.shared_control &&
+                                        tr(' · керують усі')}
                                 </p>
                             </div>
                         </div>
@@ -268,7 +272,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                         control(state.playing, to);
                                     }}
                                     className="w-full accent-[var(--accent)]"
-                                    aria-label="Позиція"
+                                    aria-label={tr('Позиція')}
                                 />
                                 <div className="flex justify-between text-xs text-white/45">
                                     <span>{clock(position)}</span>
@@ -288,8 +292,8 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                                 className="btn-glow flex size-14 items-center justify-center rounded-full"
                                                 aria-label={
                                                     state.playing
-                                                        ? 'Пауза'
-                                                        : 'Грати'
+                                                        ? tr('Пауза')
+                                                        : tr('Грати')
                                                 }
                                             >
                                                 {state.playing ? (
@@ -313,7 +317,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                                         )
                                                 }
                                                 className="glass flex size-11 items-center justify-center rounded-full text-white/80 hover:text-white"
-                                                aria-label="Наступний"
+                                                aria-label={tr('Наступний')}
                                             >
                                                 <SkipForward className="size-5" />
                                             </button>
@@ -331,8 +335,8 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                         >
                                             <Headphones className="size-4" />
                                             {synced
-                                                ? 'Синхронно з ведучим'
-                                                : 'Увімкнути синхронізацію'}
+                                                ? tr('Синхронно з ведучим')
+                                                : tr('Увімкнути синхронізацію')}
                                         </button>
                                     )}
                                 </div>
@@ -344,7 +348,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                         <div className="mb-3 flex items-center gap-2">
                             <ListMusic className="size-4 text-[#a5b4fc]" />
                             <h2 className="flex-1 font-display text-base font-semibold text-white">
-                                Черга
+                                {tr('Черга')}
                             </h2>
                             <span className="text-xs text-white/40">
                                 {party.queue.length}
@@ -352,8 +356,9 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                         </div>
                         {party.queue.length === 0 && (
                             <p className="text-sm text-white/45">
-                                Черга порожня. Знайдіть трек нижче — додати може
-                                кожен.
+                                {tr(
+                                    'Черга порожня. Знайдіть трек нижче — додати може кожен.',
+                                )}
                             </p>
                         )}
                         {party.queue.map((item, i) => (
@@ -371,7 +376,9 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                     <span className="block truncate text-xs text-white/45">
                                         {item.track.artist}
                                         {item.by &&
-                                            ` · додав(-ла) ${item.by.name}`}
+                                            tr(' · додав(-ла) {name}', {
+                                                name: item.by.name,
+                                            })}
                                     </span>
                                 </span>
                                 {!party.ended &&
@@ -390,7 +397,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                                     )
                                             }
                                             className="text-white/35 hover:text-rose-300"
-                                            aria-label="Прибрати"
+                                            aria-label={tr('Прибрати')}
                                         >
                                             <Trash2 className="size-4" />
                                         </button>
@@ -407,7 +414,9 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                         onChange={(e) =>
                                             setSearch(e.target.value)
                                         }
-                                        placeholder="Знайти трек на GameCon"
+                                        placeholder={tr(
+                                            'Знайти трек на GameCon',
+                                        )}
                                         className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
                                     />
                                 </label>
@@ -441,7 +450,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                                 type="button"
                                                 onClick={() => enqueue(t)}
                                                 className="glass flex size-8 items-center justify-center rounded-lg text-white/75 hover:text-white"
-                                                aria-label="У чергу"
+                                                aria-label={tr('У чергу')}
                                             >
                                                 <Plus className="size-4" />
                                             </button>
@@ -458,7 +467,8 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                         <div className="mb-3 flex items-center gap-2">
                             <Users className="size-4 text-[#a5b4fc]" />
                             <h2 className="flex-1 font-display text-base font-semibold text-white">
-                                Слухають ({party.members.length})
+                                {tr('Слухають (')}
+                                {party.members.length})
                             </h2>
                         </div>
                         <div className="space-y-2">
@@ -489,26 +499,28 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                         .writeText(party.url)
                                         .then(() =>
                                             toast.success(
-                                                'Посилання скопійовано',
+                                                tr('Посилання скопійовано'),
                                             ),
                                         );
                                 }}
                                 className="glass flex h-10 w-full items-center justify-center gap-2 rounded-xl text-sm text-white/80 hover:text-white"
                             >
-                                <Copy className="size-4" /> Скопіювати посилання
+                                <Copy className="size-4" />{' '}
+                                {tr('Скопіювати посилання')}
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setInviting(!inviting)}
                                 className="btn-glow flex h-10 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold"
                             >
-                                <UserPlus className="size-4" /> Запросити друзів
+                                <UserPlus className="size-4" />{' '}
+                                {tr('Запросити друзів')}
                             </button>
                             {inviting && (
                                 <div className="max-h-64 overflow-y-auto pt-1">
                                     {friends.length === 0 && (
                                         <p className="text-sm text-white/45">
-                                            Друзів поки немає.
+                                            {tr('Друзів поки немає.')}
                                         </p>
                                     )}
                                     {friends.map((f) => (
@@ -525,7 +537,12 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                                 )
                                                     .then(() =>
                                                         toast.success(
-                                                            `Запрошення надіслано: ${f.name}`,
+                                                            tr(
+                                                                'Запрошення надіслано: {name}',
+                                                                {
+                                                                    name: f.name,
+                                                                },
+                                                            ),
                                                         ),
                                                     )
                                                     .catch((e: Error) =>
@@ -546,7 +563,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                             {party.is_host && (
                                 <>
                                     <label className="flex cursor-pointer items-center justify-between gap-2 rounded-xl px-1 py-2 text-sm text-white/75">
-                                        Керувати можуть усі
+                                        {tr('Керувати можуть усі')}
                                         <input
                                             type="checkbox"
                                             checked={state.shared_control}
@@ -565,14 +582,17 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                     <button
                                         type="button"
                                         onClick={() =>
-                                            confirm('Завершити для всіх?') &&
+                                            confirm(
+                                                tr('Завершити для всіх?'),
+                                            ) &&
                                             void api('DELETE', base).then(() =>
                                                 apply({ ended: true }),
                                             )
                                         }
                                         className="flex h-10 w-full items-center justify-center gap-2 rounded-xl text-sm text-rose-300 hover:bg-rose-500/10"
                                     >
-                                        <X className="size-4" /> Завершити
+                                        <X className="size-4" />{' '}
+                                        {tr('Завершити')}
                                     </button>
                                 </>
                             )}

@@ -4,6 +4,7 @@ import { EventList } from '@/components/events/event-card';
 import type { CalendarEvent } from '@/components/events/event-card';
 import { EmptyState } from '@/components/gc/widget';
 import { cn } from '@/lib/utils';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     events: CalendarEvent[];
@@ -14,22 +15,22 @@ type Props = {
 /** Календар: найближчі події моїх сімей, кланів, серверів та ігор, з нагадуванням за пів години. */
 export default function EventsIndex({ events, kind, kinds }: Props) {
     const tabs: [string | null, string][] = [
-        [null, 'Усі'],
+        [null, tr('Усі')],
         ...Object.entries(kinds),
     ];
 
     return (
         <>
-            <Head title="Календар подій" />
+            <Head title={tr('Календар подій')} />
             <div className="mb-4">
                 <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
-                    <CalendarDays className="size-6 text-[#a5b4fc]" /> Календар
-                    подій
+                    <CalendarDays className="size-6 text-[#a5b4fc]" />{' '}
+                    {tr('Календар подій')}
                 </h1>
                 <p className="text-sm text-white/50">
-                    Події ваших сімей, кланів, серверів та ігор. Події серверів
-                    з Discord і ігор з IGDB підтягуються самі. За пів години до
-                    початку прийде нагадування.
+                    {tr(
+                        'Події ваших сімей, кланів, серверів та ігор. Події серверів з Discord і ігор з IGDB підтягуються самі. За пів години до початку прийде нагадування.',
+                    )}
                 </p>
             </div>
             <div className="-mx-1 mb-4 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1">
@@ -58,11 +59,15 @@ export default function EventsIndex({ events, kind, kinds }: Props) {
             {events.length === 0 ? (
                 <EmptyState
                     icon={CalendarDays}
-                    title="Найближчих подій немає"
+                    title={tr('Найближчих подій немає')}
                     text={
                         kind === 'game'
-                            ? 'Шоукейси, трансляції й виходи ігор з’являються тут автоматично.'
-                            : 'Події з’являються, коли їх створюють у сім’ї, клані, на сторінці сервера або в Discord проєкту.'
+                            ? tr(
+                                  'Шоукейси, трансляції й виходи ігор з’являються тут автоматично.',
+                              )
+                            : tr(
+                                  'Події з’являються, коли їх створюють у сім’ї, клані, на сторінці сервера або в Discord проєкту.',
+                              )
                     }
                 />
             ) : (

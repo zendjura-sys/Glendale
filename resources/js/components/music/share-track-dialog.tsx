@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import type { TrackCard } from '@/types';
 import { MusicCard } from './music-card';
+import { tr } from '@/lib/i18n';
 
 export function musicPayload(track: TrackCard) {
     return track.source === 'local'
@@ -54,10 +55,10 @@ export function ShareTrackDialog({
         <Dialog open={track !== null} onOpenChange={onOpenChange}>
             <DialogContent className="glass-strong gap-0 rounded-3xl border-white/10 p-6 text-white sm:max-w-lg">
                 <DialogTitle className="font-display text-xl">
-                    Поділитися на стіні
+                    {tr('Поділитися на стіні')}
                 </DialogTitle>
                 <DialogDescription className="mt-1 text-sm text-white/50">
-                    Трек з’явиться у вашій стрічці й на сторінці.
+                    {tr('Трек з’явиться у вашій стрічці й на сторінці.')}
                 </DialogDescription>
                 <textarea
                     value={body}
@@ -65,7 +66,7 @@ export function ShareTrackDialog({
                     rows={3}
                     maxLength={2000}
                     autoFocus
-                    placeholder="Що скажете про цей трек?"
+                    placeholder={tr('Що скажете про цей трек?')}
                     className="input-glass mt-5 w-full resize-none rounded-2xl px-4 py-3 text-sm text-white placeholder:text-white/35 focus:outline-none"
                 />
                 {track && (
@@ -79,7 +80,7 @@ export function ShareTrackDialog({
                         onClick={() => onOpenChange(false)}
                         className="rounded-xl px-4 py-2.5 text-sm text-white/60 hover:bg-white/5 hover:text-white"
                     >
-                        Скасувати
+                        {tr('Скасувати')}
                     </button>
                     <button
                         type="button"
@@ -87,7 +88,7 @@ export function ShareTrackDialog({
                         disabled={sending}
                         className="btn-glow rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
                     >
-                        Опублікувати
+                        {tr('Опублікувати')}
                     </button>
                 </div>
             </DialogContent>

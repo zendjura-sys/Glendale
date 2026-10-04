@@ -7,6 +7,7 @@ import type { CommunityCard, UserCard } from '@/types';
 import { CommunityAvatar } from './community-avatar';
 import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
+import { tr } from '@/lib/i18n';
 
 type Result =
     | { kind: 'user'; href: string; item: UserCard }
@@ -118,7 +119,7 @@ export function QuickSearch({ className }: { className?: string }) {
                             inputRef.current?.blur();
                         }
                     }}
-                    placeholder="Пошук людей і спільнот…"
+                    placeholder={tr('Пошук людей і спільнот…')}
                     className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none"
                 />
                 {query ? (
@@ -140,7 +141,7 @@ export function QuickSearch({ className }: { className?: string }) {
                 <div className="glass-strong absolute top-12 right-0 left-0 z-50 animate-rise overflow-hidden rounded-2xl p-1.5">
                     {results.length === 0 ? (
                         <div className="px-3 py-6 text-center text-sm text-white/50">
-                            Нікого не знайдено
+                            {tr('Нікого не знайдено')}
                         </div>
                     ) : (
                         results.map((result, index) => (
@@ -174,7 +175,21 @@ export function QuickSearch({ className }: { className?: string }) {
                                     <span className="block truncate text-xs text-white/45">
                                         {result.kind === 'user'
                                             ? `@${result.item.username}`
-                                            : `${result.item.type === 'public' ? 'Публічна сторінка' : 'Спільнота'} · ${result.item.members_count} учасн.`}
+                                            : tr(
+                                                  '{v} · {members_count} учасн.',
+                                                  {
+                                                      v:
+                                                          result.item.type ===
+                                                          'public'
+                                                              ? tr(
+                                                                    'Публічна сторінка',
+                                                                )
+                                                              : tr('Спільнота'),
+                                                      members_count:
+                                                          result.item
+                                                              .members_count,
+                                                  },
+                                              )}
                                     </span>
                                 </span>
                             </Link>
@@ -185,7 +200,7 @@ export function QuickSearch({ className }: { className?: string }) {
                         onClick={() => setOpen(false)}
                         className="mt-1 block rounded-xl border-t border-white/5 px-3 py-2.5 text-center text-xs font-medium text-[#9aa8ff] hover:bg-white/5"
                     >
-                        Показати всі результати
+                        {tr('Показати всі результати')}
                     </Link>
                 </div>
             )}

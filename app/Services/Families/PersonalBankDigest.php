@@ -7,6 +7,7 @@ use App\Mail\FamilyBankDigestMail;
 use App\Models\FamilyMember;
 use App\Models\FamilyTransaction;
 use App\Models\User;
+use App\Support\I18n\Locales;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Mail;
@@ -67,7 +68,7 @@ class PersonalBankDigest
             return false;
         }
         ['start' => $start, 'end' => $end] = WeeklyDigest::week($at);
-        Mail::to($email)->queue(new FamilyBankDigestMail(
+        Mail::to($email)->locale(app(Locales::class)->forUser($user))->queue(new FamilyBankDigestMail(
             accounts: $accounts,
             period: $start->format('d.m').' – '.$end->format('d.m.Y'),
             unsubscribeUrl: UnsubscribeController::url($user),

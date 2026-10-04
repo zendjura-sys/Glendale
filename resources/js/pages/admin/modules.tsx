@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { PageHeader, Pill, Toggle } from '@/components/gc/admin';
 import { ModuleIcon } from '@/components/gc/module-icon';
 import { cn } from '@/lib/utils';
+import { tr } from '@/lib/i18n';
 
 type ModuleItem = {
     key: string;
@@ -29,28 +30,32 @@ export default function AdminModules({ modules }: { modules: ModuleItem[] }) {
 
     const groups = [
         {
-            title: 'Ядро',
-            description: 'Базові розділи соціальної мережі. Завжди увімкнені.',
+            title: tr('Ядро'),
+            description: tr(
+                'Базові розділи соціальної мережі. Завжди увімкнені.',
+            ),
             items: modules.filter((m) => m.core),
         },
         {
-            title: 'Модулі',
-            description: 'Вмикайте та вимикайте розділи без зупинки сайту.',
+            title: tr('Модулі'),
+            description: tr('Вмикайте та вимикайте розділи без зупинки сайту.'),
             items: modules.filter((m) => !m.core && m.available),
         },
         {
-            title: 'У розробці',
-            description: "З'являться в наступних етапах.",
+            title: tr('У розробці'),
+            description: tr("З'являться в наступних етапах."),
             items: modules.filter((m) => !m.core && !m.available),
         },
     ].filter((g) => g.items.length > 0);
 
     return (
         <>
-            <Head title="Модулі — Адмін-панель" />
+            <Head title={tr('Модулі — Адмін-панель')} />
             <PageHeader
-                title="Модулі"
-                description="Платформа складається з ядра та незалежних модулів. Вимкнений модуль зникає з меню, а його сторінки стають недоступними."
+                title={tr('Модулі')}
+                description={tr(
+                    'Платформа складається з ядра та незалежних модулів. Вимкнений модуль зникає з меню, а його сторінки стають недоступними.',
+                )}
             />
 
             <div className="space-y-8">
@@ -105,13 +110,13 @@ export default function AdminModules({ modules }: { modules: ModuleItem[] }) {
                                                 {m.core && (
                                                     <Pill tone="gold">
                                                         <Lock className="size-3" />{' '}
-                                                        Ядро
+                                                        {tr('Ядро')}
                                                     </Pill>
                                                 )}
                                                 {!m.available && (
                                                     <Pill tone="violet">
                                                         <Sparkles className="size-3" />{' '}
-                                                        У розробці
+                                                        {tr('У розробці')}
                                                     </Pill>
                                                 )}
                                             </div>
@@ -140,10 +145,10 @@ export default function AdminModules({ modules }: { modules: ModuleItem[] }) {
                                             )}
                                         />
                                         {m.enabled
-                                            ? 'Увімкнено'
+                                            ? tr('Увімкнено')
                                             : m.available
-                                              ? 'Вимкнено'
-                                              : 'Недоступно'}
+                                              ? tr('Вимкнено')
+                                              : tr('Недоступно')}
                                         <code className="ml-auto rounded bg-white/[0.04] px-1.5 py-0.5 text-white/30">
                                             {m.key}
                                         </code>

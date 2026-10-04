@@ -44,6 +44,9 @@ class SiteSettings
         'discord_guild_id' => null,
         'steam_api_key' => null,
         'moderation' => [],
+        // Мови інтерфейсу: [{code, enabled}], українська — завжди; типова — для решти відвідувачів.
+        'languages' => [],
+        'default_locale' => 'uk',
         'shikimori_enabled' => true,
         'shikimori_url' => null,
         'cinema_auto' => [],

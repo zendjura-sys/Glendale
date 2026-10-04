@@ -20,6 +20,7 @@ import { plural } from '@/lib/format';
 import type { ConversationDetails, UserCard } from '@/types';
 import { ContactPicker } from './contact-picker';
 import { ConversationAvatar } from './conversation-avatar';
+import { tr } from '@/lib/i18n';
 
 const reload = { preserveScroll: true, preserveState: true } as const;
 
@@ -91,8 +92,10 @@ export function GroupInfoDialog({
     const remove = (user: { id: number; first_name: string }) => {
         const leaving = user.id === auth.user.id;
         const question = leaving
-            ? 'Вийти з бесіди? Ви більше не отримуватимете повідомлення.'
-            : `Виключити ${user.first_name} з бесіди?`;
+            ? tr('Вийти з бесіди? Ви більше не отримуватимете повідомлення.')
+            : tr('Виключити {first_name} з бесіди?', {
+                  first_name: user.first_name,
+              });
 
         if (!window.confirm(question)) return;
 
@@ -111,7 +114,7 @@ export function GroupInfoDialog({
                         disabled={!canManage}
                         onClick={() => fileRef.current?.click()}
                         className="group relative rounded-full"
-                        aria-label="Змінити фото"
+                        aria-label={tr('Змінити фото')}
                     >
                         <ConversationAvatar
                             conversation={conversation}
@@ -154,7 +157,7 @@ export function GroupInfoDialog({
                                 onClick={saveTitle}
                                 className="btn-glow rounded-xl px-4 text-sm font-semibold"
                             >
-                                Зберегти
+                                {tr('Зберегти')}
                             </button>
                         </div>
                     ) : (
@@ -168,7 +171,7 @@ export function GroupInfoDialog({
                                         setRenaming(true);
                                     }}
                                     className="rounded-lg p-1 text-white/45 hover:bg-white/10 hover:text-white"
-                                    aria-label="Перейменувати"
+                                    aria-label={tr('Перейменувати')}
                                 >
                                     <Pencil className="size-4" />
                                 </button>
@@ -209,7 +212,7 @@ export function GroupInfoDialog({
                                     onClick={() => setAdding(false)}
                                     className="rounded-xl px-4 py-2 text-sm text-white/60 hover:bg-white/5 hover:text-white"
                                 >
-                                    Скасувати
+                                    {tr('Скасувати')}
                                 </button>
                                 <button
                                     type="button"
@@ -217,7 +220,7 @@ export function GroupInfoDialog({
                                     onClick={addMembers}
                                     className="btn-glow rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-50"
                                 >
-                                    Додати
+                                    {tr('Додати')}
                                     {picked.length > 0 && ` (${picked.length})`}
                                 </button>
                             </div>
@@ -232,7 +235,7 @@ export function GroupInfoDialog({
                                 <span className="flex size-10 items-center justify-center rounded-full bg-[#6d5dfc]/15">
                                     <UserPlus className="size-[18px]" />
                                 </span>
-                                Додати учасників
+                                {tr('Додати учасників')}
                             </button>
                             <div className="max-h-[42vh] overflow-y-auto">
                                 {conversation.members.map((member) => (
@@ -256,13 +259,13 @@ export function GroupInfoDialog({
                                                         auth.user.id && (
                                                         <span className="text-white/40">
                                                             {' '}
-                                                            (ви)
+                                                            {tr('(ви)')}
                                                         </span>
                                                     )}
                                                 </span>
                                                 <span className="block truncate text-xs text-white/40">
                                                     {member.is_online
-                                                        ? 'в мережі'
+                                                        ? tr('в мережі')
                                                         : `@${member.username}`}
                                                 </span>
                                             </span>
@@ -270,12 +273,12 @@ export function GroupInfoDialog({
                                         {member.role === 'owner' ? (
                                             <span className="flex items-center gap-1 rounded-full bg-[#ffd36b]/10 px-2 py-0.5 text-[11px] font-medium text-[#ffd36b]">
                                                 <Crown className="size-3" />
-                                                Творець
+                                                {tr('Творець')}
                                             </span>
                                         ) : member.role === 'admin' ? (
                                             <span className="flex items-center gap-1 rounded-full bg-[#4f8bff]/10 px-2 py-0.5 text-[11px] font-medium text-[#8fb4ff]">
                                                 <ShieldCheck className="size-3" />
-                                                Адмін
+                                                {tr('Адмін')}
                                             </span>
                                         ) : null}
                                         {canManage &&
@@ -287,8 +290,8 @@ export function GroupInfoDialog({
                                                         remove(member)
                                                     }
                                                     className="rounded-lg p-1.5 text-white/40 opacity-0 transition group-hover:opacity-100 hover:bg-rose-500/10 hover:text-rose-300"
-                                                    aria-label="Виключити"
-                                                    title="Виключити"
+                                                    aria-label={tr('Виключити')}
+                                                    title={tr('Виключити')}
                                                 >
                                                     <UserMinus className="size-4" />
                                                 </button>
@@ -302,7 +305,7 @@ export function GroupInfoDialog({
                                 className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-rose-400/20 py-2.5 text-sm font-medium text-rose-300 transition hover:bg-rose-500/10"
                             >
                                 <LogOut className="size-4" />
-                                Вийти з бесіди
+                                {tr('Вийти з бесіди')}
                             </button>
                         </>
                     )}

@@ -8,6 +8,7 @@ use App\Services\Auth\FirebaseAuth;
 use App\Services\FriendshipService;
 use App\Services\Messenger;
 use App\Services\Spotify\SpotifyClient;
+use App\Support\I18n\Locales;
 use App\Support\Modules\ModuleManager;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\Request;
@@ -54,6 +55,8 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => $this->settings->get('site_name'),
+            'locale' => app()->getLocale(),
+            'locales' => app(Locales::class)->options(),
             'site' => [
                 'name' => $this->settings->get('site_name'),
                 'tagline' => $this->settings->get('tagline'),

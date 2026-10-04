@@ -9,6 +9,8 @@ use App\Models\Family;
 use App\Models\Message;
 use App\Models\PushDevice;
 use App\Models\User;
+use App\Support\I18n\Locales;
+use App\Support\I18n\Translations;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Str;
 
@@ -38,7 +40,8 @@ class PushNotifier
 
         $data = $notification->data;
         $title = $this->sender($data);
-        $text = trim((string) ($data['text'] ?? ''));
+        // Текст сповіщення — мовою отримувача.
+        $text = app(Translations::class)->line(trim((string) ($data['text'] ?? '')), app(Locales::class)->forUser($notifiable));
         $excerpt = trim((string) ($data['excerpt'] ?? ''));
         $body = Str::limit($excerpt !== '' ? "{$text}: «{$excerpt}»" : $text, 180);
 

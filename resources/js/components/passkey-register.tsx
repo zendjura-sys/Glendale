@@ -4,6 +4,7 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     onSuccess: () => void;
@@ -59,7 +60,7 @@ export default function PasskeyRegistration({ onSuccess }: Props) {
     if (!isSupported) {
         return (
             <div className="text-sm text-muted-foreground">
-                Цей браузер не підтримує ключі доступу.
+                {tr('Цей браузер не підтримує ключі доступу.')}
             </div>
         );
     }
@@ -67,7 +68,7 @@ export default function PasskeyRegistration({ onSuccess }: Props) {
     if (!showForm) {
         return (
             <Button variant="outline" onClick={() => setShowForm(true)}>
-                Додати ключ
+                {tr('Додати ключ')}
             </Button>
         );
     }
@@ -97,10 +98,10 @@ export default function PasskeyRegistration({ onSuccess }: Props) {
 
             <div className="flex gap-2">
                 <Button type="submit" disabled={isLoading || !name.trim()}>
-                    {isLoading ? 'Реєстрація…' : 'Зареєструвати ключ'}
+                    {isLoading ? tr('Реєстрація…') : tr('Зареєструвати ключ')}
                 </Button>
                 <Button type="button" variant="ghost" onClick={handleCancel}>
-                    Скасувати
+                    {tr('Скасувати')}
                 </Button>
             </div>
         </form>

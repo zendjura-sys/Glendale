@@ -6,6 +6,7 @@ import { CreateCommunityDialog } from '@/components/communities/create-community
 import { EmptyState } from '@/components/gc/widget';
 import { cn } from '@/lib/utils';
 import type { CommunityListItem, ScrollData } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Tab = 'mine' | 'managed' | 'discover';
 
@@ -58,22 +59,22 @@ export default function Communities({
     }[] = [
         {
             value: 'mine',
-            label: 'Мої спільноти',
+            label: tr('Мої спільноти'),
             icon: Shield,
             count: counts.mine,
         },
         {
             value: 'managed',
-            label: 'Керую',
+            label: tr('Керую'),
             icon: Crown,
             count: counts.managed,
         },
-        { value: 'discover', label: 'Огляд', icon: Compass },
+        { value: 'discover', label: tr('Огляд'), icon: Compass },
     ];
 
     return (
         <>
-            <Head title="Спільноти" />
+            <Head title={tr('Спільноти')} />
             <div className="space-y-5">
                 <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-6">
                     <div className="pointer-events-none absolute -top-28 -right-10 size-80 rounded-full bg-[#a855f7]/25 blur-3xl" />
@@ -81,12 +82,15 @@ export default function Communities({
                     <div className="relative flex flex-wrap items-start justify-between gap-4">
                         <div>
                             <h1 className="font-display text-2xl font-bold text-white">
-                                <span className="text-gradient">Спільноти</span>{' '}
-                                за інтересами
+                                <span className="text-gradient">
+                                    {tr('Спільноти')}
+                                </span>{' '}
+                                {tr('за інтересами')}
                             </h1>
                             <p className="mt-1 text-sm text-white/50">
-                                Клани, фандоми, команди та сторінки улюблених
-                                ігор — усе в одному місці.
+                                {tr(
+                                    'Клани, фандоми, команди та сторінки улюблених ігор — усе в одному місці.',
+                                )}
                             </p>
                         </div>
                         <button
@@ -94,7 +98,8 @@ export default function Communities({
                             onClick={() => setCreating(true)}
                             className="btn-glow inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold"
                         >
-                            <Plus className="size-4" /> Створити спільноту
+                            <Plus className="size-4" />{' '}
+                            {tr('Створити спільноту')}
                         </button>
                     </div>
 
@@ -127,7 +132,7 @@ export default function Communities({
                             <input
                                 value={q}
                                 onChange={(event) => setQ(event.target.value)}
-                                placeholder="Назва або адреса спільноти"
+                                placeholder={tr('Назва або адреса спільноти')}
                                 className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
                             />
                         </label>
@@ -135,7 +140,7 @@ export default function Communities({
 
                     <div className="relative mt-4 -mb-1 flex gap-2 overflow-x-auto pb-1">
                         {[
-                            ['', 'Усі тематики'],
+                            ['', tr('Усі тематики')],
                             ...Object.entries(categories),
                         ].map(([key, label]) => {
                             const active = (filters.category ?? '') === key;
@@ -166,15 +171,19 @@ export default function Communities({
                         icon={SearchX}
                         title={
                             tab === 'mine'
-                                ? 'Ви ще не вступили до жодної спільноти'
+                                ? tr('Ви ще не вступили до жодної спільноти')
                                 : tab === 'managed'
-                                  ? 'Ви поки нічим не керуєте'
-                                  : 'Нічого не знайдено'
+                                  ? tr('Ви поки нічим не керуєте')
+                                  : tr('Нічого не знайдено')
                         }
                         text={
                             tab === 'discover'
-                                ? 'Спробуйте інший запит або створіть власну спільноту.'
-                                : 'Знайдіть цікаві спільноти в огляді або створіть свою.'
+                                ? tr(
+                                      'Спробуйте інший запит або створіть власну спільноту.',
+                                  )
+                                : tr(
+                                      'Знайдіть цікаві спільноти в огляді або створіть свою.',
+                                  )
                         }
                         action={
                             <button
@@ -187,8 +196,8 @@ export default function Communities({
                                 className="btn-glow rounded-xl px-5 py-2.5 text-sm font-semibold"
                             >
                                 {tab === 'discover'
-                                    ? 'Створити спільноту'
-                                    : 'Перейти до огляду'}
+                                    ? tr('Створити спільноту')
+                                    : tr('Перейти до огляду')}
                             </button>
                         }
                     />

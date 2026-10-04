@@ -9,6 +9,7 @@ import { timeAgo } from '@/lib/format';
 import { uah } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type { FamilyCard, Paginated, UserCard } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Status = FamilyCard['status'];
 
@@ -60,7 +61,12 @@ export default function AdminFamilies({
     const setStatus = (f: AdminFamily, status: Status) => {
         let reason: string | null = null;
         if (status === 'suspended') {
-            reason = prompt(`Причина призупинення [${f.tag}] ${f.name}`);
+            reason = prompt(
+                tr('Причина призупинення [{tag}] {name}', {
+                    tag: f.tag,
+                    name: f.name,
+                }),
+            );
             if (!reason) return;
         }
         router.patch(
@@ -72,27 +78,29 @@ export default function AdminFamilies({
 
     return (
         <>
-            <Head title="Сім’ї — Адмін-панель" />
+            <Head title={tr('Сім’ї — Адмін-панель')} />
             <PageHeader
-                title="Сім’ї GTA RP"
-                description="Верифікація нових сімей і контроль порушників"
+                title={tr('Сім’ї GTA RP')}
+                description={tr(
+                    'Верифікація нових сімей і контроль порушників',
+                )}
             />
 
             <div className="mb-5 grid gap-3 sm:grid-cols-3">
                 <StatCard
-                    label="Очікують верифікації"
+                    label={tr('Очікують верифікації')}
                     value={counts.pending_verification}
                     icon={Crown}
                     tone="from-[#f59e0b] to-[#ef4444]"
                 />
                 <StatCard
-                    label="Учасників у сім’ях"
+                    label={tr('Учасників у сім’ях')}
                     value={stats.members}
                     icon={Users}
                     delay={60}
                 />
                 <StatCard
-                    label="Звітів за тиждень"
+                    label={tr('Звітів за тиждень')}
                     value={stats.reports_week}
                     icon={FileText}
                     tone="from-[#22d3a6] to-[#38e1ff]"
@@ -128,7 +136,7 @@ export default function AdminFamilies({
                     <input
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
-                        placeholder="Назва або тег"
+                        placeholder={tr('Назва або тег')}
                         className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
                     />
                 </label>
@@ -168,7 +176,7 @@ export default function AdminFamilies({
                             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-white/45">
                                 {f.leader && (
                                     <span className="font-mono">
-                                        Лідер: {f.leader}
+                                        {tr('Лідер:')} {f.leader}
                                     </span>
                                 )}
                                 {f.owner && (
@@ -179,10 +187,18 @@ export default function AdminFamilies({
                                         @{f.owner.username}
                                     </Link>
                                 )}
-                                <span>{f.members_count} учасн.</span>
-                                <span>скарбниця {uah(f.treasury)}</span>
-                                <span>звітів за тиждень: {f.reports_week}</span>
-                                <span>створено {timeAgo(f.created_at)}</span>
+                                <span>
+                                    {f.members_count} {tr('учасн.')}
+                                </span>
+                                <span>
+                                    {tr('скарбниця')} {uah(f.treasury)}
+                                </span>
+                                <span>
+                                    {tr('звітів за тиждень:')} {f.reports_week}
+                                </span>
+                                <span>
+                                    {tr('створено')} {timeAgo(f.created_at)}
+                                </span>
                             </div>
                             {f.description && (
                                 <p className="mt-1.5 line-clamp-2 text-xs text-white/55">
@@ -191,7 +207,7 @@ export default function AdminFamilies({
                             )}
                             {f.status_reason && (
                                 <p className="mt-1 text-xs text-rose-200/80">
-                                    Причина: {f.status_reason}
+                                    {tr('Причина:')} {f.status_reason}
                                 </p>
                             )}
                         </div>
@@ -204,8 +220,8 @@ export default function AdminFamilies({
                                 >
                                     <ShieldCheck className="size-4" />
                                     {f.status === 'suspended'
-                                        ? 'Відновити'
-                                        : 'Верифікувати'}
+                                        ? tr('Відновити')
+                                        : tr('Верифікувати')}
                                 </button>
                             )}
                             {f.status !== 'suspended' && (
@@ -214,7 +230,8 @@ export default function AdminFamilies({
                                     onClick={() => setStatus(f, 'suspended')}
                                     className="inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-rose-300 hover:bg-rose-500/10"
                                 >
-                                    <Ban className="size-4" /> Призупинити
+                                    <Ban className="size-4" />{' '}
+                                    {tr('Призупинити')}
                                 </button>
                             )}
                         </div>
@@ -222,7 +239,7 @@ export default function AdminFamilies({
                 ))}
                 {families.data.length === 0 && (
                     <div className="glass rounded-3xl px-6 py-14 text-center text-sm text-white/40">
-                        Сімей у цьому статусі немає
+                        {tr('Сімей у цьому статусі немає')}
                     </div>
                 )}
             </div>

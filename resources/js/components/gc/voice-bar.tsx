@@ -11,6 +11,7 @@ import {
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { leaveVoice, toggleDeafen, toggleMic, useVoice } from '@/lib/voice';
+import { tr } from '@/lib/i18n';
 
 const iconBtn =
     'inline-flex size-9 items-center justify-center rounded-xl transition';
@@ -50,7 +51,7 @@ export function VoiceBar() {
                     </span>
                     <span className="block truncate text-xs text-white/45">
                         {voice.status === 'connecting'
-                            ? 'Підключення…'
+                            ? tr('Підключення…')
                             : voice.kind === 'call'
                               ? `${voice.label} · ${elapsed}`
                               : voice.label}
@@ -61,7 +62,9 @@ export function VoiceBar() {
                     onClick={toggleMic}
                     disabled={voice.status !== 'connected'}
                     aria-label={
-                        voice.micOn ? 'Вимкнути мікрофон' : 'Увімкнути мікрофон'
+                        voice.micOn
+                            ? tr('Вимкнути мікрофон')
+                            : tr('Увімкнути мікрофон')
                     }
                     className={cn(
                         iconBtn,
@@ -80,7 +83,9 @@ export function VoiceBar() {
                     type="button"
                     onClick={toggleDeafen}
                     aria-label={
-                        voice.deafened ? 'Увімкнути звук' : 'Вимкнути звук'
+                        voice.deafened
+                            ? tr('Увімкнути звук')
+                            : tr('Вимкнути звук')
                     }
                     className={cn(
                         iconBtn,
@@ -100,8 +105,8 @@ export function VoiceBar() {
                     onClick={() => void leaveVoice()}
                     aria-label={
                         voice.kind === 'call'
-                            ? 'Покласти слухавку'
-                            : 'Вийти з кімнати'
+                            ? tr('Покласти слухавку')
+                            : tr('Вийти з кімнати')
                     }
                     className={cn(
                         iconBtn,

@@ -4,6 +4,7 @@ import { UserAvatar } from '@/components/gc/user-avatar';
 import { useRealtime } from '@/hooks/use-realtime';
 import { answerCall, declineCall, voiceState } from '@/lib/voice';
 import type { CallState } from '@/lib/voice';
+import { tr } from '@/lib/i18n';
 
 type Ringing = CallState & { group?: boolean; title?: string | null };
 
@@ -84,8 +85,8 @@ export function IncomingCall({ userId }: { userId: number }) {
     if (!ringing) return null;
 
     const title = ringing.group
-        ? (ringing.title ?? 'Бесіда')
-        : (ringing.caller?.name ?? 'Дзвінок');
+        ? (ringing.title ?? tr('Бесіда'))
+        : (ringing.caller?.name ?? tr('Дзвінок'));
 
     return (
         <div className="fixed inset-x-4 top-[72px] z-50 sm:left-auto sm:w-[380px]">
@@ -110,8 +111,10 @@ export function IncomingCall({ userId }: { userId: number }) {
                     </span>
                     <span className="block truncate text-xs text-white/55">
                         {ringing.group
-                            ? `${ringing.caller?.name ?? 'Хтось'} розпочинає груповий дзвінок`
-                            : 'Вхідний дзвінок'}
+                            ? tr('{v} розпочинає груповий дзвінок', {
+                                  v: ringing.caller?.name ?? tr('Хтось'),
+                              })
+                            : tr('Вхідний дзвінок')}
                     </span>
                 </span>
                 <button
@@ -120,7 +123,7 @@ export function IncomingCall({ userId }: { userId: number }) {
                         declineCall(ringing);
                         setRinging(null);
                     }}
-                    aria-label="Відхилити"
+                    aria-label={tr('Відхилити')}
                     className="inline-flex size-10 items-center justify-center rounded-xl bg-rose-500 text-white transition hover:bg-rose-500/85"
                 >
                     <PhoneOff className="size-4" />
@@ -132,7 +135,7 @@ export function IncomingCall({ userId }: { userId: number }) {
                         setRinging(null);
                         void answerCall(call, title);
                     }}
-                    aria-label="Відповісти"
+                    aria-label={tr('Відповісти')}
                     className="inline-flex size-10 items-center justify-center rounded-xl bg-emerald-500 text-white transition hover:bg-emerald-500/85"
                 >
                     <Phone className="size-4" />

@@ -21,6 +21,7 @@ import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { GameCard, Paginated } from '@/types';
 import { GameCover } from '../games/index';
+import { tr } from '@/lib/i18n';
 
 type AdminGame = GameCard & {
     is_published: boolean;
@@ -83,17 +84,19 @@ export default function AdminGames({
 
     return (
         <>
-            <Head title="Ігри — адмінка" />
+            <Head title={tr('Ігри — адмінка')} />
             <PageHeader
-                title="Каталог ігор"
-                description="Що показувати в каталозі й на сторінці гри, оновлення з IGDB і приховування окремих ігор."
+                title={tr('Каталог ігор')}
+                description={tr(
+                    'Що показувати в каталозі й на сторінці гри, оновлення з IGDB і приховування окремих ігор.',
+                )}
                 actions={
                     <>
                         <Link
                             href="/admin/integrations"
                             className="glass inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white"
                         >
-                            <PlugZap className="size-4" /> Ключі IGDB
+                            <PlugZap className="size-4" /> {tr('Ключі IGDB')}
                         </Link>
                         <button
                             type="button"
@@ -117,7 +120,7 @@ export default function AdminGames({
                                     syncing && 'animate-pulse',
                                 )}
                             />
-                            {syncing ? 'Оновлюємо…' : 'Оновити зараз'}
+                            {syncing ? tr('Оновлюємо…') : tr('Оновити зараз')}
                         </button>
                     </>
                 }
@@ -125,33 +128,37 @@ export default function AdminGames({
 
             <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <StatCard
-                    label="Ігор у каталозі"
+                    label={tr('Ігор у каталозі')}
                     value={stats.total}
                     hint={
-                        stats.hidden ? `${stats.hidden} приховано` : undefined
+                        stats.hidden
+                            ? tr('{hidden} приховано', { hidden: stats.hidden })
+                            : undefined
                     }
                     icon={Gamepad2}
                 />
                 <StatCard
-                    label="З IGDB"
+                    label={tr('З IGDB')}
                     value={stats.igdb}
                     hint={stats.rawg ? `RAWG: ${stats.rawg}` : undefined}
                     icon={Layers}
                     delay={50}
                 />
                 <StatCard
-                    label="Джерело оновлень"
+                    label={tr('Джерело оновлень')}
                     value={stats.source ?? '—'}
                     hint={
                         stats.last_sync
-                            ? `оновлено ${timeAgo(stats.last_sync)}`
-                            : 'щодня о 04:40'
+                            ? tr('оновлено {timeAgo}', {
+                                  timeAgo: timeAgo(stats.last_sync),
+                              })
+                            : tr('щодня о 04:40')
                     }
                     icon={DownloadCloud}
                     delay={100}
                 />
                 <StatCard
-                    label="Кланів"
+                    label={tr('Кланів')}
                     value={stats.clans}
                     icon={Swords}
                     delay={150}
@@ -161,7 +168,7 @@ export default function AdminGames({
             <section className="glass mb-6 rounded-3xl p-4 sm:p-5">
                 <div className="mb-3 flex flex-wrap items-center gap-3">
                     <h2 className="flex-1 font-display text-lg font-semibold text-white">
-                        Можливості
+                        {tr('Можливості')}
                     </h2>
                     <button
                         type="button"
@@ -174,7 +181,7 @@ export default function AdminGames({
                         }
                         className="text-xs text-white/55 hover:text-white"
                     >
-                        Увімкнути все
+                        {tr('Увімкнути все')}
                     </button>
                     <button
                         type="button"
@@ -186,11 +193,11 @@ export default function AdminGames({
                         }
                         className="btn-glow inline-flex h-9 items-center rounded-xl px-4 text-sm font-semibold disabled:opacity-40"
                     >
-                        Зберегти
+                        {tr('Зберегти')}
                     </button>
                 </div>
                 <p className="mb-4 text-sm text-white/50">
-                    Вимкнене зникає одразу й на сайті, і в застосунку.
+                    {tr('Вимкнене зникає одразу й на сайті, і в застосунку.')}
                 </p>
                 <div className="grid gap-2 md:grid-cols-2">
                     {features.map((f) => (
@@ -225,7 +232,7 @@ export default function AdminGames({
                         <input
                             value={q}
                             onChange={(e) => setQ(e.target.value)}
-                            placeholder="Назва гри"
+                            placeholder={tr('Назва гри')}
                             className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
                         />
                     </label>
@@ -235,9 +242,9 @@ export default function AdminGames({
                             visit({ category: e.target.value || null })
                         }
                         className="input-glass h-10 rounded-xl px-3 text-sm text-white"
-                        aria-label="Розділ"
+                        aria-label={tr('Розділ')}
                     >
-                        <option value="">Усі розділи</option>
+                        <option value="">{tr('Усі розділи')}</option>
                         {Object.entries(categories).map(([key, label]) => (
                             <option key={key} value={key}>
                                 {label}
@@ -250,11 +257,11 @@ export default function AdminGames({
                             visit({ status: e.target.value || null })
                         }
                         className="input-glass h-10 rounded-xl px-3 text-sm text-white"
-                        aria-label="Стан"
+                        aria-label={tr('Стан')}
                     >
-                        <option value="">Усі</option>
-                        <option value="published">У каталозі</option>
-                        <option value="hidden">Приховані</option>
+                        <option value="">{tr('Усі')}</option>
+                        <option value="published">{tr('У каталозі')}</option>
+                        <option value="hidden">{tr('Приховані')}</option>
                     </select>
                 </div>
 
@@ -282,11 +289,13 @@ export default function AdminGames({
                                 <span className="flex flex-wrap items-center gap-1.5 text-xs text-white/45">
                                     {g.category_label} · {g.source}
                                     {g.clans_count > 0 &&
-                                        ` · ${g.clans_count} кланів`}
+                                        tr(' · {clans_count} кланів', {
+                                            clans_count: g.clans_count,
+                                        })}
                                 </span>
                             </span>
                             {!g.is_published && (
-                                <Pill tone="gold">приховано</Pill>
+                                <Pill tone="gold">{tr('приховано')}</Pill>
                             )}
                             <button
                                 type="button"
@@ -299,10 +308,14 @@ export default function AdminGames({
                                 }
                                 className="rounded-lg p-2 text-white/55 hover:bg-white/10 hover:text-white"
                                 aria-label={
-                                    g.is_published ? 'Приховати' : 'Показати'
+                                    g.is_published
+                                        ? tr('Приховати')
+                                        : tr('Показати')
                                 }
                                 title={
-                                    g.is_published ? 'Приховати' : 'Показати'
+                                    g.is_published
+                                        ? tr('Приховати')
+                                        : tr('Показати')
                                 }
                             >
                                 {g.is_published ? (

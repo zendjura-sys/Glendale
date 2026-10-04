@@ -8,18 +8,19 @@ import {
 } from '@/components/ui/dialog';
 import { selectClass } from '@/components/gc/admin';
 import { cn } from '@/lib/utils';
+import { tr } from '@/lib/i18n';
 
 const types = [
     {
         value: 'group',
-        title: 'Група',
-        text: 'Спілкування й обговорення: учасники пишуть на стіні.',
+        title: tr('Група'),
+        text: tr('Спілкування й обговорення: учасники пишуть на стіні.'),
         icon: UsersRound,
     },
     {
         value: 'public',
-        title: 'Публічна сторінка',
-        text: 'Новини від імені сторінки для підписників.',
+        title: tr('Публічна сторінка'),
+        text: tr('Новини від імені сторінки для підписників.'),
         icon: Megaphone,
     },
 ] as const;
@@ -52,10 +53,10 @@ export function CreateCommunityDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="glass-strong gap-0 rounded-3xl border-white/10 p-6 text-white sm:max-w-lg">
                 <DialogTitle className="font-display text-xl">
-                    Нова спільнота
+                    {tr('Нова спільнота')}
                 </DialogTitle>
                 <DialogDescription className="mt-1 text-sm text-white/50">
-                    Зберіть людей навколо гри, команди, фандому чи ідеї.
+                    {tr('Зберіть людей навколо гри, команди, фандому чи ідеї.')}
                 </DialogDescription>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -90,7 +91,7 @@ export function CreateCommunityDialog({
                 </div>
 
                 <label className="mt-5 block text-sm font-medium text-white/80">
-                    Назва
+                    {tr('Назва')}
                     <input
                         value={form.data.name}
                         onChange={(event) =>
@@ -98,7 +99,7 @@ export function CreateCommunityDialog({
                         }
                         maxLength={100}
                         autoFocus
-                        placeholder="Наприклад, «Кіберкотлета UA»"
+                        placeholder={tr('Наприклад, «Кіберкотлета UA»')}
                         className="input-glass mt-1.5 h-11 w-full rounded-xl px-3.5 text-sm text-white placeholder:text-white/30 focus:outline-none"
                     />
                 </label>
@@ -110,7 +111,7 @@ export function CreateCommunityDialog({
 
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <label className="block text-sm font-medium text-white/80">
-                        Тематика
+                        {tr('Тематика')}
                         <select
                             value={form.data.category}
                             onChange={(event) =>
@@ -127,12 +128,12 @@ export function CreateCommunityDialog({
                     </label>
                     {form.data.type === 'group' && (
                         <div className="text-sm font-medium text-white/80">
-                            Доступ
+                            {tr('Доступ')}
                             <div className="mt-1.5 grid h-11 grid-cols-2 gap-1 rounded-xl bg-white/[0.04] p-1">
                                 {(
                                     [
-                                        ['open', 'Відкрита', Globe2],
-                                        ['closed', 'Закрита', Lock],
+                                        ['open', tr('Відкрита'), Globe2],
+                                        ['closed', tr('Закрита'), Lock],
                                     ] as const
                                 ).map(([value, label, Icon]) => (
                                     <button
@@ -163,7 +164,7 @@ export function CreateCommunityDialog({
                         onClick={() => onOpenChange(false)}
                         className="rounded-xl px-4 py-2.5 text-sm text-white/60 hover:bg-white/5 hover:text-white"
                     >
-                        Скасувати
+                        {tr('Скасувати')}
                     </button>
                     <button
                         type="button"
@@ -173,7 +174,7 @@ export function CreateCommunityDialog({
                         }
                         className="btn-glow rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
                     >
-                        Створити
+                        {tr('Створити')}
                     </button>
                 </div>
             </DialogContent>

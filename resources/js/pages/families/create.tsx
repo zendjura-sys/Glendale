@@ -7,6 +7,7 @@ import { ServerIcon } from '@/components/servers/server-icon';
 import { Field, inputClass } from '@/components/servers/server-form';
 import { cn } from '@/lib/utils';
 import type { ServerOption } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Props = { servers: ServerOption[]; server: string | null };
 
@@ -29,13 +30,13 @@ export default function CreateFamily({ servers, server }: Props) {
 
     return (
         <>
-            <Head title="Нова сім’я" />
+            <Head title={tr('Нова сім’я')} />
             <div className="mx-auto max-w-3xl space-y-4">
                 <Link
                     href="/families"
                     className="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white"
                 >
-                    <ArrowLeft className="size-4" /> До сімей
+                    <ArrowLeft className="size-4" /> {tr('До сімей')}
                 </Link>
                 <section className="glass rounded-3xl p-5 sm:p-7">
                     <div className="flex items-center gap-3">
@@ -44,18 +45,19 @@ export default function CreateFamily({ servers, server }: Props) {
                         </span>
                         <div>
                             <h1 className="font-display text-2xl font-bold text-white">
-                                Створення сім’ї
+                                {tr('Створення сім’ї')}
                             </h1>
                             <p className="text-sm text-white/50">
-                                Ви станете лідером (ранг 10). Після верифікації
-                                адміністрацією відкриються набір і чат.
+                                {tr(
+                                    'Ви станете лідером (ранг 10). Після верифікації адміністрацією відкриються набір і чат.',
+                                )}
                             </p>
                         </div>
                     </div>
 
                     <div className="mt-6">
                         <div className="mb-1.5 text-xs font-medium text-white/60">
-                            Сервер
+                            {tr('Сервер')}
                         </div>
                         <div className="grid max-h-64 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
                             {servers.map((s) => (
@@ -81,8 +83,8 @@ export default function CreateFamily({ servers, server }: Props) {
                                         </div>
                                         <div className="text-[11px] text-white/40">
                                             {s.platform === 'mobile'
-                                                ? 'Мобільний'
-                                                : 'ПК'}
+                                                ? tr('Мобільний')
+                                                : tr('ПК')}
                                         </div>
                                     </div>
                                 </button>
@@ -94,12 +96,12 @@ export default function CreateFamily({ servers, server }: Props) {
                             </p>
                         )}
                         <p className="mt-1.5 text-[11px] text-white/35">
-                            Немає вашого сервера?{' '}
+                            {tr('Немає вашого сервера?')}{' '}
                             <Link
                                 href="/servers"
                                 className="text-[#a5b4fc] hover:underline"
                             >
-                                Запропонуйте його в каталозі
+                                {tr('Запропонуйте його в каталозі')}
                             </Link>
                             .
                         </p>
@@ -136,7 +138,10 @@ export default function CreateFamily({ servers, server }: Props) {
                             }}
                         />
                         <div className="grid min-w-0 flex-1 gap-4 sm:grid-cols-[1fr_140px]">
-                            <Field label="Назва сім’ї" error={errors.name}>
+                            <Field
+                                label={tr('Назва сім’ї')}
+                                error={errors.name}
+                            >
                                 <input
                                     value={data.name}
                                     onChange={(e) =>
@@ -146,7 +151,7 @@ export default function CreateFamily({ servers, server }: Props) {
                                     className={inputClass}
                                 />
                             </Field>
-                            <Field label="Тег" error={errors.tag}>
+                            <Field label={tr('Тег')} error={errors.tag}>
                                 <input
                                     value={data.tag}
                                     onChange={(e) =>
@@ -164,7 +169,7 @@ export default function CreateFamily({ servers, server }: Props) {
                                 />
                             </Field>
                             <Field
-                                label="Опис"
+                                label={tr('Опис')}
                                 error={errors.description}
                                 className="sm:col-span-2"
                             >
@@ -174,7 +179,9 @@ export default function CreateFamily({ servers, server }: Props) {
                                         setData('description', e.target.value)
                                     }
                                     rows={3}
-                                    placeholder="Хто ви, чим займаєтесь, кого шукаєте"
+                                    placeholder={tr(
+                                        'Хто ви, чим займаєтесь, кого шукаєте',
+                                    )}
                                     className={textareaClass}
                                 />
                             </Field>
@@ -183,12 +190,12 @@ export default function CreateFamily({ servers, server }: Props) {
 
                     <div className="mt-5 rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/[0.06]">
                         <div className="mb-3 text-sm font-semibold text-white">
-                            Ваш персонаж
+                            {tr('Ваш персонаж')}
                         </div>
                         <div className="grid gap-4 sm:grid-cols-[1fr_160px]">
                             <Field
-                                label="RP-нікнейм"
-                                hint="Ім’я_Прізвище латиницею"
+                                label={tr('RP-нікнейм')}
+                                hint={tr('Ім’я_Прізвище латиницею')}
                                 error={errors.rp_nickname}
                             >
                                 <input
@@ -217,7 +224,7 @@ export default function CreateFamily({ servers, server }: Props) {
                         </div>
                         {data.rp_nickname && data.static_id && (
                             <div className="mt-3 text-xs text-white/45">
-                                У чаті й звітах:{' '}
+                                {tr('У чаті й звітах:')}{' '}
                                 <span className="font-mono text-white">
                                     {data.rp_nickname} [{data.static_id}]
                                 </span>
@@ -232,7 +239,9 @@ export default function CreateFamily({ servers, server }: Props) {
                             disabled={form.processing || servers.length === 0}
                             className={cn(btnPrimary, 'h-12 px-7')}
                         >
-                            {form.processing ? 'Створюємо…' : 'Створити сім’ю'}
+                            {form.processing
+                                ? tr('Створюємо…')
+                                : tr('Створити сім’ю')}
                         </button>
                     </div>
                 </section>

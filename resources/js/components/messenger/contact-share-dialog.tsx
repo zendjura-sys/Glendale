@@ -11,6 +11,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { ContactCard } from '@/types';
 import { useContacts } from './contact-picker';
+import { tr } from '@/lib/i18n';
 
 export function ContactShareDialog({
     open,
@@ -38,10 +39,12 @@ export function ContactShareDialog({
         <Dialog open={open} onOpenChange={close}>
             <DialogContent className="glass-strong max-w-md gap-0 border-white/10 p-5">
                 <DialogTitle className="font-display text-lg text-white">
-                    Надіслати контакт
+                    {tr('Надіслати контакт')}
                 </DialogTitle>
                 <DialogDescription className="mt-1 text-sm text-white/45">
-                    Знайдіть будь-кого на GameCon за ім’ям або нікнеймом.
+                    {tr(
+                        'Знайдіть будь-кого на GameCon за ім’ям або нікнеймом.',
+                    )}
                 </DialogDescription>
 
                 <label className="input-glass mt-4 mb-2 flex h-11 items-center gap-2 rounded-xl px-3">
@@ -49,13 +52,13 @@ export function ContactShareDialog({
                     <input
                         value={query}
                         onChange={(event) => setQuery(event.target.value)}
-                        placeholder="Ім’я або @нікнейм"
+                        placeholder={tr('Ім’я або @нікнейм')}
                         className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
                         autoFocus
                     />
                 </label>
                 <p className="mb-1 px-1 text-[11px] font-semibold tracking-wide text-white/35 uppercase">
-                    {site ? 'Результати по всьому сайту' : 'Ваші друзі'}
+                    {site ? tr('Результати по всьому сайту') : tr('Ваші друзі')}
                 </p>
 
                 <div className="-mx-1 max-h-[44vh] min-h-[220px] overflow-y-auto px-1">
@@ -73,8 +76,8 @@ export function ContactShareDialog({
                         <div className="flex flex-col items-center py-12 text-center text-sm text-white/45">
                             <UserRoundX className="mb-2 size-7 text-white/20" />
                             {query
-                                ? 'Нікого не знайдено'
-                                : 'Почніть вводити ім’я'}
+                                ? tr('Нікого не знайдено')
+                                : tr('Почніть вводити ім’я')}
                         </div>
                     ) : (
                         users.map((user) => (
@@ -108,7 +111,7 @@ export function ContactShareDialog({
                                 </span>
                                 {user.is_friend && (
                                     <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-[10px] font-medium text-emerald-200">
-                                        друг
+                                        {tr('друг')}
                                     </span>
                                 )}
                             </button>
@@ -128,8 +131,10 @@ export function ContactShareDialog({
                 >
                     <SendHorizonal className="size-4" />
                     {picked
-                        ? `Надіслати контакт ${picked.first_name}`
-                        : 'Оберіть людину'}
+                        ? tr('Надіслати контакт {first_name}', {
+                              first_name: picked.first_name,
+                          })
+                        : tr('Оберіть людину')}
                 </button>
             </DialogContent>
         </Dialog>

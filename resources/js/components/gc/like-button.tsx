@@ -2,6 +2,7 @@ import { Heart } from 'lucide-react';
 import { useState } from 'react';
 import { compactNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     liked: boolean;
@@ -28,7 +29,7 @@ export function LikeButton({ liked, count, onToggle, size = 'md' }: Props) {
                     : 'bg-white/[0.045] text-white/65 hover:bg-white/[0.08] hover:text-white',
             )}
             aria-pressed={liked}
-            aria-label="Подобається"
+            aria-label={tr('Подобається')}
         >
             <span className="relative">
                 <Heart

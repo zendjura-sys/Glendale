@@ -35,6 +35,7 @@ import { timeAgo } from '@/lib/format';
 import { uah } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type { CashoutItem, FamilyReportItem, FamilyShellProps } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type QueueReport = FamilyReportItem & {
     self_review: boolean;
@@ -175,7 +176,7 @@ export default function FamilyQueue(props: Props) {
             ? [
                   {
                       value: 'reports' as const,
-                      label: 'Звіти',
+                      label: tr('Звіти'),
                       badge: reports.length,
                   },
               ]
@@ -184,7 +185,7 @@ export default function FamilyQueue(props: Props) {
             ? [
                   {
                       value: 'cashouts' as const,
-                      label: 'Виплати',
+                      label: tr('Виплати'),
                       badge: cashouts.length,
                   },
               ]
@@ -192,16 +193,16 @@ export default function FamilyQueue(props: Props) {
     ];
 
     return (
-        <FamilyShell {...props} title="Перевірка">
+        <FamilyShell {...props} title={tr('Перевірка')}>
             <div className="flex flex-wrap items-center gap-2">
                 <Segmented value={tab} onChange={setTab} options={tabs} />
                 {tab === 'reports' && (
                     <div className="ml-auto hidden items-center gap-3 text-xs text-white/40 md:flex">
                         <Keyboard className="size-4" />
-                        <Kbd>J</Kbd>/<Kbd>K</Kbd> навігація
-                        <Kbd>A</Kbd> схвалити
-                        <Kbd>R</Kbd> відхилити
-                        <Kbd>X</Kbd> позначити
+                        <Kbd>J</Kbd>/<Kbd>K</Kbd> {tr('навігація')}
+                        <Kbd>A</Kbd> {tr('схвалити')}
+                        <Kbd>R</Kbd> {tr('відхилити')}
+                        <Kbd>X</Kbd> {tr('позначити')}
                     </div>
                 )}
             </div>
@@ -211,7 +212,7 @@ export default function FamilyQueue(props: Props) {
                     <Panel>
                         <Empty
                             icon={ClipboardCheck}
-                            text="Черга порожня — усі звіти перевірено 🎉"
+                            text={tr('Черга порожня — усі звіти перевірено 🎉')}
                         />
                     </Panel>
                 ) : (
@@ -220,7 +221,7 @@ export default function FamilyQueue(props: Props) {
                             <div className="flex items-center gap-2 border-b border-white/[0.06] px-3 py-2.5">
                                 <input
                                     type="checkbox"
-                                    aria-label="Обрати всі"
+                                    aria-label={tr('Обрати всі')}
                                     checked={
                                         bulkable.length > 0 &&
                                         bulkable.every((r) =>
@@ -238,8 +239,12 @@ export default function FamilyQueue(props: Props) {
                                 />
                                 <span className="flex-1 text-xs text-white/50">
                                     {selected.length
-                                        ? `Обрано ${selected.length}`
-                                        : `${reports.length} в черзі`}
+                                        ? tr('Обрано {length}', {
+                                              length: selected.length,
+                                          })
+                                        : tr('{length} в черзі', {
+                                              length: reports.length,
+                                          })}
                                 </span>
                                 {selected.length > 0 && (
                                     <button
@@ -251,7 +256,7 @@ export default function FamilyQueue(props: Props) {
                                         )}
                                     >
                                         <CheckCheck className="size-4" />{' '}
-                                        Схвалити обрані
+                                        {tr('Схвалити обрані')}
                                     </button>
                                 )}
                             </div>
@@ -323,8 +328,9 @@ export default function FamilyQueue(props: Props) {
                                 <div className="mt-5 flex flex-wrap gap-2 border-t border-white/[0.06] pt-4">
                                     {current.self_review ? (
                                         <p className="text-sm text-amber-200">
-                                            Це ваш звіт — його має перевірити
-                                            інший офіцер.
+                                            {tr(
+                                                'Це ваш звіт — його має перевірити інший офіцер.',
+                                            )}
                                         </p>
                                     ) : (
                                         <>
@@ -340,7 +346,7 @@ export default function FamilyQueue(props: Props) {
                                                 )}
                                             >
                                                 <Check className="size-4" />{' '}
-                                                Схвалити <Kbd>A</Kbd>
+                                                {tr('Схвалити')} <Kbd>A</Kbd>
                                             </button>
                                             <button
                                                 type="button"
@@ -354,7 +360,7 @@ export default function FamilyQueue(props: Props) {
                                                 )}
                                             >
                                                 <X className="size-4" />{' '}
-                                                Відхилити <Kbd>R</Kbd>
+                                                {tr('Відхилити')} <Kbd>R</Kbd>
                                             </button>
                                         </>
                                     )}
@@ -365,9 +371,9 @@ export default function FamilyQueue(props: Props) {
                 ))}
 
             {tab === 'cashouts' && (
-                <Panel title="Заявки на виплату" icon={Wallet}>
+                <Panel title={tr('Заявки на виплату')} icon={Wallet}>
                     {cashouts.length === 0 ? (
-                        <Empty icon={Wallet} text="Нових заявок немає" />
+                        <Empty icon={Wallet} text={tr('Нових заявок немає')} />
                     ) : (
                         <div className="space-y-2">
                             {cashouts.map((c) => (
@@ -392,13 +398,16 @@ export default function FamilyQueue(props: Props) {
                                         onClick={() => setPaying(c)}
                                         className={btnSuccess}
                                     >
-                                        <Check className="size-4" /> Видано
+                                        <Check className="size-4" />{' '}
+                                        {tr('Видано')}
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => {
                                             const reason = prompt(
-                                                'Причина скасування (кошти повернуться на рахунок)',
+                                                tr(
+                                                    'Причина скасування (кошти повернуться на рахунок)',
+                                                ),
                                             );
                                             if (reason !== null) {
                                                 router.post(
@@ -410,7 +419,7 @@ export default function FamilyQueue(props: Props) {
                                         }}
                                         className={btnGhost}
                                     >
-                                        Скасувати
+                                        {tr('Скасувати')}
                                     </button>
                                 </div>
                             ))}
@@ -474,7 +483,7 @@ function ReportDetail({
                 </div>
                 <div className="text-right">
                     <div className="text-[11px] tracking-wide text-white/40 uppercase">
-                        До виплати
+                        {tr('До виплати')}
                     </div>
                     <div className="font-display text-2xl font-bold text-emerald-300">
                         {report.type === 'other'
@@ -487,7 +496,7 @@ function ReportDetail({
             </div>
 
             <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
-                <Info label="Отримувач">
+                <Info label={tr('Отримувач')}>
                     <span className="font-mono text-white">
                         {report.beneficiary.display}
                     </span>{' '}
@@ -496,21 +505,21 @@ function ReportDetail({
                         title={report.beneficiary.rank_title}
                     />
                 </Info>
-                <Info label="Подав">
+                <Info label={tr('Подав')}>
                     <span className="font-mono text-white">
                         {report.submitter.display}
                     </span>
                     {report.for_friend && (
                         <span className="ml-1 text-xs text-amber-200">
-                            (за друга)
+                            {tr('(за друга)')}
                         </span>
                     )}
                 </Info>
-                <Info label="Дата події">
-                    {kyivDate(report.event_date)} · подано{' '}
+                <Info label={tr('Дата події')}>
+                    {kyivDate(report.event_date)} {tr('· подано')}{' '}
                     {kyivDateTime(report.created_at)}
                 </Info>
-                <Info label="Історія за 30 днів">
+                <Info label={tr('Історія за 30 днів')}>
                     <span className="text-emerald-300">
                         ✓ {report.history.approved}
                     </span>{' '}
@@ -520,7 +529,7 @@ function ReportDetail({
                     </span>
                 </Info>
                 {report.contracts_used !== null && (
-                    <Info label="Контрактів за день">
+                    <Info label={tr('Контрактів за день')}>
                         <span
                             className={cn(
                                 report.contracts_used > contractLimit &&
@@ -531,19 +540,21 @@ function ReportDetail({
                         </span>
                     </Info>
                 )}
-                <Info label="Дедлайн звіту">
+                <Info label={tr('Дедлайн звіту')}>
                     {deadlineLeft > 0
-                        ? `ще ${Math.ceil(deadlineLeft / 3600000)} год`
-                        : 'минув'}
+                        ? tr('ще {ceil} год', {
+                              ceil: Math.ceil(deadlineLeft / 3600000),
+                          })
+                        : tr('минув')}
                 </Info>
             </div>
 
             {report.flags?.similar_reports && (
                 <div className="mt-3 flex items-start gap-2 rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-100">
                     <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-                    Скріншот дуже схожий на звіти #
-                    {report.flags.similar_reports.join(', #')}. Перевірте, чи це
-                    не повторне подання.
+                    {tr('Скріншот дуже схожий на звіти #')}
+                    {report.flags.similar_reports.join(', #')}
+                    {tr('. Перевірте, чи це не повторне подання.')}
                 </div>
             )}
 
@@ -556,7 +567,7 @@ function ReportDetail({
             {report.type === 'other' && (
                 <label className="mt-3 block">
                     <span className="mb-1.5 block text-xs font-medium text-white/60">
-                        Винагорода, ₴ (визначаєте ви)
+                        {tr('Винагорода, ₴ (визначаєте ви)')}
                     </span>
                     <input
                         value={customReward}
@@ -586,7 +597,7 @@ function ReportDetail({
                 ))}
                 {report.proofs.length === 0 && (
                     <p className="col-span-full text-xs text-white/40">
-                        Скріншотів немає
+                        {tr('Скріншотів немає')}
                     </p>
                 )}
             </div>
@@ -635,10 +646,10 @@ function RejectDialog({
 }) {
     const [comment, setComment] = useState('');
     const presets = [
-        'Немає доказів на скріншоті',
-        'Скріншот уже подавали',
-        'Дані не збігаються зі скріншотом',
-        'Минув термін подання',
+        tr('Немає доказів на скріншоті'),
+        tr('Скріншот уже подавали'),
+        tr('Дані не збігаються зі скріншотом'),
+        tr('Минув термін подання'),
     ];
 
     useEffect(() => setComment(''), [report?.id]);
@@ -647,8 +658,8 @@ function RejectDialog({
         <Modal
             open={report !== null}
             onClose={onClose}
-            title={`Відхилити звіт #${report?.id ?? ''}`}
-            description="Причину побачить автор звіту."
+            title={tr('Відхилити звіт #{v}', { v: report?.id ?? '' })}
+            description={tr('Причину побачить автор звіту.')}
             footer={
                 <>
                     <button
@@ -656,7 +667,7 @@ function RejectDialog({
                         onClick={onClose}
                         className={btnGhost}
                     >
-                        Скасувати
+                        {tr('Скасувати')}
                     </button>
                     <button
                         type="button"
@@ -664,7 +675,7 @@ function RejectDialog({
                         onClick={() => onSubmit(comment)}
                         className={btnDanger}
                     >
-                        Відхилити
+                        {tr('Відхилити')}
                     </button>
                 </>
             }
@@ -691,7 +702,7 @@ function RejectDialog({
                         onSubmit(comment);
                     }
                 }}
-                placeholder="Причина відхилення"
+                placeholder={tr('Причина відхилення')}
                 className={textareaClass}
             />
         </Modal>
@@ -714,10 +725,13 @@ function PayDialog({
         <Modal
             open={cashout !== null}
             onClose={onClose}
-            title={`Видача ${cashout ? uah(cashout.amount) : ''}`}
+            title={tr('Видача {v}', { v: cashout ? uah(cashout.amount) : '' })}
             description={
                 cashout
-                    ? `Підтвердіть, що передали гроші ${cashout.member.display} у грі. Суму буде списано зі скарбниці.`
+                    ? tr(
+                          'Підтвердіть, що передали гроші {display} у грі. Суму буде списано зі скарбниці.',
+                          { display: cashout.member.display },
+                      )
                     : undefined
             }
             footer={
@@ -727,7 +741,7 @@ function PayDialog({
                         onClick={onClose}
                         className={btnGhost}
                     >
-                        Скасувати
+                        {tr('Скасувати')}
                     </button>
                     <button
                         type="button"
@@ -744,7 +758,7 @@ function PayDialog({
                         }
                         className={btnPrimary}
                     >
-                        Підтвердити видачу
+                        {tr('Підтвердити видачу')}
                     </button>
                 </>
             }
@@ -752,7 +766,7 @@ function PayDialog({
             <input
                 value={form.data.comment}
                 onChange={(e) => form.setData('comment', e.target.value)}
-                placeholder="Коментар (необов’язково)"
+                placeholder={tr('Коментар (необов’язково)')}
                 className={inputClass}
             />
             <button
@@ -761,7 +775,9 @@ function PayDialog({
                 className={cn(btnGhost, 'w-full')}
             >
                 <ImagePlus className="size-4" />
-                {form.data.proof ? form.data.proof.name : 'Скріншот передачі'}
+                {form.data.proof
+                    ? form.data.proof.name
+                    : tr('Скріншот передачі')}
             </button>
             <input
                 ref={fileRef}

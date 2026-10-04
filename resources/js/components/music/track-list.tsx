@@ -40,6 +40,7 @@ import { EditTrackDialog } from './edit-track-dialog';
 import { PlaylistDialog } from './playlist-dialog';
 import { ShareTrackDialog } from './share-track-dialog';
 import { Equalizer, SpotifyLogo, TrackCover } from './track-cover';
+import { tr } from '@/lib/i18n';
 
 const itemClass = 'rounded-lg focus:bg-white/[0.06]';
 
@@ -95,8 +96,8 @@ export function TrackList({
             );
             toast.success(
                 next
-                    ? 'Додано до ваших аудіозаписів.'
-                    : 'Прибрано з ваших аудіозаписів.',
+                    ? tr('Додано до ваших аудіозаписів.')
+                    : tr('Прибрано з ваших аудіозаписів.'),
             );
         } catch {
             patch(track, { in_library: !next });
@@ -111,21 +112,26 @@ export function TrackList({
             );
             toast.success(
                 response.added
-                    ? `Додано в «${playlist.title}».`
-                    : `Трек уже є в «${playlist.title}».`,
+                    ? tr('Додано в «{title}».', { title: playlist.title })
+                    : tr('Трек уже є в «{title}».', { title: playlist.title }),
             );
         } catch (error) {
             toast.error(
-                error instanceof ApiError ? error.message : 'Не вдалося.',
+                error instanceof ApiError ? error.message : tr('Не вдалося.'),
             );
         }
     };
 
     const destroy = async (track: LocalTrack) => {
-        if (!window.confirm(`Видалити «${track.title}» з GameCon?`)) return;
+        if (
+            !window.confirm(
+                tr('Видалити «{title}» з GameCon?', { title: track.title }),
+            )
+        )
+            return;
         await api('DELETE', `/music/tracks/${track.id}`);
         setHidden((all) => [...all, track.key]);
-        toast.success('Трек видалено.');
+        toast.success(tr('Трек видалено.'));
     };
 
     return (
@@ -156,7 +162,9 @@ export function TrackList({
                                         : playQueue(list, index)
                                 }
                                 className="relative shrink-0"
-                                aria-label={playing ? 'Пауза' : 'Слухати'}
+                                aria-label={
+                                    playing ? tr('Пауза') : tr('Слухати')
+                                }
                             >
                                 <TrackCover
                                     url={track.cover_url}
@@ -230,13 +238,13 @@ export function TrackList({
                                     )}
                                     aria-label={
                                         track.in_library
-                                            ? 'Прибрати з моїх аудіозаписів'
-                                            : 'Додати до моїх аудіозаписів'
+                                            ? tr('Прибрати з моїх аудіозаписів')
+                                            : tr('Додати до моїх аудіозаписів')
                                     }
                                     title={
                                         track.in_library
-                                            ? 'У моїх аудіозаписах'
-                                            : 'Додати собі'
+                                            ? tr('У моїх аудіозаписах')
+                                            : tr('Додати собі')
                                     }
                                 >
                                     {track.in_library ? (
@@ -265,13 +273,13 @@ export function TrackList({
                                         className={itemClass}
                                         onSelect={() => playNext(track)}
                                     >
-                                        <ListEnd /> Слухати наступним
+                                        <ListEnd /> {tr('Слухати наступним')}
                                     </DropdownMenuItem>
                                     {track.source === 'local' && playlists && (
                                         <DropdownMenuSub>
                                             <DropdownMenuSubTrigger className="rounded-lg focus:bg-white/[0.06] data-[state=open]:bg-white/[0.06]">
                                                 <ListPlus className="size-4 text-white/60" />
-                                                До плейлиста
+                                                {tr('До плейлиста')}
                                             </DropdownMenuSubTrigger>
                                             <DropdownMenuSubContent className="glass-strong max-h-72 w-56 overflow-y-auto rounded-2xl border-white/10 p-1.5 text-white">
                                                 {playlists.map((playlist) => (
@@ -301,7 +309,8 @@ export function TrackList({
                                                         )
                                                     }
                                                 >
-                                                    <Plus /> Новий плейлист
+                                                    <Plus />{' '}
+                                                    {tr('Новий плейлист')}
                                                 </DropdownMenuItem>
                                             </DropdownMenuSubContent>
                                         </DropdownMenuSub>
@@ -310,7 +319,7 @@ export function TrackList({
                                         className={itemClass}
                                         onSelect={() => setSharing(track)}
                                     >
-                                        <Share2 /> Поділитися на стіні
+                                        <Share2 /> {tr('Поділитися на стіні')}
                                     </DropdownMenuItem>
                                     {track.source === 'local' ? (
                                         <DropdownMenuItem
@@ -320,7 +329,7 @@ export function TrackList({
                                             <a
                                                 href={`/music/tracks/${track.id}/download`}
                                             >
-                                                <Download /> Завантажити
+                                                <Download /> {tr('Завантажити')}
                                             </a>
                                         </DropdownMenuItem>
                                     ) : (
@@ -333,8 +342,8 @@ export function TrackList({
                                                 target="_blank"
                                                 rel="noreferrer"
                                             >
-                                                <ExternalLink /> Відкрити у
-                                                Spotify
+                                                <ExternalLink />{' '}
+                                                {tr('Відкрити у Spotify')}
                                             </a>
                                         </DropdownMenuItem>
                                     )}
@@ -343,7 +352,7 @@ export function TrackList({
                                             className={itemClass}
                                             onSelect={() => setEditing(track)}
                                         >
-                                            <PenLine /> Редагувати
+                                            <PenLine /> {tr('Редагувати')}
                                         </DropdownMenuItem>
                                     )}
                                     {(onRemove || canManage) && (
@@ -361,7 +370,7 @@ export function TrackList({
                                             }}
                                         >
                                             <Trash2 className="text-rose-300" />{' '}
-                                            {removeLabel ?? 'Прибрати'}
+                                            {removeLabel ?? tr('Прибрати')}
                                         </DropdownMenuItem>
                                     )}
                                     {canManage && (
@@ -370,7 +379,7 @@ export function TrackList({
                                             onSelect={() => destroy(track)}
                                         >
                                             <Trash2 className="text-rose-300" />{' '}
-                                            Видалити з сайту
+                                            {tr('Видалити з сайту')}
                                         </DropdownMenuItem>
                                     )}
                                 </DropdownMenuContent>

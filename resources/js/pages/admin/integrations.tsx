@@ -19,6 +19,7 @@ import { PageHeader, Pill, StatCard } from '@/components/gc/admin';
 import { SpotifyLogo } from '@/components/music/track-cover';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     spotify: {
@@ -36,7 +37,7 @@ type Props = {
 
 function copy(text: string) {
     void navigator.clipboard?.writeText(text);
-    toast.success('Скопійовано.');
+    toast.success(tr('Скопійовано.'));
 }
 
 export default function AdminIntegrations({ spotify, cinema }: Props) {
@@ -54,16 +55,22 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
 
     return (
         <>
-            <Head title="Інтеграції — Адмін-панель" />
+            <Head title={tr('Інтеграції — Адмін-панель')} />
             <PageHeader
-                title="Інтеграції"
-                description="Ключі зовнішніх сервісів: зберігаються зашифрованими й не потрапляють у браузер користувачів."
+                title={tr('Інтеграції')}
+                description={tr(
+                    'Ключі зовнішніх сервісів: зберігаються зашифрованими й не потрапляють у браузер користувачів.',
+                )}
             />
 
             <div className="mb-5 grid gap-3 sm:grid-cols-3">
                 <StatCard
-                    label="Статус Spotify"
-                    value={spotify.configured ? 'Активно' : 'Не налаштовано'}
+                    label={tr('Статус Spotify')}
+                    value={
+                        spotify.configured
+                            ? tr('Активно')
+                            : tr('Не налаштовано')
+                    }
                     icon={PlugZap}
                     tone={
                         spotify.configured
@@ -72,13 +79,13 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                     }
                 />
                 <StatCard
-                    label="Під’єднали Spotify"
+                    label={tr('Під’єднали Spotify')}
                     value={String(spotify.accounts)}
                     icon={UsersRound}
                     delay={60}
                 />
                 <StatCard
-                    label="З Premium"
+                    label={tr('З Premium')}
                     value={String(spotify.premium)}
                     icon={ShieldCheck}
                     tone="from-[#f04fd8] to-[#a855f7]"
@@ -98,18 +105,19 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                             {spotify.configured ? (
                                 <Pill tone="green">
                                     <CheckCircle2 className="size-3" />{' '}
-                                    Підключено
+                                    {tr('Підключено')}
                                 </Pill>
                             ) : (
-                                <Pill tone="gold">Потрібні ключі</Pill>
+                                <Pill tone="gold">{tr('Потрібні ключі')}</Pill>
                             )}
                             {spotify.from_env && (
-                                <Pill tone="blue">з .env</Pill>
+                                <Pill tone="blue">{tr('з .env')}</Pill>
                             )}
                         </h2>
                         <p className="text-sm text-white/50">
-                            Пошук, плейлисти, «Зараз грає» та відтворення через
-                            Web Playback SDK.
+                            {tr(
+                                'Пошук, плейлисти, «Зараз грає» та відтворення через Web Playback SDK.',
+                            )}
                         </p>
                     </div>
                     <a
@@ -135,7 +143,7 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                                         e.target.value.trim(),
                                     )
                                 }
-                                placeholder="32 символи, напр. 1a2b3c…"
+                                placeholder={tr('32 символи, напр. 1a2b3c…')}
                                 autoComplete="off"
                                 spellCheck={false}
                                 className="font-mono"
@@ -161,8 +169,11 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                                     }
                                     placeholder={
                                         spotify.secret_hint
-                                            ? `Збережено ${spotify.secret_hint}`
-                                            : 'Вставте Client Secret'
+                                            ? tr('Збережено {secret_hint}', {
+                                                  secret_hint:
+                                                      spotify.secret_hint,
+                                              })
+                                            : tr('Вставте Client Secret')
                                     }
                                     autoComplete="new-password"
                                     spellCheck={false}
@@ -172,7 +183,7 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                                     type="button"
                                     onClick={() => setReveal(!reveal)}
                                     className="absolute top-1/2 right-2 -translate-y-1/2 rounded-lg p-1.5 text-white/40 hover:text-white"
-                                    aria-label="Показати секрет"
+                                    aria-label={tr('Показати секрет')}
                                 >
                                     {reveal ? (
                                         <EyeOff className="size-4" />
@@ -189,8 +200,9 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                             {spotify.secret_hint &&
                                 !form.errors.client_secret && (
                                     <p className="text-xs text-white/40">
-                                        Залиште поле порожнім, щоб не змінювати
-                                        збережений секрет.
+                                        {tr(
+                                            'Залиште поле порожнім, щоб не змінювати збережений секрет.',
+                                        )}
                                     </p>
                                 )}
                         </div>
@@ -202,7 +214,8 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                                 disabled={form.processing}
                                 className="btn-glow inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
                             >
-                                <KeyRound className="size-4" /> Зберегти ключі
+                                <KeyRound className="size-4" />{' '}
+                                {tr('Зберегти ключі')}
                             </button>
                             <button
                                 type="button"
@@ -216,15 +229,17 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                                 disabled={!spotify.configured}
                                 className="inline-flex items-center gap-2 rounded-xl bg-white/[0.06] px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/10 disabled:opacity-40"
                             >
-                                <PlugZap className="size-4" /> Перевірити
-                                з’єднання
+                                <PlugZap className="size-4" />{' '}
+                                {tr('Перевірити з’єднання')}
                             </button>
                             {spotify.configured && !spotify.from_env && (
                                 <button
                                     type="button"
                                     onClick={() =>
                                         window.confirm(
-                                            'Видалити ключі Spotify? Користувачі не зможуть слухати Spotify.',
+                                            tr(
+                                                'Видалити ключі Spotify? Користувачі не зможуть слухати Spotify.',
+                                            ),
                                         ) &&
                                         router.put(
                                             '/admin/integrations/spotify',
@@ -234,7 +249,8 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                                     }
                                     className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm text-rose-300 transition hover:bg-rose-500/10"
                                 >
-                                    <Trash2 className="size-4" /> Видалити
+                                    <Trash2 className="size-4" />{' '}
+                                    {tr('Видалити')}
                                 </button>
                             )}
                         </div>
@@ -242,20 +258,25 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
 
                     <aside className="space-y-3 rounded-2xl bg-white/[0.035] p-4 text-sm text-white/65">
                         <p className="font-semibold text-white">
-                            Як отримати ключі
+                            {tr('Як отримати ключі')}
                         </p>
                         <ol className="list-decimal space-y-1.5 pl-4 text-[13px] leading-relaxed">
-                            <li>Відкрийте Spotify Dashboard → «Create app».</li>
                             <li>
-                                У полі <b>Redirect URI</b> вкажіть адресу нижче.
+                                {tr(
+                                    'Відкрийте Spotify Dashboard → «Create app».',
+                                )}
                             </li>
                             <li>
-                                Позначте <b>Web API</b> і{' '}
+                                {tr('У полі')} <b>Redirect URI</b>{' '}
+                                {tr('вкажіть адресу нижче.')}
+                            </li>
+                            <li>
+                                {tr('Позначте')} <b>Web API</b> {tr('і')}{' '}
                                 <b>Web Playback SDK</b>.
                             </li>
                             <li>
-                                Скопіюйте <b>Client ID</b> і{' '}
-                                <b>Client Secret</b> у форму.
+                                {tr('Скопіюйте')} <b>Client ID</b> {tr('і')}{' '}
+                                <b>Client Secret</b> {tr('у форму.')}
                             </li>
                         </ol>
                         <div>
@@ -274,9 +295,9 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                             </button>
                         </div>
                         <p className="text-xs leading-relaxed text-white/40">
-                            Поки застосунок у режимі Development, додайте
-                            користувачів у розділі «User Management» Spotify
-                            Dashboard.
+                            {tr(
+                                'Поки застосунок у режимі Development, додайте користувачів у розділі «User Management» Spotify Dashboard.',
+                            )}
                         </p>
                     </aside>
                 </div>
@@ -286,33 +307,45 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                 [
                     [
                         'auth',
-                        'Вхід через соцмережі',
-                        'Кнопки «Увійти через Discord / Google» на сторінках входу й реєстрації та прив’язка акаунтів у налаштуваннях.',
+                        tr('Вхід через соцмережі'),
+                        tr(
+                            'Кнопки «Увійти через Discord / Google» на сторінках входу й реєстрації та прив’язка акаунтів у налаштуваннях.',
+                        ),
                     ],
                     [
                         'push',
-                        'Застосунок',
-                        'Push-сповіщення в Android-застосунку GameCon: лайки, коментарі, заявки, події сімей і нові повідомлення.',
+                        tr('Застосунок'),
+                        tr(
+                            'Push-сповіщення в Android-застосунку GameCon: лайки, коментарі, заявки, події сімей і нові повідомлення.',
+                        ),
                     ],
                     [
                         'voice',
-                        'Голосові кімнати',
-                        'Голосові канали сімей і спільнот на сайті та в застосунку. Потрібен власний сервер LiveKit.',
+                        tr('Голосові кімнати'),
+                        tr(
+                            'Голосові канали сімей і спільнот на сайті та в застосунку. Потрібен власний сервер LiveKit.',
+                        ),
                     ],
                     [
                         'games',
-                        'Каталог ігор',
-                        'Звідки беруться мультиплеєрні ігри для каталогу й вибору гри в кланах. Без ключа працює стартовий список.',
+                        tr('Каталог ігор'),
+                        tr(
+                            'Звідки беруться мультиплеєрні ігри для каталогу й вибору гри в кланах. Без ключа працює стартовий список.',
+                        ),
                     ],
                     [
                         'players',
-                        'Кіно: плеєри',
-                        'Звідки беруться фільми та озвучки. Обидва балансери підтримують автонаповнення каталогу.',
+                        tr('Кіно: плеєри'),
+                        tr(
+                            'Звідки беруться фільми та озвучки. Обидва балансери підтримують автонаповнення каталогу.',
+                        ),
                     ],
                     [
                         'metadata',
-                        'Кіно: метадані',
-                        'Назви, описи, постери, трейлери та рейтинги для кожного тайтлу.',
+                        tr('Кіно: метадані'),
+                        tr(
+                            'Назви, описи, постери, трейлери та рейтинги для кожного тайтлу.',
+                        ),
                     ],
                 ] as const
             ).map(([group, title, text]) => (

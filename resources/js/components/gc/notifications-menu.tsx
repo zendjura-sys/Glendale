@@ -23,6 +23,7 @@ import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { NotificationItem } from '@/types';
 import { UserAvatar } from './user-avatar';
+import { tr } from '@/lib/i18n';
 
 const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
     post_like: { icon: Heart, className: 'bg-rose-500' },
@@ -101,7 +102,7 @@ export function NotificationsMenu() {
                     'relative flex size-10 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white',
                     open && 'bg-white/[0.07] text-white',
                 )}
-                aria-label="Сповіщення"
+                aria-label={tr('Сповіщення')}
             >
                 <Bell className="size-[19px]" />
                 {unread > 0 && (
@@ -115,14 +116,14 @@ export function NotificationsMenu() {
                 <>
                     <button
                         type="button"
-                        aria-label="Закрити сповіщення"
+                        aria-label={tr('Закрити сповіщення')}
                         onClick={() => setOpen(false)}
                         className="fixed inset-0 z-40 bg-[#05070f]/70 sm:hidden"
                     />
                     <div className="fixed inset-x-3 top-16 z-50 flex max-h-[min(70dvh,calc(100dvh-env(safe-area-inset-bottom)-8.5rem))] animate-rise flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#101628] shadow-[0_24px_80px_-24px_rgb(0_0_0/0.9)] sm:absolute sm:inset-x-auto sm:top-12 sm:right-0 sm:max-h-[60vh] sm:w-[min(380px,calc(100vw-2rem))]">
                         <div className="flex shrink-0 items-center justify-between border-b border-white/5 px-4 py-3">
                             <span className="font-display text-sm font-semibold">
-                                Сповіщення
+                                {tr('Сповіщення')}
                             </span>
                         </div>
                         <div className="min-h-0 overflow-y-auto overscroll-contain p-1.5">
@@ -143,8 +144,9 @@ export function NotificationsMenu() {
                                 <div className="px-4 py-10 text-center">
                                     <Bell className="mx-auto mb-3 size-8 text-white/20" />
                                     <p className="text-sm text-white/50">
-                                        Поки що тихо. Тут з'являться лайки,
-                                        коментарі та заявки.
+                                        {tr(
+                                            "Поки що тихо. Тут з'являться лайки, коментарі та заявки.",
+                                        )}
                                     </p>
                                 </div>
                             ) : (

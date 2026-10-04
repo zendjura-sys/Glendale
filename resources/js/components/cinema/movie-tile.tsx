@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import type { MovieCard } from '@/types';
+import { tr } from '@/lib/i18n';
 
 const hues = [228, 262, 290, 200, 316, 245];
 
@@ -148,7 +149,7 @@ export function PosterRow({
                         type="button"
                         onClick={() => scroll(-1)}
                         className="flex size-8 items-center justify-center rounded-lg bg-white/[0.05] text-white/60 transition hover:bg-white/10 hover:text-white"
-                        aria-label="Назад"
+                        aria-label={tr('Назад')}
                     >
                         <ChevronLeft className="size-4" />
                     </button>
@@ -156,7 +157,7 @@ export function PosterRow({
                         type="button"
                         onClick={() => scroll(1)}
                         className="flex size-8 items-center justify-center rounded-lg bg-white/[0.05] text-white/60 transition hover:bg-white/10 hover:text-white"
-                        aria-label="Далі"
+                        aria-label={tr('Далі')}
                     >
                         <ChevronRight className="size-4" />
                     </button>

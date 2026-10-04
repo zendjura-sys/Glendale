@@ -18,6 +18,7 @@ import { OnlineMeter, ServerIcon } from '@/components/servers/server-icon';
 import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { FamilyCard, GtaServerCard, UserCard } from '@/types';
+import { LOCALE, tr } from '@/lib/i18n';
 
 type Props = {
     server: GtaServerCard & {
@@ -52,7 +53,7 @@ export default function ServerShow({
                     href="/servers"
                     className="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white"
                 >
-                    <ArrowLeft className="size-4" /> Усі сервери
+                    <ArrowLeft className="size-4" /> {tr('Усі сервери')}
                 </Link>
 
                 <section className="glass noise relative overflow-hidden rounded-3xl p-6 sm:p-8">
@@ -78,7 +79,7 @@ export default function ServerShow({
                                     {server.multiplayer_label}
                                 </span>
                                 <span className="rounded-full bg-[#facc15]/10 px-2 py-0.5 text-[#fde68a]">
-                                    🇺🇦 Україна
+                                    {tr('🇺🇦 Україна')}
                                 </span>
                             </div>
                             <h1 className="mt-2 font-display text-3xl font-bold text-white sm:text-4xl">
@@ -103,10 +104,10 @@ export default function ServerShow({
                             />
                             {server.players_peak !== null && (
                                 <div className="text-xs text-white/45">
-                                    Пік:{' '}
+                                    {tr('Пік:')}{' '}
                                     <span className="font-semibold text-white/80">
                                         {server.players_peak.toLocaleString(
-                                            'uk-UA',
+                                            LOCALE,
                                         )}
                                     </span>
                                 </div>
@@ -115,16 +116,22 @@ export default function ServerShow({
                                 <div className="flex items-center gap-2 text-xs text-white/55">
                                     <MessageCircle className="size-3.5 text-[#8fa0ff]" />
                                     {server.discord_members.toLocaleString(
-                                        'uk-UA',
+                                        LOCALE,
                                     )}{' '}
-                                    у Discord
+                                    {tr('у Discord')}
                                     {server.discord_online !== null &&
-                                        ` · ${server.discord_online.toLocaleString('uk-UA')} в мережі`}
+                                        tr(' · {toLocaleString} в мережі', {
+                                            toLocaleString:
+                                                server.discord_online.toLocaleString(
+                                                    LOCALE,
+                                                ),
+                                        })}
                                 </div>
                             )}
                             {server.stats_updated_at && (
                                 <div className="text-[11px] text-white/30">
-                                    Оновлено {timeAgo(server.stats_updated_at)}
+                                    {tr('Оновлено')}{' '}
+                                    {timeAgo(server.stats_updated_at)}
                                 </div>
                             )}
                         </div>
@@ -139,43 +146,48 @@ export default function ServerShow({
                 <PlayingNow users={playing_now} count={playing_count} />
                 <section className="glass rounded-3xl p-5">
                     <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
-                        <CalendarDays className="size-5 text-[#a5b4fc]" /> Події
-                        сервера
+                        <CalendarDays className="size-5 text-[#a5b4fc]" />{' '}
+                        {tr('Події сервера')}
                     </h2>
                     {events.length === 0 ? (
                         <p className="text-sm text-white/45">
-                            Найближчих подій немає.
+                            {tr('Найближчих подій немає.')}
                             {event_hosts.length > 0 &&
-                                ' Додайте першу — її побачать усі сім’ї сервера в календарі.'}
+                                tr(
+                                    ' Додайте першу — її побачать усі сім’ї сервера в календарі.',
+                                )}
                         </p>
                     ) : (
                         <EventList events={events} />
                     )}
                     {discord_events.connected ? (
                         <p className="mt-3 text-xs text-white/40">
-                            Події з Discord проєкту підтягуються автоматично.
+                            {tr(
+                                'Події з Discord проєкту підтягуються автоматично.',
+                            )}
                         </p>
                     ) : (
                         discord_events.invite && (
                             <p className="mt-3 text-xs text-white/45">
-                                Адміністрація проєкту? Додайте{' '}
+                                {tr('Адміністрація проєкту? Додайте')}{' '}
                                 <a
                                     href={discord_events.invite}
                                     target="_blank"
                                     rel="noreferrer noopener"
                                     className="text-[#a5b4fc] hover:text-white"
                                 >
-                                    бота GameCon
+                                    {tr('бота GameCon')}
                                 </a>{' '}
-                                на свій Discord — заплановані події звідти самі
-                                з’являться тут і в календарі гравців.
+                                {tr(
+                                    'на свій Discord — заплановані події звідти самі з’являться тут і в календарі гравців.',
+                                )}
                             </p>
                         )
                     )}
                     {event_hosts.length > 0 && (
                         <details className="mt-4 rounded-2xl bg-white/[0.03] p-3">
                             <summary className="cursor-pointer text-sm font-semibold text-white/80">
-                                Нова подія сервера
+                                {tr('Нова подія сервера')}
                             </summary>
                             <div className="mt-3">
                                 <ServerEventForm
@@ -191,23 +203,26 @@ export default function ServerShow({
                     <header className="mb-4 flex flex-wrap items-center gap-3">
                         <Trophy className="size-5 text-amber-300" />
                         <h2 className="font-display text-lg font-semibold text-white">
-                            Рейтинг сімей сервера
+                            {tr('Рейтинг сімей сервера')}
                         </h2>
                         <span className="text-xs text-white/40">
-                            бали за поточний місяць
+                            {tr('бали за поточний місяць')}
                         </span>
                         <Link
                             href={`/families/create?server=${server.slug}`}
                             className="btn-glow ml-auto inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold"
                         >
-                            <Plus className="size-4" /> Зареєструвати сім’ю
+                            <Plus className="size-4" />{' '}
+                            {tr('Зареєструвати сім’ю')}
                         </Link>
                     </header>
                     {families.length === 0 ? (
                         <EmptyState
                             icon={Crown}
-                            title="Тут ще немає сімей"
-                            text="Станьте першими: створіть сім’ю й ведіть звіти, банк і склад на GameCon."
+                            title={tr('Тут ще немає сімей')}
+                            text={tr(
+                                'Станьте першими: створіть сім’ю й ведіть звіти, банк і склад на GameCon.',
+                            )}
                         />
                     ) : (
                         <div className="divide-y divide-white/[0.05]">
@@ -241,15 +256,16 @@ export default function ServerShow({
                                         </div>
                                         <div className="flex items-center gap-1 text-xs text-white/45">
                                             <UsersRound className="size-3" />
-                                            {family.members_count} учасників
+                                            {family.members_count}{' '}
+                                            {tr('учасників')}
                                             {family.is_recruiting &&
-                                                ' · набір відкрито'}
+                                                tr(' · набір відкрито')}
                                         </div>
                                     </div>
                                     <span className="font-display text-lg font-bold text-white">
                                         {family.score}
                                         <span className="ml-1 text-xs font-medium text-white/40">
-                                            балів
+                                            {tr('балів')}
                                         </span>
                                     </span>
                                 </Link>

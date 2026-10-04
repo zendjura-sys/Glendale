@@ -37,6 +37,7 @@ import type {
     Paginated,
     RosterEntry,
 } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Props = FamilyShellProps & {
     scope: 'me' | 'family';
@@ -65,15 +66,15 @@ type Props = FamilyShellProps & {
 };
 
 const cashoutStatus = {
-    pending: ['Очікує видачі', 'bg-amber-300/10 text-amber-200'],
-    paid: ['Видано', 'bg-emerald-400/10 text-emerald-200'],
-    cancelled: ['Скасовано', 'bg-white/[0.05] text-white/45'],
+    pending: [tr('Очікує видачі'), 'bg-amber-300/10 text-amber-200'],
+    paid: [tr('Видано'), 'bg-emerald-400/10 text-emerald-200'],
+    cancelled: [tr('Скасовано'), 'bg-white/[0.05] text-white/45'],
 } as const;
 
 const depositStatus = {
-    active: ['Активний', 'bg-[#6d5dfc]/15 text-[#c4b5fd]'],
-    matured: ['Виплачено', 'bg-emerald-400/10 text-emerald-200'],
-    closed: ['Закрито достроково', 'bg-white/[0.05] text-white/45'],
+    active: [tr('Активний'), 'bg-[#6d5dfc]/15 text-[#c4b5fd]'],
+    matured: [tr('Виплачено'), 'bg-emerald-400/10 text-emerald-200'],
+    closed: [tr('Закрито достроково'), 'bg-white/[0.05] text-white/45'],
 } as const;
 
 export default function FamilyBank(props: Props) {
@@ -92,10 +93,10 @@ export default function FamilyBank(props: Props) {
     const base = `/f/${family.slug}`;
 
     return (
-        <FamilyShell {...props} title="Банк">
+        <FamilyShell {...props} title={tr('Банк')}>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <Metric
-                    label="Мій баланс"
+                    label={tr('Мій баланс')}
                     value={uah(me.balance)}
                     tone={me.balance < 0 ? 'text-rose-300' : 'text-emerald-300'}
                     icon={Wallet}
@@ -103,17 +104,21 @@ export default function FamilyBank(props: Props) {
                 {totals ? (
                     <>
                         <Metric
-                            label="Скарбниця"
+                            label={tr('Скарбниця')}
                             value={uah(family.treasury)}
-                            hint={`Видано за тиждень: ${uah(totals.paid_week)}`}
+                            hint={tr('Видано за тиждень: {uah}', {
+                                uah: uah(totals.paid_week),
+                            })}
                             icon={Landmark}
                         />
                         <Metric
-                            label="Борг перед учасниками"
+                            label={tr('Борг перед учасниками')}
                             value={uah(
                                 totals.balances + totals.pending_cashouts,
                             )}
-                            hint={`На видачу: ${uah(totals.pending_cashouts)}`}
+                            hint={tr('На видачу: {uah}', {
+                                uah: uah(totals.pending_cashouts),
+                            })}
                             tone={
                                 totals.balances + totals.pending_cashouts >
                                 family.treasury
@@ -123,14 +128,14 @@ export default function FamilyBank(props: Props) {
                             icon={Scale}
                         />
                         <Metric
-                            label="Депозити"
+                            label={tr('Депозити')}
                             value={uah(totals.deposits)}
                             icon={PiggyBank}
                         />
                     </>
                 ) : (
                     <Metric
-                        label="Активні депозити"
+                        label={tr('Активні депозити')}
                         value={uah(
                             deposits
                                 .filter((d) => d.status === 'active')
@@ -162,7 +167,7 @@ export default function FamilyBank(props: Props) {
             )}
 
             <Panel
-                title="Журнал операцій"
+                title={tr('Журнал операцій')}
                 icon={ReceiptText}
                 actions={
                     can['treasury.manage'] && (
@@ -181,15 +186,15 @@ export default function FamilyBank(props: Props) {
                                 )
                             }
                             options={[
-                                { value: 'me', label: 'Мої' },
-                                { value: 'family', label: 'Уся сім’я' },
+                                { value: 'me', label: tr('Мої') },
+                                { value: 'family', label: tr('Уся сім’я') },
                             ]}
                         />
                     )
                 }
             >
                 {ledger.data.length === 0 ? (
-                    <Empty icon={ReceiptText} text="Операцій ще немає" />
+                    <Empty icon={ReceiptText} text={tr('Операцій ще немає')} />
                 ) : (
                     <div className="overflow-x-auto">
                         <InfiniteScroll data="ledger" preserveUrl>
@@ -197,23 +202,23 @@ export default function FamilyBank(props: Props) {
                                 <thead className="text-left text-[11px] tracking-wide text-white/35 uppercase">
                                     <tr>
                                         <th className="py-2 pr-3 font-medium">
-                                            Час
+                                            {tr('Час')}
                                         </th>
                                         <th className="py-2 pr-3 font-medium">
-                                            Операція
+                                            {tr('Операція')}
                                         </th>
                                         {scope === 'family' && (
                                             <th className="py-2 pr-3 font-medium">
-                                                Учасник
+                                                {tr('Учасник')}
                                             </th>
                                         )}
                                         <th className="py-2 pr-3 text-right font-medium">
-                                            Сума
+                                            {tr('Сума')}
                                         </th>
                                         <th className="py-2 text-right font-medium">
                                             {scope === 'family'
-                                                ? 'Скарбниця'
-                                                : 'Баланс'}
+                                                ? tr('Скарбниця')
+                                                : tr('Баланс')}
                                         </th>
                                     </tr>
                                 </thead>
@@ -287,10 +292,12 @@ function CashoutPanel({
     const form = useForm({ amount: '', note: '' });
 
     return (
-        <Panel title="Вивести гроші в грі" icon={Banknote}>
+        <Panel title={tr('Вивести гроші в грі')} icon={Banknote}>
             <p className="mb-3 text-xs text-white/45">
-                Сума резервується з вашого балансу, офіцер видає її в грі й
-                підтверджує. Мінімум — {uah(toMinor(min))}.
+                {tr(
+                    'Сума резервується з вашого балансу, офіцер видає її в грі й підтверджує. Мінімум —',
+                )}{' '}
+                {uah(toMinor(min))}.
             </p>
             <div className="flex flex-wrap gap-2">
                 <div className="min-w-0 flex-1">
@@ -298,7 +305,7 @@ function CashoutPanel({
                         value={form.data.amount}
                         onChange={(e) => form.setData('amount', e.target.value)}
                         inputMode="decimal"
-                        placeholder="Сума, ₴"
+                        placeholder={tr('Сума, ₴')}
                         className={inputClass}
                     />
                 </div>
@@ -312,7 +319,7 @@ function CashoutPanel({
                     }
                     className={btnGhost}
                 >
-                    Усе
+                    {tr('Усе')}
                 </button>
                 <button
                     type="button"
@@ -325,13 +332,13 @@ function CashoutPanel({
                     }
                     className={btnPrimary}
                 >
-                    <ArrowDownToLine className="size-4" /> Запросити
+                    <ArrowDownToLine className="size-4" /> {tr('Запросити')}
                 </button>
             </div>
             <input
                 value={form.data.note}
                 onChange={(e) => form.setData('note', e.target.value)}
-                placeholder="Примітка: коли зручно отримати"
+                placeholder={tr('Примітка: коли зручно отримати')}
                 className={cn(inputClass, 'mt-2 h-10')}
             />
             <FieldError message={form.errors.amount ?? form.errors.note} />
@@ -360,7 +367,7 @@ function CashoutPanel({
                                     rel="noreferrer"
                                     className="text-xs text-[#a5b4fc] hover:underline"
                                 >
-                                    скрін
+                                    {tr('скрін')}
                                 </a>
                             )}
                             <span
@@ -383,7 +390,7 @@ function CashoutPanel({
                                     }
                                     className="text-xs text-white/45 hover:text-rose-300"
                                 >
-                                    скасувати
+                                    {tr('скасувати')}
                                 </button>
                             )}
                         </li>
@@ -419,24 +426,32 @@ function DepositPanel({
 
     if (!config.enabled) {
         return (
-            <Panel title="Депозити" icon={PiggyBank}>
-                <Empty icon={PiggyBank} text="Депозити в сім’ї вимкнено" />
+            <Panel title={tr('Депозити')} icon={PiggyBank}>
+                <Empty
+                    icon={PiggyBank}
+                    text={tr('Депозити в сім’ї вимкнено')}
+                />
             </Panel>
         );
     }
 
     return (
-        <Panel title="Депозит" icon={PiggyBank}>
+        <Panel title={tr('Депозит')} icon={PiggyBank}>
             <p className="mb-3 text-xs text-white/45">
-                {config.daily_rate}% на день або {config.weekly_rate}% на
-                тиждень. Дострокове закриття повертає лише тіло депозиту.
+                {config.daily_rate}
+                {tr('% на день або')} {config.weekly_rate}
+                {tr(
+                    '% на тиждень. Дострокове закриття повертає лише тіло депозиту.',
+                )}
             </p>
             <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
                 <input
                     value={form.data.amount}
                     onChange={(e) => form.setData('amount', e.target.value)}
                     inputMode="decimal"
-                    placeholder={`Від ${config.min_amount} ₴`}
+                    placeholder={tr('Від {min_amount} ₴', {
+                        min_amount: config.min_amount,
+                    })}
                     className={inputClass}
                 />
                 <Segmented
@@ -445,8 +460,8 @@ function DepositPanel({
                         form.setData((d) => ({ ...d, period: v, periods: 1 }));
                     }}
                     options={[
-                        { value: 'daily', label: 'Дні' },
-                        { value: 'weekly', label: 'Тижні' },
+                        { value: 'daily', label: tr('Дні') },
+                        { value: 'weekly', label: tr('Тижні') },
                     ]}
                 />
             </div>
@@ -463,17 +478,17 @@ function DepositPanel({
                 />
                 <span className="w-24 text-right text-sm font-semibold text-white">
                     {form.data.periods}{' '}
-                    {form.data.period === 'daily' ? 'дн.' : 'тиж.'}
+                    {form.data.period === 'daily' ? tr('дн.') : tr('тиж.')}
                 </span>
             </div>
             <div className="mt-3 flex items-center gap-3 rounded-2xl bg-white/[0.03] p-3 ring-1 ring-white/[0.06]">
                 <div className="min-w-0 flex-1 text-xs text-white/45">
-                    До виплати
+                    {tr('До виплати')}
                     <div className="font-display text-lg font-bold text-emerald-300">
                         {uah(principal + interest)}
                     </div>
                     <span className="text-emerald-300/70">
-                        +{uah(interest)} відсотків
+                        +{uah(interest)} {tr('відсотків')}
                     </span>
                 </div>
                 <button
@@ -487,7 +502,7 @@ function DepositPanel({
                     }
                     className={btnPrimary}
                 >
-                    Відкрити
+                    {tr('Відкрити')}
                 </button>
             </div>
             <FieldError message={form.errors.amount ?? form.errors.periods} />
@@ -508,9 +523,20 @@ function DepositPanel({
                                 </div>
                                 <div className="text-xs text-white/40">
                                     {d.rate}% × {d.periods}{' '}
-                                    {d.period === 'daily' ? 'дн.' : 'тиж.'} ·{' '}
+                                    {d.period === 'daily'
+                                        ? tr('дн.')
+                                        : tr('тиж.')}{' '}
+                                    ·{' '}
                                     {d.status === 'active'
-                                        ? `до ${kyivDateTime(d.matures_at)} · накопичено ${uah(d.accrued)}`
+                                        ? tr(
+                                              'до {kyivDateTime} · накопичено {uah}',
+                                              {
+                                                  kyivDateTime: kyivDateTime(
+                                                      d.matures_at,
+                                                  ),
+                                                  uah: uah(d.accrued),
+                                              },
+                                          )
                                         : timeAgo(d.matures_at)}
                                 </div>
                             </div>
@@ -527,7 +553,9 @@ function DepositPanel({
                                     type="button"
                                     onClick={() =>
                                         confirm(
-                                            'Закрити депозит достроково? Відсотки не буде нараховано.',
+                                            tr(
+                                                'Закрити депозит достроково? Відсотки не буде нараховано.',
+                                            ),
                                         ) &&
                                         router.post(
                                             `${base}/bank/deposits/${d.id}/close`,
@@ -537,7 +565,7 @@ function DepositPanel({
                                     }
                                     className="text-xs text-white/45 hover:text-rose-300"
                                 >
-                                    закрити
+                                    {tr('закрити')}
                                 </button>
                             )}
                         </li>
@@ -566,7 +594,7 @@ function ManualPanel({
 
     return (
         <Panel
-            title="Ручна операція"
+            title={tr('Ручна операція')}
             icon={Scale}
             actions={
                 <button
@@ -574,24 +602,27 @@ function ManualPanel({
                     onClick={() => setOpen((v) => !v)}
                     className="text-xs text-white/50 hover:text-white"
                 >
-                    {open ? 'Згорнути' : 'Розгорнути'}
+                    {open ? tr('Згорнути') : tr('Розгорнути')}
                 </button>
             }
         >
             {open ? (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <Field label="Рахунок">
+                    <Field label={tr('Рахунок')}>
                         <Segmented
                             value={form.data.target}
                             onChange={(v) => form.setData('target', v)}
                             options={[
-                                { value: 'member', label: 'Учасник' },
-                                { value: 'treasury', label: 'Скарбниця' },
+                                { value: 'member', label: tr('Учасник') },
+                                { value: 'treasury', label: tr('Скарбниця') },
                             ]}
                         />
                     </Field>
                     {form.data.target === 'member' && (
-                        <Field label="Учасник" error={form.errors.member_id}>
+                        <Field
+                            label={tr('Учасник')}
+                            error={form.errors.member_id}
+                        >
                             <select
                                 value={form.data.member_id}
                                 onChange={(e) =>
@@ -604,7 +635,7 @@ function ManualPanel({
                                 }
                                 className={cn(selectClass, 'h-11 w-full')}
                             >
-                                <option value="">Оберіть…</option>
+                                <option value="">{tr('Оберіть…')}</option>
                                 {roster.map((m) => (
                                     <option key={m.id} value={m.id}>
                                         {m.display}
@@ -613,17 +644,17 @@ function ManualPanel({
                             </select>
                         </Field>
                     )}
-                    <Field label="Напрям">
+                    <Field label={tr('Напрям')}>
                         <Segmented
                             value={form.data.direction}
                             onChange={(v) => form.setData('direction', v)}
                             options={[
-                                { value: 'credit', label: 'Нарахувати' },
-                                { value: 'debit', label: 'Списати' },
+                                { value: 'credit', label: tr('Нарахувати') },
+                                { value: 'debit', label: tr('Списати') },
                             ]}
                         />
                     </Field>
-                    <Field label="Сума, ₴" error={form.errors.amount}>
+                    <Field label={tr('Сума, ₴')} error={form.errors.amount}>
                         <input
                             value={form.data.amount}
                             onChange={(e) =>
@@ -634,7 +665,7 @@ function ManualPanel({
                         />
                     </Field>
                     <Field
-                        label="Коментар (потрапить у журнал аудиту)"
+                        label={tr('Коментар (потрапить у журнал аудиту)')}
                         error={form.errors.comment}
                         className="sm:col-span-2 lg:col-span-3"
                     >
@@ -643,7 +674,9 @@ function ManualPanel({
                             onChange={(e) =>
                                 form.setData('comment', e.target.value)
                             }
-                            placeholder="Напр. Компенсація за зламаний транспорт"
+                            placeholder={tr(
+                                'Напр. Компенсація за зламаний транспорт',
+                            )}
                             className={inputClass}
                         />
                     </Field>
@@ -660,14 +693,15 @@ function ManualPanel({
                             }
                             className={cn(btnPrimary, 'h-11 w-full')}
                         >
-                            Провести
+                            {tr('Провести')}
                         </button>
                     </div>
                 </div>
             ) : (
                 <p className="text-xs text-white/45">
-                    Нарахування чи списання з балансу учасника або скарбниці з
-                    обов’язковим коментарем.
+                    {tr(
+                        'Нарахування чи списання з балансу учасника або скарбниці з обов’язковим коментарем.',
+                    )}
                 </p>
             )}
         </Panel>

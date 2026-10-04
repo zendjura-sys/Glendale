@@ -3,7 +3,10 @@
 namespace App\Jobs;
 
 use App\Models\PushDevice;
+use App\Models\User;
 use App\Services\Push\FcmClient;
+use App\Support\I18n\Locales;
+use App\Support\I18n\Translations;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -41,9 +44,16 @@ class SendPushNotification implements ShouldQueue
             return;
         }
 
+        // Заголовок і текст — мовою отримувача.
+        $user = User::query()->find($this->userId);
+        $locale = $user instanceof User ? app(Locales::class)->forUser($user) : app(Locales::class)->fallback();
+        $translations = app(Translations::class);
+        $title = $translations->line($this->title, $locale);
+        $body = $translations->line($this->body, $locale);
+
         PushDevice::query()->where('user_id', $this->userId)->latest('id')->limit(10)->get()
-            ->each(function (PushDevice $device) use ($fcm) {
-                $result = $fcm->send($device->token, $this->title, $this->body, $this->data, $this->channel, $this->tag, $this->dataOnly && $device->local_render && $device->platform === 'android');
+            ->each(function (PushDevice $device) use ($fcm, $title, $body) {
+                $result = $fcm->send($device->token, $title, $body, $this->data, $this->channel, $this->tag, $this->dataOnly && $device->local_render && $device->platform === 'android');
                 match ($result) {
                     FcmClient::GONE => $device->delete(),
                     FcmClient::SENT => $device->forceFill(['last_used_at' => now()])->saveQuietly(),

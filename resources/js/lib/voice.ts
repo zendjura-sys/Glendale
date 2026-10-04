@@ -2,6 +2,7 @@ import type { Room, RoomOptions } from 'livekit-client';
 import { useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
 import { api, ApiError } from '@/lib/api';
+import { tr } from '@/lib/i18n';
 
 /**
  * Голос GameCon: кімнати сімей і спільнот та дзвінки в бесідах. Одне з’єднання LiveKit на весь сайт,
@@ -166,12 +167,12 @@ async function connect(
             if (p !== next.localParticipant) return;
             const blocked = p.permissions?.canPublish === false;
             set({ micBlocked: blocked, micOn: blocked ? false : state.micOn });
-            if (blocked) toast('Модератор вимкнув вам мікрофон');
+            if (blocked) toast(tr('Модератор вимкнув вам мікрофон'));
         });
         next.on(RoomEvent.Disconnected, (reason) => {
             if (room !== next) return;
             if (reason === DisconnectReason.PARTICIPANT_REMOVED)
-                toast('Вас виключили з голосової кімнати');
+                toast(tr('Вас виключили з голосової кімнати'));
             cleanup();
         });
 
@@ -220,7 +221,7 @@ export async function joinVoice(
             href,
             owner,
         },
-        'Не вдалося підключитися до голосової кімнати',
+        tr('Не вдалося підключитися до голосової кімнати'),
     );
 }
 
@@ -232,10 +233,10 @@ export async function joinWatchVoice(code: string, title: string) {
             kind: 'room',
             roomId: null,
             roomName: title,
-            label: 'Спільний перегляд',
+            label: tr('Спільний перегляд'),
             href: `/watch/${code}`,
         },
-        'Не вдалося підключити голос',
+        tr('Не вдалося підключити голос'),
     );
 }
 
@@ -254,10 +255,10 @@ export async function startCall(conversation: { id: number; title: string }) {
             kind: 'call',
             conversationId: conversation.id,
             roomName: conversation.title,
-            label: 'Дзвінок',
+            label: tr('Дзвінок'),
             href: `/messages/${conversation.id}`,
         },
-        'Не вдалося зателефонувати',
+        tr('Не вдалося зателефонувати'),
     );
 }
 
@@ -270,10 +271,10 @@ export async function answerCall(call: CallState, title: string) {
             callId: call.id,
             conversationId: call.conversation_id,
             roomName: title,
-            label: 'Дзвінок',
+            label: tr('Дзвінок'),
             href: `/messages/${call.conversation_id}`,
         },
-        'Не вдалося відповісти на дзвінок',
+        tr('Не вдалося відповісти на дзвінок'),
     );
 }
 
@@ -299,13 +300,15 @@ async function setMic(on: boolean) {
         set({ micOn: on });
     } catch {
         set({ micOn: false });
-        toast.error('Немає доступу до мікрофона — дозвольте його в браузері');
+        toast.error(
+            tr('Немає доступу до мікрофона — дозвольте його в браузері'),
+        );
     }
 }
 
 export function toggleMic() {
     if (state.micBlocked) {
-        toast('Модератор вимкнув вам мікрофон');
+        toast(tr('Модератор вимкнув вам мікрофон'));
 
         return;
     }

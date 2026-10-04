@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import type { PlaylistCard } from '@/types';
+import { tr } from '@/lib/i18n';
 
 export function PlaylistDialog({
     open,
@@ -64,10 +65,14 @@ export function PlaylistDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="glass-strong gap-0 rounded-3xl border-white/10 p-6 text-white sm:max-w-lg">
                 <DialogTitle className="font-display text-xl">
-                    {playlist ? 'Редагування плейлиста' : 'Новий плейлист'}
+                    {playlist
+                        ? tr('Редагування плейлиста')
+                        : tr('Новий плейлист')}
                 </DialogTitle>
                 <DialogDescription className="mt-1 text-sm text-white/50">
-                    Зберіть настрій: для рейдів, нічного кодингу чи тренувань.
+                    {tr(
+                        'Зберіть настрій: для рейдів, нічного кодингу чи тренувань.',
+                    )}
                 </DialogDescription>
 
                 <div className="mt-5 flex gap-4">
@@ -83,7 +88,7 @@ export function PlaylistDialog({
                                 <ImagePlus className="size-7 text-white/40" />
                             )}
                             <span className="absolute inset-0 flex items-center justify-center bg-black/50 text-xs font-medium opacity-0 transition group-hover:opacity-100">
-                                Обкладинка
+                                {tr('Обкладинка')}
                             </span>
                             <input
                                 type="file"
@@ -106,7 +111,7 @@ export function PlaylistDialog({
                             }
                             maxLength={100}
                             autoFocus
-                            placeholder="Назва плейлиста"
+                            placeholder={tr('Назва плейлиста')}
                             className="input-glass h-11 w-full rounded-xl px-3.5 text-sm text-white placeholder:text-white/30 focus:outline-none"
                         />
                         {form.errors.title && (
@@ -121,7 +126,7 @@ export function PlaylistDialog({
                             }
                             maxLength={500}
                             rows={playlist ? 2 : 3}
-                            placeholder="Опис (необов’язково)"
+                            placeholder={tr('Опис (необов’язково)')}
                             className="input-glass w-full resize-none rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none"
                         />
                     </div>
@@ -130,8 +135,8 @@ export function PlaylistDialog({
                 <div className="mt-4 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
                     {(
                         [
-                            [true, 'Публічний', Globe2],
-                            [false, 'Лише для мене', Lock],
+                            [true, tr('Публічний'), Globe2],
+                            [false, tr('Лише для мене'), Lock],
                         ] as const
                     ).map(([value, label, Icon]) => (
                         <button
@@ -156,7 +161,7 @@ export function PlaylistDialog({
                         onClick={() => onOpenChange(false)}
                         className="rounded-xl px-4 py-2.5 text-sm text-white/60 hover:bg-white/5 hover:text-white"
                     >
-                        Скасувати
+                        {tr('Скасувати')}
                     </button>
                     <button
                         type="button"
@@ -166,7 +171,7 @@ export function PlaylistDialog({
                         }
                         className="btn-glow rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
                     >
-                        {playlist ? 'Зберегти' : 'Створити'}
+                        {playlist ? tr('Зберегти') : tr('Створити')}
                     </button>
                 </div>
             </DialogContent>

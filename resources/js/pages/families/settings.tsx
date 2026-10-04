@@ -26,6 +26,7 @@ import {
 import { uah } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type { FamilyShellProps } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Settings = {
     rates: Record<string, number>;
@@ -60,60 +61,60 @@ type Props = FamilyShellProps & {
 
 const labels: Record<string, Record<string, string>> = {
     rates: {
-        bizwar_win: 'Бізвар — перемога, ₴',
-        bizwar_loss: 'Бізвар — поразка, ₴',
-        contract_light: 'Контракт легкий, ₴',
-        contract_medium: 'Контракт середній, ₴',
-        contract_heavy: 'Контракт важкий, ₴',
-        investment_cashback: 'Кешбек з інвестицій, %',
+        bizwar_win: tr('Бізвар — перемога, ₴'),
+        bizwar_loss: tr('Бізвар — поразка, ₴'),
+        contract_light: tr('Контракт легкий, ₴'),
+        contract_medium: tr('Контракт середній, ₴'),
+        contract_heavy: tr('Контракт важкий, ₴'),
+        investment_cashback: tr('Кешбек з інвестицій, %'),
     },
     deposits: {
-        enabled: 'Депозити увімкнено',
-        daily_rate: 'Ставка на день, %',
-        weekly_rate: 'Ставка на тиждень, %',
-        min_amount: 'Мінімальна сума, ₴',
-        max_days: 'Максимум днів',
-        max_weeks: 'Максимум тижнів',
+        enabled: tr('Депозити увімкнено'),
+        daily_rate: tr('Ставка на день, %'),
+        weekly_rate: tr('Ставка на тиждень, %'),
+        min_amount: tr('Мінімальна сума, ₴'),
+        max_days: tr('Максимум днів'),
+        max_weeks: tr('Максимум тижнів'),
     },
     reports: {
-        deadline_hours: 'Дедлайн подання, год',
-        contract_daily_limit: 'Ліміт контрактів на день (кожного рівня)',
-        require_proof: 'Скріншот обов’язковий',
-        max_proofs: 'Максимум скріншотів',
+        deadline_hours: tr('Дедлайн подання, год'),
+        contract_daily_limit: tr('Ліміт контрактів на день (кожного рівня)'),
+        require_proof: tr('Скріншот обов’язковий'),
+        max_proofs: tr('Максимум скріншотів'),
     },
     rating: {
-        bizwar: 'Враховувати бізвари',
-        contracts: 'Враховувати контракти',
-        investments: 'Враховувати інвестиції',
-        events: 'Враховувати події',
-        points_bizwar_win: 'Бали: перемога',
-        points_bizwar_loss: 'Бали: поразка',
-        points_contract_light: 'Бали: легкий контракт',
-        points_contract_medium: 'Бали: середній контракт',
-        points_contract_heavy: 'Бали: важкий контракт',
-        points_per_1000: 'Бали за кожні 1000 ₴ інвестицій',
-        points_event: 'Бали за подію (типово)',
+        bizwar: tr('Враховувати бізвари'),
+        contracts: tr('Враховувати контракти'),
+        investments: tr('Враховувати інвестиції'),
+        events: tr('Враховувати події'),
+        points_bizwar_win: tr('Бали: перемога'),
+        points_bizwar_loss: tr('Бали: поразка'),
+        points_contract_light: tr('Бали: легкий контракт'),
+        points_contract_medium: tr('Бали: середній контракт'),
+        points_contract_heavy: tr('Бали: важкий контракт'),
+        points_per_1000: tr('Бали за кожні 1000 ₴ інвестицій'),
+        points_event: tr('Бали за подію (типово)'),
     },
     discipline: {
-        warn_days: 'Попередження діє, днів',
-        warn_limit: 'Ліміт попереджень',
-        escalation: 'Після ліміту',
+        warn_days: tr('Попередження діє, днів'),
+        warn_limit: tr('Ліміт попереджень'),
+        escalation: tr('Після ліміту'),
     },
-    cashout: { min_amount: 'Мінімальний вивід, ₴' },
+    cashout: { min_amount: tr('Мінімальний вивід, ₴') },
     digest: {
-        enabled: 'Щотижневий звіт (нд 23:59)',
-        chat: 'Публікувати в чат сім’ї',
+        enabled: tr('Щотижневий звіт (нд 23:59)'),
+        chat: tr('Публікувати в чат сім’ї'),
     },
 };
 
 const groups: { key: keyof Settings; title: string }[] = [
-    { key: 'rates', title: 'Ставки винагород' },
-    { key: 'reports', title: 'Звіти' },
-    { key: 'deposits', title: 'Депозити' },
-    { key: 'rating', title: 'Рейтинг' },
-    { key: 'discipline', title: 'Дисципліна' },
-    { key: 'cashout', title: 'Виплати' },
-    { key: 'digest', title: 'Тижневий звіт' },
+    { key: 'rates', title: tr('Ставки винагород') },
+    { key: 'reports', title: tr('Звіти') },
+    { key: 'deposits', title: tr('Депозити') },
+    { key: 'rating', title: tr('Рейтинг') },
+    { key: 'discipline', title: tr('Дисципліна') },
+    { key: 'cashout', title: tr('Виплати') },
+    { key: 'digest', title: tr('Тижневий звіт') },
 ];
 
 export default function FamilySettings(props: Props) {
@@ -121,7 +122,7 @@ export default function FamilySettings(props: Props) {
     const base = `/f/${family.slug}`;
 
     return (
-        <FamilyShell {...props} title="Налаштування">
+        <FamilyShell {...props} title={tr('Налаштування')}>
             <ProfilePanel
                 action={`${base}/settings/profile`}
                 family={family}
@@ -131,14 +132,16 @@ export default function FamilySettings(props: Props) {
             <div className="grid gap-4 lg:grid-cols-2">
                 <WebhooksPanel base={base} webhooks={webhooks} />
                 <Panel
-                    title="Тижневий звіт"
+                    title={tr('Тижневий звіт')}
                     icon={FileBarChart}
                     actions={
                         <button
                             type="button"
                             disabled={family.status !== 'verified'}
                             onClick={() =>
-                                confirm('Надіслати звіт зараз у всі канали?') &&
+                                confirm(
+                                    tr('Надіслати звіт зараз у всі канали?'),
+                                ) &&
                                 router.post(
                                     `${base}/settings/digest`,
                                     {},
@@ -147,14 +150,15 @@ export default function FamilySettings(props: Props) {
                             }
                             className={cn(btnGhost, 'h-9')}
                         >
-                            <Send className="size-4" /> Надіслати зараз
+                            <Send className="size-4" /> {tr('Надіслати зараз')}
                         </button>
                     }
                 >
                     <p className="mb-2 text-xs text-white/45">
-                        Попередній перегляд: {digest.members} учасників · разом{' '}
-                        {uah(digest.total)}
-                        {digest.last && ` · останній: ${digest.last}`}
+                        {tr('Попередній перегляд:')} {digest.members}{' '}
+                        {tr('учасників · разом')} {uah(digest.total)}
+                        {digest.last &&
+                            tr(' · останній: {last}', { last: digest.last })}
                     </p>
                     <pre className="max-h-80 overflow-auto rounded-2xl bg-black/30 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap text-white/75">
                         {digest.text}
@@ -186,7 +190,7 @@ function ProfilePanel({
     const coverRef = useRef<HTMLInputElement>(null);
 
     return (
-        <Panel title="Профіль сім’ї" icon={SettingsIcon}>
+        <Panel title={tr('Профіль сім’ї')} icon={SettingsIcon}>
             <div className="flex flex-wrap items-start gap-5">
                 <div className="flex flex-col items-center gap-2">
                     <FamilyLogo
@@ -204,7 +208,7 @@ function ProfilePanel({
                         onClick={() => logoRef.current?.click()}
                         className={cn(btnGhost, 'h-8 text-xs')}
                     >
-                        <ImagePlus className="size-3.5" /> Логотип
+                        <ImagePlus className="size-3.5" /> {tr('Логотип')}
                     </button>
                     <button
                         type="button"
@@ -212,7 +216,9 @@ function ProfilePanel({
                         className={cn(btnGhost, 'h-8 text-xs')}
                     >
                         <ImagePlus className="size-3.5" />{' '}
-                        {form.data.cover ? 'Обкладинку обрано' : 'Обкладинка'}
+                        {form.data.cover
+                            ? tr('Обкладинку обрано')
+                            : tr('Обкладинка')}
                     </button>
                     <input
                         ref={logoRef}
@@ -234,7 +240,7 @@ function ProfilePanel({
                     />
                 </div>
                 <div className="grid min-w-0 flex-1 gap-3 sm:grid-cols-[1fr_140px]">
-                    <Field label="Назва" error={form.errors.name}>
+                    <Field label={tr('Назва')} error={form.errors.name}>
                         <input
                             value={form.data.name}
                             onChange={(e) =>
@@ -243,7 +249,7 @@ function ProfilePanel({
                             className={inputClass}
                         />
                     </Field>
-                    <Field label="Тег" error={form.errors.tag}>
+                    <Field label={tr('Тег')} error={form.errors.tag}>
                         <input
                             value={form.data.tag}
                             maxLength={8}
@@ -260,7 +266,7 @@ function ProfilePanel({
                         />
                     </Field>
                     <Field
-                        label="Опис"
+                        label={tr('Опис')}
                         error={form.errors.description}
                         className="sm:col-span-2"
                     >
@@ -277,9 +283,9 @@ function ProfilePanel({
                         <Toggle
                             checked={form.data.is_recruiting}
                             onChange={(v) => form.setData('is_recruiting', v)}
-                            label="Набір"
+                            label={tr('Набір')}
                         />
-                        Набір відкрито
+                        {tr('Набір відкрито')}
                     </label>
                     <div className="flex justify-end">
                         <button
@@ -293,7 +299,7 @@ function ProfilePanel({
                             }
                             className={btnPrimary}
                         >
-                            Зберегти профіль
+                            {tr('Зберегти профіль')}
                         </button>
                     </div>
                     <FieldError
@@ -325,7 +331,7 @@ function SettingsPanel({
 
     return (
         <Panel
-            title="Правила й ставки"
+            title={tr('Правила й ставки')}
             icon={SlidersHorizontal}
             actions={
                 <button
@@ -334,13 +340,14 @@ function SettingsPanel({
                     onClick={() => form.put(action, { preserveScroll: true })}
                     className={btnPrimary}
                 >
-                    Зберегти
+                    {tr('Зберегти')}
                 </button>
             }
         >
             <p className="mb-4 text-xs text-white/45">
-                Кожна зміна записується в журнал аудиту (було → стало). Нові
-                ставки діють для звітів, схвалених після збереження.
+                {tr(
+                    'Кожна зміна записується в журнал аудиту (було → стало). Нові ставки діють для звітів, схвалених після збереження.',
+                )}
             </p>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {groups.map((g) => (
@@ -383,10 +390,10 @@ function SettingsPanel({
                                                 )}
                                             >
                                                 <option value="demote">
-                                                    Знизити ранг
+                                                    {tr('Знизити ранг')}
                                                 </option>
                                                 <option value="kick">
-                                                    Виключити
+                                                    {tr('Виключити')}
                                                 </option>
                                             </select>
                                         </Field>
@@ -465,7 +472,7 @@ function WebhooksPanel({
 
     return (
         <Panel
-            title="Боти Discord і Telegram"
+            title={tr('Боти Discord і Telegram')}
             icon={Bot}
             actions={
                 <button
@@ -479,21 +486,24 @@ function WebhooksPanel({
                     }
                     className={cn(btnGhost, 'h-9')}
                 >
-                    Тест
+                    {tr('Тест')}
                 </button>
             }
         >
             <p className="mb-3 text-xs text-white/45">
-                Сюди надходитимуть тижневі звіти, схвалення великих виплат і
-                анонси подій.
+                {tr(
+                    'Сюди надходитимуть тижневі звіти, схвалення великих виплат і анонси подій.',
+                )}
             </p>
             <div className="space-y-3">
                 <Field
-                    label="Вебхук Discord"
+                    label={tr('Вебхук Discord')}
                     hint={
                         webhooks.discord
-                            ? `Підключено: ${webhooks.discord}`
-                            : 'Налаштування каналу → Інтеграції → Вебхуки'
+                            ? tr('Підключено: {discord}', {
+                                  discord: webhooks.discord,
+                              })
+                            : tr('Налаштування каналу → Інтеграції → Вебхуки')
                     }
                     error={form.errors.discord}
                 >
@@ -512,18 +522,20 @@ function WebhooksPanel({
                                 onClick={() => clear('discord')}
                                 className={btnGhost}
                             >
-                                Вимкнути
+                                {tr('Вимкнути')}
                             </button>
                         )}
                     </div>
                 </Field>
                 <div className="grid gap-3 sm:grid-cols-[1fr_160px]">
                     <Field
-                        label="Токен Telegram-бота"
+                        label={tr('Токен Telegram-бота')}
                         hint={
                             webhooks.telegram_token
-                                ? `Підключено: ${webhooks.telegram_token}`
-                                : 'Створіть бота в @BotFather'
+                                ? tr('Підключено: {telegram_token}', {
+                                      telegram_token: webhooks.telegram_token,
+                                  })
+                                : tr('Створіть бота в @BotFather')
                         }
                         error={form.errors.telegram_token}
                     >
@@ -554,7 +566,7 @@ function WebhooksPanel({
                             onClick={() => clear('telegram')}
                             className={btnGhost}
                         >
-                            Вимкнути Telegram
+                            {tr('Вимкнути Telegram')}
                         </button>
                     )}
                     <button
@@ -569,7 +581,7 @@ function WebhooksPanel({
                         }
                         className={btnPrimary}
                     >
-                        Зберегти
+                        {tr('Зберегти')}
                     </button>
                 </div>
             </div>

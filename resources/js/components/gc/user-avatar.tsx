@@ -1,5 +1,6 @@
 import { initials } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { tr } from '@/lib/i18n';
 
 const sizes = {
     xs: 'size-7 text-[10px]',
@@ -94,7 +95,7 @@ export function UserAvatar({
                         dotSizes[size],
                         size !== 'xs' && 'animate-pulse-ring',
                     )}
-                    title="Онлайн"
+                    title={tr('Онлайн')}
                 />
             )}
         </span>

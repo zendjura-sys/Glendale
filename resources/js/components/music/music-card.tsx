@@ -7,6 +7,7 @@ import { playTrack, toggle, usePlayer } from '@/lib/player';
 import { cn } from '@/lib/utils';
 import type { TrackCard } from '@/types';
 import { Equalizer, SpotifyLogo, TrackCover } from './track-cover';
+import { tr } from '@/lib/i18n';
 
 /**
  * Картка треку у записі на стіні, у «Зараз грає» та в діалогах.
@@ -33,7 +34,7 @@ export function MusicCard({
             next ? 'POST' : 'DELETE',
             `/music/tracks/${track.id}/library`,
         );
-        if (next) toast.success('Додано до ваших аудіозаписів.');
+        if (next) toast.success(tr('Додано до ваших аудіозаписів.'));
     };
 
     return (
@@ -56,7 +57,7 @@ export function MusicCard({
                 type="button"
                 onClick={() => (isCurrent ? toggle() : playTrack(track))}
                 className="relative shrink-0"
-                aria-label={playing ? 'Пауза' : 'Слухати'}
+                aria-label={playing ? tr('Пауза') : tr('Слухати')}
             >
                 <TrackCover
                     url={track.cover_url}
@@ -108,8 +109,8 @@ export function MusicCard({
                     )}
                     aria-label={
                         track.in_library
-                            ? 'Прибрати з моїх аудіозаписів'
-                            : 'Додати до моїх аудіозаписів'
+                            ? tr('Прибрати з моїх аудіозаписів')
+                            : tr('Додати до моїх аудіозаписів')
                     }
                 >
                     {track.in_library ? (
@@ -124,7 +125,7 @@ export function MusicCard({
                     target="_blank"
                     rel="noreferrer"
                     className="relative flex items-center gap-1.5 rounded-full px-2 py-1 text-[11px] font-medium text-[#1ed760] transition hover:bg-[#1ed760]/10"
-                    title="Відкрити у Spotify"
+                    title={tr('Відкрити у Spotify')}
                 >
                     <SpotifyLogo className="size-4" />
                     <ExternalLink className="size-3" />

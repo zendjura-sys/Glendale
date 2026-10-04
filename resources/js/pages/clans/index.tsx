@@ -5,6 +5,7 @@ import { Pagination } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
 import { cn } from '@/lib/utils';
 import type { ClanCard, GameCard, Paginated } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     mine: ClanCard[];
@@ -70,12 +71,12 @@ export function ClanRow({ clan }: { clan: ClanCard }) {
                     </span>
                     {clan.pending ? (
                         <span className="text-amber-300">
-                            заявка на розгляді
+                            {tr('заявка на розгляді')}
                         </span>
                     ) : (
                         clan.is_recruiting && (
                             <span className="text-emerald-300">
-                                набір відкрито
+                                {tr('набір відкрито')}
                             </span>
                         )
                     )}
@@ -113,23 +114,24 @@ export default function ClansIndex({ mine, clans, filters, types }: Props) {
 
     return (
         <>
-            <Head title="Клани й гільдії" />
+            <Head title={tr('Клани й гільдії')} />
             <div className="mb-4 flex flex-wrap items-center gap-3">
                 <h1 className="flex flex-1 items-center gap-2 font-display text-2xl font-semibold text-white">
-                    <Swords className="size-6 text-[#a5b4fc]" /> Клани й гільдії
+                    <Swords className="size-6 text-[#a5b4fc]" />{' '}
+                    {tr('Клани й гільдії')}
                 </h1>
                 <Link
                     href="/clans/create"
                     className="btn-glow inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold"
                 >
-                    <Plus className="size-4" /> Створити
+                    <Plus className="size-4" /> {tr('Створити')}
                 </Link>
             </div>
 
             {mine.length > 0 && (
                 <section className="mb-5">
                     <h2 className="mb-2 text-sm font-semibold text-white/70">
-                        Мої
+                        {tr('Мої')}
                     </h2>
                     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                         {mine.map((c) => (
@@ -145,7 +147,7 @@ export default function ClansIndex({ mine, clans, filters, types }: Props) {
                     <input
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
-                        placeholder="Назва або тег"
+                        placeholder={tr('Назва або тег')}
                         className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
                     />
                 </label>
@@ -162,7 +164,7 @@ export default function ClansIndex({ mine, clans, filters, types }: Props) {
                                     : 'text-white/55 hover:text-white',
                             )}
                         >
-                            {t ? types[t] : 'Усі'}
+                            {t ? types[t] : tr('Усі')}
                         </button>
                     ))}
                 </div>
@@ -180,8 +182,8 @@ export default function ClansIndex({ mine, clans, filters, types }: Props) {
             {clans.data.length === 0 ? (
                 <EmptyState
                     icon={Swords}
-                    title="Кланів не знайдено"
-                    text="Створіть свій — оберіть гру й потрібні розділи."
+                    title={tr('Кланів не знайдено')}
+                    text={tr('Створіть свій — оберіть гру й потрібні розділи.')}
                 />
             ) : (
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">

@@ -8,12 +8,13 @@ import {
 } from '@/components/ui/dialog';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { tr } from '@/lib/i18n';
 
 const REASONS = {
-    spam: 'Спам або реклама',
-    abuse: 'Образи, мат, цькування',
-    scam: 'Шахрайство',
-    other: 'Інше',
+    spam: tr('Спам або реклама'),
+    abuse: tr('Образи, мат, цькування'),
+    scam: tr('Шахрайство'),
+    other: tr('Інше'),
 } as const;
 
 /** Скарга на повідомлення: причина й коментар — модераторам (у чаті сім’ї — ще й керівництву сім’ї). */
@@ -44,10 +45,11 @@ export function ReportDialog({
     return (
         <Dialog open={url !== null} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="sm:max-w-md">
-                <DialogTitle>Поскаржитися на повідомлення</DialogTitle>
+                <DialogTitle>{tr('Поскаржитися на повідомлення')}</DialogTitle>
                 <DialogDescription>
-                    Модератори перевірять повідомлення й вирішать, що з ним
-                    робити.
+                    {tr(
+                        'Модератори перевірять повідомлення й вирішать, що з ним робити.',
+                    )}
                 </DialogDescription>
                 <div className="space-y-1.5">
                     {Object.entries(REASONS).map(([key, label]) => (
@@ -73,7 +75,7 @@ export function ReportDialog({
                     maxLength={300}
                     rows={2}
                     onChange={(e) => setComment(e.target.value)}
-                    placeholder="Коментар (необов’язково)"
+                    placeholder={tr('Коментар (необов’язково)')}
                     className="input-glass w-full rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none"
                 />
                 <button
@@ -82,7 +84,7 @@ export function ReportDialog({
                     onClick={send}
                     className="btn-glow h-10 w-full rounded-xl text-sm font-semibold disabled:opacity-50"
                 >
-                    Надіслати скаргу
+                    {tr('Надіслати скаргу')}
                 </button>
             </DialogContent>
         </Dialog>

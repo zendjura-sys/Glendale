@@ -7,6 +7,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { LOCALE } from '@/lib/i18n';
 
 export const btnPrimary =
     'btn-glow inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:opacity-50';
@@ -258,7 +259,7 @@ export function Amount({
     );
 }
 
-const whole = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2 });
+const whole = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 2 });
 
 function formatSigned(minor: number): string {
     const text = `${whole.format(Math.abs(minor) / 100)} ₴`;
@@ -267,7 +268,7 @@ function formatSigned(minor: number): string {
 }
 
 export const kyivDateTime = (iso: string) =>
-    new Date(iso).toLocaleString('uk-UA', {
+    new Date(iso).toLocaleString(LOCALE, {
         timeZone: 'Europe/Kyiv',
         day: '2-digit',
         month: '2-digit',
@@ -276,7 +277,7 @@ export const kyivDateTime = (iso: string) =>
     });
 
 export const kyivDate = (date: string) =>
-    new Date(`${date}T12:00:00Z`).toLocaleDateString('uk-UA', {
+    new Date(`${date}T12:00:00Z`).toLocaleDateString(LOCALE, {
         day: 'numeric',
         month: 'long',
     });

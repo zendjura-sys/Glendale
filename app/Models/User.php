@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Translation\HasLocalePreference;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -65,6 +66,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $steam_id
  * @property Carbon|null $muted_until Тимчасовий мут на всьому сайті
  * @property string|null $mute_reason
+ * @property string|null $locale
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -73,7 +75,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
     'status', 'about', 'city', 'birthday', 'gender', 'website', 'is_private', 'message_privacy', 'email_social',
 ])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'email', 'ban_reason', 'google_email'])]
-class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
+class User extends Authenticatable implements HasLocalePreference, MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
@@ -276,6 +278,12 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'status' => $this->status,
             'playing' => $this->playing(),
         ];
+    }
+
+    /** Мова листів і сповіщень (Laravel бере її автоматично). */
+    public function preferredLocale(): ?string
+    {
+        return $this->locale;
     }
 
     public function isMuted(): bool

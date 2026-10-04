@@ -2,6 +2,7 @@ import { router } from '@inertiajs/react';
 import { Check, Lock, Mic, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { tr } from '@/lib/i18n';
 
 export type VoiceTemplate = {
     id: number;
@@ -35,7 +36,7 @@ function RankPicker({
                     key={r}
                     type="button"
                     onClick={() => toggle(r)}
-                    aria-label={`Ранг ${r}`}
+                    aria-label={tr('Ранг {r}', { r })}
                     className={cn(
                         'size-7 rounded-lg text-xs font-semibold transition',
                         on.includes(r)
@@ -70,7 +71,10 @@ function TemplateRow({ template }: { template: VoiceTemplate }) {
     const remove = () => {
         if (
             !confirm(
-                `Прибрати «${template.name}» з усіх сімей? Розмови в цій кімнаті завершаться.`,
+                tr(
+                    'Прибрати «{name}» з усіх сімей? Розмови в цій кімнаті завершаться.',
+                    { name: template.name },
+                ),
             )
         )
             return;
@@ -90,7 +94,7 @@ function TemplateRow({ template }: { template: VoiceTemplate }) {
             />
             <RankPicker value={ranks} onChange={setRanks} />
             <span className="text-xs text-white/40">
-                у {template.families} сім’ях
+                {tr('у')} {template.families} {tr('сім’ях')}
             </span>
             {dirty && (
                 <>
@@ -100,21 +104,21 @@ function TemplateRow({ template }: { template: VoiceTemplate }) {
                             checked={apply}
                             onChange={(e) => setApply(e.target.checked)}
                         />
-                        Застосувати доступ до всіх сімей
+                        {tr('Застосувати доступ до всіх сімей')}
                     </label>
                     <button
                         type="button"
                         onClick={save}
                         className="inline-flex h-9 items-center rounded-xl bg-gradient-brand px-3 text-sm font-medium text-white"
                     >
-                        Зберегти
+                        {tr('Зберегти')}
                     </button>
                 </>
             )}
             <button
                 type="button"
                 onClick={remove}
-                aria-label="Прибрати кімнату"
+                aria-label={tr('Прибрати кімнату')}
                 className="inline-flex size-9 items-center justify-center rounded-xl text-rose-300 hover:bg-rose-500/10"
             >
                 <Trash2 className="size-4" />
@@ -154,13 +158,12 @@ export function VoiceTemplates({ templates }: { templates: VoiceTemplate[] }) {
                 </div>
                 <div>
                     <h2 className="font-semibold text-white">
-                        Голосові кімнати для всіх сімей
+                        {tr('Голосові кімнати для всіх сімей')}
                     </h2>
                     <p className="text-xs text-white/45">
-                        Кімнати з’являються в кожній сім’ї автоматично. Нові
-                        учасники бачать ті, що відкриті їхньому рангу; лідер
-                        заходить завжди. Сім’я може змінити доступ у «Рангах і
-                        правах», але не видалити кімнату.
+                        {tr(
+                            'Кімнати з’являються в кожній сім’ї автоматично. Нові учасники бачать ті, що відкриті їхньому рангу; лідер заходить завжди. Сім’я може змінити доступ у «Рангах і правах», але не видалити кімнату.',
+                        )}
                     </p>
                 </div>
             </div>
@@ -171,7 +174,9 @@ export function VoiceTemplates({ templates }: { templates: VoiceTemplate[] }) {
                 ))}
                 {templates.length === 0 && (
                     <p className="rounded-2xl bg-white/[0.03] px-4 py-3 text-sm text-white/40">
-                        Поки що кожна сім’я отримує лише кімнату «Загальна».
+                        {tr(
+                            'Поки що кожна сім’я отримує лише кімнату «Загальна».',
+                        )}
                     </p>
                 )}
                 <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-dashed border-white/10 p-3">
@@ -181,7 +186,7 @@ export function VoiceTemplates({ templates }: { templates: VoiceTemplate[] }) {
                         maxLength={60}
                         onChange={(e) => setName(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && add()}
-                        placeholder="Назва, наприклад «Бізвар»"
+                        placeholder={tr('Назва, наприклад «Бізвар»')}
                         className="input-glass h-9 min-w-[140px] flex-1 rounded-xl px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
                     />
                     <RankPicker value={ranks} onChange={setRanks} />
@@ -191,7 +196,7 @@ export function VoiceTemplates({ templates }: { templates: VoiceTemplate[] }) {
                         disabled={!name.trim()}
                         className="inline-flex h-9 items-center rounded-xl bg-gradient-brand px-3 text-sm font-medium text-white disabled:opacity-40"
                     >
-                        Додати
+                        {tr('Додати')}
                     </button>
                 </div>
             </div>

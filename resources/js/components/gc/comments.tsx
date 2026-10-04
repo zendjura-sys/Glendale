@@ -10,6 +10,7 @@ import type { CommentItem } from '@/types';
 import { LikeButton } from './like-button';
 import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     /** Базовий URL коментарів, напр. `/posts/1/comments`. */
@@ -68,7 +69,7 @@ export function Comments({
             toast.error(
                 error instanceof ApiError
                     ? error.message
-                    : 'Не вдалося надіслати коментар.',
+                    : tr('Не вдалося надіслати коментар.'),
             );
         } finally {
             setSending(false);
@@ -127,7 +128,7 @@ export function Comments({
                     onClick={loadAll}
                     className="text-[13px] font-medium text-[#9aa8ff] hover:text-white"
                 >
-                    Показати всі {total}{' '}
+                    {tr('Показати всі')} {total}{' '}
                     {plural(total, ['коментар', 'коментарі', 'коментарів'])}
                 </button>
             )}
@@ -179,7 +180,7 @@ export function Comments({
                                             inputRef.current?.focus();
                                         }}
                                     >
-                                        Відповісти
+                                        {tr('Відповісти')}
                                     </button>
                                 )}
                                 {comment.can_delete && (
@@ -187,7 +188,7 @@ export function Comments({
                                         type="button"
                                         className="opacity-0 transition group-hover:opacity-100 hover:text-rose-300"
                                         onClick={() => remove(comment)}
-                                        aria-label="Видалити коментар"
+                                        aria-label={tr('Видалити коментар')}
                                     >
                                         <Trash2 className="size-3.5" />
                                     </button>
@@ -213,13 +214,13 @@ export function Comments({
                         {replyTo && (
                             <div className="flex items-center gap-1.5 px-3.5 pt-2 text-xs text-[#9aa8ff]">
                                 <CornerDownRight className="size-3.5" />{' '}
-                                Відповідь для {replyTo.user.first_name}
+                                {tr('Відповідь для')} {replyTo.user.first_name}
                                 <button
                                     type="button"
                                     className="ml-auto text-white/40 hover:text-white"
                                     onClick={() => setReplyTo(null)}
                                 >
-                                    скасувати
+                                    {tr('скасувати')}
                                 </button>
                             </div>
                         )}
@@ -242,7 +243,7 @@ export function Comments({
                                         void submit();
                                     }
                                 }}
-                                placeholder="Написати коментар…"
+                                placeholder={tr('Написати коментар…')}
                                 className="[field-sizing:content] max-h-40 min-h-10 flex-1 resize-none bg-transparent px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 focus:outline-none"
                             />
                             <button
@@ -250,7 +251,7 @@ export function Comments({
                                 onClick={submit}
                                 disabled={!body.trim() || sending}
                                 className="m-1 flex size-8 items-center justify-center rounded-xl text-[#9aa8ff] transition hover:bg-white/10 disabled:opacity-30"
-                                aria-label="Надіслати"
+                                aria-label={tr('Надіслати')}
                             >
                                 <SendHorizontal className="size-[18px]" />
                             </button>

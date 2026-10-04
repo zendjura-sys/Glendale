@@ -2,6 +2,7 @@
 
 namespace App\Support\Mail;
 
+use App\Support\I18n\Translations;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -43,8 +44,9 @@ class AccountMail
 
     private static function message(string $subject, string $intro, string $action, string $url, string $outro): MailMessage
     {
+        // Лист будується вже з мовою отримувача (Laravel бере її з preferredLocale).
         return (new MailMessage)
-            ->subject($subject)
+            ->subject(app(Translations::class)->line($subject))
             // Фірмовий шаблон сайту замість стандартного листа Laravel.
             ->view(['html' => 'mail.account-notice', 'text' => 'mail.account-notice-text'], [
                 'title' => $subject,

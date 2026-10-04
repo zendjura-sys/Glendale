@@ -21,6 +21,7 @@ import { api, ApiError } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { joinWatchVoice, leaveVoice, useVoice } from '@/lib/voice';
 import type { MovieCard, MoviePlayer, UserCard } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Playback = {
     playing: boolean;
@@ -264,7 +265,7 @@ export default function WatchParty({
             }
             if (event.ended) {
                 setParty((p) => ({ ...p, ended: true }));
-                toast('Ведучий завершив спільний перегляд');
+                toast(tr('Ведучий завершив спільний перегляд'));
             }
         },
     });
@@ -295,7 +296,7 @@ export default function WatchParty({
             await api('POST', `/watch/${party.code}/messages`, { body });
         } catch (e) {
             setDraft(body);
-            toast.error(e instanceof ApiError ? e.message : 'Не надіслано');
+            toast.error(e instanceof ApiError ? e.message : tr('Не надіслано'));
         }
     };
 
@@ -305,7 +306,7 @@ export default function WatchParty({
             position: kodik ? localTime : 0,
             player_key: player?.key ?? null,
         }).catch((e) =>
-            toast.error(e instanceof ApiError ? e.message : 'Не вдалося'),
+            toast.error(e instanceof ApiError ? e.message : tr('Не вдалося')),
         );
     };
 
@@ -332,12 +333,12 @@ export default function WatchParty({
                 `/watch/${party.code}/invite`,
                 { user_ids: picked },
             );
-            toast.success(`Запрошення надіслано: ${sent}`);
+            toast.success(tr('Запрошення надіслано: {sent}', { sent }));
             setInviteOpen(false);
             setPicked([]);
         } catch (e) {
             toast.error(
-                e instanceof ApiError ? e.message : 'Не вдалося надіслати',
+                e instanceof ApiError ? e.message : tr('Не вдалося надіслати'),
             );
         }
     };
@@ -349,12 +350,12 @@ export default function WatchParty({
 
     return (
         <>
-            <Head title={`Разом: ${movie.title}`} />
+            <Head title={tr('Разом: {title}', { title: movie.title })} />
             <div className="mb-4 flex flex-wrap items-center gap-3">
                 <Link
                     href={movie.href}
                     className="inline-flex size-10 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.07] hover:text-white"
-                    aria-label="До фільму"
+                    aria-label={tr('До фільму')}
                 >
                     <ArrowLeft className="size-5" />
                 </Link>
@@ -364,18 +365,19 @@ export default function WatchParty({
                         <span className="truncate">{movie.title}</span>
                     </h1>
                     <p className="truncate text-xs text-white/50">
-                        Спільний перегляд · ведучий {party.host?.name ?? '—'}
+                        {tr('Спільний перегляд · ведучий')}{' '}
+                        {party.host?.name ?? '—'}
                     </p>
                 </div>
                 <button
                     type="button"
                     onClick={() => {
                         void navigator.clipboard?.writeText(party.url);
-                        toast.success('Посилання скопійовано');
+                        toast.success(tr('Посилання скопійовано'));
                     }}
                     className="glass inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm text-white/80 hover:text-white"
                 >
-                    <Copy className="size-4" /> Посилання
+                    <Copy className="size-4" /> {tr('Посилання')}
                 </button>
                 {!party.ended && (
                     <button
@@ -383,19 +385,19 @@ export default function WatchParty({
                         onClick={() => setInviteOpen(true)}
                         className="btn-glow inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold"
                     >
-                        <UserPlus className="size-4" /> Запросити
+                        <UserPlus className="size-4" /> {tr('Запросити')}
                     </button>
                 )}
             </div>
 
             {party.ended && (
                 <div className="glass mb-4 rounded-2xl px-4 py-3 text-sm text-white/70">
-                    Спільний перегляд завершено. Фільм можна додивитися{' '}
+                    {tr('Спільний перегляд завершено. Фільм можна додивитися')}{' '}
                     <Link
                         href={movie.href}
                         className="text-[#a5b4fc] hover:underline"
                     >
-                        на його сторінці
+                        {tr('на його сторінці')}
                     </Link>
                     .
                 </div>
@@ -417,7 +419,7 @@ export default function WatchParty({
                                 />
                             ) : (
                                 <div className="absolute inset-0 flex items-center justify-center text-sm text-white/50">
-                                    Для фільму немає плеєра
+                                    {tr('Для фільму немає плеєра')}
                                 </div>
                             )}
                         </div>
@@ -435,18 +437,21 @@ export default function WatchParty({
                                 ) : (
                                     <Pause className="size-3.5" />
                                 )}
-                                Ведучий: {clock(expected())}
+                                {tr('Ведучий:')} {clock(expected())}
                             </span>
                             {kodik ? (
                                 <span className="text-xs text-white/45">
                                     {synced
-                                        ? 'Синхронізовано з ведучим'
-                                        : 'Натисніть Play у плеєрі, щоб підключитися'}
+                                        ? tr('Синхронізовано з ведучим')
+                                        : tr(
+                                              'Натисніть Play у плеєрі, щоб підключитися',
+                                          )}
                                 </span>
                             ) : (
                                 <span className="text-xs text-amber-200/80">
-                                    Цей плеєр не дає керувати собою — тисніть
-                                    Play разом за сигналом «Старт».
+                                    {tr(
+                                        'Цей плеєр не дає керувати собою — тисніть Play разом за сигналом «Старт».',
+                                    )}
                                 </span>
                             )}
                             {control && (
@@ -457,15 +462,15 @@ export default function WatchParty({
                                         className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-emerald-500 px-3 text-sm font-semibold text-white hover:bg-emerald-500/85"
                                     >
                                         <Play className="size-4 fill-current" />{' '}
-                                        Старт разом
+                                        {tr('Старт разом')}
                                     </button>
                                     <button
                                         type="button"
                                         onClick={pauseAll}
                                         className="glass inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-white/80"
                                     >
-                                        <Pause className="size-4" /> Пауза для
-                                        всіх
+                                        <Pause className="size-4" />{' '}
+                                        {tr('Пауза для всіх')}
                                     </button>
                                 </span>
                             )}
@@ -507,14 +512,16 @@ export default function WatchParty({
                                         )
                                     }
                                 />
-                                Керувати плеєром можуть усі
+                                {tr('Керувати плеєром можуть усі')}
                             </label>
                             <button
                                 type="button"
                                 onClick={() => {
                                     if (
                                         !confirm(
-                                            'Завершити спільний перегляд для всіх?',
+                                            tr(
+                                                'Завершити спільний перегляд для всіх?',
+                                            ),
                                         )
                                     )
                                         return;
@@ -525,7 +532,7 @@ export default function WatchParty({
                                 }}
                                 className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-rose-300 hover:bg-rose-500/10"
                             >
-                                <X className="size-4" /> Завершити
+                                <X className="size-4" /> {tr('Завершити')}
                             </button>
                         </div>
                     )}
@@ -536,7 +543,8 @@ export default function WatchParty({
                         <div className="mb-3 flex items-center gap-2">
                             <Users className="size-4 text-[#a5b4fc]" />
                             <h2 className="flex-1 text-sm font-semibold text-white">
-                                Дивляться ({party.members.length})
+                                {tr('Дивляться (')}
+                                {party.members.length})
                             </h2>
                             {party.voice_enabled && !party.ended && (
                                 <button
@@ -557,7 +565,9 @@ export default function WatchParty({
                                     )}
                                 >
                                     <Headphones className="size-3.5" />
-                                    {inVoice ? 'Вийти з голосу' : 'Голос'}
+                                    {inVoice
+                                        ? tr('Вийти з голосу')
+                                        : tr('Голос')}
                                 </button>
                             )}
                         </div>
@@ -583,7 +593,7 @@ export default function WatchParty({
                                     {m.is_host && (
                                         <Crown
                                             className="size-3.5 text-amber-300"
-                                            aria-label="Ведучий"
+                                            aria-label={tr('Ведучий')}
                                         />
                                     )}
                                 </li>
@@ -595,13 +605,13 @@ export default function WatchParty({
                         <div className="mb-2 flex items-center gap-2">
                             <MessageCircle className="size-4 text-[#a5b4fc]" />
                             <h2 className="text-sm font-semibold text-white">
-                                Чат перегляду
+                                {tr('Чат перегляду')}
                             </h2>
                         </div>
                         <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
                             {messages.length === 0 && (
                                 <p className="py-6 text-center text-xs text-white/40">
-                                    Обговорюйте фільм тут
+                                    {tr('Обговорюйте фільм тут')}
                                 </p>
                             )}
                             {messages.map((m) => (
@@ -633,12 +643,12 @@ export default function WatchParty({
                                     value={draft}
                                     maxLength={500}
                                     onChange={(e) => setDraft(e.target.value)}
-                                    placeholder="Повідомлення"
+                                    placeholder={tr('Повідомлення')}
                                     className="input-glass h-10 min-w-0 flex-1 rounded-xl px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
                                 />
                                 <button
                                     type="submit"
-                                    aria-label="Надіслати"
+                                    aria-label={tr('Надіслати')}
                                     className="btn-glow inline-flex size-10 items-center justify-center rounded-xl"
                                 >
                                     <Send className="size-4" />
@@ -659,12 +669,14 @@ export default function WatchParty({
                         onClick={(e) => e.stopPropagation()}
                     >
                         <h2 className="mb-3 font-display text-base font-semibold text-white">
-                            Запросити друзів
+                            {tr('Запросити друзів')}
                         </h2>
                         <div className="max-h-[50vh] space-y-1 overflow-y-auto">
                             {friends.length === 0 && (
                                 <p className="py-4 text-center text-sm text-white/45">
-                                    Друзів поки немає — надішліть посилання.
+                                    {tr(
+                                        'Друзів поки немає — надішліть посилання.',
+                                    )}
                                 </p>
                             )}
                             {friends.map((f) => {
@@ -715,7 +727,7 @@ export default function WatchParty({
                                 onClick={() => setInviteOpen(false)}
                                 className="glass inline-flex h-10 items-center rounded-xl px-4 text-sm text-white/75"
                             >
-                                Скасувати
+                                {tr('Скасувати')}
                             </button>
                             <button
                                 type="button"
@@ -723,7 +735,8 @@ export default function WatchParty({
                                 onClick={() => void invite()}
                                 className="btn-glow inline-flex h-10 items-center rounded-xl px-4 text-sm font-semibold disabled:opacity-50"
                             >
-                                Надіслати ({picked.length})
+                                {tr('Надіслати (')}
+                                {picked.length})
                             </button>
                         </div>
                     </div>

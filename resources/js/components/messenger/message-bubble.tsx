@@ -21,6 +21,7 @@ import {
     FileAttachment,
     VoicePlayer,
 } from './message-media';
+import { tr } from '@/lib/i18n';
 
 export type BubbleActions = {
     onReply: (message: ChatMessage) => void;
@@ -158,7 +159,7 @@ export function MessageBubble({
                       : 'text-white/40',
             )}
         >
-            {message.edited_at && <span>ред.</span>}
+            {message.edited_at && <span>{tr('ред.')}</span>}
             {clockTime(message.created_at)}
             {own &&
                 (pending === 'sending' ? (
@@ -281,15 +282,15 @@ export function MessageBubble({
                                     own ? 'text-white' : 'text-[#a9b6ff]',
                                 )}
                             >
-                                {message.reply_to.author ?? 'Повідомлення'}
+                                {message.reply_to.author ?? tr('Повідомлення')}
                             </span>
                             <span className="block truncate opacity-75">
                                 {message.reply_to.deleted
-                                    ? 'Повідомлення видалено'
+                                    ? tr('Повідомлення видалено')
                                     : message.reply_to.body ||
                                       message.reply_to.preview ||
                                       (message.reply_to.has_attachments
-                                          ? 'Фотографія'
+                                          ? tr('Фотографія')
                                           : '')}
                             </span>
                         </button>
@@ -299,7 +300,7 @@ export function MessageBubble({
                         <div className="relative">
                             <img
                                 src={message.sticker.url}
-                                alt={message.sticker.emoji ?? 'Стікер'}
+                                alt={message.sticker.emoji ?? tr('Стікер')}
                                 onLoad={actions.onMediaLoad}
                                 className="size-[148px] object-contain drop-shadow-[0_10px_24px_rgb(0_0_0/0.35)] sm:size-[164px]"
                             />
@@ -384,7 +385,8 @@ export function MessageBubble({
                         onClick={() => actions.onRetry(message)}
                         className="mt-1 inline-flex items-center gap-1 text-xs text-rose-300 hover:text-rose-200"
                     >
-                        <RotateCw className="size-3" /> Не надіслано. Повторити
+                        <RotateCw className="size-3" />{' '}
+                        {tr('Не надіслано. Повторити')}
                     </button>
                 )}
             </div>
@@ -400,7 +402,7 @@ export function MessageBubble({
                         type="button"
                         className={toolButton}
                         onClick={() => actions.onReply(message)}
-                        title="Відповісти"
+                        title={tr('Відповісти')}
                     >
                         <Reply className="size-4" />
                     </button>
@@ -409,7 +411,7 @@ export function MessageBubble({
                             type="button"
                             className={toolButton}
                             onClick={() => actions.onCopy(message)}
-                            title="Копіювати"
+                            title={tr('Копіювати')}
                         >
                             <Copy className="size-3.5" />
                         </button>
@@ -419,7 +421,7 @@ export function MessageBubble({
                             type="button"
                             className={toolButton}
                             onClick={() => actions.onEdit(message)}
-                            title="Редагувати"
+                            title={tr('Редагувати')}
                         >
                             <Pencil className="size-3.5" />
                         </button>
@@ -429,7 +431,7 @@ export function MessageBubble({
                             type="button"
                             className={cn(toolButton, 'hover:text-rose-300')}
                             onClick={() => actions.onDelete(message)}
-                            title="Видалити"
+                            title={tr('Видалити')}
                         >
                             <Trash2 className="size-3.5" />
                         </button>
@@ -439,7 +441,7 @@ export function MessageBubble({
                             type="button"
                             className={cn(toolButton, 'hover:text-amber-300')}
                             onClick={() => actions.onReport?.(message)}
-                            title="Поскаржитися"
+                            title={tr('Поскаржитися')}
                         >
                             <Flag className="size-3.5" />
                         </button>

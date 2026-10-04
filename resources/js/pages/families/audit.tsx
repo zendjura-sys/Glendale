@@ -5,6 +5,7 @@ import { FamilyShell } from '@/components/families/family-shell';
 import { Empty, Panel, kyivDateTime } from '@/components/families/ui';
 import { selectClass } from '@/components/gc/admin';
 import type { AuditEntry, FamilyShellProps, Paginated } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Props = FamilyShellProps & {
     logs: Paginated<AuditEntry>;
@@ -14,7 +15,7 @@ type Props = FamilyShellProps & {
 
 const formatValue = (value: unknown): string => {
     if (value === null || value === undefined) return '—';
-    if (typeof value === 'boolean') return value ? 'так' : 'ні';
+    if (typeof value === 'boolean') return value ? tr('так') : tr('ні');
     if (typeof value === 'object') return JSON.stringify(value);
 
     return String(value as string | number);
@@ -25,9 +26,9 @@ export default function FamilyAudit(props: Props) {
     const [open, setOpen] = useState<number | null>(null);
 
     return (
-        <FamilyShell {...props} title="Аудит">
+        <FamilyShell {...props} title={tr('Аудит')}>
             <Panel
-                title="Журнал аудиту"
+                title={tr('Журнал аудиту')}
                 icon={ScrollText}
                 actions={
                     <select
@@ -46,7 +47,7 @@ export default function FamilyAudit(props: Props) {
                         }
                         className={selectClass}
                     >
-                        <option value="">Усі дії</option>
+                        <option value="">{tr('Усі дії')}</option>
                         {Object.entries(actions).map(([k, v]) => (
                             <option key={k} value={k}>
                                 {v}
@@ -56,11 +57,13 @@ export default function FamilyAudit(props: Props) {
                 }
             >
                 <p className="mb-3 flex items-center gap-1.5 text-xs text-white/40">
-                    <Lock className="size-3.5" /> Записи незмінні: їх не може
-                    відредагувати чи видалити навіть лідер.
+                    <Lock className="size-3.5" />{' '}
+                    {tr(
+                        'Записи незмінні: їх не може відредагувати чи видалити навіть лідер.',
+                    )}
                 </p>
                 {logs.data.length === 0 ? (
-                    <Empty icon={ScrollText} text="Записів немає" />
+                    <Empty icon={ScrollText} text={tr('Записів немає')} />
                 ) : (
                     <InfiniteScroll data="logs" preserveUrl>
                         <ul className="divide-y divide-white/[0.05]">
@@ -87,7 +90,7 @@ export default function FamilyAudit(props: Props) {
                                                 </span>
                                             )}
                                             <div className="text-xs text-white/40">
-                                                {l.actor ?? 'Система'}
+                                                {l.actor ?? tr('Система')}
                                             </div>
                                         </div>
                                         <span className="font-mono text-[10px] text-white/25">

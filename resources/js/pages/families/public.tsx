@@ -13,6 +13,7 @@ import { Field, inputClass } from '@/components/servers/server-form';
 import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { FamilyCard, MemberCard } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     family: FamilyCard & { description: string | null; created_at: string };
@@ -41,7 +42,7 @@ export default function FamilyPublic({ family, leaders, application }: Props) {
                     href="/families"
                     className="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white"
                 >
-                    <ArrowLeft className="size-4" /> До сімей
+                    <ArrowLeft className="size-4" /> {tr('До сімей')}
                 </Link>
                 <section className="glass noise relative overflow-hidden rounded-3xl">
                     <div className="h-40 sm:h-52">
@@ -87,9 +88,11 @@ export default function FamilyPublic({ family, leaders, application }: Props) {
                                 )}
                                 <span className="flex items-center gap-1">
                                     <Users className="size-4" />
-                                    {family.members_count} учасників
+                                    {family.members_count} {tr('учасників')}
                                 </span>
-                                <span>з {formatDate(family.created_at)}</span>
+                                <span>
+                                    {tr('з')} {formatDate(family.created_at)}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -100,7 +103,7 @@ export default function FamilyPublic({ family, leaders, application }: Props) {
                         {family.description && (
                             <section className="glass rounded-3xl p-5">
                                 <h2 className="mb-2 font-display font-semibold text-white">
-                                    Про сім’ю
+                                    {tr('Про сім’ю')}
                                 </h2>
                                 <p className="text-sm leading-relaxed whitespace-pre-line text-white/65">
                                     {family.description}
@@ -109,7 +112,7 @@ export default function FamilyPublic({ family, leaders, application }: Props) {
                         )}
                         <section className="glass rounded-3xl p-5">
                             <h2 className="mb-3 font-display font-semibold text-white">
-                                Керівництво
+                                {tr('Керівництво')}
                             </h2>
                             <div className="grid gap-2 sm:grid-cols-2">
                                 {leaders.map((m) => (
@@ -144,14 +147,14 @@ export default function FamilyPublic({ family, leaders, application }: Props) {
                             <div className="text-center">
                                 <Clock3 className="mx-auto size-8 text-amber-300" />
                                 <div className="mt-2 font-semibold text-white">
-                                    Заявку надіслано
+                                    {tr('Заявку надіслано')}
                                 </div>
                                 <p className="mt-1 text-sm text-white/50">
-                                    Як{' '}
+                                    {tr('Як')}{' '}
                                     <span className="font-mono text-white">
                                         {application.display}
                                     </span>
-                                    . Офіцери отримали сповіщення.
+                                    {tr('. Офіцери отримали сповіщення.')}
                                 </p>
                                 <button
                                     type="button"
@@ -165,23 +168,24 @@ export default function FamilyPublic({ family, leaders, application }: Props) {
                                     }
                                     className={cn(btnGhost, 'mt-4 w-full')}
                                 >
-                                    Відкликати заявку
+                                    {tr('Відкликати заявку')}
                                 </button>
                             </div>
                         ) : canApply ? (
                             <div className="space-y-3">
                                 <h2 className="flex items-center gap-2 font-display font-semibold text-white">
                                     <UserPlus className="size-4 text-amber-300" />
-                                    Вступити до сім’ї
+                                    {tr('Вступити до сім’ї')}
                                 </h2>
                                 {application?.status === 'declined' && (
                                     <p className="rounded-xl bg-rose-500/10 px-3 py-2 text-xs text-rose-200">
-                                        Попередню заявку відхилено — можна
-                                        подати знову.
+                                        {tr(
+                                            'Попередню заявку відхилено — можна подати знову.',
+                                        )}
                                     </p>
                                 )}
                                 <Field
-                                    label="RP-нікнейм"
+                                    label={tr('RP-нікнейм')}
                                     error={form.errors.rp_nickname}
                                 >
                                     <input
@@ -192,7 +196,7 @@ export default function FamilyPublic({ family, leaders, application }: Props) {
                                                 e.target.value,
                                             )
                                         }
-                                        placeholder="Ім’я_Прізвище"
+                                        placeholder={tr('Ім’я_Прізвище')}
                                         className={cn(inputClass, 'font-mono')}
                                     />
                                 </Field>
@@ -221,7 +225,9 @@ export default function FamilyPublic({ family, leaders, application }: Props) {
                                         form.setData('note', e.target.value)
                                     }
                                     rows={3}
-                                    placeholder="Коротко про себе: досвід, онлайн, рекомендації"
+                                    placeholder={tr(
+                                        'Коротко про себе: досвід, онлайн, рекомендації',
+                                    )}
                                     className={textareaClass}
                                 />
                                 <button
@@ -234,16 +240,16 @@ export default function FamilyPublic({ family, leaders, application }: Props) {
                                     }
                                     className={cn(btnPrimary, 'h-11 w-full')}
                                 >
-                                    Надіслати заявку
+                                    {tr('Надіслати заявку')}
                                 </button>
                             </div>
                         ) : (
                             <p className="text-center text-sm text-white/50">
                                 {family.status !== 'verified'
-                                    ? 'Сім’я ще проходить верифікацію.'
+                                    ? tr('Сім’я ще проходить верифікацію.')
                                     : application?.status === 'kicked'
-                                      ? 'Вас було виключено з цієї сім’ї.'
-                                      : 'Набір до сім’ї зараз закрито.'}
+                                      ? tr('Вас було виключено з цієї сім’ї.')
+                                      : tr('Набір до сім’ї зараз закрито.')}
                             </p>
                         )}
                     </section>

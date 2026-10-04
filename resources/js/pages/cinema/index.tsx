@@ -30,6 +30,7 @@ import type {
     MovieType,
     ScrollData,
 } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Filters = {
     type: MovieType | null;
@@ -54,10 +55,10 @@ type Props = {
 };
 
 const sorts: { key: Filters['sort']; label: string }[] = [
-    { key: 'new', label: 'Нові на сайті' },
-    { key: 'popular', label: 'Популярні' },
-    { key: 'rating', label: 'За рейтингом' },
-    { key: 'year', label: 'За роком' },
+    { key: 'new', label: tr('Нові на сайті') },
+    { key: 'popular', label: tr('Популярні') },
+    { key: 'rating', label: tr('За рейтингом') },
+    { key: 'year', label: tr('За роком') },
 ];
 
 function durationLabel(minutes: number | null) {
@@ -65,7 +66,9 @@ function durationLabel(minutes: number | null) {
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
 
-    return h ? `${h} год ${m ? `${m} хв` : ''}`.trim() : `${m} хв`;
+    return h
+        ? tr('{h} год {v}', { h, v: m ? tr('{m} хв', { m }) : '' }).trim()
+        : tr('{m} хв', { m });
 }
 
 function Hero({ items }: { items: MovieFeatured[] }) {
@@ -124,7 +127,7 @@ function Hero({ items }: { items: MovieFeatured[] }) {
                 >
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-2.5 py-1 text-[11px] font-semibold tracking-wider text-white/70 uppercase backdrop-blur">
                         <Sparkles className="size-3.5 text-[#f5b342]" />
-                        Рекомендуємо
+                        {tr('Рекомендуємо')}
                     </span>
                     <h1 className="mt-3 font-display text-3xl leading-[1.05] font-bold text-white drop-shadow-lg sm:text-5xl">
                         {movie.title}
@@ -170,13 +173,14 @@ function Hero({ items }: { items: MovieFeatured[] }) {
                             href={`${movie.href}#player`}
                             className="btn-glow inline-flex h-11 items-center gap-2 rounded-xl px-6 text-sm font-semibold"
                         >
-                            <Play className="size-4 fill-current" /> Дивитися
+                            <Play className="size-4 fill-current" />{' '}
+                            {tr('Дивитися')}
                         </Link>
                         <Link
                             href={movie.href}
                             className="inline-flex h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.08] px-5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15"
                         >
-                            <Info className="size-4" /> Детальніше
+                            <Info className="size-4" /> {tr('Детальніше')}
                         </Link>
                     </div>
                 </div>
@@ -265,7 +269,7 @@ export default function CinemaIndex({
 
     return (
         <>
-            <Head title="Кіно" />
+            <Head title={tr('Кіно')} />
             <div className="space-y-5">
                 {!filtered && featured.length > 0 ? (
                     <Hero items={featured} />
@@ -276,12 +280,12 @@ export default function CinemaIndex({
                         <div className="relative">
                             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[11px] font-semibold tracking-wider text-white/60 uppercase">
                                 <Clapperboard className="size-3.5 text-[#8fa0ff]" />
-                                Кіно GameCon
+                                {tr('Кіно GameCon')}
                             </span>
                             <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
                                 {filtered ? (
                                     <>
-                                        Знайдено{' '}
+                                        {tr('Знайдено')}{' '}
                                         <span className="text-gradient">
                                             {total}
                                         </span>{' '}
@@ -293,9 +297,9 @@ export default function CinemaIndex({
                                     </>
                                 ) : (
                                     <>
-                                        Фільми, серіали,{' '}
+                                        {tr('Фільми, серіали,')}{' '}
                                         <span className="text-gradient">
-                                            аніме
+                                            {tr('аніме')}
                                         </span>
                                     </>
                                 )}
@@ -311,7 +315,9 @@ export default function CinemaIndex({
                             <input
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Назва фільму, серіалу чи аніме"
+                                placeholder={tr(
+                                    'Назва фільму, серіалу чи аніме',
+                                )}
                                 className="h-full flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/35"
                             />
                             {search && (
@@ -319,7 +325,7 @@ export default function CinemaIndex({
                                     type="button"
                                     onClick={() => setSearch('')}
                                     className="text-white/40 hover:text-white"
-                                    aria-label="Очистити"
+                                    aria-label={tr('Очистити')}
                                 >
                                     <X className="size-4" />
                                 </button>
@@ -330,7 +336,7 @@ export default function CinemaIndex({
                             className="glass inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 transition hover:text-white"
                         >
                             <Bookmark className="size-4 text-[#8fa0ff]" />
-                            Мої списки
+                            {tr('Мої списки')}
                             {myCounts.all > 0 && (
                                 <span className="rounded-full bg-white/10 px-1.5 text-[11px]">
                                     {myCounts.all}
@@ -343,7 +349,7 @@ export default function CinemaIndex({
                             {[
                                 {
                                     key: null,
-                                    label: 'Усе',
+                                    label: tr('Усе'),
                                     count: totalAll,
                                 },
                                 ...types.map((t) => ({
@@ -383,9 +389,9 @@ export default function CinemaIndex({
                                     apply({ genre: e.target.value || null })
                                 }
                                 className={selectClass}
-                                aria-label="Жанр"
+                                aria-label={tr('Жанр')}
                             >
-                                <option value="">Усі жанри</option>
+                                <option value="">{tr('Усі жанри')}</option>
                                 {genres.map((g) => (
                                     <option key={g.name} value={g.name}>
                                         {g.name}
@@ -402,9 +408,9 @@ export default function CinemaIndex({
                                     })
                                 }
                                 className={selectClass}
-                                aria-label="Рік"
+                                aria-label={tr('Рік')}
                             >
-                                <option value="">Будь-який рік</option>
+                                <option value="">{tr('Будь-який рік')}</option>
                                 {years.map((y) => (
                                     <option key={y} value={y}>
                                         {y}
@@ -419,7 +425,7 @@ export default function CinemaIndex({
                                     })
                                 }
                                 className={selectClass}
-                                aria-label="Сортування"
+                                aria-label={tr('Сортування')}
                             >
                                 {sorts.map((s) => (
                                     <option key={s.key} value={s.key}>
@@ -451,7 +457,7 @@ export default function CinemaIndex({
                                         href="/cinema/my?status=watching"
                                         className="text-xs font-medium text-[#9aa8ff] hover:text-white"
                                     >
-                                        Усі
+                                        {tr('Усі')}
                                     </Link>
                                 ) : undefined
                             }
@@ -463,18 +469,22 @@ export default function CinemaIndex({
                     <EmptyState
                         icon={Film}
                         title={
-                            filtered ? 'Нічого не знайдено' : 'Каталог порожній'
+                            filtered
+                                ? tr('Нічого не знайдено')
+                                : tr('Каталог порожній')
                         }
                         text={
                             filtered
-                                ? 'Спробуйте змінити фільтри або запит.'
-                                : 'Адміністратор ще не додав фільми. Загляньте трохи згодом!'
+                                ? tr('Спробуйте змінити фільтри або запит.')
+                                : tr(
+                                      'Адміністратор ще не додав фільми. Загляньте трохи згодом!',
+                                  )
                         }
                     />
                 ) : (
                     <section className="glass rounded-3xl p-4 sm:p-5">
                         <h2 className="mb-4 font-display text-lg font-semibold text-white">
-                            {filtered ? 'Результати' : 'Каталог'}
+                            {filtered ? tr('Результати') : tr('Каталог')}
                             <span className="ml-2 text-sm font-normal text-white/40">
                                 {total}
                             </span>

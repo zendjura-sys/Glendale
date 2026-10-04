@@ -4,6 +4,7 @@ import { UserAvatar } from '@/components/gc/user-avatar';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import type { ContactCard } from '@/types';
+import { tr } from '@/lib/i18n';
 
 export function useContacts(
     query: string,
@@ -52,7 +53,7 @@ export function ContactPicker({
                 <input
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Пошук серед друзів"
+                    placeholder={tr('Пошук серед друзів')}
                     className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
                     autoFocus
                 />
@@ -69,8 +70,8 @@ export function ContactPicker({
                     <div className="flex flex-col items-center py-10 text-center text-sm text-white/45">
                         <UserRoundX className="mb-2 size-7 text-white/20" />
                         {query
-                            ? 'Нікого не знайдено'
-                            : 'Додайте друзів, щоб почати спілкування'}
+                            ? tr('Нікого не знайдено')
+                            : tr('Додайте друзів, щоб почати спілкування')}
                     </div>
                 ) : (
                     users.map((user) => {
@@ -97,7 +98,7 @@ export function ContactPicker({
                                     </span>
                                     <span className="block truncate text-xs text-white/40">
                                         {user.is_online
-                                            ? 'в мережі'
+                                            ? tr('в мережі')
                                             : `@${user.username}`}
                                     </span>
                                 </span>

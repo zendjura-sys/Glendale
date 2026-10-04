@@ -19,6 +19,7 @@ import { formatBytes, formatDuration } from '@/lib/format';
 import { guessFromFilename, readDuration, readTags } from '@/lib/id3';
 import { cn } from '@/lib/utils';
 import { TrackCover } from './track-cover';
+import { tr } from '@/lib/i18n';
 
 type Item = {
     id: string;
@@ -61,18 +62,18 @@ function send(item: Item, onProgress: (p: number) => void): Promise<void> {
                 const first = payload.errors
                     ? (Object.values(payload.errors)[0] as string[])[0]
                     : payload.message;
-                reject(new Error(first ?? 'Помилка завантаження.'));
+                reject(new Error(first ?? tr('Помилка завантаження.')));
             } catch {
                 reject(
                     new Error(
                         xhr.status === 413
-                            ? 'Файл завеликий для сервера.'
-                            : 'Помилка завантаження.',
+                            ? tr('Файл завеликий для сервера.')
+                            : tr('Помилка завантаження.'),
                     ),
                 );
             }
         };
-        xhr.onerror = () => reject(new Error('Немає з’єднання.'));
+        xhr.onerror = () => reject(new Error(tr('Немає з’єднання.')));
         xhr.send(form);
     });
 }
@@ -108,7 +109,12 @@ export function UploadTracksDialog({
         );
         for (const file of audio) {
             if (file.size > maxMb * 1024 * 1024) {
-                toast.error(`«${file.name}» більший за ${maxMb} МБ.`);
+                toast.error(
+                    tr('«{name}» більший за {maxMb} МБ.', {
+                        name: file.name,
+                        maxMb,
+                    }),
+                );
                 continue;
             }
             const [tags, duration] = await Promise.all([
@@ -147,7 +153,7 @@ export function UploadTracksDialog({
             if (!item.title.trim() || !item.artist.trim()) {
                 update(item.id, {
                     status: 'error',
-                    error: 'Вкажіть назву й виконавця.',
+                    error: tr('Вкажіть назву й виконавця.'),
                 });
                 continue;
             }
@@ -163,14 +169,15 @@ export function UploadTracksDialog({
             } catch (error) {
                 update(item.id, {
                     status: 'error',
-                    error: error instanceof Error ? error.message : 'Помилка.',
+                    error:
+                        error instanceof Error ? error.message : tr('Помилка.'),
                 });
             }
         }
         setBusy(false);
 
         if (uploaded > 0) {
-            toast.success(`Завантажено треків: ${uploaded}.`);
+            toast.success(tr('Завантажено треків: {uploaded}.', { uploaded }));
             router.reload({ only: ['tracks', 'stats'], reset: ['tracks'] });
         }
     };
@@ -187,11 +194,13 @@ export function UploadTracksDialog({
         <Dialog open={open} onOpenChange={close}>
             <DialogContent className="glass-strong flex max-h-[min(92dvh,calc(100dvh-env(safe-area-inset-bottom)-0.75rem))] w-[calc(100%-1rem)] flex-col gap-0 overflow-hidden rounded-3xl border-white/10 p-4 text-white sm:max-w-2xl sm:p-6">
                 <DialogTitle className="pr-8 font-display text-xl leading-tight">
-                    Завантаження музики
+                    {tr('Завантаження музики')}
                 </DialogTitle>
                 <DialogDescription className="mt-1 text-sm text-white/50">
-                    Назву, виконавця й обкладинку підставимо з тегів файлу. До{' '}
-                    {maxMb} МБ на трек.
+                    {tr(
+                        'Назву, виконавця й обкладинку підставимо з тегів файлу. До',
+                    )}{' '}
+                    {maxMb} {tr('МБ на трек.')}
                 </DialogDescription>
 
                 <button
@@ -216,7 +225,7 @@ export function UploadTracksDialog({
                 >
                     <UploadCloud className="size-9 text-[#9aa8ff]" />
                     <span className="mt-2 text-sm font-semibold">
-                        Перетягніть аудіофайли або натисніть
+                        {tr('Перетягніть аудіофайли або натисніть')}
                     </span>
                     <span className="mt-1 text-xs text-white/45">
                         {formats
@@ -275,7 +284,7 @@ export function UploadTracksDialog({
                                                         item.status ===
                                                             'done' || busy
                                                     }
-                                                    placeholder="Назва"
+                                                    placeholder={tr('Назва')}
                                                     maxLength={150}
                                                     className="input-glass h-10 w-full min-w-0 rounded-lg px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
                                                 />
@@ -291,7 +300,9 @@ export function UploadTracksDialog({
                                                         item.status ===
                                                             'done' || busy
                                                     }
-                                                    placeholder="Виконавець"
+                                                    placeholder={tr(
+                                                        'Виконавець',
+                                                    )}
                                                     maxLength={150}
                                                     className="input-glass h-10 w-full min-w-0 rounded-lg px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
                                                 />
@@ -316,7 +327,9 @@ export function UploadTracksDialog({
                                                             )
                                                         }
                                                         className="rounded-full p-1.5 text-white/40 hover:bg-white/10 hover:text-white"
-                                                        aria-label="Прибрати"
+                                                        aria-label={tr(
+                                                            'Прибрати',
+                                                        )}
                                                     >
                                                         <X className="size-4" />
                                                     </button>
@@ -351,8 +364,8 @@ export function UploadTracksDialog({
                         className="rounded-xl px-4 py-2.5 text-sm text-white/60 hover:bg-white/5 hover:text-white disabled:opacity-50"
                     >
                         {pending === 0 && items.length > 0
-                            ? 'Готово'
-                            : 'Скасувати'}
+                            ? tr('Готово')
+                            : tr('Скасувати')}
                     </button>
                     <button
                         type="button"
@@ -361,7 +374,8 @@ export function UploadTracksDialog({
                         className="btn-glow inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
                     >
                         {busy && <Loader2 className="size-4 animate-spin" />}
-                        Завантажити{pending > 0 ? ` (${pending})` : ''}
+                        {tr('Завантажити')}
+                        {pending > 0 ? ` (${pending})` : ''}
                     </button>
                 </div>
             </DialogContent>

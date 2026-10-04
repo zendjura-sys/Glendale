@@ -43,6 +43,7 @@ import { ConversationAvatar } from './conversation-avatar';
 import { MessageBubble, SystemMessage } from './message-bubble';
 import { ReportDialog } from './report-dialog';
 import type { BubbleActions } from './message-bubble';
+import { tr } from '@/lib/i18n';
 
 const EDIT_WINDOW_MS = 24 * 3600 * 1000;
 const GROUP_GAP_MS = 5 * 60 * 1000;
@@ -190,7 +191,7 @@ export function ChatView({
         ? isGroup
             ? typingNames.length === 1
                 ? typingNames[0]
-                : `${typingNames.length} учасники`
+                : tr('{length} учасники', { length: typingNames.length })
             : (active.peer?.first_name ?? '')
         : null;
 
@@ -409,7 +410,7 @@ export function ChatView({
                 toast.error(
                     error instanceof ApiError
                         ? (Object.values(error.errors)[0]?.[0] ?? error.message)
-                        : 'Не вдалося надіслати повідомлення.',
+                        : tr('Не вдалося надіслати повідомлення.'),
                 );
             });
     };
@@ -515,7 +516,7 @@ export function ChatView({
                 toast.error(
                     error instanceof ApiError
                         ? error.message
-                        : 'Не вдалося зберегти зміни.',
+                        : tr('Не вдалося зберегти зміни.'),
                 );
             });
     };
@@ -544,10 +545,10 @@ export function ChatView({
             );
 
             void api('DELETE', `/messages/${active.id}/messages/${message.id}`)
-                .then(() => toast.success('Повідомлення видалено.'))
+                .then(() => toast.success(tr('Повідомлення видалено.')))
                 .catch(() => {
                     setMessages(snapshot);
-                    toast.error('Не вдалося видалити повідомлення.');
+                    toast.error(tr('Не вдалося видалити повідомлення.'));
                 });
         },
         onReport: (message) =>
@@ -558,12 +559,12 @@ export function ChatView({
         onCopy: (message) => {
             void navigator.clipboard
                 ?.writeText(message.body ?? '')
-                .then(() => toast.success('Скопійовано.'));
+                .then(() => toast.success(tr('Скопійовано.')));
         },
         onJump: (id) => {
             const node = document.getElementById(`message-${id}`);
             if (!node) {
-                toast('Повідомлення далеко в історії.');
+                toast(tr('Повідомлення далеко в історії.'));
 
                 return;
             }
@@ -595,12 +596,15 @@ export function ChatView({
 
     const subtitle = typingLabel ? (
         <span className="flex items-center gap-1.5 text-[#8fd8ff]">
-            {isGroup ? `${typingLabel} друкує` : 'друкує'} <TypingDots />
+            {isGroup
+                ? tr('{typingLabel} друкує', { typingLabel })
+                : tr('друкує')}{' '}
+            <TypingDots />
         </span>
     ) : isGroup ? (
         `${active.members_count} ${plural(active.members_count, ['учасник', 'учасники', 'учасників'])}`
     ) : active.peer?.is_online ? (
-        <span className="text-emerald-300">в мережі</span>
+        <span className="text-emerald-300">{tr('в мережі')}</span>
     ) : (
         lastSeen(active.peer?.last_seen_at ?? null, active.peer?.gender)
     );
@@ -611,7 +615,7 @@ export function ChatView({
                 <Link
                     href="/messages"
                     className="flex size-9 items-center justify-center rounded-xl text-white/70 hover:bg-white/[0.07] md:hidden"
-                    aria-label="Назад"
+                    aria-label={tr('Назад')}
                 >
                     <ChevronLeft className="size-5" />
                 </Link>
@@ -651,8 +655,8 @@ export function ChatView({
                                 onSuccess: () =>
                                     toast.success(
                                         active.is_muted
-                                            ? 'Сповіщення увімкнено.'
-                                            : 'Сповіщення вимкнено.',
+                                            ? tr('Сповіщення увімкнено.')
+                                            : tr('Сповіщення вимкнено.'),
                                     ),
                             },
                         )
@@ -660,13 +664,13 @@ export function ChatView({
                     className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
                     aria-label={
                         active.is_muted
-                            ? 'Увімкнути сповіщення'
-                            : 'Вимкнути сповіщення'
+                            ? tr('Увімкнути сповіщення')
+                            : tr('Вимкнути сповіщення')
                     }
                     title={
                         active.is_muted
-                            ? 'Увімкнути сповіщення'
-                            : 'Вимкнути сповіщення'
+                            ? tr('Увімкнути сповіщення')
+                            : tr('Вимкнути сповіщення')
                     }
                 >
                     {active.is_muted ? (
@@ -694,17 +698,17 @@ export function ChatView({
                         )}
                         aria-label={
                             inThisCall
-                                ? 'Покласти слухавку'
+                                ? tr('Покласти слухавку')
                                 : call
-                                  ? 'Приєднатися до дзвінка'
-                                  : 'Зателефонувати'
+                                  ? tr('Приєднатися до дзвінка')
+                                  : tr('Зателефонувати')
                         }
                         title={
                             inThisCall
-                                ? 'Покласти слухавку'
+                                ? tr('Покласти слухавку')
                                 : call
-                                  ? 'Приєднатися до дзвінка'
-                                  : 'Зателефонувати'
+                                  ? tr('Приєднатися до дзвінка')
+                                  : tr('Зателефонувати')
                         }
                     >
                         {inThisCall ? (
@@ -727,8 +731,8 @@ export function ChatView({
                             })
                         }
                         className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
-                        aria-label="Слухати музику разом"
-                        title="Слухати музику разом"
+                        aria-label={tr('Слухати музику разом')}
+                        title={tr('Слухати музику разом')}
                     >
                         <Headphones className="size-[18px]" />
                     </button>
@@ -738,8 +742,8 @@ export function ChatView({
                         type="button"
                         onClick={onOpenInfo}
                         className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
-                        aria-label="Інформація про бесіду"
-                        title="Інформація про бесіду"
+                        aria-label={tr('Інформація про бесіду')}
+                        title={tr('Інформація про бесіду')}
                     >
                         <Info className="size-[18px]" />
                     </button>
@@ -750,8 +754,10 @@ export function ChatView({
                 <div className="flex items-center gap-3 border-b border-white/[0.06] bg-emerald-400/[0.07] px-3 py-2 sm:px-4">
                     <Phone className="size-4 shrink-0 text-emerald-300" />
                     <span className="min-w-0 flex-1 truncate text-sm text-white/80">
-                        {isGroup ? 'Іде груповий дзвінок' : 'Іде дзвінок'} ·{' '}
-                        {call.joined.map((p) => p.name).join(', ')}
+                        {isGroup
+                            ? tr('Іде груповий дзвінок')
+                            : tr('Іде дзвінок')}{' '}
+                        · {call.joined.map((p) => p.name).join(', ')}
                     </span>
                     {canCall && (
                         <button
@@ -764,7 +770,7 @@ export function ChatView({
                             }
                             className="inline-flex h-8 shrink-0 items-center rounded-lg bg-emerald-500 px-3 text-xs font-semibold text-white transition hover:bg-emerald-500/85"
                         >
-                            Приєднатися
+                            {tr('Приєднатися')}
                         </button>
                     )}
                 </div>
@@ -793,7 +799,7 @@ export function ChatView({
                                 {active.title}
                             </p>
                             <p className="text-xs text-white/40">
-                                Початок історії повідомлень
+                                {tr('Початок історії повідомлень')}
                             </p>
                         </div>
                     )}
@@ -812,8 +818,9 @@ export function ChatView({
                                 {active.title}
                             </p>
                             <p className="mt-1 max-w-xs text-sm text-white/45">
-                                Тут ще порожньо. Надішліть перше повідомлення —
-                                привітайтесь!
+                                {tr(
+                                    'Тут ще порожньо. Надішліть перше повідомлення — привітайтесь!',
+                                )}
                             </p>
                             {active.can_write && (
                                 <button
@@ -829,7 +836,7 @@ export function ChatView({
                                     className="glass mt-5 inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-medium text-white transition hover:border-white/20"
                                 >
                                     <Sparkles className="size-4 text-[#ffd36b]" />
-                                    Надіслати 👋
+                                    {tr('Надіслати 👋')}
                                 </button>
                             )}
                         </div>

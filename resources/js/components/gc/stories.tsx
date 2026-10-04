@@ -19,6 +19,7 @@ import { api, ApiError } from '@/lib/api';
 import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { UserCard } from '@/types';
+import { tr } from '@/lib/i18n';
 
 export type StoryItem = {
     id: number;
@@ -108,11 +109,11 @@ function Composer({
             );
         try {
             await api('POST', '/stories', form);
-            toast.success('Історію опубліковано на 24 години');
+            toast.success(tr('Історію опубліковано на 24 години'));
             onPosted();
             onClose();
         } catch (e) {
-            failed(e, 'Не вдалося опублікувати');
+            failed(e, tr('Не вдалося опублікувати'));
         } finally {
             setBusy(false);
         }
@@ -129,12 +130,12 @@ function Composer({
             >
                 <div className="mb-3 flex items-center">
                     <h2 className="flex-1 font-display text-base font-semibold text-white">
-                        Нова історія
+                        {tr('Нова історія')}
                     </h2>
                     <button
                         type="button"
                         onClick={onClose}
-                        aria-label="Закрити"
+                        aria-label={tr('Закрити')}
                         className="text-white/60 hover:text-white"
                     >
                         <X className="size-5" />
@@ -179,8 +180,8 @@ function Composer({
                         )
                     ) : (
                         <span className="flex flex-col items-center gap-2 text-sm text-white/50">
-                            <ImagePlus className="size-8" /> Фото або відео до
-                            60 с
+                            <ImagePlus className="size-8" />{' '}
+                            {tr('Фото або відео до 60 с')}
                         </span>
                     )}
                 </button>
@@ -188,14 +189,14 @@ function Composer({
                     value={caption}
                     maxLength={200}
                     onChange={(e) => setCaption(e.target.value)}
-                    placeholder="Підпис (необов’язково)"
+                    placeholder={tr('Підпис (необов’язково)')}
                     className="input-glass mt-3 h-10 w-full rounded-xl px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
                 />
                 <div className="mt-3 flex rounded-xl bg-white/[0.04] p-1 text-sm">
                     {(
                         [
-                            ['friends', 'Друзям', Users],
-                            ['everyone', 'Усім', Globe],
+                            ['friends', tr('Друзям'), Users],
+                            ['everyone', tr('Усім'), Globe],
                         ] as const
                     ).map(([key, label, Icon]) => (
                         <button
@@ -220,7 +221,7 @@ function Composer({
                     className="btn-glow mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold disabled:opacity-50"
                 >
                     {busy && <Loader2 className="size-4 animate-spin" />}{' '}
-                    Опублікувати
+                    {tr('Опублікувати')}
                 </button>
             </div>
         </div>
@@ -323,28 +324,28 @@ function StoryViewer({
     const send = async (body: string) => {
         try {
             await api('POST', `/stories/${story.id}/reply`, { body });
-            toast.success('Відповідь надіслано в особисті');
+            toast.success(tr('Відповідь надіслано в особисті'));
             setReply('');
         } catch (e) {
-            failed(e, 'Не надіслано');
+            failed(e, tr('Не надіслано'));
         }
     };
     const react = async (reaction: string) => {
         try {
             await api('POST', `/stories/${story.id}/react`, { reaction });
-            toast.success(`${reaction} надіслано`);
+            toast.success(tr('{reaction} надіслано', { reaction }));
         } catch (e) {
-            failed(e, 'Не надіслано');
+            failed(e, tr('Не надіслано'));
         }
     };
     const remove = async () => {
-        if (!confirm('Видалити історію?')) return;
+        if (!confirm(tr('Видалити історію?'))) return;
         try {
             await api('DELETE', `/stories/${story.id}`);
             onChanged();
             onClose();
         } catch (e) {
-            failed(e, 'Не вдалося видалити');
+            failed(e, tr('Не вдалося видалити'));
         }
     };
     const openViewers = async () => {
@@ -355,7 +356,7 @@ function StoryViewer({
             );
             setViewers(data.viewers);
         } catch (e) {
-            failed(e, 'Не вдалося завантажити');
+            failed(e, tr('Не вдалося завантажити'));
         }
     };
 
@@ -396,7 +397,7 @@ function StoryViewer({
                         <button
                             type="button"
                             onClick={() => void remove()}
-                            aria-label="Видалити"
+                            aria-label={tr('Видалити')}
                             className="p-1 text-white/80 hover:text-white"
                         >
                             <Trash2 className="size-5" />
@@ -405,7 +406,7 @@ function StoryViewer({
                     <button
                         type="button"
                         onClick={onClose}
-                        aria-label="Закрити"
+                        aria-label={tr('Закрити')}
                         className="p-1 text-white/80 hover:text-white"
                     >
                         <X className="size-6" />
@@ -446,13 +447,13 @@ function StoryViewer({
                     )}
                     <button
                         type="button"
-                        aria-label="Попередня"
+                        aria-label={tr('Попередня')}
                         onClick={prev}
                         className="absolute inset-y-0 left-0 w-1/3"
                     />
                     <button
                         type="button"
-                        aria-label="Наступна"
+                        aria-label={tr('Наступна')}
                         onClick={next}
                         className="absolute inset-y-0 right-0 w-2/3"
                     />
@@ -472,7 +473,7 @@ function StoryViewer({
                             className="inline-flex items-center gap-2 text-sm text-white/80 hover:text-white"
                         >
                             <Eye className="size-4" /> {story.views_count ?? 0}{' '}
-                            переглядів
+                            {tr('переглядів')}
                         </button>
                     ) : (
                         <>
@@ -501,12 +502,14 @@ function StoryViewer({
                                     onFocus={() => setPaused(true)}
                                     onBlur={() => setPaused(false)}
                                     maxLength={1000}
-                                    placeholder={`Відповісти ${group.user.first_name}`}
+                                    placeholder={tr('Відповісти {first_name}', {
+                                        first_name: group.user.first_name,
+                                    })}
                                     className="h-10 min-w-0 flex-1 rounded-full border border-white/25 bg-transparent px-4 text-sm text-white placeholder:text-white/50 focus:outline-none"
                                 />
                                 <button
                                     type="submit"
-                                    aria-label="Надіслати"
+                                    aria-label={tr('Надіслати')}
                                     className="inline-flex size-10 items-center justify-center rounded-full bg-white/15 text-white"
                                 >
                                     <Send className="size-4" />
@@ -520,12 +523,13 @@ function StoryViewer({
                     <div className="absolute inset-x-0 bottom-0 z-30 max-h-[60%] overflow-y-auto rounded-t-3xl bg-[#0d1222] p-4">
                         <div className="mb-2 flex items-center">
                             <h3 className="flex-1 text-sm font-semibold text-white">
-                                Переглянули ({viewers.length})
+                                {tr('Переглянули (')}
+                                {viewers.length})
                             </h3>
                             <button
                                 type="button"
                                 onClick={() => setViewers(null)}
-                                aria-label="Закрити"
+                                aria-label={tr('Закрити')}
                                 className="text-white/60"
                             >
                                 <X className="size-5" />
@@ -533,7 +537,7 @@ function StoryViewer({
                         </div>
                         {viewers.length === 0 && (
                             <p className="py-4 text-center text-sm text-white/45">
-                                Ще ніхто не переглянув
+                                {tr('Ще ніхто не переглянув')}
                             </p>
                         )}
                         {viewers.map((v) => (
@@ -558,7 +562,7 @@ function StoryViewer({
                 <button
                     type="button"
                     onClick={prev}
-                    aria-label="Попередня"
+                    aria-label={tr('Попередня')}
                     className="absolute top-1/2 -left-14 hidden -translate-y-1/2 rounded-full bg-white/10 p-2 text-white sm:block"
                 >
                     <ChevronLeft className="size-6" />
@@ -566,7 +570,7 @@ function StoryViewer({
                 <button
                     type="button"
                     onClick={next}
-                    aria-label="Наступна"
+                    aria-label={tr('Наступна')}
                     className="absolute top-1/2 -right-14 hidden -translate-y-1/2 rounded-full bg-white/10 p-2 text-white sm:block"
                 >
                     <ChevronRight className="size-6" />
@@ -637,13 +641,13 @@ export function StoriesBar() {
                                 setComposing(true);
                             }}
                             className="absolute -right-0.5 -bottom-0.5 flex size-5 items-center justify-center rounded-full border-2 border-[#0b0d1d] bg-gradient-brand text-white"
-                            aria-label="Нова історія"
+                            aria-label={tr('Нова історія')}
                         >
                             <Plus className="size-3" />
                         </span>
                     </span>
                     <span className="w-full truncate text-center text-[11px] text-white/70">
-                        Ваша історія
+                        {tr('Ваша історія')}
                     </span>
                 </button>
                 {groups.map((group, n) =>
@@ -669,7 +673,7 @@ export function StoriesBar() {
                 )}
                 {groups.filter((x) => !x.own).length === 0 && (
                     <p className="self-center text-xs text-white/40">
-                        Історії друзів з’являться тут на 24 години
+                        {tr('Історії друзів з’являться тут на 24 години')}
                     </p>
                 )}
             </div>

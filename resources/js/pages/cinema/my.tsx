@@ -4,6 +4,7 @@ import { MovieTile, movieGridClass } from '@/components/cinema/movie-tile';
 import { EmptyState } from '@/components/gc/widget';
 import { cn } from '@/lib/utils';
 import type { MovieCard, MovieOption, MovieStatus, ScrollData } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type MyMovie = MovieCard & {
     my_status: MovieStatus | null;
@@ -19,15 +20,15 @@ type Props = {
 
 export default function CinemaMy({ status, movies, statuses, counts }: Props) {
     const tabs = [
-        { key: 'all', label: 'Усі' },
+        { key: 'all', label: tr('Усі') },
         ...statuses,
-        { key: 'rated', label: 'Оцінені' },
+        { key: 'rated', label: tr('Оцінені') },
     ];
     const labels = Object.fromEntries(statuses.map((s) => [s.key, s.label]));
 
     return (
         <>
-            <Head title="Мої фільми" />
+            <Head title={tr('Мої фільми')} />
             <div className="space-y-5">
                 <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-7">
                     <div className="pointer-events-none absolute -top-24 -right-16 size-80 rounded-full bg-[#6d5dfc]/25 blur-3xl" />
@@ -35,14 +36,16 @@ export default function CinemaMy({ status, movies, statuses, counts }: Props) {
                         href="/cinema"
                         className="relative inline-flex items-center gap-1.5 text-xs font-medium text-white/55 hover:text-white"
                     >
-                        <ArrowLeft className="size-3.5" /> Кіно
+                        <ArrowLeft className="size-3.5" /> {tr('Кіно')}
                     </Link>
                     <h1 className="relative mt-3 font-display text-3xl font-bold text-white">
-                        Мої <span className="text-gradient">списки</span>
+                        {tr('Мої')}{' '}
+                        <span className="text-gradient">{tr('списки')}</span>
                     </h1>
                     <p className="relative mt-1 text-sm text-white/50">
-                        Що ви дивитеся, що вже подивилися і що чекає свого
-                        вечора.
+                        {tr(
+                            'Що ви дивитеся, що вже подивилися і що чекає свого вечора.',
+                        )}
                     </p>
                 </section>
 
@@ -74,14 +77,16 @@ export default function CinemaMy({ status, movies, statuses, counts }: Props) {
                 {movies.data.length === 0 ? (
                     <EmptyState
                         icon={Bookmark}
-                        title="Тут поки порожньо"
-                        text="Відкрийте фільм і натисніть «Додати до списку»."
+                        title={tr('Тут поки порожньо')}
+                        text={tr(
+                            'Відкрийте фільм і натисніть «Додати до списку».',
+                        )}
                         action={
                             <Link
                                 href="/cinema"
                                 className="btn-glow rounded-xl px-5 py-2.5 text-sm font-semibold"
                             >
-                                До каталогу
+                                {tr('До каталогу')}
                             </Link>
                         }
                     />

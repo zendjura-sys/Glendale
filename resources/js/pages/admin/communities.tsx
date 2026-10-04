@@ -24,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { compactNumber, timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { CommunityCard, Paginated, UserCard } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type AdminCommunity = CommunityCard & {
     owner: UserCard | null;
@@ -62,7 +63,11 @@ export default function AdminCommunities({
     const remove = (c: AdminCommunity) => {
         if (
             c.deleted_at &&
-            !confirm(`Видалити «${c.name}» назавжди разом із записами?`)
+            !confirm(
+                tr('Видалити «{name}» назавжди разом із записами?', {
+                    name: c.name,
+                }),
+            )
         ) {
             return;
         }
@@ -79,19 +84,19 @@ export default function AdminCommunities({
 
     return (
         <>
-            <Head title="Спільноти — Адмін-панель" />
+            <Head title={tr('Спільноти — Адмін-панель')} />
             <PageHeader
-                title="Спільноти"
+                title={tr('Спільноти')}
                 description={
                     filters.trashed
-                        ? `У кошику: ${communities.total}`
-                        : 'Групи та публічні сторінки мережі'
+                        ? tr('У кошику: {total}', { total: communities.total })
+                        : tr('Групи та публічні сторінки мережі')
                 }
                 actions={
                     <div className="glass flex rounded-xl p-1 text-sm">
                         {[
-                            { label: 'Активні', value: false },
-                            { label: 'Кошик', value: true },
+                            { label: tr('Активні'), value: false },
+                            { label: tr('Кошик'), value: true },
                         ].map((tab) => (
                             <button
                                 key={tab.label}
@@ -113,19 +118,19 @@ export default function AdminCommunities({
 
             <div className="mb-5 grid gap-3 sm:grid-cols-3">
                 <StatCard
-                    label="Усього спільнот"
+                    label={tr('Усього спільнот')}
                     value={compactNumber(stats.total)}
                     icon={Shield}
                 />
                 <StatCard
-                    label="Верифіковані"
+                    label={tr('Верифіковані')}
                     value={compactNumber(stats.verified)}
                     icon={BadgeCheck}
                     tone="from-[#22d3a6] to-[#38e1ff]"
                     delay={60}
                 />
                 <StatCard
-                    label="Учасників сумарно"
+                    label={tr('Учасників сумарно')}
                     value={compactNumber(stats.members)}
                     icon={UsersRound}
                     tone="from-[#f04fd8] to-[#a855f7]"
@@ -142,7 +147,7 @@ export default function AdminCommunities({
                     <Input
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
-                        placeholder="Назва або адреса спільноти"
+                        placeholder={tr('Назва або адреса спільноти')}
                         className="h-10 pl-10"
                     />
                 </form>
@@ -151,9 +156,9 @@ export default function AdminCommunities({
                     onChange={(e) => apply({ type: e.target.value })}
                     className={selectClass}
                 >
-                    <option value="">Усі типи</option>
-                    <option value="group">Групи</option>
-                    <option value="public">Публічні сторінки</option>
+                    <option value="">{tr('Усі типи')}</option>
+                    <option value="group">{tr('Групи')}</option>
+                    <option value="public">{tr('Публічні сторінки')}</option>
                 </select>
             </div>
 
@@ -190,16 +195,17 @@ export default function AdminCommunities({
                                     }
                                 >
                                     {c.type === 'group'
-                                        ? 'Група'
-                                        : 'Публічна сторінка'}
+                                        ? tr('Група')
+                                        : tr('Публічна сторінка')}
                                 </Pill>
                                 {c.privacy === 'closed' && (
                                     <Pill tone="gold">
-                                        <Lock className="size-3" /> Закрита
+                                        <Lock className="size-3" />{' '}
+                                        {tr('Закрита')}
                                     </Pill>
                                 )}
                                 {c.deleted_at && (
-                                    <Pill tone="red">У кошику</Pill>
+                                    <Pill tone="red">{tr('У кошику')}</Pill>
                                 )}
                             </div>
                             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-white/45">
@@ -217,7 +223,7 @@ export default function AdminCommunities({
                                 </span>
                                 {c.owner && (
                                     <span>
-                                        Власник:{' '}
+                                        {tr('Власник:')}{' '}
                                         <Link
                                             href={`/${c.owner.username}`}
                                             className="text-white/70 hover:underline"
@@ -226,16 +232,18 @@ export default function AdminCommunities({
                                         </Link>
                                     </span>
                                 )}
-                                <span>створено {timeAgo(c.created_at)}</span>
+                                <span>
+                                    {tr('створено')} {timeAgo(c.created_at)}
+                                </span>
                             </div>
                         </div>
                         {!c.deleted_at && (
                             <label className="hidden items-center gap-2 text-xs text-white/50 sm:flex">
-                                Верифікація
+                                {tr('Верифікація')}
                                 <Toggle
                                     checked={c.is_verified}
                                     onChange={(v) => verify(c, v)}
-                                    label="Верифікація"
+                                    label={tr('Верифікація')}
                                 />
                             </label>
                         )}
@@ -251,7 +259,7 @@ export default function AdminCommunities({
                                         )
                                     }
                                     className="flex size-9 items-center justify-center rounded-xl text-emerald-300 transition hover:bg-emerald-400/10"
-                                    title="Відновити"
+                                    title={tr('Відновити')}
                                 >
                                     <RotateCcw className="size-4" />
                                 </button>
@@ -262,8 +270,8 @@ export default function AdminCommunities({
                                 className="flex size-9 items-center justify-center rounded-xl text-rose-300 transition hover:bg-rose-500/10"
                                 title={
                                     c.deleted_at
-                                        ? 'Видалити назавжди'
-                                        : 'У кошик'
+                                        ? tr('Видалити назавжди')
+                                        : tr('У кошик')
                                 }
                             >
                                 <Trash2 className="size-4" />
@@ -273,7 +281,7 @@ export default function AdminCommunities({
                 ))}
                 {communities.data.length === 0 && (
                     <div className="glass rounded-3xl px-6 py-14 text-center text-sm text-white/40">
-                        Спільнот не знайдено
+                        {tr('Спільнот не знайдено')}
                     </div>
                 )}
             </div>

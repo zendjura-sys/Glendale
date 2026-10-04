@@ -5,6 +5,7 @@ use App\Http\Middleware\EnsureEmailVerifiedWhenRequired;
 use App\Http\Middleware\EnsureModuleEnabled;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\TrackUserActivity;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -25,10 +26,15 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
+            SetLocale::class,
             TrackUserActivity::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
+
+        $middleware->api(append: [SetLocale::class]);
+        // Мова з cookie читається до розшифрування — вона не секретна.
+        $middleware->encryptCookies(except: ['locale']);
 
         // «Відписатися одним натисканням» з Gmail надсилає POST без CSRF-токена; посилання підписане.
         $middleware->validateCsrfTokens(except: ['mail/unsubscribe/*']);

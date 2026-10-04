@@ -7,6 +7,8 @@ use App\Mail\SocialActivityMail;
 use App\Models\Community;
 use App\Models\Family;
 use App\Models\User;
+use App\Support\I18n\Locales;
+use App\Support\I18n\Translations;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -29,7 +31,9 @@ class SocialMailer
         }
 
         $data = $notification->data;
-        $text = $this->plain((string) ($data['text'] ?? ''));
+        // Лист — мовою отримувача.
+        $locale = app(Locales::class)->forUser($notifiable);
+        $text = app(Translations::class)->line($this->plain((string) ($data['text'] ?? '')), $locale);
         if ($text === '') {
             return;
         }
@@ -49,7 +53,7 @@ class SocialMailer
         $rawUrl = (string) ($data['url'] ?? '/notifications');
         $actionUrl = str_starts_with($rawUrl, '/') ? url($rawUrl) : url('/notifications');
 
-        Mail::to($email)->queue(new SocialActivityMail(
+        Mail::to($email)->locale($locale)->queue(new SocialActivityMail(
             subjectLine: Str::limit($intro, 140),
             intro: Str::limit($intro, 500),
             actionUrl: $actionUrl,

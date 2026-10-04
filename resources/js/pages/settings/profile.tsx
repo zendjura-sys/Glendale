@@ -14,6 +14,7 @@ import { usePlayer } from '@/lib/player';
 import { cn, floatingAboveNav } from '@/lib/utils';
 import { send } from '@/routes/verification';
 import type { SocialConnection } from '@/types/auth';
+import { tr } from '@/lib/i18n';
 
 type ProfileForm = {
     first_name: string;
@@ -76,17 +77,17 @@ export default function Profile({
 
     return (
         <>
-            <Head title="Налаштування профілю" />
+            <Head title={tr('Налаштування профілю')} />
 
             <form onSubmit={submit} className="space-y-5">
                 <SettingsCard
-                    title="Основне"
-                    description="Так вас бачать інші учасники"
+                    title={tr('Основне')}
+                    description={tr('Так вас бачать інші учасники')}
                 >
                     <div className="grid gap-5">
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div className="grid gap-2">
-                                <Label htmlFor="first_name">Ім'я</Label>
+                                <Label htmlFor="first_name">{tr("Ім'я")}</Label>
                                 <Input
                                     id="first_name"
                                     value={data.first_name}
@@ -99,7 +100,9 @@ export default function Profile({
                                 <InputError message={errors.first_name} />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="last_name">Прізвище</Label>
+                                <Label htmlFor="last_name">
+                                    {tr('Прізвище')}
+                                </Label>
                                 <Input
                                     id="last_name"
                                     value={data.last_name}
@@ -113,7 +116,9 @@ export default function Profile({
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="username">Адреса сторінки</Label>
+                            <Label htmlFor="username">
+                                {tr('Адреса сторінки')}
+                            </Label>
                             <div className="input-glass flex h-11 items-center rounded-xl pl-3.5 text-sm">
                                 <span className="shrink-0 text-white/35">
                                     gamecon.online/
@@ -134,14 +139,15 @@ export default function Profile({
                                 <AtSign className="mr-3 size-4 text-white/25" />
                             </div>
                             <p className="text-[11px] text-white/35">
-                                Латиниця, цифри, крапка та підкреслення. 3–32
-                                символи.
+                                {tr(
+                                    'Латиниця, цифри, крапка та підкреслення. 3–32 символи.',
+                                )}
                             </p>
                             <InputError message={errors.username} />
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="status">Статус</Label>
+                            <Label htmlFor="status">{tr('Статус')}</Label>
                             <Input
                                 id="status"
                                 value={data.status}
@@ -149,7 +155,7 @@ export default function Profile({
                                     setData('status', e.target.value)
                                 }
                                 maxLength={140}
-                                placeholder="Що у вас нового?"
+                                placeholder={tr('Що у вас нового?')}
                             />
                             <div className="flex justify-between">
                                 <InputError message={errors.status} />
@@ -160,7 +166,7 @@ export default function Profile({
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="about">Про себе</Label>
+                            <Label htmlFor="about">{tr('Про себе')}</Label>
                             <textarea
                                 id="about"
                                 value={data.about}
@@ -169,7 +175,9 @@ export default function Profile({
                                 }
                                 rows={4}
                                 maxLength={2000}
-                                placeholder="Розкажіть про свої захоплення, улюблені ігри та фільми"
+                                placeholder={tr(
+                                    'Розкажіть про свої захоплення, улюблені ігри та фільми',
+                                )}
                                 className={cn(
                                     fieldClass,
                                     'resize-y py-3 leading-relaxed',
@@ -180,10 +188,10 @@ export default function Profile({
                     </div>
                 </SettingsCard>
 
-                <SettingsCard title="Особиста інформація">
+                <SettingsCard title={tr('Особиста інформація')}>
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="grid gap-2">
-                            <Label htmlFor="city">Місто</Label>
+                            <Label htmlFor="city">{tr('Місто')}</Label>
                             <div className="relative">
                                 <MapPin className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-white/30" />
                                 <Input
@@ -193,13 +201,15 @@ export default function Profile({
                                         setData('city', e.target.value)
                                     }
                                     className="pl-10"
-                                    placeholder="Київ"
+                                    placeholder={tr('Київ')}
                                 />
                             </div>
                             <InputError message={errors.city} />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="birthday">Дата народження</Label>
+                            <Label htmlFor="birthday">
+                                {tr('Дата народження')}
+                            </Label>
                             <Input
                                 id="birthday"
                                 type="date"
@@ -212,7 +222,7 @@ export default function Profile({
                             <InputError message={errors.birthday} />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="gender">Стать</Label>
+                            <Label htmlFor="gender">{tr('Стать')}</Label>
                             <select
                                 id="gender"
                                 value={data.gender}
@@ -224,14 +234,14 @@ export default function Profile({
                                     'h-11 [color-scheme:dark]',
                                 )}
                             >
-                                <option value="">Не вказано</option>
-                                <option value="male">Чоловіча</option>
-                                <option value="female">Жіноча</option>
+                                <option value="">{tr('Не вказано')}</option>
+                                <option value="male">{tr('Чоловіча')}</option>
+                                <option value="female">{tr('Жіноча')}</option>
                             </select>
                             <InputError message={errors.gender} />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="website">Вебсайт</Label>
+                            <Label htmlFor="website">{tr('Вебсайт')}</Label>
                             <div className="relative">
                                 <Globe className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-white/30" />
                                 <Input
@@ -250,10 +260,12 @@ export default function Profile({
                     </div>
                 </SettingsCard>
 
-                <SettingsCard title="Акаунт і приватність">
+                <SettingsCard title={tr('Акаунт і приватність')}>
                     <div className="grid gap-5">
                         <div className="grid gap-2">
-                            <Label htmlFor="email">Електронна пошта</Label>
+                            <Label htmlFor="email">
+                                {tr('Електронна пошта')}
+                            </Label>
                             <Input
                                 id="email"
                                 type="email"
@@ -269,18 +281,18 @@ export default function Profile({
                             {mustVerifyEmail &&
                                 auth.user.email_verified_at === null && (
                                     <p className="text-xs text-amber-200/80">
-                                        Пошту не підтверджено.{' '}
+                                        {tr('Пошту не підтверджено.')}{' '}
                                         <Link
                                             href={send()}
                                             as="button"
                                             className="text-[#9aa8ff] underline underline-offset-4"
                                         >
-                                            Надіслати лист ще раз
+                                            {tr('Надіслати лист ще раз')}
                                         </Link>
                                         {status ===
                                             'verification-link-sent' && (
                                             <span className="ml-1 text-emerald-300">
-                                                Посилання надіслано.
+                                                {tr('Посилання надіслано.')}
                                             </span>
                                         )}
                                     </p>
@@ -293,11 +305,12 @@ export default function Profile({
                             </span>
                             <span className="flex-1">
                                 <span className="block text-sm font-semibold text-white">
-                                    Закритий профіль
+                                    {tr('Закритий профіль')}
                                 </span>
                                 <span className="mt-0.5 block text-xs leading-relaxed text-white/45">
-                                    Записи, друзів і фото бачитимуть лише ваші
-                                    друзі.
+                                    {tr(
+                                        'Записи, друзів і фото бачитимуть лише ваші друзі.',
+                                    )}
                                 </span>
                             </span>
                             <input
@@ -317,12 +330,12 @@ export default function Profile({
                             </span>
                             <span className="flex-1">
                                 <span className="block text-sm font-semibold text-white">
-                                    Листи про активність
+                                    {tr('Листи про активність')}
                                 </span>
                                 <span className="mt-0.5 block text-xs leading-relaxed text-white/45">
-                                    Друзі, коментарі, спільноти й сім’ї — на
-                                    пошту. Службові листи (підтвердження,
-                                    пароль) приходять завжди.
+                                    {tr(
+                                        'Друзі, коментарі, спільноти й сім’ї — на пошту. Службові листи (підтвердження, пароль) приходять завжди.',
+                                    )}
                                 </span>
                             </span>
                             <input
@@ -342,16 +355,21 @@ export default function Profile({
                             </span>
                             <span className="min-w-[160px] flex-1">
                                 <span className="block text-sm font-semibold text-white">
-                                    Хто може писати мені
+                                    {tr('Хто може писати мені')}
                                 </span>
                                 <span className="mt-0.5 block text-xs text-white/45">
-                                    Особисті повідомлення від інших учасників
+                                    {tr(
+                                        'Особисті повідомлення від інших учасників',
+                                    )}
                                 </span>
                             </span>
                             <div className="glass flex rounded-xl p-1 text-sm">
                                 {[
-                                    { value: 'everyone', label: 'Усі' },
-                                    { value: 'friends', label: 'Лише друзі' },
+                                    { value: 'everyone', label: tr('Усі') },
+                                    {
+                                        value: 'friends',
+                                        label: tr('Лише друзі'),
+                                    },
                                 ].map((option) => (
                                     <button
                                         key={option.value}
@@ -386,7 +404,7 @@ export default function Profile({
                 >
                     {form.recentlySuccessful && (
                         <span className="text-sm text-emerald-300">
-                            Збережено
+                            {tr('Збережено')}
                         </span>
                     )}
                     <Button
@@ -394,7 +412,7 @@ export default function Profile({
                         data-test="update-profile-button"
                     >
                         {processing && <Spinner />}
-                        Зберегти зміни
+                        {tr('Зберегти зміни')}
                     </Button>
                 </div>
             </form>

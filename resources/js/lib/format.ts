@@ -1,18 +1,20 @@
-const relative = new Intl.RelativeTimeFormat('uk', { numeric: 'auto' });
-const dayMonth = new Intl.DateTimeFormat('uk', {
+import { LOCALE, pluralForm, tr } from '@/lib/i18n';
+
+const relative = new Intl.RelativeTimeFormat(LOCALE, { numeric: 'auto' });
+const dayMonth = new Intl.DateTimeFormat(LOCALE, {
     day: 'numeric',
     month: 'long',
 });
-const dayMonthYear = new Intl.DateTimeFormat('uk', {
+const dayMonthYear = new Intl.DateTimeFormat(LOCALE, {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
 });
-const timeOnly = new Intl.DateTimeFormat('uk', {
+const timeOnly = new Intl.DateTimeFormat(LOCALE, {
     hour: '2-digit',
     minute: '2-digit',
 });
-const compact = new Intl.NumberFormat('uk', {
+const compact = new Intl.NumberFormat(LOCALE, {
     notation: 'compact',
     maximumFractionDigits: 1,
 });
@@ -25,7 +27,7 @@ export function timeAgo(iso: string): string {
     const seconds = Math.round((Date.now() - date.getTime()) / 1000);
 
     if (seconds < 45) {
-        return 'щойно';
+        return tr('щойно');
     }
 
     if (seconds < 3600) {
@@ -41,20 +43,23 @@ export function timeAgo(iso: string): string {
     yesterday.setDate(today.getDate() - 1);
 
     if (date.toDateString() === today.toDateString()) {
-        return `сьогодні о ${timeOnly.format(date)}`;
+        return tr('сьогодні о {format}', { format: timeOnly.format(date) });
     }
 
     if (date.toDateString() === yesterday.toDateString()) {
-        return `вчора о ${timeOnly.format(date)}`;
+        return tr('вчора о {format}', { format: timeOnly.format(date) });
     }
 
     const formatter =
         date.getFullYear() === today.getFullYear() ? dayMonth : dayMonthYear;
 
-    return `${formatter.format(date)} о ${timeOnly.format(date)}`;
+    return tr('{format} о {format2}', {
+        format: formatter.format(date),
+        format2: timeOnly.format(date),
+    });
 }
 
-const shortDay = new Intl.DateTimeFormat('uk', {
+const shortDay = new Intl.DateTimeFormat(LOCALE, {
     day: 'numeric',
     month: 'short',
 });
@@ -77,12 +82,12 @@ export function shortTime(iso: string): string {
     }
 
     if (date.toDateString() === yesterday.toDateString()) {
-        return 'вчора';
+        return tr('вчора');
     }
 
     return date.getFullYear() === today.getFullYear()
         ? shortDay.format(date)
-        : date.toLocaleDateString('uk');
+        : date.toLocaleDateString(LOCALE);
 }
 
 /**
@@ -94,8 +99,8 @@ export function dayLabel(iso: string): string {
     const yesterday = new Date();
     yesterday.setDate(today.getDate() - 1);
 
-    if (date.toDateString() === today.toDateString()) return 'Сьогодні';
-    if (date.toDateString() === yesterday.toDateString()) return 'Вчора';
+    if (date.toDateString() === today.toDateString()) return tr('Сьогодні');
+    if (date.toDateString() === yesterday.toDateString()) return tr('Вчора');
 
     return formatDate(iso, date.getFullYear() !== today.getFullYear());
 }
@@ -112,29 +117,22 @@ export function compactNumber(value: number): string {
  * Українська множина: plural(5, ['друг', 'друзі', 'друзів']).
  */
 export function plural(count: number, forms: [string, string, string]): string {
-    const mod10 = count % 10;
-    const mod100 = count % 100;
-
-    if (mod10 === 1 && mod100 !== 11) {
-        return forms[0];
-    }
-
-    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
-        return forms[1];
-    }
-
-    return forms[2];
+    return pluralForm(count, forms);
 }
 
 export function lastSeen(iso: string | null, gender?: string | null): string {
     if (!iso) {
-        return 'давно не заходив(-ла)';
+        return tr('давно не заходив(-ла)');
     }
 
     const verb =
-        gender === 'female' ? 'була' : gender === 'male' ? 'був' : 'був(-ла)';
+        gender === 'female'
+            ? tr('була')
+            : gender === 'male'
+              ? tr('був')
+              : tr('був(-ла)');
 
-    return `${verb} в мережі ${timeAgo(iso)}`;
+    return tr('{verb} в мережі {timeAgo}', { verb, timeAgo: timeAgo(iso) });
 }
 
 export function initials(name: string): string {
@@ -147,8 +145,8 @@ export function initials(name: string): string {
 }
 
 export function formatBytes(bytes: number | null | undefined): string {
-    if (!bytes) return '0 Б';
-    const units = ['Б', 'КБ', 'МБ', 'ГБ'];
+    if (!bytes) return tr('0 Б');
+    const units = [tr('Б'), tr('КБ'), tr('МБ'), tr('ГБ')];
     const power = Math.min(
         units.length - 1,
         Math.floor(Math.log(bytes) / Math.log(1024)),
@@ -168,9 +166,9 @@ export function formatLength(seconds: number): string {
     const minutes = Math.round(Math.max(0, seconds) / 60);
     const hours = Math.floor(minutes / 60);
 
-    if (hours === 0) return `${minutes} хв`;
+    if (hours === 0) return tr('{minutes} хв', { minutes });
 
     return minutes % 60 === 0
-        ? `${hours} год`
-        : `${hours} год ${minutes % 60} хв`;
+        ? tr('{hours} год', { hours })
+        : tr('{hours} год {v} хв', { hours, v: minutes % 60 });
 }

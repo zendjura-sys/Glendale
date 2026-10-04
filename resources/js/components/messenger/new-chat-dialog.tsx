@@ -11,6 +11,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { UserCard } from '@/types';
 import { ContactPicker } from './contact-picker';
+import { tr } from '@/lib/i18n';
 
 type Mode = 'direct' | 'group';
 
@@ -61,26 +62,30 @@ export function NewChatDialog({
                 onFinish: () => setProcessing(false),
                 onSuccess: () => close(false),
                 onError: (errors) =>
-                    setError(Object.values(errors)[0] ?? 'Помилка'),
+                    setError(Object.values(errors)[0] ?? tr('Помилка')),
             },
         );
     };
 
     const tabs: { value: Mode; label: string; icon: typeof UsersRound }[] = [
-        { value: 'direct', label: 'Повідомлення', icon: MessageCircle },
-        { value: 'group', label: 'Нова бесіда', icon: UsersRound },
+        { value: 'direct', label: tr('Повідомлення'), icon: MessageCircle },
+        { value: 'group', label: tr('Нова бесіда'), icon: UsersRound },
     ];
 
     return (
         <Dialog open={open} onOpenChange={close}>
             <DialogContent className="glass-strong gap-0 rounded-3xl border-white/10 p-5 text-white sm:max-w-md">
                 <DialogTitle className="font-display text-lg">
-                    {mode === 'direct' ? 'Нове повідомлення' : 'Нова бесіда'}
+                    {mode === 'direct'
+                        ? tr('Нове повідомлення')
+                        : tr('Нова бесіда')}
                 </DialogTitle>
                 <DialogDescription className="mt-1 text-sm text-white/45">
                     {mode === 'direct'
-                        ? 'Оберіть друга, якому хочете написати.'
-                        : 'Створіть груповий чат із друзями — до 200 учасників.'}
+                        ? tr('Оберіть друга, якому хочете написати.')
+                        : tr(
+                              'Створіть груповий чат із друзями — до 200 учасників.',
+                          )}
                 </DialogDescription>
 
                 <div className="mt-4 mb-4 grid grid-cols-2 gap-1 rounded-2xl bg-white/[0.04] p-1">
@@ -108,7 +113,7 @@ export function NewChatDialog({
                             value={title}
                             onChange={(event) => setTitle(event.target.value)}
                             maxLength={80}
-                            placeholder="Назва бесіди"
+                            placeholder={tr('Назва бесіди')}
                             className="input-glass h-11 w-full rounded-xl px-3.5 text-sm text-white placeholder:text-white/35 focus:outline-none"
                         />
                         {members.length > 0 && (
@@ -155,7 +160,7 @@ export function NewChatDialog({
                             }
                             className="btn-glow rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
                         >
-                            Створити бесіду
+                            {tr('Створити бесіду')}
                         </button>
                     </div>
                 )}

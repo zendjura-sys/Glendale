@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { LOCALE, tr } from '@/lib/i18n';
 
 const tones = [
     'from-[#4f8bff] to-[#6d5dfc]',
@@ -77,11 +78,11 @@ export function OnlineMeter({
                         )}
                         <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
                     </span>
-                    {online.toLocaleString('uk-UA')} онлайн
+                    {online.toLocaleString(LOCALE)} {tr('онлайн')}
                 </span>
                 {max && (
                     <span className="text-white/35">
-                        з {max.toLocaleString('uk-UA')}
+                        {tr('з')} {max.toLocaleString(LOCALE)}
                     </span>
                 )}
             </div>

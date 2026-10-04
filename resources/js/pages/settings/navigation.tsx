@@ -13,6 +13,7 @@ import { ModuleIcon } from '@/components/gc/module-icon';
 import { SettingsCard } from '@/layouts/settings/layout';
 import { MOBILE_LABEL } from '@/lib/nav';
 import { cn } from '@/lib/utils';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     defaults: string[];
@@ -53,15 +54,18 @@ export default function Navigation({ defaults, max }: Props) {
 
     return (
         <>
-            <Head title="Нижня панель" />
+            <Head title={tr('Нижня панель')} />
 
             <SettingsCard
-                title="Нижня панель"
-                description={`До ${max} розділів поруч із «Меню» на телефоні — і на сайті, і в застосунку. Те, що приберете з панелі, буде в меню.`}
+                title={tr('Нижня панель')}
+                description={tr(
+                    'До {max} розділів поруч із «Меню» на телефоні — і на сайті, і в застосунку. Те, що приберете з панелі, буде в меню.',
+                    { max },
+                )}
             >
                 <div
                     className="mb-6 flex items-stretch rounded-2xl border border-white/[0.08] bg-[#0f0a1e]/60"
-                    aria-label="Попередній перегляд"
+                    aria-label={tr('Попередній перегляд')}
                 >
                     {[...pinned, null].map((item) => (
                         <div
@@ -79,14 +83,14 @@ export default function Navigation({ defaults, max }: Props) {
                             <span className="max-w-full truncate px-0.5">
                                 {item
                                     ? (MOBILE_LABEL[item.key] ?? item.label)
-                                    : 'Меню'}
+                                    : tr('Меню')}
                             </span>
                         </div>
                     ))}
                 </div>
 
                 <h3 className="mb-2 text-xs font-semibold tracking-wide text-white/45 uppercase">
-                    У панелі
+                    {tr('У панелі')}
                 </h3>
                 <ul className="grid gap-1.5" data-test="nav-pinned">
                     {pinned.map((item, index) => (
@@ -102,21 +106,21 @@ export default function Navigation({ defaults, max }: Props) {
                                 {item.label}
                             </span>
                             <IconButton
-                                label="Вище"
+                                label={tr('Вище')}
                                 disabled={index === 0}
                                 onClick={() => move(index, -1)}
                             >
                                 <ArrowUp className="size-4" />
                             </IconButton>
                             <IconButton
-                                label="Нижче"
+                                label={tr('Нижче')}
                                 disabled={index === pinned.length - 1}
                                 onClick={() => move(index, 1)}
                             >
                                 <ArrowDown className="size-4" />
                             </IconButton>
                             <IconButton
-                                label="Прибрати в меню"
+                                label={tr('Прибрати в меню')}
                                 disabled={pinned.length <= 1}
                                 onClick={() =>
                                     save(tabs.filter((key) => key !== item.key))
@@ -131,11 +135,11 @@ export default function Navigation({ defaults, max }: Props) {
 
                 <div className="mt-6 mb-2 flex items-center justify-between">
                     <h3 className="text-xs font-semibold tracking-wide text-white/45 uppercase">
-                        У меню
+                        {tr('У меню')}
                     </h3>
                     {full && (
                         <span className="text-xs text-white/35">
-                            Панель заповнена
+                            {tr('Панель заповнена')}
                         </span>
                     )}
                 </div>
@@ -167,7 +171,7 @@ export default function Navigation({ defaults, max }: Props) {
                         className="mt-6 inline-flex items-center gap-2 rounded-xl border border-white/10 px-3.5 py-2 text-sm font-medium text-white/75 transition hover:bg-white/[0.06]"
                     >
                         <RotateCcw className="size-4" />
-                        Повернути як було
+                        {tr('Повернути як було')}
                     </button>
                 )}
             </SettingsCard>

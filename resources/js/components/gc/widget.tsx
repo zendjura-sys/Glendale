@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import type { LucideIcon } from 'lucide-react';
 import type { PropsWithChildren, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { tr } from '@/lib/i18n';
 
 type Props = PropsWithChildren<{
     title: string;
@@ -33,7 +34,7 @@ export function Widget({
                                 href={href}
                                 className="text-xs font-medium text-white/45 hover:text-white"
                             >
-                                Усі
+                                {tr('Усі')}
                             </Link>
                         ))}
                 </span>

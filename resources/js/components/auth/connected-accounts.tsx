@@ -7,6 +7,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { SettingsCard } from '@/layouts/settings/layout';
 import { cn } from '@/lib/utils';
 import type { SocialConnection, SocialProvider } from '@/types/auth';
+import { tr } from '@/lib/i18n';
 
 const brands: Record<
     SocialProvider,
@@ -34,7 +35,10 @@ export function ConnectedAccounts({
     const disconnect = (connection: SocialConnection) => {
         if (
             window.confirm(
-                `Від’єднати ${connection.label}? Увійти можна буде поштою й паролем — якщо пароль не задавали, скористайтеся «Забули пароль?».`,
+                tr(
+                    'Від’єднати {label}? Увійти можна буде поштою й паролем — якщо пароль не задавали, скористайтеся «Забули пароль?».',
+                    { label: connection.label },
+                ),
             )
         ) {
             router.delete(`/auth/social/${connection.provider}`, {
@@ -45,8 +49,10 @@ export function ConnectedAccounts({
 
     return (
         <SettingsCard
-            title="Під’єднані акаунти"
-            description="Входьте в один клік і показуйте Discord у профілі сім’ї"
+            title={tr('Під’єднані акаунти')}
+            description={tr(
+                'Входьте в один клік і показуйте Discord у профілі сім’ї',
+            )}
         >
             <div className="grid gap-3">
                 {connections.map((c) => {
@@ -76,10 +82,12 @@ export function ConnectedAccounts({
                                 </span>
                                 <span className="mt-0.5 block truncate text-xs text-white/45">
                                     {c.connected
-                                        ? (c.account ?? 'Під’єднано')
+                                        ? (c.account ?? tr('Під’єднано'))
                                         : c.available
-                                          ? 'Не під’єднано'
-                                          : 'Адміністратор ще не налаштував вхід'}
+                                          ? tr('Не під’єднано')
+                                          : tr(
+                                                'Адміністратор ще не налаштував вхід',
+                                            )}
                                 </span>
                             </span>
                             {c.connected ? (
@@ -89,7 +97,7 @@ export function ConnectedAccounts({
                                     className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm text-white/55 transition hover:bg-rose-500/10 hover:text-rose-200"
                                 >
                                     <Unlink className="size-4" />
-                                    Від’єднати
+                                    {tr('Від’єднати')}
                                 </button>
                             ) : (
                                 <button
@@ -99,7 +107,7 @@ export function ConnectedAccounts({
                                     className="inline-flex items-center gap-2 rounded-xl bg-white/[0.07] px-4 py-2 text-sm font-medium text-white transition hover:bg-white/[0.12] disabled:cursor-not-allowed disabled:opacity-40"
                                 >
                                     {pending && <Spinner />}
-                                    Під’єднати
+                                    {tr('Під’єднати')}
                                 </button>
                             )}
                         </div>

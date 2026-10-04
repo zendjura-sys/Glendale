@@ -33,11 +33,12 @@ import { LikeButton } from './like-button';
 import { MediaGrid } from './media-grid';
 import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
+import { tr } from '@/lib/i18n';
 
 const visibilityMeta = {
-    public: { icon: Earth, label: 'Усім' },
-    friends: { icon: UsersRound, label: 'Лише друзям' },
-    private: { icon: Lock, label: 'Тільки мені' },
+    public: { icon: Earth, label: tr('Усім') },
+    friends: { icon: UsersRound, label: tr('Лише друзям') },
+    private: { icon: Lock, label: tr('Тільки мені') },
 } as const;
 
 const LONG_TEXT = 420;
@@ -85,7 +86,7 @@ export function PostCard({
         await navigator.clipboard?.writeText(
             `${window.location.origin}/posts/${post.id}`,
         );
-        toast.success('Посилання скопійовано.');
+        toast.success(tr('Посилання скопійовано.'));
     };
 
     if (deleted) {
@@ -139,7 +140,7 @@ export function PostCard({
                         />
                         {post.is_pinned && (
                             <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-[#4f8bff]/15 px-2 py-0.5 text-[11px] font-medium text-[#9fb6ff]">
-                                <Pin className="size-3" /> Закріплено
+                                <Pin className="size-3" /> {tr('Закріплено')}
                             </span>
                         )}
                     </div>
@@ -157,7 +158,7 @@ export function PostCard({
                             className="rounded-lg focus:bg-white/[0.06]"
                             onSelect={copyLink}
                         >
-                            <Link2 /> Копіювати посилання
+                            <Link2 /> {tr('Копіювати посилання')}
                         </DropdownMenuItem>
                         {post.can.pin && (
                             <DropdownMenuItem
@@ -171,7 +172,9 @@ export function PostCard({
                                 }
                             >
                                 {post.is_pinned ? <PinOff /> : <Pin />}{' '}
-                                {post.is_pinned ? 'Відкріпити' : 'Закріпити'}
+                                {post.is_pinned
+                                    ? tr('Відкріпити')
+                                    : tr('Закріпити')}
                             </DropdownMenuItem>
                         )}
                         {post.can.delete && (
@@ -187,7 +190,7 @@ export function PostCard({
                                     }
                                 >
                                     <Trash2 className="text-rose-300" />{' '}
-                                    Видалити запис
+                                    {tr('Видалити запис')}
                                 </DropdownMenuItem>
                             </>
                         )}
@@ -206,7 +209,7 @@ export function PostCard({
                             onClick={() => setFullText(true)}
                             className="ml-1 font-medium text-[#9aa8ff] hover:text-white"
                         >
-                            Показати повністю
+                            {tr('Показати повністю')}
                         </button>
                     )}
                 </div>
@@ -237,7 +240,7 @@ export function PostCard({
                         !post.comments_enabled &&
                             'pointer-events-none opacity-40',
                     )}
-                    aria-label="Коментарі"
+                    aria-label={tr('Коментарі')}
                 >
                     <MessageCircle className="size-[18px]" />
                     {commentsCount > 0 && (
@@ -250,7 +253,7 @@ export function PostCard({
                     type="button"
                     onClick={copyLink}
                     className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white/[0.045] px-3.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.08] hover:text-white"
-                    aria-label="Поділитися"
+                    aria-label={tr('Поділитися')}
                 >
                     <Link2 className="size-[18px]" />
                 </button>

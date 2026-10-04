@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import type { GtaServerCard } from '@/types';
+import { LOCALE, tr } from '@/lib/i18n';
 
 type Props = {
     servers: GtaServerCard[];
@@ -51,10 +52,10 @@ type Props = {
 };
 
 const sorts = [
-    ['online', 'За онлайном'],
-    ['families', 'За сім’ями'],
-    ['name', 'За назвою'],
-    ['new', 'Нові'],
+    ['online', tr('За онлайном')],
+    ['families', tr('За сім’ями')],
+    ['name', tr('За назвою')],
+    ['new', tr('Нові')],
 ] as const;
 
 export default function Servers({
@@ -99,11 +100,16 @@ export default function Servers({
         });
 
     const tabs = [
-        { value: null, label: 'Усі', icon: Server, count: stats.servers },
-        { value: 'pc' as const, label: 'ПК', icon: Monitor, count: stats.pc },
+        { value: null, label: tr('Усі'), icon: Server, count: stats.servers },
+        {
+            value: 'pc' as const,
+            label: tr('ПК'),
+            icon: Monitor,
+            count: stats.pc,
+        },
         {
             value: 'mobile' as const,
-            label: 'Мобільні',
+            label: tr('Мобільні'),
             icon: Smartphone,
             count: stats.mobile,
         },
@@ -111,7 +117,7 @@ export default function Servers({
 
     return (
         <>
-            <Head title="Сервери GTA" />
+            <Head title={tr('Сервери GTA')} />
             <div className="space-y-5">
                 <section className="glass noise relative overflow-hidden rounded-3xl p-5 sm:p-7">
                     <div className="pointer-events-none absolute -top-24 -right-16 size-96 rounded-full bg-[#facc15]/15 blur-3xl" />
@@ -119,29 +125,29 @@ export default function Servers({
                     <div className="relative flex flex-wrap items-start justify-between gap-5">
                         <div className="max-w-xl">
                             <span className="inline-flex items-center gap-2 rounded-full border border-[#facc15]/25 bg-[#facc15]/10 px-3 py-1 text-[11px] font-semibold tracking-wider text-[#fde68a] uppercase">
-                                🇺🇦 Зроблено в Україні
+                                {tr('🇺🇦 Зроблено в Україні')}
                             </span>
                             <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
-                                Українські{' '}
+                                {tr('Українські')}{' '}
                                 <span className="text-gradient">
-                                    GTA RP сервери
+                                    {tr('GTA RP сервери')}
                                 </span>
                             </h1>
                             <p className="mt-2 text-sm leading-relaxed text-white/55">
-                                ПК і мобільні проєкти з живим онлайном. Іконки,
-                                онлайн і Discord оновлюються автоматично. Не
-                                знайшли свій сервер — додайте його.
+                                {tr(
+                                    'ПК і мобільні проєкти з живим онлайном. Іконки, онлайн і Discord оновлюються автоматично. Не знайшли свій сервер — додайте його.',
+                                )}
                             </p>
                         </div>
                         <div className="grid w-full grid-cols-3 gap-2 sm:w-auto">
                             {[
                                 [
-                                    'Гравців онлайн',
-                                    stats.online.toLocaleString('uk-UA'),
+                                    tr('Гравців онлайн'),
+                                    stats.online.toLocaleString(LOCALE),
                                     'text-emerald-300',
                                 ],
-                                ['Серверів', stats.servers, 'text-white'],
-                                ['Сімей', stats.families, 'text-[#c4b5fd]'],
+                                [tr('Серверів'), stats.servers, 'text-white'],
+                                [tr('Сімей'), stats.families, 'text-[#c4b5fd]'],
                             ].map(([label, value, tone]) => (
                                 <div
                                     key={label}
@@ -192,7 +198,7 @@ export default function Servers({
                             <input
                                 value={q}
                                 onChange={(event) => setQ(event.target.value)}
-                                placeholder="Пошук сервера"
+                                placeholder={tr('Пошук сервера')}
                                 className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
                             />
                         </label>
@@ -212,14 +218,16 @@ export default function Servers({
                             onClick={() => setSuggesting(true)}
                             className="btn-glow inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold"
                         >
-                            <Plus className="size-4" /> Додати сервер
+                            <Plus className="size-4" /> {tr('Додати сервер')}
                         </button>
                     </div>
                 </section>
 
                 {my_suggestions.length > 0 && (
                     <div className="glass flex flex-wrap items-center gap-2 rounded-2xl px-4 py-3 text-xs">
-                        <span className="text-white/50">Ваші пропозиції:</span>
+                        <span className="text-white/50">
+                            {tr('Ваші пропозиції:')}
+                        </span>
                         {my_suggestions.map((s) => (
                             <span
                                 key={s.id}
@@ -238,8 +246,12 @@ export default function Servers({
                                 )}
                                 {s.name} ·{' '}
                                 {s.status === 'pending'
-                                    ? 'на модерації'
-                                    : `відхилено${s.review_note ? `: ${s.review_note}` : ''}`}
+                                    ? tr('на модерації')
+                                    : tr('відхилено{v}', {
+                                          v: s.review_note
+                                              ? `: ${s.review_note}`
+                                              : '',
+                                      })}
                             </span>
                         ))}
                     </div>
@@ -248,15 +260,17 @@ export default function Servers({
                 {servers.length === 0 ? (
                     <EmptyState
                         icon={SearchX}
-                        title="Серверів не знайдено"
-                        text="Спробуйте інший запит або запропонуйте сервер, якого бракує."
+                        title={tr('Серверів не знайдено')}
+                        text={tr(
+                            'Спробуйте інший запит або запропонуйте сервер, якого бракує.',
+                        )}
                         action={
                             <button
                                 type="button"
                                 onClick={() => setSuggesting(true)}
                                 className="btn-glow rounded-xl px-5 py-2.5 text-sm font-semibold"
                             >
-                                Додати сервер
+                                {tr('Додати сервер')}
                             </button>
                         }
                     />
@@ -278,18 +292,19 @@ export default function Servers({
                     </span>
                     <div className="min-w-0 flex-1">
                         <div className="font-display text-lg font-semibold text-white">
-                            Керуєте сім’єю на сервері?
+                            {tr('Керуєте сім’єю на сервері?')}
                         </div>
                         <p className="text-sm text-white/50">
-                            Звіти, банк і виплати, склад, дисципліна й рейтинг —
-                            усе в одній панелі.
+                            {tr(
+                                'Звіти, банк і виплати, склад, дисципліна й рейтинг — усе в одній панелі.',
+                            )}
                         </p>
                     </div>
                     <a
                         href="/families/create"
                         className="glass inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold text-white hover:bg-white/10"
                     >
-                        <UsersRound className="size-4" /> Створити сім’ю
+                        <UsersRound className="size-4" /> {tr('Створити сім’ю')}
                     </a>
                 </div>
             </div>
@@ -297,11 +312,12 @@ export default function Servers({
             <Dialog open={suggesting} onOpenChange={setSuggesting}>
                 <DialogContent className="glass-strong max-h-[92dvh] gap-0 overflow-y-auto rounded-3xl border-white/10 p-6 text-white sm:max-w-2xl">
                     <DialogTitle className="font-display text-xl">
-                        Додати відсутній сервер
+                        {tr('Додати відсутній сервер')}
                     </DialogTitle>
                     <DialogDescription className="mt-1 text-sm text-white/50">
-                        Після перевірки модератором сервер з’явиться в каталозі.
-                        Іконку підтягнемо з Discord або сайту автоматично.
+                        {tr(
+                            'Після перевірки модератором сервер з’явиться в каталозі. Іконку підтягнемо з Discord або сайту автоматично.',
+                        )}
                     </DialogDescription>
                     <div className="mt-5">
                         <ServerFormFields
@@ -318,7 +334,7 @@ export default function Servers({
                             onClick={() => setSuggesting(false)}
                             className="h-11 rounded-xl px-4 text-sm font-medium text-white/60 hover:text-white"
                         >
-                            Скасувати
+                            {tr('Скасувати')}
                         </button>
                         <button
                             type="button"
@@ -327,8 +343,8 @@ export default function Servers({
                             className="btn-glow h-11 rounded-xl px-6 text-sm font-semibold disabled:opacity-50"
                         >
                             {form.processing
-                                ? 'Надсилаємо…'
-                                : 'Надіслати на модерацію'}
+                                ? tr('Надсилаємо…')
+                                : tr('Надіслати на модерацію')}
                         </button>
                     </div>
                 </DialogContent>

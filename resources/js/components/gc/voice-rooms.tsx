@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { joinVoice, useVoice } from '@/lib/voice';
 import type { VoiceOwner } from '@/lib/voice';
 import type { UserCard } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Participant = UserCard & { muted: boolean; joined_at: string };
 
@@ -44,7 +45,9 @@ type VoiceState = {
 };
 
 const failed = (e: unknown) =>
-    toast.error(e instanceof ApiError ? e.message : 'Не вдалося виконати дію');
+    toast.error(
+        e instanceof ApiError ? e.message : tr('Не вдалося виконати дію'),
+    );
 
 /**
  * Голосові кімнати сім’ї чи спільноти: хто де сидить, вхід одним кліком,
@@ -77,7 +80,7 @@ export function VoiceRooms({
                     setError(
                         e instanceof ApiError
                             ? e.message
-                            : 'Голосові кімнати зараз недоступні',
+                            : tr('Голосові кімнати зараз недоступні'),
                     ),
                 ),
         [owner.type, owner.id],
@@ -120,19 +123,19 @@ export function VoiceRooms({
     };
 
     const create = () => {
-        const name = prompt('Назва нової кімнати')?.trim();
+        const name = prompt(tr('Назва нової кімнати'))?.trim();
         if (name)
             void run(() =>
                 api('POST', `/voice/${owner.type}/${owner.id}`, { name }),
             );
     };
     const rename = (room: VoiceRoom) => {
-        const name = prompt('Нова назва кімнати', room.name)?.trim();
+        const name = prompt(tr('Нова назва кімнати'), room.name)?.trim();
         if (name && name !== room.name)
             void run(() => api('PATCH', `/voice/rooms/${room.id}`, { name }));
     };
     const remove = (room: VoiceRoom) => {
-        if (confirm(`Видалити кімнату «${room.name}»?`))
+        if (confirm(tr('Видалити кімнату «{name}»?', { name: room.name })))
             void run(() => api('DELETE', `/voice/rooms/${room.id}`));
     };
     const moderate = (
@@ -151,14 +154,14 @@ export function VoiceRooms({
             <div className="mb-3 flex items-center gap-2">
                 <Volume2 className="size-4 text-[#a5b4fc]" />
                 <h2 className="flex-1 font-display text-base font-semibold text-white">
-                    Голосові кімнати
+                    {tr('Голосові кімнати')}
                 </h2>
                 {data.can_manage && (
                     <button
                         type="button"
                         onClick={create}
                         disabled={busy}
-                        aria-label="Нова кімната"
+                        aria-label={tr('Нова кімната')}
                         className="inline-flex size-8 items-center justify-center rounded-lg text-white/55 transition hover:bg-white/10 hover:text-white"
                     >
                         <Plus className="size-4" />
@@ -168,7 +171,9 @@ export function VoiceRooms({
 
             {!data.enabled && (
                 <p className="mb-3 rounded-xl bg-white/[0.04] px-3 py-2 text-xs text-white/45">
-                    Голосовий сервер ще не підключено адміністрацією сайту.
+                    {tr(
+                        'Голосовий сервер ще не підключено адміністрацією сайту.',
+                    )}
                 </p>
             )}
 
@@ -200,10 +205,10 @@ export function VoiceRooms({
                                     className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm text-white/80 disabled:cursor-default"
                                     title={
                                         room.locked
-                                            ? 'Закрито для вашого рангу'
+                                            ? tr('Закрито для вашого рангу')
                                             : here
-                                              ? 'Ви тут'
-                                              : 'Зайти'
+                                              ? tr('Ви тут')
+                                              : tr('Зайти')
                                     }
                                 >
                                     {room.locked ? (
@@ -232,7 +237,7 @@ export function VoiceRooms({
                                 {data.can_manage && (
                                     <DropdownMenu>
                                         <DropdownMenuTrigger
-                                            aria-label="Дії з кімнатою"
+                                            aria-label={tr('Дії з кімнатою')}
                                             className="inline-flex size-7 items-center justify-center rounded-lg text-white/40 opacity-0 transition group-hover:opacity-100 hover:bg-white/10 hover:text-white focus-visible:opacity-100"
                                         >
                                             <MoreHorizontal className="size-4" />
@@ -241,14 +246,14 @@ export function VoiceRooms({
                                             <DropdownMenuItem
                                                 onClick={() => rename(room)}
                                             >
-                                                <Pencil /> Перейменувати
+                                                <Pencil /> {tr('Перейменувати')}
                                             </DropdownMenuItem>
                                             {!room.system && (
                                                 <DropdownMenuItem
                                                     onClick={() => remove(room)}
                                                     className="text-rose-300"
                                                 >
-                                                    <Trash2 /> Видалити
+                                                    <Trash2 /> {tr('Видалити')}
                                                 </DropdownMenuItem>
                                             )}
                                         </DropdownMenuContent>
@@ -286,13 +291,17 @@ export function VoiceRooms({
                                                 {p.muted && (
                                                     <MicOff
                                                         className="size-3.5 text-rose-300"
-                                                        aria-label="Мікрофон вимкнено модератором"
+                                                        aria-label={tr(
+                                                            'Мікрофон вимкнено модератором',
+                                                        )}
                                                     />
                                                 )}
                                                 {data.can_manage && (
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger
-                                                            aria-label="Модерація"
+                                                            aria-label={tr(
+                                                                'Модерація',
+                                                            )}
                                                             className="inline-flex size-6 items-center justify-center rounded-md text-white/40 opacity-0 transition group-hover/p:opacity-100 hover:bg-white/10 focus-visible:opacity-100"
                                                         >
                                                             <MoreHorizontal className="size-3.5" />
@@ -312,14 +321,16 @@ export function VoiceRooms({
                                                                 {p.muted ? (
                                                                     <>
                                                                         <Mic />{' '}
-                                                                        Дозволити
-                                                                        мікрофон
+                                                                        {tr(
+                                                                            'Дозволити мікрофон',
+                                                                        )}
                                                                     </>
                                                                 ) : (
                                                                     <>
                                                                         <MicOff />{' '}
-                                                                        Вимкнути
-                                                                        мікрофон
+                                                                        {tr(
+                                                                            'Вимкнути мікрофон',
+                                                                        )}
                                                                     </>
                                                                 )}
                                                             </DropdownMenuItem>
@@ -334,7 +345,9 @@ export function VoiceRooms({
                                                                 className="text-rose-300"
                                                             >
                                                                 <UserX />{' '}
-                                                                Виключити
+                                                                {tr(
+                                                                    'Виключити',
+                                                                )}
                                                             </DropdownMenuItem>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>

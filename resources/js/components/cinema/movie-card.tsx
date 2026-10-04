@@ -3,6 +3,7 @@ import { Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PostMovie } from '@/types';
 import { MoviePoster, RatingBadge } from './movie-tile';
+import { tr } from '@/lib/i18n';
 
 /**
  * Фільм, прикріплений до запису на стіні.
@@ -57,11 +58,11 @@ export function MovieCardEmbed({
                         {movie.available ? (
                             <span className="btn-glow inline-flex h-8 items-center gap-1.5 rounded-lg px-3.5 text-xs font-semibold">
                                 <Play className="size-3.5 fill-current" />{' '}
-                                Дивитися
+                                {tr('Дивитися')}
                             </span>
                         ) : (
                             <span className="text-xs text-white/40">
-                                Фільм більше недоступний
+                                {tr('Фільм більше недоступний')}
                             </span>
                         )}
                     </span>

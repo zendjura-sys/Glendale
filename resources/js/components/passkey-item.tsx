@@ -11,6 +11,7 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import type { Passkey } from '@/types/auth';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     passkey: Passkey;
@@ -49,7 +50,7 @@ export default function PasskeyItem({ passkey, onDelete }: Props) {
                                 <span className="mx-1 text-muted-foreground/50">
                                     /
                                 </span>
-                                Використано {passkey.last_used_at_diff}
+                                {tr('Використано')} {passkey.last_used_at_diff}
                             </>
                         )}
                     </p>
@@ -64,25 +65,30 @@ export default function PasskeyItem({ passkey, onDelete }: Props) {
                         className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                     >
                         <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Видалити</span>
+                        <span className="sr-only">{tr('Видалити')}</span>
                     </Button>
                 </DialogTrigger>
                 <DialogContent>
-                    <DialogTitle>Видалити ключ</DialogTitle>
+                    <DialogTitle>{tr('Видалити ключ')}</DialogTitle>
                     <DialogDescription>
-                        Видалити ключ «{passkey.name}»? Ним більше не можна буде
-                        увійти.
+                        {tr('Видалити ключ «')}
+                        {passkey.name}
+                        {tr('»? Ним більше не можна буде увійти.')}
                     </DialogDescription>
                     <DialogFooter className="gap-2">
                         <DialogClose asChild>
-                            <Button variant="secondary">Скасувати</Button>
+                            <Button variant="secondary">
+                                {tr('Скасувати')}
+                            </Button>
                         </DialogClose>
                         <Button
                             variant="destructive"
                             onClick={handleDelete}
                             disabled={isDeleting}
                         >
-                            {isDeleting ? 'Видалення…' : 'Видалити ключ'}
+                            {isDeleting
+                                ? tr('Видалення…')
+                                : tr('Видалити ключ')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

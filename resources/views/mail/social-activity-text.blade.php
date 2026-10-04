@@ -1,7 +1,7 @@
-{!! $intro !!}
+{!! $t($intro) !!}
 
-Відкрити: {!! $actionUrl !!}
+{!! $t('Відкрити') !!}: {!! $actionUrl !!}
 @isset($unsubscribeUrl)
 
-Не надсилати листи про активність: {!! $unsubscribeUrl !!}
+{!! $t('Не надсилати листи про активність') !!}: {!! $unsubscribeUrl !!}
 @endisset

@@ -23,6 +23,7 @@ import type {
     TrackCard,
     UserCard,
 } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     owner: UserCard;
@@ -43,7 +44,7 @@ export default function MusicUser({
 
     return (
         <>
-            <Head title={`Музика ${owner.name}`} />
+            <Head title={tr('Музика {name}', { name: owner.name })} />
             <div className="space-y-5">
                 <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-6">
                     <div className="pointer-events-none absolute -top-28 -right-10 size-80 rounded-full bg-[#a855f7]/20 blur-3xl" />
@@ -60,12 +61,12 @@ export default function MusicUser({
                                     href={`/${owner.username}`}
                                     className="inline-flex items-center gap-1.5 text-xs whitespace-nowrap text-white/45 hover:text-white"
                                 >
-                                    <ArrowLeft className="size-3.5" /> До
-                                    профілю
+                                    <ArrowLeft className="size-3.5" />{' '}
+                                    {tr('До профілю')}
                                 </Link>
                                 <h1 className="mt-0.5 truncate font-display text-xl font-bold text-white sm:text-2xl">
                                     <span className="text-gradient">
-                                        Музика
+                                        {tr('Музика')}
                                     </span>{' '}
                                     {owner.name}
                                 </h1>
@@ -92,7 +93,7 @@ export default function MusicUser({
                                     className="btn-glow inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold sm:flex-none"
                                 >
                                     <Play className="size-4 fill-current" />
-                                    Слухати
+                                    {tr('Слухати')}
                                 </button>
                                 <button
                                     type="button"
@@ -100,7 +101,7 @@ export default function MusicUser({
                                         playQueue(shuffled(tracks.data), 0)
                                     }
                                     className="glass inline-flex size-11 shrink-0 items-center justify-center rounded-xl text-white/80 hover:text-white"
-                                    aria-label="Перемішати"
+                                    aria-label={tr('Перемішати')}
                                 >
                                     <Shuffle className="size-4" />
                                 </button>
@@ -116,7 +117,7 @@ export default function MusicUser({
                 {playlists.length > 0 && (
                     <section className="glass rounded-3xl p-4 sm:p-5">
                         <h2 className="mb-3 font-display text-[13px] font-semibold tracking-wide text-white/70 uppercase">
-                            Плейлисти
+                            {tr('Плейлисти')}
                         </h2>
                         <div className={playlistGridClass}>
                             {playlists.map((playlist) => (
@@ -132,13 +133,16 @@ export default function MusicUser({
                 {tracks.data.length === 0 ? (
                     <EmptyState
                         icon={Headphones}
-                        title="Аудіозаписів поки немає"
-                        text={`${owner.first_name} ще не додав(ла) жодного треку.`}
+                        title={tr('Аудіозаписів поки немає')}
+                        text={tr(
+                            '{first_name} ще не додав(ла) жодного треку.',
+                            { first_name: owner.first_name },
+                        )}
                     />
                 ) : (
                     <section className="glass rounded-3xl p-2 sm:p-3">
                         <h2 className="p-2 font-display text-[13px] font-semibold tracking-wide text-white/70 uppercase">
-                            Аудіозаписи
+                            {tr('Аудіозаписи')}
                         </h2>
                         <InfiniteScroll data="tracks" preserveUrl>
                             <TrackList

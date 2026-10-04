@@ -27,6 +27,7 @@ import { cn, floatingAboveNav } from '@/lib/utils';
 import type { FamilySection, FamilyShellProps } from '@/types';
 import { FamilyLogo } from './family-logo';
 import { RankBadge } from './ui';
+import { tr } from '@/lib/i18n';
 
 type Tab = {
     section: FamilySection;
@@ -60,14 +61,14 @@ export function FamilyShell({
     const tabs: Tab[] = [
         {
             section: 'overview',
-            label: 'Огляд',
+            label: tr('Огляд'),
             href: base,
             icon: LayoutDashboard,
             visible: true,
         },
         {
             section: 'reports',
-            label: 'Звіти',
+            label: tr('Звіти'),
             href: `${base}/reports`,
             icon: FileText,
             badge: badges?.my_pending,
@@ -75,7 +76,7 @@ export function FamilyShell({
         },
         {
             section: 'queue',
-            label: 'Перевірка',
+            label: tr('Перевірка'),
             href: `${base}/queue`,
             icon: ClipboardCheck,
             badge: badges?.queue,
@@ -83,14 +84,14 @@ export function FamilyShell({
         },
         {
             section: 'bank',
-            label: 'Банк',
+            label: tr('Банк'),
             href: `${base}/bank`,
             icon: Wallet,
             visible: true,
         },
         {
             section: 'warehouse',
-            label: 'Склад',
+            label: tr('Склад'),
             href: `${base}/warehouse`,
             icon: Package,
             badge: badges?.alerts,
@@ -98,7 +99,7 @@ export function FamilyShell({
         },
         {
             section: 'members',
-            label: 'Учасники',
+            label: tr('Учасники'),
             href: `${base}/members`,
             icon: Users,
             badge: badges?.applications,
@@ -106,35 +107,35 @@ export function FamilyShell({
         },
         {
             section: 'discipline',
-            label: 'Дисципліна',
+            label: tr('Дисципліна'),
             href: `${base}/discipline`,
             icon: Gavel,
             visible: true,
         },
         {
             section: 'events',
-            label: 'Події',
+            label: tr('Події'),
             href: `${base}/events`,
             icon: CalendarDays,
             visible: true,
         },
         {
             section: 'rating',
-            label: 'Рейтинг',
+            label: tr('Рейтинг'),
             href: `${base}/rating`,
             icon: BarChart3,
             visible: true,
         },
         {
             section: 'audit',
-            label: 'Аудит',
+            label: tr('Аудит'),
             href: `${base}/audit`,
             icon: ScrollText,
             visible: can['audit.view'],
         },
         {
             section: 'settings',
-            label: 'Налаштування',
+            label: tr('Налаштування'),
             href: `${base}/settings`,
             icon: Settings,
             visible: can['settings.manage'],
@@ -180,7 +181,7 @@ export function FamilyShell({
                                 {family.status === 'verified' && (
                                     <ShieldCheck
                                         className="size-5 text-emerald-300"
-                                        aria-label="Верифіковано"
+                                        aria-label={tr('Верифіковано')}
                                     />
                                 )}
                             </div>
@@ -204,7 +205,8 @@ export function FamilyShell({
                                 </span>
                                 {can['treasury.manage'] && (
                                     <span>
-                                        Скарбниця: {uah(family.treasury)}
+                                        {tr('Скарбниця:')}{' '}
+                                        {uah(family.treasury)}
                                     </span>
                                 )}
                             </div>
@@ -223,7 +225,7 @@ export function FamilyShell({
                                 </div>
                                 <div className="ml-auto border-l border-white/10 pl-3 text-right">
                                     <div className="text-[10px] tracking-wide text-white/40 uppercase">
-                                        Баланс
+                                        {tr('Баланс')}
                                     </div>
                                     <div
                                         className={cn(
@@ -242,7 +244,8 @@ export function FamilyShell({
                                     href={`${base}/chat`}
                                     className="glass inline-flex h-12 items-center gap-2 rounded-2xl px-4 text-sm font-medium text-white/80 hover:text-white"
                                 >
-                                    <MessagesSquare className="size-4" /> Чат
+                                    <MessagesSquare className="size-4" />{' '}
+                                    {tr('Чат')}
                                 </a>
                             )}
                         </div>
@@ -290,14 +293,18 @@ export function FamilyShell({
                         <div>
                             <div className="font-semibold">
                                 {family.status === 'suspended'
-                                    ? 'Сім’ю призупинено платформою — зміни недоступні'
-                                    : 'Сім’я очікує верифікації'}
+                                    ? tr(
+                                          'Сім’ю призупинено платформою — зміни недоступні',
+                                      )
+                                    : tr('Сім’я очікує верифікації')}
                             </div>
                             <div className="mt-0.5 text-xs opacity-80">
                                 {family.status === 'suspended'
                                     ? family.status_reason ||
-                                      'Зверніться до адміністрації GameCon.'
-                                    : 'Панель уже працює. Після перевірки адміністрацією з’являться публічна сторінка, набір учасників і чат сім’ї.'}
+                                      tr('Зверніться до адміністрації GameCon.')
+                                    : tr(
+                                          'Панель уже працює. Після перевірки адміністрацією з’являться публічна сторінка, набір учасників і чат сім’ї.',
+                                      )}
                             </div>
                         </div>
                     </div>
@@ -314,7 +321,7 @@ export function FamilyShell({
                         floatingAboveNav(playing),
                     )}
                 >
-                    <FilePlus2 className="size-5" /> Звіт
+                    <FilePlus2 className="size-5" /> {tr('Звіт')}
                 </Link>
             )}
         </>

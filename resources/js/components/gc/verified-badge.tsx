@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import { cn } from '@/lib/utils';
+import { tr } from '@/lib/i18n';
 
 export function VerifiedBadge({ className }: { className?: string }) {
     const gradientId = `gc-verified${useId().replace(/[^\w-]/g, '')}`;
@@ -8,9 +9,9 @@ export function VerifiedBadge({ className }: { className?: string }) {
         <svg
             viewBox="0 0 24 24"
             className={cn('inline-block size-4 shrink-0', className)}
-            aria-label="Підтверджений профіль"
+            aria-label={tr('Підтверджений профіль')}
         >
-            <title>Підтверджений профіль</title>
+            <title>{tr('Підтверджений профіль')}</title>
             <defs>
                 <linearGradient
                     id={gradientId}

@@ -25,15 +25,16 @@ import type {
 } from '@/types';
 import { SpotifyLogo } from './track-cover';
 import { TrackList } from './track-list';
+import { tr } from '@/lib/i18n';
 
 type Section = 'search' | 'top' | 'recent' | 'saved' | 'playlists';
 
 const sections: { value: Section; label: string; icon: typeof Flame }[] = [
-    { value: 'top', label: 'Мій топ', icon: Flame },
-    { value: 'recent', label: 'Нещодавні', icon: Clock3 },
-    { value: 'saved', label: 'Улюблені', icon: Heart },
-    { value: 'playlists', label: 'Плейлисти', icon: Library },
-    { value: 'search', label: 'Пошук', icon: Search },
+    { value: 'top', label: tr('Мій топ'), icon: Flame },
+    { value: 'recent', label: tr('Нещодавні'), icon: Clock3 },
+    { value: 'saved', label: tr('Улюблені'), icon: Heart },
+    { value: 'playlists', label: tr('Плейлисти'), icon: Library },
+    { value: 'search', label: tr('Пошук'), icon: Search },
 ];
 
 function useSpotify<T>(url: string | null) {
@@ -57,7 +58,7 @@ function useSpotify<T>(url: string | null) {
                         error:
                             error instanceof ApiError
                                 ? error.message
-                                : 'Spotify недоступний.',
+                                : tr('Spotify недоступний.'),
                     }),
             );
 
@@ -112,7 +113,7 @@ function Tracks({ url, empty }: { url: string | null; empty: string }) {
                 onClick={() => playQueue(data.tracks, 0)}
                 className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#1ed760] px-4 py-2 text-sm font-semibold text-[#06140b] transition hover:scale-[1.03]"
             >
-                <Play className="size-4 fill-current" /> Слухати все
+                <Play className="size-4 fill-current" /> {tr('Слухати все')}
             </button>
             <TrackList tracks={data.tracks} />
         </>
@@ -133,7 +134,7 @@ function Playlists() {
                     onClick={() => setOpen(null)}
                     className="mb-3 inline-flex items-center gap-1.5 text-sm text-white/55 hover:text-white"
                 >
-                    <ArrowLeft className="size-4" /> Усі плейлисти
+                    <ArrowLeft className="size-4" /> {tr('Усі плейлисти')}
                 </button>
                 <div className="mb-4 flex items-center gap-4">
                     {open.cover_url && (
@@ -148,13 +149,13 @@ function Playlists() {
                             {open.name}
                         </h3>
                         <p className="text-xs text-white/45">
-                            {open.owner} · {open.tracks_count} треків
+                            {open.owner} · {open.tracks_count} {tr('треків')}
                         </p>
                     </div>
                 </div>
                 <Tracks
                     url={`/music/spotify/playlists/${open.id}`}
-                    empty="Плейлист порожній."
+                    empty={tr('Плейлист порожній.')}
                 />
             </div>
         );
@@ -168,7 +169,7 @@ function Playlists() {
     if (!data?.playlists.length)
         return (
             <p className="py-10 text-center text-sm text-white/45">
-                У вашому Spotify поки немає плейлистів.
+                {tr('У вашому Spotify поки немає плейлистів.')}
             </p>
         );
 
@@ -199,7 +200,7 @@ function Playlists() {
                         {playlist.name}
                     </span>
                     <span className="block truncate text-xs text-white/45">
-                        {playlist.tracks_count} треків
+                        {playlist.tracks_count} {tr('треків')}
                     </span>
                 </button>
             ))}
@@ -225,18 +226,18 @@ function SearchSection() {
                     value={q}
                     onChange={(event) => setQ(event.target.value)}
                     autoFocus
-                    placeholder="Трек, виконавець або альбом у Spotify"
+                    placeholder={tr('Трек, виконавець або альбом у Spotify')}
                     className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
                 />
             </label>
             {query ? (
                 <Tracks
                     url={`/music/spotify/search?q=${encodeURIComponent(query)}`}
-                    empty="Нічого не знайдено."
+                    empty={tr('Нічого не знайдено.')}
                 />
             ) : (
                 <p className="py-10 text-center text-sm text-white/40">
-                    Понад 100 мільйонів треків — почніть вводити запит.
+                    {tr('Понад 100 мільйонів треків — почніть вводити запит.')}
                 </p>
             )}
         </div>
@@ -258,18 +259,20 @@ export function SpotifyPanel({
             <div className="glass flex flex-col items-center rounded-3xl px-6 py-14 text-center">
                 <SpotifyLogo className="size-14 opacity-60" />
                 <h3 className="mt-4 font-display text-lg font-semibold text-white">
-                    Spotify ще не підключено до GameCon
+                    {tr('Spotify ще не підключено до GameCon')}
                 </h3>
                 <p className="mt-2 max-w-md text-sm text-white/50">
-                    Щойно адміністратор додасть ключі застосунку Spotify, тут
-                    з’являться пошук, ваш топ, плейлисти й відтворення.
+                    {tr(
+                        'Щойно адміністратор додасть ключі застосунку Spotify, тут з’являться пошук, ваш топ, плейлисти й відтворення.',
+                    )}
                 </p>
                 {auth.user.is_admin && (
                     <a
                         href="/admin/integrations"
                         className="btn-glow mt-5 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold"
                     >
-                        <Settings2 className="size-4" /> Налаштувати інтеграцію
+                        <Settings2 className="size-4" />{' '}
+                        {tr('Налаштувати інтеграцію')}
                     </a>
                 )}
             </div>
@@ -295,8 +298,8 @@ export function SpotifyPanel({
                         )}
                         <div className="min-w-0 flex-1">
                             <p className="flex items-center gap-2 text-xs font-medium text-[#1ed760]">
-                                <SpotifyLogo className="size-3.5" /> Spotify
-                                під’єднано
+                                <SpotifyLogo className="size-3.5" />{' '}
+                                {tr('Spotify під’єднано')}
                             </p>
                             <a
                                 href={account.profile_url}
@@ -317,13 +320,15 @@ export function SpotifyPanel({
                                     </span>
                                 )}
                                 {account.premium
-                                    ? 'Повні треки прямо в плеєрі GameCon'
-                                    : 'Треки грають через вбудований плеєр Spotify'}
+                                    ? tr('Повні треки прямо в плеєрі GameCon')
+                                    : tr(
+                                          'Треки грають через вбудований плеєр Spotify',
+                                      )}
                             </p>
                         </div>
                         <label className="flex items-center gap-2.5 rounded-xl bg-white/[0.04] px-3 py-2 text-xs text-white/70">
                             <Radio className="size-4 text-[#1ed760]" />
-                            Показувати «Зараз грає»
+                            {tr('Показувати «Зараз грає»')}
                             <Toggle
                                 checked={account.show_now_playing}
                                 onChange={(value) =>
@@ -333,20 +338,20 @@ export function SpotifyPanel({
                                         { preserveScroll: true },
                                     )
                                 }
-                                label="Показувати «Зараз грає»"
+                                label={tr('Показувати «Зараз грає»')}
                             />
                         </label>
                         <button
                             type="button"
                             onClick={() =>
-                                window.confirm('Від’єднати Spotify?') &&
+                                window.confirm(tr('Від’єднати Spotify?')) &&
                                 router.delete('/music/spotify', {
                                     preserveScroll: true,
                                 })
                             }
                             className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs text-white/50 transition hover:bg-rose-500/10 hover:text-rose-300"
                         >
-                            <Link2Off className="size-4" /> Від’єднати
+                            <Link2Off className="size-4" /> {tr('Від’єднати')}
                         </button>
                     </div>
                 </section>
@@ -357,24 +362,24 @@ export function SpotifyPanel({
                         <SpotifyLogo className="size-16 drop-shadow-[0_0_24px_rgb(30_215_96/0.6)]" />
                         <div className="min-w-0 flex-1">
                             <h3 className="font-display text-2xl font-bold text-white">
-                                Під’єднайте свій Spotify
+                                {tr('Під’єднайте свій Spotify')}
                             </h3>
                             <ul className="mt-2 grid gap-1 text-sm text-white/70 sm:grid-cols-2">
                                 <li className="flex items-center gap-2">
                                     <Sparkles className="size-4 text-[#1ed760]" />
-                                    Ваш топ, улюблені й плейлисти
+                                    {tr('Ваш топ, улюблені й плейлисти')}
                                 </li>
                                 <li className="flex items-center gap-2">
                                     <Sparkles className="size-4 text-[#1ed760]" />
-                                    Повні треки з Premium у GameCon
+                                    {tr('Повні треки з Premium у GameCon')}
                                 </li>
                                 <li className="flex items-center gap-2">
                                     <Sparkles className="size-4 text-[#1ed760]" />
-                                    «Зараз грає» у вашому профілі
+                                    {tr('«Зараз грає» у вашому профілі')}
                                 </li>
                                 <li className="flex items-center gap-2">
                                     <Sparkles className="size-4 text-[#1ed760]" />
-                                    Діліться треками на стіні
+                                    {tr('Діліться треками на стіні')}
                                 </li>
                             </ul>
                         </div>
@@ -383,7 +388,7 @@ export function SpotifyPanel({
                             className="inline-flex h-12 items-center gap-2 rounded-full bg-[#1ed760] px-6 text-sm font-bold text-[#04140a] shadow-[0_0_30px_-6px_rgb(30_215_96/0.9)] transition hover:scale-[1.03]"
                         >
                             <SpotifyLogo className="size-5 fill-[#04140a]" />
-                            Увійти через Spotify
+                            {tr('Увійти через Spotify')}
                         </a>
                     </div>
                 </section>
@@ -415,19 +420,21 @@ export function SpotifyPanel({
                 {section === 'top' && (
                     <Tracks
                         url="/music/spotify/library/top"
-                        empty="Spotify ще не зібрав ваш топ — послухайте більше музики."
+                        empty={tr(
+                            'Spotify ще не зібрав ваш топ — послухайте більше музики.',
+                        )}
                     />
                 )}
                 {section === 'recent' && (
                     <Tracks
                         url="/music/spotify/library/recent"
-                        empty="Історія прослуховувань порожня."
+                        empty={tr('Історія прослуховувань порожня.')}
                     />
                 )}
                 {section === 'saved' && (
                     <Tracks
                         url="/music/spotify/library/saved"
-                        empty="Немає вподобаних треків."
+                        empty={tr('Немає вподобаних треків.')}
                     />
                 )}
             </section>

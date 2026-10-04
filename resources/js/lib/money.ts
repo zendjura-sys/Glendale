@@ -1,4 +1,5 @@
-const whole = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 });
+import { LOCALE } from '@/lib/i18n';
+const whole = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 0 });
 
 /**
  * Копійки → «12 500 ₴» або «12 500,50 ₴».

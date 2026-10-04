@@ -40,6 +40,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { formatDate, timeAgo } from '@/lib/format';
 import type { Paginated, UserCard } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type AdminUser = UserCard & {
     email: string;
@@ -61,25 +62,25 @@ type Props = {
 };
 
 const ROLE_LABELS: Record<string, string> = {
-    admin: 'Адміністратор',
-    moderator: 'Модератор',
-    user: 'Учасник',
+    admin: tr('Адміністратор'),
+    moderator: tr('Модератор'),
+    user: tr('Учасник'),
 };
 
 function RolePill({ role }: { role: string }) {
     if (role === 'admin') {
         return (
             <Pill tone="gold">
-                <ShieldCheck className="size-3" /> Адмін
+                <ShieldCheck className="size-3" /> {tr('Адмін')}
             </Pill>
         );
     }
 
     if (role === 'moderator') {
-        return <Pill tone="violet">Модератор</Pill>;
+        return <Pill tone="violet">{tr('Модератор')}</Pill>;
     }
 
-    return <Pill>Учасник</Pill>;
+    return <Pill>{tr('Учасник')}</Pill>;
 }
 
 export default function AdminUsers({ users, filters, roles }: Props) {
@@ -113,10 +114,10 @@ export default function AdminUsers({ users, filters, roles }: Props) {
 
     return (
         <>
-            <Head title="Користувачі — Адмін-панель" />
+            <Head title={tr('Користувачі — Адмін-панель')} />
             <PageHeader
-                title="Користувачі"
-                description={`Усього ${users.total}`}
+                title={tr('Користувачі')}
+                description={tr('Усього {total}', { total: users.total })}
             />
 
             <div className="glass mb-4 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
@@ -128,7 +129,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                     <Input
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
-                        placeholder="Ім'я, логін, email або ID"
+                        placeholder={tr("Ім'я, логін, email або ID")}
                         className="h-10 pl-10"
                     />
                 </form>
@@ -137,7 +138,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                     onChange={(e) => apply({ role: e.target.value })}
                     className={selectClass}
                 >
-                    <option value="">Усі ролі</option>
+                    <option value="">{tr('Усі ролі')}</option>
                     {roles.map((r) => (
                         <option key={r} value={r}>
                             {ROLE_LABELS[r] ?? r}
@@ -149,21 +150,21 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                     onChange={(e) => apply({ status: e.target.value })}
                     className={selectClass}
                 >
-                    <option value="">Будь-який статус</option>
-                    <option value="active">Активні</option>
-                    <option value="online">Онлайн</option>
-                    <option value="verified">Верифіковані</option>
-                    <option value="banned">Заблоковані</option>
+                    <option value="">{tr('Будь-який статус')}</option>
+                    <option value="active">{tr('Активні')}</option>
+                    <option value="online">{tr('Онлайн')}</option>
+                    <option value="verified">{tr('Верифіковані')}</option>
+                    <option value="banned">{tr('Заблоковані')}</option>
                 </select>
                 <select
                     value={filters.sort}
                     onChange={(e) => apply({ sort: e.target.value })}
                     className={selectClass}
                 >
-                    <option value="newest">Спочатку нові</option>
-                    <option value="oldest">Спочатку старі</option>
-                    <option value="last_seen">За активністю</option>
-                    <option value="name">За ім'ям</option>
+                    <option value="newest">{tr('Спочатку нові')}</option>
+                    <option value="oldest">{tr('Спочатку старі')}</option>
+                    <option value="last_seen">{tr('За активністю')}</option>
+                    <option value="name">{tr("За ім'ям")}</option>
                 </select>
             </div>
 
@@ -173,20 +174,22 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                         <thead>
                             <tr className="border-b border-white/[0.06] text-left text-[11px] tracking-wider text-white/35 uppercase">
                                 <th className="px-5 py-3 font-medium">
-                                    Користувач
-                                </th>
-                                <th className="px-3 py-3 font-medium">Роль</th>
-                                <th className="px-3 py-3 font-medium">
-                                    Статус
+                                    {tr('Користувач')}
                                 </th>
                                 <th className="px-3 py-3 font-medium">
-                                    Записи
+                                    {tr('Роль')}
                                 </th>
                                 <th className="px-3 py-3 font-medium">
-                                    Активність
+                                    {tr('Статус')}
                                 </th>
                                 <th className="px-3 py-3 font-medium">
-                                    Реєстрація
+                                    {tr('Записи')}
+                                </th>
+                                <th className="px-3 py-3 font-medium">
+                                    {tr('Активність')}
+                                </th>
+                                <th className="px-3 py-3 font-medium">
+                                    {tr('Реєстрація')}
                                 </th>
                                 <th className="w-12 px-3 py-3" />
                             </tr>
@@ -231,14 +234,16 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                                 {u.banned_at ? (
                                                     <Pill tone="red">
                                                         <Ban className="size-3" />{' '}
-                                                        Бан
+                                                        {tr('Бан')}
                                                     </Pill>
                                                 ) : u.is_online ? (
                                                     <Pill tone="green">
-                                                        Онлайн
+                                                        {tr('Онлайн')}
                                                     </Pill>
                                                 ) : (
-                                                    <Pill>Активний</Pill>
+                                                    <Pill>
+                                                        {tr('Активний')}
+                                                    </Pill>
                                                 )}
                                                 {u.two_factor && (
                                                     <Pill tone="blue">
@@ -258,7 +263,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                         </td>
                                         <td className="px-3 py-3 text-xs whitespace-nowrap text-white/50">
                                             {u.is_online
-                                                ? 'зараз'
+                                                ? tr('зараз')
                                                 : u.last_seen_at
                                                   ? timeAgo(u.last_seen_at)
                                                   : '—'}
@@ -277,7 +282,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                                 >
                                                     <DropdownMenuLabel className="text-xs text-white/40">
                                                         <UserCog className="mr-1 inline size-3.5" />{' '}
-                                                        Роль
+                                                        {tr('Роль')}
                                                     </DropdownMenuLabel>
                                                     {roles.map((r) => (
                                                         <DropdownMenuItem
@@ -314,8 +319,12 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                                     >
                                                         <BadgeCheck />{' '}
                                                         {u.is_verified
-                                                            ? 'Зняти верифікацію'
-                                                            : 'Верифікувати'}
+                                                            ? tr(
+                                                                  'Зняти верифікацію',
+                                                              )
+                                                            : tr(
+                                                                  'Верифікувати',
+                                                              )}
                                                     </DropdownMenuItem>
                                                     {u.banned_at ? (
                                                         <DropdownMenuItem
@@ -327,7 +336,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                                             className="rounded-lg focus:bg-white/[0.06]"
                                                         >
                                                             <Undo2 />{' '}
-                                                            Розблокувати
+                                                            {tr('Розблокувати')}
                                                         </DropdownMenuItem>
                                                     ) : (
                                                         <DropdownMenuItem
@@ -341,7 +350,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                                             className="rounded-lg text-amber-200 focus:bg-amber-300/10"
                                                         >
                                                             <Ban className="text-amber-200" />{' '}
-                                                            Заблокувати
+                                                            {tr('Заблокувати')}
                                                         </DropdownMenuItem>
                                                     )}
                                                     <DropdownMenuSeparator className="bg-white/5" />
@@ -353,7 +362,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                                         className="rounded-lg text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
                                                     >
                                                         <Trash2 className="text-rose-300" />{' '}
-                                                        Видалити
+                                                        {tr('Видалити')}
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
@@ -366,7 +375,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                 </div>
                 {users.data.length === 0 && (
                     <div className="px-6 py-14 text-center text-sm text-white/40">
-                        Нікого не знайдено
+                        {tr('Нікого не знайдено')}
                     </div>
                 )}
             </div>
@@ -378,20 +387,25 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                 onOpenChange={(open) => !open && setBanTarget(null)}
             >
                 <DialogContent className="glass-strong rounded-3xl border-white/10 text-white">
-                    <DialogTitle>Заблокувати {banTarget?.name}?</DialogTitle>
+                    <DialogTitle>
+                        {tr('Заблокувати')} {banTarget?.name}?
+                    </DialogTitle>
                     <DialogDescription className="text-white/50">
-                        Користувача буде розлогінено, він не зможе увійти до
-                        розблокування.
+                        {tr(
+                            'Користувача буде розлогінено, він не зможе увійти до розблокування.',
+                        )}
                     </DialogDescription>
                     <Input
                         value={banReason}
                         onChange={(e) => setBanReason(e.target.value)}
-                        placeholder="Причина (необов'язково)"
+                        placeholder={tr("Причина (необов'язково)")}
                         maxLength={255}
                     />
                     <DialogFooter className="gap-2">
                         <DialogClose asChild>
-                            <Button variant="secondary">Скасувати</Button>
+                            <Button variant="secondary">
+                                {tr('Скасувати')}
+                            </Button>
                         </DialogClose>
                         <Button
                             variant="destructive"
@@ -406,7 +420,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                 setBanTarget(null);
                             }}
                         >
-                            Заблокувати
+                            {tr('Заблокувати')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -417,14 +431,19 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                 onOpenChange={(open) => !open && setDeleteTarget(null)}
             >
                 <DialogContent className="glass-strong rounded-3xl border-white/10 text-white">
-                    <DialogTitle>Видалити {deleteTarget?.name}?</DialogTitle>
+                    <DialogTitle>
+                        {tr('Видалити')} {deleteTarget?.name}?
+                    </DialogTitle>
                     <DialogDescription className="text-white/50">
-                        Акаунт, записи, коментарі та дружби буде видалено
-                        назавжди.
+                        {tr(
+                            'Акаунт, записи, коментарі та дружби буде видалено назавжди.',
+                        )}
                     </DialogDescription>
                     <DialogFooter className="gap-2">
                         <DialogClose asChild>
-                            <Button variant="secondary">Скасувати</Button>
+                            <Button variant="secondary">
+                                {tr('Скасувати')}
+                            </Button>
                         </DialogClose>
                         <Button
                             variant="destructive"
@@ -439,7 +458,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                 setDeleteTarget(null);
                             }}
                         >
-                            Видалити назавжди
+                            {tr('Видалити назавжди')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

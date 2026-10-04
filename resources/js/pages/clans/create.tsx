@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import type { GameCard } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Feature = { label: string; text: string };
 
@@ -63,7 +64,7 @@ function GamePicker({
                 <input
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
-                    placeholder="Знайти гру: CS2, PUBG Mobile, Dota 2…"
+                    placeholder={tr('Знайти гру: CS2, PUBG Mobile, Dota 2…')}
                     className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
                 />
             </label>
@@ -152,10 +153,10 @@ export default function ClanCreate({
 
     return (
         <>
-            <Head title="Новий клан" />
+            <Head title={tr('Новий клан')} />
             <h1 className="mb-4 flex items-center gap-2 font-display text-2xl font-semibold text-white">
-                <Swords className="size-6 text-[#a5b4fc]" /> Новий клан або
-                гільдія
+                <Swords className="size-6 text-[#a5b4fc]" />{' '}
+                {tr('Новий клан або гільдія')}
             </h1>
             <form
                 onSubmit={(e) => {
@@ -166,7 +167,7 @@ export default function ClanCreate({
             >
                 <section className="glass rounded-3xl p-4 sm:p-5">
                     <h2 className="mb-3 text-sm font-semibold text-white/80">
-                        1. Тип
+                        {tr('1. Тип')}
                     </h2>
                     <div className="grid grid-cols-2 gap-2">
                         {(Object.keys(types) as ('clan' | 'guild')[]).map(
@@ -186,8 +187,8 @@ export default function ClanCreate({
                                         {types[t]}
                                     </span>
                                     <span className="block text-xs opacity-80">
-                                        Назва: [{types[t]}]{' '}
-                                        {data.name || 'Назва'}
+                                        {tr('Назва: [')}
+                                        {types[t]}] {data.name || tr('Назва')}
                                     </span>
                                 </button>
                             ),
@@ -197,7 +198,7 @@ export default function ClanCreate({
 
                 <section className="glass rounded-3xl p-4 sm:p-5">
                     <h2 className="mb-3 text-sm font-semibold text-white/80">
-                        2. Гра{' '}
+                        {tr('2. Гра')}{' '}
                         {game && (
                             <span className="text-[#a5b4fc]">
                                 — {game.name}
@@ -220,7 +221,7 @@ export default function ClanCreate({
 
                 <section className="glass space-y-3 rounded-3xl p-4 sm:p-5">
                     <h2 className="text-sm font-semibold text-white/80">
-                        3. Назва й опис
+                        {tr('3. Назва й опис')}
                     </h2>
                     <div className="grid gap-3 sm:grid-cols-[1fr_140px]">
                         <div>
@@ -230,7 +231,7 @@ export default function ClanCreate({
                                 onChange={(e) =>
                                     setData('name', e.target.value)
                                 }
-                                placeholder="Назва"
+                                placeholder={tr('Назва')}
                                 className={input}
                             />
                             {errors.name && (
@@ -246,7 +247,7 @@ export default function ClanCreate({
                                 onChange={(e) =>
                                     setData('tag', e.target.value.toUpperCase())
                                 }
-                                placeholder="ТЕГ"
+                                placeholder={tr('ТЕГ')}
                                 className={cn(input, 'uppercase')}
                             />
                             {errors.tag && (
@@ -261,12 +262,16 @@ export default function ClanCreate({
                         maxLength={1000}
                         rows={3}
                         onChange={(e) => setData('description', e.target.value)}
-                        placeholder="Про клан: чим займаєтесь, кого шукаєте"
+                        placeholder={tr(
+                            'Про клан: чим займаєтесь, кого шукаєте',
+                        )}
                         className="input-glass w-full rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none"
                     />
                     <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-white/70">
                         <ImagePlus className="size-4" />{' '}
-                        {data.logo ? data.logo.name : 'Логотип (необов’язково)'}
+                        {data.logo
+                            ? data.logo.name
+                            : tr('Логотип (необов’язково)')}
                         <input
                             type="file"
                             accept="image/*"
@@ -280,11 +285,12 @@ export default function ClanCreate({
 
                 <section className="glass rounded-3xl p-4 sm:p-5">
                     <h2 className="mb-1 text-sm font-semibold text-white/80">
-                        4. Що буде в клані
+                        {tr('4. Що буде в клані')}
                     </h2>
                     <p className="mb-3 text-xs text-white/45">
-                        Розділи можна змінити пізніше в налаштуваннях клану.
-                        Склад, заявки, ранги й права є завжди.
+                        {tr(
+                            'Розділи можна змінити пізніше в налаштуваннях клану. Склад, заявки, ранги й права є завжди.',
+                        )}
                     </p>
                     <div className="grid gap-2 sm:grid-cols-2">
                         {Object.entries(features).map(([key, f]) => {
@@ -330,7 +336,7 @@ export default function ClanCreate({
 
                 <section className="glass rounded-3xl p-4 sm:p-5">
                     <h2 className="mb-3 text-sm font-semibold text-white/80">
-                        5. Як вступати
+                        {tr('5. Як вступати')}
                     </h2>
                     <div className="flex flex-wrap gap-2">
                         {Object.entries(join_modes).map(([key, label]) => (
@@ -359,7 +365,7 @@ export default function ClanCreate({
                     {form.processing && (
                         <Loader2 className="size-4 animate-spin" />
                     )}
-                    Створити {types[data.type].toLowerCase()}
+                    {tr('Створити')} {types[data.type].toLowerCase()}
                 </button>
             </form>
         </>

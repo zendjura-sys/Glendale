@@ -42,6 +42,7 @@ import type {
     ScrollData,
     UserCard,
 } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Profile = UserCard & {
     last_name: string;
@@ -169,9 +170,9 @@ export default function ProfileShow({
     const [playingOpen, setPlayingOpen] = useState(false);
     const roleBadge =
         profile.role === 'admin'
-            ? 'Адміністратор'
+            ? tr('Адміністратор')
             : profile.role === 'moderator'
-              ? 'Модератор'
+              ? tr('Модератор')
               : null;
 
     return (
@@ -197,7 +198,8 @@ export default function ProfileShow({
                             url="/me/cover"
                             className="absolute top-4 right-4 inline-flex items-center gap-2 rounded-xl bg-black/40 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-black/60"
                         >
-                            <Camera className="size-4" /> Змінити обкладинку
+                            <Camera className="size-4" />{' '}
+                            {tr('Змінити обкладинку')}
                         </Uploader>
                     )}
                 </div>
@@ -252,8 +254,8 @@ export default function ProfileShow({
                                         >
                                             <Gamepad2 className="size-3.5" />
                                             {profile.playing
-                                                ? 'Змінити'
-                                                : 'Граю в…'}
+                                                ? tr('Змінити')
+                                                : tr('Граю в…')}
                                         </button>
                                     )}
                                 </div>
@@ -268,7 +270,7 @@ export default function ProfileShow({
                                 {profile.is_online ? (
                                     <>
                                         <span className="size-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgb(52_211_153)]" />{' '}
-                                        онлайн
+                                        {tr('онлайн')}
                                     </>
                                 ) : (
                                     lastSeen(
@@ -285,8 +287,8 @@ export default function ProfileShow({
                                     href="/settings/profile"
                                     className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"
                                 >
-                                    <PenLine className="size-4" /> Редагувати
-                                    профіль
+                                    <PenLine className="size-4" />{' '}
+                                    {tr('Редагувати профіль')}
                                 </Link>
                             ) : (
                                 <>
@@ -301,7 +303,7 @@ export default function ProfileShow({
                                                 className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"
                                             >
                                                 <MessageCircle className="size-4" />{' '}
-                                                Написати
+                                                {tr('Написати')}
                                             </Link>
                                         )}
                                 </>
@@ -340,7 +342,8 @@ export default function ProfileShow({
                             {profile.joined_at && (
                                 <span className="inline-flex items-center gap-1.5">
                                     <CalendarDays className="size-4 text-white/40" />{' '}
-                                    В GameCon з {formatDate(profile.joined_at)}
+                                    {tr('В GameCon з')}{' '}
+                                    {formatDate(profile.joined_at)}
                                 </span>
                             )}
                         </div>
@@ -364,13 +367,13 @@ export default function ProfileShow({
                             />
                             <Counter
                                 value={stats.photos}
-                                label="фото"
+                                label={tr('фото')}
                                 href={photosHref ?? undefined}
                             />
                             {audio && (
                                 <Counter
                                     value={audio.tracks}
-                                    label="аудіо"
+                                    label={tr('аудіо')}
                                     href={audio.href}
                                 />
                             )}
@@ -383,15 +386,18 @@ export default function ProfileShow({
                 <div className="mt-5">
                     <EmptyState
                         icon={Lock}
-                        title="Це закритий профіль"
-                        text={`Додайте ${profile.first_name} у друзі, щоб бачити записи, фото та інформацію.`}
+                        title={tr('Це закритий профіль')}
+                        text={tr(
+                            'Додайте {first_name} у друзі, щоб бачити записи, фото та інформацію.',
+                            { first_name: profile.first_name },
+                        )}
                     />
                 </div>
             ) : (
                 <div className="mt-5 flex flex-col gap-5 xl:flex-row">
                     <aside className="w-full shrink-0 space-y-4 xl:sticky xl:top-[76px] xl:h-fit xl:w-[320px]">
                         {profile.about && (
-                            <Widget title="Про себе">
+                            <Widget title={tr('Про себе')}>
                                 <p className="px-1 text-sm leading-relaxed whitespace-pre-line text-white/75">
                                     {profile.about}
                                 </p>
@@ -426,7 +432,7 @@ export default function ProfileShow({
                                 </span>
                                 <span className="min-w-0 flex-1">
                                     <span className="block text-sm font-semibold text-white">
-                                        Аудіозаписи
+                                        {tr('Аудіозаписи')}
                                     </span>
                                     <span className="block text-xs text-white/45">
                                         {audio.tracks}{' '}
@@ -438,13 +444,13 @@ export default function ProfileShow({
                                     </span>
                                 </span>
                                 <span className="text-xs text-white/40 transition group-hover:text-white">
-                                    Слухати →
+                                    {tr('Слухати →')}
                                 </span>
                             </Link>
                         )}
 
                         <Widget
-                            title="Друзі"
+                            title={tr('Друзі')}
                             icon={UsersRound}
                             action={
                                 stats.mutual > 0 ? (
@@ -461,7 +467,7 @@ export default function ProfileShow({
                         >
                             {friends.length === 0 ? (
                                 <p className="px-1 text-sm text-white/45">
-                                    Поки немає друзів.
+                                    {tr('Поки немає друзів.')}
                                 </p>
                             ) : (
                                 <div className="grid grid-cols-3 gap-2">
@@ -486,7 +492,7 @@ export default function ProfileShow({
 
                         {photos.length > 0 && (
                             <Widget
-                                title="Фото"
+                                title={tr('Фото')}
                                 icon={ImageIcon}
                                 action={
                                     photosHref ? (
@@ -494,7 +500,7 @@ export default function ProfileShow({
                                             href={photosHref}
                                             className="text-xs text-cyan-300/80 transition hover:text-cyan-200"
                                         >
-                                            Усі {stats.photos}
+                                            {tr('Усі')} {stats.photos}
                                         </Link>
                                     ) : undefined
                                 }
@@ -527,11 +533,19 @@ export default function ProfileShow({
                         {posts.data.length === 0 ? (
                             <EmptyState
                                 icon={PenLine}
-                                title="На стіні поки порожньо"
+                                title={tr('На стіні поки порожньо')}
                                 text={
                                     isSelf
-                                        ? 'Розкажіть світу щось цікаве — перший запис завжди найкращий.'
-                                        : `${profile.first_name} ще нічого не публікував(-ла).`
+                                        ? tr(
+                                              'Розкажіть світу щось цікаве — перший запис завжди найкращий.',
+                                          )
+                                        : tr(
+                                              '{first_name} ще нічого не публікував(-ла).',
+                                              {
+                                                  first_name:
+                                                      profile.first_name,
+                                              },
+                                          )
                                 }
                             />
                         ) : (

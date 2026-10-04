@@ -14,6 +14,7 @@ use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\ListenPartyController;
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\Mail\UnsubscribeController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
@@ -36,6 +37,10 @@ use App\Http\Controllers\WatchPartyController;
 use App\Http\Controllers\WelcomeController;
 use App\Models\VoiceRoom;
 use Illuminate\Support\Facades\Route;
+
+// Мова інтерфейсу: ручний вибір і словник сайту.
+Route::post('locale', [LocaleController::class, 'update'])->middleware('throttle:30,1')->name('locale.update');
+Route::get('i18n/{locale}.js', [LocaleController::class, 'script'])->where('locale', '[A-Za-z]{2,3}(-[A-Za-z0-9]{2,4}){0,2}')->name('locale.script');
 
 Route::get('/', WelcomeController::class)->name('home');
 

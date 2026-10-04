@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import type { GtaServerCard } from '@/types';
 import { OnlineMeter, ServerIcon } from './server-icon';
+import { LOCALE, tr } from '@/lib/i18n';
 
 export function ConnectButton({ value }: { value: string }) {
     const [copied, setCopied] = useState(false);
@@ -29,7 +30,7 @@ export function ConnectButton({ value }: { value: string }) {
                 });
             }}
             className="group/copy inline-flex max-w-full items-center gap-1.5 rounded-lg bg-white/[0.05] px-2 py-1 font-mono text-[11px] text-white/60 ring-1 ring-white/[0.06] transition hover:text-white"
-            title="Скопіювати адресу підключення"
+            title={tr('Скопіювати адресу підключення')}
         >
             {copied ? (
                 <Check className="size-3 shrink-0 text-emerald-300" />
@@ -49,7 +50,7 @@ export function ServerLinks({
     className?: string;
 }) {
     const links = [
-        { href: server.website, icon: Globe, label: 'Сайт' },
+        { href: server.website, icon: Globe, label: tr('Сайт') },
         { href: server.discord, icon: MessageCircle, label: 'Discord' },
         { href: server.telegram, icon: Send, label: 'Telegram' },
     ].filter((link) => link.href);
@@ -138,11 +139,16 @@ export function ServerCard({
                     server.discord_members !== null && (
                         <div className="text-xs text-white/50">
                             <span className="font-semibold text-[#9cbcff]">
-                                {server.discord_members.toLocaleString('uk-UA')}
+                                {server.discord_members.toLocaleString(LOCALE)}
                             </span>{' '}
-                            у Discord
+                            {tr('у Discord')}
                             {server.discord_online !== null &&
-                                ` · ${server.discord_online.toLocaleString('uk-UA')} в мережі`}
+                                tr(' · {toLocaleString} в мережі', {
+                                    toLocaleString:
+                                        server.discord_online.toLocaleString(
+                                            LOCALE,
+                                        ),
+                                })}
                         </div>
                     )}
                 <div className="flex items-center justify-between gap-2">
@@ -152,7 +158,7 @@ export function ServerCard({
                         ) : (
                             <span className="inline-flex items-center gap-1 text-xs text-white/40">
                                 <Crown className="size-3.5" />
-                                {server.families_count} сімей
+                                {server.families_count} {tr('сімей')}
                             </span>
                         )}
                     </div>

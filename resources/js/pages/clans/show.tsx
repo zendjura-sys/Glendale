@@ -25,6 +25,7 @@ import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { ClanCard, UserCard } from '@/types';
 import { ClanLogo } from './index';
+import { LOCALE, tr } from '@/lib/i18n';
 
 type Member = {
     id: number;
@@ -114,9 +115,9 @@ const btn =
 const ghost =
     'glass inline-flex h-10 items-center justify-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white';
 
-const num = (n: number) => new Intl.NumberFormat('uk-UA').format(n);
+const num = (n: number) => new Intl.NumberFormat(LOCALE).format(n);
 const kyiv = (iso: string) =>
-    new Date(iso).toLocaleString('uk-UA', {
+    new Date(iso).toLocaleString(LOCALE, {
         timeZone: 'Europe/Kyiv',
         day: '2-digit',
         month: '2-digit',
@@ -171,14 +172,14 @@ export default function ClanShow(props: Props) {
     const has = (f: string) => clan.features.includes(f);
 
     const tabs = [
-        ['overview', 'Огляд', Swords, true],
-        ['news', 'Новини', Newspaper, me && has('news')],
-        ['events', 'Заходи', CalendarDays, me && has('events')],
-        ['treasury', 'Внески', Coins, me && has('treasury')],
-        ['rating', 'Рейтинг', Trophy, me && has('rating')],
-        ['rules', 'Статут', ScrollText, has('rules') && clan.rules],
-        ['members', 'Учасники', Users, !!me],
-        ['settings', 'Налаштування', Settings, can['settings.manage']],
+        ['overview', tr('Огляд'), Swords, true],
+        ['news', tr('Новини'), Newspaper, me && has('news')],
+        ['events', tr('Заходи'), CalendarDays, me && has('events')],
+        ['treasury', tr('Внески'), Coins, me && has('treasury')],
+        ['rating', tr('Рейтинг'), Trophy, me && has('rating')],
+        ['rules', tr('Статут'), ScrollText, has('rules') && clan.rules],
+        ['members', tr('Учасники'), Users, !!me],
+        ['settings', tr('Налаштування'), Settings, can['settings.manage']],
     ].filter((t) => t[3]) as [string, string, typeof Users, boolean][];
     const [tab, setTab] = useState('overview');
 
@@ -217,7 +218,7 @@ export default function ClanShow(props: Props) {
                 <div className="flex flex-wrap gap-2">
                     {clan.conversation_id && (
                         <a href={`${base}/chat`} className={ghost}>
-                            <MessageCircle className="size-4" /> Чат
+                            <MessageCircle className="size-4" /> {tr('Чат')}
                         </a>
                     )}
                     {!me && !application && clan.is_recruiting && (
@@ -227,7 +228,9 @@ export default function ClanShow(props: Props) {
                                 post(`${base}/join`, {
                                     note:
                                         prompt(
-                                            'Кілька слів про себе (необов’язково)',
+                                            tr(
+                                                'Кілька слів про себе (необов’язково)',
+                                            ),
                                         ) ?? '',
                                 })
                             }
@@ -235,8 +238,8 @@ export default function ClanShow(props: Props) {
                         >
                             <UserPlus className="size-4" />{' '}
                             {clan.join_mode === 'open'
-                                ? 'Вступити'
-                                : 'Подати заявку'}
+                                ? tr('Вступити')
+                                : tr('Подати заявку')}
                         </button>
                     )}
                     {application && (
@@ -245,19 +248,19 @@ export default function ClanShow(props: Props) {
                             onClick={() => post(`${base}/leave`)}
                             className={ghost}
                         >
-                            Заявка на розгляді · відкликати
+                            {tr('Заявка на розгляді · відкликати')}
                         </button>
                     )}
                     {me && !me.is_owner && (
                         <button
                             type="button"
                             onClick={() =>
-                                confirm('Вийти з клану?') &&
+                                confirm(tr('Вийти з клану?')) &&
                                 post(`${base}/leave`)
                             }
                             className={ghost}
                         >
-                            <LogOut className="size-4" /> Вийти
+                            <LogOut className="size-4" /> {tr('Вийти')}
                         </button>
                     )}
                 </div>
@@ -289,15 +292,19 @@ export default function ClanShow(props: Props) {
             <div className="space-y-4">
                 {tab === 'overview' && (
                     <>
-                        <Card title="Про клан" icon={Swords}>
+                        <Card title={tr('Про клан')} icon={Swords}>
                             <p className="text-sm whitespace-pre-line text-white/75">
-                                {clan.description || 'Опису поки немає.'}
+                                {clan.description || tr('Опису поки немає.')}
                             </p>
                             <p className="mt-3 text-xs text-white/45">
-                                {props.join_modes[clan.join_mode]} · засновник{' '}
-                                {clan.owner?.name ?? '—'}
+                                {props.join_modes[clan.join_mode]}{' '}
+                                {tr('· засновник')} {clan.owner?.name ?? '—'}
                                 {clan.created_at &&
-                                    ` · з ${new Date(clan.created_at).toLocaleDateString('uk-UA')}`}
+                                    tr(' · з {toLocaleDateString}', {
+                                        toLocaleDateString: new Date(
+                                            clan.created_at,
+                                        ).toLocaleDateString(LOCALE),
+                                    })}
                             </p>
                         </Card>
                         {me && has('voice') && (
@@ -308,7 +315,7 @@ export default function ClanShow(props: Props) {
                             />
                         )}
                         {me && has('news') && news.length > 0 && (
-                            <Card title="Останні новини" icon={Newspaper}>
+                            <Card title={tr('Останні новини')} icon={Newspaper}>
                                 {news.slice(0, 3).map((n) => (
                                     <div
                                         key={n.id}
@@ -325,7 +332,10 @@ export default function ClanShow(props: Props) {
                             </Card>
                         )}
                         {me && has('events') && events.length > 0 && (
-                            <Card title="Найближчі заходи" icon={CalendarDays}>
+                            <Card
+                                title={tr('Найближчі заходи')}
+                                icon={CalendarDays}
+                            >
                                 {events.slice(0, 3).map((e) => (
                                     <p
                                         key={e.id}
@@ -334,15 +344,17 @@ export default function ClanShow(props: Props) {
                                         <span className="text-[#a5b4fc]">
                                             {kyiv(e.starts_at)}
                                         </span>{' '}
-                                        — {e.title} · {e.going_count} іде
+                                        — {e.title} · {e.going_count}{' '}
+                                        {tr('іде')}
                                     </p>
                                 ))}
                             </Card>
                         )}
                         {!me && (
                             <p className="text-center text-sm text-white/45">
-                                Новини, заходи, внески й голосові кімнати бачать
-                                лише учасники.
+                                {tr(
+                                    'Новини, заходи, внески й голосові кімнати бачать лише учасники.',
+                                )}
                             </p>
                         )}
                     </>
@@ -372,7 +384,7 @@ export default function ClanShow(props: Props) {
                 )}
 
                 {tab === 'rating' && (
-                    <Card title="Рейтинг учасників" icon={Trophy}>
+                    <Card title={tr('Рейтинг учасників')} icon={Trophy}>
                         {rating.map((m, i) => (
                             <div
                                 key={m.id}
@@ -388,7 +400,7 @@ export default function ClanShow(props: Props) {
                                     {m.nickname || m.user?.name}
                                 </span>
                                 <span className="text-xs text-white/55">
-                                    {m.events ?? 0} заходів
+                                    {m.events ?? 0} {tr('заходів')}
                                 </span>
                                 <span className="w-24 text-right text-sm text-amber-200">
                                     {num(m.contributed)} {clan.currency}
@@ -399,7 +411,7 @@ export default function ClanShow(props: Props) {
                 )}
 
                 {tab === 'rules' && (
-                    <Card title="Статут" icon={ScrollText}>
+                    <Card title={tr('Статут')} icon={ScrollText}>
                         <p className="text-sm whitespace-pre-line text-white/75">
                             {clan.rules}
                         </p>
@@ -447,7 +459,7 @@ function NewsTab({
     return (
         <>
             {canPost && (
-                <Card title="Нова новина" icon={Newspaper}>
+                <Card title={tr('Нова новина')} icon={Newspaper}>
                     <form
                         onSubmit={(e) => {
                             e.preventDefault();
@@ -464,7 +476,7 @@ function NewsTab({
                             onChange={(e) =>
                                 form.setData('title', e.target.value)
                             }
-                            placeholder="Заголовок"
+                            placeholder={tr('Заголовок')}
                             className={input}
                         />
                         <textarea
@@ -474,7 +486,7 @@ function NewsTab({
                             onChange={(e) =>
                                 form.setData('body', e.target.value)
                             }
-                            placeholder="Текст новини"
+                            placeholder={tr('Текст новини')}
                             className={area}
                         />
                         <div className="flex items-center gap-3">
@@ -489,14 +501,14 @@ function NewsTab({
                                         )
                                     }
                                 />{' '}
-                                Закріпити
+                                {tr('Закріпити')}
                             </label>
                             <button
                                 type="submit"
                                 disabled={form.processing}
                                 className={cn(btn, 'ml-auto')}
                             >
-                                Опублікувати
+                                {tr('Опублікувати')}
                             </button>
                         </div>
                     </form>
@@ -504,7 +516,7 @@ function NewsTab({
             )}
             {news.length === 0 && (
                 <p className="text-center text-sm text-white/45">
-                    Новин ще немає.
+                    {tr('Новин ще немає.')}
                 </p>
             )}
             {news.map((n) => (
@@ -520,13 +532,13 @@ function NewsTab({
                             <button
                                 type="button"
                                 onClick={() =>
-                                    confirm('Видалити новину?') &&
+                                    confirm(tr('Видалити новину?')) &&
                                     router.delete(`${base}/news/${n.id}`, {
                                         preserveScroll: true,
                                     })
                                 }
                                 className="text-white/40 hover:text-rose-300"
-                                aria-label="Видалити"
+                                aria-label={tr('Видалити')}
                             >
                                 <Trash2 className="size-4" />
                             </button>
@@ -558,7 +570,7 @@ function EventsTab({
     return (
         <>
             {canManage && (
-                <Card title="Новий захід" icon={CalendarDays}>
+                <Card title={tr('Новий захід')} icon={CalendarDays}>
                     <form
                         onSubmit={(e) => {
                             e.preventDefault();
@@ -575,7 +587,7 @@ function EventsTab({
                             onChange={(e) =>
                                 form.setData('title', e.target.value)
                             }
-                            placeholder="Рейд, турнір, збір…"
+                            placeholder={tr('Рейд, турнір, збір…')}
                             className={input}
                         />
                         <input
@@ -593,7 +605,7 @@ function EventsTab({
                             onChange={(e) =>
                                 form.setData('description', e.target.value)
                             }
-                            placeholder="Деталі (необов’язково)"
+                            placeholder={tr('Деталі (необов’язково)')}
                             className={cn(area, 'sm:col-span-2')}
                         />
                         {form.errors.starts_at && (
@@ -606,14 +618,14 @@ function EventsTab({
                             disabled={form.processing}
                             className={cn(btn, 'sm:col-span-2')}
                         >
-                            Створити захід
+                            {tr('Створити захід')}
                         </button>
                     </form>
                 </Card>
             )}
             {events.length === 0 && (
                 <p className="text-center text-sm text-white/45">
-                    Найближчих заходів немає.
+                    {tr('Найближчих заходів немає.')}
                 </p>
             )}
             {events.map((e) => (
@@ -632,7 +644,7 @@ function EventsTab({
                             </p>
                         )}
                         <p className="mt-1 text-xs text-white/45">
-                            Іде: {e.going_count}
+                            {tr('Іде:')} {e.going_count}
                         </p>
                     </div>
                     <button
@@ -642,23 +654,23 @@ function EventsTab({
                     >
                         {e.going ? (
                             <>
-                                <Check className="size-4" /> Іду
+                                <Check className="size-4" /> {tr('Іду')}
                             </>
                         ) : (
-                            'Піду'
+                            tr('Піду')
                         )}
                     </button>
                     {canManage && (
                         <button
                             type="button"
                             onClick={() =>
-                                confirm('Видалити захід?') &&
+                                confirm(tr('Видалити захід?')) &&
                                 router.delete(`${base}/events/${e.id}`, {
                                     preserveScroll: true,
                                 })
                             }
                             className="text-white/40 hover:text-rose-300"
-                            aria-label="Видалити"
+                            aria-label={tr('Видалити')}
                         >
                             <Trash2 className="size-4" />
                         </button>
@@ -683,15 +695,18 @@ function TreasuryTab({
     const give = useForm({ amount: '', comment: '' });
     const spend = useForm({ amount: '', comment: '' });
     const label = {
-        pending: 'очікує',
+        pending: tr('очікує'),
         approved: '',
-        rejected: 'відхилено',
+        rejected: tr('відхилено'),
     } as const;
 
     return (
         <>
             <Card
-                title={`Скарбниця: ${num(clan.treasury ?? 0)} ${clan.currency}`}
+                title={tr('Скарбниця: {num} {currency}', {
+                    num: num(clan.treasury ?? 0),
+                    currency: clan.currency,
+                })}
                 icon={Coins}
             >
                 <form
@@ -709,7 +724,9 @@ function TreasuryTab({
                         min={1}
                         value={give.data.amount}
                         onChange={(e) => give.setData('amount', e.target.value)}
-                        placeholder={`Сума, ${clan.currency}`}
+                        placeholder={tr('Сума, {currency}', {
+                            currency: clan.currency,
+                        })}
                         className={cn(input, 'w-40')}
                     />
                     <input
@@ -718,7 +735,7 @@ function TreasuryTab({
                         onChange={(e) =>
                             give.setData('comment', e.target.value)
                         }
-                        placeholder="Коментар"
+                        placeholder={tr('Коментар')}
                         className={cn(input, 'min-w-[160px] flex-1')}
                     />
                     <button
@@ -726,11 +743,11 @@ function TreasuryTab({
                         disabled={give.processing}
                         className={btn}
                     >
-                        Зробити внесок
+                        {tr('Зробити внесок')}
                     </button>
                 </form>
                 <p className="mt-2 text-xs text-white/45">
-                    Внесок зараховується після підтвердження скарбником.
+                    {tr('Внесок зараховується після підтвердження скарбником.')}
                 </p>
                 {canManage && (
                     <form
@@ -750,7 +767,7 @@ function TreasuryTab({
                             onChange={(e) =>
                                 spend.setData('amount', e.target.value)
                             }
-                            placeholder="Витрата"
+                            placeholder={tr('Витрата')}
                             className={cn(input, 'w-40')}
                         />
                         <input
@@ -759,7 +776,7 @@ function TreasuryTab({
                             onChange={(e) =>
                                 spend.setData('comment', e.target.value)
                             }
-                            placeholder="На що"
+                            placeholder={tr('На що')}
                             className={cn(input, 'min-w-[160px] flex-1')}
                         />
                         <button
@@ -767,7 +784,7 @@ function TreasuryTab({
                             disabled={spend.processing}
                             className={ghost}
                         >
-                            Записати витрату
+                            {tr('Записати витрату')}
                         </button>
                         {spend.errors.amount && (
                             <p className="w-full text-xs text-rose-300">
@@ -777,9 +794,11 @@ function TreasuryTab({
                     </form>
                 )}
             </Card>
-            <Card title="Історія" icon={Coins}>
+            <Card title={tr('Історія')} icon={Coins}>
                 {contributions.length === 0 && (
-                    <p className="text-sm text-white/45">Ще немає операцій.</p>
+                    <p className="text-sm text-white/45">
+                        {tr('Ще немає операцій.')}
+                    </p>
                 )}
                 {contributions.map((c) => (
                     <div
@@ -821,7 +840,7 @@ function TreasuryTab({
                                         })
                                     }
                                     className="rounded-lg bg-emerald-500/20 p-1.5 text-emerald-200"
-                                    aria-label="Підтвердити"
+                                    aria-label={tr('Підтвердити')}
                                 >
                                     <Check className="size-4" />
                                 </button>
@@ -833,7 +852,7 @@ function TreasuryTab({
                                         })
                                     }
                                     className="rounded-lg bg-rose-500/15 p-1.5 text-rose-200"
-                                    aria-label="Відхилити"
+                                    aria-label={tr('Відхилити')}
                                 >
                                     <X className="size-4" />
                                 </button>
@@ -866,7 +885,12 @@ function MembersTab({
     return (
         <>
             {manage && applications.length > 0 && (
-                <Card title={`Заявки (${applications.length})`} icon={UserPlus}>
+                <Card
+                    title={tr('Заявки ({length})', {
+                        length: applications.length,
+                    })}
+                    icon={UserPlus}
+                >
                     {applications.map((m) => (
                         <div
                             key={m.id}
@@ -888,20 +912,23 @@ function MembersTab({
                                 onClick={() => act(m, 'accept')}
                                 className={btn}
                             >
-                                Прийняти
+                                {tr('Прийняти')}
                             </button>
                             <button
                                 type="button"
                                 onClick={() => act(m, 'decline')}
                                 className={ghost}
                             >
-                                Відхилити
+                                {tr('Відхилити')}
                             </button>
                         </div>
                     ))}
                 </Card>
             )}
-            <Card title={`Склад (${members.length})`} icon={Users}>
+            <Card
+                title={tr('Склад ({length})', { length: members.length })}
+                icon={Users}
+            >
                 {members.map((m) => {
                     const canTouch =
                         manage &&
@@ -939,7 +966,7 @@ function MembersTab({
                                             )
                                         }
                                         className="input-glass h-9 rounded-lg px-2 text-xs text-white"
-                                        aria-label="Ранг"
+                                        aria-label={tr('Ранг')}
                                     >
                                         {[1, 2, 3, 4]
                                             .filter(
@@ -956,12 +983,14 @@ function MembersTab({
                                         type="button"
                                         onClick={() =>
                                             confirm(
-                                                `Виключити ${m.user?.name}?`,
+                                                tr('Виключити {name}?', {
+                                                    name: m.user?.name,
+                                                }),
                                             ) && act(m, 'kick')
                                         }
                                         className="text-xs text-rose-300 hover:underline"
                                     >
-                                        Виключити
+                                        {tr('Виключити')}
                                     </button>
                                 </>
                             )}
@@ -970,12 +999,14 @@ function MembersTab({
                                     type="button"
                                     onClick={() =>
                                         confirm(
-                                            `Передати лідерство ${m.user?.name}?`,
+                                            tr('Передати лідерство {name}?', {
+                                                name: m.user?.name,
+                                            }),
                                         ) && act(m, 'transfer')
                                     }
                                     className="text-xs text-amber-200 hover:underline"
                                 >
-                                    Зробити лідером
+                                    {tr('Зробити лідером')}
                                 </button>
                             )}
                         </div>
@@ -1044,14 +1075,14 @@ function SettingsTab({
             }}
             className="space-y-4"
         >
-            <Card title="Основне" icon={Settings}>
+            <Card title={tr('Основне')} icon={Settings}>
                 <div className="grid gap-2 sm:grid-cols-[1fr_120px_160px]">
                     <input
                         value={form.data.name}
                         maxLength={60}
                         onChange={(e) => form.setData('name', e.target.value)}
                         className={input}
-                        aria-label="Назва"
+                        aria-label={tr('Назва')}
                     />
                     <input
                         value={form.data.tag}
@@ -1060,7 +1091,7 @@ function SettingsTab({
                             form.setData('tag', e.target.value.toUpperCase())
                         }
                         className={input}
-                        aria-label="Тег"
+                        aria-label={tr('Тег')}
                     />
                     <input
                         value={form.data.currency}
@@ -1069,8 +1100,8 @@ function SettingsTab({
                             form.setData('currency', e.target.value)
                         }
                         className={input}
-                        aria-label="Валюта внесків"
-                        placeholder="Валюта внесків"
+                        aria-label={tr('Валюта внесків')}
+                        placeholder={tr('Валюта внесків')}
                     />
                 </div>
                 <textarea
@@ -1080,7 +1111,7 @@ function SettingsTab({
                     onChange={(e) =>
                         form.setData('description', e.target.value)
                     }
-                    placeholder="Опис"
+                    placeholder={tr('Опис')}
                     className={cn(area, 'mt-2')}
                 />
                 <textarea
@@ -1088,7 +1119,7 @@ function SettingsTab({
                     rows={4}
                     maxLength={10000}
                     onChange={(e) => form.setData('rules', e.target.value)}
-                    placeholder="Статут (розділ «Статут»)"
+                    placeholder={tr('Статут (розділ «Статут»)')}
                     className={cn(area, 'mt-2')}
                 />
                 <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -1108,7 +1139,7 @@ function SettingsTab({
                         </button>
                     ))}
                     <label className="ml-auto inline-flex cursor-pointer items-center gap-2 text-sm text-white/70">
-                        Логотип
+                        {tr('Логотип')}
                         <input
                             type="file"
                             accept="image/*"
@@ -1124,7 +1155,7 @@ function SettingsTab({
                 </div>
             </Card>
 
-            <Card title="Розділи клану" icon={Swords}>
+            <Card title={tr('Розділи клану')} icon={Swords}>
                 <div className="grid gap-2 sm:grid-cols-2">
                     {Object.entries(features).map(([key, f]) => {
                         const on = form.data.features.includes(key);
@@ -1167,12 +1198,12 @@ function SettingsTab({
                 </div>
             </Card>
 
-            <Card title="Ранги й права" icon={Crown}>
+            <Card title={tr('Ранги й права')} icon={Crown}>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                     {form.data.rank_titles.map((t, i) => (
                         <label key={i}>
                             <span className="mb-1 block text-[11px] text-white/45">
-                                Ранг {i + 1}
+                                {tr('Ранг')} {i + 1}
                             </span>
                             <input
                                 value={t}
@@ -1196,7 +1227,7 @@ function SettingsTab({
                             <thead>
                                 <tr className="text-white/40">
                                     <th className="py-2 text-left font-medium">
-                                        Право
+                                        {tr('Право')}
                                     </th>
                                     {[1, 2, 3, 4].map((r) => (
                                         <th
@@ -1247,7 +1278,10 @@ function SettingsTab({
                                                                     ? 'bg-gradient-brand text-white'
                                                                     : 'bg-white/[0.05]',
                                                             )}
-                                                            aria-label={`${label}: ранг ${r}`}
+                                                            aria-label={tr(
+                                                                '{label}: ранг {r}',
+                                                                { label, r },
+                                                            )}
                                                         >
                                                             {on && (
                                                                 <Check className="mx-auto size-3.5" />
@@ -1262,7 +1296,7 @@ function SettingsTab({
                             </tbody>
                         </table>
                         <p className="mt-2 text-xs text-white/40">
-                            Ранг 5 (лідер) і засновник мають усі права.
+                            {tr('Ранг 5 (лідер) і засновник мають усі права.')}
                         </p>
                     </div>
                 )}
@@ -1273,17 +1307,17 @@ function SettingsTab({
                 disabled={form.processing}
                 className={cn(btn, 'w-full')}
             >
-                Зберегти налаштування
+                {tr('Зберегти налаштування')}
             </button>
 
             {logs.length > 0 && (
-                <Card title="Журнал дій" icon={ScrollText}>
+                <Card title={tr('Журнал дій')} icon={ScrollText}>
                     {logs.map((l) => (
                         <p key={l.id} className="py-1 text-xs text-white/60">
                             <span className="text-white/40">
                                 {timeAgo(l.created_at)}
                             </span>{' '}
-                            · {l.actor ?? 'Система'}: {l.text}
+                            · {l.actor ?? tr('Система')}: {l.text}
                         </p>
                     ))}
                 </Card>

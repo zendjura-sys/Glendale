@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Services\Families\PersonalBankDigest;
+use App\Support\I18n\Translations;
 use App\Support\Mail\MailCategory;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -33,7 +34,7 @@ class FamilyBankDigestMail extends Mailable implements ShouldQueue
     {
         return new Envelope(
             from: new Address(MailCategory::address(MailCategory::SOCIAL), (string) config('app.name')),
-            subject: PersonalBankDigest::subject($this->accounts).' ('.$this->period.')',
+            subject: app(Translations::class)->line(PersonalBankDigest::subject($this->accounts)).' ('.$this->period.')',
         );
     }
 

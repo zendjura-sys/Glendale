@@ -12,6 +12,7 @@ import { formatDuration } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { TrackCard } from '@/types';
 import { SpotifyLogo, TrackCover } from './track-cover';
+import { tr } from '@/lib/i18n';
 
 type Source = 'mine' | 'all' | 'spotify';
 
@@ -63,7 +64,7 @@ export function MusicPicker({
                         setError(
                             e instanceof ApiError
                                 ? e.message
-                                : 'Не вдалося виконати пошук.',
+                                : tr('Не вдалося виконати пошук.'),
                         );
                     }
                 } finally {
@@ -80,8 +81,8 @@ export function MusicPicker({
     }, [open, source, q]);
 
     const sources: { key: Source; label: string }[] = [
-        { key: 'mine', label: 'Мої' },
-        { key: 'all', label: 'Усі на GameCon' },
+        { key: 'mine', label: tr('Мої') },
+        { key: 'all', label: tr('Усі на GameCon') },
         ...(spotifyEnabled
             ? [{ key: 'spotify' as const, label: 'Spotify' }]
             : []),
@@ -92,10 +93,10 @@ export function MusicPicker({
             <DialogContent className="glass-strong flex max-h-[85dvh] flex-col gap-0 rounded-3xl border-white/10 p-0 text-white sm:max-w-lg">
                 <div className="p-5 pb-3">
                     <DialogTitle className="font-display text-xl">
-                        Прикріпити музику
+                        {tr('Прикріпити музику')}
                     </DialogTitle>
                     <DialogDescription className="mt-1 text-sm text-white/50">
-                        Оберіть трек — він з’явиться у записі з плеєром.
+                        {tr('Оберіть трек — він з’явиться у записі з плеєром.')}
                     </DialogDescription>
                     <div className="mt-4 flex gap-1 rounded-xl bg-white/[0.04] p-1">
                         {sources.map((item) => (
@@ -125,8 +126,8 @@ export function MusicPicker({
                             autoFocus
                             placeholder={
                                 source === 'spotify'
-                                    ? 'Пошук у Spotify'
-                                    : 'Назва або виконавець'
+                                    ? tr('Пошук у Spotify')
+                                    : tr('Назва або виконавець')
                             }
                             className="h-full flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/35"
                         />
@@ -146,7 +147,7 @@ export function MusicPicker({
                             {source === 'spotify' && !q ? (
                                 <>
                                     <SpotifyLogo className="mb-3 size-8" />
-                                    Почніть вводити назву треку
+                                    {tr('Почніть вводити назву треку')}
                                 </>
                             ) : (
                                 <>
@@ -156,8 +157,8 @@ export function MusicPicker({
                                         <Music2 className="mb-3 size-8 text-white/30" />
                                     )}
                                     {q
-                                        ? 'Нічого не знайдено'
-                                        : 'Тут поки немає треків'}
+                                        ? tr('Нічого не знайдено')
+                                        : tr('Тут поки немає треків')}
                                 </>
                             )}
                         </div>

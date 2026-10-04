@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import type { Paginated } from '@/types';
+import { tr } from '@/lib/i18n';
 
 export function PageHeader({
     title,
@@ -160,7 +161,7 @@ export function Pagination({ data }: { data: Paginated<unknown> }) {
     return (
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm">
             <span className="text-white/40">
-                {data.from}–{data.to} з {data.total}
+                {data.from}–{data.to} {tr('з')} {data.total}
             </span>
             <div className="flex flex-wrap gap-1">
                 {data.links.map((link, i) => {

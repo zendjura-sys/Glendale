@@ -11,6 +11,7 @@ import {
     UsersRound,
     X,
 } from 'lucide-react';
+import { LOCALE, tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 export type CalendarEvent = {
@@ -48,20 +49,20 @@ const KIND_ICON = {
 /** Підпис кнопки зовнішнього посилання: трансляція, Discord чи сайт. */
 const linkLabel = (url: string) =>
     url.includes('discord.com')
-        ? 'Відкрити в Discord'
+        ? tr('Відкрити в Discord')
         : /twitch\.tv|youtube\.com|youtu\.be/.test(url)
-          ? 'Дивитися трансляцію'
-          : 'Детальніше';
+          ? tr('Дивитися трансляцію')
+          : tr('Детальніше');
 
 export const kyivTime = (iso: string) =>
-    new Date(iso).toLocaleTimeString('uk-UA', {
+    new Date(iso).toLocaleTimeString(LOCALE, {
         timeZone: 'Europe/Kyiv',
         hour: '2-digit',
         minute: '2-digit',
     });
 
 export const kyivDay = (iso: string) =>
-    new Date(iso).toLocaleDateString('uk-UA', {
+    new Date(iso).toLocaleDateString(LOCALE, {
         timeZone: 'Europe/Kyiv',
         weekday: 'long',
         day: 'numeric',
@@ -82,9 +83,9 @@ export function EventCard({ event }: { event: CalendarEvent }) {
             <div className="flex w-14 shrink-0 flex-col items-center rounded-xl bg-white/[0.04] py-2">
                 {event.all_day ? (
                     <span className="text-center text-xs leading-tight font-semibold text-white">
-                        Весь
+                        {tr('Весь')}
                         <br />
-                        день
+                        {tr('день')}
                     </span>
                 ) : (
                     <span className="text-base font-semibold text-white">
@@ -128,7 +129,7 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                 <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/45">
                     <span className="inline-flex items-center gap-1">
                         <UsersRound className="size-3.5" />{' '}
-                        {game ? 'Цікаво' : 'Іде'}: {event.going_count}
+                        {game ? tr('Цікаво') : tr('Іде')}: {event.going_count}
                     </span>
                     {event.url && (
                         <a
@@ -168,7 +169,8 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                             : 'bg-white/[0.06] text-white/75 hover:bg-white/10',
                     )}
                 >
-                    <Check className="size-4" /> {game ? 'Цікаво' : 'Піду'}
+                    <Check className="size-4" />{' '}
+                    {game ? tr('Цікаво') : tr('Піду')}
                 </button>
                 {event.can_decline && (
                     <button
@@ -182,14 +184,14 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                         )}
                     >
                         <X className="size-4" />{' '}
-                        {game ? 'Не цікаво' : 'Не піду'}
+                        {game ? tr('Не цікаво') : tr('Не піду')}
                     </button>
                 )}
                 {event.can_delete && (
                     <button
                         type="button"
                         onClick={() =>
-                            confirm('Видалити подію?') &&
+                            confirm(tr('Видалити подію?')) &&
                             router.delete(
                                 event.delete_url ??
                                     `/events/server/${event.id}`,
@@ -197,7 +199,7 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                             )
                         }
                         className="rounded-lg p-2 text-white/35 hover:text-rose-300"
-                        aria-label="Видалити"
+                        aria-label={tr('Видалити')}
                     >
                         <Trash2 className="size-4" />
                     </button>
@@ -274,7 +276,7 @@ export function ServerEventForm({
                     )
                 }
                 className={input}
-                aria-label="Від кого"
+                aria-label={tr('Від кого')}
             >
                 {hosts.map((h) => (
                     <option key={h.id ?? 'official'} value={h.id ?? ''}>
@@ -286,7 +288,7 @@ export function ServerEventForm({
                 value={form.data.type}
                 onChange={(e) => form.setData('type', e.target.value)}
                 className={input}
-                aria-label="Тип"
+                aria-label={tr('Тип')}
             >
                 {Object.entries(types).map(([key, label]) => (
                     <option key={key} value={key}>
@@ -298,7 +300,7 @@ export function ServerEventForm({
                 value={form.data.title}
                 maxLength={120}
                 onChange={(e) => form.setData('title', e.target.value)}
-                placeholder="Назва: турнір, збір, рейд…"
+                placeholder={tr('Назва: турнір, збір, рейд…')}
                 className={input}
             />
             <input
@@ -306,14 +308,14 @@ export function ServerEventForm({
                 value={form.data.starts_at}
                 onChange={(e) => form.setData('starts_at', e.target.value)}
                 className={input}
-                aria-label="Початок (Київ)"
+                aria-label={tr('Початок (Київ)')}
             />
             <textarea
                 value={form.data.description}
                 maxLength={1000}
                 rows={2}
                 onChange={(e) => form.setData('description', e.target.value)}
-                placeholder="Деталі (необов’язково)"
+                placeholder={tr('Деталі (необов’язково)')}
                 className="input-glass w-full rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none sm:col-span-2"
             />
             {(form.errors.starts_at || form.errors.title) && (
@@ -326,7 +328,7 @@ export function ServerEventForm({
                 disabled={form.processing}
                 className="btn-glow inline-flex h-10 items-center justify-center rounded-xl text-sm font-semibold disabled:opacity-50 sm:col-span-2"
             >
-                Додати подію
+                {tr('Додати подію')}
             </button>
         </form>
     );
@@ -366,14 +368,14 @@ export function GameEventForm({
                 value={form.data.title}
                 maxLength={160}
                 onChange={(e) => form.setData('title', e.target.value)}
-                placeholder="Назва події"
+                placeholder={tr('Назва події')}
                 className={input}
             />
             <select
                 value={form.data.type}
                 onChange={(e) => form.setData('type', e.target.value)}
                 className={input}
-                aria-label="Тип"
+                aria-label={tr('Тип')}
             >
                 {Object.entries(types)
                     .filter(([key]) => key !== 'release')
@@ -388,12 +390,12 @@ export function GameEventForm({
                 value={form.data.starts_at}
                 onChange={(e) => form.setData('starts_at', e.target.value)}
                 className={input}
-                aria-label="Початок (Київ)"
+                aria-label={tr('Початок (Київ)')}
             />
             <input
                 value={form.data.url}
                 onChange={(e) => form.setData('url', e.target.value)}
-                placeholder="Посилання (https://…), необов’язково"
+                placeholder={tr('Посилання (https://…), необов’язково')}
                 className={input}
             />
             <textarea
@@ -401,7 +403,7 @@ export function GameEventForm({
                 maxLength={1000}
                 rows={2}
                 onChange={(e) => form.setData('description', e.target.value)}
-                placeholder="Деталі (необов’язково)"
+                placeholder={tr('Деталі (необов’язково)')}
                 className="input-glass w-full rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none sm:col-span-2"
             />
             {(form.errors.starts_at ||
@@ -418,7 +420,7 @@ export function GameEventForm({
                 disabled={form.processing}
                 className="btn-glow inline-flex h-10 items-center justify-center rounded-xl text-sm font-semibold disabled:opacity-50 sm:col-span-2"
             >
-                Додати подію гри
+                {tr('Додати подію гри')}
             </button>
         </form>
     );

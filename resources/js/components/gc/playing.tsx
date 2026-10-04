@@ -12,6 +12,7 @@ import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import type { PlayingInfo, UserCard } from '@/types';
 import { UserAvatar } from './user-avatar';
+import { tr } from '@/lib/i18n';
 
 /** «Грає в…»: сервер GTA або гра, з іконкою й посиланням. */
 export function PlayingBadge({
@@ -34,7 +35,7 @@ export function PlayingBadge({
                 <Icon className="size-3.5 shrink-0" />
             )}
             <span className="truncate">
-                Грає в {playing.label}
+                {tr('Грає в')} {playing.label}
                 {playing.note && (
                     <span className="text-emerald-200/70">
                         {' '}
@@ -75,7 +76,7 @@ export function PlayingNow({
         <section className="glass rounded-3xl p-4 sm:p-5">
             <h2 className="mb-3 flex items-center gap-2 font-display text-base font-semibold text-white">
                 <span className="size-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgb(52_211_153)]" />
-                Зараз грають: {count}
+                {tr('Зараз грають:')} {count}
             </h2>
             <div className="flex flex-wrap gap-2">
                 {users.map((u) => (
@@ -155,16 +156,19 @@ export function PlayingDialog({
             preserveScroll: true,
             onSuccess: () => load(),
             onError: (errors) =>
-                toast.error(Object.values(errors)[0] ?? 'Не вдалося зберегти.'),
+                toast.error(
+                    Object.values(errors)[0] ?? tr('Не вдалося зберегти.'),
+                ),
         });
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
-                <DialogTitle>Граю в…</DialogTitle>
+                <DialogTitle>{tr('Граю в…')}</DialogTitle>
                 <DialogDescription>
-                    Статус біля аватарки: де ви зараз грають. Ставиться сам або
-                    вручну.
+                    {tr(
+                        'Статус біля аватарки: де ви зараз грають. Ставиться сам або вручну.',
+                    )}
                 </DialogDescription>
                 {!settings ? (
                     <Loader2 className="mx-auto my-6 size-6 animate-spin text-white/40" />
@@ -175,14 +179,14 @@ export function PlayingDialog({
                                 <PlayingBadge playing={settings.playing} />
                                 <span className="text-xs text-white/40">
                                     {settings.playing.auto
-                                        ? 'автоматично'
-                                        : 'вручну'}
+                                        ? tr('автоматично')
+                                        : tr('вручну')}
                                 </span>
                                 <button
                                     type="button"
                                     onClick={() => act('delete', '/me/playing')}
                                     className="ml-auto rounded-lg p-1.5 text-white/40 hover:text-rose-300"
-                                    aria-label="Прибрати статус"
+                                    aria-label={tr('Прибрати статус')}
                                 >
                                     <X className="size-4" />
                                 </button>
@@ -191,7 +195,7 @@ export function PlayingDialog({
 
                         <section className="space-y-2 rounded-2xl bg-white/[0.03] p-3">
                             <label className="flex items-center justify-between gap-3 text-sm font-semibold text-white">
-                                Автоматично
+                                {tr('Автоматично')}
                                 <input
                                     type="checkbox"
                                     checked={settings.auto}
@@ -203,11 +207,9 @@ export function PlayingDialog({
                                 />
                             </label>
                             <p className="text-xs text-white/50">
-                                Discord: гра й сервер GTA з вашого статусу в
-                                Discord (потрібні прив’язаний Discord і участь у
-                                Discord-сервері GameCon). Steam: ігри на ПК.
-                                Телефон: ігри на Android — у застосунку GameCon
-                                (Налаштування → «Граю в…»).
+                                {tr(
+                                    'Discord: гра й сервер GTA з вашого статусу в Discord (потрібні прив’язаний Discord і участь у Discord-сервері GameCon). Steam: ігри на ПК. Телефон: ігри на Android — у застосунку GameCon (Налаштування → «Граю в…»).',
+                                )}
                             </p>
                             <div className="flex flex-wrap items-center gap-2 text-sm">
                                 <span
@@ -220,15 +222,15 @@ export function PlayingDialog({
                                 >
                                     Discord:{' '}
                                     {settings.discord.linked
-                                        ? 'прив’язано'
-                                        : 'не прив’язано'}
+                                        ? tr('прив’язано')
+                                        : tr('не прив’язано')}
                                 </span>
                                 {!settings.discord.linked && (
                                     <a
                                         href="/auth/discord"
                                         className="text-xs text-[#a5b4fc] hover:text-white"
                                     >
-                                        Прив’язати Discord →
+                                        {tr('Прив’язати Discord →')}
                                     </a>
                                 )}
                             </div>
@@ -236,7 +238,7 @@ export function PlayingDialog({
                                 (settings.steam.linked ? (
                                     <div className="flex items-center gap-2 text-xs">
                                         <span className="rounded-lg bg-emerald-500/15 px-2 py-1 text-emerald-200">
-                                            Steam: прив’язано
+                                            {tr('Steam: прив’язано')}
                                         </span>
                                         <button
                                             type="button"
@@ -249,7 +251,7 @@ export function PlayingDialog({
                                             className="inline-flex items-center gap-1 text-white/45 hover:text-rose-300"
                                         >
                                             <Unplug className="size-3.5" />{' '}
-                                            Відв’язати
+                                            {tr('Відв’язати')}
                                         </button>
                                     </div>
                                 ) : (
@@ -267,14 +269,16 @@ export function PlayingDialog({
                                             onChange={(e) =>
                                                 setSteam(e.target.value)
                                             }
-                                            placeholder="Посилання на профіль Steam"
+                                            placeholder={tr(
+                                                'Посилання на профіль Steam',
+                                            )}
                                             className="input-glass h-9 min-w-0 flex-1 rounded-lg px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
                                         />
                                         <button
                                             type="submit"
                                             className="glass h-9 rounded-lg px-3 text-sm text-white/80 hover:text-white"
                                         >
-                                            Прив’язати
+                                            {tr('Прив’язати')}
                                         </button>
                                     </form>
                                 ))}
@@ -282,14 +286,14 @@ export function PlayingDialog({
 
                         <section className="space-y-2">
                             <h3 className="text-sm font-semibold text-white">
-                                Вручну
+                                {tr('Вручну')}
                             </h3>
                             <label className="input-glass flex h-10 items-center gap-2 rounded-xl px-3">
                                 <Search className="size-4 text-white/35" />
                                 <input
                                     value={q}
                                     onChange={(e) => setQ(e.target.value)}
-                                    placeholder="Сервер GTA або гра"
+                                    placeholder={tr('Сервер GTA або гра')}
                                     className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
                                 />
                             </label>
@@ -339,7 +343,9 @@ export function PlayingDialog({
                                         onChange={(e) =>
                                             setNote(e.target.value)
                                         }
-                                        placeholder="Підпис: сім’я, персонаж… (необов’язково)"
+                                        placeholder={tr(
+                                            'Підпис: сім’я, персонаж… (необов’язково)',
+                                        )}
                                         className="input-glass h-10 min-w-0 rounded-xl px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
                                     />
                                     <select
@@ -348,11 +354,11 @@ export function PlayingDialog({
                                             setHours(Number(e.target.value))
                                         }
                                         className="input-glass h-10 rounded-xl px-2 text-sm text-white"
-                                        aria-label="На скільки"
+                                        aria-label={tr('На скільки')}
                                     >
                                         {settings.hours.map((h) => (
                                             <option key={h} value={h}>
-                                                на {h} год
+                                                {tr('на')} {h} {tr('год')}
                                             </option>
                                         ))}
                                     </select>
@@ -368,7 +374,8 @@ export function PlayingDialog({
                                         }
                                         className="btn-glow col-span-2 h-10 rounded-xl text-sm font-semibold"
                                     >
-                                        Поставити «Граю в {picked.label}»
+                                        {tr('Поставити «Граю в')} {picked.label}
+                                        »
                                     </button>
                                 </div>
                             )}

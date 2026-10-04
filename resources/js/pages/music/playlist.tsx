@@ -21,6 +21,7 @@ import { api } from '@/lib/api';
 import { formatLength, plural } from '@/lib/format';
 import { playQueue, shuffled, toggle, usePlayer } from '@/lib/player';
 import type { PlaylistDetails, TrackCard } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     playlist: PlaylistDetails;
@@ -47,11 +48,16 @@ export default function PlaylistShow({ playlist, tracks, can }: Props) {
             `/music/playlists/${playlist.id}/tracks/${track.id}`,
         );
         setCount(response.tracks_count);
-        toast.success('Трек прибрано з плейлиста.');
+        toast.success(tr('Трек прибрано з плейлиста.'));
     };
 
     const destroy = () => {
-        if (!window.confirm(`Видалити плейлист «${playlist.title}»?`)) return;
+        if (
+            !window.confirm(
+                tr('Видалити плейлист «{title}»?', { title: playlist.title }),
+            )
+        )
+            return;
         router.delete(`/music/playlists/${playlist.id}`);
     };
 
@@ -78,7 +84,8 @@ export default function PlaylistShow({ playlist, tracks, can }: Props) {
                                 href="/music?tab=playlists"
                                 className="inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-white"
                             >
-                                <ArrowLeft className="size-3.5" /> Плейлисти
+                                <ArrowLeft className="size-3.5" />{' '}
+                                {tr('Плейлисти')}
                             </Link>
                             <p className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-white/50 uppercase">
                                 {playlist.is_public ? (
@@ -87,8 +94,8 @@ export default function PlaylistShow({ playlist, tracks, can }: Props) {
                                     <Lock className="size-3.5" />
                                 )}
                                 {playlist.is_public
-                                    ? 'Відкритий плейлист'
-                                    : 'Приватний плейлист'}
+                                    ? tr('Відкритий плейлист')
+                                    : tr('Приватний плейлист')}
                             </p>
                             <h1 className="mt-1 font-display text-3xl font-bold break-words text-white sm:text-4xl">
                                 {playlist.title}
@@ -140,7 +147,7 @@ export default function PlaylistShow({ playlist, tracks, can }: Props) {
                             ) : (
                                 <Play className="size-4 fill-current" />
                             )}
-                            {playing ? 'Пауза' : 'Слухати'}
+                            {playing ? tr('Пауза') : tr('Слухати')}
                         </button>
                         <button
                             type="button"
@@ -148,7 +155,7 @@ export default function PlaylistShow({ playlist, tracks, can }: Props) {
                             onClick={() => playQueue(shuffled(tracks), 0)}
                             className="glass inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 hover:text-white disabled:opacity-40"
                         >
-                            <Shuffle className="size-4" /> Перемішати
+                            <Shuffle className="size-4" /> {tr('Перемішати')}
                         </button>
                         {can.manage && (
                             <>
@@ -157,13 +164,14 @@ export default function PlaylistShow({ playlist, tracks, can }: Props) {
                                     onClick={() => setEditing(true)}
                                     className="glass inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 hover:text-white"
                                 >
-                                    <PenLine className="size-4" /> Редагувати
+                                    <PenLine className="size-4" />{' '}
+                                    {tr('Редагувати')}
                                 </button>
                                 <button
                                     type="button"
                                     onClick={destroy}
                                     className="glass inline-flex size-11 items-center justify-center rounded-xl text-rose-300 hover:text-rose-200"
-                                    aria-label="Видалити плейлист"
+                                    aria-label={tr('Видалити плейлист')}
                                 >
                                     <Trash2 className="size-4" />
                                 </button>
@@ -175,11 +183,13 @@ export default function PlaylistShow({ playlist, tracks, can }: Props) {
                 {tracks.length === 0 ? (
                     <EmptyState
                         icon={ListMusic}
-                        title="Плейлист порожній"
+                        title={tr('Плейлист порожній')}
                         text={
                             can.manage
-                                ? 'Додайте треки через меню «⋯ → До плейлиста» у своїх аудіозаписах.'
-                                : 'Автор ще не додав сюди треків.'
+                                ? tr(
+                                      'Додайте треки через меню «⋯ → До плейлиста» у своїх аудіозаписах.',
+                                  )
+                                : tr('Автор ще не додав сюди треків.')
                         }
                         action={
                             can.manage && (
@@ -187,7 +197,7 @@ export default function PlaylistShow({ playlist, tracks, can }: Props) {
                                     href="/music"
                                     className="btn-glow rounded-xl px-5 py-2.5 text-sm font-semibold"
                                 >
-                                    До аудіозаписів
+                                    {tr('До аудіозаписів')}
                                 </Link>
                             )
                         }
@@ -199,7 +209,7 @@ export default function PlaylistShow({ playlist, tracks, can }: Props) {
                             userId={auth.user.id}
                             isAdmin={auth.user.is_admin}
                             onRemove={can.manage ? detach : undefined}
-                            removeLabel="Прибрати з плейлиста"
+                            removeLabel={tr('Прибрати з плейлиста')}
                         />
                     </section>
                 )}

@@ -9,6 +9,7 @@ import { ServerIcon } from '@/components/servers/server-icon';
 import { uah } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type { FamilyCard, Paginated, ServerOption } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Mine = FamilyCard & {
     membership: {
@@ -49,7 +50,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
 
     return (
         <>
-            <Head title="Сім’ї GTA RP" />
+            <Head title={tr('Сім’ї GTA RP')} />
             <div className="space-y-5">
                 <section className="glass noise relative overflow-hidden rounded-3xl p-5 sm:p-7">
                     <div className="pointer-events-none absolute -top-24 -right-10 size-96 rounded-full bg-amber-400/20 blur-3xl" />
@@ -60,20 +61,20 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                 <Crown className="size-3.5" /> Family ERP
                             </span>
                             <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
-                                Сім’ї{' '}
+                                {tr('Сім’ї')}{' '}
                                 <span className="text-gradient">GTA RP</span>
                             </h1>
                             <p className="mt-2 text-sm leading-relaxed text-white/55">
-                                Звіти про бізвари й контракти, автоматичні
-                                виплати, депозити, склад з квотами, дисципліна й
-                                рейтинг — без таблиць і ручних підрахунків.
+                                {tr(
+                                    'Звіти про бізвари й контракти, автоматичні виплати, депозити, склад з квотами, дисципліна й рейтинг — без таблиць і ручних підрахунків.',
+                                )}
                             </p>
                         </div>
                         <Link
                             href="/families/create"
                             className="btn-glow inline-flex h-12 items-center gap-2 rounded-2xl px-6 text-sm font-semibold"
                         >
-                            <Plus className="size-4" /> Створити сім’ю
+                            <Plus className="size-4" /> {tr('Створити сім’ю')}
                         </Link>
                     </div>
                 </section>
@@ -81,7 +82,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                 {mine.length > 0 && (
                     <section>
                         <h2 className="mb-3 font-display text-lg font-semibold text-white">
-                            Мої сім’ї
+                            {tr('Мої сім’ї')}
                         </h2>
                         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                             {mine.map((f) => (
@@ -106,7 +107,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                             'pending' ? (
                                                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-300/10 px-2 py-0.5 text-[11px] text-amber-200">
                                                     <Clock3 className="size-3" />{' '}
-                                                    Заявка на розгляді
+                                                    {tr('Заявка на розгляді')}
                                                 </span>
                                             ) : (
                                                 <>
@@ -136,14 +137,14 @@ export default function Families({ mine, families, filters, servers }: Props) {
                 <section>
                     <div className="mb-3 flex flex-wrap items-center gap-2">
                         <h2 className="mr-auto font-display text-lg font-semibold text-white">
-                            Каталог сімей
+                            {tr('Каталог сімей')}
                         </h2>
                         <label className="input-glass flex h-10 min-w-[200px] items-center gap-2 rounded-xl px-3">
                             <Search className="size-4 text-white/35" />
                             <input
                                 value={q}
                                 onChange={(e) => setQ(e.target.value)}
-                                placeholder="Назва або тег"
+                                placeholder={tr('Назва або тег')}
                                 className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
                             />
                         </label>
@@ -154,7 +155,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                             }
                             className={selectClass}
                         >
-                            <option value="">Усі сервери</option>
+                            <option value="">{tr('Усі сервери')}</option>
                             {servers.map((s) => (
                                 <option key={s.id} value={s.slug}>
                                     {s.name}
@@ -166,8 +167,10 @@ export default function Families({ mine, families, filters, servers }: Props) {
                     {families.data.length === 0 ? (
                         <EmptyState
                             icon={Crown}
-                            title="Сімей поки немає"
-                            text="Створіть першу сім’ю на своєму сервері — після верифікації вона з’явиться тут."
+                            title={tr('Сімей поки немає')}
+                            text={tr(
+                                'Створіть першу сім’ю на своєму сервері — після верифікації вона з’явиться тут.',
+                            )}
                         />
                     ) : (
                         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -239,8 +242,8 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                                 )}
                                             >
                                                 {f.is_recruiting
-                                                    ? 'Набір відкрито'
-                                                    : 'Набір закрито'}
+                                                    ? tr('Набір відкрито')
+                                                    : tr('Набір закрито')}
                                             </span>
                                         </div>
                                     </div>

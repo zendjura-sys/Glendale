@@ -1,5 +1,6 @@
 import { usePage } from '@inertiajs/react';
 import { cn } from '@/lib/utils';
+import { tr } from '@/lib/i18n';
 
 /** Офіційні значки Google Play (public/images), обрізані до краю значка. */
 export const PLAY_BADGES = [
@@ -7,15 +8,17 @@ export const PLAY_BADGES = [
         value: 'get',
         src: '/images/google-play-badge.png',
         alt: 'Get it on Google Play',
-        title: 'Публічний',
-        text: 'Застосунок опубліковано — значок «Get it on Google Play».',
+        title: tr('Публічний'),
+        text: tr('Застосунок опубліковано — значок «Get it on Google Play».'),
     },
     {
         value: 'preregister',
         src: '/images/google-play-preregister.png',
         alt: 'Pre-register on Google Play',
-        title: 'Попередня реєстрація',
-        text: 'Застосунок ще не вийшов — значок «Pre-register on Google Play».',
+        title: tr('Попередня реєстрація'),
+        text: tr(
+            'Застосунок ще не вийшов — значок «Pre-register on Google Play».',
+        ),
     },
 ] as const;
 

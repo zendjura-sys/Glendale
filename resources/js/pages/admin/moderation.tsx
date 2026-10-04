@@ -13,6 +13,7 @@ import { UserAvatar } from '@/components/gc/user-avatar';
 import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { UserCard } from '@/types';
+import { LOCALE, tr } from '@/lib/i18n';
 
 type Report = {
     id: number;
@@ -49,16 +50,20 @@ type Props = {
 };
 
 const PROFANITY = {
-    mask: 'Замінювати зірочками',
-    block: 'Не пропускати',
-    off: 'Вимкнено',
+    mask: tr('Замінювати зірочками'),
+    block: tr('Не пропускати'),
+    off: tr('Вимкнено'),
 } as const;
 
 const hoursLabel = (h: number) =>
-    h < 24 ? `${h} год` : h % 24 === 0 ? `${h / 24} дн` : `${h} год`;
+    h < 24
+        ? tr('{h} год', { h })
+        : h % 24 === 0
+          ? tr('{v} дн', { v: h / 24 })
+          : tr('{h} год', { h });
 
 const kyiv = (iso: string) =>
-    new Date(iso).toLocaleString('uk-UA', {
+    new Date(iso).toLocaleString(LOCALE, {
         timeZone: 'Europe/Kyiv',
         day: '2-digit',
         month: '2-digit',
@@ -92,20 +97,22 @@ export default function AdminModeration({
 
     return (
         <>
-            <Head title="Модерація — адмінка" />
+            <Head title={tr('Модерація — адмінка')} />
             <PageHeader
-                title="Модерація"
-                description="Скарги на повідомлення в чатах, заглушені користувачі й автоматичний фільтр мату та спаму."
+                title={tr('Модерація')}
+                description={tr(
+                    'Скарги на повідомлення в чатах, заглушені користувачі й автоматичний фільтр мату та спаму.',
+                )}
             />
 
             <div className="mb-6 grid grid-cols-2 gap-3">
                 <StatCard
-                    label="Скарг на розгляді"
+                    label={tr('Скарг на розгляді')}
                     value={stats.pending}
                     icon={Flag}
                 />
                 <StatCard
-                    label="Розглянуто за тиждень"
+                    label={tr('Розглянуто за тиждень')}
                     value={stats.resolved_week}
                     icon={Check}
                     delay={50}
@@ -114,10 +121,12 @@ export default function AdminModeration({
 
             <section className="glass mb-6 rounded-3xl p-4 sm:p-5">
                 <h2 className="mb-3 font-display text-lg font-semibold text-white">
-                    Скарги
+                    {tr('Скарги')}
                 </h2>
                 {reports.length === 0 ? (
-                    <p className="text-sm text-white/45">Нових скарг немає.</p>
+                    <p className="text-sm text-white/45">
+                        {tr('Нових скарг немає.')}
+                    </p>
                 ) : (
                     <div className="space-y-3">
                         {reports.map((r) => (
@@ -128,7 +137,9 @@ export default function AdminModeration({
                                 <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">
                                     <span className="rounded-md bg-rose-500/15 px-2 py-0.5 text-rose-200">
                                         {r.count}{' '}
-                                        {r.count === 1 ? 'скарга' : 'скарг'}
+                                        {r.count === 1
+                                            ? tr('скарга')
+                                            : tr('скарг')}
                                     </span>
                                     {r.reasons.map((reason) => (
                                         <span
@@ -158,7 +169,7 @@ export default function AdminModeration({
                                         <div className="min-w-0 flex-1">
                                             <p className="text-sm font-semibold text-white">
                                                 {r.message.author?.name ??
-                                                    'Видалений користувач'}
+                                                    tr('Видалений користувач')}
                                             </p>
                                             <p
                                                 className={cn(
@@ -176,11 +187,13 @@ export default function AdminModeration({
                                 )}
                                 {r.comments.length > 0 && (
                                     <p className="mt-2 text-xs text-white/50">
-                                        Коментарі: {r.comments.join(' · ')}
+                                        {tr('Коментарі:')}{' '}
+                                        {r.comments.join(' · ')}
                                     </p>
                                 )}
                                 <p className="mt-1 text-[11px] text-white/35">
-                                    Поскаржилися: {r.reporters.join(', ')}
+                                    {tr('Поскаржилися:')}{' '}
+                                    {r.reporters.join(', ')}
                                 </p>
                                 <div className="mt-3 flex flex-wrap items-center gap-2">
                                     <button
@@ -188,7 +201,8 @@ export default function AdminModeration({
                                         onClick={() => resolve(r, 'delete')}
                                         className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-rose-500/15 px-3 text-sm text-rose-200 hover:bg-rose-500/25"
                                     >
-                                        <Trash2 className="size-4" /> Видалити
+                                        <Trash2 className="size-4" />{' '}
+                                        {tr('Видалити')}
                                     </button>
                                     <span className="inline-flex items-center gap-1">
                                         <select
@@ -202,7 +216,9 @@ export default function AdminModeration({
                                                 })
                                             }
                                             className="input-glass h-9 rounded-xl px-2 text-sm text-white"
-                                            aria-label="На скільки заглушити"
+                                            aria-label={tr(
+                                                'На скільки заглушити',
+                                            )}
                                         >
                                             {mute_hours.map((h) => (
                                                 <option key={h} value={h}>
@@ -216,7 +232,7 @@ export default function AdminModeration({
                                             className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-amber-500/15 px-3 text-sm text-amber-200 hover:bg-amber-500/25"
                                         >
                                             <VolumeX className="size-4" />{' '}
-                                            Видалити й заглушити
+                                            {tr('Видалити й заглушити')}
                                         </button>
                                     </span>
                                     <button
@@ -224,7 +240,8 @@ export default function AdminModeration({
                                         onClick={() => resolve(r, 'dismiss')}
                                         className="inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm text-white/55 hover:bg-white/[0.06] hover:text-white"
                                     >
-                                        <Ban className="size-4" /> Відхилити
+                                        <Ban className="size-4" />{' '}
+                                        {tr('Відхилити')}
                                     </button>
                                 </div>
                             </article>
@@ -236,7 +253,7 @@ export default function AdminModeration({
             {muted.length > 0 && (
                 <section className="glass mb-6 rounded-3xl p-4 sm:p-5">
                     <h2 className="mb-3 font-display text-lg font-semibold text-white">
-                        Заглушені
+                        {tr('Заглушені')}
                     </h2>
                     <div className="divide-y divide-white/[0.05]">
                         {muted.map((u) => (
@@ -250,7 +267,7 @@ export default function AdminModeration({
                                         {u.name}
                                     </span>
                                     <span className="block truncate text-xs text-white/45">
-                                        до {kyiv(u.muted_until)}
+                                        {tr('до')} {kyiv(u.muted_until)}
                                         {u.mute_reason && ` · ${u.mute_reason}`}
                                     </span>
                                 </span>
@@ -265,7 +282,7 @@ export default function AdminModeration({
                                     }
                                     className="text-sm text-[#a5b4fc] hover:text-white"
                                 >
-                                    Зняти мут
+                                    {tr('Зняти мут')}
                                 </button>
                             </div>
                         ))}
@@ -276,11 +293,12 @@ export default function AdminModeration({
             <section className="glass rounded-3xl p-4 sm:p-5">
                 <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold text-white">
                     <MessageSquareWarning className="size-5 text-[#a5b4fc]" />
-                    Автомодерація
+                    {tr('Автомодерація')}
                 </h2>
                 <p className="mb-4 text-sm text-white/50">
-                    Мат у повідомленнях, записах і коментарях; спам і флуд у
-                    чатах; посилання від щойно зареєстрованих.
+                    {tr(
+                        'Мат у повідомленнях, записах і коментарях; спам і флуд у чатах; посилання від щойно зареєстрованих.',
+                    )}
                 </p>
                 <form
                     onSubmit={(e) => {
@@ -293,7 +311,7 @@ export default function AdminModeration({
                 >
                     <label className="block">
                         <span className="mb-1 block text-xs text-white/50">
-                            Мат
+                            {tr('Мат')}
                         </span>
                         <select
                             value={form.data.profanity}
@@ -314,7 +332,7 @@ export default function AdminModeration({
                     </label>
                     <label className="block">
                         <span className="mb-1 block text-xs text-white/50">
-                            Повідомлень за хвилину (0 — без обмеження)
+                            {tr('Повідомлень за хвилину (0 — без обмеження)')}
                         </span>
                         <input
                             type="number"
@@ -332,7 +350,7 @@ export default function AdminModeration({
                     </label>
                     <label className="block">
                         <span className="mb-1 block text-xs text-white/50">
-                            Однакових повідомлень поспіль (0 — вимкнено)
+                            {tr('Однакових повідомлень поспіль (0 — вимкнено)')}
                         </span>
                         <input
                             type="number"
@@ -350,8 +368,9 @@ export default function AdminModeration({
                     </label>
                     <label className="block">
                         <span className="mb-1 block text-xs text-white/50">
-                            Посилання — через стільки годин після реєстрації (0
-                            — одразу)
+                            {tr(
+                                'Посилання — через стільки годин після реєстрації (0 — одразу)',
+                            )}
                         </span>
                         <input
                             type="number"
@@ -369,7 +388,9 @@ export default function AdminModeration({
                     </label>
                     <label className="block sm:col-span-2">
                         <span className="mb-1 block text-xs text-white/50">
-                            Додаткові заборонені слова (по одному в рядку)
+                            {tr(
+                                'Додаткові заборонені слова (по одному в рядку)',
+                            )}
                         </span>
                         <textarea
                             value={form.data.extra_words}
@@ -385,7 +406,7 @@ export default function AdminModeration({
                         disabled={form.processing}
                         className="btn-glow h-10 rounded-xl text-sm font-semibold disabled:opacity-50 sm:col-span-2"
                     >
-                        Зберегти
+                        {tr('Зберегти')}
                     </button>
                 </form>
             </section>

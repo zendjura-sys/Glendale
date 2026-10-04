@@ -26,6 +26,7 @@ import { PlayingNow } from '@/components/gc/playing';
 import { cn } from '@/lib/utils';
 import type { ClanCard, GameCard, UserCard } from '@/types';
 import { GameCover } from './index';
+import { LOCALE, tr } from '@/lib/i18n';
 
 type Details = {
     summary?: string;
@@ -100,7 +101,7 @@ const STORE_STYLE: Record<string, string> = {
 };
 
 const date = (iso: string | null | undefined) =>
-    iso ? new Date(iso).toLocaleDateString('uk-UA') : '—';
+    iso ? new Date(iso).toLocaleDateString(LOCALE) : '—';
 
 function Section({
     title,
@@ -159,7 +160,9 @@ function Score({
             </p>
             <p className="text-xs text-white/55">{label}</p>
             {count ? (
-                <p className="text-[11px] text-white/35">{count} оцінок</p>
+                <p className="text-[11px] text-white/35">
+                    {count} {tr('оцінок')}
+                </p>
             ) : null}
         </div>
     );
@@ -183,40 +186,51 @@ export default function GameShow({
     const mp = d.multiplayer ?? {};
     const mpFacts: [string, string][] = [
         ...(mp.online_max
-            ? [['Онлайн', `до ${mp.online_max} гравців`] as [string, string]]
+            ? [
+                  [
+                      tr('Онлайн'),
+                      tr('до {online_max} гравців', {
+                          online_max: mp.online_max,
+                      }),
+                  ] as [string, string],
+              ]
             : []),
         ...(mp.online_coop_max
             ? [
-                  ['Онлайн-кооператив', `до ${mp.online_coop_max}`] as [
-                      string,
-                      string,
-                  ],
+                  [
+                      tr('Онлайн-кооператив'),
+                      tr('до {online_coop_max}', {
+                          online_coop_max: mp.online_coop_max,
+                      }),
+                  ] as [string, string],
               ]
             : []),
         ...(mp.offline_max
             ? [
-                  ['На одному пристрої', `до ${mp.offline_max}`] as [
-                      string,
-                      string,
-                  ],
+                  [
+                      tr('На одному пристрої'),
+                      tr('до {offline_max}', { offline_max: mp.offline_max }),
+                  ] as [string, string],
               ]
             : []),
         ...(mp.offline_coop_max
             ? [
-                  ['Локальний кооператив', `до ${mp.offline_coop_max}`] as [
-                      string,
-                      string,
-                  ],
+                  [
+                      tr('Локальний кооператив'),
+                      tr('до {offline_coop_max}', {
+                          offline_coop_max: mp.offline_coop_max,
+                      }),
+                  ] as [string, string],
               ]
             : []),
     ];
     const mpFlags = [
-        mp.online_coop && 'Онлайн-кооператив',
-        mp.offline_coop && 'Локальний кооператив',
-        mp.campaign_coop && 'Сюжет у кооперативі',
+        mp.online_coop && tr('Онлайн-кооператив'),
+        mp.offline_coop && tr('Локальний кооператив'),
+        mp.campaign_coop && tr('Сюжет у кооперативі'),
         mp.lan && 'LAN',
-        mp.split_screen && 'Розділений екран',
-        mp.drop_in && 'Вхід посеред гри',
+        mp.split_screen && tr('Розділений екран'),
+        mp.drop_in && tr('Вхід посеред гри'),
     ].filter(Boolean) as string[];
     const ua = d.languages?.find((l) => l.name === 'Українська');
     const beat = d.time_to_beat;
@@ -228,7 +242,7 @@ export default function GameShow({
                 href="/games"
                 className="mb-3 inline-flex items-center gap-1.5 text-sm text-white/55 hover:text-white"
             >
-                <ArrowLeft className="size-4" /> Каталог ігор
+                <ArrowLeft className="size-4" /> {tr('Каталог ігор')}
             </Link>
             <div className="glass overflow-hidden rounded-3xl">
                 <div className="relative aspect-[21/8] max-h-[320px] w-full overflow-hidden bg-black/40">
@@ -319,8 +333,9 @@ export default function GameShow({
                         </div>
                     ) : (
                         <p className="text-sm text-white/45">
-                            Посилання на магазини з’являться після наступного
-                            оновлення каталогу.
+                            {tr(
+                                'Посилання на магазини з’являться після наступного оновлення каталогу.',
+                            )}
                         </p>
                     )}
                 </div>
@@ -335,18 +350,18 @@ export default function GameShow({
                     <div className="mb-3 flex items-center gap-2">
                         <CalendarDays className="size-4 text-[#a5b4fc]" />
                         <h2 className="flex-1 font-display text-base font-semibold text-white">
-                            Події гри
+                            {tr('Події гри')}
                         </h2>
                         <Link
                             href="/events?kind=game"
                             className="text-sm text-[#a5b4fc] hover:text-white"
                         >
-                            Календар
+                            {tr('Календар')}
                         </Link>
                     </div>
                     {events.length === 0 ? (
                         <p className="text-sm text-white/45">
-                            Найближчих подій немає.
+                            {tr('Найближчих подій немає.')}
                         </p>
                     ) : (
                         <EventList events={events} />
@@ -354,7 +369,7 @@ export default function GameShow({
                     {can_add_event && (
                         <details className="mt-4 rounded-2xl bg-white/[0.03] p-3">
                             <summary className="cursor-pointer text-sm font-semibold text-white/80">
-                                Нова подія гри
+                                {tr('Нова подія гри')}
                             </summary>
                             <div className="mt-3">
                                 <GameEventForm
@@ -368,7 +383,7 @@ export default function GameShow({
             )}
 
             {(d.videos?.length || d.screenshots?.length) && (
-                <Section title="Трейлери й скриншоти" icon={Images}>
+                <Section title={tr('Трейлери й скриншоти')} icon={Images}>
                     <div className="flex [scrollbar-width:thin] gap-2 overflow-x-auto pb-1">
                         {d.videos?.map((v) => (
                             <button
@@ -414,7 +429,7 @@ export default function GameShow({
             )}
 
             {(mpFacts.length > 0 || mpFlags.length > 0) && (
-                <Section title="Мультиплеєр" icon={Users}>
+                <Section title={tr('Мультиплеєр')} icon={Users}>
                     {mpFacts.length > 0 && (
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                             {mpFacts.map(([label, value]) => (
@@ -439,20 +454,20 @@ export default function GameShow({
 
             {d.ratings &&
                 (d.ratings.critics || d.ratings.players || d.ratings.total) && (
-                    <Section title="Рейтинги" icon={Star}>
+                    <Section title={tr('Рейтинги')} icon={Star}>
                         <div className="grid grid-cols-3 gap-2">
                             <Score
-                                label="Загальний"
+                                label={tr('Загальний')}
                                 value={d.ratings.total}
                                 count={d.ratings.total_count}
                             />
                             <Score
-                                label="Критики"
+                                label={tr('Критики')}
                                 value={d.ratings.critics}
                                 count={d.ratings.critics_count}
                             />
                             <Score
-                                label="Гравці"
+                                label={tr('Гравці')}
                                 value={d.ratings.players}
                                 count={d.ratings.players_count}
                             />
@@ -460,51 +475,63 @@ export default function GameShow({
                     </Section>
                 )}
 
-            <Section title="Про гру" icon={Gamepad2}>
+            <Section title={tr('Про гру')} icon={Gamepad2}>
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {d.developers?.length ? (
                         <Fact
-                            label="Розробник"
+                            label={tr('Розробник')}
                             value={d.developers.join(', ')}
                         />
                     ) : null}
                     {d.publishers?.length ? (
                         <Fact
-                            label="Видавець"
+                            label={tr('Видавець')}
                             value={d.publishers.join(', ')}
                         />
                     ) : null}
                     {game.released && (
-                        <Fact label="Вихід" value={date(game.released)} />
+                        <Fact label={tr('Вихід')} value={date(game.released)} />
                     )}
                     {d.engines?.length ? (
-                        <Fact label="Рушій" value={d.engines.join(', ')} />
+                        <Fact
+                            label={tr('Рушій')}
+                            value={d.engines.join(', ')}
+                        />
                     ) : null}
                     {d.franchises?.length ? (
-                        <Fact label="Серія" value={d.franchises.join(', ')} />
+                        <Fact
+                            label={tr('Серія')}
+                            value={d.franchises.join(', ')}
+                        />
                     ) : null}
                     {d.perspectives?.length ? (
                         <Fact
-                            label="Камера"
+                            label={tr('Камера')}
                             value={d.perspectives.join(', ')}
                         />
                     ) : null}
                     {d.themes?.length ? (
-                        <Fact label="Теми" value={d.themes.join(', ')} />
+                        <Fact label={tr('Теми')} value={d.themes.join(', ')} />
                     ) : null}
                     {beat && (beat.normally || beat.hastily) ? (
                         <Fact
-                            label="Проходження"
+                            label={tr('Проходження')}
                             value={
                                 <span className="inline-flex items-center gap-1">
                                     <Clock className="size-3.5" />
                                     {[
                                         beat.hastily &&
-                                            `швидко ${beat.hastily} год`,
+                                            tr('швидко {hastily} год', {
+                                                hastily: beat.hastily,
+                                            }),
                                         beat.normally &&
-                                            `зазвичай ${beat.normally} год`,
+                                            tr('зазвичай {normally} год', {
+                                                normally: beat.normally,
+                                            }),
                                         beat.completely &&
-                                            `на 100% ${beat.completely} год`,
+                                            tr('на 100% {completely} год', {
+                                                completely: beat.completely,
+                                            }),
                                     ]
                                         .filter(Boolean)
                                         .join(' · ')}
@@ -513,13 +540,16 @@ export default function GameShow({
                         />
                     ) : null}
                     {d.hypes ? (
-                        <Fact label="Очікують" value={`${d.hypes} гравців`} />
+                        <Fact
+                            label={tr('Очікують')}
+                            value={tr('{hypes} гравців', { hypes: d.hypes })}
+                        />
                     ) : null}
                 </div>
                 {d.storyline && (
                     <details className="mt-3 rounded-2xl bg-white/[0.03] p-3 text-sm text-white/70">
                         <summary className="flex cursor-pointer items-center gap-1.5 text-white/85">
-                            <BookOpen className="size-4" /> Сюжет
+                            <BookOpen className="size-4" /> {tr('Сюжет')}
                         </summary>
                         <p className="mt-2 whitespace-pre-line">
                             {d.storyline}
@@ -529,7 +559,7 @@ export default function GameShow({
             </Section>
 
             {d.release_dates && d.release_dates.length > 1 && (
-                <Section title="Дати виходу" icon={CalendarDays}>
+                <Section title={tr('Дати виходу')} icon={CalendarDays}>
                     <div className="flex flex-wrap gap-2">
                         {d.release_dates.map((r) => (
                             <span
@@ -547,7 +577,7 @@ export default function GameShow({
             )}
 
             {d.languages && d.languages.length > 0 && (
-                <Section title="Мови" icon={Languages}>
+                <Section title={tr('Мови')} icon={Languages}>
                     <p
                         className={cn(
                             'mb-3 inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm',
@@ -558,19 +588,34 @@ export default function GameShow({
                     >
                         <ShieldCheck className="size-4" />
                         {ua
-                            ? `Українська: ${[ua.interface && 'інтерфейс', ua.subtitles && 'субтитри', ua.audio && 'озвучення'].filter(Boolean).join(', ') || 'є'}`
-                            : 'Української локалізації немає'}
+                            ? tr('Українська: {v}', {
+                                  v:
+                                      [
+                                          ua.interface && tr('інтерфейс'),
+                                          ua.subtitles && tr('субтитри'),
+                                          ua.audio && tr('озвучення'),
+                                      ]
+                                          .filter(Boolean)
+                                          .join(', ') || tr('є'),
+                              })
+                            : tr('Української локалізації немає')}
                     </p>
                     <div className="overflow-x-auto">
                         <table className="w-full min-w-[420px] text-xs">
                             <thead>
                                 <tr className="text-white/40">
                                     <th className="py-1.5 text-left font-medium">
-                                        Мова
+                                        {tr('Мова')}
                                     </th>
-                                    <th className="font-medium">Інтерфейс</th>
-                                    <th className="font-medium">Субтитри</th>
-                                    <th className="font-medium">Озвучення</th>
+                                    <th className="font-medium">
+                                        {tr('Інтерфейс')}
+                                    </th>
+                                    <th className="font-medium">
+                                        {tr('Субтитри')}
+                                    </th>
+                                    <th className="font-medium">
+                                        {tr('Озвучення')}
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -600,7 +645,7 @@ export default function GameShow({
             )}
 
             {(d.websites?.length || d.igdb_url) && (
-                <Section title="Спільнота й посилання" icon={Globe}>
+                <Section title={tr('Спільнота й посилання')} icon={Globe}>
                     <div className="flex flex-wrap gap-2">
                         {d.websites?.map((w) => (
                             <a
@@ -634,19 +679,20 @@ export default function GameShow({
                     <div className="mb-3 flex items-center gap-2">
                         <Swords className="size-4 text-[#a5b4fc]" />
                         <h2 className="flex-1 font-display text-base font-semibold text-white">
-                            Клани й гільдії
+                            {tr('Клани й гільдії')}
                         </h2>
                         <Link
                             href={`/clans/create?game=${game.slug}`}
                             className="btn-glow inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold"
                         >
-                            <Plus className="size-4" /> Створити
+                            <Plus className="size-4" /> {tr('Створити')}
                         </Link>
                     </div>
                     {clans.length === 0 ? (
                         <p className="text-sm text-white/45">
-                            Ще немає жодного клану для цієї гри — створіть
-                            перший.
+                            {tr(
+                                'Ще немає жодного клану для цієї гри — створіть перший.',
+                            )}
                         </p>
                     ) : (
                         <div className="grid gap-2 sm:grid-cols-2">
@@ -676,7 +722,7 @@ export default function GameShow({
                                             {c.members_count}
                                             {c.is_recruiting && (
                                                 <span className="ml-2 text-emerald-300">
-                                                    набір відкрито
+                                                    {tr('набір відкрито')}
                                                 </span>
                                             )}
                                         </span>
@@ -689,7 +735,7 @@ export default function GameShow({
             )}
 
             {similar.length > 0 && (
-                <Section title="Схожі ігри" icon={Building2}>
+                <Section title={tr('Схожі ігри')} icon={Building2}>
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
                         {similar.map((g) => (
                             <Link
@@ -720,14 +766,14 @@ export default function GameShow({
                     <button
                         type="button"
                         className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white"
-                        aria-label="Закрити"
+                        aria-label={tr('Закрити')}
                     >
                         <X className="size-5" />
                     </button>
                     {video ? (
                         <iframe
                             src={`https://www.youtube-nocookie.com/embed/${video}?autoplay=1`}
-                            title="Трейлер"
+                            title={tr('Трейлер')}
                             allow="autoplay; encrypted-media; fullscreen"
                             allowFullScreen
                             className="aspect-video w-full max-w-4xl rounded-2xl"

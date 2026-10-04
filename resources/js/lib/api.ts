@@ -1,3 +1,4 @@
+import { tr } from '@/lib/i18n';
 export function xsrfToken(): string {
     const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
 
@@ -44,7 +45,7 @@ export async function api<T>(
         const payload = await response.json().catch(() => ({}));
 
         throw new ApiError(
-            payload.message ?? 'Щось пішло не так. Спробуйте ще раз.',
+            payload.message ?? tr('Щось пішло не так. Спробуйте ще раз.'),
             response.status,
             payload.errors ?? {},
         );

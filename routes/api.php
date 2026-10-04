@@ -17,6 +17,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\ListenPartyController;
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
 use App\Http\Controllers\MusicController;
@@ -43,6 +44,8 @@ use Illuminate\Support\Facades\Route;
 Route::post('livekit/webhook', [VoiceController::class, 'webhook'])->middleware('throttle:600,1');
 
 Route::prefix('v1')->group(function () {
+    // Мова застосунку: словник його рядків (мова — з X-Locale або Accept-Language).
+    Route::get('i18n', [LocaleController::class, 'app'])->middleware('throttle:60,1');
     Route::prefix('auth')->middleware('throttle:20,1')->group(function () {
         Route::post('login', [AuthController::class, 'login']);
         Route::post('register', [AuthController::class, 'register']);
@@ -54,6 +57,7 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware(['auth.api', 'verified.site'])->group(function () {
         Route::get('me', [AuthController::class, 'me']);
+        Route::post('me/locale', [LocaleController::class, 'update'])->middleware('throttle:30,1');
         Route::post('logout', [AuthController::class, 'logout']);
         Route::patch('me', [SocialApiController::class, 'updateProfile']);
         Route::put('me/password', [SocialApiController::class, 'password']);
