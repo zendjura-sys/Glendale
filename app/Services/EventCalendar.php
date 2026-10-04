@@ -15,8 +15,7 @@ use App\Models\ServerEventRsvp;
 use App\Models\User;
 use App\Notifications\EventReminder;
 use App\Services\Families\FamilyGate;
-use App\Services\Families\ReportService;
-use Illuminate\Support\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
 
@@ -143,7 +142,7 @@ class EventCalendar
     }
 
     /**
-     * @param  array{title: string, type: string, description: string|null, starts_at: Carbon, family_id: int|null}  $data
+     * @param  array{title: string, type: string, description: string|null, starts_at: CarbonInterface, family_id: int|null}  $data
      */
     public function createServerEvent(GtaServer $server, User $user, array $data): ServerEvent
     {
@@ -263,7 +262,7 @@ class EventCalendar
      * @param  array{name: string, url: string}  $where
      * @return array<string, mixed>
      */
-    private function item(string $kind, int $id, string $title, string $typeLabel, ?string $description, Carbon $startsAt, array $where, ?string $status, int $goingCount, string $rsvpUrl): array
+    private function item(string $kind, int $id, string $title, string $typeLabel, ?string $description, CarbonInterface $startsAt, array $where, ?string $status, int $goingCount, string $rsvpUrl): array
     {
         return [
             'key' => $kind.':'.$id,
@@ -292,14 +291,8 @@ class EventCalendar
         }
     }
 
-    private function minutesLeft(Carbon $startsAt): int
+    private function minutesLeft(CarbonInterface $startsAt): int
     {
         return max(1, (int) ceil(now()->diffInMinutes($startsAt, true)));
-    }
-
-    /** Час події за Києвом — для текстів. */
-    public static function kyiv(Carbon $at): string
-    {
-        return $at->copy()->setTimezone(ReportService::TIMEZONE)->format('d.m H:i');
     }
 }

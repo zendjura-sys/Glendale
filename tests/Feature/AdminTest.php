@@ -45,7 +45,8 @@ class AdminTest extends TestCase
         $admin = User::factory()->admin()->create();
 
         $this->actingAs($admin)->patch(route('admin.modules.update', 'feed'), ['enabled' => false])->assertStatus(422);
-        $this->actingAs($admin)->patch(route('admin.modules.update', 'events'), ['enabled' => true])->assertStatus(422);
+        // Календар подій тепер доступний: адмін вмикає й вимикає його, як інші модулі.
+        $this->actingAs($admin)->patch(route('admin.modules.update', 'events'), ['enabled' => false])->assertRedirect();
     }
 
     public function test_banned_user_is_logged_out(): void
