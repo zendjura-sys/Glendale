@@ -10,13 +10,13 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-/// Віджет «Моя сім'я» на головному екрані Android.
+/// Віджет «Моя сім’я» на головному екрані Android.
 ///
-/// - Дані: `/api/v1/me/family-widget` (той самий розрахунок, що й огляд сім'ї на сайті).
-/// - Що показувати й яку сім'ю — обирає людина в Налаштуваннях → Застосунок → «Віджет».
+/// - Дані: `/api/v1/me/family-widget` (той самий розрахунок, що й огляд сім’ї на сайті).
+/// - Що показувати й яку сім’ю — обирає людина в Налаштуваннях → Застосунок → «Віджет».
 /// - Оновлення: при відкритті застосунку, кнопкою на віджеті й раз на 30 хв у фоні (FamilyWidgetProvider.kt).
 ///
-/// Нові розділи, що стосуються сім'ї чи грошей, варто додавати сюди як ще один блок на вибір.
+/// Нові розділи, що стосуються сім’ї чи грошей, варто додавати сюди як ще один блок на вибір.
 class FamilyWidget {
   static const androidName = 'online.gamecon.gamecon.FamilyWidgetProvider';
   static const _familyKey = 'widget.family';
@@ -24,12 +24,12 @@ class FamilyWidget {
 
   /// Блоки віджета: ключ → назва в налаштуваннях.
   static const blocks = {
-    'balance': 'Мій рахунок у сім\'ї',
+    'balance': 'Мій рахунок у сім’ї',
     'week': 'Заробіток за тиждень',
     'place': 'Місце в рейтингу',
     'bizwar': 'Бізвари за тиждень',
     'event': 'Найближча подія',
-    'treasury': 'Казна сім\'ї (для скарбників)',
+    'treasury': 'Казна сім’ї (для скарбників)',
     'warns': 'Попередження',
   };
   static const defaultBlocks = ['balance', 'week', 'place', 'bizwar', 'event'];
@@ -45,7 +45,7 @@ class FamilyWidget {
   /// Завантажує статистику й перемальовує віджет. Без входу — порожній віджет із підказкою.
   static Future<List<Map<String, dynamic>>> refresh(Api? api, SharedPreferences prefs) async {
     if (api == null) {
-      await _save({'fw_title': 'GameCon', 'fw_rank': 'Увійдіть у застосунок, щоб бачити свою сім\'ю', 'fw_slug': ''});
+      await _save({'fw_title': 'GameCon', 'fw_rank': 'Увійдіть у застосунок, щоб бачити свою сім’ю', 'fw_slug': ''});
       return const [];
     }
     final data = await api.get('/api/v1/me/family-widget');
@@ -57,8 +57,8 @@ class FamilyWidget {
   static Future<void> render(List<Map<String, dynamic>> families, SharedPreferences prefs) async {
     if (families.isEmpty) {
       await _save({
-        'fw_title': 'Моя сім\'я',
-        'fw_rank': 'Ви ще не в сім\'ї — оберіть її в розділі «Сім\'ї»',
+        'fw_title': 'Моя сім’я',
+        'fw_rank': 'Ви ще не в сім’ї — оберіть її в розділі «Сім’ї»',
         'fw_slug': '',
         'fw_balance': '',
         'fw_week': '',
@@ -81,7 +81,7 @@ class FamilyWidget {
     final balanceText = show.contains('balance')
         ? hryvnia(w['balance'])
         : (show.contains('treasury') && treasury != null ? hryvnia(treasury) : '');
-    final balanceLabel = show.contains('balance') ? 'Ваш рахунок у сім\'ї' : 'Казна сім\'ї';
+    final balanceLabel = show.contains('balance') ? 'Ваш рахунок у сім’ї' : 'Казна сім’ї';
 
     String eventLine() {
       if (!show.contains('event') || event.isEmpty) return '';
@@ -118,7 +118,7 @@ class FamilyWidget {
     await HomeWidget.updateWidget(qualifiedAndroidName: androidName);
   }
 
-  /// Натискання на віджет: gamecon://widget/family/{slug} → екран сім'ї в застосунку.
+  /// Натискання на віджет: gamecon://widget/family/{slug} → екран сім’ї в застосунку.
   static String? routeFor(Uri? uri) {
     if (uri == null || uri.host != 'widget') return null;
     final parts = uri.pathSegments;
@@ -140,7 +140,7 @@ Future<void> familyWidgetBackground(Uri? uri) async {
   } catch (_) {}
 }
 
-/// Налаштування віджета: яку сім'ю показувати й які блоки.
+/// Налаштування віджета: яку сім’ю показувати й які блоки.
 class FamilyWidgetSettings extends StatefulWidget {
   const FamilyWidgetSettings({super.key});
 
@@ -184,7 +184,7 @@ class _FamilyWidgetSettingsState extends State<FamilyWidgetSettings> {
 
     return Glass(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const CardTitle('Віджет «Моя сім\'я»', icon: LucideIcons.layoutGrid),
+        const CardTitle('Віджет «Моя сім’я»', icon: LucideIcons.layoutGrid),
         const SizedBox(height: 6),
         Text(
           'Додайте віджет GameCon на головний екран телефона (довге натискання на екран → Віджети). '
@@ -194,7 +194,7 @@ class _FamilyWidgetSettingsState extends State<FamilyWidgetSettings> {
         if (loading) const Padding(padding: EdgeInsets.all(12), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4))),
         if (!loading && families.length > 1) ...[
           const SizedBox(height: 12),
-          Text('Сім\'я', style: body(12.5, color: muted, weight: FontWeight.w700)),
+          Text('Сім’я', style: body(12.5, color: muted, weight: FontWeight.w700)),
           RadioGroup<String>(
             groupValue: selectedFamily,
             onChanged: (slug) => _apply(family: slug),

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Віджет «Моя сім'я»: рахунок у банку сім'ї, заробіток за тиждень, місце в рейтингу, бізвари, найближча подія. -->
+<!-- Віджет «Моя сім’я»: рахунок у банку сім’ї, заробіток за тиждень, місце в рейтингу, бізвари, найближча подія. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
@@ -61,7 +61,7 @@
         android:id="@+id/widget_balance_label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Ваш рахунок у сім'ї"
+        android:text="Ваш рахунок у сім’ї"
         android:textColor="#8B93B3"
         android:textSize="11sp" />
 

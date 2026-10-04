@@ -12,7 +12,7 @@ import es.antonborri.home_widget.HomeWidgetPlugin
 import es.antonborri.home_widget.HomeWidgetProvider
 
 /**
- * Віджет «Моя сім'я» на головному екрані. Дані кладе Flutter (lib/family_widget.dart) у SharedPreferences;
+ * Віджет «Моя сім’я» на головному екрані. Дані кладе Flutter (lib/family_widget.dart) у SharedPreferences;
  * тут лише малюємо. Планове оновлення Android (раз на 30 хв) просить Flutter у фоні завантажити свіжі дані.
  */
 class FamilyWidgetProvider : HomeWidgetProvider() {
@@ -22,7 +22,7 @@ class FamilyWidgetProvider : HomeWidgetProvider() {
             fun text(key: String, fallback: String = "") = widgetData.getString(key, null) ?: fallback
 
             views.setTextViewText(R.id.widget_title, text("fw_title", "GameCon"))
-            views.setTextViewText(R.id.widget_rank, text("fw_rank", "Відкрийте застосунок, щоб показати свою сім'ю"))
+            views.setTextViewText(R.id.widget_rank, text("fw_rank", "Відкрийте застосунок, щоб показати свою сім’ю"))
             // Що показувати, обирають у застосунку (Налаштування → Віджет): порожнє значення — блок прихований.
             fun show(view: Int, key: String): Boolean {
                 val value = text(key)
@@ -31,7 +31,7 @@ class FamilyWidgetProvider : HomeWidgetProvider() {
                 return value.isNotEmpty()
             }
             val balance = show(R.id.widget_balance, "fw_balance")
-            views.setTextViewText(R.id.widget_balance_label, text("fw_balance_label", "Ваш рахунок у сім'ї"))
+            views.setTextViewText(R.id.widget_balance_label, text("fw_balance_label", "Ваш рахунок у сім’ї"))
             views.setViewVisibility(R.id.widget_balance_label, if (balance) View.VISIBLE else View.GONE)
             val chips = listOf(show(R.id.widget_week, "fw_week"), show(R.id.widget_place, "fw_place"), show(R.id.widget_bizwar, "fw_bizwar"))
             views.setViewVisibility(R.id.widget_chips, if (chips.any { it }) View.VISIBLE else View.GONE)
