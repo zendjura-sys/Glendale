@@ -17,5 +17,6 @@ Schedule::command('families:tick')->everyFifteenMinutes()->withoutOverlapping(30
 Schedule::command('families:tick --digest')->weeklyOn(0, '23:59')->timezone('Europe/Kyiv')->withoutOverlapping(30);
 
 Schedule::command('calls:expire')->everyMinute()->withoutOverlapping(5);
+Schedule::command('events:remind')->everyFiveMinutes()->withoutOverlapping(10);
 Schedule::command('stories:prune')->hourly()->withoutOverlapping(30);
 Schedule::command('games:sync')->dailyAt('04:40')->timezone('Europe/Kyiv')->withoutOverlapping(120)->runInBackground();

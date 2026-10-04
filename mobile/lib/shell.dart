@@ -53,6 +53,8 @@ String appPathFor(String? sitePath) {
       return '/watch/${rest(1)}';
     case 'listen':
       return '/listen/${rest(1)}';
+    case 'events':
+      return '/events';
     case 'games':
     case 'clans':
       return parts.length > 2 && rest(1) != 'create' ? '/$head/${rest(1)}' : '$path$query';

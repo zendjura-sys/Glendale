@@ -8,6 +8,7 @@ use App\Http\Controllers\ClanController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityMemberController;
+use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FriendController;
@@ -255,6 +256,14 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('voice', [WatchPartyController::class, 'voice'])->middleware('throttle:20,1')->name('voice');
         Route::post('invite', [WatchPartyController::class, 'invite'])->middleware('throttle:10,1')->name('invite');
         Route::delete('/', [WatchPartyController::class, 'end'])->name('end');
+    });
+
+    // Календар подій: сім’ї, клани, сервери.
+    Route::prefix('events')->name('events.')->middleware('module:events')->group(function () {
+        Route::get('/', [EventController::class, 'index'])->name('index');
+        Route::post('server/{server}', [EventController::class, 'storeServer'])->middleware('throttle:20,1')->name('server.store');
+        Route::post('server/{event}/rsvp', [EventController::class, 'rsvpServer'])->whereNumber('event')->name('server.rsvp');
+        Route::delete('server/{event}', [EventController::class, 'destroyServer'])->whereNumber('event')->name('server.destroy');
     });
 
     // Спільне прослуховування: доступ за посиланням із кодом.

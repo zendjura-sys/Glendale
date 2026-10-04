@@ -125,11 +125,12 @@ return [
         'nav' => ['label' => 'Клани', 'route' => 'clans.index', 'position' => 106],
     ],
     'events' => [
-        'name' => 'Події',
-        'description' => 'Зустрічі, турніри, нагадування.',
+        'name' => 'Календар подій',
+        'description' => 'Події сімей, кланів і серверів в одному календарі: «піду / не піду», нагадування за пів години.',
         'icon' => 'calendar-days',
         'core' => false,
-        'available' => false,
-        'nav' => ['label' => 'Події', 'position' => 120],
+        'available' => true,
+        'default' => true,
+        'nav' => ['label' => 'Події', 'route' => 'events.index', 'position' => 107],
     ],
 ];

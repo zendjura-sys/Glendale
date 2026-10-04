@@ -1,12 +1,15 @@
 import { Head, Link } from '@inertiajs/react';
 import {
     ArrowLeft,
+    CalendarDays,
     Crown,
     MessageCircle,
     Plus,
     Trophy,
     UsersRound,
 } from 'lucide-react';
+import { EventList, ServerEventForm } from '@/components/events/event-card';
+import type { CalendarEvent } from '@/components/events/event-card';
 import { EmptyState } from '@/components/gc/widget';
 import { FamilyLogo } from '@/components/families/family-logo';
 import { ConnectButton, ServerLinks } from '@/components/servers/server-card';
@@ -22,9 +25,18 @@ type Props = {
         origin: string;
     };
     families: (FamilyCard & { score: number })[];
+    events: CalendarEvent[];
+    event_hosts: { id: number | null; name: string }[];
+    event_types: Record<string, string>;
 };
 
-export default function ServerShow({ server, families }: Props) {
+export default function ServerShow({
+    server,
+    families,
+    events,
+    event_hosts,
+    event_types,
+}: Props) {
     return (
         <>
             <Head title={server.name} />
@@ -117,6 +129,35 @@ export default function ServerShow({ server, families }: Props) {
                     )}
                 </section>
 
+                <section className="glass rounded-3xl p-5">
+                    <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
+                        <CalendarDays className="size-5 text-[#a5b4fc]" /> Події
+                        сервера
+                    </h2>
+                    {events.length === 0 ? (
+                        <p className="text-sm text-white/45">
+                            Найближчих подій немає.
+                            {event_hosts.length > 0 &&
+                                ' Додайте першу — її побачать усі сім’ї сервера в календарі.'}
+                        </p>
+                    ) : (
+                        <EventList events={events} />
+                    )}
+                    {event_hosts.length > 0 && (
+                        <details className="mt-4 rounded-2xl bg-white/[0.03] p-3">
+                            <summary className="cursor-pointer text-sm font-semibold text-white/80">
+                                Нова подія сервера
+                            </summary>
+                            <div className="mt-3">
+                                <ServerEventForm
+                                    serverSlug={server.slug}
+                                    hosts={event_hosts}
+                                    types={event_types}
+                                />
+                            </div>
+                        </details>
+                    )}
+                </section>
                 <section className="glass rounded-3xl p-5">
                     <header className="mb-4 flex flex-wrap items-center gap-3">
                         <Trophy className="size-5 text-amber-300" />

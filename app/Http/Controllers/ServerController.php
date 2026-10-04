@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Family;
 use App\Models\GtaServer;
+use App\Models\ServerEvent;
+use App\Services\EventCalendar;
 use App\Services\Families\FamilyRating;
 use App\Services\Servers\DiscordInvites;
 use App\Services\Servers\ServerDirectory;
@@ -70,7 +72,7 @@ class ServerController extends Controller
         ]);
     }
 
-    public function show(Request $request, GtaServer $server, FamilyRating $rating): Response
+    public function show(Request $request, GtaServer $server, FamilyRating $rating, EventCalendar $calendar): Response
     {
         abort_unless($server->status === GtaServer::STATUS_PUBLISHED || $request->user()->isAdmin(), 404);
 
@@ -91,6 +93,9 @@ class ServerController extends Controller
                 'origin' => $server->origin,
             ],
             'families' => $families,
+            'events' => $calendar->forServer($server, $request->user()),
+            'event_hosts' => $calendar->hosts($server, $request->user()),
+            'event_types' => ServerEvent::TYPES,
         ]);
     }
 

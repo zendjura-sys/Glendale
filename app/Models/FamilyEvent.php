@@ -19,9 +19,10 @@ use Illuminate\Support\Carbon;
  * @property int $points
  * @property int $reward
  * @property string $status
+ * @property Carbon|null $reminded_at
  * @property-read FamilyMember|null $creator
  */
-#[Fillable(['family_id', 'created_by', 'title', 'type', 'description', 'starts_at', 'points', 'reward', 'status'])]
+#[Fillable(['family_id', 'created_by', 'title', 'type', 'description', 'starts_at', 'points', 'reward', 'status', 'reminded_at'])]
 class FamilyEvent extends Model
 {
     public const TYPES = [
@@ -40,7 +41,7 @@ class FamilyEvent extends Model
 
     protected function casts(): array
     {
-        return ['starts_at' => 'datetime', 'points' => 'integer', 'reward' => 'integer'];
+        return ['starts_at' => 'datetime', 'reminded_at' => 'datetime', 'points' => 'integer', 'reward' => 'integer'];
     }
 
     /**

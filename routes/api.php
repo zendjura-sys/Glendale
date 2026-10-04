@@ -13,6 +13,7 @@ use App\Http\Controllers\ClanController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityMemberController;
+use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\ListenPartyController;
@@ -261,6 +262,14 @@ Route::prefix('v1')->group(function () {
                 Route::delete('{conversation}/members/{user}', [MessengerController::class, 'removeMember']);
                 Route::patch('{conversation}/messages/{message}', [MessageController::class, 'update']);
                 Route::delete('{conversation}/messages/{message}', [MessageController::class, 'destroy']);
+            });
+
+            // Календар подій.
+            Route::prefix('events')->middleware('module:events')->group(function () {
+                Route::get('/', [EventController::class, 'index']);
+                Route::post('server/{server}', [EventController::class, 'storeServer'])->middleware('throttle:20,1');
+                Route::post('server/{event}/rsvp', [EventController::class, 'rsvpServer'])->whereNumber('event');
+                Route::delete('server/{event}', [EventController::class, 'destroyServer'])->whereNumber('event');
             });
 
             // Клани й гільдії мультиплеєрних ігор.

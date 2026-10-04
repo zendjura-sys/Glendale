@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    AlarmClock,
     Bell,
     CalendarDays,
     ClipboardCheck,
@@ -43,6 +44,7 @@ const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
     family_kicked: { icon: Gavel, className: 'bg-rose-500' },
     family_warehouse: { icon: Package, className: 'bg-rose-500' },
     family_event: { icon: CalendarDays, className: 'bg-[#6d5dfc]' },
+    event_reminder: { icon: AlarmClock, className: 'bg-amber-500' },
 };
 
 const familyIcon = { icon: Crown, className: 'bg-amber-500' };

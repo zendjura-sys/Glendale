@@ -14,6 +14,7 @@ import 'cinema.dart';
 import 'clans.dart';
 import 'communities.dart';
 import 'families.dart';
+import 'events.dart';
 import 'family_widget.dart';
 import 'feed.dart';
 import 'games.dart';
@@ -131,6 +132,7 @@ Future<void> main() async {
               GoRoute(path: ':slug', builder: (_, state) => MovieScreen(key: ValueKey(state.pathParameters['slug']), slug: state.pathParameters['slug']!, autoplay: state.uri.queryParameters['play'] == '1')),
             ],
           ),
+          GoRoute(path: '/events', builder: (_, _) => const EventsScreen()),
           GoRoute(path: '/listen/:code', builder: (_, state) => ListenScreen(key: ValueKey(state.pathParameters['code']), code: state.pathParameters['code']!)),
           GoRoute(path: '/watch/:code', builder: (_, state) => WatchPartyScreen(key: ValueKey(state.pathParameters['code']), code: state.pathParameters['code']!)),
           GoRoute(

@@ -29,6 +29,7 @@ const navCatalog = [
   NavItem('/families', 'Сім’ї', 'Сім’ї', LucideIcons.crown, LucideIcons.crown500),
   NavItem('/games', 'Ігри', 'Каталог ігор', LucideIcons.gamepad2, LucideIcons.gamepad2500),
   NavItem('/clans', 'Клани', 'Клани й гільдії', LucideIcons.swords, LucideIcons.swords500),
+  NavItem('/events', 'Події', 'Календар подій', LucideIcons.calendarDays, LucideIcons.calendarDays500),
 ];
 
 const navMenu = NavItem('/menu', 'Меню', 'Меню', LucideIcons.layoutGrid, LucideIcons.layoutGrid500);

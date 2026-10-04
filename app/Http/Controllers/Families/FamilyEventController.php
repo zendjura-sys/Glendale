@@ -39,8 +39,11 @@ class FamilyEventController extends FamilyBaseController
                 'reward' => $e->reward,
                 'status' => $e->status,
                 'creator' => $e->creator?->displayName(),
-                'going' => $e->attendance->contains('member_id', $member->id),
-                'attendance' => $e->attendance->map(fn (FamilyEventAttendance $a) => [
+                'going' => $e->attendance->contains(fn (FamilyEventAttendance $a) => $a->member_id === $member->id && $a->status !== FamilyEventAttendance::STATUS_DECLINED),
+                'declined' => $e->attendance->contains(fn (FamilyEventAttendance $a) => $a->member_id === $member->id && $a->status === FamilyEventAttendance::STATUS_DECLINED),
+                'declined_count' => $e->attendance->where('status', FamilyEventAttendance::STATUS_DECLINED)->count(),
+                // У списку «йдуть» — лише ті, хто не відмовився.
+                'attendance' => $e->attendance->reject(fn (FamilyEventAttendance $a) => $a->status === FamilyEventAttendance::STATUS_DECLINED)->map(fn (FamilyEventAttendance $a) => [
                     'member_id' => $a->member_id,
                     'display' => $a->member->displayName(),
                     'status' => $a->status,
