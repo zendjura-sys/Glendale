@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { EventList, GameEventForm } from '@/components/events/event-card';
+import type { CalendarEvent } from '@/components/events/event-card';
 import { PlayingNow } from '@/components/gc/playing';
 import { cn } from '@/lib/utils';
 import type { ClanCard, GameCard, UserCard } from '@/types';
@@ -85,6 +87,9 @@ type Props = {
     features: Record<string, boolean>;
     playing_now: UserCard[];
     playing_count: number;
+    events: CalendarEvent[];
+    event_types: Record<string, string>;
+    can_add_event: boolean;
 };
 
 const STORE_STYLE: Record<string, string> = {
@@ -168,6 +173,9 @@ export default function GameShow({
     features,
     playing_now,
     playing_count,
+    events,
+    event_types,
+    can_add_event,
 }: Props) {
     const d = game.details ?? {};
     const [video, setVideo] = useState<string | null>(null);
@@ -321,6 +329,43 @@ export default function GameShow({
             <div className="mt-4">
                 <PlayingNow users={playing_now} count={playing_count} />
             </div>
+
+            {(events.length > 0 || can_add_event) && (
+                <section className="glass mt-4 rounded-3xl p-4 sm:p-5">
+                    <div className="mb-3 flex items-center gap-2">
+                        <CalendarDays className="size-4 text-[#a5b4fc]" />
+                        <h2 className="flex-1 font-display text-base font-semibold text-white">
+                            Події гри
+                        </h2>
+                        <Link
+                            href="/events?kind=game"
+                            className="text-sm text-[#a5b4fc] hover:text-white"
+                        >
+                            Календар
+                        </Link>
+                    </div>
+                    {events.length === 0 ? (
+                        <p className="text-sm text-white/45">
+                            Найближчих подій немає.
+                        </p>
+                    ) : (
+                        <EventList events={events} />
+                    )}
+                    {can_add_event && (
+                        <details className="mt-4 rounded-2xl bg-white/[0.03] p-3">
+                            <summary className="cursor-pointer text-sm font-semibold text-white/80">
+                                Нова подія гри
+                            </summary>
+                            <div className="mt-3">
+                                <GameEventForm
+                                    gameSlug={game.slug}
+                                    types={event_types}
+                                />
+                            </div>
+                        </details>
+                    )}
+                </section>
+            )}
 
             {(d.videos?.length || d.screenshots?.length) && (
                 <Section title="Трейлери й скриншоти" icon={Images}>

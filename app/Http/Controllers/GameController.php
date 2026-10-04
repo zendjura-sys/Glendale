@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Clan;
 use App\Models\Game;
+use App\Models\GameEvent;
+use App\Services\EventCalendar;
 use App\Services\FriendshipService;
 use App\Services\Presence\PlayingStatus;
+use App\Support\Modules\ModuleManager;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -143,6 +146,9 @@ class GameController extends Controller
             'features' => $on,
             'playing_now' => $request->user() ? $playing->playingNow('game', $game->id, $friendships->friendIds($request->user())) : [],
             'playing_count' => $playing->countNow('game', $game->id),
+            'events' => ($on['events'] || $on['release_events']) && app(ModuleManager::class)->enabled('events') ? app(EventCalendar::class)->forGame($game, $request->user()) : [],
+            'event_types' => GameEvent::TYPES,
+            'can_add_event' => $on['events'] && $request->user()?->isStaff() === true,
         ];
 
         return $request->expectsJson() && ! $request->header('X-Inertia')

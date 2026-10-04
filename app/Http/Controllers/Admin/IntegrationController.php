@@ -251,7 +251,7 @@ class IntegrationController extends Controller
             'discord' => [
                 'label' => 'Discord',
                 'group' => 'auth',
-                'description' => 'Вхід і реєстрація в один клік, прив’язка Discord до профілю та RP-сімей. З ботом — автоматичний статус «Граю в…» з Discord Rich Presence.',
+                'description' => 'Вхід і реєстрація в один клік, прив’язка Discord до профілю та RP-сімей. З ботом — автоматичний статус «Граю в…» з Discord Rich Presence і події серверів із Discord у календарі.',
                 'docs' => 'https://discord.com/developers/applications',
                 'steps' => [
                     'Discord Developer Portal → New Application → OAuth2.',
@@ -260,6 +260,7 @@ class IntegrationController extends Controller
                     'Для статусу «Граю в…»: у тому ж застосунку → Bot → Reset Token, скопіюйте токен; увімкніть Presence Intent і Server Members Intent.',
                     'OAuth2 → URL Generator → scope «bot» → відкрийте посилання й додайте бота на Discord-сервер GameCon. ID сервера: ПКМ по серверу → «Копіювати ID» (потрібен режим розробника).',
                     'Гравці мають прив’язати Discord у GameCon, бути на цьому Discord-сервері й увімкнути показ активності.',
+                    'Календар: якщо адміністрація проєкту GTA додасть цього ж бота на свій Discord (посилання — на сторінці сервера в розділі «Події»), заплановані події того Discord самі з’являться в календарі GameCon.',
                 ],
                 'configured' => $this->discord->configured(),
                 'stat' => User::query()->whereNotNull('discord_id')->count().' профілів із Discord',

@@ -20,6 +20,9 @@ Schedule::command('families:bank-digest')->weeklyOn(0, '20:00')->timezone('Europ
 
 Schedule::command('calls:expire')->everyMinute()->withoutOverlapping(5);
 Schedule::command('events:remind')->everyFiveMinutes()->withoutOverlapping(10);
+// Події серверів із Discord — що 15 хвилин, події й виходи ігор з IGDB — щогодини.
+Schedule::command('events:sync --servers')->everyFifteenMinutes()->withoutOverlapping(15);
+Schedule::command('events:sync --games')->hourlyAt(25)->withoutOverlapping(30);
 // «Граю в…»: бот Discord слухає до 55 хв і перезапускається; Steam опитуємо що дві хвилини.
 Schedule::command('discord:presence')->everyMinute()->withoutOverlapping(60)->runInBackground();
 Schedule::command('steam:presence')->everyTwoMinutes()->withoutOverlapping(5);

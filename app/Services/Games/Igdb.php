@@ -108,6 +108,33 @@ class Igdb
         return $out;
     }
 
+    /**
+     * Ігрові події IGDB (шоукейси, презентації, трансляції), що починаються в проміжку.
+     *
+     * @return list<array<string, mixed>>|null
+     */
+    public function events(int $from, int $to): ?array
+    {
+        return $this->query('events', 'fields name,description,start_time,end_time,live_stream_url,event_logo.image_id,games,event_networks.url;'
+            .' where start_time >= '.$from.' & start_time <= '.$to.'; sort start_time asc; limit 200;');
+    }
+
+    /**
+     * Дати виходу ігор (за IGDB id) у проміжку — по одній на платформу.
+     *
+     * @param  list<int>  $ids
+     * @return list<array<string, mixed>>|null
+     */
+    public function releaseDates(array $ids, int $from, int $to): ?array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        return $this->query('release_dates', 'fields game,date,platform;'
+            .' where game = ('.implode(',', $ids).') & date >= '.$from.' & date <= '.$to.'; limit 500;');
+    }
+
     /** Посилання IGDB → ключ магазину за адресою (не залежить від довідників IGDB, які змінюються). */
     public static function storeOf(string $url): ?string
     {

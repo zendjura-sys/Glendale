@@ -285,6 +285,9 @@ Route::prefix('v1')->group(function () {
                 Route::post('server/{server}', [EventController::class, 'storeServer'])->middleware('throttle:20,1');
                 Route::post('server/{event}/rsvp', [EventController::class, 'rsvpServer'])->whereNumber('event');
                 Route::delete('server/{event}', [EventController::class, 'destroyServer'])->whereNumber('event');
+                Route::post('game/{game}', [EventController::class, 'storeGame'])->middleware('throttle:20,1');
+                Route::post('game/{event}/rsvp', [EventController::class, 'rsvpGame'])->whereNumber('event');
+                Route::delete('game/{event}', [EventController::class, 'destroyGame'])->whereNumber('event');
             });
 
             // Клани й гільдії мультиплеєрних ігор.

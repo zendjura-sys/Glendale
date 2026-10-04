@@ -6,6 +6,7 @@ use App\Models\Family;
 use App\Models\GtaServer;
 use App\Models\ServerEvent;
 use App\Services\EventCalendar;
+use App\Services\Events\DiscordEventSync;
 use App\Services\Families\FamilyRating;
 use App\Services\FriendshipService;
 use App\Services\Presence\PlayingStatus;
@@ -98,6 +99,11 @@ class ServerController extends Controller
             'events' => $calendar->forServer($server, $request->user()),
             'event_hosts' => $calendar->hosts($server, $request->user()),
             'event_types' => ServerEvent::TYPES,
+            // Події з Discord проєкту підтягуються, коли туди додано бота GameCon.
+            'discord_events' => [
+                'connected' => $server->discord_events_at !== null && $server->discord_events_at->gt(now()->subDay()),
+                'invite' => $server->discord_invite ? app(DiscordEventSync::class)->botInviteUrl() : null,
+            ],
             'playing_now' => $playing->playingNow('server', $server->id, $friendships->friendIds($request->user())),
             'playing_count' => $playing->countNow('server', $server->id),
         ]);

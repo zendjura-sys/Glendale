@@ -9,18 +9,23 @@ use App\Models\Family;
 use App\Models\FamilyEvent;
 use App\Models\FamilyEventAttendance;
 use App\Models\FamilyMember;
+use App\Models\Game;
+use App\Models\GameEvent;
+use App\Models\GameEventRsvp;
 use App\Models\GtaServer;
 use App\Models\ServerEvent;
 use App\Models\ServerEventRsvp;
 use App\Models\User;
 use App\Notifications\EventReminder;
 use App\Services\Families\FamilyGate;
+use App\Support\Settings\SiteSettings;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
 
 /**
- * Календар подій: сім’ї, клани й сервери GTA в одній стрічці, «піду / не піду»,
+ * Календар подій: сім’ї, клани, сервери GTA й ігри в одній стрічці, «піду / не піду»,
  * нагадування за пів години до початку. Події сімей і кланів живуть у своїх розділах —
  * тут лише збираємо їх разом і додаємо події серверів.
  */
@@ -32,7 +37,7 @@ class EventCalendar
     /** Скільки днів уперед показуємо. */
     public const DAYS = 60;
 
-    public function __construct(private readonly FamilyGate $gate) {}
+    public function __construct(private readonly FamilyGate $gate, private readonly SiteSettings $settings) {}
 
     /**
      * Найближчі події для людини, від найранішої.
@@ -99,6 +104,18 @@ class EventCalendar
                 ->each(fn (ServerEvent $e) => $items->push($this->serverItem($e, $user)));
         }
 
+        if ($kind === null || $kind === 'game') {
+            $query = $this->gameEvents($user)->whereBetween('starts_at', [$from, $to]);
+            if ($kind === null) {
+                // У загальній стрічці — великі шоукейси й події моїх ігор (клани, «Граю в…», записався).
+                $mine = $this->gamesOf($user);
+                $query->where(fn ($q) => $q->whereIn('type', ['showcase', 'stream'])
+                    ->orWhereHas('games', fn ($g) => $g->whereIn('games.id', $mine ?: [0]))
+                    ->orWhereHas('rsvps', fn ($r) => $r->where('user_id', $user->id)->where('status', GameEventRsvp::GOING)));
+            }
+            $query->limit(200)->get()->each(fn (GameEvent $e) => $items->push($this->gameItem($e, $user)));
+        }
+
         return array_values($items->sortBy('starts_at')->values()->all());
     }
 
@@ -119,6 +136,50 @@ class EventCalendar
             ->get()
             ->map(fn (ServerEvent $e) => $this->serverItem($e, $user))
             ->all());
+    }
+
+    /**
+     * Події гри (для її сторінки).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function forGame(Game $game, ?User $user): array
+    {
+        return array_values($this->gameEvents($user)
+            ->whereHas('games', fn ($q) => $q->where('games.id', $game->id))
+            ->where('starts_at', '>=', now()->subHours(3))
+            ->limit(20)
+            ->get()
+            ->map(fn (GameEvent $e) => $this->gameItem($e, $user))
+            ->all());
+    }
+
+    /**
+     * @param  array{title: string, type: string, description: string|null, starts_at: CarbonInterface, url: string|null}  $data
+     */
+    public function createGameEvent(Game $game, User $user, array $data): GameEvent
+    {
+        abort_unless($user->isStaff(), 403, 'Події ігор додає адміністрація GameCon.');
+        $event = GameEvent::query()->create([...$data, 'user_id' => $user->id, 'source' => 'manual']);
+        $event->games()->attach($game->id);
+        GameEventRsvp::query()->create(['game_event_id' => $event->id, 'user_id' => $user->id, 'status' => GameEventRsvp::GOING]);
+
+        return $event;
+    }
+
+    public function rsvpGame(GameEvent $event, User $user, bool $going): void
+    {
+        abort_if(($event->ends_at ?? $event->starts_at)->lt(now()->subHours(3)), 422, 'Подія вже минула.');
+        GameEventRsvp::query()->updateOrCreate(
+            ['game_event_id' => $event->id, 'user_id' => $user->id],
+            ['status' => $going ? GameEventRsvp::GOING : GameEventRsvp::DECLINED],
+        );
+    }
+
+    public function deleteGameEvent(GameEvent $event, User $user): void
+    {
+        abort_unless($user->isStaff(), 403, 'Видалити подію гри може адміністрація.');
+        $event->delete();
     }
 
     /**
@@ -221,7 +282,85 @@ class EventCalendar
                 $count++;
             });
 
+        // Події ігор «на весь день» (виходи) не нагадуємо — лише шоукейси, трансляції, турніри.
+        GameEvent::query()->whereNull('reminded_at')->where('all_day', false)->whereBetween('starts_at', $window)->get()
+            ->each(function (GameEvent $e) use (&$count) {
+                $e->update(['reminded_at' => now()]);
+                $users = User::query()->whereIn('id', $e->rsvps()->where('status', GameEventRsvp::GOING)->select('user_id'))->get();
+                $this->send($users, "⏰ За {$this->minutesLeft($e->starts_at)} хв: «{$e->title}»", '/events?kind=game');
+                $count++;
+            });
+
         return $count;
+    }
+
+    /**
+     * Події ігор з урахуванням перемикачів «Події ігор» і «Виходи ігор» (Адмінка → Ігри).
+     *
+     * @return Builder<GameEvent>
+     */
+    private function gameEvents(?User $user): Builder
+    {
+        $on = Game::features($this->settings->get('games_features'));
+        $types = array_keys(GameEvent::TYPES);
+        if (! $on['events']) {
+            $types = ['release'];
+        }
+        if (! $on['release_events']) {
+            $types = array_values(array_diff($types, ['release']));
+        }
+
+        return GameEvent::query()
+            ->with(['games' => fn ($q) => $q->select('games.id', 'games.name', 'games.slug')])
+            ->withCount(['rsvps as going_count' => fn ($q) => $q->where('status', GameEventRsvp::GOING)])
+            ->with(['rsvps' => fn ($q) => $q->where('user_id', $user->id ?? 0)])
+            ->whereIn('type', $types ?: ['-'])
+            ->orderBy('starts_at');
+    }
+
+    /**
+     * Ігри людини: клани, поточна гра зі статусу «Граю в…».
+     *
+     * @return list<int>
+     */
+    private function gamesOf(User $user): array
+    {
+        $ids = Clan::query()->whereIn('id', ClanMember::query()->where('user_id', $user->id)->where('status', ClanMember::STATUS_ACTIVE)->select('clan_id'))
+            ->pluck('game_id')->all();
+        $playing = $user->playing();
+        if (($playing['kind'] ?? null) === 'game' && isset($playing['id'])) {
+            $ids[] = $playing['id'];
+        }
+
+        return array_values(array_unique(array_filter(array_map('intval', $ids))));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function gameItem(GameEvent $e, ?User $user): array
+    {
+        $mine = $e->rsvps->first();
+        $first = $e->games->first();
+        $where = $first instanceof Game
+            ? ['name' => $e->games->count() > 1 ? $first->name.' +'.($e->games->count() - 1) : $first->name, 'url' => '/games/'.$first->slug]
+            : ['name' => 'Ігри', 'url' => '/games'];
+        $item = $this->item('game', $e->id, $e->title, GameEvent::TYPES[$e->type] ?? $e->type, $e->description, $e->starts_at, $where,
+            $mine instanceof GameEventRsvp ? ($mine->status === GameEventRsvp::GOING ? 'going' : 'declined') : null,
+            (int) $e->getAttribute('going_count'), '/events/game/'.$e->id.'/rsvp');
+
+        return [
+            ...$item,
+            'host' => GameEvent::SOURCES[$e->source] ?? null,
+            'source' => $e->source,
+            'all_day' => $e->all_day,
+            'ends_at' => $e->ends_at?->toIso8601String(),
+            'url' => $e->url,
+            'image' => $e->image,
+            'games' => $e->games->take(8)->map(fn (Game $g) => ['name' => $g->name, 'url' => '/games/'.$g->slug])->values()->all(),
+            'can_delete' => $e->source === 'manual' && $user?->isStaff() === true,
+            'delete_url' => '/events/game/'.$e->id,
+        ];
     }
 
     /**
@@ -250,9 +389,13 @@ class EventCalendar
 
         return [
             ...$item,
-            'host' => $e->is_official ? 'GameCon' : ($e->family ? "[{$e->family->tag}] {$e->family->name}" : null),
+            'host' => $e->source === 'discord' ? 'Discord сервера' : ($e->is_official ? 'GameCon' : ($e->family ? "[{$e->family->tag}] {$e->family->name}" : null)),
             'is_official' => $e->is_official,
-            'can_delete' => $e->user_id === $user->id || $user->isStaff(),
+            'source' => $e->source,
+            'ends_at' => $e->ends_at?->toIso8601String(),
+            'url' => $e->url,
+            'can_delete' => $e->source === 'manual' ? ($e->user_id === $user->id || $user->isStaff()) : false,
+            'delete_url' => '/events/server/'.$e->id,
         ];
     }
 
@@ -278,6 +421,11 @@ class EventCalendar
             // Клани приймають лише перемикач «піду», сім’ї й сервери — «піду / не піду».
             'can_decline' => $kind !== 'clan',
             'rsvp_url' => $rsvpUrl,
+            'all_day' => false,
+            'ends_at' => null,
+            'url' => null,
+            'image' => null,
+            'source' => null,
         ];
     }
 

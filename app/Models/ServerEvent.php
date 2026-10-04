@@ -21,11 +21,15 @@ use Illuminate\Support\Carbon;
  * @property Carbon $starts_at
  * @property bool $is_official
  * @property Carbon|null $reminded_at
+ * @property string $source
+ * @property string|null $external_id
+ * @property Carbon|null $ends_at
+ * @property string|null $url
  * @property-read GtaServer|null $server
  * @property-read Family|null $family
  * @property-read User|null $user
  */
-#[Fillable(['gta_server_id', 'user_id', 'family_id', 'title', 'type', 'description', 'starts_at', 'is_official', 'reminded_at'])]
+#[Fillable(['gta_server_id', 'user_id', 'family_id', 'title', 'type', 'description', 'starts_at', 'is_official', 'reminded_at', 'source', 'external_id', 'ends_at', 'url'])]
 class ServerEvent extends Model
 {
     public const TYPES = [
@@ -38,7 +42,7 @@ class ServerEvent extends Model
 
     protected function casts(): array
     {
-        return ['starts_at' => 'datetime', 'reminded_at' => 'datetime', 'is_official' => 'boolean'];
+        return ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'reminded_at' => 'datetime', 'is_official' => 'boolean'];
     }
 
     /**

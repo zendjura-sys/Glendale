@@ -260,12 +260,15 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::delete('/', [WatchPartyController::class, 'end'])->name('end');
     });
 
-    // Календар подій: сім’ї, клани, сервери.
+    // Календар подій: сім’ї, клани, сервери, ігри.
     Route::prefix('events')->name('events.')->middleware('module:events')->group(function () {
         Route::get('/', [EventController::class, 'index'])->name('index');
         Route::post('server/{server}', [EventController::class, 'storeServer'])->middleware('throttle:20,1')->name('server.store');
         Route::post('server/{event}/rsvp', [EventController::class, 'rsvpServer'])->whereNumber('event')->name('server.rsvp');
         Route::delete('server/{event}', [EventController::class, 'destroyServer'])->whereNumber('event')->name('server.destroy');
+        Route::post('game/{game}', [EventController::class, 'storeGame'])->middleware('throttle:20,1')->name('game.store');
+        Route::post('game/{event}/rsvp', [EventController::class, 'rsvpGame'])->whereNumber('event')->name('game.rsvp');
+        Route::delete('game/{event}', [EventController::class, 'destroyGame'])->whereNumber('event')->name('game.destroy');
     });
 
     // Спільне прослуховування: доступ за посиланням із кодом.

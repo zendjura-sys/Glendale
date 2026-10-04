@@ -11,7 +11,7 @@ type Props = {
     kinds: Record<string, string>;
 };
 
-/** Календар: найближчі події моїх сімей, кланів і серверів, з нагадуванням за пів години. */
+/** Календар: найближчі події моїх сімей, кланів, серверів та ігор, з нагадуванням за пів години. */
 export default function EventsIndex({ events, kind, kinds }: Props) {
     const tabs: [string | null, string][] = [
         [null, 'Усі'],
@@ -27,7 +27,8 @@ export default function EventsIndex({ events, kind, kinds }: Props) {
                     подій
                 </h1>
                 <p className="text-sm text-white/50">
-                    Події ваших сімей, кланів і серверів. За пів години до
+                    Події ваших сімей, кланів, серверів та ігор. Події серверів
+                    з Discord і ігор з IGDB підтягуються самі. За пів години до
                     початку прийде нагадування.
                 </p>
             </div>
@@ -58,7 +59,11 @@ export default function EventsIndex({ events, kind, kinds }: Props) {
                 <EmptyState
                     icon={CalendarDays}
                     title="Найближчих подій немає"
-                    text="Події з’являються, коли їх створюють у сім’ї, клані або на сторінці сервера."
+                    text={
+                        kind === 'game'
+                            ? 'Шоукейси, трансляції й виходи ігор з’являються тут автоматично.'
+                            : 'Події з’являються, коли їх створюють у сім’ї, клані, на сторінці сервера або в Discord проєкту.'
+                    }
                 />
             ) : (
                 <EventList events={events} />

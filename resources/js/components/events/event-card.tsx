@@ -3,6 +3,8 @@ import {
     CalendarDays,
     Check,
     Crown,
+    ExternalLink,
+    Gamepad2,
     Server,
     Swords,
     Trash2,
@@ -13,7 +15,7 @@ import { cn } from '@/lib/utils';
 
 export type CalendarEvent = {
     key: string;
-    kind: 'family' | 'clan' | 'server';
+    kind: 'family' | 'clan' | 'server' | 'game';
     id: number;
     title: string;
     type_label: string;
@@ -27,9 +29,29 @@ export type CalendarEvent = {
     host?: string | null;
     is_official?: boolean;
     can_delete?: boolean;
+    delete_url?: string;
+    all_day?: boolean;
+    ends_at?: string | null;
+    url?: string | null;
+    image?: string | null;
+    source?: string | null;
+    games?: { name: string; url: string }[];
 };
 
-const KIND_ICON = { family: Crown, clan: Swords, server: Server } as const;
+const KIND_ICON = {
+    family: Crown,
+    clan: Swords,
+    server: Server,
+    game: Gamepad2,
+} as const;
+
+/** Підпис кнопки зовнішнього посилання: трансляція, Discord чи сайт. */
+const linkLabel = (url: string) =>
+    url.includes('discord.com')
+        ? 'Відкрити в Discord'
+        : /twitch\.tv|youtube\.com|youtu\.be/.test(url)
+          ? 'Дивитися трансляцію'
+          : 'Детальніше';
 
 export const kyivTime = (iso: string) =>
     new Date(iso).toLocaleTimeString('uk-UA', {
@@ -49,6 +71,7 @@ export const kyivDay = (iso: string) =>
 /** Подія з календаря: де, коли, хто йде, «піду / не піду». Дії йдуть у розділи сім’ї, клану чи сервера. */
 export function EventCard({ event }: { event: CalendarEvent }) {
     const Icon = KIND_ICON[event.kind];
+    const game = event.kind === 'game';
     const rsvp = (going: boolean) =>
         router.post(event.rsvp_url, event.kind === 'clan' ? {} : { going }, {
             preserveScroll: true,
@@ -57,9 +80,17 @@ export function EventCard({ event }: { event: CalendarEvent }) {
     return (
         <article className="glass flex flex-wrap items-start gap-3 rounded-2xl p-3.5 sm:flex-nowrap">
             <div className="flex w-14 shrink-0 flex-col items-center rounded-xl bg-white/[0.04] py-2">
-                <span className="text-base font-semibold text-white">
-                    {kyivTime(event.starts_at)}
-                </span>
+                {event.all_day ? (
+                    <span className="text-center text-xs leading-tight font-semibold text-white">
+                        Весь
+                        <br />
+                        день
+                    </span>
+                ) : (
+                    <span className="text-base font-semibold text-white">
+                        {kyivTime(event.starts_at)}
+                    </span>
+                )}
                 <Icon className="mt-1 size-4 text-[#a5b4fc]" />
             </div>
             <div className="min-w-0 flex-1">
@@ -81,10 +112,45 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                         {event.description}
                     </p>
                 )}
-                <p className="mt-1 inline-flex items-center gap-1 text-xs text-white/45">
-                    <UsersRound className="size-3.5" /> Іде: {event.going_count}
+                {event.games && event.games.length > 1 && (
+                    <p className="mt-1 flex flex-wrap gap-1">
+                        {event.games.map((g) => (
+                            <Link
+                                key={g.url}
+                                href={g.url}
+                                className="rounded-md bg-white/[0.04] px-1.5 py-0.5 text-[11px] text-white/60 hover:text-white"
+                            >
+                                {g.name}
+                            </Link>
+                        ))}
+                    </p>
+                )}
+                <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/45">
+                    <span className="inline-flex items-center gap-1">
+                        <UsersRound className="size-3.5" />{' '}
+                        {game ? 'Цікаво' : 'Іде'}: {event.going_count}
+                    </span>
+                    {event.url && (
+                        <a
+                            href={event.url}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            className="inline-flex items-center gap-1 text-[#a5b4fc] hover:text-white"
+                        >
+                            <ExternalLink className="size-3.5" />
+                            {linkLabel(event.url)}
+                        </a>
+                    )}
                 </p>
             </div>
+            {event.image && (
+                <img
+                    src={event.image}
+                    alt=""
+                    loading="lazy"
+                    className="hidden size-14 shrink-0 rounded-xl bg-white/[0.04] object-contain p-1 sm:block"
+                />
+            )}
             <div className="flex w-full items-center gap-1.5 sm:w-auto">
                 <button
                     type="button"
@@ -102,7 +168,7 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                             : 'bg-white/[0.06] text-white/75 hover:bg-white/10',
                     )}
                 >
-                    <Check className="size-4" /> Піду
+                    <Check className="size-4" /> {game ? 'Цікаво' : 'Піду'}
                 </button>
                 {event.can_decline && (
                     <button
@@ -115,7 +181,8 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                                 : 'bg-white/[0.04] text-white/55 hover:bg-white/10',
                         )}
                     >
-                        <X className="size-4" /> Не піду
+                        <X className="size-4" />{' '}
+                        {game ? 'Не цікаво' : 'Не піду'}
                     </button>
                 )}
                 {event.can_delete && (
@@ -123,9 +190,11 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                         type="button"
                         onClick={() =>
                             confirm('Видалити подію?') &&
-                            router.delete(`/events/server/${event.id}`, {
-                                preserveScroll: true,
-                            })
+                            router.delete(
+                                event.delete_url ??
+                                    `/events/server/${event.id}`,
+                                { preserveScroll: true },
+                            )
                         }
                         className="rounded-lg p-2 text-white/35 hover:text-rose-300"
                         aria-label="Видалити"
@@ -258,6 +327,98 @@ export function ServerEventForm({
                 className="btn-glow inline-flex h-10 items-center justify-center rounded-xl text-sm font-semibold disabled:opacity-50 sm:col-span-2"
             >
                 Додати подію
+            </button>
+        </form>
+    );
+}
+
+/** Офіційна подія гри від адміністрації GameCon (турнір, трансляція, оновлення). */
+export function GameEventForm({
+    gameSlug,
+    types,
+}: {
+    gameSlug: string;
+    types: Record<string, string>;
+}) {
+    const form = useForm({
+        type: 'tournament',
+        title: '',
+        starts_at: '',
+        url: '',
+        description: '',
+    });
+    const input =
+        'input-glass h-10 w-full min-w-0 rounded-xl px-3 text-sm text-white placeholder:text-white/30 focus:outline-none';
+
+    return (
+        <form
+            onSubmit={(e) => {
+                e.preventDefault();
+                form.post(`/events/game/${gameSlug}`, {
+                    preserveScroll: true,
+                    onSuccess: () =>
+                        form.reset('title', 'starts_at', 'url', 'description'),
+                });
+            }}
+            className="grid gap-2 sm:grid-cols-2"
+        >
+            <input
+                value={form.data.title}
+                maxLength={160}
+                onChange={(e) => form.setData('title', e.target.value)}
+                placeholder="Назва події"
+                className={input}
+            />
+            <select
+                value={form.data.type}
+                onChange={(e) => form.setData('type', e.target.value)}
+                className={input}
+                aria-label="Тип"
+            >
+                {Object.entries(types)
+                    .filter(([key]) => key !== 'release')
+                    .map(([key, label]) => (
+                        <option key={key} value={key}>
+                            {label}
+                        </option>
+                    ))}
+            </select>
+            <input
+                type="datetime-local"
+                value={form.data.starts_at}
+                onChange={(e) => form.setData('starts_at', e.target.value)}
+                className={input}
+                aria-label="Початок (Київ)"
+            />
+            <input
+                value={form.data.url}
+                onChange={(e) => form.setData('url', e.target.value)}
+                placeholder="Посилання (https://…), необов’язково"
+                className={input}
+            />
+            <textarea
+                value={form.data.description}
+                maxLength={1000}
+                rows={2}
+                onChange={(e) => form.setData('description', e.target.value)}
+                placeholder="Деталі (необов’язково)"
+                className="input-glass w-full rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none sm:col-span-2"
+            />
+            {(form.errors.starts_at ||
+                form.errors.title ||
+                form.errors.url) && (
+                <p className="text-xs text-rose-300 sm:col-span-2">
+                    {form.errors.starts_at ??
+                        form.errors.title ??
+                        form.errors.url}
+                </p>
+            )}
+            <button
+                type="submit"
+                disabled={form.processing}
+                className="btn-glow inline-flex h-10 items-center justify-center rounded-xl text-sm font-semibold disabled:opacity-50 sm:col-span-2"
+            >
+                Додати подію гри
             </button>
         </form>
     );

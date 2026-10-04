@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
 import 'shell.dart';
@@ -8,12 +9,12 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-const _kindIcons = {'family': LucideIcons.crown, 'clan': LucideIcons.swords, 'server': LucideIcons.server};
+const _kindIcons = {'family': LucideIcons.crown, 'clan': LucideIcons.swords, 'server': LucideIcons.server, 'game': LucideIcons.gamepad2};
 
 const _months = ['січня', 'лютого', 'березня', 'квітня', 'травня', 'червня', 'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня'];
 const _weekdays = ['понеділок', 'вівторок', 'середа', 'четвер', 'пʼятниця', 'субота', 'неділя'];
 
-/// Календар: події сімей, кланів і серверів; «піду / не піду» — через ті самі дії сайту.
+/// Календар: події сімей, кланів, серверів та ігор (Discord і IGDB підтягуються самі); «піду / не піду» — через ті самі дії сайту.
 class EventsScreen extends StatefulWidget {
   const EventsScreen({super.key});
 
@@ -66,7 +67,7 @@ class _EventsScreenState extends State<EventsScreen> {
     return ScreenScroll(
       onRefresh: _load,
       children: [
-        const PageTitle('Календар подій', subtitle: 'Події ваших сімей, кланів і серверів. За пів години до початку прийде нагадування.'),
+        const PageTitle('Календар подій', subtitle: 'Події ваших сімей, кланів, серверів та ігор. Події з Discord серверів та ігор з IGDB підтягуються самі. За пів години до початку прийде нагадування.'),
         ChipRow(
           options: [('', 'Усі'), for (final e in kinds.entries) (e.key, '${e.value}')],
           selected: kind,
@@ -77,21 +78,26 @@ class _EventsScreenState extends State<EventsScreen> {
         ),
         const SizedBox(height: 12),
         if (events.isEmpty)
-          const EmptyState(icon: LucideIcons.calendarDays, title: 'Найближчих подій немає', text: 'Події з’являються, коли їх створюють у сім’ї, клані або на сторінці сервера.'),
+          EmptyState(
+            icon: LucideIcons.calendarDays,
+            title: 'Найближчих подій немає',
+            text: kind == 'game' ? 'Шоукейси, трансляції й виходи ігор з’являються тут автоматично.' : 'Події з’являються, коли їх створюють у сім’ї, клані, на сторінці сервера або в Discord проєкту.',
+          ),
         for (final day in days.entries) ...[
           Padding(
             padding: const EdgeInsets.only(top: 6, bottom: 8),
             child: Text(day.key[0].toUpperCase() + day.key.substring(1), style: body(14, color: soft, weight: FontWeight.w700)),
           ),
-          for (final e in day.value) Padding(padding: const EdgeInsets.only(bottom: 8), child: _EventTile(event: e, onRsvp: (going) => _rsvp(e, going))),
+          for (final e in day.value) Padding(padding: const EdgeInsets.only(bottom: 8), child: EventTile(event: e, onRsvp: (going) => _rsvp(e, going))),
         ],
       ],
     );
   }
 }
 
-class _EventTile extends StatelessWidget {
-  const _EventTile({required this.event, required this.onRsvp});
+/// Подія з календаря: час (або «весь день»), де, хто йде, посилання (Discord, трансляція), «піду / не піду».
+class EventTile extends StatelessWidget {
+  const EventTile({required this.event, required this.onRsvp, super.key});
   final Map<String, dynamic> event;
   final void Function(bool going) onRsvp;
 
@@ -101,6 +107,8 @@ class _EventTile extends StatelessWidget {
     final where = mapOf(event['where']);
     final status = text(event['status']);
     final isClan = event['kind'] == 'clan';
+    final isGame = event['kind'] == 'game';
+    final link = text(event['url']);
     return Glass(
       padding: const EdgeInsets.all(12),
       radius: 18,
@@ -111,7 +119,9 @@ class _EventTile extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(12)),
             child: Column(children: [
-              Text(at == null ? '—' : '${at.hour.toString().padLeft(2, '0')}:${at.minute.toString().padLeft(2, '0')}', style: body(15, weight: FontWeight.w700)),
+              event['all_day'] == true
+                  ? Text('Весь\nдень', textAlign: TextAlign.center, style: body(11.5, weight: FontWeight.w700))
+                  : Text(at == null ? '—' : '${at.hour.toString().padLeft(2, '0')}:${at.minute.toString().padLeft(2, '0')}', style: body(15, weight: FontWeight.w700)),
               const SizedBox(height: 4),
               Icon(_kindIcons[event['kind']] ?? LucideIcons.calendarDays, size: 15, color: primary),
             ]),
@@ -131,7 +141,21 @@ class _EventTile extends StatelessWidget {
               Text(text(event['title']) ?? '', style: body(15, weight: FontWeight.w600)),
               if (text(event['description']) != null) Text(text(event['description'])!, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(13, color: muted)),
               const SizedBox(height: 4),
-              Text('Іде: ${event['going_count'] ?? 0}', style: body(12, color: faint)),
+              Wrap(spacing: 12, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                Text('${isGame ? 'Цікаво' : 'Іде'}: ${event['going_count'] ?? 0}', style: body(12, color: faint)),
+                if (link != null)
+                  GestureDetector(
+                    onTap: () => launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(LucideIcons.externalLink, size: 13, color: primary),
+                      const SizedBox(width: 4),
+                      Text(
+                        link.contains('discord.com') ? 'Відкрити в Discord' : (RegExp(r'twitch\.tv|youtube\.com|youtu\.be').hasMatch(link) ? 'Дивитися трансляцію' : 'Детальніше'),
+                        style: body(12, color: primary, weight: FontWeight.w600),
+                      ),
+                    ]),
+                  ),
+              ]),
             ]),
           ),
         ]),
@@ -139,14 +163,14 @@ class _EventTile extends StatelessWidget {
         Row(children: [
           Expanded(
             child: status == 'going'
-                ? PrimaryButton(label: 'Піду', icon: LucideIcons.check, compact: true, onPressed: isClan ? () => onRsvp(false) : null)
-                : GhostButton(label: 'Піду', icon: LucideIcons.check, compact: true, onPressed: () => onRsvp(true)),
+                ? PrimaryButton(label: isGame ? 'Цікаво' : 'Піду', icon: LucideIcons.check, compact: true, onPressed: isClan ? () => onRsvp(false) : null)
+                : GhostButton(label: isGame ? 'Цікаво' : 'Піду', icon: LucideIcons.check, compact: true, onPressed: () => onRsvp(true)),
           ),
           if (event['can_decline'] == true) ...[
             const SizedBox(width: 8),
             Expanded(
               child: GhostButton(
-                label: 'Не піду',
+                label: isGame ? 'Не цікаво' : 'Не піду',
                 icon: LucideIcons.x,
                 compact: true,
                 color: status == 'declined' ? dangerSoft : ink,

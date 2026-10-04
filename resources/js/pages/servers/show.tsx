@@ -29,6 +29,7 @@ type Props = {
     events: CalendarEvent[];
     event_hosts: { id: number | null; name: string }[];
     event_types: Record<string, string>;
+    discord_events: { connected: boolean; invite: string | null };
     playing_now: UserCard[];
     playing_count: number;
 };
@@ -39,6 +40,7 @@ export default function ServerShow({
     events,
     event_hosts,
     event_types,
+    discord_events,
     playing_now,
     playing_count,
 }: Props) {
@@ -148,6 +150,27 @@ export default function ServerShow({
                         </p>
                     ) : (
                         <EventList events={events} />
+                    )}
+                    {discord_events.connected ? (
+                        <p className="mt-3 text-xs text-white/40">
+                            Події з Discord проєкту підтягуються автоматично.
+                        </p>
+                    ) : (
+                        discord_events.invite && (
+                            <p className="mt-3 text-xs text-white/45">
+                                Адміністрація проєкту? Додайте{' '}
+                                <a
+                                    href={discord_events.invite}
+                                    target="_blank"
+                                    rel="noreferrer noopener"
+                                    className="text-[#a5b4fc] hover:text-white"
+                                >
+                                    бота GameCon
+                                </a>{' '}
+                                на свій Discord — заплановані події звідти самі
+                                з’являться тут і в календарі гравців.
+                            </p>
+                        )
                     )}
                     {event_hosts.length > 0 && (
                         <details className="mt-4 rounded-2xl bg-white/[0.03] p-3">

@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
 import 'clans.dart';
+import 'events.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -312,6 +313,7 @@ class GameScreen extends StatelessWidget {
         final features = mapOf(data['features']);
         final links = maps(game['links']);
         final clans = maps(data['clans']);
+        final events = maps(data['events']);
         final similar = maps(data['similar']);
         final modes = maps(game['modes']);
         final genres = _strings(game['genres']);
@@ -496,6 +498,21 @@ class GameScreen extends StatelessWidget {
                   if (text(d['igdb_url']) != null) GhostButton(label: 'IGDB', icon: LucideIcons.externalLink, expand: false, compact: true, onPressed: () => _open(text(d['igdb_url'])!)),
                 ]),
               ]),
+            if (events.isNotEmpty) ...[
+              SectionLabel('Події гри', trailing: 'Календар', onTrailing: () => context.push('/events')),
+              for (final e in events)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: EventTile(
+                    event: e,
+                    onRsvp: (going) async {
+                      final url = text(e['rsvp_url']);
+                      if (url != null && await attempt(context, () => api.post(Api.site(url), {'going': going}))) reload();
+                    },
+                  ),
+                ),
+              const SizedBox(height: 4),
+            ],
             if (features['clans'] != false) ...[
               SectionLabel('Клани й гільдії', trailing: 'Створити', onTrailing: () => context.push('/clans/create?game=$slug')),
               if (clans.isEmpty)

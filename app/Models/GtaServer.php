@@ -41,12 +41,15 @@ use Illuminate\Support\Facades\Storage;
  * @property bool $is_featured
  * @property int $position
  * @property int|null $families_count
+ * @property string|null $discord_guild_id
+ * @property Carbon|null $discord_events_at
  * @property Carbon $created_at
  * @property-read string|null $icon
  */
 #[Fillable([
     'slug', 'name', 'platform', 'multiplayer', 'tagline', 'description', 'website', 'discord_invite', 'telegram',
     'connect', 'icon_url', 'status', 'origin', 'review_note', 'suggested_by', 'is_featured', 'position',
+    'discord_guild_id', 'discord_events_at',
 ])]
 class GtaServer extends Model
 {
@@ -85,6 +88,7 @@ class GtaServer extends Model
             'is_featured' => 'boolean',
             'icon_fetched_at' => 'datetime',
             'stats_updated_at' => 'datetime',
+            'discord_events_at' => 'datetime',
         ];
     }
 
