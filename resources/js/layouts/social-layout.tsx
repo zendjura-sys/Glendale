@@ -13,7 +13,7 @@ import {
     UsersRound,
     X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { PropsWithChildren } from 'react';
 import { Aurora } from '@/components/gc/aurora';
 import { IncomingCall } from '@/components/gc/incoming-call';
@@ -534,17 +534,50 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
 
 function Announcement() {
     const { site } = usePage().props;
+    const ref = useRef<HTMLDivElement>(null);
+    const text = site.announcement;
 
-    if (!site.announcement) {
+    // Чат і інші панелі на висоту екрана віднімають цей блок, інакше їх зсуває вниз.
+    useLayoutEffect(() => {
+        const root = document.documentElement;
+        const el = ref.current;
+
+        if (!el) {
+            root.style.removeProperty('--gc-banner');
+
+            return;
+        }
+
+        const publish = () => {
+            const margin =
+                Number.parseFloat(getComputedStyle(el).marginBottom) || 0;
+            root.style.setProperty(
+                '--gc-banner',
+                `${Math.ceil(el.offsetHeight + margin)}px`,
+            );
+        };
+
+        publish();
+        const observer = new ResizeObserver(publish);
+        observer.observe(el);
+
+        return () => {
+            observer.disconnect();
+            root.style.removeProperty('--gc-banner');
+        };
+    }, [text]);
+
+    if (!text) {
         return null;
     }
 
     return (
-        <div className="gradient-border glass mb-4 flex items-start gap-3 rounded-2xl px-4 py-3 text-sm text-white/80">
+        <div
+            ref={ref}
+            className="gradient-border glass mb-4 flex items-start gap-3 rounded-2xl px-4 py-3 text-sm text-white/80"
+        >
             <Megaphone className="mt-0.5 size-4 shrink-0 text-[#a58bff]" />
-            <p className="leading-relaxed whitespace-pre-line">
-                {site.announcement}
-            </p>
+            <p className="leading-relaxed whitespace-pre-line">{text}</p>
         </div>
     );
 }
