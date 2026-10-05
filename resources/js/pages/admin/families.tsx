@@ -86,7 +86,7 @@ export default function AdminFamilies({
                 )}
             />
 
-            <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <StatCard
                     label={tr('Очікують верифікації')}
                     value={counts.pending_verification}
@@ -111,14 +111,14 @@ export default function AdminFamilies({
             <VoiceTemplates templates={voice_templates} />
 
             <div className="glass mb-4 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
-                <div className="flex rounded-xl bg-white/[0.04] p-1 text-sm">
+                <div className="scrollbar-none flex max-w-full overflow-x-auto rounded-xl bg-white/[0.04] p-1 text-sm">
                     {(Object.keys(statuses) as Status[]).map((s) => (
                         <button
                             key={s}
                             type="button"
                             onClick={() => visit({ status: s })}
                             className={cn(
-                                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium transition',
+                                'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium whitespace-nowrap transition',
                                 filters.status === s
                                     ? 'bg-gradient-brand text-white'
                                     : 'text-white/55 hover:text-white',

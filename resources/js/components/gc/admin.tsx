@@ -52,7 +52,7 @@ export function StatCard({
 }) {
     return (
         <div
-            className="glass group relative animate-rise overflow-hidden rounded-3xl p-5"
+            className="glass group relative animate-rise overflow-hidden rounded-3xl p-4 sm:p-5"
             style={{ animationDelay: `${delay}ms` }}
         >
             <div
@@ -61,20 +61,20 @@ export function StatCard({
                     tone,
                 )}
             />
-            <div className="relative flex items-start justify-between">
-                <span className="text-[13px] font-medium text-white/50">
+            <div className="relative flex items-start justify-between gap-2">
+                <span className="min-w-0 text-[13px] font-medium text-white/50">
                     {label}
                 </span>
                 <span
                     className={cn(
-                        'flex size-9 items-center justify-center rounded-xl bg-gradient-to-br shadow-[0_8px_24px_-8px_rgb(109_93_252/0.8)]',
+                        'flex size-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br shadow-[0_8px_24px_-8px_rgb(109_93_252/0.8)] sm:size-9',
                         tone,
                     )}
                 >
                     <Icon className="size-[18px] text-white" />
                 </span>
             </div>
-            <div className="relative mt-3 font-display text-[30px] leading-none font-bold text-white">
+            <div className="relative mt-3 font-display text-2xl leading-none font-bold text-white sm:text-[30px]">
                 {value}
             </div>
             {hint && (

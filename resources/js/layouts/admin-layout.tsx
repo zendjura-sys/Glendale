@@ -20,6 +20,7 @@ import {
     Sticker,
     UsersRound,
 } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import type { PropsWithChildren } from 'react';
 import { Aurora } from '@/components/gc/aurora';
 import { LogoMark } from '@/components/gc/logo';
@@ -66,6 +67,19 @@ export default function AdminLayout({ children }: PropsWithChildren) {
     const { auth, modules } = usePage().props;
     const isActive = useActive();
     const { current } = usePlayer();
+    const { currentUrl } = useCurrentUrl();
+    const topNav = useRef<HTMLElement>(null);
+
+    // On phones the section bar scrolls sideways: keep the open section in view.
+    useEffect(() => {
+        const nav = topNav.current;
+        const link = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+
+        if (nav && link) {
+            nav.scrollLeft =
+                link.offsetLeft - (nav.clientWidth - link.offsetWidth) / 2;
+        }
+    }, [currentUrl]);
 
     return (
         <div className="relative min-h-dvh">
@@ -144,7 +158,10 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                 </div>
             </aside>
 
-            <header className="sticky top-0 z-30 scrollbar-none flex items-center gap-2 overflow-x-auto border-b border-white/[0.06] bg-[#060915]/85 px-3 py-2 backdrop-blur-2xl [view-transition-name:gc-topbar] lg:hidden">
+            <header
+                ref={topNav}
+                className="sticky top-0 z-30 scrollbar-none flex items-center gap-2 overflow-x-auto border-b border-white/[0.06] bg-[#060915]/85 px-3 py-2 backdrop-blur-2xl [view-transition-name:gc-topbar] lg:hidden"
+            >
                 <Link href="/feed" className="mr-1 shrink-0">
                     <LogoMark className="size-8" />
                 </Link>
@@ -152,8 +169,11 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                     <Link
                         key={href}
                         href={href}
+                        aria-current={
+                            isActive(href, exact) ? 'page' : undefined
+                        }
                         className={cn(
-                            'flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium',
+                            'flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium',
                             isActive(href, exact)
                                 ? 'bg-white/[0.08] text-white'
                                 : 'text-white/55',
