@@ -116,7 +116,10 @@ export default function AuthLayout({
             <Aurora intense />
             <Showcase />
 
-            <div className="flex w-full items-center justify-center p-5 sm:p-8 lg:w-[540px] lg:shrink-0 xl:w-[600px]">
+            <main
+                id="main-content"
+                className="flex w-full items-center justify-center p-5 sm:p-8 lg:w-[540px] lg:shrink-0 xl:w-[600px]"
+            >
                 <div className="w-full max-w-[420px]">
                     <Link
                         href="/"
@@ -146,7 +149,7 @@ export default function AuthLayout({
                         © {new Date().getFullYear()} {site?.name ?? 'GameCon'}
                     </p>
                 </div>
-            </div>
+            </main>
         </div>
     );
 }

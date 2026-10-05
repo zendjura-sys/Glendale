@@ -240,11 +240,11 @@ function Topbar() {
     const unreadMessages = useUnreadMessages();
 
     return (
-        <header className="pointer-events-none fixed inset-x-0 top-0 z-40 bg-transparent [view-transition-name:gc-topbar]">
+        <header className="pointer-events-none fixed inset-x-0 top-0 z-40 bg-transparent pt-[env(safe-area-inset-top)] [view-transition-name:gc-topbar]">
             {/* Підкладка: контент, що прокручується під шапку, не накладається на пошук і кнопки. */}
             <div
                 aria-hidden
-                className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-background/95 via-background/80 to-transparent [mask-image:linear-gradient(to_bottom,black_65%,transparent)] backdrop-blur-xl"
+                className="absolute inset-x-0 top-0 h-[calc(5rem+env(safe-area-inset-top))] bg-gradient-to-b from-background/95 via-background/80 to-transparent [mask-image:linear-gradient(to_bottom,black_65%,transparent)] backdrop-blur-xl"
             />
             <div className="pointer-events-auto relative mx-auto flex h-16 max-w-[1320px] items-center gap-2 px-3 sm:gap-4 sm:px-5">
                 <Link href="/feed" className="shrink-0 lg:w-[232px]">
@@ -337,7 +337,7 @@ function MobileNav() {
 
     return (
         <>
-            <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-[#0f0a1e]/60 pb-[env(safe-area-inset-bottom)] backdrop-blur-md [view-transition-name:gc-tabbar] lg:hidden">
+            <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-sidebar/70 pb-[env(safe-area-inset-bottom)] backdrop-blur-md [view-transition-name:gc-tabbar] lg:hidden">
                 <div className="flex items-stretch justify-around">
                     {primary.map((item) => {
                         const active = isActive(item.href, item.key);
@@ -346,8 +346,9 @@ function MobileNav() {
                             <Link
                                 key={item.key}
                                 href={item.href}
+                                aria-current={active ? 'page' : undefined}
                                 className={cn(
-                                    'relative flex min-w-0 flex-1 flex-col items-center gap-1 py-2 text-xs font-medium transition active:scale-95',
+                                    'relative flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition active:scale-95',
                                     active ? 'text-white' : 'text-white/45',
                                 )}
                             >
@@ -376,7 +377,7 @@ function MobileNav() {
                         aria-expanded={open}
                         data-test="mobile-menu"
                         className={cn(
-                            'relative flex min-w-0 flex-1 flex-col items-center gap-1 py-2 text-xs font-medium transition active:scale-95',
+                            'relative flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition active:scale-95',
                             open || restActive ? 'text-white' : 'text-white/45',
                         )}
                     >
@@ -502,7 +503,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                                         'size-6',
                                         active
                                             ? 'text-gc-lilac-400 drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]'
-                                            : 'text-[#a9b4ff]',
+                                            : 'text-gc-lilac-200',
                                     )}
                                 />
                                 {item.label}
@@ -550,7 +551,10 @@ function Announcement() {
 
     return (
         <div className="gradient-border glass mb-4 flex items-start gap-3 rounded-2xl px-4 py-3 text-sm text-white/80">
-            <Megaphone className="mt-0.5 size-4 shrink-0 text-gc-violet-300" />
+            <Megaphone
+                aria-hidden
+                className="mt-0.5 size-4 shrink-0 text-gc-violet-300"
+            />
             <p className="leading-relaxed whitespace-pre-line">
                 {site.announcement}
             </p>
@@ -574,12 +578,15 @@ export default function SocialLayout({ children }: PropsWithChildren) {
             <Topbar />
             <div
                 className={cn(
-                    'mx-auto flex max-w-[1320px] gap-5 px-3 pt-[76px] sm:px-5',
+                    'mx-auto flex max-w-[1320px] gap-5 px-3 pt-[calc(76px+env(safe-area-inset-top))] sm:px-5',
                     current ? 'pb-44 lg:pb-28' : 'pb-24 lg:pb-10',
                 )}
             >
                 <Sidebar />
-                <main className="min-w-0 flex-1 [view-transition-name:gc-main]">
+                <main
+                    id="main-content"
+                    className="min-w-0 flex-1 [view-transition-name:gc-main]"
+                >
                     <Announcement />
                     <PageTransition>{children}</PageTransition>
                 </main>

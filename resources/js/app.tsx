@@ -1,5 +1,6 @@
 import type { VisitOptions } from '@inertiajs/core';
 import { createInertiaApp } from '@inertiajs/react';
+import { SkipLink } from '@/components/gc/skip-link';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import AdminLayout from '@/layouts/admin-layout';
@@ -118,6 +119,7 @@ void createInertiaApp({
     withApp(app) {
         return (
             <TooltipProvider delayDuration={0}>
+                <SkipLink />
                 {app}
                 <Toaster />
             </TooltipProvider>
