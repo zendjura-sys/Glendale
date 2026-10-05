@@ -59,7 +59,7 @@ export function CreateCommunityDialog({
                     {tr('Зберіть людей навколо гри, команди, фандому чи ідеї.')}
                 </DialogDescription>
 
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {types.map((type) => (
                         <button
                             key={type.value}
@@ -109,7 +109,7 @@ export function CreateCommunityDialog({
                     </p>
                 )}
 
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <label className="block text-sm font-medium text-white/80">
                         {tr('Тематика')}
                         <select

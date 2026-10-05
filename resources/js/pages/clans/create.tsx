@@ -223,7 +223,7 @@ export default function ClanCreate({
                     <h2 className="text-sm font-semibold text-white/80">
                         {tr('3. Назва й опис')}
                     </h2>
-                    <div className="grid gap-3 sm:grid-cols-[1fr_140px]">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_140px]">
                         <div>
                             <input
                                 value={data.name}
@@ -292,7 +292,7 @@ export default function ClanCreate({
                             'Розділи можна змінити пізніше в налаштуваннях клану. Склад, заявки, ранги й права є завжди.',
                         )}
                     </p>
-                    <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                         {Object.entries(features).map(([key, f]) => {
                             const on = data.features.includes(key);
 

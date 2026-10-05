@@ -119,7 +119,7 @@ export default function AdminMusic({ tracks, filters, stats }: Props) {
                 }
             />
 
-            <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
                 <StatCard
                     label={tr('Треків')}
                     value={compactNumber(stats.tracks)}

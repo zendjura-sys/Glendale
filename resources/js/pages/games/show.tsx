@@ -476,7 +476,7 @@ export default function GameShow({
                 )}
 
             <Section title={tr('Про гру')} icon={Gamepad2}>
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {d.developers?.length ? (
                         <Fact
                             label={tr('Розробник')}
@@ -695,7 +695,7 @@ export default function GameShow({
                             )}
                         </p>
                     ) : (
-                        <div className="grid gap-2 sm:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                             {clans.map((c) => (
                                 <Link
                                     key={c.id}

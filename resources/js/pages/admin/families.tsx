@@ -86,7 +86,7 @@ export default function AdminFamilies({
                 )}
             />
 
-            <div className="mb-5 grid gap-3 sm:grid-cols-3">
+            <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <StatCard
                     label={tr('Очікують верифікації')}
                     value={counts.pending_verification}

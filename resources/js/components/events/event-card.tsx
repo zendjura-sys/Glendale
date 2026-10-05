@@ -265,7 +265,7 @@ export function ServerEventForm({
                         form.reset('title', 'starts_at', 'description'),
                 });
             }}
-            className="grid gap-2 sm:grid-cols-2"
+            className="grid grid-cols-1 gap-2 sm:grid-cols-2"
         >
             <select
                 value={form.data.family_id ?? ''}
@@ -362,7 +362,7 @@ export function GameEventForm({
                         form.reset('title', 'starts_at', 'url', 'description'),
                 });
             }}
-            className="grid gap-2 sm:grid-cols-2"
+            className="grid grid-cols-1 gap-2 sm:grid-cols-2"
         >
             <input
                 value={form.data.title}

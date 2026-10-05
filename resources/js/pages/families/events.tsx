@@ -108,7 +108,7 @@ export default function FamilyEvents(props: Props) {
                     />
                 </Panel>
             ) : (
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     {planned.map((e) => (
                         <Panel key={e.id}>
                             <div className="flex items-start gap-3">
@@ -275,7 +275,7 @@ export default function FamilyEvents(props: Props) {
                     </>
                 }
             >
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <Field
                         label={tr('Назва')}
                         error={form.errors.title}
@@ -428,7 +428,7 @@ function CloseDialog({
                 </>
             }
         >
-            <div className="grid max-h-[50vh] gap-1.5 overflow-y-auto sm:grid-cols-2">
+            <div className="grid max-h-[50vh] grid-cols-1 gap-1.5 overflow-y-auto sm:grid-cols-2">
                 {roster.map((m) => {
                     const on = attended.includes(m.id);
 

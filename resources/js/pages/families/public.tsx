@@ -98,7 +98,7 @@ export default function FamilyPublic({ family, leaders, application }: Props) {
                     </div>
                 </section>
 
-                <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
                     <div className="space-y-4">
                         {family.description && (
                             <section className="glass rounded-3xl p-5">
@@ -114,7 +114,7 @@ export default function FamilyPublic({ family, leaders, application }: Props) {
                             <h2 className="mb-3 font-display font-semibold text-white">
                                 {tr('Керівництво')}
                             </h2>
-                            <div className="grid gap-2 sm:grid-cols-2">
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                 {leaders.map((m) => (
                                     <div
                                         key={m.id}

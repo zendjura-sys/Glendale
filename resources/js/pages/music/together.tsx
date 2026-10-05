@@ -214,7 +214,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
     return (
         <>
             <Head title={tr('Слухаємо разом')} />
-            <div className="mx-auto grid max-w-5xl gap-4 lg:grid-cols-[1fr_340px]">
+            <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">
                 <div className="space-y-4">
                     <section className="glass overflow-hidden rounded-3xl">
                         <div className="flex flex-col items-center gap-4 p-5 sm:flex-row sm:items-end">

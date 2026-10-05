@@ -73,7 +73,7 @@ export default function AdminGeo({
                 )}
             />
 
-            <div className="mb-6 grid gap-3 sm:grid-cols-3">
+            <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <StatCard
                     label={tr('Заблоковано країн')}
                     value={blocked.length}
@@ -156,7 +156,7 @@ export default function AdminGeo({
                         className="min-w-0 flex-1 bg-transparent text-sm text-white focus:outline-none"
                     />
                 </label>
-                <div className="grid max-h-72 gap-1 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid max-h-72 grid-cols-1 gap-1 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
                     {found.map((c) => (
                         <button
                             key={c.code}
@@ -221,7 +221,7 @@ export default function AdminGeo({
                             onSuccess: () => keys.reset('license_key'),
                         });
                     }}
-                    className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]"
+                    className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto]"
                 >
                     <input
                         value={keys.data.account_id}

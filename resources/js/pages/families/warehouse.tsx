@@ -120,7 +120,7 @@ export default function FamilyWarehouse(props: Props) {
             </div>
 
             {tab === 'stock' ? (
-                <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
                     <div className="space-y-4">
                         {grouped.length === 0 && (
                             <Panel>
@@ -132,7 +132,7 @@ export default function FamilyWarehouse(props: Props) {
                         )}
                         {grouped.map((g) => (
                             <Panel key={g.key} title={g.label} icon={Package}>
-                                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                                     {g.items.map((item) => (
                                         <div
                                             key={item.id}
@@ -249,7 +249,7 @@ export default function FamilyWarehouse(props: Props) {
                     </Panel>
                 </div>
             ) : (
-                <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_300px]">
                     <Panel
                         title={
                             tab === 'alerts'
@@ -579,7 +579,7 @@ function ItemDialog({
                 </>
             }
         >
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field label={tr('Назва')} error={form.errors.name}>
                     <input
                         value={form.data.name}

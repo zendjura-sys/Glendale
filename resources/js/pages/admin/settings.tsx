@@ -49,7 +49,7 @@ function Section({
     description: string;
 }>) {
     return (
-        <section className="glass grid gap-6 rounded-3xl p-6 md:grid-cols-[260px_1fr]">
+        <section className="glass grid grid-cols-1 gap-6 rounded-3xl p-6 md:grid-cols-[260px_1fr]">
             <div>
                 <span className="mb-3 flex size-10 items-center justify-center rounded-xl bg-white/[0.05] ring-1 ring-white/10">
                     <Icon className="size-[18px] text-[#9aa8ff]" />
@@ -302,7 +302,7 @@ export default function AdminSettings({
                     </div>
                     <div className="grid gap-2">
                         <Label>{tr('Тип застосунку')}</Label>
-                        <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             {PLAY_BADGES.map((badge) => (
                                 <button
                                     key={badge.value}
@@ -368,7 +368,7 @@ export default function AdminSettings({
                     title={tr('Записи та файли')}
                     description={tr('Обмеження для публікацій і завантажень.')}
                 >
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         <div className="grid gap-2">
                             <Label htmlFor="max_post_length">
                                 {tr('Довжина запису')}

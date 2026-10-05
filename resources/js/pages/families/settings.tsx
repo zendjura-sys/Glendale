@@ -129,7 +129,7 @@ export default function FamilySettings(props: Props) {
                 profile={profile}
             />
             <SettingsPanel action={`${base}/settings`} settings={settings} />
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <WebhooksPanel base={base} webhooks={webhooks} />
                 <Panel
                     title={tr('Тижневий звіт')}
@@ -239,7 +239,7 @@ function ProfilePanel({
                         }
                     />
                 </div>
-                <div className="grid min-w-0 flex-1 gap-3 sm:grid-cols-[1fr_140px]">
+                <div className="grid min-w-0 flex-1 grid-cols-1 gap-3 sm:grid-cols-[1fr_140px]">
                     <Field label={tr('Назва')} error={form.errors.name}>
                         <input
                             value={form.data.name}
@@ -349,7 +349,7 @@ function SettingsPanel({
                     'Кожна зміна записується в журнал аудиту (було → стало). Нові ставки діють для звітів, схвалених після збереження.',
                 )}
             </p>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {groups.map((g) => (
                     <SettingsGroup key={g.key} title={g.title}>
                         {Object.entries(form.data[g.key]).map(
@@ -527,7 +527,7 @@ function WebhooksPanel({
                         )}
                     </div>
                 </Field>
-                <div className="grid gap-3 sm:grid-cols-[1fr_160px]">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_160px]">
                     <Field
                         label={tr('Токен Telegram-бота')}
                         hint={

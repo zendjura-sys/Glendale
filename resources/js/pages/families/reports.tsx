@@ -61,7 +61,7 @@ export default function FamilyReports(props: Props) {
 
     return (
         <FamilyShell {...props} title={tr('Звіти')}>
-            <div className="grid gap-4 lg:grid-cols-[440px_1fr]">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[440px_1fr]">
                 <Panel
                     title={tr('Новий звіт')}
                     icon={FilePlus2}

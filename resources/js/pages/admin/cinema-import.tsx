@@ -305,7 +305,7 @@ export default function AdminCinemaImport({ providers }: Props) {
                             {tr('Імпортувати всі нові')}
                         </button>
                     </div>
-                    <div className="grid gap-3 md:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                         {results.map((c) => (
                             <article
                                 key={c.key}

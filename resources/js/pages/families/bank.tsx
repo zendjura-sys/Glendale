@@ -146,7 +146,7 @@ export default function FamilyBank(props: Props) {
                 )}
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <CashoutPanel
                     action={`${base}/bank/cashouts`}
                     base={base}
@@ -444,7 +444,7 @@ function DepositPanel({
                     '% на тиждень. Дострокове закриття повертає лише тіло депозиту.',
                 )}
             </p>
-            <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
                 <input
                     value={form.data.amount}
                     onChange={(e) => form.setData('amount', e.target.value)}
@@ -607,7 +607,7 @@ function ManualPanel({
             }
         >
             {open ? (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <Field label={tr('Рахунок')}>
                         <Segmented
                             value={form.data.target}

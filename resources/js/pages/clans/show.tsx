@@ -579,7 +579,7 @@ function EventsTab({
                                 onSuccess: () => form.reset(),
                             });
                         }}
-                        className="grid gap-2 sm:grid-cols-[1fr_220px]"
+                        className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_220px]"
                     >
                         <input
                             value={form.data.title}
@@ -1076,7 +1076,7 @@ function SettingsTab({
             className="space-y-4"
         >
             <Card title={tr('Основне')} icon={Settings}>
-                <div className="grid gap-2 sm:grid-cols-[1fr_120px_160px]">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_120px_160px]">
                     <input
                         value={form.data.name}
                         maxLength={60}
@@ -1156,7 +1156,7 @@ function SettingsTab({
             </Card>
 
             <Card title={tr('Розділи клану')} icon={Swords}>
-                <div className="grid gap-2 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {Object.entries(features).map(([key, f]) => {
                         const on = form.data.features.includes(key);
 

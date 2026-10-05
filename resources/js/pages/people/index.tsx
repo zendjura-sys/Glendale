@@ -54,7 +54,7 @@ export default function People({ filters, total, users }: Props) {
                         {tr('за вашим запитом')}
                     </p>
 
-                    <div className="relative mt-5 grid gap-3 md:grid-cols-[1fr_220px_auto_auto]">
+                    <div className="relative mt-5 grid grid-cols-1 gap-3 md:grid-cols-[1fr_220px_auto_auto]">
                         <label className="input-glass flex h-11 items-center gap-2.5 rounded-xl px-3.5">
                             <Search className="size-4 text-white/40" />
                             <input

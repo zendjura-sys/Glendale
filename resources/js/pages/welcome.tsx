@@ -204,7 +204,7 @@ export default function Welcome({
             </header>
 
             <main className="relative">
-                <section className="mx-auto grid max-w-[1240px] items-center gap-14 px-5 pt-32 pb-20 lg:grid-cols-[1.05fr_1fr] lg:pt-40">
+                <section className="mx-auto grid max-w-[1240px] grid-cols-1 items-center gap-14 px-5 pt-32 pb-20 lg:grid-cols-[1.05fr_1fr] lg:pt-40">
                     <div className="animate-rise">
                         <span className="glass inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium text-white/75">
                             <Sparkles className="size-3.5 text-[#a58bff]" />
@@ -328,7 +328,7 @@ export default function Welcome({
                         </p>
                     </div>
 
-                    <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {FEATURES.map(
                             ({ icon: Icon, title, text, tone, soon }) => (
                                 <div

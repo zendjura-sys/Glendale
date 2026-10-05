@@ -98,7 +98,7 @@ export default function FamilyDiscipline(props: Props) {
 
             {can['sanctions.issue'] && (
                 <Panel title={tr('Видати покарання')} icon={Gavel}>
-                    <div className="grid gap-3 lg:grid-cols-[1fr_200px_1.5fr_140px_auto]">
+                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_200px_1.5fr_140px_auto]">
                         <Field
                             label={tr('Учасник')}
                             error={form.errors.member_id}

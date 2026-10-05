@@ -63,7 +63,7 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                 )}
             />
 
-            <div className="mb-5 grid gap-3 sm:grid-cols-3">
+            <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <StatCard
                     label={tr('Статус Spotify')}
                     value={
@@ -130,7 +130,7 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                     </a>
                 </header>
 
-                <div className="relative grid gap-6 lg:grid-cols-[1fr_340px]">
+                <div className="relative grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
                     <div className="grid content-start gap-4">
                         <div className="grid gap-2">
                             <Label htmlFor="client_id">Client ID</Label>
@@ -361,7 +361,7 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                         {title}
                     </h2>
                     <p className="mb-4 text-sm text-white/45">{text}</p>
-                    <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
                         {cinema
                             .filter((c) => c.group === group)
                             .map((c) => (

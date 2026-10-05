@@ -3,6 +3,7 @@ import { AtSign, Globe, Lock, Mail, MapPin, MessageCircle } from 'lucide-react';
 import type { FormEvent } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import { ConnectedAccounts } from '@/components/auth/connected-accounts';
+import { PlayingSettingsCard } from '@/components/gc/playing';
 import DeleteUser from '@/components/delete-user';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -84,8 +85,8 @@ export default function Profile({
                     title={tr('Основне')}
                     description={tr('Так вас бачать інші учасники')}
                 >
-                    <div className="grid gap-5">
-                        <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-5">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="grid gap-2">
                                 <Label htmlFor="first_name">{tr("Ім'я")}</Label>
                                 <Input
@@ -132,11 +133,11 @@ export default function Profile({
                                             e.target.value.toLowerCase(),
                                         )
                                     }
-                                    className="h-full min-w-0 flex-1 bg-transparent pr-3 text-white outline-none"
+                                    className="h-full w-0 min-w-0 flex-1 bg-transparent pr-3 text-white outline-none"
                                     required
                                     maxLength={32}
                                 />
-                                <AtSign className="mr-3 size-4 text-white/25" />
+                                <AtSign className="mr-3 size-4 shrink-0 text-white/25" />
                             </div>
                             <p className="text-[11px] text-white/35">
                                 {tr(
@@ -189,7 +190,7 @@ export default function Profile({
                 </SettingsCard>
 
                 <SettingsCard title={tr('Особиста інформація')}>
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div className="grid gap-2">
                             <Label htmlFor="city">{tr('Місто')}</Label>
                             <div className="relative">
@@ -261,7 +262,7 @@ export default function Profile({
                 </SettingsCard>
 
                 <SettingsCard title={tr('Акаунт і приватність')}>
-                    <div className="grid gap-5">
+                    <div className="grid grid-cols-1 gap-5">
                         <div className="grid gap-2">
                             <Label htmlFor="email">
                                 {tr('Електронна пошта')}
@@ -416,6 +417,8 @@ export default function Profile({
                     </Button>
                 </div>
             </form>
+
+            <PlayingSettingsCard />
 
             <div className="mt-5">
                 <ConnectedAccounts connections={connections} />

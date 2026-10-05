@@ -84,7 +84,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                         <h2 className="mb-3 font-display text-lg font-semibold text-white">
                             {tr('Мої сім’ї')}
                         </h2>
-                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                             {mine.map((f) => (
                                 <Link
                                     key={f.id}
@@ -173,7 +173,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                             )}
                         />
                     ) : (
-                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                             {families.data.map((f, i) => (
                                 <Link
                                     key={f.id}

@@ -307,7 +307,7 @@ export default function AdminModeration({
                             preserveScroll: true,
                         });
                     }}
-                    className="grid gap-3 sm:grid-cols-2"
+                    className="grid grid-cols-1 gap-3 sm:grid-cols-2"
                 >
                     <label className="block">
                         <span className="mb-1 block text-xs text-white/50">

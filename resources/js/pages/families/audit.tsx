@@ -98,7 +98,7 @@ export default function FamilyAudit(props: Props) {
                                         </span>
                                     </button>
                                     {open === l.id && l.details && (
-                                        <dl className="mt-2 ml-27 grid gap-x-4 gap-y-1 rounded-xl bg-white/[0.03] p-3 font-mono text-[11px] sm:grid-cols-[auto_1fr]">
+                                        <dl className="mt-2 ml-27 grid grid-cols-1 gap-x-4 gap-y-1 rounded-xl bg-white/[0.03] p-3 font-mono text-[11px] sm:grid-cols-[auto_1fr]">
                                             {Object.entries(l.details).map(
                                                 ([k, v]) => (
                                                     <div

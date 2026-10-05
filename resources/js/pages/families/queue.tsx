@@ -216,7 +216,7 @@ export default function FamilyQueue(props: Props) {
                         />
                     </Panel>
                 ) : (
-                    <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_1fr]">
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,380px)_1fr]">
                         <Panel padded={false} className="overflow-hidden">
                             <div className="flex items-center gap-2 border-b border-white/[0.06] px-3 py-2.5">
                                 <input
@@ -495,7 +495,7 @@ function ReportDetail({
                 </div>
             </div>
 
-            <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
+            <div className="mt-4 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
                 <Info label={tr('Отримувач')}>
                     <span className="font-mono text-white">
                         {report.beneficiary.display}

@@ -272,9 +272,9 @@ export default function AdminCinemaEdit({
                 }
             />
 
-            <div className="grid gap-5 xl:grid-cols-[1fr_320px]">
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_320px]">
                 <div className="space-y-5">
-                    <section className="glass grid gap-4 rounded-3xl p-5 sm:grid-cols-2">
+                    <section className="glass grid grid-cols-1 gap-4 rounded-3xl p-5 sm:grid-cols-2">
                         <Field
                             label={tr('Назва')}
                             error={errors.title}
@@ -427,7 +427,7 @@ export default function AdminCinemaEdit({
                                 'За ID метадані й плеєри знаходяться автоматично. Рейтинги оновлюються при кожному збагаченні.',
                             )}
                         </p>
-                        <div className="grid gap-4 sm:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                             <Field label="IMDb ID" error={errors.imdb_id}>
                                 <input
                                     className={cn(field, 'font-mono')}
@@ -504,7 +504,7 @@ export default function AdminCinemaEdit({
                         <h2 className="mb-4 font-display text-base font-semibold text-white">
                             {tr('Зображення')}
                         </h2>
-                        <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             {(
                                 [
                                     ['poster', tr('Постер'), 'has_poster_file'],
@@ -661,7 +661,7 @@ export default function AdminCinemaEdit({
                                     </li>
                                 ))}
                             </ul>
-                            <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_180px_110px_auto]">
+                            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_180px_110px_auto]">
                                 <Input
                                     value={source.data.link}
                                     onChange={(e) =>

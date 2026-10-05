@@ -137,7 +137,7 @@ export default function CreateFamily({ servers, server }: Props) {
                                 );
                             }}
                         />
-                        <div className="grid min-w-0 flex-1 gap-4 sm:grid-cols-[1fr_140px]">
+                        <div className="grid min-w-0 flex-1 grid-cols-1 gap-4 sm:grid-cols-[1fr_140px]">
                             <Field
                                 label={tr('Назва сім’ї')}
                                 error={errors.name}
@@ -192,7 +192,7 @@ export default function CreateFamily({ servers, server }: Props) {
                         <div className="mb-3 text-sm font-semibold text-white">
                             {tr('Ваш персонаж')}
                         </div>
-                        <div className="grid gap-4 sm:grid-cols-[1fr_160px]">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_160px]">
                             <Field
                                 label={tr('RP-нікнейм')}
                                 hint={tr('Ім’я_Прізвище латиницею')}

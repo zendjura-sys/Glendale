@@ -199,7 +199,7 @@ export default function AdminGames({
                 <p className="mb-4 text-sm text-white/50">
                     {tr('Вимкнене зникає одразу й на сайті, і в застосунку.')}
                 </p>
-                <div className="grid gap-2 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                     {features.map((f) => (
                         <label
                             key={f.key}

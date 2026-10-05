@@ -227,9 +227,9 @@ function AutoImportPanel({
                 />
             </header>
 
-            <div className="relative grid gap-5 lg:grid-cols-[1fr_320px]">
+            <div className="relative grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
                 <div className="space-y-4">
-                    <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                         {providerCards.map((p) => {
                             const on = data.providers.includes(p.key);
 
@@ -307,7 +307,7 @@ function AutoImportPanel({
                         </div>
                     </div>
 
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                         <label className="grid gap-1.5 text-xs text-white/50">
                             {tr('Частота')}
                             <select
@@ -371,7 +371,7 @@ function AutoImportPanel({
                         </label>
                     </div>
 
-                    <div className="grid gap-2 sm:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                         {(
                             [
                                 ['publish', tr('Публікувати одразу')],
@@ -631,7 +631,7 @@ export default function AdminCinema({
                 }
             />
 
-            <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <StatCard
                     label={tr('Тайтлів')}
                     value={compactNumber(stats.movies)}

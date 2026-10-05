@@ -399,7 +399,7 @@ function MemberDialog({
             wide
         >
             {manage && !member.is_owner && (
-                <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
                     <Field label={tr('Ранг')} error={form.errors.rank}>
                         <select
                             value={form.data.rank}
@@ -432,7 +432,7 @@ function MemberDialog({
 
             {member.rank === 9 &&
                 (manage || (isSelf && can['ranks.manage'])) && (
-                    <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
                         <Field
                             label={tr('Обов’язки')}
                             hint={tr(
@@ -462,7 +462,7 @@ function MemberDialog({
                 )}
 
             {can['members.manage'] && (manage || isSelf) && (
-                <div className="grid gap-3 rounded-2xl bg-white/[0.03] p-3 sm:grid-cols-[1fr_140px_auto]">
+                <div className="grid grid-cols-1 gap-3 rounded-2xl bg-white/[0.03] p-3 sm:grid-cols-[1fr_140px_auto]">
                     <Field
                         label={tr('RP-нікнейм')}
                         error={form.errors.rp_nickname}

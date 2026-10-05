@@ -637,7 +637,7 @@ export default function CinemaShow({
                     )}
                 </section>
 
-                <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_300px]">
                     <div className="min-w-0 space-y-5">
                         {movie.description && (
                             <section className="glass rounded-3xl p-5">

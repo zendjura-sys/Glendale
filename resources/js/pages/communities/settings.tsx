@@ -33,7 +33,7 @@ function Segmented<T extends string>({
     options: { value: T; label: string; icon: typeof Lock; hint: string }[];
 }) {
     return (
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {options.map((option) => (
                 <button
                     key={option.value}
@@ -183,7 +183,7 @@ export default function CommunitySettings({
                                 />
                                 <Error message={errors.description} />
                             </label>
-                            <div className="grid gap-4 sm:grid-cols-3">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                                 <label className="text-sm font-medium text-white/80">
                                     {tr('Тематика')}
                                     <select

@@ -259,7 +259,7 @@ export default function AdminDashboard({
                 description={tr('Пульс спільноти GameCon у реальному часі')}
             />
 
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <StatCard
                     label={tr('Користувачі')}
                     value={compactNumber(stats.users)}
@@ -310,7 +310,7 @@ export default function AdminDashboard({
                 />
             </div>
 
-            <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_340px]">
+            <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[1fr_340px]">
                 <section className="glass rounded-3xl p-5 sm:p-6">
                     <div className="mb-4 flex items-center gap-2">
                         <Activity className="size-4 text-[#8fa0ff]" />
@@ -409,7 +409,7 @@ export default function AdminDashboard({
                 </div>
             </div>
 
-            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <section className="glass rounded-3xl p-5">
                     <div className="mb-3 flex items-center justify-between">
                         <h2 className="font-display text-sm font-semibold tracking-wide text-white/90 uppercase">

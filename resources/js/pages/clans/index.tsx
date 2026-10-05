@@ -133,7 +133,7 @@ export default function ClansIndex({ mine, clans, filters, types }: Props) {
                     <h2 className="mb-2 text-sm font-semibold text-white/70">
                         {tr('Мої')}
                     </h2>
-                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                         {mine.map((c) => (
                             <ClanRow key={c.id} clan={c} />
                         ))}
@@ -186,7 +186,7 @@ export default function ClansIndex({ mine, clans, filters, types }: Props) {
                     text={tr('Створіть свій — оберіть гру й потрібні розділи.')}
                 />
             ) : (
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {clans.data.map((c) => (
                         <ClanRow key={c.id} clan={c} />
                     ))}

@@ -364,7 +364,7 @@ export function SpotifyPanel({
                             <h3 className="font-display text-2xl font-bold text-white">
                                 {tr('Під’єднайте свій Spotify')}
                             </h3>
-                            <ul className="mt-2 grid gap-1 text-sm text-white/70 sm:grid-cols-2">
+                            <ul className="mt-2 grid grid-cols-1 gap-1 text-sm text-white/70 sm:grid-cols-2">
                                 <li className="flex items-center gap-2">
                                     <Sparkles className="size-4 text-[#1ed760]" />
                                     {tr('Ваш топ, улюблені й плейлисти')}
