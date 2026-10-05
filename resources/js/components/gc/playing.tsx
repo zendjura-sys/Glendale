@@ -386,3 +386,55 @@ export function PlayingDialog({
         </Dialog>
     );
 }
+
+/** Налаштування → Профіль: поточний статус «Граю в…» і кнопка налаштувань. */
+export function PlayingSettingsCard() {
+    const [open, setOpen] = useState(false);
+    const [settings, setSettings] = useState<Settings | null>(null);
+    const load = () =>
+        void api<Settings>('GET', '/me/playing')
+            .then(setSettings)
+            .catch(() => undefined);
+
+    useEffect(load, []);
+
+    return (
+        <div className="glass mt-5 rounded-3xl p-6 sm:p-7">
+            <div className="flex flex-wrap items-start gap-4">
+                <div className="min-w-[min(100%,16rem)] flex-1">
+                    <h2 className="text-[17px] font-semibold text-white">
+                        {tr('Граю в…')}
+                    </h2>
+                    <p className="mt-1 text-sm text-white/45">
+                        {settings?.auto
+                            ? tr(
+                                  'Статус ставиться автоматично з Discord, Steam чи застосунку й показується у профілі, лише поки ви граєте.',
+                              )
+                            : tr(
+                                  'Статус показується у профілі, лише поки ви граєте.',
+                              )}
+                    </p>
+                    {settings?.playing && (
+                        <div className="mt-3">
+                            <PlayingBadge playing={settings.playing} />
+                        </div>
+                    )}
+                </div>
+                <button
+                    type="button"
+                    onClick={() => setOpen(true)}
+                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-4 text-sm font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
+                >
+                    <Gamepad2 className="size-4" /> {tr('Налаштувати')}
+                </button>
+            </div>
+            <PlayingDialog
+                open={open}
+                onOpenChange={(next) => {
+                    setOpen(next);
+                    if (!next) load();
+                }}
+            />
+        </div>
+    );
+}
