@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import { useState } from 'react';
 import {
     Flag,
     Languages,
@@ -150,6 +151,7 @@ export function MessageBubble({
         (hasImages && !message.body && !message.reply_to && !files.length);
     const pending = message.pending;
     const translation = useContentTranslation('message', message.id);
+    const [toolsOpen, setToolsOpen] = useState(false);
 
     const meta = (
         <span
@@ -178,11 +180,23 @@ export function MessageBubble({
     );
 
     const toolButton =
-        'flex size-7 items-center justify-center rounded-lg text-white/55 transition hover:bg-white/10 hover:text-white';
+        'flex size-7 items-center justify-center rounded-lg text-white/55 transition hover:bg-white/10 hover:text-white [@media(hover:none)]:size-9';
+    // На сенсорних екранах наведення немає — панель дій відкривається дотиком до повідомлення.
+    const toggleTools = (e: React.MouseEvent) => {
+        if (
+            pending ||
+            !window.matchMedia('(hover: none)').matches ||
+            (e.target as HTMLElement).closest('a, button, audio, video, input')
+        ) {
+            return;
+        }
+        setToolsOpen((open) => !open);
+    };
 
     return (
         <div
             id={`message-${message.id}`}
+            onClick={toggleTools}
             className={cn(
                 'group/msg flex items-end gap-2 px-3 sm:px-5',
                 own ? 'flex-row-reverse' : 'flex-row',
@@ -397,8 +411,9 @@ export function MessageBubble({
             {!pending && (
                 <div
                     className={cn(
-                        'mb-1 flex shrink-0 items-center gap-0.5 rounded-xl border border-white/[0.06] bg-[#0d1222]/90 p-0.5 opacity-0 shadow-lg backdrop-blur transition group-hover/msg:opacity-100 focus-within:opacity-100',
+                        'pointer-events-none mb-1 flex shrink-0 items-center gap-0.5 rounded-xl border border-white/[0.06] bg-[#0d1222]/90 p-0.5 opacity-0 shadow-lg backdrop-blur transition group-hover/msg:pointer-events-auto group-hover/msg:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100',
                         own && 'flex-row-reverse',
+                        toolsOpen && 'pointer-events-auto opacity-100',
                     )}
                 >
                     <button
