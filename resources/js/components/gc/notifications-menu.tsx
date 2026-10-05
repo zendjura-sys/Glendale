@@ -99,7 +99,7 @@ export function NotificationsMenu() {
                 type="button"
                 onClick={toggle}
                 className={cn(
-                    'relative flex size-10 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white',
+                    'relative flex size-11 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white',
                     open && 'bg-white/[0.07] text-white',
                 )}
                 aria-label={
@@ -127,7 +127,7 @@ export function NotificationsMenu() {
                         onClick={() => setOpen(false)}
                         className="fixed inset-0 z-40 bg-background/70 sm:hidden"
                     />
-                    <div className="fixed inset-x-3 top-16 z-50 flex max-h-[min(70dvh,calc(100dvh-env(safe-area-inset-bottom)-8.5rem))] animate-rise flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#101628] shadow-[0_24px_80px_-24px_rgb(0_0_0/0.9)] sm:absolute sm:inset-x-auto sm:top-12 sm:right-0 sm:max-h-[60vh] sm:w-[min(380px,calc(100vw-2rem))]">
+                    <div className="fixed inset-x-3 top-16 z-50 flex max-h-[min(70dvh,calc(100dvh-env(safe-area-inset-bottom)-8.5rem))] animate-rise flex-col overflow-hidden rounded-2xl border border-white/10 bg-deep shadow-[0_24px_80px_-24px_rgb(0_0_0/0.9)] sm:absolute sm:inset-x-auto sm:top-12 sm:right-0 sm:max-h-[60vh] sm:w-[min(380px,calc(100vw-2rem))]">
                         <div className="flex shrink-0 items-center justify-between border-b border-white/5 px-4 py-3">
                             <span className="font-display text-sm font-semibold">
                                 {tr('Сповіщення')}

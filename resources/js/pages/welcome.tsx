@@ -51,21 +51,18 @@ const FEATURES = [
         title: tr('Повідомлення'),
         text: tr('Миттєві чати, голосові та групові розмови.'),
         tone: 'from-gc-cyan to-gc-blue',
-        soon: true,
     },
     {
         icon: Gamepad2,
         title: tr('Ігри та клани'),
         text: tr('Збирай команду, турніри, рейтинги та ігрові профілі.'),
         tone: 'from-gc-purple to-gc-pink',
-        soon: true,
     },
     {
         icon: Clapperboard,
         title: tr('Кінопортал'),
         text: tr('Тисячі фільмів і серіалів — дивись і обговорюй з друзями.'),
-        tone: 'from-gc-pink to-[#ff8a5c]',
-        soon: true,
+        tone: 'from-gc-pink to-gc-coral',
     },
     {
         icon: ShieldCheck,
@@ -181,7 +178,7 @@ export default function Welcome({
             <Head title={tr('Соціальна мережа для геймерів і кіноманів')} />
             <Aurora intense />
 
-            <header className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.05] bg-background/50 backdrop-blur-2xl">
+            <header className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.05] bg-background/50 pt-[env(safe-area-inset-top)] backdrop-blur-2xl">
                 <div className="mx-auto flex h-16 max-w-[1240px] items-center gap-4 px-5">
                     <Logo />
                     <nav className="ml-auto flex items-center gap-2">
@@ -203,7 +200,7 @@ export default function Welcome({
                 </div>
             </header>
 
-            <main className="relative">
+            <main id="main-content" className="relative">
                 <section className="mx-auto grid max-w-[1240px] grid-cols-1 items-center gap-14 px-5 pt-32 pb-20 lg:grid-cols-[1.05fr_1fr] lg:pt-40">
                     <div className="animate-rise">
                         <span className="glass inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium text-white/75">
@@ -329,34 +326,30 @@ export default function Welcome({
                     </div>
 
                     <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {FEATURES.map(
-                            ({ icon: Icon, title, text, tone, soon }) => (
+                        {FEATURES.map(({ icon: Icon, title, text, tone }) => (
+                            <div
+                                key={title}
+                                className="glass group relative overflow-hidden rounded-3xl p-6 transition duration-300 hover:-translate-y-1 hover:border-white/15"
+                            >
                                 <div
-                                    key={title}
-                                    className="glass group relative overflow-hidden rounded-3xl p-6 transition duration-300 hover:-translate-y-1 hover:border-white/15"
+                                    className={`absolute -top-16 -right-16 size-40 rounded-full bg-gradient-to-br ${tone} opacity-0 blur-3xl transition duration-500 group-hover:opacity-40`}
+                                />
+                                <span
+                                    className={`relative flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br ${tone} shadow-[0_10px_30px_-10px_rgb(109_93_252/0.9)]`}
                                 >
-                                    <div
-                                        className={`absolute -top-16 -right-16 size-40 rounded-full bg-gradient-to-br ${tone} opacity-0 blur-3xl transition duration-500 group-hover:opacity-40`}
+                                    <Icon
+                                        aria-hidden
+                                        className="size-[22px] text-white"
                                     />
-                                    <span
-                                        className={`relative flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br ${tone} shadow-[0_10px_30px_-10px_rgb(109_93_252/0.9)]`}
-                                    >
-                                        <Icon className="size-[22px] text-white" />
-                                    </span>
-                                    <h3 className="relative mt-5 flex items-center gap-2 text-lg font-semibold text-white">
-                                        {title}
-                                        {soon && (
-                                            <span className="rounded-full border border-white/10 px-2 py-0.5 text-xs font-medium text-white/45">
-                                                {tr('Скоро')}
-                                            </span>
-                                        )}
-                                    </h3>
-                                    <p className="relative mt-2 text-sm leading-relaxed text-white/50">
-                                        {text}
-                                    </p>
-                                </div>
-                            ),
-                        )}
+                                </span>
+                                <h3 className="relative mt-5 flex items-center gap-2 text-lg font-semibold text-white">
+                                    {title}
+                                </h3>
+                                <p className="relative mt-2 text-sm leading-relaxed text-white/50">
+                                    {text}
+                                </p>
+                            </div>
+                        ))}
                     </div>
 
                     <div className="mt-6 flex flex-wrap justify-center gap-2 text-xs text-white/40">

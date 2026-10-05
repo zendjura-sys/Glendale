@@ -210,6 +210,8 @@
 
     html {
         scrollbar-color: rgb(255 255 255 / 0.14) transparent;
+        touch-action: manipulation;
+        scroll-behavior: smooth;
     }
 
     body {
@@ -491,6 +493,15 @@
     opacity: 1;
 }
 
+@media (hover: none) {
+    .gc-range::-webkit-slider-thumb,
+    .gc-range::-moz-range-thumb {
+        opacity: 1;
+        width: 16px;
+        height: 16px;
+    }
+}
+
 @utility bg-gradient-brand {
     background-image: var(--gc-gradient);
 }
@@ -689,6 +700,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
     *,
     *::before,
     *::after {
