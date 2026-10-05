@@ -108,8 +108,9 @@ function Sidebar() {
                             key={item.key}
                             href={href}
                             prefetch
+                            aria-current={active ? 'page' : undefined}
                             className={cn(
-                                'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-medium transition',
+                                'group relative flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-medium transition',
                                 active
                                     ? 'nav-active text-white'
                                     : 'text-white/65 hover:bg-white/[0.045] hover:text-white',
@@ -161,7 +162,10 @@ function UserMenu() {
 
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-2 rounded-xl py-1 pr-2 pl-1 transition outline-none hover:bg-white/[0.06] data-[state=open]:bg-white/[0.07]">
+            <DropdownMenuTrigger
+                aria-label={tr('Меню облікового запису')}
+                className="flex min-h-11 items-center gap-2 rounded-xl py-1 pr-2 pl-1 transition outline-none hover:bg-white/[0.06] data-[state=open]:bg-white/[0.07]"
+            >
                 <UserAvatar user={user} size="sm" showOnline={false} />
                 <span className="hidden text-left leading-tight xl:block">
                     <span className="block text-[13px] font-semibold text-white">
@@ -255,7 +259,7 @@ function Topbar() {
                 <div className="ml-auto flex items-center gap-1">
                     <Link
                         href="/friends?tab=requests"
-                        className="relative hidden size-10 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white sm:flex"
+                        className="relative hidden size-11 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white sm:flex"
                         aria-label={tr('Заявки в друзі')}
                     >
                         <UsersRound className="size-[19px]" />
@@ -268,7 +272,7 @@ function Topbar() {
                     {modules.includes('messages') && (
                         <Link
                             href="/messages"
-                            className="relative hidden size-10 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white sm:flex"
+                            className="relative hidden size-11 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white sm:flex"
                             aria-label={
                                 unreadMessages > 0
                                     ? tr('Повідомлення: {count} непрочитаних', {
