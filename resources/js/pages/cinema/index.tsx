@@ -310,7 +310,7 @@ export default function CinemaIndex({
 
                 <div className="glass space-y-3 rounded-3xl p-3">
                     <div className="flex flex-col gap-3 md:flex-row md:items-center">
-                        <label className="input-glass flex h-11 flex-1 items-center gap-2 rounded-xl px-3.5">
+                        <label className="input-glass flex h-11 min-h-11 flex-1 items-center gap-2 rounded-xl px-3.5">
                             <Search className="size-4 text-white/40" />
                             <input
                                 value={search}

@@ -208,7 +208,7 @@ export default function Servers({
                                 </button>
                             ))}
                         </div>
-                        <label className="input-glass flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-3.5">
+                        <label className="input-glass flex h-11 min-h-11 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-3.5">
                             <Search className="size-4 text-white/40" />
                             <input
                                 value={q}
