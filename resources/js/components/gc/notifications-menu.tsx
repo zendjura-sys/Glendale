@@ -102,11 +102,18 @@ export function NotificationsMenu() {
                     'relative flex size-10 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white',
                     open && 'bg-white/[0.07] text-white',
                 )}
-                aria-label={tr('Сповіщення')}
+                aria-label={
+                    unread > 0
+                        ? tr('Сповіщення: {count} нових', { count: unread })
+                        : tr('Сповіщення')
+                }
             >
                 <Bell className="size-[19px]" />
                 {unread > 0 && (
-                    <span className="absolute top-1.5 right-1.5 flex min-w-4 items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-pink-500 px-1 text-[10px] leading-4 font-bold text-white shadow-[0_0_12px_rgb(244_63_94/0.8)]">
+                    <span
+                        aria-hidden
+                        className="absolute -top-0.5 -right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-pink-500 px-1 text-[11px] leading-none font-bold text-white ring-2 ring-[#05070f]"
+                    >
                         {unread > 99 ? '99+' : unread}
                     </span>
                 )}

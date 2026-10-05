@@ -269,11 +269,20 @@ function Topbar() {
                         <Link
                             href="/messages"
                             className="relative hidden size-10 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white sm:flex"
-                            aria-label={tr('Повідомлення')}
+                            aria-label={
+                                unreadMessages > 0
+                                    ? tr('Повідомлення: {count} непрочитаних', {
+                                          count: unreadMessages,
+                                      })
+                                    : tr('Повідомлення')
+                            }
                         >
                             <MessageCircle className="size-[19px]" />
                             {unreadMessages > 0 && (
-                                <span className="absolute top-1.5 right-1.5 flex min-w-4 animate-in items-center justify-center rounded-full bg-gradient-brand px-1 text-[10px] leading-4 font-bold text-white shadow-[0_0_12px_rgb(124_140_255/0.9)] zoom-in-50">
+                                <span
+                                    aria-hidden
+                                    className="absolute -top-0.5 -right-0.5 flex h-[18px] min-w-[18px] animate-in items-center justify-center rounded-full bg-gradient-brand px-1 text-[11px] leading-none font-bold text-white ring-2 ring-[#05070f] zoom-in-50"
+                                >
                                     {unreadMessages > 99
                                         ? '99+'
                                         : unreadMessages}
