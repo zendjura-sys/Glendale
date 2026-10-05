@@ -142,14 +142,14 @@ export function FamilyShell({
         },
     ];
 
+    // На огляді є велика кнопка «Новий звіт» — плаваюча там лише закривала б вміст.
+    const showReportButton = section !== 'reports' && section !== 'overview';
+
     return (
         <>
             <Head title={`${title} · [${family.tag}] ${family.name}`} />
             <div
-                className={cn(
-                    'space-y-4',
-                    section !== 'reports' && 'pb-16 lg:pb-0',
-                )}
+                className={cn('space-y-4', showReportButton && 'pb-20 lg:pb-0')}
             >
                 <header className="glass noise relative overflow-hidden rounded-3xl">
                     <div className="relative h-28 sm:h-36">
@@ -214,7 +214,7 @@ export function FamilyShell({
                         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                             <div className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl bg-white/[0.05] px-3.5 py-2 ring-1 ring-white/[0.07] sm:flex-none">
                                 <div className="min-w-0">
-                                    <div className="truncate font-mono text-sm font-semibold text-white">
+                                    <div className="font-mono text-sm font-semibold break-words text-white">
                                         {me.display}
                                     </div>
                                     <RankBadge
@@ -313,7 +313,7 @@ export function FamilyShell({
                 {children}
             </div>
 
-            {section !== 'reports' && (
+            {showReportButton && (
                 <Link
                     href={`${base}/reports?new=1`}
                     className={cn(
