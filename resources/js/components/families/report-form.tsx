@@ -238,7 +238,7 @@ export function ReportForm({
                                 </option>
                             ))}
                         </select>
-                        <p className="mt-1 text-[11px] text-white/40">
+                        <p className="mt-1 text-xs text-white/40">
                             {tr(
                                 'Винагорода піде на рахунок друга, а ви будете вказані як автор звіту.',
                             )}
@@ -345,7 +345,7 @@ export function ReportForm({
                                 <div className="text-sm font-semibold">
                                     {config.tiers[tier]}
                                 </div>
-                                <div className="text-[11px] text-white/45">
+                                <div className="text-xs text-white/45">
                                     {uah(
                                         toMinor(
                                             config.rates[`contract_${tier}`] ??
@@ -462,7 +462,7 @@ export function ReportForm({
                         <button
                             type="button"
                             onClick={() => fileRef.current?.click()}
-                            className="flex size-20 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-white/15 text-[11px] text-white/45 transition hover:border-white/30 hover:text-white"
+                            className="flex size-20 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-white/15 text-xs text-white/45 transition hover:border-white/30 hover:text-white"
                         >
                             <ImagePlus className="size-5" /> {tr('Додати')}
                         </button>
@@ -491,7 +491,7 @@ export function ReportForm({
 
             <div className="flex items-center gap-3 rounded-2xl bg-white/[0.03] p-3 ring-1 ring-white/[0.06]">
                 <div className="min-w-0 flex-1">
-                    <div className="text-[11px] tracking-wide text-white/40 uppercase">
+                    <div className="text-xs tracking-wide text-white/40 uppercase">
                         {tr('Очікувана винагорода')}
                     </div>
                     <div className="font-display text-xl font-bold text-emerald-300">

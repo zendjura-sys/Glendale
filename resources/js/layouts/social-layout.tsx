@@ -147,7 +147,7 @@ function Sidebar() {
 
             <PlayStoreLink compact className="mt-3 self-center" />
 
-            <div className="mt-auto px-3 pt-4 text-[11px] leading-relaxed text-white/30">
+            <div className="mt-auto px-3 pt-4 text-xs leading-relaxed text-white/30">
                 © {new Date().getFullYear()}{' '}
                 {tr('GameCon · Соціальна мережа нового покоління')}
             </div>
@@ -167,7 +167,7 @@ function UserMenu() {
                     <span className="block text-[13px] font-semibold text-white">
                         {user.first_name}
                     </span>
-                    <span className="block text-[11px] text-white/45">
+                    <span className="block text-xs text-white/45">
                         {user.is_admin
                             ? tr('Адміністратор')
                             : user.role === 'moderator'
@@ -260,7 +260,7 @@ function Topbar() {
                     >
                         <UsersRound className="size-[19px]" />
                         {!!counters?.friend_requests && (
-                            <span className="absolute top-1.5 right-1.5 flex min-w-4 items-center justify-center rounded-full bg-gradient-brand px-1 text-[10px] leading-4 font-bold text-white">
+                            <span className="absolute top-1.5 right-1.5 flex min-w-4 items-center justify-center rounded-full bg-gradient-brand px-1 text-[11px] leading-4 font-bold text-white">
                                 {counters.friend_requests}
                             </span>
                         )}
@@ -347,12 +347,12 @@ function MobileNav() {
                                 key={item.key}
                                 href={item.href}
                                 className={cn(
-                                    'relative flex min-w-0 flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium transition active:scale-95',
+                                    'relative flex min-w-0 flex-1 flex-col items-center gap-1 py-2 text-xs font-medium transition active:scale-95',
                                     active ? 'text-white' : 'text-white/45',
                                 )}
                             >
                                 {item.badge > 0 && (
-                                    <span className="absolute top-1 left-1/2 ml-1.5 min-w-4 rounded-full bg-gradient-brand px-1 text-center text-[10px] leading-4 font-bold text-white">
+                                    <span className="absolute top-1 left-1/2 ml-1.5 min-w-4 rounded-full bg-gradient-brand px-1 text-center text-[11px] leading-4 font-bold text-white">
                                         {item.badge > 99 ? '99+' : item.badge}
                                     </span>
                                 )}
@@ -376,12 +376,12 @@ function MobileNav() {
                         aria-expanded={open}
                         data-test="mobile-menu"
                         className={cn(
-                            'relative flex min-w-0 flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium transition active:scale-95',
+                            'relative flex min-w-0 flex-1 flex-col items-center gap-1 py-2 text-xs font-medium transition active:scale-95',
                             open || restActive ? 'text-white' : 'text-white/45',
                         )}
                     >
                         {restBadge > 0 && (
-                            <span className="absolute top-1 left-1/2 ml-1.5 min-w-4 rounded-full bg-gradient-brand px-1 text-center text-[10px] leading-4 font-bold text-white">
+                            <span className="absolute top-1 left-1/2 ml-1.5 min-w-4 rounded-full bg-gradient-brand px-1 text-center text-[11px] leading-4 font-bold text-white">
                                 {restBadge}
                             </span>
                         )}

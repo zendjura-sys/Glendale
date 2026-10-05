@@ -224,7 +224,7 @@ export function FamilyShell({
                                     />
                                 </div>
                                 <div className="ml-auto border-l border-white/10 pl-3 text-right">
-                                    <div className="text-[10px] tracking-wide text-white/40 uppercase">
+                                    <div className="text-xs tracking-wide text-white/40 uppercase">
                                         {tr('Баланс')}
                                     </div>
                                     <div
@@ -268,7 +268,7 @@ export function FamilyShell({
                                     <t.icon className="size-4" />
                                     {t.label}
                                     {!!t.badge && (
-                                        <span className="rounded-full bg-rose-500 px-1.5 text-[10px] leading-4 font-semibold text-white">
+                                        <span className="rounded-full bg-rose-500 px-1.5 text-[11px] leading-4 font-semibold text-white">
                                             {t.badge > 99 ? '99+' : t.badge}
                                         </span>
                                     )}

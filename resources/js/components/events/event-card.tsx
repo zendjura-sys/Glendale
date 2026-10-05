@@ -119,7 +119,7 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                             <Link
                                 key={g.url}
                                 href={g.url}
-                                className="rounded-md bg-white/[0.04] px-1.5 py-0.5 text-[11px] text-white/60 hover:text-white"
+                                className="rounded-md bg-white/[0.04] px-1.5 py-0.5 text-xs text-white/60 hover:text-white"
                             >
                                 {g.name}
                             </Link>

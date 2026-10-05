@@ -143,7 +143,7 @@ export function ConversationList({
                                             <BellOff className="size-3.5 shrink-0 text-white/35" />
                                         )}
                                         {conversation.last_message && (
-                                            <span className="ml-auto shrink-0 pl-2 text-[11px] text-white/40">
+                                            <span className="ml-auto shrink-0 pl-2 text-xs text-white/40">
                                                 {shortTime(
                                                     conversation.last_message
                                                         .created_at,

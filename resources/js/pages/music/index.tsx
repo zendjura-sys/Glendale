@@ -95,7 +95,7 @@ export default function MusicIndex({
                     </div>
                     <div className="relative flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-end">
                         <div className="min-w-0 flex-1">
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[11px] font-semibold tracking-wider text-white/60 uppercase">
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs font-semibold tracking-wider text-white/60 uppercase">
                                 <Music2 className="size-3.5 text-[#8fa0ff]" />
                                 {tr('Музика GameCon')}
                             </span>

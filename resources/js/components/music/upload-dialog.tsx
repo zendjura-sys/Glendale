@@ -336,7 +336,7 @@ export function UploadTracksDialog({
                                                 )}
                                             </span>
                                         </div>
-                                        <p className="mt-1.5 truncate text-[11px] leading-4 text-white/40">
+                                        <p className="mt-1.5 truncate text-xs leading-4 text-white/40">
                                             {item.file.name} ·{' '}
                                             {formatBytes(item.file.size)}
                                             {item.duration > 0 &&

@@ -271,7 +271,7 @@ export default function FamilyDiscipline(props: Props) {
                             >
                                 <span
                                     className={cn(
-                                        'rounded-full px-2.5 py-1 text-[11px] font-semibold',
+                                        'rounded-full px-2.5 py-1 text-xs font-semibold',
                                         typeTones[p.type] ??
                                             'bg-white/[0.06] text-white/60',
                                     )}

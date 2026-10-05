@@ -121,7 +121,7 @@ export default function FamilyEvents(props: Props) {
                                             day: 'numeric',
                                         })}
                                     </span>
-                                    <span className="text-[10px] text-white/55 uppercase">
+                                    <span className="text-xs text-white/55 uppercase">
                                         {new Date(
                                             e.starts_at,
                                         ).toLocaleDateString(LOCALE, {
@@ -464,7 +464,7 @@ function CloseDialog({
                                 {m.display}
                             </span>
                             {going.has(m.id) && (
-                                <span className="text-[10px] text-white/40">
+                                <span className="text-xs text-white/40">
                                     {tr('записався')}
                                 </span>
                             )}

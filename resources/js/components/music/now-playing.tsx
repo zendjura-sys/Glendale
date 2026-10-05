@@ -19,7 +19,7 @@ export function NowPlayingCard({
             )}
         >
             <div className="pointer-events-none absolute -top-10 -left-10 size-40 rounded-full bg-[#6d5dfc]/25 blur-3xl" />
-            <h3 className="relative mb-2 flex items-center gap-2 px-1 text-[11px] font-semibold tracking-wider text-white/55 uppercase">
+            <h3 className="relative mb-2 flex items-center gap-2 px-1 text-xs font-semibold tracking-wider text-white/55 uppercase">
                 <Equalizer paused={!track.is_playing} />
                 {track.is_playing
                     ? tr('Зараз грає')

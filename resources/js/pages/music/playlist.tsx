@@ -87,7 +87,7 @@ export default function PlaylistShow({ playlist, tracks, can }: Props) {
                                 <ArrowLeft className="size-3.5" />{' '}
                                 {tr('Плейлисти')}
                             </Link>
-                            <p className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-white/50 uppercase">
+                            <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold tracking-wider text-white/50 uppercase">
                                 {playlist.is_public ? (
                                     <Globe2 className="size-3.5" />
                                 ) : (

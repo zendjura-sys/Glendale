@@ -139,7 +139,7 @@ export default function Profile({
                                 />
                                 <AtSign className="mr-3 size-4 shrink-0 text-white/25" />
                             </div>
-                            <p className="text-[11px] text-white/35">
+                            <p className="text-xs text-white/35">
                                 {tr(
                                     'Латиниця, цифри, крапка та підкреслення. 3–32 символи.',
                                 )}
@@ -160,7 +160,7 @@ export default function Profile({
                             />
                             <div className="flex justify-between">
                                 <InputError message={errors.status} />
-                                <span className="ml-auto text-[11px] text-white/30">
+                                <span className="ml-auto text-xs text-white/30">
                                     {data.status.length}/140
                                 </span>
                             </div>

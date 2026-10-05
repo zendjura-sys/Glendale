@@ -131,7 +131,7 @@ export function QuickSearch({ className }: { className?: string }) {
                         <X className="size-4" />
                     </button>
                 ) : (
-                    <kbd className="hidden rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 font-sans text-[10px] font-medium text-white/45 md:inline">
+                    <kbd className="hidden rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 font-sans text-xs font-medium text-white/45 md:inline">
                         Ctrl K
                     </kbd>
                 )}

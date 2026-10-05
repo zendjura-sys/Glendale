@@ -84,7 +84,7 @@ export function AchievementsCard({
         <section className="glass rounded-3xl p-4">
             <div className="flex items-center gap-3">
                 <span className="flex size-12 shrink-0 flex-col items-center justify-center rounded-2xl bg-gradient-brand text-white">
-                    <span className="text-[9px] leading-none font-semibold uppercase opacity-80">
+                    <span className="text-[11px] leading-none font-semibold uppercase opacity-80">
                         {tr('рів.')}
                     </span>
                     <span className="text-lg leading-tight font-bold">
@@ -107,7 +107,7 @@ export function AchievementsCard({
                             style={{ width: `${percent}%` }}
                         />
                     </div>
-                    <p className="mt-1 text-[11px] text-white/45">
+                    <p className="mt-1 text-xs text-white/45">
                         {data.xp} / {data.next_xp} {tr('досвіду до рівня')}{' '}
                         {data.level + 1}
                     </p>

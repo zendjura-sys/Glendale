@@ -135,7 +135,7 @@ export default function AdminModules({ modules }: { modules: ModuleItem[] }) {
                                             label={m.name}
                                         />
                                     </div>
-                                    <div className="relative mt-4 flex items-center gap-2 text-[11px] text-white/35">
+                                    <div className="relative mt-4 flex items-center gap-2 text-xs text-white/35">
                                         <span
                                             className={cn(
                                                 'size-1.5 rounded-full',

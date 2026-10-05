@@ -754,7 +754,7 @@ export default function AdminCinemaEdit({
                                     <p className="font-display text-xl font-bold text-white">
                                         {value}
                                     </p>
-                                    <p className="text-[11px] text-white/45">
+                                    <p className="text-xs text-white/45">
                                         {label}
                                     </p>
                                 </div>

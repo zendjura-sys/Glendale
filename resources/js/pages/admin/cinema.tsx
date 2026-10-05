@@ -496,7 +496,7 @@ function AutoImportPanel({
                                         >
                                             {compactNumber(last[key])}
                                         </p>
-                                        <p className="text-[11px] text-white/45">
+                                        <p className="text-xs text-white/45">
                                             {label}
                                         </p>
                                     </div>
@@ -546,7 +546,7 @@ function AutoImportPanel({
                             {tr('і натисніть «Запустити зараз».')}
                         </p>
                     )}
-                    <p className="mt-4 text-[11px] leading-relaxed text-white/35">
+                    <p className="mt-4 text-xs leading-relaxed text-white/35">
                         {tr(
                             'Розклад працює через планувальник Laravel: на сервері має бути cron',
                         )}{' '}
@@ -722,7 +722,7 @@ export default function AdminCinema({
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[900px] text-sm">
                         <thead>
-                            <tr className="border-b border-white/[0.06] text-left text-[11px] tracking-wider text-white/40 uppercase">
+                            <tr className="border-b border-white/[0.06] text-left text-xs tracking-wider text-white/40 uppercase">
                                 <th className="px-4 py-3 font-medium">
                                     {tr('Тайтл')}
                                 </th>

@@ -101,7 +101,7 @@ export default function CinemaMy({ status, movies, statuses, counts }: Props) {
                                         badge={
                                             <div className="flex items-center justify-between gap-1">
                                                 {movie.my_status && (
-                                                    <span className="truncate rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur">
+                                                    <span className="truncate rounded-md bg-black/70 px-1.5 py-0.5 text-xs font-semibold text-white backdrop-blur">
                                                         {
                                                             labels[
                                                                 movie.my_status
@@ -110,7 +110,7 @@ export default function CinemaMy({ status, movies, statuses, counts }: Props) {
                                                     </span>
                                                 )}
                                                 {movie.my_rating && (
-                                                    <span className="ml-auto inline-flex items-center gap-0.5 rounded-md bg-[#f5b342] px-1.5 py-0.5 text-[10px] font-bold text-black">
+                                                    <span className="ml-auto inline-flex items-center gap-0.5 rounded-md bg-[#f5b342] px-1.5 py-0.5 text-xs font-bold text-black">
                                                         <Star className="size-2.5 fill-current" />
                                                         {movie.my_rating}
                                                     </span>

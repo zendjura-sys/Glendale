@@ -328,7 +328,7 @@ export function PlayingDialog({
                                             <span className="block truncate text-sm text-white">
                                                 {o.label}
                                             </span>
-                                            <span className="block text-[11px] text-white/40">
+                                            <span className="block text-xs text-white/40">
                                                 {o.hint}
                                             </span>
                                         </span>

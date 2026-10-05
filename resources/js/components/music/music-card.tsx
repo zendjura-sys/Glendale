@@ -124,7 +124,7 @@ export function MusicCard({
                     href={track.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="relative flex items-center gap-1.5 rounded-full px-2 py-1 text-[11px] font-medium text-[#1ed760] transition hover:bg-[#1ed760]/10"
+                    className="relative flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium text-[#1ed760] transition hover:bg-[#1ed760]/10"
                     title={tr('Відкрити у Spotify')}
                 >
                     <SpotifyLogo className="size-4" />

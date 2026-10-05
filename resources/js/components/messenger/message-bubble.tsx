@@ -272,7 +272,7 @@ export function MessageBubble({
                                 <RankBadge
                                     rank={message.user.family_rank.rank}
                                     title={message.user.family_rank.title}
-                                    className="px-1.5 py-0 text-[10px]"
+                                    className="px-1.5 py-0 text-xs"
                                 />
                             )}
                         </div>

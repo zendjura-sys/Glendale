@@ -71,7 +71,7 @@ export default function ServerShow({
                             className="size-24 rounded-3xl"
                         />
                         <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium">
+                            <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
                                 <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-white/65">
                                     {server.platform_label}
                                 </span>
@@ -131,7 +131,7 @@ export default function ServerShow({
                                 </div>
                             )}
                             {server.stats_updated_at && (
-                                <div className="text-[11px] text-white/30">
+                                <div className="text-xs text-white/30">
                                     {tr('Оновлено')}{' '}
                                     {timeAgo(server.stats_updated_at)}
                                 </div>

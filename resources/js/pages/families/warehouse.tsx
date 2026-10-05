@@ -150,7 +150,7 @@ export default function FamilyWarehouse(props: Props) {
                                                     <div className="truncate text-sm font-semibold text-white">
                                                         {item.name}
                                                     </div>
-                                                    <div className="text-[11px] text-white/40">
+                                                    <div className="text-xs text-white/40">
                                                         {item.hourly_quota
                                                             ? tr(
                                                                   'квота {hourly_quota}/год',
@@ -388,7 +388,7 @@ function LogList({ logs, compact }: { logs: Log[]; compact?: boolean }) {
                                 ? l.quantity_after
                                 : l.quantity}
                         </div>
-                        <div className="text-[10px] text-white/35">
+                        <div className="text-xs text-white/35">
                             {tr('залишок')} {l.quantity_after}
                         </div>
                     </div>

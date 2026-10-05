@@ -38,7 +38,7 @@ export function MovieCardEmbed({
                     <div className="flex items-center gap-2">
                         <RatingBadge value={movie.rating} />
                         {movie.age_rating && (
-                            <span className="rounded-md bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">
+                            <span className="rounded-md bg-white/10 px-1.5 py-0.5 text-xs font-semibold text-white/70">
                                 {movie.age_rating}
                             </span>
                         )}

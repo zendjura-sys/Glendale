@@ -226,7 +226,7 @@ export default function ProfileShow({
                                     <VerifiedBadge className="size-6" />
                                 )}
                                 {roleBadge && (
-                                    <span className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-[11px] font-semibold text-gold">
+                                    <span className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-xs font-semibold text-gold">
                                         <ShieldCheck className="size-3" />{' '}
                                         {roleBadge}
                                     </span>

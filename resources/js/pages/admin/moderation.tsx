@@ -191,7 +191,7 @@ export default function AdminModeration({
                                         {r.comments.join(' · ')}
                                     </p>
                                 )}
-                                <p className="mt-1 text-[11px] text-white/35">
+                                <p className="mt-1 text-xs text-white/35">
                                     {tr('Поскаржилися:')}{' '}
                                     {r.reporters.join(', ')}
                                 </p>

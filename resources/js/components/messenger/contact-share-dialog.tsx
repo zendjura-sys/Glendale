@@ -57,7 +57,7 @@ export function ContactShareDialog({
                         autoFocus
                     />
                 </label>
-                <p className="mb-1 px-1 text-[11px] font-semibold tracking-wide text-white/35 uppercase">
+                <p className="mb-1 px-1 text-xs font-semibold tracking-wide text-white/35 uppercase">
                     {site ? tr('Результати по всьому сайту') : tr('Ваші друзі')}
                 </p>
 
@@ -110,7 +110,7 @@ export function ContactShareDialog({
                                     </span>
                                 </span>
                                 {user.is_friend && (
-                                    <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-[10px] font-medium text-emerald-200">
+                                    <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-xs font-medium text-emerald-200">
                                         {tr('друг')}
                                     </span>
                                 )}

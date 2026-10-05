@@ -96,7 +96,7 @@ function GamePicker({
                             <span className="block truncate text-sm text-white">
                                 {g.name}
                             </span>
-                            <span className="block truncate text-[11px] text-white/45">
+                            <span className="block truncate text-xs text-white/45">
                                 {g.platforms
                                     .map((p) => p.label)
                                     .slice(0, 3)

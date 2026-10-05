@@ -962,7 +962,7 @@ export function ChatView({
 function DaySeparator({ iso }: { iso: string }) {
     return (
         <div className="sticky top-1 z-10 flex justify-center py-2">
-            <span className="rounded-full border border-white/[0.06] bg-[#0b1020]/80 px-3 py-1 text-[11px] font-medium text-white/60 backdrop-blur-xl">
+            <span className="rounded-full border border-white/[0.06] bg-[#0b1020]/80 px-3 py-1 text-xs font-medium text-white/60 backdrop-blur-xl">
                 {dayLabel(iso)}
             </span>
         </div>

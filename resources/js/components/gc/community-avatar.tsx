@@ -2,7 +2,7 @@ import { initials } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 const sizes = {
-    xs: 'size-7 rounded-lg text-[10px]',
+    xs: 'size-7 rounded-lg text-xs',
     sm: 'size-9 rounded-xl text-xs',
     md: 'size-11 rounded-[14px] text-sm',
     lg: 'size-16 rounded-[20px] text-lg',

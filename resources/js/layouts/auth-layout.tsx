@@ -142,7 +142,7 @@ export default function AuthLayout({
                         <LanguageSelect />
                     </div>
 
-                    <p className="mt-6 text-center text-[11px] text-white/30">
+                    <p className="mt-6 text-center text-xs text-white/30">
                         © {new Date().getFullYear()} {site?.name ?? 'GameCon'}
                     </p>
                 </div>

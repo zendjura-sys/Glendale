@@ -99,7 +99,7 @@ export function SocialLogin({
             </div>
 
             {divider && (
-                <div className="flex items-center gap-3 text-[11px] font-medium tracking-[0.2em] text-white/30 uppercase">
+                <div className="flex items-center gap-3 text-xs font-medium tracking-[0.2em] text-white/30 uppercase">
                     <span className="h-px flex-1 bg-white/10" />
                     {tr('або поштою')}
                     <span className="h-px flex-1 bg-white/10" />

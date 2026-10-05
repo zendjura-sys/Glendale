@@ -307,7 +307,7 @@ export default function CinemaShow({
                                 <ArrowLeft className="size-3.5" /> {tr('Кіно')}
                             </Link>
                             {!movie.is_published && (
-                                <span className="rounded-full bg-amber-400/15 px-2.5 py-1 text-[11px] font-semibold text-amber-200">
+                                <span className="rounded-full bg-amber-400/15 px-2.5 py-1 text-xs font-semibold text-amber-200">
                                     {tr('Приховано')}
                                 </span>
                             )}
@@ -363,7 +363,7 @@ export default function CinemaShow({
                                         </span>
                                     ))}
                                     {movie.age_rating && (
-                                        <span className="rounded border border-white/25 px-1.5 text-[10px] font-semibold">
+                                        <span className="rounded border border-white/25 px-1.5 text-xs font-semibold">
                                             {movie.age_rating}
                                         </span>
                                     )}
@@ -418,7 +418,7 @@ export default function CinemaShow({
                                                         r.key
                                                     ]!.toFixed(1)}
                                                 </span>
-                                                <span className="text-[11px] text-white/45">
+                                                <span className="text-xs text-white/45">
                                                     {r.label}
                                                 </span>
                                             </div>

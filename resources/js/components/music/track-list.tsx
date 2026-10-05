@@ -204,7 +204,7 @@ export function TrackList({
                                     </span>
                                     {track.source === 'spotify' &&
                                         track.explicit && (
-                                            <span className="rounded bg-white/15 px-1 text-[9px] leading-4 font-bold text-white/70">
+                                            <span className="rounded bg-white/15 px-1 text-xs leading-4 font-bold text-white/70">
                                                 E
                                             </span>
                                         )}

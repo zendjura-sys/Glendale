@@ -336,7 +336,7 @@ export function Composer({
                                 <span className="block truncate text-[13px] font-medium text-white">
                                     {file.name}
                                 </span>
-                                <span className="block text-[11px] text-white/45">
+                                <span className="block text-xs text-white/45">
                                     {formatBytes(file.size)}
                                 </span>
                             </span>
@@ -489,7 +489,7 @@ export function Composer({
                                                 <span className="block text-sm font-medium text-white">
                                                     {item.label}
                                                 </span>
-                                                <span className="block text-[11px] text-white/40">
+                                                <span className="block text-xs text-white/40">
                                                     {item.hint}
                                                 </span>
                                             </span>

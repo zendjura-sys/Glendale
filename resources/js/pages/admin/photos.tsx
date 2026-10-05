@@ -175,7 +175,7 @@ export default function AdminPhotos({ photos, filters, stats }: Props) {
                                     <Trash2 className="size-4" />
                                 </button>
                             </div>
-                            <div className="absolute inset-x-0 bottom-0 flex gap-3 bg-gradient-to-t from-black/75 to-transparent px-2.5 pt-6 pb-2 text-[11px] text-white/80">
+                            <div className="absolute inset-x-0 bottom-0 flex gap-3 bg-gradient-to-t from-black/75 to-transparent px-2.5 pt-6 pb-2 text-xs text-white/80">
                                 <span className="inline-flex items-center gap-1">
                                     <Heart className="size-3" />
                                     {photo.likes_count}

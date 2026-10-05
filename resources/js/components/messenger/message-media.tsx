@@ -170,7 +170,7 @@ export function VoicePlayer({
                 </div>
                 <div
                     className={cn(
-                        'mt-0.5 flex items-center gap-2 text-[11px]',
+                        'mt-0.5 flex items-center gap-2 text-xs',
                         own ? 'text-white/75' : 'text-white/45',
                     )}
                 >
@@ -183,7 +183,7 @@ export function VoicePlayer({
                         type="button"
                         onClick={cycleSpeed}
                         className={cn(
-                            'rounded-md px-1.5 py-px text-[10px] font-bold transition',
+                            'rounded-md px-1.5 py-px text-xs font-bold transition',
                             own
                                 ? 'bg-white/15 hover:bg-white/25'
                                 : 'bg-white/[0.07] hover:bg-white/15',

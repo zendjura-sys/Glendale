@@ -199,7 +199,7 @@ export default function FamilyBank(props: Props) {
                     <div className="overflow-x-auto">
                         <InfiniteScroll data="ledger" preserveUrl>
                             <table className="w-full min-w-[560px] text-sm">
-                                <thead className="text-left text-[11px] tracking-wide text-white/35 uppercase">
+                                <thead className="text-left text-xs tracking-wide text-white/35 uppercase">
                                     <tr>
                                         <th className="py-2 pr-3 font-medium">
                                             {tr('Час')}
@@ -372,7 +372,7 @@ function CashoutPanel({
                             )}
                             <span
                                 className={cn(
-                                    'rounded-full px-2 py-0.5 text-[11px] font-medium',
+                                    'rounded-full px-2 py-0.5 text-xs font-medium',
                                     cashoutStatus[c.status][1],
                                 )}
                             >
@@ -542,7 +542,7 @@ function DepositPanel({
                             </div>
                             <span
                                 className={cn(
-                                    'rounded-full px-2 py-0.5 text-[11px] font-medium',
+                                    'rounded-full px-2 py-0.5 text-xs font-medium',
                                     depositStatus[d.status][1],
                                 )}
                             >

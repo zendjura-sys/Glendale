@@ -65,7 +65,7 @@ export default function PasskeyVerify({
                     <Separator className="w-full bg-white/10" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                    <span className="rounded-full bg-[#0c1024] px-3 text-[11px] tracking-wider text-white/35">
+                    <span className="rounded-full bg-[#0c1024] px-3 text-xs tracking-wider text-white/35">
                         {separator ?? tr('або через пошту')}
                     </span>
                 </div>

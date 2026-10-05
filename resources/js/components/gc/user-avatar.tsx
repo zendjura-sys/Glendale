@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { tr } from '@/lib/i18n';
 
 const sizes = {
-    xs: 'size-7 text-[10px]',
+    xs: 'size-7 text-xs',
     sm: 'size-9 text-xs',
     md: 'size-11 text-sm',
     lg: 'size-14 text-base',

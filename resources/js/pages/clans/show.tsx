@@ -1202,7 +1202,7 @@ function SettingsTab({
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                     {form.data.rank_titles.map((t, i) => (
                         <label key={i}>
-                            <span className="mb-1 block text-[11px] text-white/45">
+                            <span className="mb-1 block text-xs text-white/45">
                                 {tr('Ранг')} {i + 1}
                             </span>
                             <input

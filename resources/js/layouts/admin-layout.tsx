@@ -81,7 +81,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                         <span className="block font-display text-[15px] font-bold text-white">
                             Game<span className="text-gradient">Con</span>
                         </span>
-                        <span className="flex items-center gap-1 text-[11px] font-medium tracking-wider text-gold uppercase">
+                        <span className="flex items-center gap-1 text-xs font-medium tracking-wider text-gold uppercase">
                             <ShieldCheck className="size-3" />{' '}
                             {tr('Адмін-панель')}
                         </span>
@@ -136,7 +136,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                             <span className="block truncate text-sm font-semibold text-white">
                                 {auth.user.name}
                             </span>
-                            <span className="block text-[11px] text-white/40">
+                            <span className="block text-xs text-white/40">
                                 {tr('Адміністратор')}
                             </span>
                         </span>

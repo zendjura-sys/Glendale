@@ -299,7 +299,7 @@ export default function FamilyQueue(props: Props) {
                                                 <div className="truncate font-mono text-xs text-white">
                                                     {r.beneficiary.display}
                                                 </div>
-                                                <div className="truncate text-[11px] text-white/45">
+                                                <div className="truncate text-xs text-white/45">
                                                     {reportSummary(r)}
                                                 </div>
                                             </div>
@@ -447,7 +447,7 @@ export default function FamilyQueue(props: Props) {
 
 function Kbd({ children }: { children: React.ReactNode }) {
     return (
-        <kbd className="rounded-md border border-white/15 bg-white/[0.06] px-1.5 font-mono text-[10px] text-white/70">
+        <kbd className="rounded-md border border-white/15 bg-white/[0.06] px-1.5 font-mono text-xs text-white/70">
             {children}
         </kbd>
     );
@@ -482,7 +482,7 @@ function ReportDetail({
                     </div>
                 </div>
                 <div className="text-right">
-                    <div className="text-[11px] tracking-wide text-white/40 uppercase">
+                    <div className="text-xs tracking-wide text-white/40 uppercase">
                         {tr('До виплати')}
                     </div>
                     <div className="font-display text-2xl font-bold text-emerald-300">
@@ -627,7 +627,7 @@ function Info({
 }) {
     return (
         <div className="rounded-xl bg-white/[0.03] px-3 py-2">
-            <div className="text-[11px] text-white/40">{label}</div>
+            <div className="text-xs text-white/40">{label}</div>
             <div className="mt-0.5 text-white/75">{children}</div>
         </div>
     );

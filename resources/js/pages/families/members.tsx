@@ -261,7 +261,7 @@ export default function FamilyMembers(props: Props) {
                                                 title={m.rank_title}
                                             />
                                             {m.warns > 0 && (
-                                                <span className="rounded-full bg-rose-500/10 px-2 py-0.5 text-[11px] text-rose-200">
+                                                <span className="rounded-full bg-rose-500/10 px-2 py-0.5 text-xs text-rose-200">
                                                     ⚠ {m.warns}/{warn_limit}
                                                 </span>
                                             )}
@@ -657,7 +657,7 @@ function RanksDialog({
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                 {form.data.titles.map((t, i) => (
                     <label key={i} className="block">
-                        <span className="mb-1 block text-[11px] text-white/45">
+                        <span className="mb-1 block text-xs text-white/45">
                             {tr('Ранг')} {i + 1}
                         </span>
                         <input
@@ -699,7 +699,7 @@ function RanksDialog({
                             <tr>
                                 <td
                                     colSpan={10}
-                                    className="pt-4 pb-1 text-[11px] font-semibold tracking-wide text-white/45 uppercase"
+                                    className="pt-4 pb-1 text-xs font-semibold tracking-wide text-white/45 uppercase"
                                 >
                                     {tr('Голосові кімнати — хто може заходити')}
                                 </td>

@@ -29,7 +29,7 @@ export function ConnectButton({ value }: { value: string }) {
                     setTimeout(() => setCopied(false), 1500);
                 });
             }}
-            className="group/copy inline-flex max-w-full items-center gap-1.5 rounded-lg bg-white/[0.05] px-2 py-1 font-mono text-[11px] text-white/60 ring-1 ring-white/[0.06] transition hover:text-white"
+            className="group/copy inline-flex max-w-full items-center gap-1.5 rounded-lg bg-white/[0.05] px-2 py-1 font-mono text-xs text-white/60 ring-1 ring-white/[0.06] transition hover:text-white"
             title={tr('Скопіювати адресу підключення')}
         >
             {copied ? (
@@ -109,7 +109,7 @@ export function ServerCard({
                             <Sparkles className="size-4 shrink-0 text-amber-300" />
                         )}
                     </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] font-medium">
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium">
                         <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2 py-0.5 text-white/65">
                             <PlatformIcon className="size-3" />
                             {server.platform_label}

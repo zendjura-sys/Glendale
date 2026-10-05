@@ -251,7 +251,7 @@ export default function CommunityMembers({
                                 {member.role !== 'member' && (
                                     <span
                                         className={cn(
-                                            'hidden items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium sm:inline-flex',
+                                            'hidden items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium sm:inline-flex',
                                             roleStyle[member.role],
                                         )}
                                     >

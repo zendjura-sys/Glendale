@@ -58,7 +58,7 @@ export function RatingBadge({
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[11px] font-bold text-white tabular-nums shadow-lg',
+                'inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-bold text-white tabular-nums shadow-lg',
                 value >= 7
                     ? 'bg-emerald-500/90'
                     : value >= 5
@@ -98,7 +98,7 @@ export function MovieTile({
                     <RatingBadge value={movie.rating} />
                 </div>
                 {movie.age_rating && (
-                    <span className="absolute top-2 right-2 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white/80 backdrop-blur">
+                    <span className="absolute top-2 right-2 rounded-md bg-black/60 px-1.5 py-0.5 text-xs font-semibold text-white/80 backdrop-blur">
                         {movie.age_rating}
                     </span>
                 )}

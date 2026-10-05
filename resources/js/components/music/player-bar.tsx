@@ -306,7 +306,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                                     <RepeatIcon className="size-4" />
                                 </IconButton>
                             </div>
-                            <div className="flex w-full max-w-[560px] items-center gap-2.5 text-[11px] text-white/45 tabular-nums">
+                            <div className="flex w-full max-w-[560px] items-center gap-2.5 text-xs text-white/45 tabular-nums">
                                 <span className="w-9 text-right">
                                     {formatDuration(player.position)}
                                 </span>

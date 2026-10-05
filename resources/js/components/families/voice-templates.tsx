@@ -47,7 +47,7 @@ function RankPicker({
                     {r}
                 </button>
             ))}
-            <span className="ml-1 inline-flex h-7 items-center gap-1 rounded-lg bg-amber-400/10 px-2 text-[11px] text-amber-200">
+            <span className="ml-1 inline-flex h-7 items-center gap-1 rounded-lg bg-amber-400/10 px-2 text-xs text-amber-200">
                 <Check className="size-3" /> 10
             </span>
         </div>

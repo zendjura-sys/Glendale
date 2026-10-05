@@ -57,7 +57,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                     <div className="pointer-events-none absolute -bottom-40 left-10 size-96 rounded-full bg-[#6d5dfc]/25 blur-3xl" />
                     <div className="relative flex flex-wrap items-end justify-between gap-5">
                         <div className="max-w-xl">
-                            <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-[11px] font-semibold tracking-wider text-amber-200 uppercase">
+                            <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-xs font-semibold tracking-wider text-amber-200 uppercase">
                                 <Crown className="size-3.5" /> Family ERP
                             </span>
                             <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
@@ -105,7 +105,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                         <div className="mt-1.5 flex items-center gap-2">
                                             {f.membership.status ===
                                             'pending' ? (
-                                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-300/10 px-2 py-0.5 text-[11px] text-amber-200">
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-300/10 px-2 py-0.5 text-xs text-amber-200">
                                                     <Clock3 className="size-3" />{' '}
                                                     {tr('Заявка на розгляді')}
                                                 </span>
@@ -235,7 +235,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                             </span>
                                             <span
                                                 className={cn(
-                                                    'ml-auto rounded-full px-2 py-0.5 text-[11px] font-medium',
+                                                    'ml-auto rounded-full px-2 py-0.5 text-xs font-medium',
                                                     f.is_recruiting
                                                         ? 'bg-emerald-400/10 text-emerald-200'
                                                         : 'bg-white/[0.05] text-white/40',

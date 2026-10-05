@@ -75,13 +75,13 @@ export default function CreateFamily({ servers, server }: Props) {
                                     <ServerIcon
                                         name={s.name}
                                         icon={s.icon}
-                                        className="size-9 rounded-xl text-[10px]"
+                                        className="size-9 rounded-xl text-xs"
                                     />
                                     <div className="min-w-0">
                                         <div className="truncate text-sm font-medium text-white">
                                             {s.name}
                                         </div>
-                                        <div className="text-[11px] text-white/40">
+                                        <div className="text-xs text-white/40">
                                             {s.platform === 'mobile'
                                                 ? tr('Мобільний')
                                                 : tr('ПК')}
@@ -95,7 +95,7 @@ export default function CreateFamily({ servers, server }: Props) {
                                 {errors.server_id}
                             </p>
                         )}
-                        <p className="mt-1.5 text-[11px] text-white/35">
+                        <p className="mt-1.5 text-xs text-white/35">
                             {tr('Немає вашого сервера?')}{' '}
                             <Link
                                 href="/servers"

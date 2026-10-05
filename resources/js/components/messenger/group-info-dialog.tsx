@@ -271,12 +271,12 @@ export function GroupInfoDialog({
                                             </span>
                                         </Link>
                                         {member.role === 'owner' ? (
-                                            <span className="flex items-center gap-1 rounded-full bg-[#ffd36b]/10 px-2 py-0.5 text-[11px] font-medium text-[#ffd36b]">
+                                            <span className="flex items-center gap-1 rounded-full bg-[#ffd36b]/10 px-2 py-0.5 text-xs font-medium text-[#ffd36b]">
                                                 <Crown className="size-3" />
                                                 {tr('Творець')}
                                             </span>
                                         ) : member.role === 'admin' ? (
-                                            <span className="flex items-center gap-1 rounded-full bg-[#4f8bff]/10 px-2 py-0.5 text-[11px] font-medium text-[#8fb4ff]">
+                                            <span className="flex items-center gap-1 rounded-full bg-[#4f8bff]/10 px-2 py-0.5 text-xs font-medium text-[#8fb4ff]">
                                                 <ShieldCheck className="size-3" />
                                                 {tr('Адмін')}
                                             </span>

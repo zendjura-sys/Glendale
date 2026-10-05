@@ -139,7 +139,7 @@ export default function Servers({
                     <div className="pointer-events-none absolute -bottom-36 -left-10 size-96 rounded-full bg-[#2563eb]/25 blur-3xl" />
                     <div className="relative flex flex-wrap items-start justify-between gap-5">
                         <div className="max-w-xl">
-                            <span className="inline-flex items-center gap-2 rounded-full border border-[#facc15]/25 bg-[#facc15]/10 px-3 py-1 text-[11px] font-semibold tracking-wider text-[#fde68a] uppercase">
+                            <span className="inline-flex items-center gap-2 rounded-full border border-[#facc15]/25 bg-[#facc15]/10 px-3 py-1 text-xs font-semibold tracking-wider text-[#fde68a] uppercase">
                                 {tr('🇺🇦 Зроблено в Україні')}
                             </span>
                             <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
@@ -176,7 +176,7 @@ export default function Servers({
                                     >
                                         {value}
                                     </div>
-                                    <div className="text-[11px] text-white/45">
+                                    <div className="text-xs text-white/45">
                                         {label}
                                     </div>
                                 </div>

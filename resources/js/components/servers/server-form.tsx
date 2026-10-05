@@ -60,9 +60,7 @@ export function Field({
             </span>
             {children}
             {hint && !error && (
-                <span className="mt-1 block text-[11px] text-white/35">
-                    {hint}
-                </span>
+                <span className="mt-1 block text-xs text-white/35">{hint}</span>
             )}
             <FieldError message={error} />
         </label>

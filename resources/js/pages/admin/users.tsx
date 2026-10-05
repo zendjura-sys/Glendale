@@ -172,7 +172,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[860px] text-sm">
                         <thead>
-                            <tr className="border-b border-white/[0.06] text-left text-[11px] tracking-wider text-white/35 uppercase">
+                            <tr className="border-b border-white/[0.06] text-left text-xs tracking-wider text-white/35 uppercase">
                                 <th className="px-5 py-3 font-medium">
                                     {tr('Користувач')}
                                 </th>
@@ -253,7 +253,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                                 )}
                                             </div>
                                             {u.ban_reason && (
-                                                <div className="mt-1 max-w-[180px] truncate text-[11px] text-rose-200/60">
+                                                <div className="mt-1 max-w-[180px] truncate text-xs text-rose-200/60">
                                                     {u.ban_reason}
                                                 </div>
                                             )}

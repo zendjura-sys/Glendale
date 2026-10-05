@@ -26,7 +26,7 @@ export function ClanLogo({
     size?: 'sm' | 'md' | 'lg';
 }) {
     const box = {
-        sm: 'size-9 text-[11px] rounded-lg',
+        sm: 'size-9 text-xs rounded-lg',
         md: 'size-12 text-xs rounded-xl',
         lg: 'size-20 text-lg rounded-2xl',
     }[size];

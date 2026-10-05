@@ -233,7 +233,7 @@ function ActivityChart({ data }: { data: ChartPoint[] }) {
                                       ? 'end'
                                       : 'middle'
                             }
-                            className="fill-white/30 text-[11px]"
+                            className="fill-white/30 text-xs"
                         >
                             {formatDate(d.date, false)}
                         </text>
@@ -484,7 +484,7 @@ export default function AdminDashboard({
                                         {p.body || tr('Фото')}
                                     </span>
                                 </Link>
-                                <span className="flex shrink-0 flex-col items-end gap-1 text-[11px] text-white/40">
+                                <span className="flex shrink-0 flex-col items-end gap-1 text-xs text-white/40">
                                     <span className="flex items-center gap-1">
                                         <Heart className="size-3" />{' '}
                                         {p.likes_count}

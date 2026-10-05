@@ -88,7 +88,7 @@ function MockPost() {
                     <div className="text-sm font-semibold text-white">
                         {tr('Софія Мельник')}
                     </div>
-                    <div className="text-[11px] text-white/40">
+                    <div className="text-xs text-white/40">
                         {tr('2 хв тому')}
                     </div>
                 </div>
@@ -146,7 +146,7 @@ function MockMovie() {
                 className="h-[72px] w-[52px] rounded-lg object-cover"
             />
             <div className="min-w-0">
-                <div className="text-[11px] font-medium tracking-wider text-[#ff9de6] uppercase">
+                <div className="text-xs font-medium tracking-wider text-[#ff9de6] uppercase">
                     {tr('Дивляться зараз')}
                 </div>
                 <div className="truncate text-sm font-semibold text-white">
@@ -161,7 +161,7 @@ function MockMovie() {
                             className="size-5 rounded-full border border-[#0c1024]"
                         />
                     ))}
-                    <span className="pl-3 text-[11px] text-white/45">
+                    <span className="pl-3 text-xs text-white/45">
                         {tr('+12 друзів')}
                     </span>
                 </div>
@@ -346,7 +346,7 @@ export default function Welcome({
                                     <h3 className="relative mt-5 flex items-center gap-2 text-lg font-semibold text-white">
                                         {title}
                                         {soon && (
-                                            <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] font-medium text-white/45">
+                                            <span className="rounded-full border border-white/10 px-2 py-0.5 text-xs font-medium text-white/45">
                                                 {tr('Скоро')}
                                             </span>
                                         )}

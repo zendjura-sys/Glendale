@@ -128,7 +128,7 @@ function Section({
 function Fact({ label, value }: { label: string; value: ReactNode }) {
     return (
         <div className="rounded-2xl bg-white/[0.03] p-3">
-            <p className="text-[11px] tracking-wide text-white/40 uppercase">
+            <p className="text-xs tracking-wide text-white/40 uppercase">
                 {label}
             </p>
             <p className="mt-0.5 text-sm text-white/85">{value}</p>
@@ -160,7 +160,7 @@ function Score({
             </p>
             <p className="text-xs text-white/55">{label}</p>
             {count ? (
-                <p className="text-[11px] text-white/35">
+                <p className="text-xs text-white/35">
                     {count} {tr('оцінок')}
                 </p>
             ) : null}
@@ -404,7 +404,7 @@ export default function GameShow({
                                         <Play className="size-5 fill-white text-white" />
                                     </span>
                                 </span>
-                                <span className="absolute inset-x-2 bottom-1.5 truncate text-left text-[11px] text-white/85">
+                                <span className="absolute inset-x-2 bottom-1.5 truncate text-left text-xs text-white/85">
                                     {v.name}
                                 </span>
                             </button>

@@ -144,7 +144,7 @@ export function PostCard({
                             aria-label={visibilityMeta[post.visibility].label}
                         />
                         {post.is_pinned && (
-                            <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-[#4f8bff]/15 px-2 py-0.5 text-[11px] font-medium text-[#9fb6ff]">
+                            <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-[#4f8bff]/15 px-2 py-0.5 text-xs font-medium text-[#9fb6ff]">
                                 <Pin className="size-3" /> {tr('Закріплено')}
                             </span>
                         )}

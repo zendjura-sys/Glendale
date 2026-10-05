@@ -77,7 +77,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                             <span className="block text-sm font-medium">
                                                 {title}
                                             </span>
-                                            <span className="hidden truncate text-[11px] text-white/35 md:block">
+                                            <span className="hidden truncate text-xs text-white/35 md:block">
                                                 {description}
                                             </span>
                                         </span>

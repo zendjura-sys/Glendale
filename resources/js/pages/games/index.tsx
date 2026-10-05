@@ -329,7 +329,7 @@ export default function GamesIndex({
                 </div>
             )}
             <Pagination data={games} />
-            <p className="mt-6 text-center text-[11px] text-white/30">
+            <p className="mt-6 text-center text-xs text-white/30">
                 {tr('Дані каталогу —')}{' '}
                 <a
                     href="https://www.igdb.com"

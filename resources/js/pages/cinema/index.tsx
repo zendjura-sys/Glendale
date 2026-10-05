@@ -125,7 +125,7 @@ function Hero({ items }: { items: MovieFeatured[] }) {
                     key={movie.id}
                     className="max-w-xl min-w-0 flex-1 animate-rise"
                 >
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-2.5 py-1 text-[11px] font-semibold tracking-wider text-white/70 uppercase backdrop-blur">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-2.5 py-1 text-xs font-semibold tracking-wider text-white/70 uppercase backdrop-blur">
                         <Sparkles className="size-3.5 text-[#f5b342]" />
                         {tr('Рекомендуємо')}
                     </span>
@@ -153,7 +153,7 @@ function Hero({ items }: { items: MovieFeatured[] }) {
                             </>
                         )}
                         {movie.age_rating && (
-                            <span className="rounded border border-white/25 px-1.5 text-[10px] font-semibold">
+                            <span className="rounded border border-white/25 px-1.5 text-xs font-semibold">
                                 {movie.age_rating}
                             </span>
                         )}
@@ -278,7 +278,7 @@ export default function CinemaIndex({
                         <div className="pointer-events-none absolute -top-24 -right-16 size-80 rounded-full bg-[#6d5dfc]/25 blur-3xl" />
                         <div className="pointer-events-none absolute -bottom-36 left-10 size-80 rounded-full bg-[#f04fd8]/15 blur-3xl" />
                         <div className="relative">
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[11px] font-semibold tracking-wider text-white/60 uppercase">
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs font-semibold tracking-wider text-white/60 uppercase">
                                 <Clapperboard className="size-3.5 text-[#8fa0ff]" />
                                 {tr('Кіно GameCon')}
                             </span>
@@ -375,7 +375,7 @@ export default function CinemaIndex({
                                         )}
                                     >
                                         {t.label}
-                                        <span className="text-[11px] text-white/40">
+                                        <span className="text-xs text-white/40">
                                             {t.count}
                                         </span>
                                     </button>
