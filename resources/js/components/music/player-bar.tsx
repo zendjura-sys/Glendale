@@ -197,7 +197,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                                         <button
                                             type="button"
                                             onClick={() => removeFromQueue(i)}
-                                            className="rounded-full p-1 text-white/30 opacity-0 transition group-hover:opacity-100 hover:text-white"
+                                            className="rounded-full p-1 text-white/30 opacity-0 transition group-hover:opacity-100 hover:text-white [@media(hover:none)]:opacity-100"
                                             aria-label={tr('Прибрати з черги')}
                                         >
                                             <X className="size-3.5" />

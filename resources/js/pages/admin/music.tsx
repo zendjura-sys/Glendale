@@ -241,7 +241,7 @@ export default function AdminMusic({ tracks, filters, stats }: Props) {
                                                             'absolute inset-0 flex items-center justify-center rounded-lg bg-black/50 transition',
                                                             isCurrent
                                                                 ? 'opacity-100'
-                                                                : 'opacity-0 group-hover:opacity-100',
+                                                                : 'opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100',
                                                         )}
                                                     >
                                                         {playing ? (

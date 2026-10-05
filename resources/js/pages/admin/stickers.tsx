@@ -281,7 +281,7 @@ function PackCard({
                                     { preserveScroll: true },
                                 )
                             }
-                            className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/70 text-rose-200 opacity-0 transition group-hover:opacity-100"
+                            className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/70 text-rose-200 opacity-0 transition group-hover:opacity-100 [@media(hover:none)]:opacity-100"
                             title={tr('Видалити')}
                         >
                             <Trash2 className="size-3" />

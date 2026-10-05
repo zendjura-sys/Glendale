@@ -192,7 +192,7 @@ function Playlists() {
                         ) : (
                             <ListMusic className="absolute inset-0 m-auto size-8 text-white/30" />
                         )}
-                        <span className="absolute right-2 bottom-2 flex size-10 translate-y-2 items-center justify-center rounded-full bg-[#1ed760] text-[#06140b] opacity-0 shadow-lg transition group-hover:translate-y-0 group-hover:opacity-100">
+                        <span className="absolute right-2 bottom-2 flex size-10 translate-y-2 items-center justify-center rounded-full bg-[#1ed760] text-[#06140b] opacity-0 shadow-lg transition group-hover:translate-y-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
                             <Play className="ml-0.5 size-4 fill-current" />
                         </span>
                     </span>

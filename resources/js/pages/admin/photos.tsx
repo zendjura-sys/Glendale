@@ -145,7 +145,7 @@ export default function AdminPhotos({ photos, filters, stats }: Props) {
                                 loading="lazy"
                                 className="size-full object-cover"
                             />
-                            <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 transition group-hover:opacity-100">
+                            <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 transition group-hover:opacity-100 [@media(hover:none)]:opacity-100">
                                 {photo.deleted_at && (
                                     <button
                                         type="button"

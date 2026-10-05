@@ -72,7 +72,7 @@ export function MusicCard({
                         'absolute inset-0 flex items-center justify-center rounded-xl bg-black/45 transition',
                         isCurrent
                             ? 'opacity-100'
-                            : 'opacity-0 group-hover:opacity-100',
+                            : 'opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100',
                     )}
                 >
                     {playing ? (

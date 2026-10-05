@@ -193,7 +193,7 @@ export function Comments({
                                 {comment.can_delete && (
                                     <button
                                         type="button"
-                                        className="opacity-0 transition group-hover:opacity-100 hover:text-rose-300"
+                                        className="opacity-0 transition group-hover:opacity-100 hover:text-rose-300 [@media(hover:none)]:opacity-100"
                                         onClick={() => remove(comment)}
                                         aria-label={tr('Видалити коментар')}
                                     >

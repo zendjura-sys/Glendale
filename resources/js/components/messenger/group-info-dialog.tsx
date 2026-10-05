@@ -289,7 +289,7 @@ export function GroupInfoDialog({
                                                     onClick={() =>
                                                         remove(member)
                                                     }
-                                                    className="rounded-lg p-1.5 text-white/40 opacity-0 transition group-hover:opacity-100 hover:bg-rose-500/10 hover:text-rose-300"
+                                                    className="rounded-lg p-1.5 text-white/40 opacity-0 transition group-hover:opacity-100 hover:bg-rose-500/10 hover:text-rose-300 [@media(hover:none)]:opacity-100"
                                                     aria-label={tr('Виключити')}
                                                     title={tr('Виключити')}
                                                 >

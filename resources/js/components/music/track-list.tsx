@@ -176,7 +176,7 @@ export function TrackList({
                                         'absolute inset-0 flex items-center justify-center rounded-xl bg-black/50 transition',
                                         isCurrent
                                             ? 'opacity-100'
-                                            : 'opacity-0 group-hover:opacity-100',
+                                            : 'opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100',
                                     )}
                                 >
                                     {playing ? (
@@ -234,7 +234,7 @@ export function TrackList({
                                         'flex size-8 items-center justify-center rounded-full transition',
                                         track.in_library
                                             ? 'text-[#8fa0ff]'
-                                            : 'text-white/40 opacity-100 hover:bg-white/10 hover:text-white sm:opacity-0 sm:group-hover:opacity-100',
+                                            : 'text-white/40 opacity-100 hover:bg-white/10 hover:text-white sm:opacity-0 sm:group-hover:opacity-100 [@media(hover:none)]:opacity-100',
                                     )}
                                     aria-label={
                                         track.in_library

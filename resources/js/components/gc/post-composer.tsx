@@ -209,7 +209,7 @@ export function PostComposer({
                                         ),
                                     )
                                 }
-                                className="absolute top-1.5 right-1.5 rounded-full bg-black/60 p-1 text-white opacity-0 backdrop-blur transition group-hover:opacity-100"
+                                className="absolute top-1.5 right-1.5 rounded-full bg-black/60 p-1 text-white opacity-0 backdrop-blur transition group-hover:opacity-100 [@media(hover:none)]:opacity-100"
                                 aria-label={tr('Прибрати фото')}
                             >
                                 <X className="size-3.5" />

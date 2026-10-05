@@ -238,7 +238,7 @@ export function VoiceRooms({
                                     <DropdownMenu>
                                         <DropdownMenuTrigger
                                             aria-label={tr('Дії з кімнатою')}
-                                            className="inline-flex size-7 items-center justify-center rounded-lg text-white/40 opacity-0 transition group-hover:opacity-100 hover:bg-white/10 hover:text-white focus-visible:opacity-100"
+                                            className="inline-flex size-7 items-center justify-center rounded-lg text-white/40 opacity-0 transition group-hover:opacity-100 hover:bg-white/10 hover:text-white focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
                                         >
                                             <MoreHorizontal className="size-4" />
                                         </DropdownMenuTrigger>
@@ -302,7 +302,7 @@ export function VoiceRooms({
                                                             aria-label={tr(
                                                                 'Модерація',
                                                             )}
-                                                            className="inline-flex size-6 items-center justify-center rounded-md text-white/40 opacity-0 transition group-hover/p:opacity-100 hover:bg-white/10 focus-visible:opacity-100"
+                                                            className="inline-flex size-6 items-center justify-center rounded-md text-white/40 opacity-0 transition group-hover/p:opacity-100 hover:bg-white/10 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
                                                         >
                                                             <MoreHorizontal className="size-3.5" />
                                                         </DropdownMenuTrigger>
