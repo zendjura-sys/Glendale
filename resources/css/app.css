@@ -683,3 +683,37 @@
         animation: none !important;
     }
 }
+
+/*
+ * Keyboard focus ring. Unlayered on purpose: it must win over the
+ * `outline-none` utilities that many custom buttons and links carry.
+ * Only shows for keyboard focus (:focus-visible), never on mouse clicks.
+ * Fields keep their own glow; shadcn controls that already draw a
+ * focus ring (button, checkbox, toggle, select) keep theirs.
+ */
+:where(
+        a,
+        button,
+        summary,
+        [role='button'],
+        [role='tab'],
+        [role='link'],
+        [role='menuitem'],
+        [role='option'],
+        [role='switch'],
+        [tabindex]:not([tabindex='-1'])
+    ):not(
+        [data-slot='button'],
+        [data-slot='badge'],
+        [data-slot='checkbox'],
+        [data-slot='toggle'],
+        [data-slot='select-trigger']
+    ):focus-visible,
+label:has(
+    > input.sr-only:focus-visible,
+    > input[type='checkbox']:focus-visible,
+    > input[type='radio']:focus-visible
+) {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}
