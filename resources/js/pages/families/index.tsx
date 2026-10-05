@@ -54,7 +54,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
             <div className="space-y-5">
                 <section className="glass noise relative overflow-hidden rounded-3xl p-5 sm:p-7">
                     <div className="pointer-events-none absolute -top-24 -right-10 size-96 rounded-full bg-amber-400/20 blur-3xl" />
-                    <div className="pointer-events-none absolute -bottom-40 left-10 size-96 rounded-full bg-[#6d5dfc]/25 blur-3xl" />
+                    <div className="pointer-events-none absolute -bottom-40 left-10 size-96 rounded-full bg-gc-indigo/25 blur-3xl" />
                     <div className="relative flex flex-wrap items-end justify-between gap-5">
                         <div className="max-w-xl">
                             <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-xs font-semibold tracking-wider text-amber-200 uppercase">

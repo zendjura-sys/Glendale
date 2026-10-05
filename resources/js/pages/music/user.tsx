@@ -47,7 +47,7 @@ export default function MusicUser({
             <Head title={tr('Музика {name}', { name: owner.name })} />
             <div className="space-y-5">
                 <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-6">
-                    <div className="pointer-events-none absolute -top-28 -right-10 size-80 rounded-full bg-[#a855f7]/20 blur-3xl" />
+                    <div className="pointer-events-none absolute -top-28 -right-10 size-80 rounded-full bg-gc-purple/20 blur-3xl" />
                     <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center">
                         <div className="flex min-w-0 flex-1 items-center gap-4">
                             <Link

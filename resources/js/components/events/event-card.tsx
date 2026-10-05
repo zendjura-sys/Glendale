@@ -92,7 +92,7 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                         {kyivTime(event.starts_at)}
                     </span>
                 )}
-                <Icon className="mt-1 size-4 text-[#a5b4fc]" />
+                <Icon className="mt-1 size-4 text-gc-lilac-200" />
             </div>
             <div className="min-w-0 flex-1">
                 <p className="flex flex-wrap items-center gap-x-2 text-xs text-white/50">
@@ -136,7 +136,7 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                             href={event.url}
                             target="_blank"
                             rel="noreferrer noopener"
-                            className="inline-flex items-center gap-1 text-[#a5b4fc] hover:text-white"
+                            className="inline-flex items-center gap-1 text-gc-lilac-200 hover:text-white"
                         >
                             <ExternalLink className="size-3.5" />
                             {linkLabel(event.url)}
@@ -222,7 +222,8 @@ export function EventList({ events }: { events: CalendarEvent[] }) {
             {[...days.entries()].map(([day, items]) => (
                 <section key={day}>
                     <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-white/70 first-letter:uppercase">
-                        <CalendarDays className="size-4 text-[#a5b4fc]" /> {day}
+                        <CalendarDays className="size-4 text-gc-lilac-200" />{' '}
+                        {day}
                     </h2>
                     <div className="space-y-2">
                         {items.map((e) => (

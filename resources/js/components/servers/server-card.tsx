@@ -89,11 +89,11 @@ export function ServerCard({
             className={cn(
                 'glass group relative flex animate-rise flex-col gap-4 overflow-hidden rounded-3xl p-5 transition hover:-translate-y-0.5 hover:border-white/15',
                 server.is_featured &&
-                    'shadow-[0_20px_60px_-30px_rgb(124_92_255/0.9)] ring-1 ring-[#7c8cff]/30',
+                    'shadow-[0_20px_60px_-30px_rgb(124_92_255/0.9)] ring-1 ring-gc-lilac-500/30',
             )}
             style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}
         >
-            <div className="pointer-events-none absolute -top-16 -right-12 size-40 rounded-full bg-[#6d5dfc]/15 blur-3xl transition group-hover:bg-[#6d5dfc]/30" />
+            <div className="pointer-events-none absolute -top-16 -right-12 size-40 rounded-full bg-gc-indigo/15 blur-3xl transition group-hover:bg-gc-indigo/30" />
             <div className="relative flex items-start gap-3.5">
                 <ServerIcon
                     name={server.name}
@@ -114,7 +114,7 @@ export function ServerCard({
                             <PlatformIcon className="size-3" />
                             {server.platform_label}
                         </span>
-                        <span className="rounded-full bg-[#6d5dfc]/15 px-2 py-0.5 text-[#b9b0ff]">
+                        <span className="rounded-full bg-gc-indigo/15 px-2 py-0.5 text-[#b9b0ff]">
                             {server.multiplayer_label}
                         </span>
                         <span className="rounded-full bg-[#facc15]/10 px-2 py-0.5 text-[#fde68a]">
@@ -140,7 +140,7 @@ export function ServerCard({
                 {server.players_online === null &&
                     server.discord_members !== null && (
                         <div className="text-xs text-white/50">
-                            <span className="font-semibold text-[#9cbcff]">
+                            <span className="font-semibold text-gc-sky">
                                 {server.discord_members.toLocaleString(LOCALE)}
                             </span>{' '}
                             {tr('у Discord')}

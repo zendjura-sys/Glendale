@@ -130,7 +130,7 @@ export function Comments({
                 <button
                     type="button"
                     onClick={loadAll}
-                    className="text-[13px] font-medium text-[#9aa8ff] hover:text-white"
+                    className="text-[13px] font-medium text-gc-lilac-300 hover:text-white"
                 >
                     {tr('Показати всі')} {total}{' '}
                     {plural(total, ['коментар', 'коментарі', 'коментарів'])}
@@ -166,7 +166,7 @@ export function Comments({
                                 </Link>
                                 <p className="text-[14px] leading-snug break-words whitespace-pre-line text-white/85">
                                     {parent && (
-                                        <span className="mr-1 text-[#9aa8ff]">
+                                        <span className="mr-1 text-gc-lilac-300">
                                             {parent.user.first_name},
                                         </span>
                                     )}
@@ -219,7 +219,7 @@ export function Comments({
                     <UserAvatar user={auth.user} size="sm" showOnline={false} />
                     <div className="input-glass flex min-w-0 flex-1 flex-col rounded-2xl">
                         {replyTo && (
-                            <div className="flex items-center gap-1.5 px-3.5 pt-2 text-xs text-[#9aa8ff]">
+                            <div className="flex items-center gap-1.5 px-3.5 pt-2 text-xs text-gc-lilac-300">
                                 <CornerDownRight className="size-3.5" />{' '}
                                 {tr('Відповідь для')} {replyTo.user.first_name}
                                 <button
@@ -257,7 +257,7 @@ export function Comments({
                                 type="button"
                                 onClick={submit}
                                 disabled={!body.trim() || sending}
-                                className="m-1 flex size-8 items-center justify-center rounded-xl text-[#9aa8ff] transition hover:bg-white/10 disabled:opacity-30"
+                                className="m-1 flex size-8 items-center justify-center rounded-xl text-gc-lilac-300 transition hover:bg-white/10 disabled:opacity-30"
                                 aria-label={tr('Надіслати')}
                             >
                                 <SendHorizontal className="size-[18px]" />

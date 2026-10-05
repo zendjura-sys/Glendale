@@ -338,7 +338,7 @@ export function ReportForm({
                                 className={cn(
                                     'rounded-2xl border px-2 py-2.5 text-center transition',
                                     data.tier === tier
-                                        ? 'border-[#7c8cff]/60 bg-[#6d5dfc]/15 text-white'
+                                        ? 'border-gc-lilac-500/60 bg-gc-indigo/15 text-white'
                                         : 'border-white/[0.07] bg-white/[0.03] text-white/55 hover:text-white',
                                 )}
                             >

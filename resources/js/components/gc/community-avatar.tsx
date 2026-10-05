@@ -11,11 +11,11 @@ const sizes = {
 } as const;
 
 const palettes = [
-    'from-[#4f8bff] via-[#6d5dfc] to-[#a855f7]',
-    'from-[#22d3a6] via-[#38e1ff] to-[#4f8bff]',
-    'from-[#f04fd8] via-[#a855f7] to-[#6d5dfc]',
-    'from-[#ff7a59] via-[#f04fd8] to-[#a855f7]',
-    'from-[#38e1ff] via-[#4f8bff] to-[#22d3a6]',
+    'from-gc-blue via-gc-indigo to-gc-purple',
+    'from-gc-mint via-gc-cyan to-gc-blue',
+    'from-gc-pink via-gc-purple to-gc-indigo',
+    'from-gc-coral via-gc-pink to-gc-purple',
+    'from-gc-cyan via-gc-blue to-gc-mint',
 ];
 
 export function CommunityAvatar({

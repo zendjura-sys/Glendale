@@ -24,7 +24,7 @@ export default function EventsIndex({ events, kind, kinds }: Props) {
             <Head title={tr('Календар подій')} />
             <div className="mb-4">
                 <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
-                    <CalendarDays className="size-6 text-[#a5b4fc]" />{' '}
+                    <CalendarDays className="size-6 text-gc-lilac-200" />{' '}
                     {tr('Календар подій')}
                 </h1>
                 <p className="text-sm text-white/50">

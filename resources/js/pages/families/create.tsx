@@ -99,7 +99,7 @@ export default function CreateFamily({ servers, server }: Props) {
                             {tr('Немає вашого сервера?')}{' '}
                             <Link
                                 href="/servers"
-                                className="text-[#a5b4fc] hover:underline"
+                                className="text-gc-lilac-200 hover:underline"
                             >
                                 {tr('Запропонуйте його в каталозі')}
                             </Link>

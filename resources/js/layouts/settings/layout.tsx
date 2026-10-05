@@ -69,7 +69,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                             className={cn(
                                                 'size-[18px] shrink-0',
                                                 active
-                                                    ? 'text-[#8fa0ff]'
+                                                    ? 'text-gc-lilac-400'
                                                     : 'text-white/40',
                                             )}
                                         />

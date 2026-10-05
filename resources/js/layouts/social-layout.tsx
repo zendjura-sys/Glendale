@@ -120,7 +120,7 @@ function Sidebar() {
                                 className={cn(
                                     'size-[19px] transition',
                                     active
-                                        ? 'text-[#8fa0ff] drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]'
+                                        ? 'text-gc-lilac-400 drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]'
                                         : 'text-white/45 group-hover:text-white/80',
                                 )}
                             />
@@ -244,7 +244,7 @@ function Topbar() {
             {/* Підкладка: контент, що прокручується під шапку, не накладається на пошук і кнопки. */}
             <div
                 aria-hidden
-                className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#05070f]/95 via-[#05070f]/80 to-transparent [mask-image:linear-gradient(to_bottom,black_65%,transparent)] backdrop-blur-xl"
+                className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-background/95 via-background/80 to-transparent [mask-image:linear-gradient(to_bottom,black_65%,transparent)] backdrop-blur-xl"
             />
             <div className="pointer-events-auto relative mx-auto flex h-16 max-w-[1320px] items-center gap-2 px-3 sm:gap-4 sm:px-5">
                 <Link href="/feed" className="shrink-0 lg:w-[232px]">
@@ -281,7 +281,7 @@ function Topbar() {
                             {unreadMessages > 0 && (
                                 <span
                                     aria-hidden
-                                    className="absolute -top-0.5 -right-0.5 flex h-[18px] min-w-[18px] animate-in items-center justify-center rounded-full bg-gradient-brand px-1 text-[11px] leading-none font-bold text-white ring-2 ring-[#05070f] zoom-in-50"
+                                    className="absolute -top-0.5 -right-0.5 flex h-[18px] min-w-[18px] animate-in items-center justify-center rounded-full bg-gradient-brand px-1 text-[11px] leading-none font-bold text-white ring-2 ring-background zoom-in-50"
                                 >
                                     {unreadMessages > 99
                                         ? '99+'
@@ -361,7 +361,7 @@ function MobileNav() {
                                     className={cn(
                                         'size-5',
                                         active &&
-                                            'text-[#8fa0ff] drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]',
+                                            'text-gc-lilac-400 drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]',
                                     )}
                                 />
                                 <span className="max-w-full truncate px-0.5">
@@ -389,7 +389,7 @@ function MobileNav() {
                             className={cn(
                                 'size-5',
                                 (open || restActive) &&
-                                    'text-[#8fa0ff] drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]',
+                                    'text-gc-lilac-400 drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]',
                             )}
                         />
                         {tr('Меню')}
@@ -487,7 +487,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                                 className={cn(
                                     'relative flex aspect-[1/0.9] flex-col items-center justify-center gap-2 rounded-2xl border p-2 text-center text-[12px] leading-tight font-medium transition active:scale-[0.97]',
                                     active
-                                        ? 'nav-active border-[#8fa0ff]/30 text-white'
+                                        ? 'nav-active border-gc-lilac-400/30 text-white'
                                         : 'border-white/[0.06] bg-white/[0.03] text-white/75 active:bg-white/[0.08]',
                                 )}
                             >
@@ -501,7 +501,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                                     className={cn(
                                         'size-6',
                                         active
-                                            ? 'text-[#8fa0ff] drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]'
+                                            ? 'text-gc-lilac-400 drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]'
                                             : 'text-[#a9b4ff]',
                                     )}
                                 />
@@ -550,7 +550,7 @@ function Announcement() {
 
     return (
         <div className="gradient-border glass mb-4 flex items-start gap-3 rounded-2xl px-4 py-3 text-sm text-white/80">
-            <Megaphone className="mt-0.5 size-4 shrink-0 text-[#a58bff]" />
+            <Megaphone className="mt-0.5 size-4 shrink-0 text-gc-violet-300" />
             <p className="leading-relaxed whitespace-pre-line">
                 {site.announcement}
             </p>

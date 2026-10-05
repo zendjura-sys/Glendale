@@ -82,7 +82,7 @@ export function LanguageMenu() {
                     >
                         <span className="flex-1">{l.native}</span>
                         {l.code === locale && (
-                            <Check className="size-4 text-[#a5b4fc]" />
+                            <Check className="size-4 text-gc-lilac-200" />
                         )}
                     </DropdownMenuItem>
                 ))}

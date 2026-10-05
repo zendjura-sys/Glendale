@@ -104,7 +104,7 @@ function GamePicker({
                             </span>
                         </span>
                         {value?.id === g.id && (
-                            <Check className="size-4 text-[#a5b4fc]" />
+                            <Check className="size-4 text-gc-lilac-200" />
                         )}
                     </button>
                 ))}
@@ -155,7 +155,7 @@ export default function ClanCreate({
         <>
             <Head title={tr('Новий клан')} />
             <h1 className="mb-4 flex items-center gap-2 font-display text-2xl font-semibold text-white">
-                <Swords className="size-6 text-[#a5b4fc]" />{' '}
+                <Swords className="size-6 text-gc-lilac-200" />{' '}
                 {tr('Новий клан або гільдія')}
             </h1>
             <form
@@ -200,7 +200,7 @@ export default function ClanCreate({
                     <h2 className="mb-3 text-sm font-semibold text-white/80">
                         {tr('2. Гра')}{' '}
                         {game && (
-                            <span className="text-[#a5b4fc]">
+                            <span className="text-gc-lilac-200">
                                 — {game.name}
                             </span>
                         )}

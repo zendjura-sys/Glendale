@@ -115,7 +115,7 @@ export default function TwoFactorChallenge() {
                                 <span>{tr('або')} </span>
                                 <button
                                     type="button"
-                                    className="cursor-pointer text-[#9aa8ff] underline decoration-white/20 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+                                    className="cursor-pointer text-gc-lilac-300 underline decoration-white/20 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
                                     onClick={() =>
                                         toggleRecoveryMode(clearErrors)
                                     }

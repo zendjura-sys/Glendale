@@ -372,7 +372,7 @@ function LogList({ logs, compact }: { logs: Log[]; compact?: boolean }) {
                             href={l.proof_url}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-xs text-[#a5b4fc] hover:underline"
+                            className="text-xs text-gc-lilac-200 hover:underline"
                         >
                             {tr('скрін')}
                         </a>

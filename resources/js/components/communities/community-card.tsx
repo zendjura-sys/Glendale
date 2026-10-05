@@ -60,7 +60,7 @@ export function CommunityTile({ community }: { community: CommunityListItem }) {
                 <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/45">
                     <span className="inline-flex items-center gap-1">
                         {isPublic ? (
-                            <Megaphone className="size-3.5 text-[#a58bff]" />
+                            <Megaphone className="size-3.5 text-gc-violet-300" />
                         ) : (
                             <UsersRound className="size-3.5 text-[#6fa2ff]" />
                         )}

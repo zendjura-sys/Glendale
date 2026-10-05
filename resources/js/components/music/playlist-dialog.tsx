@@ -146,7 +146,7 @@ export function PlaylistDialog({
                             className={cn(
                                 'inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition',
                                 form.data.is_public === value
-                                    ? 'border-[#7c8cff]/60 bg-[#6d5dfc]/15 text-white'
+                                    ? 'border-gc-lilac-500/60 bg-gc-indigo/15 text-white'
                                     : 'border-white/[0.07] text-white/55 hover:border-white/15',
                             )}
                         >

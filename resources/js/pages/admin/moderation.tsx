@@ -280,7 +280,7 @@ export default function AdminModeration({
                                             { preserveScroll: true },
                                         )
                                     }
-                                    className="text-sm text-[#a5b4fc] hover:text-white"
+                                    className="text-sm text-gc-lilac-200 hover:text-white"
                                 >
                                     {tr('Зняти мут')}
                                 </button>
@@ -292,7 +292,7 @@ export default function AdminModeration({
 
             <section className="glass rounded-3xl p-4 sm:p-5">
                 <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold text-white">
-                    <MessageSquareWarning className="size-5 text-[#a5b4fc]" />
+                    <MessageSquareWarning className="size-5 text-gc-lilac-200" />
                     {tr('Автомодерація')}
                 </h2>
                 <p className="mb-4 text-sm text-white/50">

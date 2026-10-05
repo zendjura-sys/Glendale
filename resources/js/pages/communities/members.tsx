@@ -48,9 +48,9 @@ type Props = {
 };
 
 const roleStyle: Record<CommunityRole, string> = {
-    owner: 'bg-[#ffd36b]/10 text-[#ffd36b]',
-    admin: 'bg-[#4f8bff]/10 text-[#8fb4ff]',
-    editor: 'bg-[#a855f7]/10 text-[#cfa8ff]',
+    owner: 'bg-gc-gold/10 text-gc-gold',
+    admin: 'bg-gc-blue/10 text-[#8fb4ff]',
+    editor: 'bg-gc-purple/10 text-[#cfa8ff]',
     member: '',
 };
 
@@ -130,7 +130,7 @@ export default function CommunityMembers({
             <Head title={tr('Учасники — {name}', { name: community.name })} />
             <div className="space-y-5">
                 <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-6">
-                    <div className="pointer-events-none absolute -top-24 right-0 size-72 rounded-full bg-[#6d5dfc]/20 blur-3xl" />
+                    <div className="pointer-events-none absolute -top-24 right-0 size-72 rounded-full bg-gc-indigo/20 blur-3xl" />
                     <div className="relative flex items-center gap-4">
                         <Link
                             href={`/c/${community.slug}`}
@@ -341,7 +341,7 @@ export default function CommunityMembers({
                                                 ))}
                                                 {isOwner && (
                                                     <DropdownMenuItem
-                                                        className="rounded-lg text-[#ffd36b] focus:bg-[#ffd36b]/10 focus:text-[#ffe39b]"
+                                                        className="rounded-lg text-gc-gold focus:bg-gc-gold/10 focus:text-[#ffe39b]"
                                                         onSelect={() =>
                                                             setRole(
                                                                 member,
@@ -349,7 +349,7 @@ export default function CommunityMembers({
                                                             )
                                                         }
                                                     >
-                                                        <Crown className="text-[#ffd36b]" />
+                                                        <Crown className="text-gc-gold" />
                                                         {tr(
                                                             'Передати права власника',
                                                         )}

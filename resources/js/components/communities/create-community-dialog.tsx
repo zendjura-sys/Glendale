@@ -68,7 +68,7 @@ export function CreateCommunityDialog({
                             className={cn(
                                 'relative flex flex-col items-start gap-2 rounded-2xl border p-4 text-left transition',
                                 form.data.type === type.value
-                                    ? 'border-[#7c8cff]/60 bg-[#6d5dfc]/15 shadow-[0_0_30px_-10px_rgb(124_92_255/0.9)]'
+                                    ? 'border-gc-lilac-500/60 bg-gc-indigo/15 shadow-[0_0_30px_-10px_rgb(124_92_255/0.9)]'
                                     : 'border-white/[0.07] bg-white/[0.03] hover:border-white/15',
                             )}
                         >

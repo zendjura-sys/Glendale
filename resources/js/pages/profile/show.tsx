@@ -292,13 +292,13 @@ export default function ProfileShow({
                         <div className="flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-white/55">
                             {profile.city && (
                                 <span className="inline-flex items-center gap-1.5">
-                                    <MapPin className="size-4 text-[#8fa0ff]" />{' '}
+                                    <MapPin className="size-4 text-gc-lilac-400" />{' '}
                                     {profile.city}
                                 </span>
                             )}
                             {profile.birthday && (
                                 <span className="inline-flex items-center gap-1.5">
-                                    <Cake className="size-4 text-[#f04fd8]" />{' '}
+                                    <Cake className="size-4 text-gc-pink" />{' '}
                                     {formatDate(profile.birthday, false)}
                                 </span>
                             )}
@@ -309,7 +309,7 @@ export default function ProfileShow({
                                     rel="noreferrer nofollow"
                                     className="inline-flex items-center gap-1.5 hover:text-white"
                                 >
-                                    <Globe className="size-4 text-[#38e1ff]" />{' '}
+                                    <Globe className="size-4 text-gc-cyan" />{' '}
                                     {profile.website.replace(
                                         /^https?:\/\//,
                                         '',
@@ -404,7 +404,7 @@ export default function ProfileShow({
                                 href={audio.href}
                                 className="glass group flex items-center gap-3 rounded-3xl p-4 transition hover:border-white/15"
                             >
-                                <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#a855f7] to-[#4f8bff] shadow-[0_10px_30px_-10px_rgb(168_85_247/0.9)]">
+                                <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-gc-purple to-gc-blue shadow-[0_10px_30px_-10px_rgb(168_85_247/0.9)]">
                                     <Music2 className="size-5 text-white" />
                                 </span>
                                 <span className="min-w-0 flex-1">

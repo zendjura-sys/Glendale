@@ -150,7 +150,7 @@ export function TrackList({
                             className={cn(
                                 'group flex items-center gap-3 rounded-2xl p-2 pr-2.5 transition hover:bg-white/[0.045]',
                                 isCurrent &&
-                                    'bg-gradient-to-r from-[#6d5dfc]/15 to-transparent',
+                                    'bg-gradient-to-r from-gc-indigo/15 to-transparent',
                             )}
                             onDoubleClick={() => playQueue(list, index)}
                         >
@@ -233,7 +233,7 @@ export function TrackList({
                                     className={cn(
                                         'flex size-8 items-center justify-center rounded-full transition',
                                         track.in_library
-                                            ? 'text-[#8fa0ff]'
+                                            ? 'text-gc-lilac-400'
                                             : 'text-white/40 opacity-100 hover:bg-white/10 hover:text-white sm:opacity-0 sm:group-hover:opacity-100 [@media(hover:none)]:opacity-100',
                                     )}
                                     aria-label={

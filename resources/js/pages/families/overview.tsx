@@ -230,7 +230,7 @@ export default function FamilyOverview(props: Props) {
                                         key={e.id}
                                         className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3 py-2.5"
                                     >
-                                        <CalendarDays className="size-4 text-[#a5b4fc]" />
+                                        <CalendarDays className="size-4 text-gc-lilac-200" />
                                         <div className="min-w-0 flex-1">
                                             <div className="truncate text-sm font-medium text-white">
                                                 {e.title}

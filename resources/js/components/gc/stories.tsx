@@ -59,7 +59,7 @@ function Ring({
                 'inline-flex rounded-full p-[2.5px]',
                 seen
                     ? 'bg-white/15'
-                    : 'bg-gradient-to-tr from-[#4F8BFF] via-[#8B6BFF] to-[#F04FD8]',
+                    : 'bg-gradient-to-tr from-gc-blue via-gc-violet-400 to-gc-pink',
             )}
         >
             <span className="inline-flex rounded-full bg-[var(--card-solid,#0b0d1d)] p-[2px]">

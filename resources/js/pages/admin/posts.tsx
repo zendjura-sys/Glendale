@@ -202,7 +202,7 @@ export default function AdminPosts({ posts, filters }: Props) {
                                     {!p.deleted_at && (
                                         <Link
                                             href={`/posts/${p.id}`}
-                                            className="ml-auto text-[#9aa8ff] hover:underline"
+                                            className="ml-auto text-gc-lilac-300 hover:underline"
                                         >
                                             {tr('Відкрити')}
                                         </Link>

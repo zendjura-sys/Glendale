@@ -158,7 +158,7 @@ export function VoicePlayer({
                                             ? 'bg-white'
                                             : 'bg-white/40'
                                         : active
-                                          ? 'bg-[#8fa0ff]'
+                                          ? 'bg-gc-lilac-400'
                                           : 'bg-white/25',
                                 )}
                                 style={{
@@ -207,16 +207,16 @@ function fileVisual(name: string | null | undefined, mime?: string | null) {
         return { icon: FileSpreadsheet, tone: 'from-emerald-400 to-teal-500' };
     }
     if (mime?.startsWith('audio/')) {
-        return { icon: FileAudio, tone: 'from-[#f04fd8] to-[#a855f7]' };
+        return { icon: FileAudio, tone: 'from-gc-pink to-gc-purple' };
     }
     if (mime?.startsWith('video/')) {
-        return { icon: FileVideo, tone: 'from-rose-400 to-[#f04fd8]' };
+        return { icon: FileVideo, tone: 'from-rose-400 to-gc-pink' };
     }
     if (['js', 'ts', 'php', 'json', 'html', 'css', 'py', 'cs'].includes(ext)) {
-        return { icon: FileCode, tone: 'from-[#38e1ff] to-[#4f8bff]' };
+        return { icon: FileCode, tone: 'from-gc-cyan to-gc-blue' };
     }
     if (['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt', 'md'].includes(ext)) {
-        return { icon: FileText, tone: 'from-[#4f8bff] to-[#6d5dfc]' };
+        return { icon: FileText, tone: 'from-gc-blue to-gc-indigo' };
     }
 
     return { icon: FileIcon, tone: 'from-slate-400 to-slate-600' };
@@ -328,7 +328,7 @@ export function ContactAttachment({
                         'flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition',
                         own
                             ? 'bg-white/15 hover:bg-white/25'
-                            : 'bg-[#6d5dfc]/20 text-[#c7c0ff] hover:bg-[#6d5dfc]/30',
+                            : 'bg-gc-indigo/20 text-[#c7c0ff] hover:bg-gc-indigo/30',
                     )}
                 >
                     <MessageCircle className="size-3.5" /> {tr('Написати')}

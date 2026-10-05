@@ -89,7 +89,7 @@ function IconButton({
             className={cn(
                 'flex size-9 items-center justify-center rounded-full transition',
                 active
-                    ? 'text-[#8fa0ff] drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]'
+                    ? 'text-gc-lilac-400 drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]'
                     : 'text-white/60 hover:bg-white/[0.06] hover:text-white',
                 className,
             )}
@@ -257,12 +257,12 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                                 <p className="truncate text-xs text-white/50">
                                     {track.artist}
                                     {player.engine === 'embed' && (
-                                        <span className="ml-1.5 text-[#1ed760]/80">
+                                        <span className="ml-1.5 text-spotify/80">
                                             {tr('· плеєр Spotify')}
                                         </span>
                                     )}
                                     {player.engine === 'sdk' && (
-                                        <span className="ml-1.5 text-[#1ed760]/80">
+                                        <span className="ml-1.5 text-spotify/80">
                                             · Spotify Premium
                                         </span>
                                     )}

@@ -591,7 +591,7 @@ export default function AdminCinemaEdit({
                     {movie && (
                         <section className="glass rounded-3xl p-5">
                             <h2 className="mb-1 flex items-center gap-2 font-display text-base font-semibold text-white">
-                                <Tv className="size-4 text-[#8fa0ff]" />
+                                <Tv className="size-4 text-gc-lilac-400" />
                                 {tr('Плеєри')}
                                 <span className="text-sm font-normal text-white/40">
                                     {movie.sources.length}
@@ -784,7 +784,7 @@ export default function AdminCinemaEdit({
                         </ul>
                         <Link
                             href="/admin/integrations"
-                            className="mt-3 inline-block text-xs text-[#9aa8ff] hover:text-white"
+                            className="mt-3 inline-block text-xs text-gc-lilac-300 hover:text-white"
                         >
                             {tr('Налаштувати інтеграції →')}
                         </Link>

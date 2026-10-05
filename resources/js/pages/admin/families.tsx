@@ -103,7 +103,7 @@ export default function AdminFamilies({
                     label={tr('Звітів за тиждень')}
                     value={stats.reports_week}
                     icon={FileText}
-                    tone="from-[#22d3a6] to-[#38e1ff]"
+                    tone="from-gc-mint to-gc-cyan"
                     delay={120}
                 />
             </div>

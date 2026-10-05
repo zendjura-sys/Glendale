@@ -139,7 +139,7 @@ function Card({
     return (
         <section className="glass rounded-3xl p-4 sm:p-5">
             <div className="mb-3 flex items-center gap-2">
-                <Icon className="size-4 text-[#a5b4fc]" />
+                <Icon className="size-4 text-gc-lilac-200" />
                 <h2 className="flex-1 font-display text-base font-semibold text-white">
                     {title}
                 </h2>
@@ -193,7 +193,7 @@ export default function ClanShow(props: Props) {
                         {clan.display_name}
                     </h1>
                     <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/55">
-                        <span className="font-mono text-[#a5b4fc]">
+                        <span className="font-mono text-gc-lilac-200">
                             [{clan.tag}]
                         </span>
                         {clan.game && (
@@ -341,7 +341,7 @@ export default function ClanShow(props: Props) {
                                         key={e.id}
                                         className="py-1 text-sm text-white/75"
                                     >
-                                        <span className="text-[#a5b4fc]">
+                                        <span className="text-gc-lilac-200">
                                             {kyiv(e.starts_at)}
                                         </span>{' '}
                                         — {e.title} · {e.going_count}{' '}
@@ -634,7 +634,7 @@ function EventsTab({
                     className="glass flex flex-wrap items-center gap-3 rounded-3xl p-4"
                 >
                     <div className="min-w-0 flex-1">
-                        <p className="text-xs text-[#a5b4fc]">
+                        <p className="text-xs text-gc-lilac-200">
                             {kyiv(e.starts_at)}
                         </p>
                         <h3 className="font-semibold text-white">{e.title}</h3>

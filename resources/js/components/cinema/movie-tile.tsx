@@ -88,7 +88,7 @@ export function MovieTile({
             className={cn('group block min-w-0', className)}
             prefetch
         >
-            <div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/[0.08] transition duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_18px_40px_-18px_rgb(124_92_255/0.9)] group-hover:ring-[#8fa0ff]/50">
+            <div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/[0.08] transition duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_18px_40px_-18px_rgb(124_92_255/0.9)] group-hover:ring-gc-lilac-400/50">
                 <MoviePoster
                     movie={movie}
                     className="size-full transition duration-500 group-hover:scale-105"

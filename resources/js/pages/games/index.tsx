@@ -61,7 +61,7 @@ export function GameCover({
     ) : (
         <span
             className={cn(
-                'flex size-full items-center justify-center bg-gradient-to-br from-[#4F8BFF]/30 via-[#8B6BFF]/25 to-[#F04FD8]/25 font-display text-2xl font-bold text-white/80',
+                'flex size-full items-center justify-center bg-gradient-to-br from-gc-blue/30 via-gc-violet-400/25 to-gc-pink/25 font-display text-2xl font-bold text-white/80',
                 className,
             )}
         >
@@ -136,7 +136,7 @@ export default function GamesIndex({
             <div className="mb-4 flex flex-wrap items-end gap-3">
                 <div className="min-w-0 flex-1">
                     <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-white">
-                        <Gamepad2 className="size-6 text-[#a5b4fc]" />{' '}
+                        <Gamepad2 className="size-6 text-gc-lilac-200" />{' '}
                         {tr('Каталог ігор')}
                     </h1>
                     <p className="text-sm text-white/50">

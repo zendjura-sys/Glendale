@@ -286,7 +286,7 @@ export default function Profile({
                                         <Link
                                             href={send()}
                                             as="button"
-                                            className="text-[#9aa8ff] underline underline-offset-4"
+                                            className="text-gc-lilac-300 underline underline-offset-4"
                                         >
                                             {tr('Надіслати лист ще раз')}
                                         </Link>
@@ -302,7 +302,7 @@ export default function Profile({
 
                         <label className="flex cursor-pointer items-start gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 transition hover:border-white/15">
                             <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.05]">
-                                <Lock className="size-[18px] text-[#a58bff]" />
+                                <Lock className="size-[18px] text-gc-violet-300" />
                             </span>
                             <span className="flex-1">
                                 <span className="block text-sm font-semibold text-white">
@@ -327,7 +327,7 @@ export default function Profile({
 
                         <label className="flex cursor-pointer items-start gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 transition hover:border-white/15">
                             <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.05]">
-                                <Mail className="size-[18px] text-[#a58bff]" />
+                                <Mail className="size-[18px] text-gc-violet-300" />
                             </span>
                             <span className="flex-1">
                                 <span className="block text-sm font-semibold text-white">
@@ -352,7 +352,7 @@ export default function Profile({
 
                         <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4">
                             <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.05]">
-                                <MessageCircle className="size-[18px] text-[#a58bff]" />
+                                <MessageCircle className="size-[18px] text-gc-violet-300" />
                             </span>
                             <span className="min-w-[160px] flex-1">
                                 <span className="block text-sm font-semibold text-white">

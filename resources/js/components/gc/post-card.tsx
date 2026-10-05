@@ -144,7 +144,7 @@ export function PostCard({
                             aria-label={visibilityMeta[post.visibility].label}
                         />
                         {post.is_pinned && (
-                            <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-[#4f8bff]/15 px-2 py-0.5 text-xs font-medium text-[#9fb6ff]">
+                            <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-gc-blue/15 px-2 py-0.5 text-xs font-medium text-[#9fb6ff]">
                                 <Pin className="size-3" /> {tr('Закріплено')}
                             </span>
                         )}
@@ -212,7 +212,7 @@ export function PostCard({
                         <button
                             type="button"
                             onClick={() => setFullText(true)}
-                            className="ml-1 font-medium text-[#9aa8ff] hover:text-white"
+                            className="ml-1 font-medium text-gc-lilac-300 hover:text-white"
                         >
                             {tr('Показати повністю')}
                         </button>

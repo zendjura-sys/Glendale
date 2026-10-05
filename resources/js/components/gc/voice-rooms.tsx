@@ -152,7 +152,7 @@ export function VoiceRooms({
     return (
         <section className={cn('glass rounded-3xl p-4', className)}>
             <div className="mb-3 flex items-center gap-2">
-                <Volume2 className="size-4 text-[#a5b4fc]" />
+                <Volume2 className="size-4 text-gc-lilac-200" />
                 <h2 className="flex-1 font-display text-base font-semibold text-white">
                     {tr('Голосові кімнати')}
                 </h2>

@@ -23,7 +23,7 @@ export function Widget({
     return (
         <section className={cn('glass rounded-3xl p-4', className)}>
             <header className="mb-3 flex items-center gap-2 px-1">
-                {Icon && <Icon className="size-4 text-[#8fa0ff]" />}
+                {Icon && <Icon className="size-4 text-gc-lilac-400" />}
                 <h3 className="font-display text-[13px] font-semibold tracking-wide text-white/90 uppercase">
                     {title}
                 </h3>
@@ -75,7 +75,7 @@ export function EmptyState({
         <div className="glass flex flex-col items-center rounded-3xl px-6 py-14 text-center">
             <span className="relative mb-5 flex size-16 items-center justify-center rounded-2xl bg-white/[0.04] ring-1 ring-white/10">
                 <span className="absolute inset-0 rounded-2xl bg-gradient-brand opacity-20 blur-xl" />
-                <Icon className="relative size-7 text-[#9aa8ff]" />
+                <Icon className="relative size-7 text-gc-lilac-300" />
             </span>
             <h3 className="font-display text-lg font-semibold text-white">
                 {title}

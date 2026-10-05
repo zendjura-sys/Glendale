@@ -72,7 +72,7 @@ const cashoutStatus = {
 } as const;
 
 const depositStatus = {
-    active: [tr('Активний'), 'bg-[#6d5dfc]/15 text-[#c4b5fd]'],
+    active: [tr('Активний'), 'bg-gc-indigo/15 text-[#c4b5fd]'],
     matured: [tr('Виплачено'), 'bg-emerald-400/10 text-emerald-200'],
     closed: [tr('Закрито достроково'), 'bg-white/[0.05] text-white/45'],
 } as const;
@@ -365,7 +365,7 @@ function CashoutPanel({
                                     href={`${base}/bank/cashouts/${c.id}/proof`}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="text-xs text-[#a5b4fc] hover:underline"
+                                    className="text-xs text-gc-lilac-200 hover:underline"
                                 >
                                     {tr('скрін')}
                                 </a>
@@ -474,7 +474,7 @@ function DepositPanel({
                     onChange={(e) =>
                         form.setData('periods', Number(e.target.value))
                     }
-                    className="flex-1 accent-[#6d5dfc]"
+                    className="flex-1 accent-gc-indigo"
                 />
                 <span className="w-24 text-right text-sm font-semibold text-white">
                     {form.data.periods}{' '}

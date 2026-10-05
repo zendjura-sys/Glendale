@@ -411,7 +411,7 @@ export function PhotoViewer({
                                             onToggle={toggleLike}
                                         />
                                         {photo.is_cover && (
-                                            <span className="rounded-full bg-[#6d5dfc]/15 px-3 py-1.5 text-xs font-medium text-[#b3bcff]">
+                                            <span className="rounded-full bg-gc-indigo/15 px-3 py-1.5 text-xs font-medium text-[#b3bcff]">
                                                 {tr('Обкладинка альбому')}
                                             </span>
                                         )}

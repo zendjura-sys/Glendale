@@ -50,8 +50,8 @@ export default function PhotosIndex({
             <Head title={title} />
             <div className="space-y-5">
                 <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-6">
-                    <div className="pointer-events-none absolute -top-28 -right-10 size-80 rounded-full bg-[#38e1ff]/15 blur-3xl" />
-                    <div className="pointer-events-none absolute -bottom-32 left-16 size-72 rounded-full bg-[#a855f7]/20 blur-3xl" />
+                    <div className="pointer-events-none absolute -top-28 -right-10 size-80 rounded-full bg-gc-cyan/15 blur-3xl" />
+                    <div className="pointer-events-none absolute -bottom-32 left-16 size-72 rounded-full bg-gc-purple/20 blur-3xl" />
                     <div className="relative flex flex-wrap items-center gap-4">
                         <Link href={owner.href} className="shrink-0">
                             {owner.community ? (
@@ -149,7 +149,7 @@ export default function PhotosIndex({
                         {photos.data.length > 0 && (
                             <section className="glass rounded-3xl p-3 sm:p-4">
                                 <h2 className="mb-3 flex items-center gap-2 px-1 font-display text-[13px] font-semibold tracking-wide text-white/70 uppercase">
-                                    <Images className="size-4 text-[#8fa0ff]" />
+                                    <Images className="size-4 text-gc-lilac-400" />
                                     {tr('Усі фотографії')}
                                 </h2>
                                 <InfiniteScroll

@@ -124,7 +124,7 @@ export function AchievementsCard({
                 <button
                     type="button"
                     onClick={() => setAll(!all)}
-                    className="text-xs text-[#a5b4fc] hover:text-white"
+                    className="text-xs text-gc-lilac-200 hover:text-white"
                 >
                     {all ? tr('Лише отримані') : tr('Усі')}
                 </button>

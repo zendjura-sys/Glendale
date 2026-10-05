@@ -116,7 +116,7 @@ function Section({
     return (
         <section className="glass mt-4 rounded-3xl p-4 sm:p-5">
             <div className="mb-3 flex items-center gap-2">
-                <Icon className="size-4 text-[#a5b4fc]" />
+                <Icon className="size-4 text-gc-lilac-200" />
                 <h2 className="font-display text-base font-semibold text-white">
                     {title}
                 </h2>
@@ -349,13 +349,13 @@ export default function GameShow({
             {(events.length > 0 || can_add_event) && (
                 <section className="glass mt-4 rounded-3xl p-4 sm:p-5">
                     <div className="mb-3 flex items-center gap-2">
-                        <CalendarDays className="size-4 text-[#a5b4fc]" />
+                        <CalendarDays className="size-4 text-gc-lilac-200" />
                         <h2 className="flex-1 font-display text-base font-semibold text-white">
                             {tr('Події гри')}
                         </h2>
                         <Link
                             href="/events?kind=game"
-                            className="text-sm text-[#a5b4fc] hover:text-white"
+                            className="text-sm text-gc-lilac-200 hover:text-white"
                         >
                             {tr('Календар')}
                         </Link>
@@ -685,7 +685,7 @@ export default function GameShow({
             {features.clans !== false && (
                 <section className="glass mt-4 rounded-3xl p-4 sm:p-5">
                     <div className="mb-3 flex items-center gap-2">
-                        <Swords className="size-4 text-[#a5b4fc]" />
+                        <Swords className="size-4 text-gc-lilac-200" />
                         <h2 className="flex-1 font-display text-base font-semibold text-white">
                             {tr('Клани й гільдії')}
                         </h2>

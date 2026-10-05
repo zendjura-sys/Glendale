@@ -42,11 +42,11 @@ export type CinemaIntegration = {
 };
 
 const tones: Record<string, string> = {
-    kodik: 'from-[#4f8bff] to-[#6d5dfc]',
-    flixcdn: 'from-[#a855f7] to-[#f04fd8]',
-    tmdb: 'from-[#01b4e4] to-[#22d3a6]',
-    shikimori: 'from-[#5b7cfa] to-[#38e1ff]',
-    omdb: 'from-[#f5c518] to-[#f5b342]',
+    kodik: 'from-gc-blue to-gc-indigo',
+    flixcdn: 'from-gc-purple to-gc-pink',
+    tmdb: 'from-[#01b4e4] to-gc-mint',
+    shikimori: 'from-[#5b7cfa] to-gc-cyan',
+    omdb: 'from-[#f5c518] to-gc-amber',
 };
 
 function initialValues(fields: IntegrationField[]) {

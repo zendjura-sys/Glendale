@@ -34,7 +34,7 @@ export function ClanLogo({
     return (
         <span
             className={cn(
-                'flex shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-[#4F8BFF]/40 to-[#8B6BFF]/40 font-bold text-white',
+                'flex shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-gc-blue/40 to-gc-violet-400/40 font-bold text-white',
                 box,
             )}
         >
@@ -117,7 +117,7 @@ export default function ClansIndex({ mine, clans, filters, types }: Props) {
             <Head title={tr('Клани й гільдії')} />
             <div className="mb-4 flex flex-wrap items-center gap-3">
                 <h1 className="flex flex-1 items-center gap-2 font-display text-2xl font-semibold text-white">
-                    <Swords className="size-6 text-[#a5b4fc]" />{' '}
+                    <Swords className="size-6 text-gc-lilac-200" />{' '}
                     {tr('Клани й гільдії')}
                 </h1>
                 <Link

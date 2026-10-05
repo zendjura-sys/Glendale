@@ -123,7 +123,7 @@ export function NewChatDialog({
                                         key={member.id}
                                         type="button"
                                         onClick={() => pick(member)}
-                                        className="flex animate-in items-center gap-1.5 rounded-full bg-[#6d5dfc]/20 py-0.5 pr-2 pl-0.5 text-xs text-white zoom-in-90 hover:bg-[#6d5dfc]/30"
+                                        className="flex animate-in items-center gap-1.5 rounded-full bg-gc-indigo/20 py-0.5 pr-2 pl-0.5 text-xs text-white zoom-in-90 hover:bg-gc-indigo/30"
                                     >
                                         <UserAvatar
                                             user={member}

@@ -807,7 +807,7 @@ export function ChatView({
                     {messages.length === 0 && (
                         <div className="flex h-full flex-col items-center justify-center px-6 text-center">
                             <div className="relative mb-5">
-                                <div className="absolute inset-0 rounded-full bg-[#6d5dfc]/40 blur-2xl" />
+                                <div className="absolute inset-0 rounded-full bg-gc-indigo/40 blur-2xl" />
                                 <ConversationAvatar
                                     conversation={active}
                                     size="lg"
@@ -835,7 +835,7 @@ export function ChatView({
                                     }
                                     className="glass mt-5 inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-medium text-white transition hover:border-white/20"
                                 >
-                                    <Sparkles className="size-4 text-[#ffd36b]" />
+                                    <Sparkles className="size-4 text-gc-gold" />
                                     {tr('Надіслати 👋')}
                                 </button>
                             )}

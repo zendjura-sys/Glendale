@@ -232,7 +232,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                 )}
                             </div>
                             <div className="min-w-0 flex-1 text-center sm:text-left">
-                                <p className="text-xs font-semibold tracking-wider text-[#a5b4fc] uppercase">
+                                <p className="text-xs font-semibold tracking-wider text-gc-lilac-200 uppercase">
                                     {tr('Слухаємо разом')}
                                     {party.ended && tr(' · завершено')}
                                 </p>
@@ -346,7 +346,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
 
                     <section className="glass rounded-3xl p-4 sm:p-5">
                         <div className="mb-3 flex items-center gap-2">
-                            <ListMusic className="size-4 text-[#a5b4fc]" />
+                            <ListMusic className="size-4 text-gc-lilac-200" />
                             <h2 className="flex-1 font-display text-base font-semibold text-white">
                                 {tr('Черга')}
                             </h2>
@@ -465,7 +465,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                 <aside className="space-y-4">
                     <section className="glass rounded-3xl p-4">
                         <div className="mb-3 flex items-center gap-2">
-                            <Users className="size-4 text-[#a5b4fc]" />
+                            <Users className="size-4 text-gc-lilac-200" />
                             <h2 className="flex-1 font-display text-base font-semibold text-white">
                                 {tr('Слухають (')}
                                 {party.members.length})

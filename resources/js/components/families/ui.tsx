@@ -52,7 +52,9 @@ export function Panel({
                 >
                     {title && (
                         <h2 className="flex min-w-0 flex-1 items-center gap-2 font-display text-base font-semibold text-white">
-                            {Icon && <Icon className="size-4 text-[#a5b4fc]" />}
+                            {Icon && (
+                                <Icon className="size-4 text-gc-lilac-200" />
+                            )}
                             {title}
                         </h2>
                     )}

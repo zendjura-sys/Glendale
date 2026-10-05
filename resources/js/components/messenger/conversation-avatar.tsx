@@ -58,7 +58,7 @@ export function ConversationAvatar({
                     className="size-full object-cover"
                 />
             ) : (
-                <span className="flex size-full items-center justify-center bg-gradient-to-br from-[#4f8bff] via-[#6d5dfc] to-[#a855f7]">
+                <span className="flex size-full items-center justify-center bg-gradient-to-br from-gc-blue via-gc-indigo to-gc-purple">
                     <UsersRound
                         className={cn(
                             'text-white',

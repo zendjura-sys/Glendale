@@ -52,7 +52,7 @@ function Section({
         <section className="glass grid grid-cols-1 gap-6 rounded-3xl p-6 md:grid-cols-[260px_1fr]">
             <div>
                 <span className="mb-3 flex size-10 items-center justify-center rounded-xl bg-white/[0.05] ring-1 ring-white/10">
-                    <Icon className="size-[18px] text-[#9aa8ff]" />
+                    <Icon className="size-[18px] text-gc-lilac-300" />
                 </span>
                 <h2 className="font-semibold text-white">{title}</h2>
                 <p className="mt-1 text-[13px] leading-relaxed text-white/45">

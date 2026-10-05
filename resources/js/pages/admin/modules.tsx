@@ -75,7 +75,7 @@ export default function AdminModules({ modules }: { modules: ModuleItem[] }) {
                                     key={m.key}
                                     className={cn(
                                         'glass group relative animate-rise overflow-hidden rounded-3xl p-5 transition',
-                                        m.enabled && 'border-[#6d5dfc]/25',
+                                        m.enabled && 'border-gc-indigo/25',
                                         !m.available && 'opacity-65',
                                     )}
                                     style={{ animationDelay: `${i * 50}ms` }}

@@ -75,7 +75,7 @@ export default function ServerShow({
                                 <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-white/65">
                                     {server.platform_label}
                                 </span>
-                                <span className="rounded-full bg-[#6d5dfc]/15 px-2 py-0.5 text-[#b9b0ff]">
+                                <span className="rounded-full bg-gc-indigo/15 px-2 py-0.5 text-[#b9b0ff]">
                                     {server.multiplayer_label}
                                 </span>
                                 <span className="rounded-full bg-[#facc15]/10 px-2 py-0.5 text-[#fde68a]">
@@ -116,7 +116,7 @@ export default function ServerShow({
                             )}
                             {server.discord_members !== null && (
                                 <div className="flex items-center gap-2 text-xs text-white/55">
-                                    <MessageCircle className="size-3.5 text-[#8fa0ff]" />
+                                    <MessageCircle className="size-3.5 text-gc-lilac-400" />
                                     {server.discord_members.toLocaleString(
                                         LOCALE,
                                     )}{' '}
@@ -148,7 +148,7 @@ export default function ServerShow({
                 <PlayingNow users={playing_now} count={playing_count} />
                 <section className="glass rounded-3xl p-5">
                     <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
-                        <CalendarDays className="size-5 text-[#a5b4fc]" />{' '}
+                        <CalendarDays className="size-5 text-gc-lilac-200" />{' '}
                         {tr('Події сервера')}
                     </h2>
                     {events.length === 0 ? (
@@ -176,7 +176,7 @@ export default function ServerShow({
                                     href={discord_events.invite}
                                     target="_blank"
                                     rel="noreferrer noopener"
-                                    className="text-[#a5b4fc] hover:text-white"
+                                    className="text-gc-lilac-200 hover:text-white"
                                 >
                                     {tr('бота GameCon')}
                                 </a>{' '}
@@ -251,7 +251,7 @@ export default function ServerShow({
                                     <FamilyLogo family={family} />
                                     <div className="min-w-0 flex-1">
                                         <div className="truncate font-semibold text-white">
-                                            <span className="text-[#a5b4fc]">
+                                            <span className="text-gc-lilac-200">
                                                 [{family.tag}]
                                             </span>{' '}
                                             {family.name}

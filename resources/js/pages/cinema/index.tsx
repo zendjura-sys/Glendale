@@ -90,7 +90,7 @@ function Hero({ items }: { items: MovieFeatured[] }) {
 
     return (
         <section
-            className="relative isolate overflow-hidden rounded-3xl border border-white/[0.08] bg-[#070914]"
+            className="relative isolate overflow-hidden rounded-3xl border border-white/[0.08] bg-gc-ink"
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}
         >
@@ -117,8 +117,8 @@ function Hero({ items }: { items: MovieFeatured[] }) {
                     )}
                 </div>
             ))}
-            <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#070914] via-[#070914]/80 to-transparent" />
-            <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#070914] via-transparent to-[#070914]/30" />
+            <div className="absolute inset-0 -z-10 bg-gradient-to-r from-gc-ink via-gc-ink/80 to-transparent" />
+            <div className="absolute inset-0 -z-10 bg-gradient-to-t from-gc-ink via-transparent to-gc-ink/30" />
 
             <div className="flex min-h-[340px] items-end gap-6 p-5 sm:min-h-[420px] sm:p-8">
                 <div
@@ -126,7 +126,7 @@ function Hero({ items }: { items: MovieFeatured[] }) {
                     className="max-w-xl min-w-0 flex-1 animate-rise"
                 >
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-2.5 py-1 text-xs font-semibold tracking-wider text-white/70 uppercase backdrop-blur">
-                        <Sparkles className="size-3.5 text-[#f5b342]" />
+                        <Sparkles className="size-3.5 text-gc-amber" />
                         {tr('Рекомендуємо')}
                     </span>
                     <h1 className="mt-3 font-display text-3xl leading-[1.05] font-bold text-white drop-shadow-lg sm:text-5xl">
@@ -275,11 +275,11 @@ export default function CinemaIndex({
                     <Hero items={featured} />
                 ) : (
                     <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-7">
-                        <div className="pointer-events-none absolute -top-24 -right-16 size-80 rounded-full bg-[#6d5dfc]/25 blur-3xl" />
-                        <div className="pointer-events-none absolute -bottom-36 left-10 size-80 rounded-full bg-[#f04fd8]/15 blur-3xl" />
+                        <div className="pointer-events-none absolute -top-24 -right-16 size-80 rounded-full bg-gc-indigo/25 blur-3xl" />
+                        <div className="pointer-events-none absolute -bottom-36 left-10 size-80 rounded-full bg-gc-pink/15 blur-3xl" />
                         <div className="relative">
                             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs font-semibold tracking-wider text-white/60 uppercase">
-                                <Clapperboard className="size-3.5 text-[#8fa0ff]" />
+                                <Clapperboard className="size-3.5 text-gc-lilac-400" />
                                 {tr('Кіно GameCon')}
                             </span>
                             <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
@@ -335,7 +335,7 @@ export default function CinemaIndex({
                             href="/cinema/my"
                             className="glass inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 transition hover:text-white"
                         >
-                            <Bookmark className="size-4 text-[#8fa0ff]" />
+                            <Bookmark className="size-4 text-gc-lilac-400" />
                             {tr('Мої списки')}
                             {myCounts.all > 0 && (
                                 <span className="rounded-full bg-white/10 px-1.5 text-[11px]">
@@ -444,7 +444,7 @@ export default function CinemaIndex({
                             title={
                                 row.key === 'continue' ? (
                                     <span className="inline-flex items-center gap-2">
-                                        <Play className="size-4 fill-[#8fa0ff] text-[#8fa0ff]" />
+                                        <Play className="size-4 fill-gc-lilac-400 text-gc-lilac-400" />
                                         {row.title}
                                     </span>
                                 ) : (
@@ -455,7 +455,7 @@ export default function CinemaIndex({
                                 row.key === 'continue' ? (
                                     <Link
                                         href="/cinema/my?status=watching"
-                                        className="text-xs font-medium text-[#9aa8ff] hover:text-white"
+                                        className="text-xs font-medium text-gc-lilac-300 hover:text-white"
                                     >
                                         {tr('Усі')}
                                     </Link>

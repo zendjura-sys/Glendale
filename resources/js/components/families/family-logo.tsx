@@ -9,9 +9,9 @@ const sizes = {
 
 const tones = [
     'from-[#facc15] via-[#f59e0b] to-[#ef4444]',
-    'from-[#4f8bff] via-[#6d5dfc] to-[#a855f7]',
-    'from-[#22d3a6] via-[#38e1ff] to-[#4f8bff]',
-    'from-[#f04fd8] via-[#a855f7] to-[#6d5dfc]',
+    'from-gc-blue via-gc-indigo to-gc-purple',
+    'from-gc-mint via-gc-cyan to-gc-blue',
+    'from-gc-pink via-gc-purple to-gc-indigo',
 ];
 
 export function FamilyLogo({

@@ -104,14 +104,14 @@ export default function AdminPhotos({ photos, filters, stats }: Props) {
                     label={tr('Альбомів')}
                     value={compactNumber(stats.albums)}
                     icon={FolderOpen}
-                    tone="from-[#22d3a6] to-[#38e1ff]"
+                    tone="from-gc-mint to-gc-cyan"
                     delay={60}
                 />
                 <StatCard
                     label={tr('Займають на диску')}
                     value={formatBytes(stats.size)}
                     icon={HardDrive}
-                    tone="from-[#f04fd8] to-[#a855f7]"
+                    tone="from-gc-pink to-gc-purple"
                     delay={120}
                 />
             </div>

@@ -335,7 +335,7 @@ export default function AdminCinemaImport({ providers }: Props) {
                                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                                         {(c.rating_imdb ??
                                             c.rating_shikimori) && (
-                                            <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-[#f5b342]">
+                                            <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-gc-amber">
                                                 <Star className="size-3 fill-current" />
                                                 {(
                                                     c.rating_imdb ??
@@ -372,7 +372,7 @@ export default function AdminCinemaImport({ providers }: Props) {
                                                 </span>
                                                 <Link
                                                     href={`/admin/cinema/${c.imported.id}/edit`}
-                                                    className="ml-auto text-xs text-[#9aa8ff] hover:text-white"
+                                                    className="ml-auto text-xs text-gc-lilac-300 hover:text-white"
                                                 >
                                                     {tr('Редагувати')}
                                                 </Link>

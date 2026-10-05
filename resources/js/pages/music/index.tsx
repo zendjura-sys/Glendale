@@ -88,15 +88,15 @@ export default function MusicIndex({
             <Head title={tr('Музика')} />
             <div className="space-y-5">
                 <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-7">
-                    <div className="pointer-events-none absolute -top-24 -right-16 size-80 rounded-full bg-[#a855f7]/25 blur-3xl" />
-                    <div className="pointer-events-none absolute -bottom-36 left-10 size-80 rounded-full bg-[#38e1ff]/15 blur-3xl" />
+                    <div className="pointer-events-none absolute -top-24 -right-16 size-80 rounded-full bg-gc-purple/25 blur-3xl" />
+                    <div className="pointer-events-none absolute -bottom-36 left-10 size-80 rounded-full bg-gc-cyan/15 blur-3xl" />
                     <div className="pointer-events-none absolute top-6 right-8 hidden opacity-[0.07] sm:block">
                         <Disc3 className="size-48 animate-[spin_18s_linear_infinite] text-white" />
                     </div>
                     <div className="relative flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-end">
                         <div className="min-w-0 flex-1">
                             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs font-semibold tracking-wider text-white/60 uppercase">
-                                <Music2 className="size-3.5 text-[#8fa0ff]" />
+                                <Music2 className="size-3.5 text-gc-lilac-400" />
                                 {tr('Музика GameCon')}
                             </span>
                             <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
@@ -316,7 +316,7 @@ export default function MusicIndex({
                                 <button
                                     type="button"
                                     onClick={() => setCreating(true)}
-                                    className="flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 text-sm font-medium text-white/50 transition hover:border-[#8fa0ff]/50 hover:text-white"
+                                    className="flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 text-sm font-medium text-white/50 transition hover:border-gc-lilac-400/50 hover:text-white"
                                 >
                                     <ListPlus className="size-7" />
                                     {tr('Новий плейлист')}

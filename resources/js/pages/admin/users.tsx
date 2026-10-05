@@ -302,7 +302,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                                             {ROLE_LABELS[r] ??
                                                                 r}
                                                             {u.role === r && (
-                                                                <Check className="ml-auto size-4 text-[#8fa0ff]" />
+                                                                <Check className="ml-auto size-4 text-gc-lilac-400" />
                                                             )}
                                                         </DropdownMenuItem>
                                                     ))}

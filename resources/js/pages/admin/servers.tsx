@@ -231,7 +231,7 @@ export default function AdminServers({
                     label={tr('Онлайн у вибірці')}
                     value={online.toLocaleString(LOCALE)}
                     icon={UsersRound}
-                    tone="from-[#22d3a6] to-[#38e1ff]"
+                    tone="from-gc-mint to-gc-cyan"
                     delay={120}
                 />
             </div>

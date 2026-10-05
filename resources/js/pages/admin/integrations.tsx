@@ -74,8 +74,8 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                     icon={PlugZap}
                     tone={
                         spotify.configured
-                            ? 'from-[#1ed760] to-[#38e1ff]'
-                            : 'from-[#ff7a59] to-[#f04fd8]'
+                            ? 'from-spotify to-gc-cyan'
+                            : 'from-gc-coral to-gc-pink'
                     }
                 />
                 <StatCard
@@ -88,15 +88,15 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                     label={tr('З Premium')}
                     value={String(spotify.premium)}
                     icon={ShieldCheck}
-                    tone="from-[#f04fd8] to-[#a855f7]"
+                    tone="from-gc-pink to-gc-purple"
                     delay={120}
                 />
             </div>
 
             <section className="glass relative overflow-hidden rounded-3xl p-6">
-                <div className="pointer-events-none absolute -top-24 -right-20 size-80 rounded-full bg-[#1ed760]/10 blur-3xl" />
+                <div className="pointer-events-none absolute -top-24 -right-20 size-80 rounded-full bg-spotify/10 blur-3xl" />
                 <header className="relative mb-6 flex flex-wrap items-center gap-4">
-                    <span className="flex size-12 items-center justify-center rounded-2xl bg-[#1ed760]/10 ring-1 ring-[#1ed760]/30">
+                    <span className="flex size-12 items-center justify-center rounded-2xl bg-spotify/10 ring-1 ring-spotify/30">
                         <SpotifyLogo className="size-7" />
                     </span>
                     <div className="min-w-0 flex-1">

@@ -36,7 +36,7 @@ const FEATURES = [
         text: tr(
             'Пости друзів і цікаве від спільноти — з фото, реакціями й обговореннями.',
         ),
-        tone: 'from-[#4f8bff] to-[#6d5dfc]',
+        tone: 'from-gc-blue to-gc-indigo',
     },
     {
         icon: UsersRound,
@@ -44,34 +44,34 @@ const FEATURES = [
         text: tr(
             'Заявки, спільні друзі, рекомендації — як ти звик, тільки красивіше.',
         ),
-        tone: 'from-[#6d5dfc] to-[#a855f7]',
+        tone: 'from-gc-indigo to-gc-purple',
     },
     {
         icon: MessageCircle,
         title: tr('Повідомлення'),
         text: tr('Миттєві чати, голосові та групові розмови.'),
-        tone: 'from-[#38e1ff] to-[#4f8bff]',
+        tone: 'from-gc-cyan to-gc-blue',
         soon: true,
     },
     {
         icon: Gamepad2,
         title: tr('Ігри та клани'),
         text: tr('Збирай команду, турніри, рейтинги та ігрові профілі.'),
-        tone: 'from-[#a855f7] to-[#f04fd8]',
+        tone: 'from-gc-purple to-gc-pink',
         soon: true,
     },
     {
         icon: Clapperboard,
         title: tr('Кінопортал'),
         text: tr('Тисячі фільмів і серіалів — дивись і обговорюй з друзями.'),
-        tone: 'from-[#f04fd8] to-[#ff8a5c]',
+        tone: 'from-gc-pink to-[#ff8a5c]',
         soon: true,
     },
     {
         icon: ShieldCheck,
         title: tr('Приватність'),
         text: tr('Закритий профіль, видимість постів, 2FA та ключі доступу.'),
-        tone: 'from-[#22d3a6] to-[#38e1ff]',
+        tone: 'from-gc-mint to-gc-cyan',
     },
 ];
 
@@ -82,7 +82,7 @@ function MockPost() {
                 <img
                     src="https://randomuser.me/api/portraits/women/44.jpg"
                     alt=""
-                    className="size-10 rounded-full object-cover ring-2 ring-[#6d5dfc]/60"
+                    className="size-10 rounded-full object-cover ring-2 ring-gc-indigo/60"
                 />
                 <div className="leading-tight">
                     <div className="text-sm font-semibold text-white">
@@ -181,7 +181,7 @@ export default function Welcome({
             <Head title={tr('Соціальна мережа для геймерів і кіноманів')} />
             <Aurora intense />
 
-            <header className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.05] bg-[#05070f]/50 backdrop-blur-2xl">
+            <header className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.05] bg-background/50 backdrop-blur-2xl">
                 <div className="mx-auto flex h-16 max-w-[1240px] items-center gap-4 px-5">
                     <Logo />
                     <nav className="ml-auto flex items-center gap-2">
@@ -207,7 +207,7 @@ export default function Welcome({
                 <section className="mx-auto grid max-w-[1240px] grid-cols-1 items-center gap-14 px-5 pt-32 pb-20 lg:grid-cols-[1.05fr_1fr] lg:pt-40">
                     <div className="animate-rise">
                         <span className="glass inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium text-white/75">
-                            <Sparkles className="size-3.5 text-[#a58bff]" />
+                            <Sparkles className="size-3.5 text-gc-violet-300" />
                             {tagline || tr('Соціальна мережа нового покоління')}
                         </span>
                         <h1 className="mt-6 font-display text-[clamp(2.6rem,6vw,5rem)] leading-[1.02] font-extrabold tracking-tight text-white">
@@ -250,7 +250,7 @@ export default function Welcome({
                                         user={m}
                                         size="sm"
                                         showOnline={false}
-                                        className="rounded-full border-2 border-[#05070f]"
+                                        className="rounded-full border-2 border-background"
                                     />
                                 ))}
                             </div>

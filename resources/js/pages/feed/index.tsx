@@ -79,7 +79,7 @@ function FeedTabs({
                     <item.icon
                         className={cn(
                             'size-4',
-                            tab === item.key && 'text-[#8fa0ff]',
+                            tab === item.key && 'text-gc-lilac-400',
                         )}
                     />
                     {item.label}
@@ -212,7 +212,7 @@ export default function Feed({
                                         {tr('Ви вже знайомі з усіма.')}{' '}
                                         <Link
                                             href="/people"
-                                            className="text-[#9aa8ff] hover:underline"
+                                            className="text-gc-lilac-300 hover:underline"
                                         >
                                             {tr('Шукати людей')}
                                         </Link>

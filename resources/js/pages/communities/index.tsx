@@ -77,8 +77,8 @@ export default function Communities({
             <Head title={tr('Спільноти')} />
             <div className="space-y-5">
                 <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-6">
-                    <div className="pointer-events-none absolute -top-28 -right-10 size-80 rounded-full bg-[#a855f7]/25 blur-3xl" />
-                    <div className="pointer-events-none absolute -bottom-32 left-10 size-72 rounded-full bg-[#4f8bff]/15 blur-3xl" />
+                    <div className="pointer-events-none absolute -top-28 -right-10 size-80 rounded-full bg-gc-purple/25 blur-3xl" />
+                    <div className="pointer-events-none absolute -bottom-32 left-10 size-72 rounded-full bg-gc-blue/15 blur-3xl" />
                     <div className="relative flex flex-wrap items-start justify-between gap-4">
                         <div>
                             <h1 className="font-display text-2xl font-bold text-white">

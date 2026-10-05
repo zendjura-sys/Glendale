@@ -84,7 +84,7 @@ export function ContactPicker({
                                 onClick={() => onPick(user)}
                                 className={cn(
                                     'flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-white/[0.05]',
-                                    isSelected && 'bg-[#6d5dfc]/10',
+                                    isSelected && 'bg-gc-indigo/10',
                                 )}
                             >
                                 <UserAvatar

@@ -219,11 +219,11 @@ export function UploadTracksDialog({
                     className={cn(
                         'mt-4 flex flex-col items-center rounded-2xl border-2 border-dashed px-4 py-6 text-center transition sm:mt-5 sm:px-6 sm:py-7',
                         dragging
-                            ? 'border-[#7c8cff] bg-[#6d5dfc]/10'
+                            ? 'border-gc-lilac-500 bg-gc-indigo/10'
                             : 'border-white/10 hover:border-white/25',
                     )}
                 >
-                    <UploadCloud className="size-9 text-[#9aa8ff]" />
+                    <UploadCloud className="size-9 text-gc-lilac-300" />
                     <span className="mt-2 text-sm font-semibold">
                         {tr('Перетягніть аудіофайли або натисніть')}
                     </span>
@@ -259,7 +259,7 @@ export function UploadTracksDialog({
                             >
                                 {item.status === 'uploading' && (
                                     <span
-                                        className="absolute inset-y-0 left-0 bg-[#6d5dfc]/15 transition-[width]"
+                                        className="absolute inset-y-0 left-0 bg-gc-indigo/15 transition-[width]"
                                         style={{ width: `${item.progress}%` }}
                                     />
                                 )}
@@ -309,7 +309,7 @@ export function UploadTracksDialog({
                                             </div>
                                             <span className="flex size-10 shrink-0 items-center justify-center">
                                                 {item.status === 'uploading' ? (
-                                                    <Loader2 className="size-5 animate-spin text-[#9aa8ff]" />
+                                                    <Loader2 className="size-5 animate-spin text-gc-lilac-300" />
                                                 ) : item.status === 'done' ? (
                                                     <CheckCircle2 className="size-5 text-emerald-400" />
                                                 ) : item.status === 'error' ? (

@@ -73,7 +73,7 @@ export default function PlaylistShow({ playlist, tracks, can }: Props) {
                             className="pointer-events-none absolute inset-0 size-full scale-125 object-cover opacity-25 blur-3xl"
                         />
                     )}
-                    <div className="pointer-events-none absolute -top-24 -right-10 size-72 rounded-full bg-[#a855f7]/25 blur-3xl" />
+                    <div className="pointer-events-none absolute -top-24 -right-10 size-72 rounded-full bg-gc-purple/25 blur-3xl" />
                     <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end">
                         <PlaylistCover
                             playlist={playlist}

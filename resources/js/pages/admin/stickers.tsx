@@ -65,14 +65,14 @@ export default function AdminStickers({ packs, stats, limits }: Props) {
                     label={tr('Стікерів')}
                     value={stats.stickers}
                     icon={StickerIcon}
-                    tone="from-[#f04fd8] to-[#a855f7]"
+                    tone="from-gc-pink to-gc-purple"
                     delay={60}
                 />
                 <StatCard
                     label={tr('Надіслано в чатах')}
                     value={stats.sent}
                     icon={Send}
-                    tone="from-[#22d3a6] to-[#38e1ff]"
+                    tone="from-gc-mint to-gc-cyan"
                     delay={120}
                 />
             </div>

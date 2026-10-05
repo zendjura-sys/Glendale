@@ -132,7 +132,7 @@ export default function PhotoAlbum({
                             className="absolute inset-0 size-full scale-110 object-cover opacity-25 blur-2xl"
                         />
                     )}
-                    <div className="pointer-events-none absolute -top-28 -right-10 size-80 rounded-full bg-[#a855f7]/20 blur-3xl" />
+                    <div className="pointer-events-none absolute -top-28 -right-10 size-80 rounded-full bg-gc-purple/20 blur-3xl" />
                     <div className="relative flex flex-wrap items-end gap-4 p-5 sm:p-6">
                         <div className="min-w-0 flex-1">
                             <Link
@@ -241,11 +241,11 @@ export default function PhotoAlbum({
                             className={cn(
                                 'glass flex w-full flex-col items-center rounded-3xl border-2 border-dashed px-6 py-16 text-center transition',
                                 dragging
-                                    ? 'border-[#7c8cff] bg-[#6d5dfc]/10'
+                                    ? 'border-gc-lilac-500 bg-gc-indigo/10'
                                     : 'border-white/10 hover:border-white/25',
                             )}
                         >
-                            <UploadCloud className="size-12 text-[#9aa8ff]" />
+                            <UploadCloud className="size-12 text-gc-lilac-300" />
                             <span className="mt-4 font-display text-lg font-semibold text-white">
                                 {tr('Перетягніть фото сюди')}
                             </span>
@@ -283,8 +283,8 @@ export default function PhotoAlbum({
 
             {dragging && can.upload && (
                 <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-[#05061a]/70 backdrop-blur-sm">
-                    <div className="flex flex-col items-center rounded-3xl border-2 border-dashed border-[#7c8cff] bg-[#6d5dfc]/10 px-16 py-12 text-center">
-                        <UploadCloud className="size-14 animate-bounce text-[#9aa8ff]" />
+                    <div className="flex flex-col items-center rounded-3xl border-2 border-dashed border-gc-lilac-500 bg-gc-indigo/10 px-16 py-12 text-center">
+                        <UploadCloud className="size-14 animate-bounce text-gc-lilac-300" />
                         <p className="mt-4 font-display text-xl font-semibold text-white">
                             {tr('Відпустіть, щоб завантажити в «')}
                             {album.title}»

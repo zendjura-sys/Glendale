@@ -151,7 +151,7 @@ export default function FamilyRating(props: Props) {
                                             key={row.id}
                                             className={cn(
                                                 row.id === me.id &&
-                                                    'bg-[#6d5dfc]/10',
+                                                    'bg-gc-indigo/10',
                                             )}
                                         >
                                             <td className="px-4 py-2.5 text-white/45">

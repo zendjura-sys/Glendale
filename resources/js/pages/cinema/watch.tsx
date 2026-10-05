@@ -361,7 +361,7 @@ export default function WatchParty({
                 </Link>
                 <div className="min-w-0 flex-1">
                     <h1 className="flex items-center gap-2 truncate font-display text-lg font-semibold text-white">
-                        <Popcorn className="size-5 shrink-0 text-[#a5b4fc]" />
+                        <Popcorn className="size-5 shrink-0 text-gc-lilac-200" />
                         <span className="truncate">{movie.title}</span>
                     </h1>
                     <p className="truncate text-xs text-white/50">
@@ -395,7 +395,7 @@ export default function WatchParty({
                     {tr('Спільний перегляд завершено. Фільм можна додивитися')}{' '}
                     <Link
                         href={movie.href}
-                        className="text-[#a5b4fc] hover:underline"
+                        className="text-gc-lilac-200 hover:underline"
                     >
                         {tr('на його сторінці')}
                     </Link>
@@ -541,7 +541,7 @@ export default function WatchParty({
                 <aside className="flex w-full shrink-0 flex-col gap-3 xl:w-[340px]">
                     <section className="glass rounded-3xl p-4">
                         <div className="mb-3 flex items-center gap-2">
-                            <Users className="size-4 text-[#a5b4fc]" />
+                            <Users className="size-4 text-gc-lilac-200" />
                             <h2 className="flex-1 text-sm font-semibold text-white">
                                 {tr('Дивляться (')}
                                 {party.members.length})
@@ -603,7 +603,7 @@ export default function WatchParty({
 
                     <section className="glass flex min-h-[320px] flex-1 flex-col rounded-3xl p-4 xl:max-h-[calc(100dvh-260px)]">
                         <div className="mb-2 flex items-center gap-2">
-                            <MessageCircle className="size-4 text-[#a5b4fc]" />
+                            <MessageCircle className="size-4 text-gc-lilac-200" />
                             <h2 className="text-sm font-semibold text-white">
                                 {tr('Чат перегляду')}
                             </h2>

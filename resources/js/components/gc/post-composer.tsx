@@ -136,7 +136,7 @@ export function PostComposer({
             className={cn(
                 'glass relative overflow-clip rounded-3xl p-4 transition sm:p-5',
                 expanded &&
-                    'border-[#7c8cff]/30 shadow-[0_0_0_1px_rgb(124_140_255/0.15),0_30px_60px_-30px_rgb(109_93_252/0.6)]',
+                    'border-gc-lilac-500/30 shadow-[0_0_0_1px_rgb(124_140_255/0.15),0_30px_60px_-30px_rgb(109_93_252/0.6)]',
                 className,
             )}
             onDragOver={(event) => event.preventDefault()}
@@ -145,7 +145,7 @@ export function PostComposer({
                 addFiles(event.dataTransfer.files);
             }}
         >
-            <div className="pointer-events-none absolute -top-24 -right-24 size-56 rounded-full bg-[#6d5dfc]/20 blur-3xl" />
+            <div className="pointer-events-none absolute -top-24 -right-24 size-56 rounded-full bg-gc-indigo/20 blur-3xl" />
             <div className="relative flex gap-3">
                 {asCommunity && community ? (
                     <CommunityAvatar community={community} size="md" />
@@ -297,11 +297,11 @@ export function PostComposer({
                             className={cn(
                                 'inline-flex h-9 items-center gap-2 rounded-xl px-3 text-xs font-medium transition',
                                 form.data.as_community
-                                    ? 'bg-[#6d5dfc]/20 text-white'
+                                    ? 'bg-gc-indigo/20 text-white'
                                     : 'text-white/50 hover:bg-white/[0.06] hover:text-white',
                             )}
                         >
-                            <Megaphone className="size-4 text-[#a58bff]" />
+                            <Megaphone className="size-4 text-gc-violet-300" />
                             {tr('Від імені спільноти')}
                         </button>
                     )}

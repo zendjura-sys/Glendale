@@ -198,7 +198,7 @@ export function QuickSearch({ className }: { className?: string }) {
                     <Link
                         href={`/people?q=${encodeURIComponent(query.trim())}`}
                         onClick={() => setOpen(false)}
-                        className="mt-1 block rounded-xl border-t border-white/5 px-3 py-2.5 text-center text-xs font-medium text-[#9aa8ff] hover:bg-white/5"
+                        className="mt-1 block rounded-xl border-t border-white/5 px-3 py-2.5 text-center text-xs font-medium text-gc-lilac-300 hover:bg-white/5"
                     >
                         {tr('Показати всі результати')}
                     </Link>

@@ -129,21 +129,21 @@ export default function AdminMusic({ tracks, filters, stats }: Props) {
                     label={tr('Прослуховувань')}
                     value={compactNumber(stats.plays)}
                     icon={Headphones}
-                    tone="from-[#22d3a6] to-[#38e1ff]"
+                    tone="from-gc-mint to-gc-cyan"
                     delay={60}
                 />
                 <StatCard
                     label={tr('Плейлистів')}
                     value={compactNumber(stats.playlists)}
                     icon={ListMusic}
-                    tone="from-[#f5b342] to-[#f04fd8]"
+                    tone="from-gc-amber to-gc-pink"
                     delay={120}
                 />
                 <StatCard
                     label={tr('Spotify-акаунтів')}
                     value={compactNumber(stats.spotify)}
                     icon={Headphones}
-                    tone="from-[#1ed760] to-[#22d3a6]"
+                    tone="from-spotify to-gc-mint"
                     delay={180}
                     hint={
                         <Link
@@ -158,7 +158,7 @@ export default function AdminMusic({ tracks, filters, stats }: Props) {
                     label={tr('Займають на диску')}
                     value={formatBytes(stats.size)}
                     icon={HardDrive}
-                    tone="from-[#f04fd8] to-[#a855f7]"
+                    tone="from-gc-pink to-gc-purple"
                     delay={240}
                 />
             </div>

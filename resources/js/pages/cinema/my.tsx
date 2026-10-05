@@ -31,7 +31,7 @@ export default function CinemaMy({ status, movies, statuses, counts }: Props) {
             <Head title={tr('Мої фільми')} />
             <div className="space-y-5">
                 <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-7">
-                    <div className="pointer-events-none absolute -top-24 -right-16 size-80 rounded-full bg-[#6d5dfc]/25 blur-3xl" />
+                    <div className="pointer-events-none absolute -top-24 -right-16 size-80 rounded-full bg-gc-indigo/25 blur-3xl" />
                     <Link
                         href="/cinema"
                         className="relative inline-flex items-center gap-1.5 text-xs font-medium text-white/55 hover:text-white"
@@ -110,7 +110,7 @@ export default function CinemaMy({ status, movies, statuses, counts }: Props) {
                                                     </span>
                                                 )}
                                                 {movie.my_rating && (
-                                                    <span className="ml-auto inline-flex items-center gap-0.5 rounded-md bg-[#f5b342] px-1.5 py-0.5 text-xs font-bold text-black">
+                                                    <span className="ml-auto inline-flex items-center gap-0.5 rounded-md bg-gc-amber px-1.5 py-0.5 text-xs font-bold text-black">
                                                         <Star className="size-2.5 fill-current" />
                                                         {movie.my_rating}
                                                     </span>

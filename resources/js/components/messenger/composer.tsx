@@ -265,11 +265,11 @@ export function Composer({
             {context && (
                 <div className="mb-2 flex animate-in items-center gap-3 rounded-xl bg-white/[0.04] px-3 py-2 fade-in slide-in-from-bottom-1">
                     {editing ? (
-                        <Pencil className="size-4 shrink-0 text-[#8fa0ff]" />
+                        <Pencil className="size-4 shrink-0 text-gc-lilac-400" />
                     ) : (
-                        <Reply className="size-4 shrink-0 text-[#8fa0ff]" />
+                        <Reply className="size-4 shrink-0 text-gc-lilac-400" />
                     )}
-                    <span className="min-w-0 flex-1 border-l-2 border-[#7c8cff] pl-2.5 text-[13px]">
+                    <span className="min-w-0 flex-1 border-l-2 border-gc-lilac-500 pl-2.5 text-[13px]">
                         <span className="block font-semibold text-[#a9b6ff]">
                             {editing
                                 ? tr('Редагування')
@@ -329,7 +329,7 @@ export function Composer({
                             key={`${file.name}-${index}`}
                             className="relative flex h-[72px] w-[188px] shrink-0 animate-in items-center gap-2.5 rounded-xl bg-white/[0.05] pr-7 pl-2.5 ring-1 ring-white/10 zoom-in-90"
                         >
-                            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#4f8bff] to-[#6d5dfc] text-white">
+                            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-gc-blue to-gc-indigo text-white">
                                 <FileUp className="size-5" />
                             </span>
                             <span className="min-w-0">
@@ -402,7 +402,7 @@ export function Composer({
                             {voice.live.map((level, index) => (
                                 <span
                                     key={index}
-                                    className="w-[3px] shrink-0 rounded-full bg-gradient-to-t from-[#6d5dfc] to-[#38e1ff] transition-[height] duration-100"
+                                    className="w-[3px] shrink-0 rounded-full bg-gradient-to-t from-gc-indigo to-gc-cyan transition-[height] duration-100"
                                     style={{ height: `${level}%` }}
                                 />
                             ))}
@@ -445,7 +445,7 @@ export function Composer({
                                             label: tr('Фото'),
                                             hint: 'JPG, PNG, WebP, GIF',
                                             icon: ImagePlus,
-                                            tone: 'from-[#4f8bff] to-[#38e1ff]',
+                                            tone: 'from-gc-blue to-gc-cyan',
                                             run: () =>
                                                 imageRef.current?.click(),
                                         },
@@ -457,14 +457,14 @@ export function Composer({
                                                     50,
                                             }),
                                             icon: FileUp,
-                                            tone: 'from-[#6d5dfc] to-[#a855f7]',
+                                            tone: 'from-gc-indigo to-gc-purple',
                                             run: () => docRef.current?.click(),
                                         },
                                         {
                                             label: tr('Контакт'),
                                             hint: tr('Пошук на GameCon'),
                                             icon: UserRound,
-                                            tone: 'from-[#22d3a6] to-[#38e1ff]',
+                                            tone: 'from-gc-mint to-gc-cyan',
                                             run: () => setContactOpen(true),
                                         },
                                     ].map((item) => (
@@ -548,7 +548,7 @@ export function Composer({
                                 onClick={() => setEmojiOpen((value) => !value)}
                                 className={cn(
                                     'flex size-9 items-center justify-center rounded-full text-white/50 transition hover:text-white',
-                                    emojiOpen && 'text-[#ffd36b]',
+                                    emojiOpen && 'text-gc-gold',
                                 )}
                                 aria-label={tr('Емодзі та стікери')}
                                 title={tr('Емодзі та стікери')}

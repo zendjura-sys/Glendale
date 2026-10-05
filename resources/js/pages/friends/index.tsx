@@ -88,7 +88,7 @@ export default function Friends({ tab, q, users, counts, suggestions }: Props) {
                                 <item.icon
                                     className={cn(
                                         'size-4',
-                                        tab === item.key && 'text-[#8fa0ff]',
+                                        tab === item.key && 'text-gc-lilac-400',
                                     )}
                                 />
                                 {item.label}

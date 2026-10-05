@@ -42,7 +42,7 @@ export function MusicCard({
             className={cn(
                 'group relative flex items-center gap-3 overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.035] p-2.5 pr-3 transition hover:border-white/15',
                 isCurrent &&
-                    'border-[#7c8cff]/40 shadow-[0_0_30px_-14px_rgb(124_92_255/0.9)]',
+                    'border-gc-lilac-500/40 shadow-[0_0_30px_-14px_rgb(124_92_255/0.9)]',
                 className,
             )}
         >
@@ -104,7 +104,7 @@ export function MusicCard({
                     className={cn(
                         'relative flex size-8 items-center justify-center rounded-full transition',
                         track.in_library
-                            ? 'text-[#8fa0ff]'
+                            ? 'text-gc-lilac-400'
                             : 'text-white/45 hover:bg-white/10 hover:text-white',
                     )}
                     aria-label={
@@ -124,7 +124,7 @@ export function MusicCard({
                     href={track.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="relative flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium text-[#1ed760] transition hover:bg-[#1ed760]/10"
+                    className="relative flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium text-spotify transition hover:bg-spotify/10"
                     title={tr('Відкрити у Spotify')}
                 >
                     <SpotifyLogo className="size-4" />

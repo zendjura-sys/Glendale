@@ -3,8 +3,8 @@ import { cn } from '@/lib/utils';
 import { LOCALE, tr } from '@/lib/i18n';
 
 const tones = [
-    'from-[#4f8bff] to-[#6d5dfc]',
-    'from-[#a855f7] to-[#ec4899]',
+    'from-gc-blue to-gc-indigo',
+    'from-gc-purple to-[#ec4899]',
     'from-[#f59e0b] to-[#ef4444]',
     'from-[#10b981] to-[#0ea5e9]',
     'from-[#facc15] to-[#2563eb]',
@@ -89,7 +89,7 @@ export function OnlineMeter({
             {max ? (
                 <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
                     <div
-                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-[#4f8bff] to-[#a855f7] shadow-[0_0_12px_rgb(79_139_255/0.7)]"
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-gc-blue to-gc-purple shadow-[0_0_12px_rgb(79_139_255/0.7)]"
                         style={{ width: `${Math.max(percent, 2)}%` }}
                     />
                 </div>

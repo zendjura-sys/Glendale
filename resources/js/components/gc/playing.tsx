@@ -228,7 +228,7 @@ export function PlayingDialog({
                                 {!settings.discord.linked && (
                                     <a
                                         href="/auth/discord"
-                                        className="text-xs text-[#a5b4fc] hover:text-white"
+                                        className="text-xs text-gc-lilac-200 hover:text-white"
                                     >
                                         {tr('Прив’язати Discord →')}
                                     </a>

@@ -108,7 +108,7 @@ export function GroupInfoDialog({
     return (
         <Dialog open={open} onOpenChange={close}>
             <DialogContent className="glass-strong gap-0 overflow-hidden rounded-3xl border-white/10 p-0 text-white sm:max-w-md">
-                <div className="relative flex flex-col items-center bg-gradient-to-b from-[#6d5dfc]/25 to-transparent px-5 pt-7 pb-5 text-center">
+                <div className="relative flex flex-col items-center bg-gradient-to-b from-gc-indigo/25 to-transparent px-5 pt-7 pb-5 text-center">
                     <button
                         type="button"
                         disabled={!canManage}
@@ -232,7 +232,7 @@ export function GroupInfoDialog({
                                 onClick={() => setAdding(true)}
                                 className="mb-1 flex w-full items-center gap-3 rounded-xl p-2 text-sm font-medium text-[#9fb0ff] transition hover:bg-white/[0.05]"
                             >
-                                <span className="flex size-10 items-center justify-center rounded-full bg-[#6d5dfc]/15">
+                                <span className="flex size-10 items-center justify-center rounded-full bg-gc-indigo/15">
                                     <UserPlus className="size-[18px]" />
                                 </span>
                                 {tr('Додати учасників')}
@@ -271,12 +271,12 @@ export function GroupInfoDialog({
                                             </span>
                                         </Link>
                                         {member.role === 'owner' ? (
-                                            <span className="flex items-center gap-1 rounded-full bg-[#ffd36b]/10 px-2 py-0.5 text-xs font-medium text-[#ffd36b]">
+                                            <span className="flex items-center gap-1 rounded-full bg-gc-gold/10 px-2 py-0.5 text-xs font-medium text-gc-gold">
                                                 <Crown className="size-3" />
                                                 {tr('Творець')}
                                             </span>
                                         ) : member.role === 'admin' ? (
-                                            <span className="flex items-center gap-1 rounded-full bg-[#4f8bff]/10 px-2 py-0.5 text-xs font-medium text-[#8fb4ff]">
+                                            <span className="flex items-center gap-1 rounded-full bg-gc-blue/10 px-2 py-0.5 text-xs font-medium text-[#8fb4ff]">
                                                 <ShieldCheck className="size-3" />
                                                 {tr('Адмін')}
                                             </span>

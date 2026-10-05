@@ -235,7 +235,7 @@ export default function FamilyQueue(props: Props) {
                                                 : [],
                                         )
                                     }
-                                    className="size-4 accent-[#6d5dfc]"
+                                    className="size-4 accent-gc-indigo"
                                 />
                                 <span className="flex-1 text-xs text-white/50">
                                     {selected.length
@@ -275,7 +275,7 @@ export default function FamilyQueue(props: Props) {
                                             className={cn(
                                                 'flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 transition',
                                                 i === index
-                                                    ? 'bg-[#6d5dfc]/15 ring-1 ring-[#7c8cff]/40'
+                                                    ? 'bg-gc-indigo/15 ring-1 ring-gc-lilac-500/40'
                                                     : 'hover:bg-white/[0.04]',
                                             )}
                                         >
@@ -292,7 +292,7 @@ export default function FamilyQueue(props: Props) {
                                                     e.stopPropagation()
                                                 }
                                                 onChange={() => toggle(r.id)}
-                                                className="size-4 accent-[#6d5dfc] disabled:opacity-20"
+                                                className="size-4 accent-gc-indigo disabled:opacity-20"
                                             />
                                             <Icon className="size-4 shrink-0 text-amber-200" />
                                             <div className="min-w-0 flex-1">

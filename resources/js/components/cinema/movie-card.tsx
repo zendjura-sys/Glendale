@@ -28,7 +28,7 @@ export function MovieCardEmbed({
                     className="pointer-events-none absolute inset-0 size-full object-cover opacity-30 blur-[2px] transition duration-700 group-hover:scale-105"
                 />
             )}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#070914] via-[#070914]/85 to-[#070914]/40" />
+            <div className="absolute inset-0 bg-gradient-to-r from-gc-ink via-gc-ink/85 to-gc-ink/40" />
             <div className="relative flex gap-4 p-3.5">
                 <MoviePoster
                     movie={movie}
@@ -72,7 +72,7 @@ export function MovieCardEmbed({
     );
 
     const classes = cn(
-        'group relative block overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0a0c1c] transition hover:border-[#8fa0ff]/40',
+        'group relative block overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0a0c1c] transition hover:border-gc-lilac-400/40',
         className,
     );
 

@@ -17,6 +17,26 @@
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
 
+    /* Brand palette. Use these (text-gc-lilac-400, from-gc-blue…) instead of raw hex. */
+    --color-gc-blue: #4f8bff;
+    --color-gc-indigo: #6d5dfc;
+    --color-gc-purple: #a855f7;
+    --color-gc-pink: #f04fd8;
+    --color-gc-cyan: #38e1ff;
+    --color-gc-mint: #22d3a6;
+    --color-gc-sky: #9cbcff;
+    --color-gc-lilac-200: #a5b4fc;
+    --color-gc-lilac-300: #9aa8ff;
+    --color-gc-lilac-400: #8fa0ff;
+    --color-gc-lilac-500: #7c8cff;
+    --color-gc-violet-300: #a58bff;
+    --color-gc-violet-400: #8b6bff;
+    --color-gc-amber: #f5b342;
+    --color-gc-gold: #ffd36b;
+    --color-gc-coral: #ff7a59;
+    --color-gc-ink: #070914;
+    --color-spotify: #1ed760;
+
     --color-background: var(--background);
     --color-foreground: var(--foreground);
 
@@ -176,10 +196,10 @@
 
     --gc-gradient: linear-gradient(
         120deg,
-        #4f8bff 0%,
-        #6d5dfc 45%,
-        #a855f7 80%,
-        #f04fd8 100%
+        var(--color-gc-blue) 0%,
+        var(--color-gc-indigo) 45%,
+        var(--color-gc-purple) 80%,
+        var(--color-gc-pink) 100%
     );
 }
 

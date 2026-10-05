@@ -234,7 +234,7 @@ export function MessageBubble({
                               : cn(
                                     'rounded-[20px] px-3.5 py-2',
                                     own
-                                        ? 'bg-gradient-to-br from-[#4f6bff] via-[#6d5dfc] to-[#8b5cf6] text-white shadow-[0_8px_24px_-12px_rgb(109_93_252/0.9)]'
+                                        ? 'bg-gradient-to-br from-[#4f6bff] via-gc-indigo to-[#8b5cf6] text-white shadow-[0_8px_24px_-12px_rgb(109_93_252/0.9)]'
                                         : 'border border-white/[0.07] bg-white/[0.06] text-white/90 backdrop-blur-xl',
                                     own
                                         ? groupEnd
@@ -252,7 +252,7 @@ export function MessageBubble({
                         voice && 'py-2 pr-3 pl-2',
                         pending === 'sending' && 'opacity-80',
                         highlighted &&
-                            'shadow-[0_0_30px_rgb(124_140_255/0.6)] ring-2 ring-[#8fa0ff]',
+                            'shadow-[0_0_30px_rgb(124_140_255/0.6)] ring-2 ring-gc-lilac-400',
                     )}
                 >
                     {showAuthor && message.user && (
@@ -289,7 +289,7 @@ export function MessageBubble({
                                 'mb-1.5 block w-full min-w-0 rounded-lg border-l-2 py-1 pr-2 pl-2 text-left text-[13px] transition',
                                 own
                                     ? 'border-white/70 bg-white/15 hover:bg-white/20'
-                                    : 'border-[#7c8cff] bg-[#7c8cff]/10 hover:bg-[#7c8cff]/15',
+                                    : 'border-gc-lilac-500 bg-gc-lilac-500/10 hover:bg-gc-lilac-500/15',
                                 hasImages && 'mx-0.5 mt-0.5 w-[calc(100%-4px)]',
                             )}
                         >
@@ -459,7 +459,7 @@ export function MessageBubble({
                             type="button"
                             className={cn(
                                 toolButton,
-                                translation.shown && 'text-[#a5b4fc]',
+                                translation.shown && 'text-gc-lilac-200',
                             )}
                             onClick={translation.toggle}
                             title={

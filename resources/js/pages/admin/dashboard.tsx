@@ -125,7 +125,7 @@ function ActivityChart({ data }: { data: ChartPoint[] }) {
                 {point && (
                     <div className="ml-auto text-sm text-white/55">
                         {formatDate(point.date, false)}:{' '}
-                        <span className="text-[#9cbcff]">{point.users}</span> /{' '}
+                        <span className="text-gc-sky">{point.users}</span> /{' '}
                         <span className="text-[#d3b0ff]">{point.posts}</span>
                     </div>
                 )}
@@ -280,7 +280,7 @@ export default function AdminDashboard({
                         active_week: stats.active_week,
                     })}
                     icon={Wifi}
-                    tone="from-[#22d3a6] to-[#38e1ff]"
+                    tone="from-gc-mint to-gc-cyan"
                     delay={60}
                 />
                 <StatCard
@@ -295,7 +295,7 @@ export default function AdminDashboard({
                         </>
                     }
                     icon={FileText}
-                    tone="from-[#6d5dfc] to-[#a855f7]"
+                    tone="from-gc-indigo to-gc-purple"
                     delay={120}
                 />
                 <StatCard
@@ -305,7 +305,7 @@ export default function AdminDashboard({
                         compactNumber: compactNumber(stats.comments),
                     })}
                     icon={Heart}
-                    tone="from-[#f04fd8] to-[#ff8a5c]"
+                    tone="from-gc-pink to-[#ff8a5c]"
                     delay={180}
                 />
             </div>
@@ -313,7 +313,7 @@ export default function AdminDashboard({
             <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[1fr_340px]">
                 <section className="glass rounded-3xl p-5 sm:p-6">
                     <div className="mb-4 flex items-center gap-2">
-                        <Activity className="size-4 text-[#8fa0ff]" />
+                        <Activity className="size-4 text-gc-lilac-400" />
                         <h2 className="font-display text-sm font-semibold tracking-wide text-white/90 uppercase">
                             {tr('Активність за 30 днів')}
                         </h2>
@@ -331,7 +331,7 @@ export default function AdminDashboard({
                 <div className="grid gap-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="glass rounded-3xl p-4">
-                            <UserPlus className="size-4 text-[#9cbcff]" />
+                            <UserPlus className="size-4 text-gc-sky" />
                             <div className="mt-3 font-display text-2xl font-bold text-white">
                                 {compactNumber(stats.friendships)}
                             </div>
@@ -380,7 +380,7 @@ export default function AdminDashboard({
                     </Link>
                     <section className="glass rounded-3xl p-5">
                         <div className="mb-3 flex items-center gap-2">
-                            <Server className="size-4 text-[#8fa0ff]" />
+                            <Server className="size-4 text-gc-lilac-400" />
                             <h2 className="font-display text-xs font-semibold tracking-wide text-white/80 uppercase">
                                 {tr('Система')}
                             </h2>

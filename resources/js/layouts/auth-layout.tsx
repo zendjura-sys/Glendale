@@ -44,7 +44,7 @@ function Showcase() {
 
             <div className="relative z-10 max-w-xl">
                 <span className="glass mb-6 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium text-white/75">
-                    <Sparkles className="size-3.5 text-[#a58bff]" />
+                    <Sparkles className="size-3.5 text-gc-violet-300" />
                     {tr('Соціальна мережа нового покоління')}
                 </span>
                 <h2 className="font-display text-[clamp(2.4rem,4.2vw,4rem)] leading-[1.05] font-bold tracking-tight text-white">
@@ -86,7 +86,7 @@ function Showcase() {
                             key={n}
                             src={`https://randomuser.me/api/portraits/thumb/${i % 2 ? 'women' : 'men'}/${n}.jpg`}
                             alt=""
-                            className="size-8 rounded-full border-2 border-[#05070f] object-cover"
+                            className="size-8 rounded-full border-2 border-background object-cover"
                             loading="lazy"
                         />
                     ))}

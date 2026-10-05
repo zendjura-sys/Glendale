@@ -122,7 +122,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                                     className={cn(
                                         'size-[18px]',
                                         active
-                                            ? 'text-[#8fa0ff] drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]'
+                                            ? 'text-gc-lilac-400 drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]'
                                             : 'text-white/40 group-hover:text-white/75',
                                     )}
                                 />

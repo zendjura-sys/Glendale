@@ -40,7 +40,7 @@ export function StatCard({
     value,
     hint,
     icon: Icon,
-    tone = 'from-[#4f8bff] to-[#6d5dfc]',
+    tone = 'from-gc-blue to-gc-indigo',
     delay = 0,
 }: {
     label: string;
@@ -124,8 +124,8 @@ export function Toggle({
 
 const pillTones = {
     default: 'border-white/10 bg-white/[0.04] text-white/60',
-    blue: 'border-[#4f8bff]/30 bg-[#4f8bff]/10 text-[#9cbcff]',
-    violet: 'border-[#a855f7]/30 bg-[#a855f7]/10 text-[#d3b0ff]',
+    blue: 'border-gc-blue/30 bg-gc-blue/10 text-gc-sky',
+    violet: 'border-gc-purple/30 bg-gc-purple/10 text-[#d3b0ff]',
     gold: 'border-amber-300/30 bg-amber-300/10 text-amber-200',
     green: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200',
     red: 'border-rose-400/30 bg-rose-400/10 text-rose-200',

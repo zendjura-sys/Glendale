@@ -72,10 +72,10 @@ const ratingSources: {
 ];
 
 const statusTone: Record<MovieStatus, string> = {
-    planned: 'from-[#4f8bff] to-[#6d5dfc]',
-    watching: 'from-[#22d3a6] to-[#38e1ff]',
-    watched: 'from-[#a855f7] to-[#f04fd8]',
-    dropped: 'from-[#ff7a59] to-[#f04fd8]',
+    planned: 'from-gc-blue to-gc-indigo',
+    watching: 'from-gc-mint to-gc-cyan',
+    watched: 'from-gc-purple to-gc-pink',
+    dropped: 'from-gc-coral to-gc-pink',
 };
 
 function durationLabel(minutes: number | null) {
@@ -137,7 +137,7 @@ function RatingPicker({
                             className={cn(
                                 'size-[18px] transition',
                                 n <= shown
-                                    ? 'fill-[#f5b342] text-[#f5b342] drop-shadow-[0_0_6px_rgb(245_179_66/0.6)]'
+                                    ? 'fill-gc-amber text-gc-amber drop-shadow-[0_0_6px_rgb(245_179_66/0.6)]'
                                     : 'text-white/20',
                             )}
                         />
@@ -284,7 +284,7 @@ export default function CinemaShow({
         <>
             <Head title={movie.title} />
             <div className="space-y-5">
-                <section className="relative isolate overflow-hidden rounded-3xl border border-white/[0.08] bg-[#070914]">
+                <section className="relative isolate overflow-hidden rounded-3xl border border-white/[0.08] bg-gc-ink">
                     {(movie.backdrop || movie.poster) && (
                         <img
                             src={movie.backdrop ?? movie.poster ?? ''}
@@ -295,8 +295,8 @@ export default function CinemaShow({
                             )}
                         />
                     )}
-                    <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#070914] via-[#070914]/85 to-[#070914]/30" />
-                    <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#070914] via-[#070914]/40 to-transparent" />
+                    <div className="absolute inset-0 -z-10 bg-gradient-to-r from-gc-ink via-gc-ink/85 to-gc-ink/30" />
+                    <div className="absolute inset-0 -z-10 bg-gradient-to-t from-gc-ink via-gc-ink/40 to-transparent" />
 
                     <div className="p-5 sm:p-7">
                         <div className="mb-5 flex items-center gap-2">
@@ -386,7 +386,7 @@ export default function CinemaShow({
                                             <Link
                                                 key={genre}
                                                 href={`/cinema?genre=${encodeURIComponent(genre)}`}
-                                                className="rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-xs text-white/70 backdrop-blur transition hover:border-[#8fa0ff]/40 hover:text-white"
+                                                className="rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-xs text-white/70 backdrop-blur transition hover:border-gc-lilac-400/40 hover:text-white"
                                             >
                                                 {genre}
                                             </Link>
@@ -651,7 +651,7 @@ export default function CinemaShow({
                         )}
                         <section className="glass rounded-3xl p-5">
                             <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
-                                <MessageCircle className="size-5 text-[#8fa0ff]" />
+                                <MessageCircle className="size-5 text-gc-lilac-400" />
                                 {tr('Обговорення')}
                                 <span className="text-sm font-normal text-white/40">
                                     {commentsCount}
@@ -712,7 +712,7 @@ export default function CinemaShow({
                                                     </span>
                                                 </span>
                                                 {f.movie_rating && (
-                                                    <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-[#f5b342]">
+                                                    <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-gc-amber">
                                                         <Star className="size-3 fill-current" />
                                                         {f.movie_rating}
                                                     </span>

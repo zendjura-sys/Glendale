@@ -240,7 +240,7 @@ export default function CommunityShow({
                         <div className="flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-white/55">
                             {community.city && (
                                 <span className="inline-flex items-center gap-1.5">
-                                    <MapPin className="size-4 text-[#8fa0ff]" />
+                                    <MapPin className="size-4 text-gc-lilac-400" />
                                     {community.city}
                                 </span>
                             )}
@@ -251,7 +251,7 @@ export default function CommunityShow({
                                     rel="noreferrer nofollow"
                                     className="inline-flex items-center gap-1.5 hover:text-white"
                                 >
-                                    <Globe className="size-4 text-[#38e1ff]" />
+                                    <Globe className="size-4 text-gc-cyan" />
                                     {community.website.replace(
                                         /^https?:\/\//,
                                         '',
@@ -351,7 +351,7 @@ export default function CommunityShow({
                                 action={
                                     <Link
                                         href={`/c/${community.slug}/photos`}
-                                        className="text-xs text-[#9aa8ff] hover:text-white"
+                                        className="text-xs text-gc-lilac-300 hover:text-white"
                                     >
                                         {photos.count > 0
                                             ? tr('Усі {count}', {
@@ -392,7 +392,7 @@ export default function CommunityShow({
                             action={
                                 <Link
                                     href={`/c/${community.slug}/members`}
-                                    className="text-xs text-[#9aa8ff] hover:text-white"
+                                    className="text-xs text-gc-lilac-300 hover:text-white"
                                 >
                                     {membersLabel(stats.members, isPublic)}
                                 </Link>
@@ -445,7 +445,7 @@ export default function CommunityShow({
                                                 <span className="flex items-center gap-1 text-xs text-white/45">
                                                     {manager.role ===
                                                         'owner' && (
-                                                        <Crown className="size-3 text-[#ffd36b]" />
+                                                        <Crown className="size-3 text-gc-gold" />
                                                     )}
                                                     {roleLabels[manager.role]}
                                                 </span>

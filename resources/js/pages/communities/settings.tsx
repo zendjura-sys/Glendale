@@ -42,7 +42,7 @@ function Segmented<T extends string>({
                     className={cn(
                         'flex items-start gap-3 rounded-2xl border p-3.5 text-left transition',
                         value === option.value
-                            ? 'border-[#7c8cff]/60 bg-[#6d5dfc]/15'
+                            ? 'border-gc-lilac-500/60 bg-gc-indigo/15'
                             : 'border-white/[0.07] bg-white/[0.02] hover:border-white/15',
                     )}
                 >

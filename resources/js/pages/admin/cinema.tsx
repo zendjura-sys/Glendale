@@ -191,9 +191,9 @@ function AutoImportPanel({
 
     return (
         <section className="glass relative mb-5 overflow-hidden rounded-3xl p-5 sm:p-6">
-            <div className="pointer-events-none absolute -top-24 -right-20 size-80 rounded-full bg-[#6d5dfc]/15 blur-3xl" />
+            <div className="pointer-events-none absolute -top-24 -right-20 size-80 rounded-full bg-gc-indigo/15 blur-3xl" />
             <header className="relative mb-5 flex flex-wrap items-center gap-4">
-                <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#6d5dfc] to-[#f04fd8] shadow-[0_10px_30px_-10px_rgb(168_85_247/0.9)]">
+                <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-gc-indigo to-gc-pink shadow-[0_10px_30px_-10px_rgb(168_85_247/0.9)]">
                     <Bot className="size-6 text-white" />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -241,7 +241,7 @@ function AutoImportPanel({
                                     className={cn(
                                         'flex items-start gap-3 rounded-2xl border p-3.5 text-left transition',
                                         on
-                                            ? 'border-[#8fa0ff]/40 bg-[#6d5dfc]/10'
+                                            ? 'border-gc-lilac-400/40 bg-gc-indigo/10'
                                             : 'border-white/[0.08] bg-white/[0.02] hover:border-white/15',
                                     )}
                                 >
@@ -297,7 +297,7 @@ function AutoImportPanel({
                                     className={cn(
                                         'rounded-full border px-3 py-1 text-xs transition',
                                         data.kodik_types.includes(t.key)
-                                            ? 'border-[#8fa0ff]/50 bg-[#6d5dfc]/20 text-white'
+                                            ? 'border-gc-lilac-400/50 bg-gc-indigo/20 text-white'
                                             : 'border-white/10 text-white/55 hover:text-white',
                                     )}
                                 >
@@ -470,7 +470,7 @@ function AutoImportPanel({
                                         [
                                             'updated',
                                             tr('Оновлено'),
-                                            'text-[#9cbcff]',
+                                            'text-gc-sky',
                                         ],
                                         [
                                             'enriched',
@@ -539,7 +539,7 @@ function AutoImportPanel({
                             )}{' '}
                             <Link
                                 href="/admin/integrations"
-                                className="text-[#9aa8ff] hover:text-white"
+                                className="text-gc-lilac-300 hover:text-white"
                             >
                                 {tr('інтеграціях')}
                             </Link>{' '}
@@ -645,21 +645,21 @@ export default function AdminCinema({
                     label={tr('Плеєрів (озвучок)')}
                     value={compactNumber(stats.sources)}
                     icon={Clapperboard}
-                    tone="from-[#22d3a6] to-[#38e1ff]"
+                    tone="from-gc-mint to-gc-cyan"
                     delay={60}
                 />
                 <StatCard
                     label={tr('Переглядів')}
                     value={compactNumber(stats.views)}
                     icon={Eye}
-                    tone="from-[#f5b342] to-[#f04fd8]"
+                    tone="from-gc-amber to-gc-pink"
                     delay={120}
                 />
                 <StatCard
                     label={tr('У списках глядачів')}
                     value={compactNumber(stats.watchers)}
                     icon={UsersRound}
-                    tone="from-[#f04fd8] to-[#a855f7]"
+                    tone="from-gc-pink to-gc-purple"
                     delay={180}
                 />
             </div>
@@ -771,7 +771,7 @@ export default function AdminCinema({
                                                         .filter(Boolean)
                                                         .join(' · ')}
                                                     {movie.rating && (
-                                                        <span className="inline-flex items-center gap-0.5 text-[#f5b342]">
+                                                        <span className="inline-flex items-center gap-0.5 text-gc-amber">
                                                             <Star className="size-3 fill-current" />
                                                             {movie.rating.toFixed(
                                                                 1,
