@@ -5,6 +5,7 @@ import {
     KeyRound,
     Search,
     Settings2,
+    TriangleAlert,
     UserCheck,
     Users,
     X,
@@ -261,8 +262,15 @@ export default function FamilyMembers(props: Props) {
                                                 title={m.rank_title}
                                             />
                                             {m.warns > 0 && (
-                                                <span className="rounded-full bg-rose-500/10 px-2 py-0.5 text-xs text-rose-200">
-                                                    ⚠ {m.warns}/{warn_limit}
+                                                <span
+                                                    className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-xs text-rose-200"
+                                                    title={tr('Попередження')}
+                                                >
+                                                    <TriangleAlert
+                                                        className="size-3"
+                                                        aria-hidden
+                                                    />
+                                                    {m.warns}/{warn_limit}
                                                 </span>
                                             )}
                                         </div>

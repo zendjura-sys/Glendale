@@ -2,6 +2,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     BadgeCheck,
     Ban,
+    Check,
     KeyRound,
     MoreHorizontal,
     Search,
@@ -301,9 +302,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                                                             {ROLE_LABELS[r] ??
                                                                 r}
                                                             {u.role === r && (
-                                                                <span className="ml-auto text-[#8fa0ff]">
-                                                                    ✓
-                                                                </span>
+                                                                <Check className="ml-auto size-4 text-[#8fa0ff]" />
                                                             )}
                                                         </DropdownMenuItem>
                                                     ))}

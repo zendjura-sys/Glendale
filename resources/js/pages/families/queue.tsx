@@ -520,12 +520,14 @@ function ReportDetail({
                     {kyivDateTime(report.created_at)}
                 </Info>
                 <Info label={tr('Історія за 30 днів')}>
-                    <span className="text-emerald-300">
-                        ✓ {report.history.approved}
+                    <span className="inline-flex items-center gap-1 text-emerald-300">
+                        <Check className="size-3.5" aria-hidden />
+                        {report.history.approved}
                     </span>{' '}
                     ·{' '}
-                    <span className="text-rose-300">
-                        ✕ {report.history.rejected}
+                    <span className="inline-flex items-center gap-1 text-rose-300">
+                        <X className="size-3.5" aria-hidden />
+                        {report.history.rejected}
                     </span>
                 </Info>
                 {report.contracts_used !== null && (

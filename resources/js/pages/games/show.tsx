@@ -4,14 +4,15 @@ import {
     BookOpen,
     Building2,
     CalendarDays,
+    Check,
     Clock,
     ExternalLink,
     Gamepad2,
     Globe,
     Images,
     Languages,
-    Plus,
     Play,
+    Plus,
     ShieldCheck,
     Star,
     Swords,
@@ -633,7 +634,14 @@ export default function GameShow({
                                             ] as const
                                         ).map((k) => (
                                             <td key={k} className="text-center">
-                                                {l[k] ? '✓' : '—'}
+                                                {l[k] ? (
+                                                    <Check
+                                                        className="mx-auto size-4 text-emerald-300"
+                                                        aria-label={tr('Так')}
+                                                    />
+                                                ) : (
+                                                    '—'
+                                                )}
                                             </td>
                                         ))}
                                     </tr>
