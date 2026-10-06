@@ -41,6 +41,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Inertia\Ssr\SsrState;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -73,12 +74,18 @@ class AppServiceProvider extends ServiceProvider
             app(Translations::class)->line($text),
         ));
 
-        // Перша сторінка Inertia вбудована в HTML — її рядки перекладаємо так само, як JSON.
+        // Перша сторінка Inertia вбудована в HTML. Компонент <x-inertia::app>
+        // читає її з SsrState, а не з даних шаблону, тож переклад кладемо в обидва місця.
+        // Інакше після повного завантаження (зокрема зміни мови) меню лишається українським,
+        // доки наступний перехід Inertia не віддасть уже перекладений JSON.
         View::composer('app', function (\Illuminate\View\View $view) {
             $page = $view->getData()['page'] ?? null;
-            if (is_array($page) && App::getLocale() !== Locales::SOURCE) {
-                $view->with('page', app(Translations::class)->tree($page));
+            if (! is_array($page) || App::getLocale() === Locales::SOURCE) {
+                return;
             }
+            $page = app(Translations::class)->tree($page);
+            $view->with('page', $page);
+            app(SsrState::class)->setPage($page);
         });
 
         Relation::enforceMorphMap([

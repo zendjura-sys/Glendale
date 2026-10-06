@@ -1,24 +1,27 @@
-import { router, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import { Check, Languages } from 'lucide-react';
+import { toast } from 'sonner';
 import {
     DropdownMenuItem,
     DropdownMenuSub,
     DropdownMenuSubContent,
     DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
+import { ApiError, api } from '@/lib/api';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
-/** Зміна мови: зберігаємо вибір і перезавантажуємо сторінку — словник підвантажується до застосунку. */
+/** Зміна мови зберігається і сторінка завантажується повністю: словник і переклад приходять разом. */
 export function setLocale(code: string) {
-    router.post(
-        '/locale',
-        { locale: code },
-        {
-            preserveScroll: true,
-            onSuccess: () => window.location.reload(),
-        },
-    );
+    void api('POST', '/locale', { locale: code })
+        .then(() => window.location.reload())
+        .catch((error: unknown) => {
+            toast.error(
+                error instanceof ApiError
+                    ? error.message
+                    : tr('Щось пішло не так. Спробуйте ще раз.'),
+            );
+        });
 }
 
 function useLocales() {
