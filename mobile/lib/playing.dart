@@ -52,6 +52,58 @@ class PlayingBadge extends StatelessWidget {
 }
 
 /// Налаштування «Граю в…»: автоматично (Discord, Steam, телефон) або вручну.
+/// Картка в «Налаштування → Профіль»: поточний статус і вхід до налаштувань «Граю в…».
+/// У профілі статус видно лише поки людина грає, тож керування — тут.
+class PlayingSettingsCard extends StatefulWidget {
+  const PlayingSettingsCard({super.key});
+
+  @override
+  State<PlayingSettingsCard> createState() => _PlayingSettingsCardState();
+}
+
+class _PlayingSettingsCardState extends State<PlayingSettingsCard> {
+  Map<String, dynamic>? data;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  Future<void> _load() async {
+    try {
+      final result = await AppScope.read(context).session.api.get(Api.site('/me/playing'));
+      if (mounted) setState(() => data = mapOf(result));
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final playing = data?['playing'];
+    return Glass(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        CardTitle(tr('Граю в…'), icon: LucideIcons.gamepad2),
+        Text(
+          data?['auto'] == true
+              ? tr('Статус ставиться автоматично з Discord, Steam чи застосунку й показується у профілі, лише поки ви граєте.')
+              : tr('Статус показується у профілі, лише поки ви граєте.'),
+          style: body(12.5, color: muted),
+        ),
+        if (playing is Map) ...[const SizedBox(height: 10), Align(alignment: Alignment.centerLeft, child: PlayingBadge(mapOf(playing)))],
+        const SizedBox(height: 12),
+        GhostButton(
+          label: tr('Налаштувати'),
+          icon: LucideIcons.gamepad2,
+          onPressed: () async {
+            await context.push('/playing');
+            _load();
+          },
+        ),
+      ]),
+    );
+  }
+}
+
 class PlayingSettingsScreen extends StatefulWidget {
   const PlayingSettingsScreen({super.key});
 

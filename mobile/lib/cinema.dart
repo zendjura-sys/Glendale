@@ -359,7 +359,7 @@ class PosterCard extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
-                  child: Text(text(movie['age_rating'])!, style: body(10.5, weight: FontWeight.w700)),
+                  child: Text(text(movie['age_rating'])!, style: body(11, weight: FontWeight.w700)),
                 ),
               ),
           ]),

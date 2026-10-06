@@ -1048,7 +1048,7 @@ class MetricTile extends StatelessWidget {
               Expanded(
                 child: SizedBox(
                   height: 28,
-                  child: Text(label.toUpperCase(), maxLines: 2, overflow: TextOverflow.ellipsis, style: body(10.5, color: muted, weight: FontWeight.w600).copyWith(letterSpacing: 0.8, height: 1.3)),
+                  child: Text(label.toUpperCase(), maxLines: 2, overflow: TextOverflow.ellipsis, style: body(11, color: muted, weight: FontWeight.w600).copyWith(letterSpacing: 0.8, height: 1.3)),
                 ),
               ),
               if (icon != null) Icon(icon, size: 15, color: faint),
