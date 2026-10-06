@@ -90,6 +90,19 @@ class LocalizationTest extends TestCase
         $this->get('/i18n/ru.js')->assertNotFound();
     }
 
+    public function test_first_html_page_has_server_texts_translated(): void
+    {
+        $this->translate('de', ['Новини' => 'Neuigkeiten', 'Друзі' => 'Freunde']);
+        $user = User::factory()->create();
+        $user->forceFill(['locale' => 'de'])->save();
+
+        // Меню приходить у пропсах сторінки; після перезавантаження воно має бути вже німецькою.
+        $html = (string) $this->actingAs($user)->get('/friends')->assertOk()->getContent();
+        $this->assertStringContainsString('"label":"Neuigkeiten"', $html);
+        $this->assertStringContainsString('"label":"Freunde"', $html);
+        $this->assertStringNotContainsString('"label":"Новини"', $html);
+    }
+
     public function test_app_gets_its_dictionary_and_languages(): void
     {
         $this->getJson('/api/v1/i18n', ['X-Locale' => 'de'])->assertOk()

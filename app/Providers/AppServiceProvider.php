@@ -41,6 +41,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Inertia\Ssr\SsrState;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -74,10 +75,13 @@ class AppServiceProvider extends ServiceProvider
         ));
 
         // Перша сторінка Inertia вбудована в HTML — її рядки перекладаємо так само, як JSON.
+        // <x-inertia::app /> бере сторінку з SsrState, а не з $page, тож оновлюємо обидва.
         View::composer('app', function (\Illuminate\View\View $view) {
             $page = $view->getData()['page'] ?? null;
             if (is_array($page) && App::getLocale() !== Locales::SOURCE) {
-                $view->with('page', app(Translations::class)->tree($page));
+                $page = app(Translations::class)->tree($page);
+                $view->with('page', $page);
+                app(SsrState::class)->setPage($page);
             }
         });
 
