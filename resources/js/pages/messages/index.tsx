@@ -142,8 +142,8 @@ export default function Messages({ conversations, active, history }: Props) {
                     <div className="hidden flex-1 flex-col items-center justify-center px-8 text-center md:flex">
                         <div className="relative mb-6">
                             <div className="absolute inset-0 animate-pulse rounded-full bg-gc-indigo/40 blur-3xl" />
-                            <div className="gradient-border relative flex size-24 items-center justify-center rounded-[28px] bg-[#0b1020]/70">
-                                <MessagesSquare className="size-11 text-[#9fb0ff] drop-shadow-[0_0_14px_rgb(124_140_255/0.9)]" />
+                            <div className="gradient-border relative flex size-24 items-center justify-center rounded-[28px] bg-abyss/70">
+                                <MessagesSquare className="size-11 text-gc-sky drop-shadow-[0_0_14px_rgb(124_140_255/0.9)]" />
                             </div>
                         </div>
                         <h2 className="font-display text-xl font-semibold text-white">

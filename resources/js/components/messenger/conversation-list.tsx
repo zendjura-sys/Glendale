@@ -30,7 +30,7 @@ function Preview({ conversation }: { conversation: ConversationSummary }) {
     return (
         <>
             {prefix && <span className="text-white/75">{prefix}: </span>}
-            <span className={cn(!last.body && 'text-[#9fb0ff]')}>
+            <span className={cn(!last.body && 'text-gc-sky')}>
                 {messagePreview(last)}
             </span>
         </>
@@ -154,7 +154,7 @@ export function ConversationList({
                                     <span className="mt-0.5 flex items-center gap-2">
                                         <span className="min-w-0 flex-1 truncate text-[13px] text-white/50">
                                             {typingName ? (
-                                                <span className="text-[#8fd8ff]">
+                                                <span className="text-gc-cyan">
                                                     {conversation.type ===
                                                     'group'
                                                         ? tr(

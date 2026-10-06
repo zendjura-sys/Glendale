@@ -72,7 +72,7 @@ export function MovieCardEmbed({
     );
 
     const classes = cn(
-        'group relative block overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0a0c1c] transition hover:border-gc-lilac-400/40',
+        'group relative block overflow-hidden rounded-2xl border border-white/[0.08] bg-abyss transition hover:border-gc-lilac-400/40',
         className,
     );
 

@@ -135,11 +135,11 @@ export default function Servers({
             <Head title={tr('Сервери GTA')} />
             <div className="space-y-5">
                 <section className="glass noise relative overflow-hidden rounded-3xl p-5 sm:p-7">
-                    <div className="pointer-events-none absolute -top-24 -right-16 size-96 rounded-full bg-[#facc15]/15 blur-3xl" />
-                    <div className="pointer-events-none absolute -bottom-36 -left-10 size-96 rounded-full bg-[#2563eb]/25 blur-3xl" />
+                    <div className="pointer-events-none absolute -top-24 -right-16 size-96 rounded-full bg-gc-gold/15 blur-3xl" />
+                    <div className="pointer-events-none absolute -bottom-36 -left-10 size-96 rounded-full bg-gc-blue/25 blur-3xl" />
                     <div className="relative flex flex-wrap items-start justify-between gap-5">
                         <div className="max-w-xl">
-                            <span className="inline-flex items-center gap-2 rounded-full border border-[#facc15]/25 bg-[#facc15]/10 px-3 py-1 text-xs font-semibold tracking-wider text-[#fde68a] uppercase">
+                            <span className="inline-flex items-center gap-2 rounded-full border border-gc-gold/25 bg-gc-gold/10 px-3 py-1 text-xs font-semibold tracking-wider text-gc-gold uppercase">
                                 {tr('🇺🇦 Зроблено в Україні')}
                             </span>
                             <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
@@ -162,7 +162,7 @@ export default function Servers({
                                     'text-emerald-300',
                                 ],
                                 [tr('Серверів'), stats.servers, 'text-white'],
-                                [tr('Сімей'), stats.families, 'text-[#c4b5fd]'],
+                                [tr('Сімей'), stats.families, 'text-gc-violet-300'],
                             ].map(([label, value, tone]) => (
                                 <div
                                     key={label}

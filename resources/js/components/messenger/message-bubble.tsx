@@ -172,7 +172,7 @@ export function MessageBubble({
                 ) : pending === 'failed' ? (
                     <AlertCircle className="size-3.5 text-rose-300" />
                 ) : read ? (
-                    <CheckCheck className="size-3.5 text-[#8fe3ff] drop-shadow-[0_0_4px_rgb(56_225_255/0.8)]" />
+                    <CheckCheck className="size-3.5 text-gc-cyan drop-shadow-[0_0_4px_rgb(56_225_255/0.8)]" />
                 ) : (
                     <Check className="size-3.5" />
                 ))}
@@ -234,7 +234,7 @@ export function MessageBubble({
                               : cn(
                                     'rounded-[20px] px-3.5 py-2',
                                     own
-                                        ? 'bg-gradient-to-br from-[#4f6bff] via-gc-indigo to-[#8b5cf6] text-white shadow-[0_8px_24px_-12px_rgb(109_93_252/0.9)]'
+                                        ? 'bg-gradient-to-br from-gc-blue via-gc-indigo to-gc-purple text-white shadow-[0_8px_24px_-12px_rgb(109_93_252/0.9)]'
                                         : 'border border-white/[0.07] bg-white/[0.06] text-white/90 backdrop-blur-xl',
                                     own
                                         ? groupEnd
@@ -264,7 +264,7 @@ export function MessageBubble({
                         >
                             <Link
                                 href={`/${message.user.username}`}
-                                className="truncate text-[13px] font-semibold text-[#9fb0ff] hover:underline"
+                                className="truncate text-[13px] font-semibold text-gc-sky hover:underline"
                             >
                                 {message.user.first_name}
                             </Link>
@@ -296,7 +296,7 @@ export function MessageBubble({
                             <span
                                 className={cn(
                                     'block truncate font-semibold',
-                                    own ? 'text-white' : 'text-[#a9b6ff]',
+                                    own ? 'text-white' : 'text-gc-lilac-200',
                                 )}
                             >
                                 {message.reply_to.author ?? tr('Повідомлення')}
@@ -411,7 +411,7 @@ export function MessageBubble({
             {!pending && (
                 <div
                     className={cn(
-                        'pointer-events-none mb-1 flex shrink-0 items-center gap-0.5 rounded-xl border border-white/[0.06] bg-[#0d1222]/90 p-0.5 opacity-0 shadow-lg backdrop-blur transition group-hover/msg:pointer-events-auto group-hover/msg:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100',
+                        'pointer-events-none mb-1 flex shrink-0 items-center gap-0.5 rounded-xl border border-white/[0.06] bg-popover/90 p-0.5 opacity-0 shadow-lg backdrop-blur transition group-hover/msg:pointer-events-auto group-hover/msg:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100',
                         own && 'flex-row-reverse',
                         toolsOpen && 'pointer-events-auto opacity-100',
                     )}

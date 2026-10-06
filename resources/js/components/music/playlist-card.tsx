@@ -16,7 +16,7 @@ export function PlaylistCover({
     return (
         <div
             className={cn(
-                'relative aspect-square overflow-hidden bg-gradient-to-br from-[#1b2150] via-[#2a1a5c] to-[#0c1030]',
+                'relative aspect-square overflow-hidden bg-gradient-to-br from-gc-indigo/80 via-gc-purple/70 to-abyss',
                 className,
             )}
         >

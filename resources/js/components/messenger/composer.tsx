@@ -270,7 +270,7 @@ export function Composer({
                         <Reply className="size-4 shrink-0 text-gc-lilac-400" />
                     )}
                     <span className="min-w-0 flex-1 border-l-2 border-gc-lilac-500 pl-2.5 text-[13px]">
-                        <span className="block font-semibold text-[#a9b6ff]">
+                        <span className="block font-semibold text-gc-lilac-200">
                             {editing
                                 ? tr('Редагування')
                                 : (context.user?.first_name ??

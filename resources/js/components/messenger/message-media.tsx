@@ -121,9 +121,9 @@ export function VoicePlayer({
                 type="button"
                 onClick={toggle}
                 className={cn(
-                    'flex size-10 shrink-0 items-center justify-center rounded-full transition hover:scale-105',
+                    'flex size-11 shrink-0 items-center justify-center rounded-full transition hover:scale-105',
                     own
-                        ? 'bg-white text-[#5b4cf0]'
+                        ? 'bg-white text-gc-indigo'
                         : 'bg-gradient-brand text-white shadow-[0_0_18px_-4px_rgb(124_92_255/0.9)]',
                 )}
                 aria-label={isPlaying ? tr('Пауза') : tr('Відтворити')}
@@ -328,7 +328,7 @@ export function ContactAttachment({
                         'flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition',
                         own
                             ? 'bg-white/15 hover:bg-white/25'
-                            : 'bg-gc-indigo/20 text-[#c7c0ff] hover:bg-gc-indigo/30',
+                            : 'bg-gc-indigo/20 text-gc-lilac-200 hover:bg-gc-indigo/30',
                     )}
                 >
                     <MessageCircle className="size-3.5" /> {tr('Написати')}

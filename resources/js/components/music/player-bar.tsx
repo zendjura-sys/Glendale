@@ -124,7 +124,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
             type="button"
             onClick={toggle}
             aria-label={player.playing ? tr('Пауза') : tr('Відтворити')}
-            className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-[#0b0d1d] shadow-[0_0_24px_-4px_rgb(139_107_255/0.9)] transition hover:scale-105"
+            className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-void shadow-[0_0_24px_-4px_rgb(139_107_255/0.9)] transition hover:scale-105"
         >
             {player.loading && !player.playing ? (
                 <Loader2 className="size-5 animate-spin" />
@@ -177,7 +177,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                                                 className={cn(
                                                     'block truncate text-[13px] font-medium',
                                                     i === player.index
-                                                        ? 'text-[#b3bcff]'
+                                                        ? 'text-gc-lilac-200'
                                                         : 'text-white',
                                                 )}
                                             >
@@ -218,7 +218,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                         : 'bottom-[calc(4.25rem+env(safe-area-inset-bottom))] lg:bottom-4',
                 )}
             >
-                <div className="pointer-events-auto relative mx-auto max-w-[1100px] overflow-hidden rounded-2xl border border-white/10 bg-[#0f1426]/70 shadow-[0_18px_50px_-28px_rgb(109_93_252/0.85)] backdrop-blur-md">
+                <div className="pointer-events-auto relative mx-auto max-w-[1100px] overflow-hidden rounded-2xl border border-white/10 bg-deep/70 shadow-[0_18px_50px_-28px_rgb(109_93_252/0.85)] backdrop-blur-md">
                     {player.current?.cover_url && (
                         <img
                             src={player.current.cover_url}
@@ -245,7 +245,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                                     className="size-11 rounded-xl lg:size-12"
                                 />
                                 {track.source === 'spotify' && (
-                                    <span className="absolute -right-1 -bottom-1 rounded-full bg-[#0b0d1d] p-0.5">
+                                    <span className="absolute -right-1 -bottom-1 rounded-full bg-void p-0.5">
                                         <SpotifyLogo className="size-3.5" />
                                     </span>
                                 )}

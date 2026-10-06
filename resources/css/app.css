@@ -36,6 +36,10 @@
     --color-gc-coral: #ff7a59;
     --color-gc-ink: #070914;
     --color-spotify: #1ed760;
+    --color-spotify-ink: #04140a;
+    --color-imdb: #f5c518;
+    --color-tmdb: #01d277;
+    --color-tmdb-sky: #01b4e4;
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -401,6 +405,107 @@
         background-color: #161b34;
         border-color: rgb(124 140 255 / 0.55);
         box-shadow: 0 0 0 4px rgb(109 93 252 / 0.16);
+    }
+
+    /* Шовкова стрічка поверх плям: лише токени бренду, без окремого canvas. */
+    .gc-aurora-blob {
+        position: absolute;
+        border-radius: 9999px;
+        animation: aurora 22s ease-in-out infinite alternate;
+    }
+
+    .gc-aurora-blob-blue {
+        top: -30%;
+        left: -15%;
+        height: 75vmax;
+        width: 75vmax;
+        opacity: 0.3;
+        filter: blur(120px);
+        background: radial-gradient(
+            circle at 30% 30%,
+            var(--color-gc-blue) 0%,
+            transparent 60%
+        );
+    }
+
+    .gc-aurora-blob-lilac {
+        top: -20%;
+        right: -25%;
+        height: 70vmax;
+        width: 70vmax;
+        opacity: 0.25;
+        filter: blur(130px);
+        animation-delay: -7s;
+        background: radial-gradient(
+            circle at 60% 40%,
+            var(--color-gc-purple) 0%,
+            transparent 60%
+        );
+    }
+
+    .gc-aurora-blob-pink {
+        bottom: -35%;
+        left: 20%;
+        height: 60vmax;
+        width: 60vmax;
+        opacity: 0.18;
+        filter: blur(140px);
+        animation-delay: -13s;
+        background: radial-gradient(
+            circle at 50% 50%,
+            var(--color-gc-pink) 0%,
+            transparent 60%
+        );
+    }
+
+    .gc-aurora-blob-cyan {
+        top: 40%;
+        left: -10%;
+        height: 40vmax;
+        width: 40vmax;
+        opacity: 0.12;
+        filter: blur(120px);
+        animation-delay: -4s;
+        background: radial-gradient(
+            circle,
+            var(--color-gc-cyan) 0%,
+            transparent 60%
+        );
+    }
+
+    .gc-aurora-silk {
+        position: absolute;
+        top: -18%;
+        left: -15%;
+        width: 130%;
+        height: 58%;
+        opacity: 0.26;
+        transform: rotate(-11deg);
+        filter: blur(42px);
+        animation: aurora 28s ease-in-out infinite alternate;
+        background: linear-gradient(
+            108deg,
+            transparent 6%,
+            color-mix(in srgb, var(--color-gc-blue) 75%, transparent) 24%,
+            color-mix(in srgb, var(--color-gc-lilac-400) 70%, transparent) 40%,
+            color-mix(in srgb, var(--color-gc-purple) 58%, transparent) 56%,
+            color-mix(in srgb, var(--color-gc-pink) 42%, transparent) 74%,
+            transparent 92%
+        );
+        mask-image: linear-gradient(to bottom, black 8%, transparent 80%);
+    }
+
+    .gc-aurora-intense .gc-aurora-blob-blue {
+        opacity: 0.55;
+    }
+    .gc-aurora-intense .gc-aurora-blob-lilac {
+        opacity: 0.5;
+    }
+    .gc-aurora-intense .gc-aurora-blob-pink {
+        opacity: 0.4;
+    }
+    .gc-aurora-intense .gc-aurora-silk {
+        opacity: 0.38;
     }
 }
 

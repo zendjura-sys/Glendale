@@ -66,9 +66,9 @@ const ratingSources: {
     label: string;
     tone: string;
 }[] = [
-    { key: 'imdb', label: 'IMDb', tone: 'text-[#f5c518]' },
-    { key: 'tmdb', label: 'TMDB', tone: 'text-[#01d277]' },
-    { key: 'shikimori', label: 'Shikimori', tone: 'text-[#8fb4ff]' },
+    { key: 'imdb', label: 'IMDb', tone: 'text-imdb' },
+    { key: 'tmdb', label: 'TMDB', tone: 'text-tmdb' },
+    { key: 'shikimori', label: 'Shikimori', tone: 'text-gc-sky' },
 ];
 
 const statusTone: Record<MovieStatus, string> = {
@@ -90,16 +90,22 @@ function durationLabel(minutes: number | null) {
 
 function ScoreRing({ value, label }: { value: number; label: string }) {
     const pct = Math.max(0, Math.min(1, value / 10));
+    const score =
+        value >= 7
+            ? 'var(--color-gc-mint)'
+            : value >= 5
+              ? 'var(--color-gc-amber)'
+              : 'var(--destructive)';
 
     return (
         <div className="flex items-center gap-2.5">
             <div
                 className="relative flex size-12 items-center justify-center rounded-full"
                 style={{
-                    background: `conic-gradient(${value >= 7 ? '#22d3a6' : value >= 5 ? '#f5b342' : '#f43f5e'} ${pct * 360}deg, rgb(255 255 255 / 0.08) 0)`,
+                    background: `conic-gradient(${score} ${pct * 360}deg, rgb(255 255 255 / 0.08) 0)`,
                 }}
             >
-                <span className="flex size-[40px] items-center justify-center rounded-full bg-[#0b0d1f] font-display text-sm font-bold text-white tabular-nums">
+                <span className="flex size-[40px] items-center justify-center rounded-full bg-void font-display text-sm font-bold text-white tabular-nums">
                     {value.toFixed(1)}
                 </span>
             </div>
@@ -340,7 +346,7 @@ export default function CinemaShow({
                                         </p>
                                     )}
                                 {movie.tagline && (
-                                    <p className="mt-2 text-sm text-[#b9c3ff]/80 italic">
+                                    <p className="mt-2 text-sm text-gc-lilac-200/80 italic">
                                         «{movie.tagline}»
                                     </p>
                                 )}

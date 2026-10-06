@@ -113,7 +113,7 @@ function Hero({ items }: { items: MovieFeatured[] }) {
                             )}
                         />
                     ) : (
-                        <div className="size-full bg-[radial-gradient(80%_80%_at_70%_20%,#6d5dfc55,transparent),radial-gradient(60%_60%_at_10%_90%,#f04fd833,transparent)]" />
+                        <div className="size-full bg-[radial-gradient(80%_80%_at_70%_20%,color-mix(in_srgb,var(--color-gc-indigo)_33%,transparent),transparent),radial-gradient(60%_60%_at_10%_90%,color-mix(in_srgb,var(--color-gc-pink)_20%,transparent),transparent)]" />
                     )}
                 </div>
             ))}
@@ -159,7 +159,7 @@ function Hero({ items }: { items: MovieFeatured[] }) {
                         )}
                     </div>
                     {movie.genres.length > 0 && (
-                        <p className="mt-2 text-xs text-[#b9c3ff]/80">
+                        <p className="mt-2 text-xs text-gc-lilac-200/80">
                             {movie.genres.join(' · ')}
                         </p>
                     )}
