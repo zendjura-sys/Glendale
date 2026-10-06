@@ -76,11 +76,13 @@ function MockPost() {
     return (
         <div className="glass-strong w-[340px] animate-float rounded-3xl p-4 shadow-[0_30px_80px_-30px_rgb(79_70_229/0.7)]">
             <div className="flex items-center gap-3">
-                <img
-                    src="https://randomuser.me/api/portraits/women/44.jpg"
-                    alt=""
-                    className="size-10 rounded-full object-cover ring-2 ring-gc-indigo/60"
-                />
+                <span className="gc-avatar inline-flex size-10 ring-2 ring-gc-indigo/60">
+                    <img
+                        src="https://randomuser.me/api/portraits/women/44.jpg"
+                        alt=""
+                        className="size-full object-cover"
+                    />
+                </span>
                 <div className="leading-tight">
                     <div className="text-sm font-semibold text-white">
                         {tr('Софія Мельник')}
@@ -151,12 +153,16 @@ function MockMovie() {
                 </div>
                 <div className="mt-1 flex -space-x-1.5">
                     {[21, 33, 47].map((n) => (
-                        <img
+                        <span
                             key={n}
-                            src={`https://randomuser.me/api/portraits/thumb/men/${n}.jpg`}
-                            alt=""
-                            className="size-5 rounded-full border border-abyss"
-                        />
+                            className="gc-avatar inline-flex size-5 ring-1 ring-abyss"
+                        >
+                            <img
+                                src={`https://randomuser.me/api/portraits/thumb/men/${n}.jpg`}
+                                alt=""
+                                className="size-full object-cover"
+                            />
+                        </span>
                     ))}
                     <span className="pl-3 text-xs text-white/45">
                         {tr('+12 друзів')}
@@ -247,7 +253,7 @@ export default function Welcome({
                                         user={m}
                                         size="sm"
                                         showOnline={false}
-                                        className="rounded-full border-2 border-background"
+                                        className="ring-2 ring-background"
                                     />
                                 ))}
                             </div>

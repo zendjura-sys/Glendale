@@ -286,13 +286,15 @@ export function SpotifyPanel({
                     <div className="pointer-events-none absolute -top-24 -right-16 size-72 rounded-full bg-spotify/15 blur-3xl" />
                     <div className="relative flex flex-wrap items-center gap-4">
                         {account.avatar_url ? (
-                            <img
-                                src={account.avatar_url}
-                                alt=""
-                                className="size-14 rounded-full object-cover ring-2 ring-spotify/60"
-                            />
+                            <span className="gc-avatar inline-flex size-14 ring-2 ring-spotify/60">
+                                <img
+                                    src={account.avatar_url}
+                                    alt=""
+                                    className="size-full object-cover"
+                                />
+                            </span>
                         ) : (
-                            <span className="flex size-14 items-center justify-center rounded-full bg-spotify/15">
+                            <span className="gc-avatar flex size-14 items-center justify-center bg-spotify/15">
                                 <SpotifyLogo className="size-7" />
                             </span>
                         )}

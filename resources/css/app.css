@@ -407,6 +407,12 @@
         box-shadow: 0 0 0 4px rgb(109 93 252 / 0.16);
     }
 
+    /* Кругла аватарка: радіус фіксований, щоб обводка не лишалась квадратом. */
+    .gc-avatar {
+        overflow: hidden;
+        border-radius: 9999px;
+    }
+
     /* Шовкова стрічка поверх плям: лише токени бренду, без окремого canvas. */
     .gc-aurora-blob {
         position: absolute;

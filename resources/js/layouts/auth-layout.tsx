@@ -82,13 +82,17 @@ function Showcase() {
             <div className="relative z-10 flex items-center gap-4 text-xs text-white/35">
                 <div className="flex -space-x-2">
                     {[12, 32, 45, 64, 68].map((n, i) => (
-                        <img
+                        <span
                             key={n}
-                            src={`https://randomuser.me/api/portraits/thumb/${i % 2 ? 'women' : 'men'}/${n}.jpg`}
-                            alt=""
-                            className="size-8 rounded-full border-2 border-background object-cover"
-                            loading="lazy"
-                        />
+                            className="gc-avatar inline-flex size-8 ring-2 ring-background"
+                        >
+                            <img
+                                src={`https://randomuser.me/api/portraits/thumb/${i % 2 ? 'women' : 'men'}/${n}.jpg`}
+                                alt=""
+                                className="size-full object-cover"
+                                loading="lazy"
+                            />
+                        </span>
                     ))}
                 </div>
                 {tr('Приєднуйся до спільноти GameCon')}
