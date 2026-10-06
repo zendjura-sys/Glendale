@@ -90,6 +90,30 @@ class LocalizationTest extends TestCase
         $this->get('/i18n/ru.js')->assertNotFound();
     }
 
+    public function test_first_html_page_uses_the_same_translations_as_later_visits(): void
+    {
+        $this->translate('en', ['Пошук людей' => 'Find people']);
+        $user = User::factory()->create();
+        $user->forceFill(['locale' => 'en'])->save();
+
+        $html = $this->actingAs($user)->get('/feed')->assertOk()->getContent();
+        $page = $this->embeddedPage((string) $html);
+        $labels = collect($page['props']['nav'] ?? [])->pluck('label', 'key');
+        $this->assertSame('Find people', $labels['people'] ?? null);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function embeddedPage(string $html): array
+    {
+        $this->assertSame(1, preg_match('/<script[^>]*data-page="app"[^>]*>(.*?)<\/script>/s', $html, $matches));
+        $page = json_decode(html_entity_decode($matches[1], ENT_QUOTES), true);
+        $this->assertIsArray($page);
+
+        return $page;
+    }
+
     public function test_app_gets_its_dictionary_and_languages(): void
     {
         $this->getJson('/api/v1/i18n', ['X-Locale' => 'de'])->assertOk()
