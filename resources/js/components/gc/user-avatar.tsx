@@ -56,12 +56,12 @@ export function UserAvatar({
             src={user.avatar_url}
             alt={user.name}
             loading="lazy"
-            className="size-full rounded-full object-cover"
+            className="size-full object-cover"
         />
     ) : (
         <span
             className={cn(
-                'flex size-full items-center justify-center rounded-full bg-gradient-to-br font-display font-semibold text-white',
+                'flex size-full items-center justify-center bg-gradient-to-br font-display font-semibold text-white',
                 palette,
             )}
         >
@@ -72,19 +72,19 @@ export function UserAvatar({
     return (
         <span
             className={cn(
-                'relative inline-flex shrink-0',
+                'relative inline-flex shrink-0 rounded-[9999px]',
                 sizes[size],
                 className,
             )}
         >
             {ring ? (
-                <span className="ring-gradient flex size-full rounded-full p-[3px] shadow-[0_0_40px_-6px_rgb(124_92_255/0.8)]">
-                    <span className="flex size-full rounded-full bg-void p-[3px]">
+                <span className="gc-avatar ring-gradient flex size-full p-[3px] shadow-[0_0_40px_-6px_rgb(124_92_255/0.8)]">
+                    <span className="gc-avatar flex size-full bg-void p-[3px]">
                         {inner}
                     </span>
                 </span>
             ) : (
-                <span className="flex size-full overflow-hidden rounded-full bg-white/5 ring-1 ring-white/10">
+                <span className="gc-avatar flex size-full bg-white/5 ring-1 ring-white/10">
                     {inner}
                 </span>
             )}

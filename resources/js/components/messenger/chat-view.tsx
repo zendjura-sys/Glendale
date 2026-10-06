@@ -65,7 +65,7 @@ function TypingDots() {
             {[0, 1, 2].map((i) => (
                 <span
                     key={i}
-                    className="size-1 animate-bounce rounded-full bg-[#8fd8ff]"
+                    className="size-1 animate-bounce rounded-full bg-gc-cyan"
                     style={{ animationDelay: `${i * 0.15}s` }}
                 />
             ))}
@@ -595,7 +595,7 @@ export function ChatView({
     };
 
     const subtitle = typingLabel ? (
-        <span className="flex items-center gap-1.5 text-[#8fd8ff]">
+        <span className="flex items-center gap-1.5 text-gc-cyan">
             {isGroup
                 ? tr('{typingLabel} друкує', { typingLabel })
                 : tr('друкує')}{' '}
@@ -962,7 +962,7 @@ export function ChatView({
 function DaySeparator({ iso }: { iso: string }) {
     return (
         <div className="sticky top-1 z-10 flex justify-center py-2">
-            <span className="rounded-full border border-white/[0.06] bg-[#0b1020]/80 px-3 py-1 text-xs font-medium text-white/60 backdrop-blur-xl">
+            <span className="rounded-full border border-white/[0.06] bg-abyss/80 px-3 py-1 text-xs font-medium text-white/60 backdrop-blur-xl">
                 {dayLabel(iso)}
             </span>
         </div>

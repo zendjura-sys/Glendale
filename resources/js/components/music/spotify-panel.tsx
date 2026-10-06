@@ -111,7 +111,7 @@ function Tracks({ url, empty }: { url: string | null; empty: string }) {
             <button
                 type="button"
                 onClick={() => playQueue(data.tracks, 0)}
-                className="mb-3 inline-flex items-center gap-2 rounded-full bg-spotify px-4 py-2 text-sm font-semibold text-[#06140b] transition hover:scale-[1.03]"
+                className="mb-3 inline-flex min-h-11 items-center gap-2 rounded-full bg-spotify px-4 text-sm font-semibold text-spotify-ink transition hover:scale-[1.03]"
             >
                 <Play className="size-4 fill-current" /> {tr('Слухати все')}
             </button>
@@ -192,7 +192,7 @@ function Playlists() {
                         ) : (
                             <ListMusic className="absolute inset-0 m-auto size-8 text-white/30" />
                         )}
-                        <span className="absolute right-2 bottom-2 flex size-10 translate-y-2 items-center justify-center rounded-full bg-spotify text-[#06140b] opacity-0 shadow-lg transition group-hover:translate-y-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
+                        <span className="absolute right-2 bottom-2 flex size-11 translate-y-2 items-center justify-center rounded-full bg-spotify text-spotify-ink opacity-0 shadow-lg transition group-hover:translate-y-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
                             <Play className="ml-0.5 size-4 fill-current" />
                         </span>
                     </span>
@@ -286,13 +286,15 @@ export function SpotifyPanel({
                     <div className="pointer-events-none absolute -top-24 -right-16 size-72 rounded-full bg-spotify/15 blur-3xl" />
                     <div className="relative flex flex-wrap items-center gap-4">
                         {account.avatar_url ? (
-                            <img
-                                src={account.avatar_url}
-                                alt=""
-                                className="size-14 rounded-full object-cover ring-2 ring-spotify/60"
-                            />
+                            <span className="gc-avatar inline-flex size-14 ring-2 ring-spotify/60">
+                                <img
+                                    src={account.avatar_url}
+                                    alt=""
+                                    className="size-full object-cover"
+                                />
+                            </span>
                         ) : (
-                            <span className="flex size-14 items-center justify-center rounded-full bg-spotify/15">
+                            <span className="gc-avatar flex size-14 items-center justify-center bg-spotify/15">
                                 <SpotifyLogo className="size-7" />
                             </span>
                         )}
@@ -311,7 +313,7 @@ export function SpotifyPanel({
                             </a>
                             <p className="text-xs text-white/50">
                                 {account.premium ? (
-                                    <span className="mr-2 rounded-full bg-gradient-to-r from-spotify to-gc-cyan px-2 py-0.5 font-semibold text-[#04140a]">
+                                    <span className="mr-2 rounded-full bg-gradient-to-r from-spotify to-gc-cyan px-2 py-0.5 font-semibold text-spotify-ink">
                                         Premium
                                     </span>
                                 ) : (
@@ -356,7 +358,7 @@ export function SpotifyPanel({
                     </div>
                 </section>
             ) : (
-                <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0f3d24] via-[#0b1d1a] to-[#120c2c] p-6 ring-1 ring-spotify/25 sm:p-8">
+                <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-spotify/30 via-abyss to-deep p-6 ring-1 ring-spotify/25 sm:p-8">
                     <div className="pointer-events-none absolute -top-20 -right-20 size-80 rounded-full bg-spotify/25 blur-3xl" />
                     <div className="relative flex flex-wrap items-center gap-6">
                         <SpotifyLogo className="size-16 drop-shadow-[0_0_24px_rgb(30_215_96/0.6)]" />
@@ -385,9 +387,9 @@ export function SpotifyPanel({
                         </div>
                         <a
                             href="/music/spotify/connect"
-                            className="inline-flex h-12 items-center gap-2 rounded-full bg-spotify px-6 text-sm font-bold text-[#04140a] shadow-[0_0_30px_-6px_rgb(30_215_96/0.9)] transition hover:scale-[1.03]"
+                            className="inline-flex h-12 items-center gap-2 rounded-full bg-spotify px-6 text-sm font-bold text-spotify-ink shadow-[0_0_30px_-6px_rgb(30_215_96/0.9)] transition hover:scale-[1.03]"
                         >
-                            <SpotifyLogo className="size-5 fill-[#04140a]" />
+                            <SpotifyLogo className="size-5 fill-spotify-ink" />
                             {tr('Увійти через Spotify')}
                         </a>
                     </div>

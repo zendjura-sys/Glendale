@@ -4,10 +4,10 @@ import { LOCALE, tr } from '@/lib/i18n';
 
 const tones = [
     'from-gc-blue to-gc-indigo',
-    'from-gc-purple to-[#ec4899]',
-    'from-[#f59e0b] to-[#ef4444]',
-    'from-[#10b981] to-[#0ea5e9]',
-    'from-[#facc15] to-[#2563eb]',
+    'from-gc-purple to-gc-pink',
+    'from-gc-amber to-gc-coral',
+    'from-gc-mint to-gc-cyan',
+    'from-gc-gold to-gc-blue',
 ];
 
 export function ServerIcon({

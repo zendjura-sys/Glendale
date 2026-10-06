@@ -76,11 +76,13 @@ function MockPost() {
     return (
         <div className="glass-strong w-[340px] animate-float rounded-3xl p-4 shadow-[0_30px_80px_-30px_rgb(79_70_229/0.7)]">
             <div className="flex items-center gap-3">
-                <img
-                    src="https://randomuser.me/api/portraits/women/44.jpg"
-                    alt=""
-                    className="size-10 rounded-full object-cover ring-2 ring-gc-indigo/60"
-                />
+                <span className="gc-avatar inline-flex size-10 ring-2 ring-gc-indigo/60">
+                    <img
+                        src="https://randomuser.me/api/portraits/women/44.jpg"
+                        alt=""
+                        className="size-full object-cover"
+                    />
+                </span>
                 <div className="leading-tight">
                     <div className="text-sm font-semibold text-white">
                         {tr('Софія Мельник')}
@@ -101,7 +103,7 @@ function MockPost() {
                 className="mt-3 aspect-[17/10] w-full rounded-2xl object-cover"
             />
             <div className="mt-3 flex items-center gap-4 text-xs text-white/50">
-                <span className="flex items-center gap-1.5 text-[#ff7ad9]">
+                <span className="flex items-center gap-1.5 text-gc-pink">
                     <Heart className="size-4 fill-current" /> 248
                 </span>
                 <span className="flex items-center gap-1.5">
@@ -143,7 +145,7 @@ function MockMovie() {
                 className="h-[72px] w-[52px] rounded-lg object-cover"
             />
             <div className="min-w-0">
-                <div className="text-xs font-medium tracking-wider text-[#ff9de6] uppercase">
+                <div className="text-xs font-medium tracking-wider text-gc-pink uppercase">
                     {tr('Дивляться зараз')}
                 </div>
                 <div className="truncate text-sm font-semibold text-white">
@@ -151,12 +153,16 @@ function MockMovie() {
                 </div>
                 <div className="mt-1 flex -space-x-1.5">
                     {[21, 33, 47].map((n) => (
-                        <img
+                        <span
                             key={n}
-                            src={`https://randomuser.me/api/portraits/thumb/men/${n}.jpg`}
-                            alt=""
-                            className="size-5 rounded-full border border-[#0c1024]"
-                        />
+                            className="gc-avatar inline-flex size-5 ring-1 ring-abyss"
+                        >
+                            <img
+                                src={`https://randomuser.me/api/portraits/thumb/men/${n}.jpg`}
+                                alt=""
+                                className="size-full object-cover"
+                            />
+                        </span>
                     ))}
                     <span className="pl-3 text-xs text-white/45">
                         {tr('+12 друзів')}
@@ -184,14 +190,14 @@ export default function Welcome({
                     <nav className="ml-auto flex items-center gap-2">
                         <Link
                             href={login()}
-                            className="rounded-xl px-4 py-2 text-sm font-medium text-white/75 transition hover:bg-white/[0.06] hover:text-white"
+                            className="inline-flex min-h-11 items-center rounded-xl px-4 text-sm font-medium text-white/75 transition hover:bg-white/[0.06] hover:text-white"
                         >
                             {tr('Увійти')}
                         </Link>
                         {canRegister && (
                             <Link
                                 href={register()}
-                                className="btn-glow rounded-xl px-4 py-2 text-sm font-semibold text-white"
+                                className="btn-glow inline-flex min-h-11 items-center rounded-xl px-4 text-sm font-semibold text-white"
                             >
                                 {tr('Реєстрація')}
                             </Link>
@@ -247,7 +253,7 @@ export default function Welcome({
                                         user={m}
                                         size="sm"
                                         showOnline={false}
-                                        className="rounded-full border-2 border-background"
+                                        className="ring-2 ring-background"
                                     />
                                 ))}
                             </div>

@@ -75,10 +75,10 @@ export default function ServerShow({
                                 <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-white/65">
                                     {server.platform_label}
                                 </span>
-                                <span className="rounded-full bg-gc-indigo/15 px-2 py-0.5 text-[#b9b0ff]">
+                                <span className="rounded-full bg-gc-indigo/15 px-2 py-0.5 text-gc-violet-300">
                                     {server.multiplayer_label}
                                 </span>
-                                <span className="rounded-full bg-[#facc15]/10 px-2 py-0.5 text-[#fde68a]">
+                                <span className="rounded-full bg-gc-gold/10 px-2 py-0.5 text-gc-gold">
                                     {server.language === 'uk'
                                         ? tr('🇺🇦 Україна')
                                         : server.language.toUpperCase()}

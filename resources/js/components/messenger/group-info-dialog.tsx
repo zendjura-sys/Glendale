@@ -230,7 +230,7 @@ export function GroupInfoDialog({
                             <button
                                 type="button"
                                 onClick={() => setAdding(true)}
-                                className="mb-1 flex w-full items-center gap-3 rounded-xl p-2 text-sm font-medium text-[#9fb0ff] transition hover:bg-white/[0.05]"
+                                className="mb-1 flex min-h-11 w-full items-center gap-3 rounded-xl p-2 text-sm font-medium text-gc-sky transition hover:bg-white/[0.05]"
                             >
                                 <span className="flex size-10 items-center justify-center rounded-full bg-gc-indigo/15">
                                     <UserPlus className="size-[18px]" />
@@ -276,7 +276,7 @@ export function GroupInfoDialog({
                                                 {tr('Творець')}
                                             </span>
                                         ) : member.role === 'admin' ? (
-                                            <span className="flex items-center gap-1 rounded-full bg-gc-blue/10 px-2 py-0.5 text-xs font-medium text-[#8fb4ff]">
+                                            <span className="flex items-center gap-1 rounded-full bg-gc-blue/10 px-2 py-0.5 text-xs font-medium text-gc-sky">
                                                 <ShieldCheck className="size-3" />
                                                 {tr('Адмін')}
                                             </span>

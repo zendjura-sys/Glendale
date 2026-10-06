@@ -35,7 +35,7 @@ export function MoviePoster({
                 className,
             )}
             style={{
-                background: `radial-gradient(120% 90% at 20% 0%, hsl(${hue} 90% 60% / .55), transparent 60%), linear-gradient(160deg, hsl(${hue + 30} 60% 22%), #0b0d1f)`,
+                background: `radial-gradient(120% 90% at 20% 0%, hsl(${hue} 90% 60% / .55), transparent 60%), linear-gradient(160deg, hsl(${hue + 30} 60% 22%), var(--color-void))`,
             }}
         >
             <Clapperboard className="size-8 text-white/50" />

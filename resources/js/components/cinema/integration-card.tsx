@@ -44,9 +44,9 @@ export type CinemaIntegration = {
 const tones: Record<string, string> = {
     kodik: 'from-gc-blue to-gc-indigo',
     flixcdn: 'from-gc-purple to-gc-pink',
-    tmdb: 'from-[#01b4e4] to-gc-mint',
-    shikimori: 'from-[#5b7cfa] to-gc-cyan',
-    omdb: 'from-[#f5c518] to-gc-amber',
+    tmdb: 'from-tmdb-sky to-gc-mint',
+    shikimori: 'from-gc-indigo to-gc-cyan',
+    omdb: 'from-imdb to-gc-amber',
 };
 
 function initialValues(fields: IntegrationField[]) {
