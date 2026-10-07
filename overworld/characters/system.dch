@@ -17,7 +17,7 @@
 &"portraits": {
 "Anime/Default": {
 "export_overrides": {
-"image": "\"res://assets/portraits/system.svg\""
+"image": "\"res://assets/portraits/expressions/system_calm.png\""
 },
 "image": "",
 "mirror": false,
@@ -27,7 +27,107 @@
 },
 "Default": {
 "export_overrides": {
-"image": "\"res://assets/portraits/system.svg\""
+"image": "\"res://assets/portraits/expressions/system_calm.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/Angry": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/system_angry.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Angry": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/system_angry.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/Cheerful": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/system_joy.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Cheerful": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/system_joy.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/Sad": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/system_sad.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Sad": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/system_sad.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/Sorrow": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/system_sorrow.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Sorrow": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/system_sorrow.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/InLove": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/system_in_love.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"InLove": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/system_in_love.png\""
 },
 "image": "",
 "mirror": false,
