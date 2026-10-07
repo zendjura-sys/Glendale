@@ -41,8 +41,26 @@ Single waist-up portrait, front three-quarter view, neutral friendly expression,
 head and shoulders fill the upper half of the image.
 ```
 
-> **Совет.** Чтобы персонаж совпадал между генерациями, загрузите в Flow готовую картинку
-> как референс («Ingredients») и допишите: `same character as reference image`.
+### Формат Г — одна эмоция на картинку (лучшее качество)
+
+Генератор артов выдаёт одну большую картинку лучше, чем мелкий лист 3×2.
+Делайте по картинке на эмоцию, меняя только последнюю строку:
+
+```
+Single waist-up portrait, front three-quarter view, the character fills the frame,
+high resolution, plain flat light gray background.
+Expression: ANGRY, clenched teeth, furrowed brows.
+```
+Варианты строки `Expression:`
+- `NEUTRAL, calm relaxed face`
+- `ANGRY, clenched teeth, furrowed brows`
+- `SURPRISED, wide eyes, open mouth`
+- `CHEERFUL, eyes closed, big open smile`
+- `IN LOVE, deep blush, shy smile, hand near the chest`
+- `SAD, teary eyes, trembling lips`
+
+> **Совет.** Чтобы персонаж совпадал между картинками, загрузите удачную генерацию
+> как изображение-референс и допишите: `same character as reference image, same outfit`.
 
 ---
 
