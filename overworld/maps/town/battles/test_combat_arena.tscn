@@ -18,36 +18,39 @@
 [ext_resource type="Resource" uid="uid://c01ilo1olkfsm" path="res://combat/battlers/squirrel/area_attack.tres" id="16_okbe2"]
 [ext_resource type="PackedScene" path="res://combat/battlers/slime/slime_anim.tscn" id="16_ve6h1"]
 
+[ext_resource type="PackedScene" path="res://combat/battlers/imp/imp_normal_anim.tscn" id="90_impn"]
+[ext_resource type="PackedScene" path="res://combat/battlers/imp/imp_angry_anim.tscn" id="91_impa"]
+[ext_resource type="PackedScene" path="res://combat/battlers/imp/imp_taunting_anim.tscn" id="92_impt"]
 [node name="TestCombatArena" instance=ExtResource("1_etpkf")]
 music = ExtResource("2_vo8mp")
 
 [node name="Background" parent="." index="0"]
 texture = ExtResource("2_i30nm")
 
-[node name="Багокот А" type="Node2D" parent="Battlers" index="0"]
+[node name="Бес А" type="Node2D" parent="Battlers" index="0"]
 position = Vector2(465, 722)
 script = ExtResource("4_6ngh4")
 stats = ExtResource("5_1st0g")
 actions = Array[ExtResource("6_jjek5")]([ExtResource("7_v2dhq")])
-battler_anim_scene = ExtResource("6_r8rpm")
+battler_anim_scene = ExtResource("90_impn")
 ai_scene = ExtResource("9_omkxl")
 metadata/_edit_group_ = true
 
-[node name="Багокот Б" type="Node2D" parent="Battlers" index="1"]
+[node name="Бес Б" type="Node2D" parent="Battlers" index="1"]
 position = Vector2(284, 896)
 script = ExtResource("4_6ngh4")
 stats = ExtResource("5_1st0g")
 actions = Array[ExtResource("6_jjek5")]([ExtResource("7_v2dhq")])
-battler_anim_scene = ExtResource("6_r8rpm")
+battler_anim_scene = ExtResource("91_impa")
 ai_scene = ExtResource("9_omkxl")
 metadata/_edit_group_ = true
 
-[node name="Багокот В" type="Node2D" parent="Battlers" index="2"]
+[node name="Бес В" type="Node2D" parent="Battlers" index="2"]
 position = Vector2(606, 992)
 script = ExtResource("4_6ngh4")
 stats = ExtResource("5_1st0g")
 actions = Array[ExtResource("6_jjek5")]([ExtResource("7_v2dhq")])
-battler_anim_scene = ExtResource("6_r8rpm")
+battler_anim_scene = ExtResource("92_impt")
 ai_scene = ExtResource("9_omkxl")
 metadata/_edit_group_ = true
 

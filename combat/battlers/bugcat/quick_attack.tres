@@ -6,8 +6,8 @@
 script = ExtResource("1_k2okg")
 hit_chance = 65.0
 base_damage = 30
-label = "Быстрый укус"
-description = "Быстрая атака: мало урона, короткая перезарядка."
+label = "Удар когтями"
+description = "Бес полосует когтями: мало урона, короткая перезарядка."
 target_scope = 1
 targets_friendlies = false
 targets_enemies = true

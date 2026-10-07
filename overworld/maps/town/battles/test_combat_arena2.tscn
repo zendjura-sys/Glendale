@@ -21,18 +21,21 @@
 [ext_resource type="Resource" uid="uid://c01ilo1olkfsm" path="res://combat/battlers/squirrel/area_attack.tres" id="17_r76vx"]
 [ext_resource type="Resource" uid="uid://cfj3osdc334ks" path="res://combat/battlers/squirrel/heal_friendly.tres" id="18_fxlpy"]
 
+[ext_resource type="PackedScene" path="res://combat/battlers/imp/imp_normal_anim.tscn" id="90_impn"]
+[ext_resource type="PackedScene" path="res://combat/battlers/imp/imp_angry_anim.tscn" id="91_impa"]
+[ext_resource type="PackedScene" path="res://combat/battlers/imp/imp_taunting_anim.tscn" id="92_impt"]
 [node name="TestCombatArena" instance=ExtResource("1_tqh6v")]
 music = ExtResource("2_gvpi1")
 
 [node name="Background" parent="." index="0"]
 texture = ExtResource("2_5pnp5")
 
-[node name="Багокот" type="Node2D" parent="Battlers" index="0"]
+[node name="Бес" type="Node2D" parent="Battlers" index="0"]
 position = Vector2(249, 853)
 script = ExtResource("6_q0bkx")
 stats = ExtResource("5_46fcu")
 actions = Array[ExtResource("7_7p3qq")]([ExtResource("8_71nny")])
-battler_anim_scene = ExtResource("8_rgy6v")
+battler_anim_scene = ExtResource("92_impt")
 ai_scene = ExtResource("9_rktw6")
 metadata/_edit_group_ = true
 
