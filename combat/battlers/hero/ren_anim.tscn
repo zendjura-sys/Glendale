@@ -14,10 +14,10 @@ libraries = {
 
 [node name="Sprite2D" type="Sprite2D" parent="Pivot" index="1"]
 texture = ExtResource("2_3eyxi")
-offset = Vector2(0, -220)
+offset = Vector2(0, -230)
 
 [node name="FrontAnchor" parent="." index="1"]
-position = Vector2(110, -220)
+position = Vector2(108, -230)
 
 [node name="TopAnchor" parent="." index="2"]
-position = Vector2(0, -450)
+position = Vector2(-40, -470)

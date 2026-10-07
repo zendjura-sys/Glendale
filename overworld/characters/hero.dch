@@ -15,6 +15,26 @@
 &"nicknames": [""],
 &"offset": Vector2(0, 0),
 &"portraits": {
+"Anime/Shout": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/ren_shout.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 0.8,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Shout": {
+"export_overrides": {
+"image": "\"res://overworld/characters/hero_field.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
 "Anime/Default": {
 "export_overrides": {
 "image": "\"res://assets/portraits/expressions/ren_calm.png\""
