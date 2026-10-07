@@ -37,7 +37,7 @@ SHEET_CONFIG = {
     "archmage": dict(panels=GRID_2X2_LABEL_BOTTOM, tolerance=28, box=(70, 10, 384, 360)),
     "swordsman": dict(panels=GRID_2X2_LABEL_TOP, bust=0.42),
     "knight": dict(panels=GRID_2X2_LABEL_TOP, bust=0.45),
-    "slime": dict(panels=[("idle", 0, 120, 384, 400), ("happy", 384, 120, 768, 420),
+    "slime": dict(panels=[("idle", 0, 120, 384, 400), ("happy", 384, 100, 768, 420),
                           ("angry", 0, 510, 384, 840), ("hurt", 384, 590, 768, 840),
                           ("surprised", 0, 950, 384, 1340), ("sleep", 384, 1100, 768, 1340)],
                   bust=1.0, gray_background=True),
@@ -80,6 +80,10 @@ def _keep_largest(rgb: Image.Image, background: np.ndarray) -> Image.Image:
 def bust_crop(image: Image.Image, bust: float, center: float | None = None) -> Image.Image:
     alpha = np.array(image.getchannel("A")) > 20
     ys, xs = np.nonzero(alpha)
+    if bust >= 1.0:
+        # Фигура целиком (слизни): кадр по всей фигуре, без центрирования по голове.
+        return image.crop((max(0, xs.min() - 6), max(0, ys.min() - 6),
+                           min(image.width, xs.max() + 7), min(image.height, ys.max() + 7)))
     top, bottom = ys.min(), ys.max()
     height = int((bottom - top) * bust)
     # Центр по голове: средний x непрозрачных пикселей в верхних 12% фигуры.
