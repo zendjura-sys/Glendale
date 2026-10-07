@@ -17,7 +17,17 @@
 &"portraits": {
 "Anime/Default": {
 "export_overrides": {
-"image": "\"res://assets/portraits/enemy_ghost.svg\""
+"image": "\"res://assets/portraits/expressions/slime_idle.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 0.55,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Default": {
+"export_overrides": {
+"image": "\"res://overworld/characters/ghost.atlastex\""
 },
 "image": "",
 "mirror": false,
@@ -25,10 +35,101 @@
 "scale": 1,
 "scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
 },
-"Default": {
+"Anime/Happy": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/slime_happy.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 0.55,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Happy": {
 "export_overrides": {
 "image": "\"res://overworld/characters/ghost.atlastex\""
 },
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/Angry": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/slime_angry.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 0.55,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Angry": {
+"export_overrides": {
+"image": "\"res://overworld/characters/ghost.atlastex\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/Hurt": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/slime_hurt.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 0.55,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Hurt": {
+"export_overrides": {
+"image": "\"res://overworld/characters/ghost.atlastex\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/Surprised": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/slime_surprised.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 0.55,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Surprised": {
+"export_overrides": {
+"image": "\"res://overworld/characters/ghost.atlastex\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/Sleep": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/slime_sleep.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 0.55,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Sleep": {
+"export_overrides": {
+"image": "\"res://overworld/characters/ghost.atlastex\""
+},
+"image": "",
 "mirror": false,
 "offset": Vector2(0, 0),
 "scale": 1,

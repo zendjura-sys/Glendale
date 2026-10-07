@@ -1,22 +1,22 @@
 if {TokenQuestStatus} == 0:
-	fan_of_four: ОНИ ЗДЕСЬ! [speed=3.5][color=orange][wave]Четвёрка Рассвета[/wave][/color][speed=1.0], ЛУЧШИЕ ИЗ ЛУЧШИХ!!!
+	fan_of_four (Cheerful): ОНИ ЗДЕСЬ! [speed=3.5][color=orange][wave]Четвёрка Рассвета[/wave][/color][speed=1.0], ЛУЧШИЕ ИЗ ЛУЧШИХ!!!
 	fan_of_four: Они закрыли [color=orange][wave]ШЕСТЬ Разломов[/wave][/color]! Они победили [color=red]Короля Глюков[/color], [color=red]Тёмного Лорда Понедельника[/color] и [color=red]Барона Бюрократа[/color] — и всё это [color=orange][wave]НА ПРОШЛОЙ НЕДЕЛЕ[/wave][/color]!
-	fan_of_four: Я бы отдала [color=orange][wave]ВСЁ[/wave][/color] за их автографы, но я СЛИШКОМ СТЕСНЯЮСЬ! А-А-А-А!!!
+	fan_of_four (InLove): Я бы отдала [color=orange][wave]ВСЁ[/wave][/color] за их автографы, но я СЛИШКОМ СТЕСНЯЮСЬ! А-А-А-А!!!
 	set {TokenQuestStatus} = 1
 	[signal arg="quest_tokens_started"]
 elif {TokenQuestStatus} < 3:
 	if {TokenCount} >= 4:
-		fan_of_four: Это... они хотели, чтобы это было у меня?
+		fan_of_four (Surprised): Это... они хотели, чтобы это было у меня?
 		fan_of_four: ...
-		fan_of_four: ЛУЧШИЙ ДЕНЬ В МОЕЙ ЖИЗНИ!!!
-		fan_of_four: Как мне тебя отблагодарить? Вот, возьми жезл, который я [b]одолжила[/b] у той безумной старушки.
+		fan_of_four (InLove): ЛУЧШИЙ ДЕНЬ В МОЕЙ ЖИЗНИ!!!
+		fan_of_four (Cheerful): Как мне тебя отблагодарить? Вот, возьми жезл, который я [b]одолжила[/b] у той безумной старушки.
 		[signal arg="GiveWand"]
 		set {TokenQuestStatus} = 3
 		[signal arg="quest_tokens_finished"]
 	else:
-		fan_of_four: ВОЛНУЮСЬ? Я? С ЧЕГО ТЫ ВЗЯЛ?
+		fan_of_four (Angry): ВОЛНУЮСЬ? Я? С ЧЕГО ТЫ ВЗЯЛ?
 		# Квест уже начат: интеракция должна знать, что это не первая встреча.
 		set {TokenQuestStatus} = 2
 else:
-	fan_of_four: ЛУЧШИЙ ДЕНЬ В МОЕЙ ЖИЗНИ!!!
+	fan_of_four (InLove): ЛУЧШИЙ ДЕНЬ В МОЕЙ ЖИЗНИ!!!
 [end_timeline]

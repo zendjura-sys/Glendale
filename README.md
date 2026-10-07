@@ -44,6 +44,11 @@
   (без кириллицы) заменён на Pixelify Sans (OFL).
 - **Сюжет исекая.** Вступление в офисе, «Система», новые имена и реплики
   у всех персонажей (`overworld/maps/**/*.dtl`, `*.dch`).
+- **Портреты с эмоциями.** У Мими, Сильвии, Киры, Гарета, Дзюн, Аурелия и Бага
+  есть эмоции `Angry`, `Surprised`, `Cheerful`, `InLove` (у слизня-Бага —
+  `Happy`, `Hurt`, `Sleep`…). В диалоге: `wizard (Angry): Текст`.
+  Источник — листы в `assets/portraits/sheets/`, нарезка:
+  `python3 tools/cut_portraits.py` (нужны Pillow, numpy, scipy).
 - **Аниме-портреты.** Крупный портрет говорящего слева над окном диалога
   (`AnimePortrait` в `src/main.tscn`, портреты `Anime/Default` у персонажей).
   Генератор: `python3 tools/make_portraits.py`.

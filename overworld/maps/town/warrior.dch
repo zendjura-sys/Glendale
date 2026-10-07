@@ -17,7 +17,7 @@
 &"portraits": {
 "Anime/Default": {
 "export_overrides": {
-"image": "\"res://assets/portraits/warrior.svg\""
+"image": "\"res://assets/portraits/expressions/swordsman_cheerful.png\""
 },
 "image": "",
 "mirror": false,
@@ -26,6 +26,86 @@
 "scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
 },
 "Default": {
+"export_overrides": {
+"image": "\"res://overworld/characters/knight.atlastex\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/Angry": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/swordsman_angry.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Angry": {
+"export_overrides": {
+"image": "\"res://overworld/characters/knight.atlastex\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/Surprised": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/swordsman_surprised.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Surprised": {
+"export_overrides": {
+"image": "\"res://overworld/characters/knight.atlastex\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/Cheerful": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/swordsman_cheerful.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Cheerful": {
+"export_overrides": {
+"image": "\"res://overworld/characters/knight.atlastex\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/InLove": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/swordsman_in_love.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"InLove": {
 "export_overrides": {
 "image": "\"res://overworld/characters/knight.atlastex\""
 },

@@ -63,3 +63,7 @@ License: [SIL Open Font License 1.1](assets/gui/font/PixelifySans-OFL.txt)
 Оригинальные персонажи, сгенерированы скриптом tools/make_portraits.py специально для этого проекта.
 
 Сюжет, персонажи и тексты диалогов — оригинальные.
+
+Листы эмоций персонажей (assets/portraits/sheets/*.jpg)
+Предоставлены автором проекта. Нарезаны на портреты скриптом tools/cut_portraits.py
+(assets/portraits/expressions/*.png).
