@@ -21,7 +21,7 @@
 },
 "image": "",
 "mirror": false,
-"offset": Vector2(0, 0),
+"offset": Vector2(0, -130),
 "scale": 0.55,
 "scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
 },
@@ -41,7 +41,7 @@
 },
 "image": "",
 "mirror": false,
-"offset": Vector2(0, 0),
+"offset": Vector2(0, -130),
 "scale": 0.55,
 "scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
 },
@@ -61,7 +61,7 @@
 },
 "image": "",
 "mirror": false,
-"offset": Vector2(0, 0),
+"offset": Vector2(0, -130),
 "scale": 0.55,
 "scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
 },
@@ -81,7 +81,7 @@
 },
 "image": "",
 "mirror": false,
-"offset": Vector2(0, 0),
+"offset": Vector2(0, -130),
 "scale": 0.55,
 "scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
 },
@@ -101,7 +101,7 @@
 },
 "image": "",
 "mirror": false,
-"offset": Vector2(0, 0),
+"offset": Vector2(0, -130),
 "scale": 0.55,
 "scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
 },
@@ -121,7 +121,7 @@
 },
 "image": "",
 "mirror": false,
-"offset": Vector2(0, 0),
+"offset": Vector2(0, -130),
 "scale": 0.55,
 "scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
 },

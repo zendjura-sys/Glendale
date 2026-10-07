@@ -3,6 +3,7 @@ extends Node
 ##   xvfb-run godot --rendering-driver opengl3 res://tests/expression_shots.tscn -- <папка>
 
 const SHOTS := [
+	["town/encounter_on_victory.dtl", 0, "bug_slime_hurt"],
 	["town/fan_of_four.dtl", 0, "mimi_cheerful"],
 	["town/wizard.dtl", 0, "sylvia_angry"],
 	["town/monk.dtl", 1, "jun_angry"],
