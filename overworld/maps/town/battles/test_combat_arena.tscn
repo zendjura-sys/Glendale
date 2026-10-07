@@ -10,7 +10,7 @@
 [ext_resource type="PackedScene" uid="uid://ugsq7u4cue4w" path="res://combat/battlers/bugcat/bugcat_anim.tscn" id="6_r8rpm"]
 [ext_resource type="Resource" uid="uid://752xsau3xyx0" path="res://combat/battlers/bugcat/quick_attack.tres" id="7_v2dhq"]
 [ext_resource type="PackedScene" uid="uid://dlr2vdjcicdx4" path="res://src/combat/CombatAI.tscn" id="9_omkxl"]
-[ext_resource type="PackedScene" uid="uid://bl8bmbt7v3lrj" path="res://combat/battlers/bear/bear_anim.tscn" id="10_ajkh0"]
+[ext_resource type="PackedScene" path="res://combat/battlers/hero/ren_anim.tscn" id="10_ajkh0"]
 [ext_resource type="Resource" uid="uid://ctimffr7v621e" path="res://combat/battlers/bear/focus_attack.tres" id="11_r828q"]
 [ext_resource type="Resource" uid="uid://dp7wo0l4es3w4" path="res://combat/battlers/bear/player_melee_action.tres" id="12_vputh"]
 [ext_resource type="Resource" uid="uid://bka1pe2l3gbv" path="res://combat/battlers/squirrel/squirrel_stats.tres" id="13_ewpfg"]

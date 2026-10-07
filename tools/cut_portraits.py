@@ -62,6 +62,12 @@ SHEET_CONFIG = {
                    [("in_love", 0, 690, 384, 1330), ("sad", 384, 690, 768, 1330)], bust=0.4),
     # Гарет: 3x2 с линиями сетки, подписи сверху.
     "swordsman": dict(panels=grid3(SIX, [(62, 685), (752, 1376)]), bust=0.4, inset=4),
+    # Рэн: концепт-лист — фигура во весь рост слева (для боя), головы с эмоциями справа.
+    "ren": dict(panels=[("calm", 388, 0, 578, 335), ("sad", 578, 0, 768, 335),
+                        ("fear", 388, 375, 578, 665), ("laugh", 578, 375, 768, 665),
+                        ("angry", 388, 700, 578, 990), ("embarrassed", 578, 700, 768, 990),
+                        ("debug", 420, 1050, 768, 1305)], bust=1.0),
+    "ren_body": dict(sheet="ren", panels=[("battle", 0, 110, 392, 1376)], bust=1.0, out="ren"),
     # Капля (слизень): тетрадный фон.
     "slime": dict(panels=[("idle", 0, 120, 384, 400), ("happy", 384, 100, 768, 420),
                           ("angry", 0, 510, 384, 840), ("hurt", 384, 590, 768, 840),
@@ -154,7 +160,7 @@ def fade_card(card: Image.Image) -> Image.Image:
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     for sheet, cfg in SHEET_CONFIG.items():
-        image = Image.open(SHEETS / f"{sheet}.jpg")
+        image = Image.open(SHEETS / f"{cfg.get('sheet', sheet)}.jpg")
         inset = cfg.get("inset", 0)
         for emotion, x0, y0, x1, y1 in cfg["panels"]:
             panel = image.crop((x0 + inset, y0 + inset, x1 - inset, y1 - inset))

@@ -17,7 +17,17 @@
 &"portraits": {
 "Anime/Default": {
 "export_overrides": {
-"image": "\"res://assets/portraits/hero.svg\""
+"image": "\"res://assets/portraits/expressions/ren_calm.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 0.8,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Default": {
+"export_overrides": {
+"image": "\"res://overworld/characters/hero_field.png\""
 },
 "image": "",
 "mirror": false,
@@ -25,7 +35,117 @@
 "scale": 1,
 "scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
 },
-"Default": {
+"Anime/Sad": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/ren_sad.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 0.8,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Sad": {
+"export_overrides": {
+"image": "\"res://overworld/characters/hero_field.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/Surprised": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/ren_fear.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 0.8,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Surprised": {
+"export_overrides": {
+"image": "\"res://overworld/characters/hero_field.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/Cheerful": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/ren_laugh.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 0.8,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Cheerful": {
+"export_overrides": {
+"image": "\"res://overworld/characters/hero_field.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/Angry": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/ren_angry.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 0.8,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Angry": {
+"export_overrides": {
+"image": "\"res://overworld/characters/hero_field.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/InLove": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/ren_embarrassed.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 0.8,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"InLove": {
+"export_overrides": {
+"image": "\"res://overworld/characters/hero_field.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/Debug": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/ren_debug.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 0.8,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Debug": {
 "export_overrides": {
 "image": "\"res://overworld/characters/hero_field.png\""
 },
