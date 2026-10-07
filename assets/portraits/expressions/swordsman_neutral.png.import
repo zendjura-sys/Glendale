@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cacwy4w8m83jt"
-path="res://.godot/imported/knight.jpg-cf694492566b7837d8fab82ee3ef146f.ctex"
+uid="uid://b0mlffpnvtwe8"
+path="res://.godot/imported/swordsman_neutral.png-1e9a77aa6f78b1c33c5aab6a1c425ee5.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/portraits/sheets/knight.jpg"
-dest_files=["res://.godot/imported/knight.jpg-cf694492566b7837d8fab82ee3ef146f.ctex"]
+source_file="res://assets/portraits/expressions/swordsman_neutral.png"
+dest_files=["res://.godot/imported/swordsman_neutral.png-1e9a77aa6f78b1c33c5aab6a1c425ee5.ctex"]
 
 [params]
 

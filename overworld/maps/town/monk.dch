@@ -17,7 +17,7 @@
 &"portraits": {
 "Anime/Default": {
 "export_overrides": {
-"image": "\"res://assets/portraits/expressions/knight_cheerful.png\""
+"image": "\"res://assets/portraits/expressions/knight_neutral.png\""
 },
 "image": "",
 "mirror": false,
@@ -106,6 +106,26 @@
 "scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
 },
 "InLove": {
+"export_overrides": {
+"image": "\"res://overworld/characters/monk.atlastex\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/Sad": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/knight_sad.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Sad": {
 "export_overrides": {
 "image": "\"res://overworld/characters/monk.atlastex\""
 },

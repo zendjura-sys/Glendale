@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d010lgvs7s8ei"
-path="res://.godot/imported/twintails.jpg-43ce314f8821fdc1c2f195237e1f218f.ctex"
+uid="uid://bcg51ese4vkdc"
+path="res://.godot/imported/swordsman_sad.png-c5483f966e6cbbe8347df8f202cb810d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/portraits/sheets/twintails.jpg"
-dest_files=["res://.godot/imported/twintails.jpg-43ce314f8821fdc1c2f195237e1f218f.ctex"]
+source_file="res://assets/portraits/expressions/swordsman_sad.png"
+dest_files=["res://.godot/imported/swordsman_sad.png-c5483f966e6cbbe8347df8f202cb810d.ctex"]
 
 [params]
 

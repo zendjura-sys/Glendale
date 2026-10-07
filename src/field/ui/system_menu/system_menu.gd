@@ -5,12 +5,12 @@ class_name SystemMenu extends CanvasLayer
 
 ## Характеристики бойцов отряда для вкладки «Статус».
 const PARTY := [
-	{name = "Рэн", role = "Голем «Болванчик-01»", stats = preload("res://combat/battlers/bear/bear_stats.tres"),
+	{name = "Рэн", role = "Человек, призванный Отладчик", stats = preload("res://combat/battlers/bear/bear_stats.tres"),
 		skills = [["Отладка", "Уникальный. Видит ошибки мира как строки кода и находит обходы."],
-			["Железный кулак", "Удар корпусом голема. Много урона, легко промахнуться."],
+			["Мощный удар", "Удар со всей силы. Много урона, легко промахнуться."],
 			["Концентрация", "Повышает атаку и точность."]]},
-	{name = "Орешек", role = "Лесной фамильяр", stats = preload("res://combat/battlers/squirrel/squirrel_stats.tres"),
-		skills = [["Град орехов", "Обстрел всех врагов."], ["Лечение", "Восстанавливает здоровье союзнику."]]},
+	{name = "Капля", role = "Слизень-спутница", stats = preload("res://combat/battlers/squirrel/squirrel_stats.tres"),
+		skills = [["Брызги слизи", "Липкий залп по всем врагам."], ["Целебная капля", "Восстанавливает здоровье союзнику."]]},
 ]
 
 const ITEM_NAMES := {
@@ -142,7 +142,7 @@ func _build_inventory() -> String:
 
 func _build_quests() -> String:
 	var text := "[b]Голос из леса[/b]  [color=gold](активно)[/color]\n"
-	text += "Кто-то зовёт голема в лес. Похоже, он знает, почему я здесь.\n\n"
+	text += "Кто-то зовёт меня в лес. Похоже, он знает, почему я здесь.\n\n"
 	var status := int(_dialogic_var("TokenQuestStatus"))
 	if status >= 1:
 		var done := status >= 3

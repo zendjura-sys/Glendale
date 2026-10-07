@@ -27,7 +27,7 @@
 },
 "Default": {
 "export_overrides": {
-"image": "\"res://overworld/characters/gobot.atlastex\""
+"image": "\"res://overworld/characters/hero_field.png\""
 },
 "image": "",
 "mirror": false,

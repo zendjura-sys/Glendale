@@ -72,10 +72,10 @@ func _run() -> void:
 		var names: Array[String] = []
 		for button in menu_node.find_children("*", "UIActionButton", true, false):
 			names.append(button.action.name)
-		_check("Железный кулак" in names, "приёмы переведены (%s)" % ", ".join(names))
-		# Выбираем «Железный кулак» — он бьёт одного врага.
+		_check("Мощный удар" in names, "приёмы переведены (%s)" % ", ".join(names))
+		# Выбираем «Мощный удар» — он бьёт одного врага.
 		for button in menu_node.find_children("*", "UIActionButton", true, false):
-			if button.action.name == "Железный кулак":
+			if button.action.name == "Мощный удар":
 				button.pressed.emit()
 		var cursor: UIBattlerTargetingCursor = null
 		for i in 300:

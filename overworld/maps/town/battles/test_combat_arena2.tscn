@@ -7,7 +7,7 @@
 [ext_resource type="Resource" uid="uid://chuarvle06xxf" path="res://combat/battlers/bugcat/bugcat_stats.tres" id="5_46fcu"]
 [ext_resource type="Resource" uid="uid://bn4nqbuhq4ih8" path="res://combat/battlers/bear/bear_stats.tres" id="5_dbmw8"]
 [ext_resource type="Resource" uid="uid://bka1pe2l3gbv" path="res://combat/battlers/squirrel/squirrel_stats.tres" id="5_ejdro"]
-[ext_resource type="PackedScene" uid="uid://cch8nxgex1edr" path="res://combat/battlers/squirrel/squirrel_anim.tscn" id="6_758fa"]
+[ext_resource type="PackedScene" path="res://combat/battlers/slime/slime_anim.tscn" id="6_758fa"]
 [ext_resource type="Script" uid="uid://dwj347l1r1os2" path="res://src/combat/battlers/battler.gd" id="6_q0bkx"]
 [ext_resource type="Script" uid="uid://cg2qyry5c4eef" path="res://src/combat/actions/battler_action.gd" id="7_7p3qq"]
 [ext_resource type="Resource" uid="uid://bs4g81qa8u57q" path="res://combat/battlers/wolf/area_attack.tres" id="7_vldb3"]
@@ -54,7 +54,7 @@ battler_anim_scene = ExtResource("9_jq0mb")
 is_player = true
 metadata/_edit_group_ = true
 
-[node name="Орешек" type="Node2D" parent="Battlers" index="3"]
+[node name="Капля" type="Node2D" parent="Battlers" index="3"]
 position = Vector2(1243, 906)
 script = ExtResource("6_q0bkx")
 stats = ExtResource("5_ejdro")

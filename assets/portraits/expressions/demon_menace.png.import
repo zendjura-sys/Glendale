@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bgfde6ipgboh4"
-path="res://.godot/imported/ranger.jpg-03ebdd69febbbe24ba56e0bce75d4c40.ctex"
+uid="uid://xb8hscopq36u"
+path="res://.godot/imported/demon_menace.png-638d276c36229af9d12bece064ca5efc.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/portraits/sheets/ranger.jpg"
-dest_files=["res://.godot/imported/ranger.jpg-03ebdd69febbbe24ba56e0bce75d4c40.ctex"]
+source_file="res://assets/portraits/expressions/demon_menace.png"
+dest_files=["res://.godot/imported/demon_menace.png-638d276c36229af9d12bece064ca5efc.ctex"]
 
 [params]
 

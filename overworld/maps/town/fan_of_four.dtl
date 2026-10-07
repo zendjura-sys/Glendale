@@ -7,7 +7,7 @@ if {TokenQuestStatus} == 0:
 elif {TokenQuestStatus} < 3:
 	if {TokenCount} >= 4:
 		fan_of_four (Surprised): Это... они хотели, чтобы это было у меня?
-		fan_of_four: ...
+		fan_of_four (Sad): ...
 		fan_of_four (InLove): ЛУЧШИЙ ДЕНЬ В МОЕЙ ЖИЗНИ!!!
 		fan_of_four (Cheerful): Как мне тебя отблагодарить? Вот, возьми жезл, который я [b]одолжила[/b] у той безумной старушки.
 		[signal arg="GiveWand"]

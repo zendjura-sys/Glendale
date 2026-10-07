@@ -1,0 +1,140 @@
+{
+"@path": "res://addons/dialogic/Resources/character.gd",
+"@subpath": NodePath(""),
+&"_translation_id": "",
+&"color": Color(0.37, 0.89, 1, 1),
+&"custom_info": {
+"sound_mood_default": "",
+"sound_moods": {},
+"style": ""
+},
+&"default_portrait": "Default",
+&"description": "",
+&"display_name": "Капля",
+&"mirror": false,
+&"nicknames": [""],
+&"offset": Vector2(0, 0),
+&"portraits": {
+"Anime/Default": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/slime_idle.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, -130),
+"scale": 0.55,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Default": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/slime_idle.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/Happy": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/slime_happy.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, -130),
+"scale": 0.55,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Happy": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/slime_idle.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/Angry": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/slime_angry.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, -130),
+"scale": 0.55,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Angry": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/slime_idle.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/Hurt": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/slime_hurt.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, -130),
+"scale": 0.55,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Hurt": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/slime_idle.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/Surprised": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/slime_surprised.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, -130),
+"scale": 0.55,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Surprised": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/slime_idle.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Anime/Sleep": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/slime_sleep.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, -130),
+"scale": 0.55,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+},
+"Sleep": {
+"export_overrides": {
+"image": "\"res://assets/portraits/expressions/slime_idle.png\""
+},
+"image": "",
+"mirror": false,
+"offset": Vector2(0, 0),
+"scale": 1,
+"scene": "res://addons/dialogic/Modules/Character/default_portrait.tscn"
+}
+},
+&"scale": 1.0
+}

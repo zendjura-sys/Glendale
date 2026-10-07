@@ -1,4 +1,5 @@
-enemy_ghost (Hurt): Ой-ой-ой...
-enemy_ghost (Surprised): Ладно, ладно! Помечаю себя как «исправлено». Но я ещё вернусь в следующем патче!
+enemy_ghost (Surprised): Что?.. Мою проекцию... исправили?
+enemy_ghost (Menace): Неплохо, человек. Но настоящий я жду тебя в сердце Разлома.
+slime (Happy): Пуру!
 [signal arg="bug_fixed"]
 [end_timeline]

@@ -11,7 +11,7 @@
 [ext_resource type="PackedScene" uid="uid://b626e0bngfvjj" path="res://src/field/gamepieces/gamepiece.tscn" id="11_yntrj"]
 [ext_resource type="Script" uid="uid://bm5b3nr6vn3da" path="res://src/field/gamepieces/controllers/path_loop_ai_controller.gd" id="12_glwd5"]
 [ext_resource type="PackedScene" uid="uid://cdkha7cc72h35" path="res://overworld/characters/generic_character_gfx.tscn" id="12_n5rm1"]
-[ext_resource type="PackedScene" uid="uid://qxua6ekob7fa" path="res://overworld/characters/gobot_gfx.tscn" id="12_oablq"]
+[ext_resource type="PackedScene" path="res://overworld/characters/hero_gfx.tscn" id="12_oablq"]
 [ext_resource type="Script" uid="uid://ccow10kcmjj04" path="res://overworld/maps/town/gang_of_four_conversation.gd" id="13_0rh60"]
 [ext_resource type="Texture2D" uid="uid://b71dt8n01lhd0" path="res://assets/gui/path_destination_marker.tres" id="13_osl4o"]
 [ext_resource type="Script" uid="uid://drl6kefixf2hu" path="res://src/field/gamepieces/controllers/cursor/player_path_destination_marker.gd" id="14_0j4ru"]

@@ -86,6 +86,7 @@ directories/dch_directory={
 "hero": "res://overworld/characters/hero.dch",
 "monk": "res://overworld/maps/town/monk.dch",
 "runner": "res://overworld/maps/town/runner.dch",
+"slime": "res://overworld/characters/slime.dch",
 "smith": "res://overworld/maps/town/smith.dch",
 "system": "res://overworld/characters/system.dch",
 "thief": "res://overworld/maps/town/thief.dch",
