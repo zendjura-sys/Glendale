@@ -1,0 +1,24 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/world/hut/abandoned_hut.gd" id="1"]
+
+[sub_resource type="BoxShape3D" id="inside_shape"]
+size = Vector3(4, 2, 3.5)
+
+[node name="AbandonedHut" type="Node3D"]
+script = ExtResource("1")
+
+[node name="Model" type="Node3D" parent="."]
+
+[node name="Inside" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Inside"]
+shape = SubResource("inside_shape")
+
+[node name="Lantern" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 3)
+light_color = Color(1, 0.75, 0.4, 1)
+light_energy = 2.0
+omni_range = 7.0
