@@ -29,6 +29,7 @@ const ITEM_NAMES := {
 @onready var _skills_text: RichTextLabel = %SkillsText
 @onready var _inventory_text: RichTextLabel = %InventoryText
 @onready var _quests_text: RichTextLabel = %QuestsText
+@onready var _bestiary_text: RichTextLabel = %BestiaryText
 @onready var _close_button: Button = %CloseButton
 
 # Кнопка скрыта во время диалогов, катсцен и боёв.
@@ -39,7 +40,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_window.hide()
 	for i in _tabs.get_tab_count():
-		_tabs.set_tab_title(i, ["Статус", "Навыки", "Инвентарь", "Задания"][i])
+		_tabs.set_tab_title(i, ["Статус", "Навыки", "Инвентарь", "Задания", "Бестиарий"][i])
 	_open_button.pressed.connect(open)
 	_close_button.pressed.connect(close)
 	Dialogic.timeline_started.connect(_set_blocked.bind(&"dialogue", true))
@@ -105,12 +106,14 @@ func _refresh() -> void:
 	_skills_text.text = _build_skills()
 	_inventory_text.text = _build_inventory()
 	_quests_text.text = _build_quests()
+	_bestiary_text.text = _build_bestiary()
 
 
 func _build_status() -> String:
 	var text := "[b]%s[/b]   [color=#8fd3ff]Отладчик из другого мира[/color]\n" % HeroSystem.HERO_NAME
 	text += "Уровень [color=gold]%d[/color]   Опыт %d / %d\n" % [
 		HeroSystem.level, HeroSystem.experience, HeroSystem.experience_to_next_level()]
+	text += "Фамильяры: [color=#5fe3ff]%s[/color]\n" % ", ".join(HeroSystem.familiars)
 	for member: Dictionary in PARTY:
 		var stats: BattlerStats = member.stats
 		text += "\n[b]%s[/b] — %s\n" % [member.name, member.role]
@@ -153,6 +156,26 @@ func _build_quests() -> String:
 		text += "\n"
 	if int(_dialogic_var("StrangeTreeExamined")) > 0:
 		text += "[b]Странное дерево[/b]\nДерево перегородило проход. Может, есть обход?\n"
+	return text
+
+
+func _build_bestiary() -> String:
+	var text := "Фамильяры: [color=#5fe3ff]%s[/color]\n\n" % ", ".join(HeroSystem.familiars)
+	for monster_id: String in BestiaryData.MONSTERS:
+		var data: Dictionary = BestiaryData.MONSTERS[monster_id]
+		var record: Dictionary = HeroSystem.bestiary.get(monster_id, {})
+		if not record.get("seen", false):
+			text += "[color=#6b7895]??? — ещё не встречен[/color]\n\n"
+			continue
+		var status := ""
+		if record.tamed:
+			status = "[color=#7dffa0]приручён[/color]"
+		elif data.tame > 0.0:
+			status = "[color=gold]шанс приручения %d%%[/color]" % roundi(data.tame * 100)
+		else:
+			status = "[color=#ff7a7a]не приручается[/color]"
+		text += "[b]%s[/b]  ур. %d   побеждён: %d   %s\n%s\n\n" % [
+			data.name, data.level, record.defeated, status, data.info]
 	return text
 
 

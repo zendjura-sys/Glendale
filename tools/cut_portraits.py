@@ -77,6 +77,13 @@ SHEET_CONFIG = {
     # Бесы — рядовые враги (спрайты для боя), подписи снизу.
     "imp": dict(panels=[("normal", 0, 380, 250, 910), ("angry", 250, 380, 515, 910),
                         ("taunting", 515, 380, 768, 910)], bust=1.0),
+    # Монстры (бестиарий): тёмный фон, у ног тонкая плитка-подставка — убираем (strip_thin).
+    "monsters": dict(panels=[("red_dragon", 0, 0, 384, 300), ("basilisk", 384, 0, 768, 300),
+                             ("cerberus", 0, 330, 384, 640), ("phoenix", 384, 330, 768, 640),
+                             ("griffin", 0, 680, 384, 1000), ("chimera", 384, 680, 768, 1000),
+                             ("stone_golem", 0, 1035, 256, 1315), ("shadow_imp", 256, 1035, 512, 1315),
+                             ("slime", 512, 1035, 768, 1315)],
+                     bust=1.0, tolerance=30, strip_thin=True, out="monster"),
     # Капля (слизень): тетрадный фон.
     "slime": dict(panels=[("idle", 0, 120, 384, 400), ("happy", 384, 100, 768, 420),
                           ("angry", 0, 510, 384, 840), ("hurt", 384, 590, 768, 840),
@@ -85,7 +92,8 @@ SHEET_CONFIG = {
 }
 
 
-def remove_background(panel: Image.Image, tolerance: int, gray_background: bool = False) -> Image.Image:
+def remove_background(panel: Image.Image, tolerance: int, gray_background: bool = False,
+                      strip_thin: bool = False) -> Image.Image:
     """Возвращает RGBA, где непрозрачна только крупнейшая фигура панели."""
     rgb = panel.convert("RGB")
     if gray_background:
@@ -113,15 +121,23 @@ def remove_background(panel: Image.Image, tolerance: int, gray_background: bool 
         for index, size in enumerate(sizes, start=1):
             if size > 400:
                 background |= islands == index
-    return _keep_largest(rgb, background)
+    return _keep_largest(rgb, background, strip_thin=strip_thin)
 
 
-def _keep_largest(rgb: Image.Image, background: np.ndarray, fill_holes: bool = False) -> Image.Image:
-    labels, count = ndimage.label(~background)
+def _keep_largest(rgb: Image.Image, background: np.ndarray, fill_holes: bool = False,
+                  strip_thin: bool = False) -> Image.Image:
+    solid = ~background
+    if strip_thin:
+        # Тонкие линии (контур плитки под ногами) пропадают при размыкании маски;
+        # тело монстра остаётся, затем возвращаем ему детали в радиусе нескольких пикселей.
+        solid = ndimage.binary_opening(solid, iterations=3)
+    labels, count = ndimage.label(solid)
     if count == 0:
         return rgb.convert("RGBA")
     sizes = ndimage.sum(np.ones_like(labels), labels, range(1, count + 1))
     figure = labels == (int(np.argmax(sizes)) + 1)
+    if strip_thin:
+        figure = ndimage.binary_dilation(figure, iterations=4) & ~background
     if fill_holes:
         figure = ndimage.binary_fill_holes(figure)
     alpha = Image.fromarray((figure * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(0.8))
@@ -176,7 +192,8 @@ def main() -> None:
             if cfg.get("keep_bg"):
                 result = fade_card(panel)
             else:
-                figure = remove_background(panel, cfg.get("tolerance", 22), cfg.get("gray_background", False))
+                figure = remove_background(panel, cfg.get("tolerance", 22), cfg.get("gray_background", False),
+                                           cfg.get("strip_thin", False))
                 result = bust_crop(figure, cfg.get("bust", 0.45), cfg.get("head_band", (0.0, 0.12)))
             path = OUT / f"{cfg.get('out', sheet)}_{emotion}.png"
             result.save(path, optimize=True)

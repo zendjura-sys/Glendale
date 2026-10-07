@@ -58,8 +58,27 @@ func _run() -> void:
 		await _play(path)
 	_check(_messages.any(func(m: String) -> bool: return m.contains("Обход найден")), "Отладка нашла обход у дерева")
 
-	# 4. Бой: выбор действия и цели тапами.
-	FieldEvents.combat_triggered.emit(load("res://overworld/maps/town/battles/test_combat_arena.tscn"))
+	# 4. Монстры: каждая арена собирается, приручение работает.
+	for monster_id: String in BestiaryData.MONSTERS:
+		var arena: Node = load(BestiaryData.MONSTERS[monster_id].arena).instantiate()
+		var battlers := arena.find_children("*", "Battler", true, false)
+		var players := battlers.filter(func(b: Battler) -> bool: return b.is_player)
+		_check(players.size() == 2 and battlers.size() > 2, "арена «%s»: отряд и враги на месте" % monster_id)
+		arena.free()
+	HeroSystem.begin_encounter("slime")
+	_check(HeroSystem.monster_record("slime").seen, "встреча отмечена в бестиарии")
+	_check(HeroSystem.finish_encounter(true, 0.0), "слизня можно приручить")
+	_check("Лесной слизень" in HeroSystem.familiars, "слизень стал фамильяром")
+	HeroSystem.begin_encounter("red_dragon")
+	_check(not HeroSystem.finish_encounter(true, 0.0), "дракона приручить нельзя")
+	_check(HeroSystem.monster_record("red_dragon").defeated == 1, "победа над драконом засчитана")
+	menu._refresh()
+	_check(menu._bestiary_text.text.contains("Красный дракон"), "бестиарий показывает встреченных монстров")
+	_check(Encounters.pick_monster() in BestiaryData.MONSTERS, "случайная встреча выбирает монстра")
+
+	# 5. Бой: выбор действия и цели тапами.
+	# Настоящая случайная встреча (катсцена + арена слизней — их двое, есть кого выбрать).
+	Encounters.start_encounter("slime")
 	var menu_node: UIActionMenu = null
 	for i in 900:
 		var found := get_tree().root.find_children("*", "UIActionMenu", true, false)

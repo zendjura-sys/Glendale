@@ -33,6 +33,7 @@ Player="*res://src/common/player.gd"
 Transition="*res://src/common/screen_transitions/ScreenTransition.tscn"
 Dialogic="*uid://ds2q0uclmolvu"
 HeroSystem="*res://src/common/hero_system/hero_system.gd"
+Encounters="*res://src/field/encounters/encounters.gd"
 
 [dialogic]
 

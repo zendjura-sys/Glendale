@@ -67,3 +67,6 @@ License: [SIL Open Font License 1.1](assets/gui/font/PixelifySans-OFL.txt)
 Листы эмоций персонажей (assets/portraits/sheets/*.jpg)
 Предоставлены автором проекта. Нарезаны на портреты скриптом tools/cut_portraits.py
 (assets/portraits/expressions/*.png).
+
+Лист монстров (assets/portraits/sheets/monsters.jpg), бесы (imp.jpg), Рэн и Система —
+предоставлены автором проекта.
