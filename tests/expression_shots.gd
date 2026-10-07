@@ -3,12 +3,10 @@ extends Node
 ##   xvfb-run godot --rendering-driver opengl3 res://tests/expression_shots.tscn -- <папка>
 
 const SHOTS := [
-	["town/encounter_on_victory.dtl", 0, "bug_slime_hurt"],
-	["town/fan_of_four.dtl", 0, "mimi_cheerful"],
-	["town/wizard.dtl", 0, "sylvia_angry"],
-	["town/monk.dtl", 1, "jun_angry"],
-	["town/encounter_before_combat.dtl", 0, "bug_slime_angry"],
-	["forest/ghost.dtl", 0, "aurelius_cheerful"],
+	["opening_cutscene.dtl", 17, "kaplya_happy"],
+	["town/encounter_before_combat.dtl", 1, "demon_scheming"],
+	["town/encounter_on_victory.dtl", 1, "demon_menace"],
+	["town/thief.dtl", 0, "kira_sad"],
 ]
 
 
