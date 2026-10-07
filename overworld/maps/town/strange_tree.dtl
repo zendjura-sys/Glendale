@@ -1,7 +1,9 @@
 if {StrangeTreeExamined} > 0:
-	Wait, what if I went *around* the tree!?
+	hero: Стоп. А что, если просто... [i]обойти[/i] дерево?!
+	system: Навык [color=gold]Отладка[/color]: найден обход ошибки расстановки объектов.
 	[signal arg="ClearPath"]
 else:
-	It's too bad this tree is in the way...
+	hero: Дерево перегородило единственный проход. Классическая ошибка расстановки объектов.
+	hero: В нашей студии за такое левел-дизайнера лишили бы печенек...
 	set {StrangeTreeExamined} = 1
 [end_timeline]

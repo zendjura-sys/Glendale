@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="520" viewBox="0 0 400 520">
+<defs>
+  <linearGradient id="hair" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#6b5f57"/><stop offset="1" stop-color="#2b1f18"/>
+  </linearGradient>
+  <linearGradient id="iris" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#362415"/><stop offset="0.55" stop-color="#7a5230"/>
+    <stop offset="1" stop-color="#c3b1a1"/>
+  </linearGradient>
+  <linearGradient id="cloth" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#e49b4d"/><stop offset="1" stop-color="#9c6020"/>
+  </linearGradient>
+  <radialGradient id="glow" cx="0.5" cy="0.45" r="0.6">
+    <stop offset="0" stop-color="#ffcf8f" stop-opacity="0.55"/>
+    <stop offset="1" stop-color="#ffcf8f" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+<ellipse cx="200" cy="260" rx="200" ry="260" fill="url(#glow)"/>
+<path d="M60 520 C66 430 120 396 200 392 C280 396 334 430 340 520 Z" fill="url(#cloth)"/><path d="M150 398 L220 520 M250 398 L180 520" stroke="#ffffff" stroke-width="14"/>
+<path d="M184 340 L184 400 L216 400 L216 340 Z" fill="#f2c5aa"/><path d="M106 220 C106 140 150 104 200 104 C250 104 294 140 294 220 C294 290 254 350 200 368 C146 350 106 290 106 220 Z" fill="#fde3cf"/><path d="M196 292 L202 300" stroke="#f2c5aa" stroke-width="4" stroke-linecap="round"/>
+<path d="M132 250 Q158 266 184 250" stroke="#3a2a2a" stroke-width="5" fill="none" stroke-linecap="round"/>
+<path d="M216 250 Q242 266 268 250" stroke="#3a2a2a" stroke-width="5" fill="none" stroke-linecap="round"/>
+<path d="M134 200 Q158 190 182 198" stroke="#251b14" stroke-width="6" fill="none" stroke-linecap="round"/>
+<path d="M266 200 Q242 190 218 198" stroke="#251b14" stroke-width="6" fill="none" stroke-linecap="round"/>
+<path d="M184 326 Q200 340 216 326" stroke="#9b4a4a" stroke-width="4" fill="none" stroke-linecap="round"/>
+<path d="M104 176 Q200 140 296 176 L294 196 Q200 160 106 196 Z" fill="#d94a4a"/><path d="M292 182 L334 168 L320 200 Z" fill="#d94a4a"/>
+</svg>

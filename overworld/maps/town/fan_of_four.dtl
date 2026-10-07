@@ -1,20 +1,22 @@
 if {TokenQuestStatus} == 0:
-	fan_of_four: THEY'RE HERE! [speed=3.5]The [color=orange][wave]Gang of Four[/wave][/color][speed=1.0], THEY'RE THE BEST!!!
-	fan_of_four: They're so cool! They can [color=orange][wave]TIME TRAVEL[/wave][/color] at whim! They've saved the known universe [color=orange][wave]6 TIMES[/wave][/color]! They defeated [color=red]Evillus McVillain[/color], [color=red]Frank the Tank[/color], and [color=red]Steve[/color] [color=orange][wave]LAST FRIDAY[/wave][/color]!
-	fan_of_four: I would give [color=orange][wave]ANYTHING[/wave][/color] for their autograph, but I'm TOO NERVOUS! AHHHHH!!!
+	fan_of_four: ОНИ ЗДЕСЬ! [speed=3.5][color=orange][wave]Четвёрка Рассвета[/wave][/color][speed=1.0], ЛУЧШИЕ ИЗ ЛУЧШИХ!!!
+	fan_of_four: Они закрыли [color=orange][wave]ШЕСТЬ Разломов[/wave][/color]! Они победили [color=red]Короля Глюков[/color], [color=red]Тёмного Лорда Понедельника[/color] и [color=red]Барона Бюрократа[/color] — и всё это [color=orange][wave]НА ПРОШЛОЙ НЕДЕЛЕ[/wave][/color]!
+	fan_of_four: Я бы отдала [color=orange][wave]ВСЁ[/wave][/color] за их автографы, но я СЛИШКОМ СТЕСНЯЮСЬ! А-А-А-А!!!
 	set {TokenQuestStatus} = 1
+	[signal arg="quest_tokens_started"]
 elif {TokenQuestStatus} < 3:
 	if {TokenCount} >= 4:
-		fan_of_four: They wanted me to have these?
+		fan_of_four: Это... они хотели, чтобы это было у меня?
 		fan_of_four: ...
-		fan_of_four: THIS IS THE BEST DAY OF MY LIFE!!!
-		fan_of_four: How can I ever thank you? Here, have this wand that I [b]borrowed[/b] from that crazy old lady.
+		fan_of_four: ЛУЧШИЙ ДЕНЬ В МОЕЙ ЖИЗНИ!!!
+		fan_of_four: Как мне тебя отблагодарить? Вот, возьми жезл, который я [b]одолжила[/b] у той безумной старушки.
 		[signal arg="GiveWand"]
 		set {TokenQuestStatus} = 3
+		[signal arg="quest_tokens_finished"]
 	else:
-		fan_of_four: EXCITED? ME? WHY WOULD YOU THINK THAT?
-		# Bump the quest status up by one so that the interaction knows that this is not the first encounter witht the NPC.
+		fan_of_four: ВОЛНУЮСЬ? Я? С ЧЕГО ТЫ ВЗЯЛ?
+		# Квест уже начат: интеракция должна знать, что это не первая встреча.
 		set {TokenQuestStatus} = 2
 else:
-	fan_of_four: THIS IS THE BEST DAY OF MY LIFE!!!
+	fan_of_four: ЛУЧШИЙ ДЕНЬ В МОЕЙ ЖИЗНИ!!!
 [end_timeline]

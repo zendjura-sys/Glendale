@@ -6,6 +6,6 @@
 [resource]
 script = ExtResource("1_knane")
 icon = ExtResource("1_rw7rc")
-name = "Heal"
-description = "A bandage can fix this..."
+name = "Лечение"
+description = "Целебные травы из дупла. Немного щиплет."
 targets_friendlies = true

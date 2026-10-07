@@ -24,7 +24,7 @@ music = ExtResource("2_vo8mp")
 [node name="Background" parent="." index="0"]
 texture = ExtResource("2_i30nm")
 
-[node name="Battler" type="Node2D" parent="Battlers" index="0"]
+[node name="Багокот А" type="Node2D" parent="Battlers" index="0"]
 position = Vector2(465, 722)
 script = ExtResource("4_6ngh4")
 stats = ExtResource("5_1st0g")
@@ -33,7 +33,7 @@ battler_anim_scene = ExtResource("6_r8rpm")
 ai_scene = ExtResource("9_omkxl")
 metadata/_edit_group_ = true
 
-[node name="Battler2" type="Node2D" parent="Battlers" index="1"]
+[node name="Багокот Б" type="Node2D" parent="Battlers" index="1"]
 position = Vector2(284, 896)
 script = ExtResource("4_6ngh4")
 stats = ExtResource("5_1st0g")
@@ -42,7 +42,7 @@ battler_anim_scene = ExtResource("6_r8rpm")
 ai_scene = ExtResource("9_omkxl")
 metadata/_edit_group_ = true
 
-[node name="Battler3" type="Node2D" parent="Battlers" index="2"]
+[node name="Багокот В" type="Node2D" parent="Battlers" index="2"]
 position = Vector2(606, 992)
 script = ExtResource("4_6ngh4")
 stats = ExtResource("5_1st0g")
@@ -51,7 +51,7 @@ battler_anim_scene = ExtResource("6_r8rpm")
 ai_scene = ExtResource("9_omkxl")
 metadata/_edit_group_ = true
 
-[node name="Baloo" type="Node2D" parent="Battlers" index="3"]
+[node name="Рэн" type="Node2D" parent="Battlers" index="3"]
 position = Vector2(1370, 738)
 script = ExtResource("4_6ngh4")
 stats = ExtResource("5_id2tu")
@@ -60,7 +60,7 @@ battler_anim_scene = ExtResource("10_ajkh0")
 is_player = true
 metadata/_edit_group_ = true
 
-[node name="Nutsy" type="Node2D" parent="Battlers" index="4"]
+[node name="Орешек" type="Node2D" parent="Battlers" index="4"]
 position = Vector2(1243, 906)
 script = ExtResource("4_6ngh4")
 stats = ExtResource("13_ewpfg")

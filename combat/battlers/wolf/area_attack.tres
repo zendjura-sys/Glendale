@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_bbarm")
 base_damage = 999
-label = "Area Attack"
-description = "A sweeping attack, hitting all enemy Battlers"
+label = "Глючный вой"
+description = "Искажённый вой задевает всех противников."
 target_scope = 2
 targets_enemies = true

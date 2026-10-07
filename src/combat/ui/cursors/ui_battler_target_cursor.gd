@@ -83,13 +83,21 @@ func _ready() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_released("ui_accept"):
-		# Let the UI know which Battler(s) were selected.
-		var highlighted_targets: Array[Battler] = []
-		if targets_all:		highlighted_targets.assign(targets)
-		else:				highlighted_targets.append(_current_target)
-			
-		targets_selected.emit(highlighted_targets)
-		queue_free()
+		_confirm_selection()
+	
+	# Touch/mouse: the first tap on a battler highlights it, a second tap on the highlighted battler
+	# confirms. When all targets are affected, a tap on any of them confirms immediately.
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT \
+			and not event.pressed:
+		# Use the event position (not the last known mouse position) so that touch works reliably.
+		var tapped: = _get_target_at(to_global(make_input_local(event).position))
+		if tapped == null:
+			return
+		get_viewport().set_input_as_handled()
+		if targets_all or tapped == _current_target:
+			_confirm_selection()
+		else:
+			_current_target = tapped
 	
 	elif event.is_action_released("back"):
 		targets_selected.emit(INVALID_TARGETS)
@@ -115,6 +123,30 @@ func _unhandled_input(event: InputEvent) -> void:
 			var new_target: = _find_closest_target(direction)
 			if new_target:
 				_current_target = new_target
+
+
+func _confirm_selection() -> void:
+	# Let the UI know which Battler(s) were selected.
+	var highlighted_targets: Array[Battler] = []
+	if targets_all:		highlighted_targets.assign(targets)
+	else:				highlighted_targets.append(_current_target)
+	
+	targets_selected.emit(highlighted_targets)
+	queue_free()
+
+
+# Returns the target whose sprite covers the given point (between the battler's feet and the top of
+# its animation), or null if the point is not over any target.
+func _get_target_at(point: Vector2) -> Battler:
+	const HALF_WIDTH: = 140.0
+	const MARGIN: = 60.0
+	for battler in targets:
+		var feet: = battler.global_position
+		var top: = battler.anim.top.global_position
+		if absf(point.x - feet.x) <= HALF_WIDTH \
+				and point.y >= minf(top.y, feet.y) - MARGIN and point.y <= maxf(top.y, feet.y) + MARGIN:
+			return battler
+	return null
 
 
 # Creates the actual cursor object over a given battler, or all battlers if targets_all is true.

@@ -27,5 +27,5 @@ texture = ExtResource("1_iqe73")
 [node name="Description" type="Label" parent="CenterContainer/MarginContainer"]
 layout_mode = 2
 theme = ExtResource("2_ia76b")
-text = "Description"
+text = "Описание"
 horizontal_alignment = 1

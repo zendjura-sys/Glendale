@@ -1,3 +1,4 @@
-enemy_ghost: Ow...
-enemy_ghost: Tis but a scratch!
+enemy_ghost: Ой-ой-ой...
+enemy_ghost: Ладно, ладно! Помечаю себя как «исправлено». Но я ещё вернусь в следующем патче!
+[signal arg="bug_fixed"]
 [end_timeline]

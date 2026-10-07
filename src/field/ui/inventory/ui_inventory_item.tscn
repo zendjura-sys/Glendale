@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://cr7xwk48aatln" path="res://src/field/ui/inventory/ui_inventory_item.gd" id="2_xqtx2"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_2w568"]
-font_size = 48
+font_size = 32
 outline_size = 16
 outline_color = Color(0, 0, 0, 1)
 

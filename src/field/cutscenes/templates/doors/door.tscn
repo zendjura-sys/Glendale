@@ -6,7 +6,7 @@
 [ext_resource type="AudioStream" uid="uid://c6o0qv4eig4q" path="res://assets/sfx/doorClose_1.ogg" id="4_d3ljg"]
 [ext_resource type="AudioStream" uid="uid://bww5xt1qrtltu" path="res://assets/sfx/impactWood_light_003.ogg" id="5_b854r"]
 [ext_resource type="AudioStream" uid="uid://bt1obi05x1xda" path="res://assets/sfx/impactWood_light_002.ogg" id="6_ui4yk"]
-[ext_resource type="FontFile" uid="uid://cfhyd5hmym1s4" path="res://assets/gui/font/Kenney Pixel.ttf" id="7_er0br"]
+[ext_resource type="FontFile" path="res://assets/gui/font/PixelifySans-Regular.ttf" id="7_er0br"]
 
 [sub_resource type="Animation" id="Animation_8loys"]
 length = 0.001
@@ -159,7 +159,7 @@ _data = {
 
 [sub_resource type="LabelSettings" id="LabelSettings_0glfv"]
 font = ExtResource("7_er0br")
-font_size = 80
+font_size = 54
 outline_size = 20
 outline_color = Color(0, 0, 0, 1)
 
@@ -197,6 +197,6 @@ offset_top = -29.0
 offset_right = 158.0
 offset_bottom = 72.0
 scale = Vector2(0.2, 0.2)
-text = "LOCKED"
+text = "ЗАПЕРТО"
 label_settings = SubResource("LabelSettings_0glfv")
 horizontal_alignment = 1

@@ -200,7 +200,7 @@ layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 8
 theme_override_constants/outline_size = 16
-text = "Name"
+text = "Имя"
 
 [node name="Value" type="Label" parent="MarginContainer/HBoxContainer"]
 layout_mode = 2

@@ -51,3 +51,15 @@ URL: N/A
 License: [CC0](https://creativecommons.org/publicdomain/zero/1.0/)  
   
 Please see the [license](LICENSE).
+
+## Добавлено в «Хрониках Эльдерфола»
+
+Pixelify Sans (шрифт с кириллицей)
+Author: Stefie Justprince и The Pixelify Sans Project Authors
+URL: https://github.com/eifetx/Pixelify-Sans (через пакет npm @fontsource/pixelify-sans)
+License: [SIL Open Font License 1.1](assets/gui/font/PixelifySans-OFL.txt)
+
+Аниме-портреты персонажей (assets/portraits/*.svg)
+Оригинальные персонажи, сгенерированы скриптом tools/make_portraits.py специально для этого проекта.
+
+Сюжет, персонажи и тексты диалогов — оригинальные.

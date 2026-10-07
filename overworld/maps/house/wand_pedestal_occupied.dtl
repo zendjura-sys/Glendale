@@ -1,5 +1,5 @@
-A wand rests on the pedestal.
-- Remove wand
+На пьедестале лежит жезл.
+- Забрать жезл
 	[signal arg="empty"]
-- Do nothing
+- Ничего не делать
 [end_timeline]

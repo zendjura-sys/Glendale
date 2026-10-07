@@ -22,4 +22,4 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("2_krdq3")
 theme_override_constants/outline_size = 24
-text = "Ouch!"
+text = "Ай!"

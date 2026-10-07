@@ -1,8 +1,9 @@
-wizard: FUS RO DOH!
-wizard: .[pause=0.5].[pause=0.5].[pause=0.5]No wait, that's not right.
+wizard: Пламя, повинуйся! ОГНЕННЫЙ ШАР!
+wizard: .[pause=0.5].[pause=0.5].[pause=0.5]Хм. Здесь должен был быть огненный шар.
+wizard: С тех пор как открылся Разлом, заклинания срабатывают через раз. Мир будто... глючит.
 if {HasWizardToken} == 0:
-	wizard: You want my autograph? Bah, I do not have time for small tin people.
-	wizard: Here, take this meager handout and begone.
+	wizard: Автограф? Ба! У меня нет времени на маленьких жестяных человечков.
+	wizard: Вот, возьми эту подачку и ступай.
 	[signal arg="coin_received"]
 	set {HasWizardToken} = 1
 	set {TokenCount} += 1

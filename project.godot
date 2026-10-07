@@ -14,8 +14,10 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 [application]
 
-config/name="OpenRPG"
+config/name="Хроники Эльдерфола"
+config/description="Исекай LitRPG на основе Godot Open RPG (GDQuest, MIT)."
 run/main_scene="res://src/main.tscn"
+config/quit_on_go_back=false
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 
@@ -30,6 +32,7 @@ Music="*res://src/common/music/music_player.tscn"
 Player="*res://src/common/player.gd"
 Transition="*res://src/common/screen_transitions/ScreenTransition.tscn"
 Dialogic="*uid://ds2q0uclmolvu"
+HeroSystem="*res://src/common/hero_system/hero_system.gd"
 
 [dialogic]
 
@@ -80,9 +83,11 @@ directories/dch_directory={
 "enemy_ghost": "res://overworld/maps/town/enemy_ghost.dch",
 "fan_of_four": "res://overworld/maps/town/fan_of_four.dch",
 "ghost": "res://overworld/maps/forest/ghost.dch",
+"hero": "res://overworld/characters/hero.dch",
 "monk": "res://overworld/maps/town/monk.dch",
 "runner": "res://overworld/maps/town/runner.dch",
 "smith": "res://overworld/maps/town/smith.dch",
+"system": "res://overworld/characters/system.dch",
 "thief": "res://overworld/maps/town/thief.dch",
 "warrior": "res://overworld/maps/town/warrior.dch",
 "wizard": "res://overworld/maps/town/wizard.dch"
@@ -126,6 +131,7 @@ window/size/window_width_override=960
 window/size/window_height_override=540
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+window/handheld/orientation=4
 
 [editor_plugins]
 

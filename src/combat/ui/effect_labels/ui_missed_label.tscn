@@ -93,7 +93,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("1_n0c04")
 theme_override_constants/outline_size = 24
-text = "Miss!"
+text = "Мимо!"
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 libraries = {

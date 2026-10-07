@@ -6,8 +6,8 @@
 [resource]
 script = ExtResource("1_4j0yh")
 icon = ExtResource("1_2rya6")
-name = "Focus"
-description = "Increase Attack and Accuracy. Takes half a turn to use."
+name = "Концентрация"
+description = "Повышает атаку и точность. Занимает полхода."
 target_scope = 0
 targets_friendlies = true
 readiness_saved = 50.0
