@@ -11,6 +11,7 @@ import {
 import { EventList, ServerEventForm } from '@/components/events/event-card';
 import type { CalendarEvent } from '@/components/events/event-card';
 import { PlayingNow } from '@/components/gc/playing';
+import { SaveButton } from '@/components/gc/save-button';
 import { EmptyState } from '@/components/gc/widget';
 import { FamilyLogo } from '@/components/families/family-logo';
 import { ConnectButton, ServerLinks } from '@/components/servers/server-card';
@@ -33,6 +34,7 @@ type Props = {
     discord_events: { connected: boolean; invite: string | null };
     playing_now: UserCard[];
     playing_count: number;
+    saved: boolean;
 };
 
 export default function ServerShow({
@@ -44,6 +46,7 @@ export default function ServerShow({
     discord_events,
     playing_now,
     playing_count,
+    saved,
 }: Props) {
     return (
         <>
@@ -96,6 +99,7 @@ export default function ServerShow({
                                 {server.connect && (
                                     <ConnectButton value={server.connect} />
                                 )}
+                                <SaveButton kind="server" id={server.id} saved={saved} />
                                 <ServerLinks server={server} />
                             </div>
                         </div>

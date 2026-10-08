@@ -14,6 +14,7 @@ import {
     TranslateToggle,
     useContentTranslation,
 } from '@/components/gc/translate';
+import { MentionText } from './mention-text';
 import { tr } from '@/lib/i18n';
 
 type Props = {
@@ -276,7 +277,7 @@ function CommentText({ id, body }: { id: number; body: string }) {
 
     return (
         <>
-            {translation.text ?? body}
+            <MentionText text={translation.text ?? body} />
             {translation.enabled && (
                 <span className="mt-0.5 block">
                     <TranslateToggle state={translation} />

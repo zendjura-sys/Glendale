@@ -24,6 +24,7 @@ import type { ReactNode } from 'react';
 import { EventList, GameEventForm } from '@/components/events/event-card';
 import type { CalendarEvent } from '@/components/events/event-card';
 import { PlayingNow } from '@/components/gc/playing';
+import { SaveButton } from '@/components/gc/save-button';
 import { cn } from '@/lib/utils';
 import type { ClanCard, GameCard, UserCard } from '@/types';
 import { GameCover } from './index';
@@ -92,6 +93,7 @@ type Props = {
     events: CalendarEvent[];
     event_types: Record<string, string>;
     can_add_event: boolean;
+    saved: boolean;
 };
 
 const STORE_STYLE: Record<string, string> = {
@@ -180,6 +182,7 @@ export default function GameShow({
     events,
     event_types,
     can_add_event,
+    saved,
 }: Props) {
     const d = game.details ?? {};
     const [video, setVideo] = useState<string | null>(null);
@@ -258,9 +261,12 @@ export default function GameShow({
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
                     <div className="absolute inset-x-4 bottom-4">
-                        <h1 className="font-display text-2xl font-semibold text-white sm:text-3xl">
-                            {game.name}
-                        </h1>
+                        <div className="flex items-end justify-between gap-3">
+                            <h1 className="font-display text-2xl font-semibold text-white sm:text-3xl">
+                                {game.name}
+                            </h1>
+                            <SaveButton kind="game" id={game.id} saved={saved} />
+                        </div>
                         <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/70">
                             <span>
                                 {game.platforms.map((p) => p.label).join(' · ')}

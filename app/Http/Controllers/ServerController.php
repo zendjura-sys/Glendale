@@ -10,6 +10,7 @@ use App\Services\Events\DiscordEventSync;
 use App\Services\Families\FamilyRating;
 use App\Services\FriendshipService;
 use App\Services\Presence\PlayingStatus;
+use App\Services\SavedItems;
 use App\Services\Servers\DiscordInvites;
 use App\Services\Servers\ServerDirectory;
 use App\Services\Servers\ServerIconFetcher;
@@ -118,6 +119,7 @@ class ServerController extends Controller
             ],
             'playing_now' => $playing->playingNow('server', $server->id, $friendships->friendIds($request->user())),
             'playing_count' => $playing->countNow('server', $server->id),
+            'saved' => app(SavedItems::class)->has($request->user(), 'server', $server->id),
         ]);
     }
 

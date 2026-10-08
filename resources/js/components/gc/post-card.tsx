@@ -27,6 +27,8 @@ import { api } from '@/lib/api';
 import { compactNumber, timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { PostItem } from '@/types';
+import { MentionText } from './mention-text';
+import { SaveButton } from './save-button';
 import { Comments } from './comments';
 import { CommunityAvatar } from './community-avatar';
 import { LikeButton } from './like-button';
@@ -63,6 +65,7 @@ export function PostCard({
     const [focusComment, setFocusComment] = useState(false);
     const [fullText, setFullText] = useState(expanded);
     const [deleted, setDeleted] = useState(false);
+    const [poll, setPoll] = useState(post.poll ?? null);
 
     const Visibility = visibilityMeta[post.visibility].icon;
     const publisherHref = post.publisher?.href ?? `/${post.author.username}`;
@@ -205,9 +208,11 @@ export function PostCard({
 
             {body && (
                 <div className="mt-3.5 text-[15px] leading-relaxed break-words whitespace-pre-line text-white/90">
-                    {isLong && !fullText
-                        ? `${body.slice(0, LONG_TEXT).trimEnd()}…`
-                        : body}
+                    {isLong && !fullText ? (
+                        <MentionText text={`${body.slice(0, LONG_TEXT).trimEnd()}…`} />
+                    ) : (
+                        <MentionText text={body} />
+                    )}
                     {isLong && !fullText && (
                         <button
                             type="button"
@@ -236,6 +241,49 @@ export function PostCard({
 
             {post.movie && (
                 <MovieCardEmbed movie={post.movie} className="mt-3.5" />
+            )}
+
+            {poll && (
+                <div className="mt-3.5 space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                    <p className="text-sm font-medium text-white">{poll.question}</p>
+                    {poll.options.map((option) => {
+                        const share = poll.total > 0 ? Math.round((option.votes / poll.total) * 100) : 0;
+                        const chosen = poll.voted === option.id;
+
+                        return (
+                            <button
+                                key={option.id}
+                                type="button"
+                                onClick={async () => {
+                                    const next = await api<NonNullable<PostItem['poll']>>(
+                                        'POST',
+                                        `/posts/${post.id}/poll`,
+                                        { option_id: option.id },
+                                    );
+                                    setPoll(next);
+                                }}
+                                className={cn(
+                                    'relative w-full overflow-hidden rounded-xl border px-3 py-2 text-left text-sm',
+                                    chosen ? 'border-gc-lilac-400/50 text-white' : 'border-white/10 text-white/80 hover:border-white/20',
+                                )}
+                            >
+                                <span
+                                    className="absolute inset-y-0 left-0 bg-gc-indigo/25"
+                                    style={{ width: `${poll.voted ? share : 0}%` }}
+                                />
+                                <span className="relative flex items-center justify-between gap-3">
+                                    <span>{option.label}</span>
+                                    {poll.voted !== null && (
+                                        <span className="text-xs text-white/50 tabular-nums">{share}%</span>
+                                    )}
+                                </span>
+                            </button>
+                        );
+                    })}
+                    <p className="text-xs text-white/40">
+                        {tr('{total} голосів', { total: poll.total })}
+                    </p>
+                </div>
             )}
 
             {post.link && (
@@ -286,6 +334,7 @@ export function PostCard({
                         </span>
                     )}
                 </button>
+                <SaveButton kind="post" id={post.id} saved={post.saved ?? false} compact />
                 <button
                     type="button"
                     onClick={copyLink}

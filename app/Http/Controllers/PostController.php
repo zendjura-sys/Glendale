@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Community;
 use App\Models\Like;
 use App\Models\Movie;
+use App\Models\Poll;
+use App\Models\PollOption;
+use App\Models\PollVote;
 use App\Models\Post;
 use App\Models\PostAttachment;
 use App\Models\Track;
@@ -14,6 +17,7 @@ use App\Services\CommunityService;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
 use App\Services\Media\YoutubePreview;
+use App\Services\Mentions;
 use App\Services\Moderation\ContentFilter;
 use App\Services\PostPresenter;
 use App\Services\Spotify\SpotifyClient;
@@ -65,7 +69,11 @@ class PostController extends Controller
         $maxKb = (int) $this->settings->get('max_upload_mb') * 1024;
 
         $data = $request->validate([
-            'body' => ['nullable', 'string', 'max:'.(int) $this->settings->get('max_post_length'), 'required_without_all:images,music,movie_id'],
+            'body' => ['nullable', 'string', 'max:'.(int) $this->settings->get('max_post_length'), 'required_without_all:images,music,movie_id,poll'],
+            'poll' => ['nullable', 'array'],
+            'poll.question' => ['required_with:poll', 'string', 'max:200'],
+            'poll.options' => ['required_with:poll', 'array', 'min:2', 'max:4'],
+            'poll.options.*' => ['required', 'string', 'max:80'],
             'visibility' => ['required', Rule::in(Post::VISIBILITIES)],
             'wall' => ['nullable', 'string', 'exists:users,username'],
             'community' => ['nullable', 'string'],
@@ -127,6 +135,19 @@ class PostController extends Controller
                 'visibility' => $data['visibility'],
             ]);
 
+            if (isset($data['poll'])) {
+                $poll = Poll::query()->create([
+                    'post_id' => $post->id,
+                    'question' => trim($data['poll']['question']),
+                ]);
+                foreach (array_values($data['poll']['options']) as $position => $label) {
+                    $poll->options()->create([
+                        'label' => trim((string) $label),
+                        'position' => $position,
+                    ]);
+                }
+            }
+
             foreach (array_values($request->file('images', [])) as $position => $file) {
                 $stored = $this->images->store($file, 'posts');
                 $post->attachments()->create([
@@ -146,6 +167,8 @@ class PostController extends Controller
         if ($wallOwner instanceof User && $wallOwner->isNot($user)) {
             $wallOwner->notify(new PostInteraction(PostInteraction::WALL, $user, $post, Str::limit((string) $post->body, 80)));
         }
+
+        app(Mentions::class)->notify($user, $post->body, route('posts.show', $post, absolute: false));
 
         return $post;
     }
@@ -202,6 +225,36 @@ class PostController extends Controller
         });
 
         return back();
+    }
+
+    public function vote(Request $request, Post $post): JsonResponse
+    {
+        $user = $request->user();
+        $this->authorizeView($user, $post);
+        $poll = $post->poll()->with('options')->firstOrFail();
+        $data = $request->validate(['option_id' => ['required', 'integer']]);
+        $option = $poll->options->firstWhere('id', (int) $data['option_id']);
+        abort_unless($option instanceof PollOption, 422);
+
+        DB::transaction(function () use ($user, $poll, $option) {
+            $existing = PollVote::query()->where('poll_id', $poll->id)->where('user_id', $user->id)->lockForUpdate()->first();
+            if ($existing?->option_id === $option->id) {
+                return;
+            }
+            if ($existing) {
+                PollOption::query()->whereKey($existing->option_id)->where('votes_count', '>', 0)->decrement('votes_count');
+                $existing->update(['option_id' => $option->id]);
+            } else {
+                PollVote::query()->create([
+                    'poll_id' => $poll->id,
+                    'option_id' => $option->id,
+                    'user_id' => $user->id,
+                ]);
+            }
+            $option->increment('votes_count');
+        });
+
+        return response()->json($this->presenter->one($post->fresh(), $user)['poll']);
     }
 
     public function like(Request $request, Post $post): JsonResponse

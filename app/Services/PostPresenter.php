@@ -6,8 +6,11 @@ use App\Models\Comment;
 use App\Models\Community;
 use App\Models\Like;
 use App\Models\Movie;
+use App\Models\PollOption;
+use App\Models\PollVote;
 use App\Models\Post;
 use App\Models\PostAttachment;
+use App\Models\Save;
 use App\Models\Track;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
@@ -21,6 +24,12 @@ class PostPresenter
 
     /** @var array<int, array<string, mixed>> */
     private array $movies = [];
+
+    /** @var array<int, true> */
+    private array $saved = [];
+
+    /** @var array<int, int> */
+    private array $votes = [];
 
     /**
      * Готує записи до показу: автор, стіна, вкладення, останні коментарі, лайки глядача.
@@ -70,6 +79,15 @@ class PostPresenter
                 'description' => $m->description,
                 'available' => $m->is_published,
             ]])->all()
+            : [];
+
+        $posts->loadMissing('poll.options');
+        $this->saved = $viewer
+            ? Save::query()->where('user_id', $viewer->id)->where('kind', Save::POST)->whereIn('subject_id', $ids)->pluck('subject_id')->flip()->all()
+            : [];
+        $pollIds = $posts->map(fn (Post $post) => $post->poll?->id)->filter()->values();
+        $this->votes = $viewer && $pollIds->isNotEmpty()
+            ? PollVote::query()->where('user_id', $viewer->id)->whereIn('poll_id', $pollIds)->pluck('option_id', 'poll_id')->map(fn ($id) => (int) $id)->all()
             : [];
 
         $managed = $viewer && $posts->contains('wall_type', 'community')
@@ -143,6 +161,8 @@ class PostPresenter
             'music' => $this->music($post),
             'movie' => $post->movie_id ? $this->movies[$post->movie_id] ?? null : null,
             'link' => $post->link,
+            'saved' => isset($this->saved[$post->id]),
+            'poll' => $this->pollCard($post),
             'liked' => $liked,
             'comments' => $comments,
             'can' => [
@@ -150,6 +170,29 @@ class PostPresenter
                 'pin' => $ownWall || $managesWall,
                 'comment' => $viewer !== null && $post->comments_enabled,
             ],
+        ];
+    }
+
+    /**
+     * @return array{id: int, question: string, total: int, voted: int|null, options: list<array{id: int, label: string, votes: int}>}|null
+     */
+    private function pollCard(Post $post): ?array
+    {
+        $poll = $post->poll;
+        if ($poll === null) {
+            return null;
+        }
+
+        return [
+            'id' => $poll->id,
+            'question' => $poll->question,
+            'total' => (int) $poll->options->sum('votes_count'),
+            'voted' => isset($this->votes[$poll->id]) ? (int) $this->votes[$poll->id] : null,
+            'options' => $poll->options->map(fn (PollOption $option) => [
+                'id' => $option->id,
+                'label' => $option->label,
+                'votes' => $option->votes_count,
+            ])->values()->all(),
         ];
     }
 

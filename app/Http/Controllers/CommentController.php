@@ -9,6 +9,7 @@ use App\Models\Photo;
 use App\Models\Post;
 use App\Notifications\PostInteraction;
 use App\Services\FriendshipService;
+use App\Services\Mentions;
 use App\Services\Moderation\ContentFilter;
 use App\Services\PhotoService;
 use App\Services\PostPresenter;
@@ -76,6 +77,8 @@ class CommentController extends Controller
         if ($post->author_id !== $user->id) {
             $post->author->notify(new PostInteraction(PostInteraction::COMMENT, $user, $post, Str::limit($comment->body, 80)));
         }
+
+        app(Mentions::class)->notify($user, $comment->body, route('posts.show', $post, absolute: false));
 
         return response()->json([
             'comment' => $this->presenter->comment($comment->load('user'), $user),

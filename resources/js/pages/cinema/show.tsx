@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { MoviePoster, PosterRow } from '@/components/cinema/movie-tile';
 import { ShareMovieDialog } from '@/components/cinema/share-movie-dialog';
 import { Comments } from '@/components/gc/comments';
+import { SaveButton } from '@/components/gc/save-button';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import {
     DropdownMenu,
@@ -52,6 +53,7 @@ type Props = {
     similar: MovieCard[];
     comments: CommentItem[];
     can: { manage: boolean };
+    saved: boolean;
 };
 
 type StateResponse = {
@@ -160,6 +162,7 @@ export default function CinemaShow({
     similar,
     comments,
     can,
+    saved,
 }: Props) {
     const [state, setState] = useState(initialState);
     const [stats, setStats] = useState({
@@ -456,6 +459,7 @@ export default function CinemaShow({
                                             {tr('Дивитися разом')}
                                         </button>
                                     )}
+                                    <SaveButton kind="movie" id={movie.id} saved={saved} />
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <button

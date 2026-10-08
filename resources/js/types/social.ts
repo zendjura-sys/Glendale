@@ -80,6 +80,14 @@ export type PostItem = {
     music: TrackCard | null;
     movie: PostMovie | null;
     link?: { url: string; title: string; thumbnail: string | null; author: string | null } | null;
+    saved?: boolean;
+    poll?: {
+        id: number;
+        question: string;
+        total: number;
+        voted: number | null;
+        options: { id: number; label: string; votes: number }[];
+    } | null;
     liked: boolean;
     comments: CommentItem[];
     can: { delete: boolean; pin: boolean; comment: boolean };

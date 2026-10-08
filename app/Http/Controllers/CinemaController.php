@@ -11,6 +11,7 @@ use App\Services\Cinema\CinemaService;
 use App\Services\Cinema\FlixcdnPlayer;
 use App\Services\FriendshipService;
 use App\Services\PostPresenter;
+use App\Services\SavedItems;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
@@ -144,6 +145,7 @@ class CinemaController extends Controller
             'similar' => $this->cards($similar),
             'comments' => $comments->map(fn (Comment $c) => $this->presenter->comment($c, $viewer, $liked->has($c->id)))->values(),
             'can' => ['manage' => $viewer->isStaff()],
+            'saved' => app(SavedItems::class)->has($viewer, 'movie', $movie->id),
         ]);
     }
 

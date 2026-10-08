@@ -8,6 +8,7 @@ use App\Models\GameEvent;
 use App\Services\EventCalendar;
 use App\Services\FriendshipService;
 use App\Services\Presence\PlayingStatus;
+use App\Services\SavedItems;
 use App\Support\Modules\ModuleManager;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Database\Eloquent\Builder;
@@ -149,6 +150,7 @@ class GameController extends Controller
             'events' => ($on['events'] || $on['release_events']) && app(ModuleManager::class)->enabled('events') ? app(EventCalendar::class)->forGame($game, $request->user()) : [],
             'event_types' => GameEvent::TYPES,
             'can_add_event' => $on['events'] && $request->user()?->isStaff() === true,
+            'saved' => $request->user() ? app(SavedItems::class)->has($request->user(), 'game', $game->id) : false,
         ];
 
         return $request->expectsJson() && ! $request->header('X-Inertia')

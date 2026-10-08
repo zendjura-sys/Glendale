@@ -28,6 +28,7 @@ use App\Http\Controllers\PlayingController;
 use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SavedController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StoryController;
@@ -62,6 +63,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::delete('posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
     Route::post('posts/{post}/pin', [PostController::class, 'pin'])->name('posts.pin');
     Route::post('posts/{post}/like', [PostController::class, 'like'])->middleware('throttle:120,1')->name('posts.like');
+    Route::post('posts/{post}/poll', [PostController::class, 'vote'])->middleware('throttle:60,1')->name('posts.poll');
+    Route::get('saved', [SavedController::class, 'index'])->name('saved.index');
+    Route::post('saved', [SavedController::class, 'toggle'])->middleware('throttle:60,1')->name('saved.toggle');
 
     Route::get('posts/{post}/comments', [CommentController::class, 'index'])->name('comments.index');
     Route::post('posts/{post}/comments', [CommentController::class, 'store'])->middleware('throttle:30,1')->name('comments.store');

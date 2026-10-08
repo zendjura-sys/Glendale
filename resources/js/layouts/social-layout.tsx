@@ -1,5 +1,6 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
+    Bookmark,
     ChevronDown,
     LayoutDashboard,
     LayoutGrid,
@@ -206,6 +207,14 @@ function UserMenu() {
                 >
                     <Link href={`/${user.username}`}>
                         <UserRound /> {tr('Моя сторінка')}
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    asChild
+                    className="rounded-lg focus:bg-white/[0.06]"
+                >
+                    <Link href="/saved">
+                        <Bookmark /> {tr('Збережене')}
                     </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -427,6 +436,11 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
     }, [onClose]);
 
     const extra = [
+        {
+            href: '/saved',
+            label: tr('Збережене'),
+            icon: Bookmark,
+        },
         {
             href: '/settings/navigation',
             label: tr('Налаштувати нижню панель'),

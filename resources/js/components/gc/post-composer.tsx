@@ -1,5 +1,6 @@
 import { useForm, usePage } from '@inertiajs/react';
 import {
+    BarChart3,
     Earth,
     ImagePlus,
     Lock,
@@ -60,6 +61,7 @@ export function PostComposer({
         community: string | null;
         as_community: boolean;
         images: File[];
+        poll: { question: string; options: string[] } | null;
     }>({
         body: '',
         visibility: 'public',
@@ -69,6 +71,7 @@ export function PostComposer({
             community?.type === 'public' ||
             (community?.canPostAsCommunity ?? false),
         images: [],
+        poll: null,
     });
     const asCommunity = !!community && form.data.as_community;
 
@@ -85,11 +88,17 @@ export function PostComposer({
         focused ||
         form.data.body.length > 0 ||
         form.data.images.length > 0 ||
-        track !== null;
+        track !== null ||
+        form.data.poll !== null;
+    const pollReady =
+        form.data.poll !== null &&
+        form.data.poll.question.trim().length > 0 &&
+        form.data.poll.options.filter((option) => option.trim()).length >= 2;
     const canSubmit =
         (form.data.body.trim().length > 0 ||
             form.data.images.length > 0 ||
-            track !== null) &&
+            track !== null ||
+            pollReady) &&
         !form.processing;
 
     const addFiles = (files: FileList | null) => {
@@ -106,15 +115,23 @@ export function PostComposer({
     const submit = () => {
         if (!canSubmit) return;
 
-        form.transform((data) => ({
-            ...data,
-            ...(track ? { music: musicPayload(track) } : {}),
-        }));
+        form.transform((data) => {
+            const options = data.poll?.options.map((option) => option.trim()).filter(Boolean) ?? [];
+
+            return {
+                ...data,
+                poll:
+                    data.poll && data.poll.question.trim() && options.length >= 2
+                        ? { question: data.poll.question.trim(), options }
+                        : undefined,
+                ...(track ? { music: musicPayload(track) } : {}),
+            };
+        });
         form.post('/posts', {
             forceFormData: true,
             preserveScroll: true,
             onSuccess: () => {
-                form.reset('body', 'images');
+                form.reset('body', 'images', 'poll');
                 setTrack(null);
                 setFocused(false);
             },
@@ -241,6 +258,49 @@ export function PostComposer({
                     </p>
                 ))}
 
+            {form.data.poll && (
+                <div className="relative mt-3 space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                    <input
+                        value={form.data.poll.question}
+                        onChange={(event) =>
+                            form.setData('poll', {
+                                ...form.data.poll!,
+                                question: event.target.value,
+                            })
+                        }
+                        placeholder={tr('Питання опитування')}
+                        className="w-full bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none"
+                    />
+                    {form.data.poll.options.map((option, index) => (
+                        <input
+                            key={index}
+                            value={option}
+                            onChange={(event) => {
+                                const options = [...form.data.poll!.options];
+                                options[index] = event.target.value;
+                                form.setData('poll', { ...form.data.poll!, options });
+                            }}
+                            placeholder={tr('Варіант {n}', { n: index + 1 })}
+                            className="w-full rounded-xl bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:outline-none"
+                        />
+                    ))}
+                    {form.data.poll.options.length < 4 && (
+                        <button
+                            type="button"
+                            onClick={() =>
+                                form.setData('poll', {
+                                    ...form.data.poll!,
+                                    options: [...form.data.poll!.options, ''],
+                                })
+                            }
+                            className="text-xs font-medium text-gc-lilac-300"
+                        >
+                            {tr('Ще варіант')}
+                        </button>
+                    )}
+                </div>
+            )}
+
             {form.progress && (
                 <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/5">
                     <div
@@ -271,6 +331,24 @@ export function PostComposer({
                 >
                     <ImagePlus className="size-[18px] text-[#6fa2ff]" />
                     <span className="hidden sm:inline">{tr('Фото')}</span>
+                </button>
+                <button
+                    type="button"
+                    onClick={() =>
+                        form.setData(
+                            'poll',
+                            form.data.poll
+                                ? null
+                                : { question: '', options: ['', ''] },
+                        )
+                    }
+                    className={cn(
+                        'inline-flex h-9 items-center gap-2 rounded-xl px-2.5 text-sm font-medium transition hover:bg-white/[0.06] hover:text-white sm:px-3',
+                        form.data.poll ? 'text-white' : 'text-white/65',
+                    )}
+                >
+                    <BarChart3 className="size-[18px] text-[#7dffb3]" />
+                    <span className="hidden sm:inline">{tr('Опитування')}</span>
                 </button>
                 {modules.includes('music') && (
                     <button
