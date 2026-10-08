@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\Photo;
 use App\Models\User;
+use App\Notifications\Concerns\QuietHours;
 use Illuminate\Notifications\Notification;
 
 class PhotoInteraction extends Notification
@@ -24,7 +25,7 @@ class PhotoInteraction extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return QuietHours::channels($notifiable);
     }
 
     /**

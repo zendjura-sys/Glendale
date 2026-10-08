@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Palette;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Translation\HasLocalePreference;
@@ -67,6 +68,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $muted_until Тимчасовий мут на всьому сайті
  * @property string|null $mute_reason
  * @property string|null $locale
+ * @property array<string, mixed>|null $preferences
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -125,6 +127,7 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'is_private' => 'boolean',
             'email_social' => 'boolean',
             'nav_tabs' => 'array',
+            'preferences' => 'array',
         ];
     }
 
@@ -312,5 +315,46 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'until' => $this->playing_until->toIso8601String(),
             'auto' => $this->playing_source !== null && $this->playing_source !== 'manual',
         ];
+    }
+
+    public function pref(string $key, mixed $default = null): mixed
+    {
+        $all = $this->preferences ?? [];
+
+        return $all[$key] ?? $default;
+    }
+
+    /**
+     * @param  array<string, mixed>  $patch
+     */
+    public function mergePref(array $patch): void
+    {
+        $this->preferences = array_merge($this->preferences ?? [], $patch);
+        $this->save();
+    }
+
+    public function palette(): string
+    {
+        $id = (string) $this->pref('palette', Palette::DEFAULT);
+
+        return Palette::exists($id) ? $id : Palette::DEFAULT;
+    }
+
+    /** Соціальні сповіщення мовчать у цьому вікні (може переходити через північ). */
+    public function inQuietHours(): bool
+    {
+        if (! $this->pref('quiet_enabled')) {
+            return false;
+        }
+        $from = (string) $this->pref('quiet_from', '23:00');
+        $to = (string) $this->pref('quiet_to', '08:00');
+        $now = now()->format('H:i');
+        if ($from === $to) {
+            return true;
+        }
+
+        return $from < $to
+            ? $now >= $from && $now < $to
+            : $now >= $from || $now < $to;
     }
 }

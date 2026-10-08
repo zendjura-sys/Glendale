@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\Community;
 use App\Models\User;
+use App\Notifications\Concerns\QuietHours;
 use Illuminate\Notifications\Notification;
 
 class CommunityActivity extends Notification
@@ -23,7 +24,7 @@ class CommunityActivity extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return QuietHours::channels($notifiable);
     }
 
     /**

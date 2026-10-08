@@ -203,6 +203,27 @@
     );
 }
 
+/* Палітри учасника. Фон темний, міняється лише акцент. */
+html[data-palette='ocean'] { --color-gc-blue: #38bdf8; --color-gc-indigo: #0284c7; --color-gc-purple: #22d3ee; --color-gc-pink: #2dd4bf; --color-gc-lilac-400: #7dd3fc; --color-gc-violet-400: #22d3ee; --primary: #0284c7; --ring: #38bdf8; }
+html[data-palette='forest'] { --color-gc-blue: #34d399; --color-gc-indigo: #059669; --color-gc-purple: #14b8a6; --color-gc-pink: #84cc16; --color-gc-lilac-400: #6ee7b7; --color-gc-violet-400: #2dd4bf; --primary: #059669; --ring: #34d399; }
+html[data-palette='ember'] { --color-gc-blue: #fb7185; --color-gc-indigo: #ea580c; --color-gc-purple: #f59e0b; --color-gc-pink: #ef4444; --color-gc-lilac-400: #fdba74; --color-gc-violet-400: #fb923c; --primary: #ea580c; --ring: #fb7185; }
+html[data-palette='sunset'] { --color-gc-blue: #fb923c; --color-gc-indigo: #e11d48; --color-gc-purple: #e879f9; --color-gc-pink: #facc15; --color-gc-lilac-400: #fda4af; --color-gc-violet-400: #f472b6; --primary: #e11d48; --ring: #fb923c; }
+html[data-palette='royal'] { --color-gc-blue: #a78bfa; --color-gc-indigo: #6d28d9; --color-gc-purple: #f5c451; --color-gc-pink: #c4b5fd; --color-gc-lilac-400: #ddd6fe; --color-gc-violet-400: #c4b5fd; --primary: #6d28d9; --ring: #a78bfa; }
+html[data-palette='rose'] { --color-gc-blue: #fb7185; --color-gc-indigo: #e11d48; --color-gc-purple: #fda4af; --color-gc-pink: #e879f9; --color-gc-lilac-400: #fecdd3; --color-gc-violet-400: #fb7185; --primary: #e11d48; --ring: #fb7185; }
+html[data-palette='sakura'] { --color-gc-blue: #f9a8d4; --color-gc-indigo: #db2777; --color-gc-purple: #c084fc; --color-gc-pink: #fbcfe8; --color-gc-lilac-400: #fbcfe8; --color-gc-violet-400: #f0abfc; --primary: #db2777; --ring: #f9a8d4; }
+html[data-palette='midnight'] { --color-gc-blue: #818cf8; --color-gc-indigo: #4338ca; --color-gc-purple: #6366f1; --color-gc-pink: #a5b4fc; --color-gc-lilac-400: #c7d2fe; --color-gc-violet-400: #a5b4fc; --primary: #4338ca; --ring: #818cf8; }
+html[data-palette='ice'] { --color-gc-blue: #bae6fd; --color-gc-indigo: #0284c7; --color-gc-purple: #67e8f9; --color-gc-pink: #e0f2fe; --color-gc-lilac-400: #e0f2fe; --color-gc-violet-400: #7dd3fc; --primary: #0284c7; --ring: #7dd3fc; }
+html[data-palette='neon'] { --color-gc-blue: #22d3ee; --color-gc-indigo: #c026d3; --color-gc-purple: #e879f9; --color-gc-pink: #a3e635; --color-gc-lilac-400: #67e8f9; --color-gc-violet-400: #e879f9; --primary: #c026d3; --ring: #22d3ee; }
+html[data-palette='venom'] { --color-gc-blue: #a3e635; --color-gc-indigo: #65a30d; --color-gc-purple: #c084fc; --color-gc-pink: #bef264; --color-gc-lilac-400: #d9f99d; --color-gc-violet-400: #a3e635; --primary: #65a30d; --ring: #a3e635; }
+html[data-palette='gold'] { --color-gc-blue: #fbbf24; --color-gc-indigo: #d97706; --color-gc-purple: #fde68a; --color-gc-pink: #f59e0b; --color-gc-lilac-400: #fde68a; --color-gc-violet-400: #fbbf24; --primary: #d97706; --ring: #fbbf24; }
+html[data-palette='blood'] { --color-gc-blue: #fb7185; --color-gc-indigo: #be123c; --color-gc-purple: #9f1239; --color-gc-pink: #fecdd3; --color-gc-lilac-400: #fda4af; --color-gc-violet-400: #fb7185; --primary: #be123c; --ring: #fb7185; }
+html[data-palette='grape'] { --color-gc-blue: #c084fc; --color-gc-indigo: #7e22ce; --color-gc-purple: #a855f7; --color-gc-pink: #e9d5ff; --color-gc-lilac-400: #e9d5ff; --color-gc-violet-400: #d8b4fe; --primary: #7e22ce; --ring: #c084fc; }
+html[data-palette='arctic'] { --color-gc-blue: #5eead4; --color-gc-indigo: #0f766e; --color-gc-purple: #38bdf8; --color-gc-pink: #a5f3fc; --color-gc-lilac-400: #99f6e4; --color-gc-violet-400: #5eead4; --primary: #0f766e; --ring: #5eead4; }
+html[data-palette='candy'] { --color-gc-blue: #f472b6; --color-gc-indigo: #0891b2; --color-gc-purple: #22d3ee; --color-gc-pink: #facc15; --color-gc-lilac-400: #fbcfe8; --color-gc-violet-400: #67e8f9; --primary: #0891b2; --ring: #f472b6; }
+html[data-palette='sand'] { --color-gc-blue: #fdba74; --color-gc-indigo: #c2410c; --color-gc-purple: #fcd34d; --color-gc-pink: #d6d3d1; --color-gc-lilac-400: #fed7aa; --color-gc-violet-400: #fdba74; --primary: #c2410c; --ring: #fdba74; }
+html[data-palette='matrix'] { --color-gc-blue: #4ade80; --color-gc-indigo: #15803d; --color-gc-purple: #86efac; --color-gc-pink: #22c55e; --color-gc-lilac-400: #bbf7d0; --color-gc-violet-400: #4ade80; --primary: #15803d; --ring: #4ade80; }
+html[data-palette='copper'] { --color-gc-blue: #fb923c; --color-gc-indigo: #c2410c; --color-gc-purple: #fdba74; --color-gc-pink: #ea580c; --color-gc-lilac-400: #fed7aa; --color-gc-violet-400: #fb923c; --primary: #c2410c; --ring: #fb923c; }
+
 @layer base {
     * {
         @apply border-border;

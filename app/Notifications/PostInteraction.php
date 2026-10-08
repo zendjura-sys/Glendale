@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\Post;
 use App\Models\User;
+use App\Notifications\Concerns\QuietHours;
 use Illuminate\Notifications\Notification;
 
 class PostInteraction extends Notification
@@ -26,7 +27,7 @@ class PostInteraction extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return QuietHours::channels($notifiable);
     }
 
     /**

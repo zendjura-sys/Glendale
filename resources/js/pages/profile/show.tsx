@@ -55,6 +55,8 @@ type Profile = UserCard & {
     last_seen_at: string | null;
     joined_at: string | null;
     role: string;
+    looking_for_group?: boolean;
+    languages?: string[];
 };
 
 type Props = {
@@ -236,6 +238,24 @@ export default function ProfileShow({
                                 <p className="mt-1.5 text-[15px] text-white/75">
                                     {profile.status}
                                 </p>
+                            )}
+                            {(profile.looking_for_group ||
+                                (profile.languages?.length ?? 0) > 0) && (
+                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                    {profile.looking_for_group && (
+                                        <span className="rounded-full bg-white/[0.08] px-2.5 py-1 text-xs font-medium text-white">
+                                            {tr('Шукаю групу')}
+                                        </span>
+                                    )}
+                                    {profile.languages?.map((code) => (
+                                        <span
+                                            key={code}
+                                            className="rounded-full bg-white/[0.05] px-2.5 py-1 text-xs text-white/70"
+                                        >
+                                            {code}
+                                        </span>
+                                    ))}
+                                </div>
                             )}
                             {/* «Граю в…» — лише коли людина справді грає; налаштування — у Налаштуваннях профілю. */}
                             {profile.playing && (

@@ -93,6 +93,8 @@ class ProfileController extends Controller
                 'last_seen_at' => $user->last_seen_at?->toIso8601String(),
                 'joined_at' => $user->created_at?->toIso8601String(),
                 'role' => $user->role,
+                'looking_for_group' => (bool) $user->pref('looking_for_group'),
+                'languages' => array_values(array_filter((array) $user->pref('languages', []), 'is_string')),
             ],
             'relation' => $relation,
             'canSeeContent' => $canSeeContent,

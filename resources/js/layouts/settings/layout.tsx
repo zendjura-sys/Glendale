@@ -1,8 +1,9 @@
 import { Link } from '@inertiajs/react';
-import { PanelBottom, ShieldCheck, UserRound } from 'lucide-react';
+import { Palette, PanelBottom, ShieldCheck, UserRound } from 'lucide-react';
 import type { PropsWithChildren } from 'react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
+import { edit as editAppearance } from '@/routes/appearance';
 import { edit as editNavigation } from '@/routes/navigation';
 import { edit } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
@@ -15,6 +16,12 @@ const items = [
         description: tr("Ім'я, адреса сторінки, про себе"),
         href: edit(),
         icon: UserRound,
+    },
+    {
+        title: tr('Вигляд'),
+        description: tr('Палітра, тиша і як тебе бачать'),
+        href: editAppearance(),
+        icon: Palette,
     },
     {
         title: tr('Безпека'),
