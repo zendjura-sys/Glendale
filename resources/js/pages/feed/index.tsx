@@ -35,6 +35,7 @@ type Props = {
     suggestions?: (UserCard & { mutual: number })[];
     onlineFriends?: UserCard[];
     playingNow?: UserCard[];
+    picks?: { kind: string; title: string; href: string; image: string | null }[];
     birthdays?: (UserCard & { birthday: string })[];
 };
 
@@ -99,6 +100,7 @@ export default function Feed({
     suggestions,
     onlineFriends,
     playingNow,
+    picks,
     birthdays,
 }: Props) {
     const { auth } = usePage().props;
@@ -109,6 +111,19 @@ export default function Feed({
             <div className="flex gap-5">
                 <div className="min-w-0 flex-1 space-y-4 xl:max-w-[640px]">
                     <StoriesBar />
+                    {(picks?.length ?? 0) > 0 && (
+                        <div className="flex gap-2 overflow-x-auto">
+                            {picks?.map((pick) => (
+                                <Link
+                                    key={pick.href}
+                                    href={pick.href}
+                                    className="glass shrink-0 rounded-2xl px-3 py-2 text-sm font-medium text-white"
+                                >
+                                    {pick.title}
+                                </Link>
+                            ))}
+                        </div>
+                    )}
                     {(playingNow?.length ?? 0) > 0 && (
                         <div className="glass flex gap-2 overflow-x-auto rounded-2xl p-3">
                             {playingNow?.map((person) => (

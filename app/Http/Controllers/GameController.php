@@ -6,6 +6,7 @@ use App\Models\Clan;
 use App\Models\Game;
 use App\Models\GameEvent;
 use App\Services\EventCalendar;
+use App\Services\FollowAlerts;
 use App\Services\FriendshipService;
 use App\Services\Presence\PlayingStatus;
 use App\Services\SavedItems;
@@ -151,6 +152,7 @@ class GameController extends Controller
             'event_types' => GameEvent::TYPES,
             'can_add_event' => $on['events'] && $request->user()?->isStaff() === true,
             'saved' => $request->user() ? app(SavedItems::class)->has($request->user(), 'game', $game->id) : false,
+            'following' => $request->user() ? app(FollowAlerts::class)->has($request->user(), 'game', $game->id) : false,
         ];
 
         return $request->expectsJson() && ! $request->header('X-Inertia')

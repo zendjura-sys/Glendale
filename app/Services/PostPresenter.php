@@ -161,6 +161,7 @@ class PostPresenter
             'music' => $this->music($post),
             'movie' => $post->movie_id ? $this->movies[$post->movie_id] ?? null : null,
             'link' => $post->link,
+            'card' => $post->card,
             'saved' => isset($this->saved[$post->id]),
             'poll' => $this->pollCard($post),
             'liked' => $liked,

@@ -24,6 +24,7 @@ import type { ReactNode } from 'react';
 import { EventList, GameEventForm } from '@/components/events/event-card';
 import type { CalendarEvent } from '@/components/events/event-card';
 import { PlayingNow } from '@/components/gc/playing';
+import { FollowButton } from '@/components/gc/follow-button';
 import { SaveButton } from '@/components/gc/save-button';
 import { cn } from '@/lib/utils';
 import type { ClanCard, GameCard, UserCard } from '@/types';
@@ -94,6 +95,7 @@ type Props = {
     event_types: Record<string, string>;
     can_add_event: boolean;
     saved: boolean;
+    following: boolean;
 };
 
 const STORE_STYLE: Record<string, string> = {
@@ -183,6 +185,7 @@ export default function GameShow({
     event_types,
     can_add_event,
     saved,
+    following,
 }: Props) {
     const d = game.details ?? {};
     const [video, setVideo] = useState<string | null>(null);
@@ -265,7 +268,10 @@ export default function GameShow({
                             <h1 className="font-display text-2xl font-semibold text-white sm:text-3xl">
                                 {game.name}
                             </h1>
-                            <SaveButton kind="game" id={game.id} saved={saved} />
+                            <span className="flex shrink-0 gap-2">
+                                <FollowButton kind="game" id={game.id} following={following} />
+                                <SaveButton kind="game" id={game.id} saved={saved} />
+                            </span>
                         </div>
                         <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/70">
                             <span>

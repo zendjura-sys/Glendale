@@ -25,6 +25,7 @@ use Illuminate\Support\Carbon;
  * @property array<string, mixed>|null $music
  * @property int|null $movie_id
  * @property array{url: string, title: string, thumbnail: string|null, author: string|null}|null $link
+ * @property array{kind: string, id: int, title: string, hint: string, href: string, image: string|null}|null $card
  * @property string $visibility
  * @property bool $is_pinned
  * @property bool $comments_enabled
@@ -34,7 +35,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
-#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'visibility', 'is_pinned', 'comments_enabled'])]
+#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'card', 'visibility', 'is_pinned', 'comments_enabled'])]
 class Post extends Model
 {
     /** @use HasFactory<PostFactory> */
@@ -56,6 +57,7 @@ class Post extends Model
             'as_community' => 'boolean',
             'music' => 'array',
             'link' => 'array',
+            'card' => 'array',
         ];
     }
 

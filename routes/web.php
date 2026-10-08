@@ -11,6 +11,7 @@ use App\Http\Controllers\CommunityMemberController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\FeedController;
+use App\Http\Controllers\FollowController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\ListenPartyController;
@@ -31,6 +32,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SavedController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\SpotifyController;
+use App\Http\Controllers\StartController;
 use App\Http\Controllers\StoryController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\TranslateController;
@@ -57,6 +59,11 @@ Route::prefix('auth')->name('auth.')->group(function () {
 
 Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::get('feed', [FeedController::class, 'index'])->middleware('module:feed')->name('feed');
+    Route::get('start', [StartController::class, 'index'])->name('start');
+    Route::post('start', [StartController::class, 'store'])->name('start.store');
+    Route::post('start/skip', [StartController::class, 'skip'])->name('start.skip');
+    Route::get('cards/search', [FollowController::class, 'cards'])->middleware('throttle:120,1')->name('cards.search');
+    Route::post('follows', [FollowController::class, 'toggle'])->middleware('throttle:60,1')->name('follows.toggle');
 
     Route::post('posts', [PostController::class, 'store'])->middleware('throttle:30,1')->name('posts.store');
     Route::get('posts/{post}', [PostController::class, 'show'])->name('posts.show');

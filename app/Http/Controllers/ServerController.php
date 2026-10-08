@@ -8,6 +8,7 @@ use App\Models\ServerEvent;
 use App\Services\EventCalendar;
 use App\Services\Events\DiscordEventSync;
 use App\Services\Families\FamilyRating;
+use App\Services\FollowAlerts;
 use App\Services\FriendshipService;
 use App\Services\Presence\PlayingStatus;
 use App\Services\SavedItems;
@@ -120,6 +121,7 @@ class ServerController extends Controller
             'playing_now' => $playing->playingNow('server', $server->id, $friendships->friendIds($request->user())),
             'playing_count' => $playing->countNow('server', $server->id),
             'saved' => app(SavedItems::class)->has($request->user(), 'server', $server->id),
+            'following' => app(FollowAlerts::class)->has($request->user(), 'server', $server->id),
         ]);
     }
 

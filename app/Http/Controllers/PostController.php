@@ -19,6 +19,7 @@ use App\Services\ImageStorage;
 use App\Services\Media\YoutubePreview;
 use App\Services\Mentions;
 use App\Services\Moderation\ContentFilter;
+use App\Services\PostCards;
 use App\Services\PostPresenter;
 use App\Services\Spotify\SpotifyClient;
 use App\Support\Settings\SiteSettings;
@@ -69,7 +70,10 @@ class PostController extends Controller
         $maxKb = (int) $this->settings->get('max_upload_mb') * 1024;
 
         $data = $request->validate([
-            'body' => ['nullable', 'string', 'max:'.(int) $this->settings->get('max_post_length'), 'required_without_all:images,music,movie_id,poll'],
+            'body' => ['nullable', 'string', 'max:'.(int) $this->settings->get('max_post_length'), 'required_without_all:images,music,movie_id,poll,card'],
+            'card' => ['nullable', 'array'],
+            'card.kind' => ['required_with:card', Rule::in(['game', 'server', 'game_event', 'server_event'])],
+            'card.id' => ['required_with:card', 'integer', 'min:1'],
             'poll' => ['nullable', 'array'],
             'poll.question' => ['required_with:poll', 'string', 'max:200'],
             'poll.options' => ['required_with:poll', 'array', 'min:2', 'max:4'],
@@ -122,7 +126,15 @@ class PostController extends Controller
             );
         }
 
-        $post = DB::transaction(function () use ($request, $user, $wallOwner, $data, $asCommunity, $music, $movieId) {
+        $card = null;
+        if (isset($data['card'])) {
+            $card = app(PostCards::class)->resolve($data['card']['kind'], (int) $data['card']['id']);
+            if ($card === null) {
+                throw ValidationException::withMessages(['card' => 'Картку не знайдено.']);
+            }
+        }
+
+        $post = DB::transaction(function () use ($request, $user, $wallOwner, $data, $asCommunity, $music, $movieId, $card) {
             $post = Post::query()->create([
                 'author_id' => $user->id,
                 'wall_type' => $wallOwner->getMorphClass(),
@@ -132,6 +144,7 @@ class PostController extends Controller
                 'music' => $music,
                 'movie_id' => $movieId,
                 'link' => app(YoutubePreview::class)->fromText($data['body'] ?? null),
+                'card' => $card,
                 'visibility' => $data['visibility'],
             ]);
 

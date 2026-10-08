@@ -48,6 +48,8 @@ class CreateNewUser implements CreatesNewUsers
             $user->forceFill(['role' => User::ROLE_ADMIN])->save();
         }
 
+        $user->mergePref(['onboarded' => false]);
+
         return $user;
     }
 

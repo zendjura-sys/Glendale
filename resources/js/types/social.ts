@@ -80,6 +80,14 @@ export type PostItem = {
     music: TrackCard | null;
     movie: PostMovie | null;
     link?: { url: string; title: string; thumbnail: string | null; author: string | null } | null;
+    card?: {
+        kind: string;
+        id: number;
+        title: string;
+        hint: string;
+        href: string;
+        image: string | null;
+    } | null;
     saved?: boolean;
     poll?: {
         id: number;

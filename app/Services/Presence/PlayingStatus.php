@@ -5,6 +5,7 @@ namespace App\Services\Presence;
 use App\Models\Game;
 use App\Models\GtaServer;
 use App\Models\User;
+use App\Services\FollowAlerts;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
@@ -47,6 +48,7 @@ class PlayingStatus
         }
 
         // Те саме й ще довго діє — не пишемо в базу на кожен сигнал.
+        $changedTarget = $user->playing_kind !== $target['kind'] || (int) $user->playing_ref_id !== (int) ($target['id'] ?? 0);
         $same = $user->playing_kind === $target['kind'] && $user->playing_ref_id === $target['id']
             && $user->playing_label === $target['label'] && $user->playing_note === $target['note'] && $user->playing_source === $source;
         if ($same && $user->playing_until?->gt(now()->addMinutes(intdiv($minutes, 2)))) {
@@ -63,6 +65,10 @@ class PlayingStatus
             'playing_until' => now()->addMinutes($minutes),
             'playing_source' => $source,
         ])->save();
+
+        if ($changedTarget) {
+            app(FollowAlerts::class)->friendsStarted($user->fresh());
+        }
     }
 
     public function clear(User $user): void

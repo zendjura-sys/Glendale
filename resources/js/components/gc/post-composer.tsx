@@ -14,9 +14,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { MusicCard } from '@/components/music/music-card';
 import { MusicPicker } from '@/components/music/music-picker';
 import { musicPayload } from '@/components/music/share-track-dialog';
+import { api } from '@/lib/api';
 import { fitTextarea } from '@/lib/textarea';
 import { cn } from '@/lib/utils';
-import type { TrackCard, Visibility } from '@/types';
+import type { PostItem, TrackCard, Visibility } from '@/types';
 import { CommunityAvatar } from './community-avatar';
 import { UserAvatar } from './user-avatar';
 import { tr } from '@/lib/i18n';
@@ -53,6 +54,10 @@ export function PostComposer({
     const [focused, setFocused] = useState(false);
     const [picking, setPicking] = useState(false);
     const [track, setTrack] = useState<TrackCard | null>(null);
+    const [card, setCard] = useState<NonNullable<PostItem['card']> | null>(null);
+    const [cardQuery, setCardQuery] = useState('');
+    const [cardHits, setCardHits] = useState<NonNullable<PostItem['card']>[]>([]);
+    const [pickingCard, setPickingCard] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
     const form = useForm<{
         body: string;
@@ -89,6 +94,7 @@ export function PostComposer({
         form.data.body.length > 0 ||
         form.data.images.length > 0 ||
         track !== null ||
+        card !== null ||
         form.data.poll !== null;
     const pollReady =
         form.data.poll !== null &&
@@ -98,6 +104,7 @@ export function PostComposer({
         (form.data.body.trim().length > 0 ||
             form.data.images.length > 0 ||
             track !== null ||
+            card !== null ||
             pollReady) &&
         !form.processing;
 
@@ -125,6 +132,7 @@ export function PostComposer({
                         ? { question: data.poll.question.trim(), options }
                         : undefined,
                 ...(track ? { music: musicPayload(track) } : {}),
+                ...(card ? { card: { kind: card.kind, id: card.id } } : {}),
             };
         });
         form.post('/posts', {
@@ -133,6 +141,8 @@ export function PostComposer({
             onSuccess: () => {
                 form.reset('body', 'images', 'poll');
                 setTrack(null);
+                setCard(null);
+                setPickingCard(false);
                 setFocused(false);
             },
         });
@@ -258,6 +268,55 @@ export function PostComposer({
                     </p>
                 ))}
 
+            {card && (
+                <div className="relative mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+                    <span className="min-w-0 flex-1">
+                        <span className="block text-xs text-white/40">{tr(card.hint)}</span>
+                        <span className="block truncate text-sm font-medium text-white">{card.title}</span>
+                    </span>
+                    <button type="button" onClick={() => setCard(null)} aria-label={tr('Прибрати картку')}>
+                        <X className="size-4 text-white/50" />
+                    </button>
+                </div>
+            )}
+            {pickingCard && !card && (
+                <div className="relative mt-3 space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                    <input
+                        value={cardQuery}
+                        onChange={(event) => {
+                            const value = event.target.value;
+                            setCardQuery(value);
+                            if (value.trim().length < 2) {
+                                setCardHits([]);
+                                return;
+                            }
+                            window.setTimeout(() => {
+                                void api<{ cards: NonNullable<PostItem['card']>[] }>(
+                                    'GET',
+                                    `/cards/search?q=${encodeURIComponent(value.trim())}`,
+                                ).then((response) => setCardHits(response.cards));
+                            }, 200);
+                        }}
+                        placeholder={tr('Гра, сервер або подія')}
+                        className="w-full bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none"
+                    />
+                    {cardHits.map((hit) => (
+                        <button
+                            key={`${hit.kind}-${hit.id}`}
+                            type="button"
+                            onClick={() => {
+                                setCard(hit);
+                                setPickingCard(false);
+                            }}
+                            className="block w-full rounded-xl px-2 py-1.5 text-left text-sm text-white hover:bg-white/[0.06]"
+                        >
+                            <span className="text-xs text-white/40">{tr(hit.hint)}</span>
+                            <span className="block truncate">{hit.title}</span>
+                        </button>
+                    ))}
+                </div>
+            )}
+
             {form.data.poll && (
                 <div className="relative mt-3 space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
                     <input
@@ -331,6 +390,14 @@ export function PostComposer({
                 >
                     <ImagePlus className="size-[18px] text-[#6fa2ff]" />
                     <span className="hidden sm:inline">{tr('Фото')}</span>
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setPickingCard((value) => !value)}
+                    className="inline-flex h-9 items-center gap-2 rounded-xl px-2.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white sm:px-3"
+                >
+                    <Sparkles className="size-[18px] text-[#ffd27a]" />
+                    <span className="hidden sm:inline">{tr('Картка')}</span>
                 </button>
                 <button
                     type="button"

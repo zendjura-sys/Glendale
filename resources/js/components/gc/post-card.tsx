@@ -243,6 +243,21 @@ export function PostCard({
                 <MovieCardEmbed movie={post.movie} className="mt-3.5" />
             )}
 
+            {post.card && (
+                <Link
+                    href={post.card.href}
+                    className="mt-3.5 flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-3"
+                >
+                    {post.card.image && (
+                        <img src={post.card.image} alt="" className="size-14 rounded-xl object-cover" />
+                    )}
+                    <span className="min-w-0">
+                        <span className="block text-xs text-white/40">{tr(post.card.hint)}</span>
+                        <span className="block truncate text-sm font-medium text-white">{post.card.title}</span>
+                    </span>
+                </Link>
+            )}
+
             {poll && (
                 <div className="mt-3.5 space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
                     <p className="text-sm font-medium text-white">{poll.question}</p>
