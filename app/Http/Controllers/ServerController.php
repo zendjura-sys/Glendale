@@ -122,6 +122,7 @@ class ServerController extends Controller
             'playing_count' => $playing->countNow('server', $server->id),
             'saved' => app(SavedItems::class)->has($request->user(), 'server', $server->id),
             'following' => app(FollowAlerts::class)->has($request->user(), 'server', $server->id),
+            'pinned' => is_array($pin = $request->user()->pref('pin')) && ($pin['kind'] ?? null) === 'server' && (int) ($pin['id'] ?? 0) === $server->id,
         ]);
     }
 

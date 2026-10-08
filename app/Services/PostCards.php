@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Game;
 use App\Models\GameEvent;
 use App\Models\GtaServer;
+use App\Models\Movie;
 use App\Models\ServerEvent;
 
 /**
@@ -18,6 +19,14 @@ class PostCards
     public function resolve(string $kind, int $id): ?array
     {
         return match ($kind) {
+            'movie' => ($movie = Movie::query()->published()->find($id)) ? [
+                'kind' => 'movie',
+                'id' => $movie->id,
+                'title' => $movie->title,
+                'hint' => 'Кіно',
+                'href' => '/cinema/'.$movie->slug,
+                'image' => $movie->poster,
+            ] : null,
             'game' => ($game = Game::query()->published()->find($id)) ? [
                 'kind' => 'game',
                 'id' => $game->id,

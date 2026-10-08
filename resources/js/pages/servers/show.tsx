@@ -12,6 +12,7 @@ import { EventList, ServerEventForm } from '@/components/events/event-card';
 import type { CalendarEvent } from '@/components/events/event-card';
 import { PlayingNow } from '@/components/gc/playing';
 import { FollowButton } from '@/components/gc/follow-button';
+import { PinButton } from '@/components/gc/pin-button';
 import { SaveButton } from '@/components/gc/save-button';
 import { EmptyState } from '@/components/gc/widget';
 import { FamilyLogo } from '@/components/families/family-logo';
@@ -37,6 +38,7 @@ type Props = {
     playing_count: number;
     saved: boolean;
     following: boolean;
+    pinned: boolean;
 };
 
 export default function ServerShow({
@@ -50,6 +52,7 @@ export default function ServerShow({
     playing_count,
     saved,
     following,
+    pinned,
 }: Props) {
     return (
         <>
@@ -104,6 +107,7 @@ export default function ServerShow({
                                 )}
                                 <SaveButton kind="server" id={server.id} saved={saved} />
                                 <FollowButton kind="server" id={server.id} following={following} />
+                                <PinButton kind="server" id={server.id} pinned={pinned} />
                                 <ServerLinks server={server} />
                             </div>
                         </div>

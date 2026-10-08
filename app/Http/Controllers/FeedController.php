@@ -8,6 +8,7 @@ use App\Models\GtaServer;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\CommunityService;
+use App\Services\FollowAlerts;
 use App\Services\FriendshipService;
 use App\Services\PostPresenter;
 use Illuminate\Database\Eloquent\Builder;
@@ -70,6 +71,7 @@ class FeedController extends Controller
                 ->map->toCard()
                 ->all()),
             'picks' => $this->picks($user),
+            'sameGame' => app(FollowAlerts::class)->sameGame($user),
             'playingNow' => User::query()
                 ->whereIn('id', $friendIds === [] ? [0] : $friendIds)
                 ->whereNotNull('playing_label')

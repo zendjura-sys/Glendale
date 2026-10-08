@@ -396,6 +396,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('me/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
     Route::delete('me/avatar', [ProfileController::class, 'destroyAvatar'])->name('profile.avatar.destroy');
     Route::post('me/cover', [ProfileController::class, 'updateCover'])->name('profile.cover');
+    Route::post('me/pin', [ProfileController::class, 'pin'])->name('profile.pin');
 
     Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
         Route::get('/', Admin\DashboardController::class)->name('dashboard');

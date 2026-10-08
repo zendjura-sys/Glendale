@@ -96,6 +96,7 @@ export type PostItem = {
         voted: number | null;
         options: { id: number; label: string; votes: number }[];
     } | null;
+    reaction?: string | null;
     liked: boolean;
     comments: CommentItem[];
     can: { delete: boolean; pin: boolean; comment: boolean };

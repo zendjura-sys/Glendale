@@ -59,12 +59,11 @@ class PostPresenter
             ->get()
             ->groupBy('post_id');
 
-        $likedPostIds = $viewer ? Like::query()
+        $reactions = $viewer ? Like::query()
             ->where('user_id', $viewer->id)
             ->where('likeable_type', (new Post)->getMorphClass())
             ->whereIn('likeable_id', $ids)
-            ->pluck('likeable_id')
-            ->flip()
+            ->pluck('reaction', 'likeable_id')
             ->all() : [];
 
         $localTrackIds = $posts->map(fn (Post $p) => ($p->music['source'] ?? null) === 'local' ? (int) $p->music['id'] : null)->filter()->unique();
@@ -106,7 +105,7 @@ class PostPresenter
         return array_values($posts->map(fn (Post $post) => $this->present(
             $post,
             $viewer,
-            isset($likedPostIds[$post->id]),
+            isset($reactions[$post->id]) ? (string) $reactions[$post->id] : null,
             $post->wall instanceof Community && isset($managed[$post->wall_id]),
             array_values(($previewComments[$post->id] ?? collect())->map(fn (Comment $c) => $this->comment($c, $viewer, isset($likedCommentIds[$c->id])))->all()),
         ))->all());
@@ -124,7 +123,7 @@ class PostPresenter
      * @param  list<array<string, mixed>>  $comments
      * @return array<string, mixed>
      */
-    private function present(Post $post, ?User $viewer, bool $liked, bool $managesWall, array $comments): array
+    private function present(Post $post, ?User $viewer, ?string $reaction, bool $managesWall, array $comments): array
     {
         $wall = $post->wall;
         $community = $wall instanceof Community ? $wall : null;
@@ -164,7 +163,8 @@ class PostPresenter
             'card' => $post->card,
             'saved' => isset($this->saved[$post->id]),
             'poll' => $this->pollCard($post),
-            'liked' => $liked,
+            'reaction' => $reaction,
+            'liked' => $reaction !== null,
             'comments' => $comments,
             'can' => [
                 'delete' => $viewer !== null && ($viewer->id === $post->author_id || $ownWall || $managesWall || $viewer->isStaff()),

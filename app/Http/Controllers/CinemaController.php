@@ -146,6 +146,7 @@ class CinemaController extends Controller
             'comments' => $comments->map(fn (Comment $c) => $this->presenter->comment($c, $viewer, $liked->has($c->id)))->values(),
             'can' => ['manage' => $viewer->isStaff()],
             'saved' => app(SavedItems::class)->has($viewer, 'movie', $movie->id),
+            'pinned' => is_array($pin = $viewer->pref('pin')) && ($pin['kind'] ?? null) === 'movie' && (int) ($pin['id'] ?? 0) === $movie->id,
         ]);
     }
 

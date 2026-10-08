@@ -25,6 +25,7 @@ import { EventList, GameEventForm } from '@/components/events/event-card';
 import type { CalendarEvent } from '@/components/events/event-card';
 import { PlayingNow } from '@/components/gc/playing';
 import { FollowButton } from '@/components/gc/follow-button';
+import { PinButton } from '@/components/gc/pin-button';
 import { SaveButton } from '@/components/gc/save-button';
 import { cn } from '@/lib/utils';
 import type { ClanCard, GameCard, UserCard } from '@/types';
@@ -96,6 +97,7 @@ type Props = {
     can_add_event: boolean;
     saved: boolean;
     following: boolean;
+    pinned: boolean;
 };
 
 const STORE_STYLE: Record<string, string> = {
@@ -186,6 +188,7 @@ export default function GameShow({
     can_add_event,
     saved,
     following,
+    pinned,
 }: Props) {
     const d = game.details ?? {};
     const [video, setVideo] = useState<string | null>(null);
@@ -270,6 +273,7 @@ export default function GameShow({
                             </h1>
                             <span className="flex shrink-0 gap-2">
                                 <FollowButton kind="game" id={game.id} following={following} />
+                                <PinButton kind="game" id={game.id} pinned={pinned} />
                                 <SaveButton kind="game" id={game.id} saved={saved} />
                             </span>
                         </div>

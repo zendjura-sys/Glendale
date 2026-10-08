@@ -13,9 +13,11 @@ use App\Services\ImageStorage;
 use App\Services\Messenger;
 use App\Services\MusicService;
 use App\Services\PhotoService;
+use App\Services\PostCards;
 use App\Services\PostPresenter;
 use App\Support\Modules\ModuleManager;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -93,6 +95,7 @@ class ProfileController extends Controller
                 'last_seen_at' => $user->last_seen_at?->toIso8601String(),
                 'joined_at' => $user->created_at?->toIso8601String(),
                 'role' => $user->role,
+                'pin' => $this->pinCard($user),
                 'looking_for_group' => (bool) $user->pref('looking_for_group'),
                 'languages' => array_values(array_filter((array) $user->pref('languages', []), 'is_string')),
             ],
@@ -151,6 +154,40 @@ class ProfileController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Обкладинку оновлено.']);
 
         return back();
+    }
+
+    public function pin(Request $request, PostCards $cards): JsonResponse
+    {
+        $data = $request->validate([
+            'kind' => ['required', 'in:game,server,movie'],
+            'id' => ['required', 'integer', 'min:1'],
+        ]);
+        $user = $request->user();
+        $current = $user->pref('pin');
+        $same = is_array($current) && ($current['kind'] ?? null) === $data['kind'] && (int) ($current['id'] ?? 0) === (int) $data['id'];
+        if ($same) {
+            $user->mergePref(['pin' => null]);
+
+            return response()->json(['pinned' => false, 'pin' => null]);
+        }
+        $card = $cards->resolve($data['kind'], (int) $data['id']);
+        abort_unless($card !== null, 404);
+        $user->mergePref(['pin' => ['kind' => $data['kind'], 'id' => (int) $data['id']]]);
+
+        return response()->json(['pinned' => true, 'pin' => $card]);
+    }
+
+    /**
+     * @return array{kind: string, id: int, title: string, hint: string, href: string, image: string|null}|null
+     */
+    private function pinCard(User $user): ?array
+    {
+        $pin = $user->pref('pin');
+        if (! is_array($pin) || ! isset($pin['kind'], $pin['id'])) {
+            return null;
+        }
+
+        return app(PostCards::class)->resolve((string) $pin['kind'], (int) $pin['id']);
     }
 
     public function destroyAvatar(Request $request): RedirectResponse

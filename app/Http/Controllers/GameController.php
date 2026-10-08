@@ -153,6 +153,7 @@ class GameController extends Controller
             'can_add_event' => $on['events'] && $request->user()?->isStaff() === true,
             'saved' => $request->user() ? app(SavedItems::class)->has($request->user(), 'game', $game->id) : false,
             'following' => $request->user() ? app(FollowAlerts::class)->has($request->user(), 'game', $game->id) : false,
+            'pinned' => is_array($pin = $request->user()?->pref('pin')) && ($pin['kind'] ?? null) === 'game' && (int) ($pin['id'] ?? 0) === $game->id,
         ];
 
         return $request->expectsJson() && ! $request->header('X-Inertia')

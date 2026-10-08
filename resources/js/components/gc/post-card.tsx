@@ -31,7 +31,7 @@ import { MentionText } from './mention-text';
 import { SaveButton } from './save-button';
 import { Comments } from './comments';
 import { CommunityAvatar } from './community-avatar';
-import { LikeButton } from './like-button';
+import { ReactionBar } from './reaction-bar';
 import { MediaGrid } from './media-grid';
 import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
@@ -56,7 +56,7 @@ export function PostCard({
     post: PostItem;
     expanded?: boolean;
 }) {
-    const [liked, setLiked] = useState(post.liked);
+    const [reaction, setReaction] = useState<string | null>(post.reaction ?? (post.liked ? 'like' : null));
     const [likes, setLikes] = useState(post.likes_count);
     const [commentsCount, setCommentsCount] = useState(post.comments_count);
     const [showComments, setShowComments] = useState(
@@ -73,19 +73,22 @@ export function PostCard({
     const body = translation.text ?? post.body ?? '';
     const isLong = body.length > LONG_TEXT;
 
-    const toggleLike = async () => {
-        setLiked(!liked);
-        setLikes((value) => value + (liked ? -1 : 1));
+    const pickReaction = async (next: string) => {
+        const previous = reaction;
+        const removing = previous === next;
+        setReaction(removing ? null : next);
+        setLikes((value) => value + (previous === null ? 1 : removing ? -1 : 0));
 
         try {
-            const response = await api<{ liked: boolean; likes_count: number }>(
+            const response = await api<{ reaction: string | null; likes_count: number }>(
                 'POST',
                 `/posts/${post.id}/like`,
+                { reaction: next },
             );
-            setLiked(response.liked);
+            setReaction(response.reaction);
             setLikes(response.likes_count);
         } catch {
-            setLiked(liked);
+            setReaction(previous);
             setLikes(post.likes_count);
         }
     };
@@ -328,7 +331,7 @@ export function PostCard({
             )}
 
             <footer className="mt-4 flex items-center gap-2">
-                <LikeButton liked={liked} count={likes} onToggle={toggleLike} />
+                <ReactionBar reaction={reaction} count={likes} onPick={pickReaction} />
                 <button
                     type="button"
                     onClick={() => {

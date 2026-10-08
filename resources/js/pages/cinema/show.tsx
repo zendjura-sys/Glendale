@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { MoviePoster, PosterRow } from '@/components/cinema/movie-tile';
 import { ShareMovieDialog } from '@/components/cinema/share-movie-dialog';
 import { Comments } from '@/components/gc/comments';
+import { PinButton } from '@/components/gc/pin-button';
 import { SaveButton } from '@/components/gc/save-button';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import {
@@ -54,6 +55,7 @@ type Props = {
     comments: CommentItem[];
     can: { manage: boolean };
     saved: boolean;
+    pinned: boolean;
 };
 
 type StateResponse = {
@@ -163,6 +165,7 @@ export default function CinemaShow({
     comments,
     can,
     saved,
+    pinned,
 }: Props) {
     const [state, setState] = useState(initialState);
     const [stats, setStats] = useState({
@@ -460,6 +463,7 @@ export default function CinemaShow({
                                         </button>
                                     )}
                                     <SaveButton kind="movie" id={movie.id} saved={saved} />
+                                    <PinButton kind="movie" id={movie.id} pinned={pinned} />
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <button

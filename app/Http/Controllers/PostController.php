@@ -275,34 +275,52 @@ class PostController extends Controller
         $user = $request->user();
         $this->authorizeView($user, $post);
 
-        $liked = DB::transaction(function () use ($user, $post) {
-            $deleted = Like::query()
+        $reaction = $request->validate([
+            'reaction' => ['nullable', Rule::in(['like', 'fire', 'laugh', 'gg', 'sad'])],
+        ])['reaction'] ?? 'like';
+
+        $created = false;
+        $current = DB::transaction(function () use ($user, $post, $reaction, &$created) {
+            $existing = Like::query()
                 ->where('user_id', $user->id)
                 ->where('likeable_type', $post->getMorphClass())
                 ->where('likeable_id', $post->id)
-                ->delete();
+                ->lockForUpdate()
+                ->first();
 
-            if ($deleted) {
+            if ($existing && $existing->reaction === $reaction) {
+                $existing->delete();
                 $post->decrement('likes_count');
 
-                return false;
+                return null;
+            }
+            if ($existing) {
+                $existing->update(['reaction' => $reaction]);
+
+                return $reaction;
             }
 
             Like::query()->create([
                 'user_id' => $user->id,
                 'likeable_type' => $post->getMorphClass(),
                 'likeable_id' => $post->id,
+                'reaction' => $reaction,
             ]);
             $post->increment('likes_count');
+            $created = true;
 
-            return true;
+            return $reaction;
         });
 
-        if ($liked && $post->author_id !== $user->id) {
+        if ($created && $post->author_id !== $user->id) {
             $post->author->notify(new PostInteraction(PostInteraction::LIKE, $user, $post));
         }
 
-        return response()->json(['liked' => $liked, 'likes_count' => $post->fresh()->likes_count]);
+        return response()->json([
+            'liked' => $current !== null,
+            'reaction' => $current,
+            'likes_count' => $post->fresh()->likes_count,
+        ]);
     }
 
     private function managesWall(User $user, Post $post): bool

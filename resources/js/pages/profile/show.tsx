@@ -57,6 +57,7 @@ type Profile = UserCard & {
     role: string;
     looking_for_group?: boolean;
     languages?: string[];
+    pin?: { title: string; hint: string; href: string } | null;
 };
 
 type Props = {
@@ -258,6 +259,15 @@ export default function ProfileShow({
                                 </div>
                             )}
                             {/* «Граю в…» — лише коли людина справді грає; налаштування — у Налаштуваннях профілю. */}
+                            {profile.pin && (
+                                <Link
+                                    href={profile.pin.href}
+                                    className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-3 py-1 text-xs text-white/80"
+                                >
+                                    <span className="text-white/40">{tr(profile.pin.hint)}</span>
+                                    {profile.pin.title}
+                                </Link>
+                            )}
                             {profile.playing && (
                                 <div className="mt-2">
                                     <PlayingBadge playing={profile.playing} />

@@ -36,6 +36,7 @@ type Props = {
     onlineFriends?: UserCard[];
     playingNow?: UserCard[];
     picks?: { kind: string; title: string; href: string; image: string | null }[];
+    sameGame?: (UserCard & { shared_game: string })[];
     birthdays?: (UserCard & { birthday: string })[];
 };
 
@@ -101,6 +102,7 @@ export default function Feed({
     onlineFriends,
     playingNow,
     picks,
+    sameGame,
     birthdays,
 }: Props) {
     const { auth } = usePage().props;
@@ -120,6 +122,20 @@ export default function Feed({
                                     className="glass shrink-0 rounded-2xl px-3 py-2 text-sm font-medium text-white"
                                 >
                                     {pick.title}
+                                </Link>
+                            ))}
+                        </div>
+                    )}
+                    {(sameGame?.length ?? 0) > 0 && (
+                        <div className="glass flex gap-2 overflow-x-auto rounded-2xl p-3">
+                            {sameGame?.map((person) => (
+                                <Link
+                                    key={person.id}
+                                    href={`/${person.username}`}
+                                    className="min-w-[140px] rounded-xl bg-white/[0.04] px-3 py-2"
+                                >
+                                    <span className="block truncate text-sm font-medium text-white">{person.first_name}</span>
+                                    <span className="block truncate text-[11px] text-white/45">{person.shared_game}</span>
                                 </Link>
                             ))}
                         </div>
