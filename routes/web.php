@@ -309,6 +309,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('/', [ServerController::class, 'index'])->name('index');
         Route::post('suggest', [ServerController::class, 'suggest'])->middleware('throttle:5,10')->name('suggest');
         Route::get('{server}', [ServerController::class, 'show'])->name('show');
+        Route::post('{server}/invite', [ServerController::class, 'invite'])->middleware('throttle:20,1')->name('invite');
     });
 
     Route::middleware('module:families')->group(function () {

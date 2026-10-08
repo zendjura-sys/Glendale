@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Services\FriendshipService;
 use App\Support\I18n\Locales;
 use App\Support\Palette;
 use Illuminate\Http\RedirectResponse;
@@ -27,6 +28,8 @@ class AppearanceController extends Controller
             'languages' => array_values(array_filter((array) $user->pref('languages', []), 'is_string')),
             'looking_for_group' => (bool) $user->pref('looking_for_group'),
             'languageOptions' => app(Locales::class)->options(),
+            'friends' => app(FriendshipService::class)->friendsQuery($user)->limit(40)->get()->map->toCard()->values(),
+            'closeFriends' => array_map('intval', (array) $user->pref('close_friends', [])),
         ]);
     }
 
@@ -40,6 +43,8 @@ class AppearanceController extends Controller
             'languages' => ['array', 'max:8'],
             'languages.*' => ['string', 'max:16'],
             'looking_for_group' => ['required', 'boolean'],
+            'close_friends' => ['sometimes', 'array', 'max:30'],
+            'close_friends.*' => ['integer'],
         ]);
 
         $enabled = app(Locales::class)->enabled();
@@ -48,14 +53,19 @@ class AppearanceController extends Controller
             fn (string $code) => in_array($code, $enabled, true),
         )));
 
-        $request->user()->mergePref([
+        $patch = [
             'palette' => $data['palette'],
             'quiet_enabled' => $data['quiet_enabled'],
             'quiet_from' => $data['quiet_from'],
             'quiet_to' => $data['quiet_to'],
             'languages' => $languages,
             'looking_for_group' => $data['looking_for_group'],
-        ]);
+        ];
+        if (array_key_exists('close_friends', $data)) {
+            $friendIds = app(FriendshipService::class)->friendIds($request->user());
+            $patch['close_friends'] = array_values(array_intersect(array_map('intval', $data['close_friends']), $friendIds));
+        }
+        $request->user()->mergePref($patch);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Вигляд збережено.']);
 

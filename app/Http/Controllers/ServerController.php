@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Clan;
 use App\Models\Family;
+use App\Models\FamilyMember;
 use App\Models\GtaServer;
 use App\Models\ServerEvent;
+use App\Models\User;
+use App\Notifications\GroupInvite;
 use App\Services\EventCalendar;
 use App\Services\Events\DiscordEventSync;
 use App\Services\Families\FamilyRating;
@@ -123,7 +127,55 @@ class ServerController extends Controller
             'saved' => app(SavedItems::class)->has($request->user(), 'server', $server->id),
             'following' => app(FollowAlerts::class)->has($request->user(), 'server', $server->id),
             'pinned' => is_array($pin = $request->user()->pref('pin')) && ($pin['kind'] ?? null) === 'server' && (int) ($pin['id'] ?? 0) === $server->id,
+            'invites' => $this->inviteTargets($request->user(), $server),
         ]);
+    }
+
+    public function invite(Request $request, GtaServer $server, FriendshipService $friendships): RedirectResponse
+    {
+        $data = $request->validate([
+            'kind' => ['required', Rule::in(['family', 'clan'])],
+            'id' => ['required', 'integer'],
+            'username' => ['required', 'string', 'max:32'],
+        ]);
+        $friend = User::query()->whereRaw('lower(username) = ?', [mb_strtolower($data['username'])])->first();
+        abort_unless($friend && $friendships->status($request->user(), $friend) === FriendshipService::FRIENDS, 422, 'Запросити можна лише друга.');
+
+        $target = collect($this->inviteTargets($request->user(), $server))->first(fn (array $item) => $item['kind'] === $data['kind'] && $item['id'] === (int) $data['id']);
+        abort_unless(is_array($target), 403);
+
+        $friend->notify(new GroupInvite($request->user(), $target['name'], $target['href']));
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Запрошення надіслано.']);
+
+        return back();
+    }
+
+    /**
+     * @return list<array{kind: string, id: int, name: string, href: string}>
+     */
+    private function inviteTargets(User $user, GtaServer $server): array
+    {
+        $families = FamilyMember::query()
+            ->where('user_id', $user->id)
+            ->where('status', FamilyMember::STATUS_ACTIVE)
+            ->where('rank', '>=', Family::LEADER_RANK)
+            ->whereHas('family', fn (Builder $q) => $q->where('server_id', $server->id)->where('status', Family::STATUS_VERIFIED))
+            ->with('family')
+            ->get()
+            ->map(fn (FamilyMember $member) => [
+                'kind' => 'family',
+                'id' => $member->family_id,
+                'name' => $member->family->name,
+                'href' => '/f/'.$member->family->slug,
+            ]);
+        $clans = Clan::query()->where('owner_id', $user->id)->get()->map(fn (Clan $clan) => [
+            'kind' => 'clan',
+            'id' => $clan->id,
+            'name' => $clan->name,
+            'href' => '/clans/'.$clan->slug,
+        ]);
+
+        return [...$families->all(), ...$clans->all()];
     }
 
     /**

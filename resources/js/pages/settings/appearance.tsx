@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { SettingsCard } from '@/layouts/settings/layout';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
+import type { UserCard } from '@/types';
 
 type PaletteOption = { id: string; name: string; colors: string[] };
 
@@ -16,6 +17,7 @@ type Form = {
     quiet_to: string;
     languages: string[];
     looking_for_group: boolean;
+    close_friends: number[];
 };
 
 export default function Appearance({
@@ -25,6 +27,8 @@ export default function Appearance({
     languages,
     looking_for_group,
     languageOptions,
+    friends,
+    closeFriends,
 }: {
     palette: string;
     palettes: PaletteOption[];
@@ -32,6 +36,8 @@ export default function Appearance({
     languages: string[];
     looking_for_group: boolean;
     languageOptions: { code: string; native: string }[];
+    friends: UserCard[];
+    closeFriends: number[];
 }) {
     const form = useForm<Form>({
         palette,
@@ -40,6 +46,7 @@ export default function Appearance({
         quiet_to: quiet.to,
         languages,
         looking_for_group,
+        close_friends: closeFriends,
     });
 
     const submit = (e: FormEvent) => {
@@ -201,6 +208,42 @@ export default function Appearance({
                                     )}
                                 >
                                     {language.native}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </SettingsCard>
+
+                <SettingsCard
+                    title={tr('Близькі')}
+                    description={tr('Лише вони бачать історії з позначкою «Близьким».')}
+                >
+                    <div className="flex flex-wrap gap-2">
+                        {friends.length === 0 && (
+                            <p className="text-sm text-white/45">{tr('Спершу додайте друзів.')}</p>
+                        )}
+                        {friends.map((friend) => {
+                            const on = form.data.close_friends.includes(friend.id);
+
+                            return (
+                                <button
+                                    key={friend.id}
+                                    type="button"
+                                    aria-pressed={on}
+                                    onClick={() =>
+                                        form.setData(
+                                            'close_friends',
+                                            on
+                                                ? form.data.close_friends.filter((id) => id !== friend.id)
+                                                : [...form.data.close_friends, friend.id].slice(0, 30),
+                                        )
+                                    }
+                                    className={cn(
+                                        'min-h-11 rounded-full px-3 text-sm',
+                                        on ? 'bg-white text-gc-ink' : 'bg-white/[0.06] text-white/75',
+                                    )}
+                                >
+                                    {friend.first_name}
                                 </button>
                             );
                         })}

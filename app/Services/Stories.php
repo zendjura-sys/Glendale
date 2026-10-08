@@ -31,6 +31,13 @@ class Stories
             return false;
         }
 
+        if ($story->privacy === Story::PRIVACY_CLOSE) {
+            $story->loadMissing('user');
+            $close = array_map('intval', (array) $story->user?->pref('close_friends', []));
+
+            return in_array($viewer->id, $close, true);
+        }
+
         return $story->privacy === Story::PRIVACY_EVERYONE
             || in_array($story->user_id, $this->friendships->friendIds($viewer), true);
     }
@@ -49,7 +56,8 @@ class Stories
             ->where(fn ($q) => $q->where('user_id', $viewer->id)
                 ->orWhere(fn ($q) => $q->whereIn('user_id', $friendIds ?: [0])))
             ->orderBy('created_at')
-            ->get();
+            ->get()
+            ->filter(fn (Story $story) => $this->canView($story, $viewer));
 
         return $this->group(array_values($stories->all()), $viewer);
     }

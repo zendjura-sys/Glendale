@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import {
     ArrowLeft,
     CalendarDays,
@@ -8,6 +8,7 @@ import {
     Trophy,
     UsersRound,
 } from 'lucide-react';
+import { useState } from 'react';
 import { EventList, ServerEventForm } from '@/components/events/event-card';
 import type { CalendarEvent } from '@/components/events/event-card';
 import { PlayingNow } from '@/components/gc/playing';
@@ -39,6 +40,7 @@ type Props = {
     saved: boolean;
     following: boolean;
     pinned: boolean;
+    invites: { kind: 'family' | 'clan'; id: number; name: string; href: string }[];
 };
 
 export default function ServerShow({
@@ -53,7 +55,10 @@ export default function ServerShow({
     saved,
     following,
     pinned,
+    invites,
 }: Props) {
+    const [inviteUsername, setInviteUsername] = useState('');
+    const [inviteTarget, setInviteTarget] = useState(invites[0] ? `${invites[0].kind}:${invites[0].id}` : '');
     return (
         <>
             <Head title={server.name} />
@@ -108,6 +113,41 @@ export default function ServerShow({
                                 <SaveButton kind="server" id={server.id} saved={saved} />
                                 <FollowButton kind="server" id={server.id} following={following} />
                                 <PinButton kind="server" id={server.id} pinned={pinned} />
+                                {invites.length > 0 && (
+                                    <form
+                                        className="flex flex-wrap items-center gap-2"
+                                        onSubmit={(event) => {
+                                            event.preventDefault();
+                                            const [kind, id] = inviteTarget.split(':');
+                                            router.post(`/servers/${server.slug}/invite`, {
+                                                kind,
+                                                id: Number(id),
+                                                username: inviteUsername,
+                                            });
+                                        }}
+                                    >
+                                        <select
+                                            value={inviteTarget}
+                                            onChange={(event) => setInviteTarget(event.target.value)}
+                                            className="h-11 rounded-xl bg-white/10 px-3 text-sm text-white"
+                                        >
+                                            {invites.map((item) => (
+                                                <option key={`${item.kind}-${item.id}`} value={`${item.kind}:${item.id}`}>
+                                                    {item.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <input
+                                            value={inviteUsername}
+                                            onChange={(event) => setInviteUsername(event.target.value)}
+                                            placeholder={tr('Ім’я друга')}
+                                            className="h-11 rounded-xl bg-white/10 px-3 text-sm text-white placeholder:text-white/40"
+                                        />
+                                        <button type="submit" className="h-11 rounded-xl bg-white px-4 text-sm font-semibold text-black">
+                                            {tr('Запросити')}
+                                        </button>
+                                    </form>
+                                )}
                                 <ServerLinks server={server} />
                             </div>
                         </div>
