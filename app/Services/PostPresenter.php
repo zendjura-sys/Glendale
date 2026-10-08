@@ -142,6 +142,7 @@ class PostPresenter
             ])->values()->all(),
             'music' => $this->music($post),
             'movie' => $post->movie_id ? $this->movies[$post->movie_id] ?? null : null,
+            'link' => $post->link,
             'liked' => $liked,
             'comments' => $comments,
             'can' => [

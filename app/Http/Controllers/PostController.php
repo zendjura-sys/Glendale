@@ -13,6 +13,7 @@ use App\Notifications\PostInteraction;
 use App\Services\CommunityService;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
+use App\Services\Media\YoutubePreview;
 use App\Services\Moderation\ContentFilter;
 use App\Services\PostPresenter;
 use App\Services\Spotify\SpotifyClient;
@@ -122,6 +123,7 @@ class PostController extends Controller
                 'body' => isset($data['body']) ? app(ContentFilter::class)->clean(trim($data['body'])) : null,
                 'music' => $music,
                 'movie_id' => $movieId,
+                'link' => app(YoutubePreview::class)->fromText($data['body'] ?? null),
                 'visibility' => $data['visibility'],
             ]);
 

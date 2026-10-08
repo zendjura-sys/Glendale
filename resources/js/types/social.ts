@@ -79,6 +79,7 @@ export type PostItem = {
     attachments: Attachment[];
     music: TrackCard | null;
     movie: PostMovie | null;
+    link?: { url: string; title: string; thumbnail: string | null; author: string | null } | null;
     liked: boolean;
     comments: CommentItem[];
     can: { delete: boolean; pin: boolean; comment: boolean };

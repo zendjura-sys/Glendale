@@ -238,6 +238,32 @@ export function PostCard({
                 <MovieCardEmbed movie={post.movie} className="mt-3.5" />
             )}
 
+            {post.link && (
+                <a
+                    href={post.link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-3.5 flex overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]"
+                >
+                    {post.link.thumbnail && (
+                        <img
+                            src={post.link.thumbnail}
+                            alt=""
+                            className="h-24 w-40 shrink-0 object-cover"
+                        />
+                    )}
+                    <span className="min-w-0 p-3">
+                        <span className="block text-xs text-white/40">
+                            YouTube
+                            {post.link.author ? ` · ${post.link.author}` : ''}
+                        </span>
+                        <span className="mt-1 block line-clamp-2 text-sm font-medium text-white">
+                            {post.link.title}
+                        </span>
+                    </span>
+                </a>
+            )}
+
             <footer className="mt-4 flex items-center gap-2">
                 <LikeButton liked={liked} count={likes} onToggle={toggleLike} />
                 <button

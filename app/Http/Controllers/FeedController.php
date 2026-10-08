@@ -62,6 +62,15 @@ class FeedController extends Controller
                 ->get()
                 ->map->toCard()
                 ->all()),
+            'playingNow' => User::query()
+                ->whereIn('id', $friendIds === [] ? [0] : $friendIds)
+                ->whereNotNull('playing_label')
+                ->where('playing_until', '>', now())
+                ->orderByDesc('playing_until')
+                ->limit(12)
+                ->get()
+                ->map->toCard()
+                ->all(),
             'birthdays' => Inertia::defer(fn () => User::query()
                 ->whereIn('id', $friendIds)
                 ->whereNotNull('birthday')

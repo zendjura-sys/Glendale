@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Community;
 use App\Models\User;
 use App\Services\FriendshipService;
+use App\Services\Search\SiteSearch;
 use App\Support\Modules\ModuleManager;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -66,6 +67,7 @@ class PeopleController extends Controller
             'communities' => app(ModuleManager::class)->enabled('communities')
                 ? Community::query()->search($q)->orderByDesc('members_count')->limit(4)->get()->map->toCard()->values()
                 : [],
+            'hits' => app(SiteSearch::class)->hits($q),
         ]);
     }
 

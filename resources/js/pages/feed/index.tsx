@@ -34,6 +34,7 @@ type Props = {
     posts: ScrollData<PostItem>;
     suggestions?: (UserCard & { mutual: number })[];
     onlineFriends?: UserCard[];
+    playingNow?: UserCard[];
     birthdays?: (UserCard & { birthday: string })[];
 };
 
@@ -97,6 +98,7 @@ export default function Feed({
     posts,
     suggestions,
     onlineFriends,
+    playingNow,
     birthdays,
 }: Props) {
     const { auth } = usePage().props;
@@ -107,6 +109,27 @@ export default function Feed({
             <div className="flex gap-5">
                 <div className="min-w-0 flex-1 space-y-4 xl:max-w-[640px]">
                     <StoriesBar />
+                    {(playingNow?.length ?? 0) > 0 && (
+                        <div className="glass flex gap-2 overflow-x-auto rounded-2xl p-3">
+                            {playingNow?.map((person) => (
+                                <Link
+                                    key={person.id}
+                                    href={person.playing?.url || `/${person.username}`}
+                                    className="flex min-w-[140px] items-center gap-2 rounded-xl bg-white/[0.04] px-2.5 py-2"
+                                >
+                                    <UserAvatar user={person} size="sm" />
+                                    <span className="min-w-0">
+                                        <span className="block truncate text-xs font-medium text-white">
+                                            {person.first_name}
+                                        </span>
+                                        <span className="block truncate text-[11px] text-gc-lilac-200">
+                                            {person.playing?.label}
+                                        </span>
+                                    </span>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
                     <PostComposer />
                     <FeedTabs tab={tab} hasFriends={hasFriends} />
 

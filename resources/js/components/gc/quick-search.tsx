@@ -9,9 +9,12 @@ import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
 import { tr } from '@/lib/i18n';
 
+type Hit = { kind: string; title: string; hint: string; href: string };
+
 type Result =
     | { kind: 'user'; href: string; item: UserCard }
-    | { kind: 'community'; href: string; item: CommunityCard };
+    | { kind: 'community'; href: string; item: CommunityCard }
+    | { kind: 'hit'; href: string; item: Hit };
 
 export function QuickSearch({ className }: { className?: string }) {
     const [query, setQuery] = useState('');
@@ -55,23 +58,35 @@ export function QuickSearch({ className }: { className?: string }) {
         }
 
         const timer = setTimeout(() => {
-            api<{ users: UserCard[]; communities: CommunityCard[] }>(
-                'GET',
-                `/search/quick?q=${encodeURIComponent(query.trim())}`,
-            )
+            api<{
+                users: UserCard[];
+                communities: CommunityCard[];
+                hits?: Hit[];
+            }>('GET', `/search/quick?q=${encodeURIComponent(query.trim())}`)
                 .then((response) => {
-                    setResults([
-                        ...response.users.map((item) => ({
-                            kind: 'user' as const,
-                            href: `/${item.username}`,
-                            item,
-                        })),
-                        ...(response.communities ?? []).map((item) => ({
-                            kind: 'community' as const,
-                            href: `/c/${item.slug}`,
-                            item,
-                        })),
-                    ]);
+                    const hits = response.hits ?? [];
+                    setResults(
+                        hits.length > 0
+                            ? hits.map((item) => ({
+                                  kind: 'hit' as const,
+                                  href: item.href,
+                                  item,
+                              }))
+                            : [
+                                  ...response.users.map((item) => ({
+                                      kind: 'user' as const,
+                                      href: `/${item.username}`,
+                                      item,
+                                  })),
+                                  ...(response.communities ?? []).map(
+                                      (item) => ({
+                                          kind: 'community' as const,
+                                          href: `/c/${item.slug}`,
+                                          item,
+                                      }),
+                                  ),
+                              ],
+                    );
                     setActive(0);
                 })
                 .catch(() => setResults([]));
@@ -119,7 +134,7 @@ export function QuickSearch({ className }: { className?: string }) {
                             inputRef.current?.blur();
                         }
                     }}
-                    placeholder={tr('Пошук людей і спільнот…')}
+                    placeholder={tr('Пошук людей, ігор, кіно, серверів…')}
                     className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none"
                 />
                 {query ? (
@@ -146,7 +161,7 @@ export function QuickSearch({ className }: { className?: string }) {
                     ) : (
                         results.map((result, index) => (
                             <Link
-                                key={`${result.kind}-${result.item.id}`}
+                                key={`${result.kind}-${result.href}`}
                                 href={result.href}
                                 onClick={() => setOpen(false)}
                                 onMouseEnter={() => setActive(index)}
@@ -159,37 +174,49 @@ export function QuickSearch({ className }: { className?: string }) {
                             >
                                 {result.kind === 'user' ? (
                                     <UserAvatar user={result.item} size="sm" />
-                                ) : (
+                                ) : result.kind === 'community' ? (
                                     <CommunityAvatar
                                         community={result.item}
                                         size="sm"
                                     />
+                                ) : (
+                                    <span className="flex size-8 items-center justify-center rounded-full bg-white/10 text-[10px] font-semibold text-white/70 uppercase">
+                                        {result.item.kind.slice(0, 2)}
+                                    </span>
                                 )}
                                 <span className="min-w-0 flex-1">
                                     <span className="flex items-center gap-1 truncate text-sm font-medium text-white">
-                                        {result.item.name}
-                                        {result.item.is_verified && (
-                                            <VerifiedBadge className="size-3.5" />
-                                        )}
+                                        {result.kind === 'hit'
+                                            ? result.item.title
+                                            : result.item.name}
+                                        {result.kind !== 'hit' &&
+                                            result.item.is_verified && (
+                                                <VerifiedBadge className="size-3.5" />
+                                            )}
                                     </span>
                                     <span className="block truncate text-xs text-white/45">
-                                        {result.kind === 'user'
-                                            ? `@${result.item.username}`
-                                            : tr(
-                                                  '{v} · {members_count} учасн.',
-                                                  {
-                                                      v:
-                                                          result.item.type ===
-                                                          'public'
-                                                              ? tr(
-                                                                    'Публічна сторінка',
-                                                                )
-                                                              : tr('Спільнота'),
-                                                      members_count:
-                                                          result.item
-                                                              .members_count,
-                                                  },
-                                              )}
+                                        {result.kind === 'hit'
+                                            ? result.item.hint
+                                            : result.kind === 'user'
+                                              ? `@${result.item.username}`
+                                              : tr(
+                                                    '{v} · {members_count} учасн.',
+                                                    {
+                                                        v:
+                                                            result.item
+                                                                .type ===
+                                                            'public'
+                                                                ? tr(
+                                                                      'Публічна сторінка',
+                                                                  )
+                                                                : tr(
+                                                                      'Спільнота',
+                                                                  ),
+                                                        members_count:
+                                                            result.item
+                                                                .members_count,
+                                                    },
+                                                )}
                                     </span>
                                 </span>
                             </Link>
