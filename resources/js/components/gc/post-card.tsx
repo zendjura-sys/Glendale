@@ -3,6 +3,7 @@ import {
     ChevronRight,
     Earth,
     Eye,
+    EyeOff,
     Link2,
     Lock,
     MessageCircle,
@@ -10,8 +11,11 @@ import {
     Pencil,
     Pin,
     PinOff,
+    Share2,
     Trash2,
     UsersRound,
+    Volume2,
+    VolumeX,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -170,7 +174,7 @@ export function PostCard({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                         align="end"
-                        className="glass-strong w-52 rounded-2xl border-white/10 p-1.5 text-white"
+                        className="glass-strong w-60 rounded-2xl border-white/10 p-1.5 text-white"
                     >
                         <DropdownMenuItem
                             className="rounded-lg focus:bg-white/[0.06]"
@@ -184,6 +188,49 @@ export function PostCard({
                                 onSelect={() => setEditing(true)}
                             >
                                 <Pencil /> {tr('Редагувати')}
+                            </DropdownMenuItem>
+                        )}
+                        {post.can.share && (
+                            <DropdownMenuItem
+                                className="rounded-lg focus:bg-white/[0.06]"
+                                onSelect={() =>
+                                    router.post(
+                                        `/posts/${post.id}/share`,
+                                        {},
+                                        { preserveScroll: true },
+                                    )
+                                }
+                            >
+                                <Share2 /> {tr('Поділитися на стіні')}
+                            </DropdownMenuItem>
+                        )}
+                        {post.can.hide && (
+                            <DropdownMenuItem
+                                className="rounded-lg focus:bg-white/[0.06]"
+                                onSelect={() =>
+                                    router.post(
+                                        `/posts/${post.id}/hide`,
+                                        {},
+                                        { preserveScroll: true },
+                                    )
+                                }
+                            >
+                                <EyeOff /> {tr('Не цікаво')}
+                            </DropdownMenuItem>
+                        )}
+                        {post.can.mute && (
+                            <DropdownMenuItem
+                                className="rounded-lg focus:bg-white/[0.06]"
+                                onSelect={() =>
+                                    router.post(
+                                        `/posts/${post.id}/mute`,
+                                        {},
+                                        { preserveScroll: true },
+                                    )
+                                }
+                            >
+                                {post.muted ? <Volume2 /> : <VolumeX />}{' '}
+                                {post.muted ? tr('Зняти заглушку') : tr('Заглушити')}
                             </DropdownMenuItem>
                         )}
                         {post.can.pin && (
@@ -292,6 +339,23 @@ export function PostCard({
                         />
                     </div>
                 </div>
+            )}
+
+            {post.shared && (
+                <Link
+                    href={post.shared.href}
+                    className="mt-3.5 block rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2.5"
+                >
+                    <span className="text-xs text-white/40">{tr('Запис')}</span>
+                    <span className="mt-0.5 block text-sm font-medium text-white">
+                        {post.shared.name}
+                    </span>
+                    {post.shared.body && post.shared.body !== (post.body ?? '') && (
+                        <span className="mt-1 block line-clamp-3 text-sm text-white/70">
+                            {post.shared.body}
+                        </span>
+                    )}
+                </Link>
             )}
 
             {post.attachments.length > 0 && (

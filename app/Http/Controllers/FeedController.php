@@ -8,6 +8,7 @@ use App\Models\GtaServer;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\CommunityService;
+use App\Services\FeedSignals;
 use App\Services\FollowAlerts;
 use App\Services\FriendshipService;
 use App\Services\PostPresenter;
@@ -26,6 +27,7 @@ class FeedController extends Controller
         private readonly FriendshipService $friendships,
         private readonly PostPresenter $presenter,
         private readonly CommunityService $communities,
+        private readonly FeedSignals $signals,
     ) {}
 
     public function index(Request $request): Response|RedirectResponse
@@ -62,6 +64,8 @@ class FeedController extends Controller
                 ->where('created_at', '>=', now()->subDays(30))
                 ->orderByDesc('likes_count');
         }
+
+        $this->signals->apply($query, $user, $tab === 'discover');
 
         $posts = $query->orderByDesc('id')->cursorPaginate(self::PER_PAGE)->withQueryString();
         $items = $this->presenter->many(new Collection($posts->items()), $user);

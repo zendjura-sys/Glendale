@@ -32,6 +32,7 @@ use Illuminate\Support\Carbon;
  * @property bool $spoiler
  * @property Carbon|null $edited_at
  * @property Carbon|null $publish_at
+ * @property int|null $shared_post_id
  * @property bool $comments_enabled
  * @property int $likes_count
  * @property int $comments_count
@@ -39,7 +40,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
-#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'card', 'visibility', 'is_pinned', 'is_draft', 'comments_enabled', 'spoiler', 'edited_at', 'publish_at'])]
+#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'card', 'visibility', 'is_pinned', 'is_draft', 'comments_enabled', 'spoiler', 'edited_at', 'publish_at', 'shared_post_id'])]
 class Post extends Model
 {
     /** @use HasFactory<PostFactory> */
@@ -78,6 +79,16 @@ class Post extends Model
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'author_id');
+    }
+
+    /**
+     * Оригінал, якщо цей запис — поширення чужого поста.
+     *
+     * @return BelongsTo<Post, $this>
+     */
+    public function sharedPost(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'shared_post_id');
     }
 
     /**

@@ -7,6 +7,7 @@ use App\Http\Controllers\PostController;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\CommunityService;
+use App\Services\FeedSignals;
 use App\Services\FriendshipService;
 use App\Services\PostPresenter;
 use Illuminate\Database\Eloquent\Builder;
@@ -20,6 +21,7 @@ class FeedApiController extends ApiController
         private readonly FriendshipService $friendships,
         private readonly PostPresenter $presenter,
         private readonly CommunityService $communities,
+        private readonly FeedSignals $signals,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -55,6 +57,8 @@ class FeedApiController extends ApiController
                 ->where('created_at', '>=', now()->subDays(30))
                 ->orderByDesc('likes_count');
         }
+
+        $this->signals->apply($query, $user, $tab === 'discover');
 
         $posts = $query->orderByDesc('id')->paginate(10);
         $items = $this->presenter->many(new Collection($posts->items()), $user);

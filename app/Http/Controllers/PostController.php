@@ -10,8 +10,10 @@ use App\Models\PollOption;
 use App\Models\PollVote;
 use App\Models\Post;
 use App\Models\PostAttachment;
+use App\Models\PostHide;
 use App\Models\Track;
 use App\Models\User;
+use App\Models\UserMute;
 use App\Notifications\PostInteraction;
 use App\Services\CommunityService;
 use App\Services\FriendshipService;
@@ -29,6 +31,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -308,6 +311,76 @@ class PostController extends Controller
         $post->delete();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Запис видалено.']);
+
+        return back();
+    }
+
+    public function hide(Request $request, Post $post): RedirectResponse
+    {
+        $user = $request->user();
+        $this->authorizeView($user, $post);
+        abort_if($post->author_id === $user->id, 422);
+
+        PostHide::query()->firstOrCreate(
+            ['user_id' => $user->id, 'post_id' => $post->id],
+            ['author_id' => $post->author_id],
+        );
+
+        return back();
+    }
+
+    public function mute(Request $request, Post $post): RedirectResponse
+    {
+        $user = $request->user();
+        $this->authorizeView($user, $post);
+        abort_if($post->author_id === $user->id, 422);
+
+        $existing = UserMute::query()
+            ->where('user_id', $user->id)
+            ->where('muted_id', $post->author_id)
+            ->first();
+
+        if ($existing) {
+            $existing->delete();
+        } else {
+            UserMute::query()->create([
+                'user_id' => $user->id,
+                'muted_id' => $post->author_id,
+            ]);
+        }
+
+        return back();
+    }
+
+    public function share(Request $request, Post $post): RedirectResponse
+    {
+        $user = $request->user();
+        $this->authorizeView($user, $post);
+        abort_if($post->is_draft || $post->publish_at?->isFuture(), 422);
+
+        $source = $post->shared_post_id
+            ? Post::query()->find($post->shared_post_id) ?? $post
+            : $post;
+        abort_if($source->author_id === $user->id, 422);
+        $source->loadMissing('author');
+
+        $copy = Post::query()->create([
+            'author_id' => $user->id,
+            'wall_type' => $user->getMorphClass(),
+            'wall_id' => $user->id,
+            'body' => $source->body,
+            'visibility' => Post::VISIBILITY_PUBLIC,
+            'spoiler' => $source->spoiler,
+            'link' => $source->link,
+            'shared_post_id' => $source->id,
+        ]);
+
+        if ($source->author && $source->author->isNot($user)) {
+            $excerpt = $source->spoiler ? 'Спойлер' : Str::limit((string) $source->body, 80);
+            $source->author->notify(new PostInteraction(PostInteraction::SHARE, $user, $copy, $excerpt));
+        }
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Запис на вашій стіні.']);
 
         return back();
     }

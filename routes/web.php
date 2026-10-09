@@ -77,6 +77,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('posts/{post}/publish', [PostController::class, 'release'])->name('posts.publish');
     Route::delete('posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
     Route::post('posts/{post}/pin', [PostController::class, 'pin'])->name('posts.pin');
+    Route::post('posts/{post}/hide', [PostController::class, 'hide'])->name('posts.hide');
+    Route::post('posts/{post}/mute', [PostController::class, 'mute'])->name('posts.mute');
+    Route::post('posts/{post}/share', [PostController::class, 'share'])->middleware('throttle:30,1')->name('posts.share');
     Route::post('posts/{post}/like', [PostController::class, 'like'])->middleware('throttle:120,1')->name('posts.like');
     Route::post('posts/{post}/poll', [PostController::class, 'vote'])->middleware('throttle:60,1')->name('posts.poll');
     Route::get('saved', [SavedController::class, 'index'])->name('saved.index');

@@ -15,6 +15,8 @@ class PostInteraction extends Notification
 
     public const WALL = 'wall_post';
 
+    public const SHARE = 'post_share';
+
     public function __construct(
         public readonly string $kind,
         public readonly User $actor,
@@ -42,6 +44,7 @@ class PostInteraction extends Notification
             'text' => match ($this->kind) {
                 self::LIKE => 'оцінив(-ла) ваш запис',
                 self::COMMENT => 'прокоментував(-ла) ваш запис',
+                self::SHARE => 'поділив(-ла)ся вашим записом',
                 default => 'залишив(-ла) запис на вашій стіні',
             },
             'excerpt' => $this->excerpt,

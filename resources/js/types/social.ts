@@ -103,8 +103,18 @@ export type PostItem = {
     } | null;
     reaction?: string | null;
     liked: boolean;
+    shared?: { name: string; username: string; href: string; body: string } | null;
+    muted?: boolean;
     comments: CommentItem[];
-    can: { delete: boolean; edit?: boolean; pin: boolean; comment: boolean };
+    can: {
+        delete: boolean;
+        edit?: boolean;
+        pin: boolean;
+        comment: boolean;
+        hide?: boolean;
+        mute?: boolean;
+        share?: boolean;
+    };
 };
 
 export type NavEntry = {

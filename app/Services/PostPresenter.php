@@ -13,6 +13,7 @@ use App\Models\PostAttachment;
 use App\Models\Save;
 use App\Models\Track;
 use App\Models\User;
+use App\Models\UserMute;
 use Illuminate\Database\Eloquent\Collection;
 
 class PostPresenter
@@ -31,6 +32,9 @@ class PostPresenter
     /** @var array<int, int> */
     private array $votes = [];
 
+    /** @var array<int, true> */
+    private array $muted = [];
+
     /**
      * Готує записи до показу: автор, стіна, вкладення, останні коментарі, лайки глядача.
      *
@@ -43,7 +47,7 @@ class PostPresenter
             return [];
         }
 
-        $posts->loadMissing(['author', 'wall', 'attachments']);
+        $posts->loadMissing(['author', 'wall', 'attachments', 'sharedPost.author']);
         $ids = $posts->modelKeys();
 
         $previewComments = Comment::query()
@@ -96,6 +100,9 @@ class PostPresenter
         $this->votes = $viewer && $pollIds->isNotEmpty()
             ? PollVote::query()->where('user_id', $viewer->id)->whereIn('poll_id', $pollIds)->pluck('option_id', 'poll_id')->map(fn ($id) => (int) $id)->all()
             : [];
+        $this->muted = $viewer
+            ? UserMute::query()->where('user_id', $viewer->id)->pluck('muted_id')->flip()->map(fn () => true)->all()
+            : [];
 
         $managed = $viewer && $posts->contains('wall_type', 'community')
             ? array_flip(app(CommunityService::class)->managedIds($viewer))
@@ -142,6 +149,8 @@ class PostPresenter
         $community = $wall instanceof Community ? $wall : null;
         $ownWall = $viewer !== null && $wall instanceof User && $wall->id === $viewer->id;
         $publisher = $community && $post->as_community ? $community : null;
+        $sourceAuthorId = $post->sharedPost?->author_id ?? $post->author_id;
+        $shareable = $viewer !== null && $sourceAuthorId !== $viewer->id && ! $post->is_draft && ! $post->publish_at?->isFuture();
 
         $wallCard = match (true) {
             $publisher !== null => null,
@@ -178,6 +187,8 @@ class PostPresenter
             'card' => $post->card,
             'saved' => isset($this->saved[$post->id]),
             'poll' => $this->pollCard($post),
+            'shared' => $this->sharedCard($post),
+            'muted' => isset($this->muted[$post->author_id]),
             'reaction' => $reaction,
             'liked' => $reaction !== null,
             'comments' => $comments,
@@ -186,7 +197,29 @@ class PostPresenter
                 'edit' => $viewer !== null && $post->author_id === $viewer->id && ($post->is_draft || $post->publish_at?->isFuture() || $post->created_at->greaterThan(now()->subMinutes(Post::EDIT_MINUTES))),
                 'pin' => $ownWall || $managesWall,
                 'comment' => $viewer !== null && $post->comments_enabled,
+                'hide' => $viewer !== null && $post->author_id !== $viewer->id && ! $post->is_draft && ! $post->publish_at?->isFuture(),
+                'mute' => $viewer !== null && $post->author_id !== $viewer->id && ! $post->is_draft && ! $post->publish_at?->isFuture(),
+                'share' => $shareable,
             ],
+        ];
+    }
+
+    /**
+     * @return array{name: string, username: string, href: string, body: string}|null
+     */
+    private function sharedCard(Post $post): ?array
+    {
+        $source = $post->sharedPost;
+        $author = $source?->author;
+        if ($source === null || $author === null) {
+            return null;
+        }
+
+        return [
+            'name' => $author->name,
+            'username' => $author->username,
+            'href' => '/'.$author->username,
+            'body' => $source->spoiler ? 'Спойлер' : (string) $source->body,
         ];
     }
 
