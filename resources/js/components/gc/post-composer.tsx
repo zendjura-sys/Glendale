@@ -6,6 +6,7 @@ import {
     Lock,
     Megaphone,
     Music2,
+    Smile,
     Sparkles,
     UsersRound,
     X,
@@ -19,6 +20,7 @@ import { fitTextarea } from '@/lib/textarea';
 import { cn } from '@/lib/utils';
 import type { PostItem, TrackCard, Visibility } from '@/types';
 import { CommunityAvatar } from './community-avatar';
+import { StickerPicker, stickerEmoji } from './stickers';
 import { UserAvatar } from './user-avatar';
 import { tr } from '@/lib/i18n';
 
@@ -59,6 +61,7 @@ export function PostComposer({
     const [cardHits, setCardHits] = useState<NonNullable<PostItem['card']>[]>([]);
     const [pickingCard, setPickingCard] = useState(false);
     const [publishAt, setPublishAt] = useState('');
+    const [pickingSticker, setPickingSticker] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
     const form = useForm<{
         body: string;
@@ -69,9 +72,11 @@ export function PostComposer({
         images: File[];
         poll: { question: string; options: string[] } | null;
         spoiler: boolean;
+        sticker: string | null;
     }>({
         body: '',
         spoiler: false,
+        sticker: null,
         visibility: 'public',
         wall: wall?.username ?? null,
         community: community?.slug ?? null,
@@ -98,7 +103,8 @@ export function PostComposer({
         form.data.images.length > 0 ||
         track !== null ||
         card !== null ||
-        form.data.poll !== null;
+        form.data.poll !== null ||
+        form.data.sticker !== null;
     const pollReady =
         form.data.poll !== null &&
         form.data.poll.question.trim().length > 0 &&
@@ -108,7 +114,8 @@ export function PostComposer({
             form.data.images.length > 0 ||
             track !== null ||
             card !== null ||
-            pollReady) &&
+            pollReady ||
+            form.data.sticker !== null) &&
         !form.processing;
 
     const addFiles = (files: FileList | null) => {
@@ -138,13 +145,15 @@ export function PostComposer({
                         : undefined,
                 ...(track ? { music: musicPayload(track) } : {}),
                 ...(card ? { card: { kind: card.kind, id: card.id } } : {}),
+                ...(data.sticker ? { sticker: data.sticker } : {}),
             };
         });
         form.post('/posts', {
             forceFormData: true,
             preserveScroll: true,
             onSuccess: () => {
-                form.reset('body', 'images', 'poll', 'spoiler');
+                form.reset('body', 'images', 'poll', 'spoiler', 'sticker');
+                setPickingSticker(false);
                 setTrack(null);
                 setCard(null);
                 setPickingCard(false);
@@ -366,6 +375,18 @@ export function PostComposer({
                 </div>
             )}
 
+            {pickingSticker && (
+                <div className="mt-3">
+                    <StickerPicker
+                        value={form.data.sticker}
+                        onChange={(key) => form.setData('sticker', key)}
+                    />
+                </div>
+            )}
+            {form.data.sticker && (
+                <div className="mt-3 text-5xl leading-none">{stickerEmoji(form.data.sticker)}</div>
+            )}
+
             {form.progress && (
                 <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/5">
                     <div
@@ -396,6 +417,17 @@ export function PostComposer({
                 >
                     <ImagePlus className="size-[18px] text-[#6fa2ff]" />
                     <span className="hidden sm:inline">{tr('Фото')}</span>
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setPickingSticker((open) => !open)}
+                    className={cn(
+                        'inline-flex h-9 items-center gap-2 rounded-xl px-2.5 text-sm font-medium transition hover:bg-white/[0.06] hover:text-white sm:px-3',
+                        form.data.sticker ? 'text-white' : 'text-white/65',
+                    )}
+                >
+                    <Smile className="size-[18px] text-[#ffd27a]" />
+                    <span className="hidden sm:inline">{tr('Стікер')}</span>
                 </button>
                 <button
                     type="button"

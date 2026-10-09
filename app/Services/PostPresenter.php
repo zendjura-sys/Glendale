@@ -14,6 +14,7 @@ use App\Models\Save;
 use App\Models\Track;
 use App\Models\User;
 use App\Models\UserMute;
+use App\Support\Stickers;
 use Illuminate\Database\Eloquent\Collection;
 
 class PostPresenter
@@ -47,7 +48,7 @@ class PostPresenter
             return [];
         }
 
-        $posts->loadMissing(['author', 'wall', 'attachments', 'sharedPost.author']);
+        $posts->loadMissing(['author', 'wall', 'attachments', 'sharedPost.author', 'quotedPost.author']);
         $ids = $posts->modelKeys();
 
         $previewComments = Comment::query()
@@ -163,6 +164,7 @@ class PostPresenter
             'id' => $post->id,
             'body' => $post->body,
             'spoiler' => $post->spoiler,
+            'sticker' => Stickers::emoji($post->sticker),
             'visibility' => $post->visibility,
             'is_pinned' => $post->is_pinned,
             'comments_enabled' => $post->comments_enabled,
@@ -188,6 +190,7 @@ class PostPresenter
             'saved' => isset($this->saved[$post->id]),
             'poll' => $this->pollCard($post),
             'shared' => $this->sharedCard($post),
+            'quoted' => $this->quotedCard($post),
             'muted' => isset($this->muted[$post->author_id]),
             'reaction' => $reaction,
             'liked' => $reaction !== null,
@@ -200,6 +203,7 @@ class PostPresenter
                 'hide' => $viewer !== null && $post->author_id !== $viewer->id && ! $post->is_draft && ! $post->publish_at?->isFuture(),
                 'mute' => $viewer !== null && $post->author_id !== $viewer->id && ! $post->is_draft && ! $post->publish_at?->isFuture(),
                 'share' => $shareable,
+                'quote' => $viewer !== null && ! $post->is_draft && ! $post->publish_at?->isFuture(),
             ],
         ];
     }
@@ -220,6 +224,28 @@ class PostPresenter
             'username' => $author->username,
             'href' => '/'.$author->username,
             'body' => $source->spoiler ? 'Спойлер' : (string) $source->body,
+        ];
+    }
+
+    /**
+     * @return array{id: int, name: string, username: string, href: string, body: string}|null
+     */
+    private function quotedCard(Post $post): ?array
+    {
+        $source = $post->quotedPost;
+        $author = $source?->author;
+        if ($source === null || $author === null) {
+            return null;
+        }
+
+        $body = $source->spoiler ? 'Спойлер' : (string) $source->body;
+
+        return [
+            'id' => $source->id,
+            'name' => $author->name,
+            'username' => $author->username,
+            'href' => '/'.$author->username,
+            'body' => mb_strlen($body) > 180 ? mb_substr($body, 0, 180).'…' : $body,
         ];
     }
 
@@ -271,6 +297,7 @@ class PostPresenter
             'id' => $comment->id,
             'body' => $comment->body,
             'spoiler' => $comment->spoiler,
+            'sticker' => Stickers::emoji($comment->sticker),
             'is_pinned' => (bool) $comment->is_pinned,
             'parent_id' => $comment->parent_id,
             'likes_count' => $comment->likes_count,

@@ -11,6 +11,7 @@ import {
     Pencil,
     Pin,
     PinOff,
+    Quote,
     Share2,
     Trash2,
     UsersRound,
@@ -74,6 +75,8 @@ export function PostCard({
     const [spoilerOpen, setSpoilerOpen] = useState(false);
     const [editing, setEditing] = useState(false);
     const [editBody, setEditBody] = useState(post.body ?? '');
+    const [quoting, setQuoting] = useState(false);
+    const [quoteBody, setQuoteBody] = useState('');
 
     const Visibility = visibilityMeta[post.visibility].icon;
     const publisherHref = post.publisher?.href ?? `/${post.author.username}`;
@@ -204,6 +207,14 @@ export function PostCard({
                                 <Share2 /> {tr('Поділитися на стіні')}
                             </DropdownMenuItem>
                         )}
+                        {post.can.quote && (
+                            <DropdownMenuItem
+                                className="rounded-lg focus:bg-white/[0.06]"
+                                onSelect={() => setQuoting(true)}
+                            >
+                                <Quote /> {tr('Цитувати')}
+                            </DropdownMenuItem>
+                        )}
                         {post.can.hide && (
                             <DropdownMenuItem
                                 className="rounded-lg focus:bg-white/[0.06]"
@@ -270,6 +281,53 @@ export function PostCard({
                     </DropdownMenuContent>
                 </DropdownMenu>
             </header>
+
+            {quoting && (
+                <form
+                    className="mt-3 space-y-2"
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        if (!quoteBody.trim()) return;
+                        router.post(
+                            `/posts/${post.id}/quote`,
+                            { body: quoteBody },
+                            {
+                                preserveScroll: true,
+                                onSuccess: () => {
+                                    setQuoting(false);
+                                    setQuoteBody('');
+                                },
+                            },
+                        );
+                    }}
+                >
+                    <textarea
+                        value={quoteBody}
+                        onChange={(event) => setQuoteBody(event.target.value)}
+                        rows={3}
+                        placeholder={tr('Ваш коментар до цитати…')}
+                        className="w-full resize-none rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:outline-none"
+                    />
+                    <div className="flex gap-2">
+                        <button
+                            type="submit"
+                            className="h-9 rounded-xl bg-white px-3 text-sm font-medium text-black"
+                        >
+                            {tr('Опублікувати')}
+                        </button>
+                        <button
+                            type="button"
+                            className="h-9 rounded-xl px-3 text-sm text-white/60"
+                            onClick={() => {
+                                setQuoting(false);
+                                setQuoteBody('');
+                            }}
+                        >
+                            {tr('Скасувати')}
+                        </button>
+                    </div>
+                </form>
+            )}
 
             {editing ? (
                 <form
@@ -339,6 +397,29 @@ export function PostCard({
                         />
                     </div>
                 </div>
+            )}
+
+            {post.sticker && (
+                <div className="mt-3 text-5xl leading-none" aria-hidden>
+                    {post.sticker}
+                </div>
+            )}
+
+            {post.quoted && (
+                <Link
+                    href={`/posts/${post.quoted.id}`}
+                    className="mt-3.5 block rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2.5"
+                >
+                    <span className="text-xs text-white/40">{tr('Цитата')}</span>
+                    <span className="mt-0.5 block text-sm font-medium text-white">
+                        {post.quoted.name}
+                    </span>
+                    {post.quoted.body && (
+                        <span className="mt-1 block line-clamp-3 text-sm text-white/70">
+                            {post.quoted.body}
+                        </span>
+                    )}
+                </Link>
             )}
 
             {post.shared && (

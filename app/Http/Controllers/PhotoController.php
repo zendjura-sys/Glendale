@@ -11,10 +11,13 @@ use App\Models\User;
 use App\Notifications\PhotoInteraction;
 use App\Services\PhotoService;
 use App\Services\PostPresenter;
+use App\Support\CommentOrder;
+use App\Support\Stickers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -141,7 +144,9 @@ class PhotoController extends Controller
         $viewer = $request->user();
         abort_unless($this->photos->canView($photo->album, $viewer), 404);
 
-        $comments = $photo->comments()->with('user')->orderBy('id')->limit(500)->get();
+        $comments = $photo->comments()->with('user');
+        CommentOrder::apply($comments, $request->query('sort'));
+        $comments = $comments->limit(500)->get();
         $liked = Like::query()
             ->where('user_id', $viewer->id)
             ->where('likeable_type', (new Comment)->getMorphClass())
@@ -162,19 +167,22 @@ class PhotoController extends Controller
         abort_unless($album->comments_enabled, 403, 'Коментарі до цього альбому вимкнено.');
 
         $data = $request->validate([
-            'body' => ['required', 'string', 'max:2000'],
+            'body' => ['nullable', 'string', 'max:2000', 'required_without:sticker'],
             'parent_id' => ['nullable', 'integer'],
+            'sticker' => ['nullable', 'string', Rule::in(array_keys(Stickers::ITEMS))],
         ]);
 
         $comment = $photo->comments()->create([
             'user_id' => $user->id,
             'parent_id' => isset($data['parent_id']) ? $photo->comments()->whereKey($data['parent_id'])->value('id') : null,
-            'body' => trim($data['body']),
+            'body' => trim((string) ($data['body'] ?? '')),
+            'sticker' => $data['sticker'] ?? null,
         ]);
         $photo->increment('comments_count');
 
         if ($photo->user && $photo->user_id !== $user->id) {
-            $photo->user->notify(new PhotoInteraction(PhotoInteraction::COMMENT, $user, $photo, Str::limit($comment->body, 80)));
+            $excerpt = $comment->body !== '' ? Str::limit($comment->body, 80) : Stickers::emoji($comment->sticker);
+            $photo->user->notify(new PhotoInteraction(PhotoInteraction::COMMENT, $user, $photo, $excerpt));
         }
 
         return response()->json([

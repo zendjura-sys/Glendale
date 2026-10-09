@@ -17,6 +17,8 @@ class PostInteraction extends Notification
 
     public const SHARE = 'post_share';
 
+    public const QUOTE = 'post_quote';
+
     public function __construct(
         public readonly string $kind,
         public readonly User $actor,
@@ -45,6 +47,7 @@ class PostInteraction extends Notification
                 self::LIKE => 'оцінив(-ла) ваш запис',
                 self::COMMENT => 'прокоментував(-ла) ваш запис',
                 self::SHARE => 'поділив(-ла)ся вашим записом',
+                self::QUOTE => 'процитував(-ла) ваш запис',
                 default => 'залишив(-ла) запис на вашій стіні',
             },
             'excerpt' => $this->excerpt,

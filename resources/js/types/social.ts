@@ -47,6 +47,7 @@ export type CommentItem = {
     id: number;
     body: string;
     spoiler?: boolean;
+    sticker?: string | null;
     is_pinned?: boolean;
     can_pin?: boolean;
     parent_id: number | null;
@@ -63,6 +64,7 @@ export type PostItem = {
     id: number;
     body: string | null;
     spoiler?: boolean;
+    sticker?: string | null;
     visibility: Visibility;
     is_pinned: boolean;
     comments_enabled: boolean;
@@ -104,6 +106,7 @@ export type PostItem = {
     reaction?: string | null;
     liked: boolean;
     shared?: { name: string; username: string; href: string; body: string } | null;
+    quoted?: { id: number; name: string; username: string; href: string; body: string } | null;
     muted?: boolean;
     comments: CommentItem[];
     can: {
@@ -114,6 +117,7 @@ export type PostItem = {
         hide?: boolean;
         mute?: boolean;
         share?: boolean;
+        quote?: boolean;
     };
 };
 

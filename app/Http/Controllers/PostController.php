@@ -25,6 +25,7 @@ use App\Services\PostPresenter;
 use App\Services\ScheduledPosts;
 use App\Services\Spotify\SpotifyClient;
 use App\Support\Settings\SiteSettings;
+use App\Support\Stickers;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -111,7 +112,8 @@ class PostController extends Controller
         $maxKb = (int) $this->settings->get('max_upload_mb') * 1024;
 
         $data = $request->validate([
-            'body' => ['nullable', 'string', 'max:'.(int) $this->settings->get('max_post_length'), 'required_without_all:images,music,movie_id,poll,card'],
+            'body' => ['nullable', 'string', 'max:'.(int) $this->settings->get('max_post_length'), 'required_without_all:images,music,movie_id,poll,card,sticker'],
+            'sticker' => ['nullable', 'string', Rule::in(array_keys(Stickers::ITEMS))],
             'card' => ['nullable', 'array'],
             'card.kind' => ['required_with:card', Rule::in(['game', 'server', 'game_event', 'server_event'])],
             'card.id' => ['required_with:card', 'integer', 'min:1'],
@@ -186,7 +188,8 @@ class PostController extends Controller
                 'wall_type' => $wallOwner->getMorphClass(),
                 'wall_id' => $wallOwner->id,
                 'as_community' => $asCommunity,
-                'body' => isset($data['body']) ? app(ContentFilter::class)->clean(trim($data['body'])) : null,
+                'body' => isset($data['body']) && trim($data['body']) !== '' ? app(ContentFilter::class)->clean(trim($data['body'])) : null,
+                'sticker' => $data['sticker'] ?? null,
                 'music' => $music,
                 'movie_id' => $movieId,
                 'link' => app(YoutubePreview::class)->fromText($data['body'] ?? null),
@@ -381,6 +384,38 @@ class PostController extends Controller
         }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Запис на вашій стіні.']);
+
+        return back();
+    }
+
+    public function quote(Request $request, Post $post): RedirectResponse
+    {
+        $user = $request->user();
+        $this->authorizeView($user, $post);
+        abort_if($post->is_draft || $post->publish_at?->isFuture(), 422);
+
+        $data = $request->validate([
+            'body' => ['required', 'string', 'max:'.(int) $this->settings->get('max_post_length')],
+        ]);
+        app(ContentFilter::class)->ensureCanPost($user);
+        $body = (string) app(ContentFilter::class)->clean(trim($data['body']));
+        abort_if($body === '', 422);
+
+        $copy = Post::query()->create([
+            'author_id' => $user->id,
+            'wall_type' => $user->getMorphClass(),
+            'wall_id' => $user->id,
+            'body' => $body,
+            'visibility' => Post::VISIBILITY_PUBLIC,
+            'quoted_post_id' => $post->id,
+        ]);
+
+        $post->loadMissing('author');
+        if ($post->author && $post->author->isNot($user)) {
+            $post->author->notify(new PostInteraction(PostInteraction::QUOTE, $user, $copy, Str::limit($body, 80)));
+        }
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Цитату опубліковано.']);
 
         return back();
     }

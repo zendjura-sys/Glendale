@@ -15,7 +15,10 @@ import {
     useContentTranslation,
 } from '@/components/gc/translate';
 import { MentionText } from './mention-text';
+import { StickerPicker } from './stickers';
 import { tr } from '@/lib/i18n';
+
+type CommentSort = 'old' | 'new' | 'reactions';
 
 type Props = {
     /** Базовий URL коментарів, напр. `/posts/1/comments`. */
@@ -44,19 +47,27 @@ export function Comments({
     const [spoiler, setSpoiler] = useState(false);
     const [replyTo, setReplyTo] = useState<CommentItem | null>(null);
     const [sending, setSending] = useState(false);
+    const [sort, setSort] = useState<CommentSort>('old');
+    const [sticker, setSticker] = useState<string | null>(null);
+    const [pickingSticker, setPickingSticker] = useState(false);
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
-    const loadAll = async () => {
+    const loadAll = async (next: CommentSort = sort) => {
         const response = await api<{ comments: CommentItem[] }>(
             'GET',
-            endpoint,
+            `${endpoint}?sort=${next}`,
         );
         setComments(response.comments);
         setLoadedAll(true);
     };
 
+    const chooseSort = (next: CommentSort) => {
+        setSort(next);
+        void loadAll(next);
+    };
+
     const submit = async () => {
-        if (!body.trim() || sending) return;
+        if ((!body.trim() && !sticker) || sending) return;
         setSending(true);
 
         try {
@@ -67,11 +78,14 @@ export function Comments({
                 body,
                 parent_id: replyTo?.id ?? null,
                 spoiler,
+                sticker,
             });
             setComments((list) => [...list, response.comment]);
             onCountChange(response.comments_count);
             setBody('');
             setSpoiler(false);
+            setSticker(null);
+            setPickingSticker(false);
             setReplyTo(null);
         } catch (error) {
             toast.error(
@@ -159,12 +173,42 @@ export function Comments({
                 </button>
             )}
 
+            {(comments.length > 1 || total > 1) && (
+                <div className="flex gap-2 text-xs">
+                    {(
+                        [
+                            ['new', tr('Нові')],
+                            ['old', tr('Старі')],
+                            ['reactions', tr('Реакції')],
+                        ] as const
+                    ).map(([key, label]) => (
+                        <button
+                            key={key}
+                            type="button"
+                            onClick={() => chooseSort(key)}
+                            className={cn(
+                                'rounded-full px-2.5 py-1 font-medium',
+                                sort === key
+                                    ? 'bg-white/10 text-white'
+                                    : 'text-white/45 hover:text-white',
+                            )}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             {[...comments]
-                .sort(
-                    (a, b) =>
-                        Number(!!b.is_pinned) - Number(!!a.is_pinned) ||
-                        a.id - b.id,
-                )
+                .sort((a, b) => {
+                    const pin = Number(!!b.is_pinned) - Number(!!a.is_pinned);
+                    if (pin !== 0) return pin;
+                    if (sort === 'new') return b.id - a.id;
+                    if (sort === 'reactions') {
+                        return b.likes_count - a.likes_count || b.id - a.id;
+                    }
+                    return a.id - b.id;
+                })
                 .map((comment) => {
                 const parent = comment.parent_id
                     ? byId.get(comment.parent_id)
@@ -203,13 +247,20 @@ export function Comments({
                                             {parent.user.first_name},
                                         </span>
                                     )}
+                                    {comment.sticker && (
+                                        <span className="mr-1 text-2xl leading-none">
+                                            {comment.sticker}
+                                        </span>
+                                    )}
                                     {comment.spoiler ? (
                                         <SpoilerText text={comment.body} />
                                     ) : (
-                                        <CommentText
-                                            id={comment.id}
-                                            body={comment.body}
-                                        />
+                                        comment.body && (
+                                            <CommentText
+                                                id={comment.id}
+                                                body={comment.body}
+                                            />
+                                        )
                                     )}
                                 </p>
                             </div>
@@ -286,7 +337,19 @@ export function Comments({
                                 onChange={(event) => setSpoiler(event.target.checked)}
                             />
                             {tr('Спойлер')}
+                            <button
+                                type="button"
+                                className="ml-auto text-white/70 hover:text-white"
+                                onClick={() => setPickingSticker((open) => !open)}
+                            >
+                                {tr('Стікер')}
+                            </button>
                         </label>
+                        {pickingSticker && (
+                            <div className="px-3 pt-1">
+                                <StickerPicker value={sticker} onChange={setSticker} />
+                            </div>
+                        )}
                         <div className="flex items-end">
                             <textarea
                                 ref={inputRef}
@@ -312,7 +375,7 @@ export function Comments({
                             <button
                                 type="button"
                                 onClick={submit}
-                                disabled={!body.trim() || sending}
+                                disabled={(!body.trim() && !sticker) || sending}
                                 className="m-1 flex size-8 items-center justify-center rounded-xl text-gc-lilac-300 transition hover:bg-white/10 disabled:opacity-30"
                                 aria-label={tr('Надіслати')}
                             >

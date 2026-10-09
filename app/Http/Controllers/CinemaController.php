@@ -13,6 +13,8 @@ use App\Services\Cinema\FlixcdnPlayer;
 use App\Services\FriendshipService;
 use App\Services\PostPresenter;
 use App\Services\SavedItems;
+use App\Support\CommentOrder;
+use App\Support\Stickers;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
@@ -259,7 +261,9 @@ class CinemaController extends Controller
         $viewer = $request->user();
         abort_unless($movie->is_published || $viewer->isStaff(), 404);
 
-        $comments = $movie->comments()->with('user')->orderByDesc('is_pinned')->orderBy('id')->limit(500)->get();
+        $comments = $movie->comments()->with('user');
+        CommentOrder::apply($comments, $request->query('sort'));
+        $comments = $comments->limit(500)->get();
         $liked = $this->likedComments($viewer, $comments);
 
         return response()->json([
@@ -274,17 +278,19 @@ class CinemaController extends Controller
         abort_unless($movie->comments_enabled, 403, 'Коментарі до цього фільму вимкнено.');
 
         $data = $request->validate([
-            'body' => ['required', 'string', 'max:2000'],
+            'body' => ['nullable', 'string', 'max:2000', 'required_without:sticker'],
             'parent_id' => ['nullable', 'integer'],
             'spoiler' => ['sometimes', 'boolean'],
+            'sticker' => ['nullable', 'string', Rule::in(array_keys(Stickers::ITEMS))],
         ]);
 
         $comment = DB::transaction(function () use ($movie, $user, $data) {
             $comment = $movie->comments()->create([
                 'user_id' => $user->id,
                 'parent_id' => isset($data['parent_id']) ? $movie->comments()->whereKey($data['parent_id'])->value('id') : null,
-                'body' => trim($data['body']),
+                'body' => trim((string) ($data['body'] ?? '')),
                 'spoiler' => (bool) ($data['spoiler'] ?? false),
+                'sticker' => $data['sticker'] ?? null,
             ]);
             $movie->increment('comments_count');
 
