@@ -31,6 +31,7 @@ class MessengerController extends Controller
             'conversations' => $this->presenter->inbox($request->user(), $this->messenger),
             'active' => null,
             'history' => null,
+            'draft' => null,
         ]);
     }
 
@@ -39,10 +40,13 @@ class MessengerController extends Controller
         $user = $request->user();
         $me = $this->participant($conversation, $user);
 
+        $draft = trim((string) $request->query('text', ''));
+
         return Inertia::render('messages/index', [
             'conversations' => $this->presenter->inbox($user, $this->messenger, $conversation->id),
             'active' => [...$this->presenter->details($conversation, $user, $me, $this->messenger), ...$calls->forViewer($conversation, $user)],
             'history' => $this->presenter->history($conversation),
+            'draft' => $draft === '' ? null : mb_substr($draft, 0, 120),
         ]);
     }
 
@@ -67,7 +71,16 @@ class MessengerController extends Controller
             return back();
         }
 
-        return to_route('messages.show', $existing ?? $this->messenger->direct($viewer, $user));
+        $conversation = $existing ?? $this->messenger->direct($viewer, $user);
+        $text = trim((string) $request->query('text', ''));
+        if ($text === '') {
+            return to_route('messages.show', $conversation);
+        }
+
+        return to_route('messages.show', [
+            'conversation' => $conversation,
+            'text' => mb_substr($text, 0, 120),
+        ]);
     }
 
     public function storeGroup(Request $request): RedirectResponse

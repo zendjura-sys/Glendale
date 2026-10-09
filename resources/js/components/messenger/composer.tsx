@@ -37,6 +37,7 @@ type Props = {
     onEdit: (message: ChatMessage, body: string) => void;
     onTyping: () => void;
     onEditLast: () => void;
+    draft?: string | null;
 };
 
 function useOutsideClose(
@@ -64,9 +65,10 @@ export function Composer({
     onEdit,
     onTyping,
     onEditLast,
+    draft = null,
 }: Props) {
     const { site } = usePage().props;
-    const [body, setBody] = useState('');
+    const [body, setBody] = useState(draft ?? '');
     const [images, setImages] = useState<File[]>([]);
     const [docs, setDocs] = useState<File[]>([]);
     const [emojiOpen, setEmojiOpen] = useState(false);
@@ -101,6 +103,15 @@ export function Composer({
         const el = textRef.current;
         if (el) fitTextarea(el, 180);
     };
+
+    useEffect(() => {
+        if (!draft) return;
+        const el = textRef.current;
+        if (!el) return;
+        fitTextarea(el, 180);
+        el.focus();
+        el.setSelectionRange(el.value.length, el.value.length);
+    }, [draft]);
 
     const editingId = editing?.id;
     useEffect(() => {

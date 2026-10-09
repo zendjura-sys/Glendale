@@ -1,5 +1,5 @@
 import { Head, useForm } from '@inertiajs/react';
-import { Check, Languages, Moon, UsersRound } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Eye, Languages, Moon, UsersRound } from 'lucide-react';
 import type { FormEvent } from 'react';
 import AppearanceController from '@/actions/App/Http/Controllers/Settings/AppearanceController';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,16 @@ import type { UserCard } from '@/types';
 
 type PaletteOption = { id: string; name: string; colors: string[] };
 
+const BLOCK_LABELS: Record<string, string> = {
+    platforms: 'Платформи',
+    steam: 'Бібліотека Steam',
+    about: 'Про себе',
+    achievements: 'Досягнення',
+    audio: 'Аудіозаписи',
+    friends: 'Друзі',
+    photos: 'Фото',
+};
+
 type Form = {
     palette: string;
     quiet_enabled: boolean;
@@ -18,6 +28,8 @@ type Form = {
     languages: string[];
     looking_for_group: boolean;
     close_friends: number[];
+    show_visitors: boolean;
+    profile_blocks: string[];
 };
 
 export default function Appearance({
@@ -26,6 +38,8 @@ export default function Appearance({
     quiet,
     languages,
     looking_for_group,
+    show_visitors,
+    profile_blocks,
     languageOptions,
     friends,
     closeFriends,
@@ -35,6 +49,8 @@ export default function Appearance({
     quiet: { enabled: boolean; from: string; to: string };
     languages: string[];
     looking_for_group: boolean;
+    show_visitors: boolean;
+    profile_blocks: string[];
     languageOptions: { code: string; native: string }[];
     friends: UserCard[];
     closeFriends: number[];
@@ -47,6 +63,8 @@ export default function Appearance({
         languages,
         looking_for_group,
         close_friends: closeFriends,
+        show_visitors,
+        profile_blocks,
     });
 
     const submit = (e: FormEvent) => {
@@ -184,6 +202,18 @@ export default function Appearance({
                         <UsersRound className="size-4 text-white/50" />
                         {tr('Шукаю групу')}
                     </label>
+                    <label className="mt-2 flex min-h-11 items-center gap-3 text-sm text-white">
+                        <input
+                            type="checkbox"
+                            checked={form.data.show_visitors}
+                            onChange={(e) =>
+                                form.setData('show_visitors', e.target.checked)
+                            }
+                            className="size-4 accent-gc-lilac-400"
+                        />
+                        <Eye className="size-4 text-white/50" />
+                        {tr('Хто заходив')}
+                    </label>
                     <p className="mt-4 mb-2 flex items-center gap-2 text-xs text-white/45">
                         <Languages className="size-3.5" />
                         {tr('Мови, якими говорю')}
@@ -247,6 +277,50 @@ export default function Appearance({
                                 </button>
                             );
                         })}
+                    </div>
+                </SettingsCard>
+
+                <SettingsCard
+                    title={tr('Порядок блоків')}
+                    description={tr('Як блоки стоять на вашій сторінці.')}
+                >
+                    <div className="space-y-2">
+                        {form.data.profile_blocks.map((key, index) => (
+                            <div
+                                key={key}
+                                className="flex min-h-11 items-center gap-2 rounded-2xl bg-white/[0.04] px-3"
+                            >
+                                <span className="min-w-0 flex-1 truncate text-sm text-white">
+                                    {tr(BLOCK_LABELS[key] ?? key)}
+                                </span>
+                                <button
+                                    type="button"
+                                    aria-label={tr('Вище')}
+                                    disabled={index === 0}
+                                    onClick={() => {
+                                        const next = [...form.data.profile_blocks];
+                                        [next[index - 1], next[index]] = [next[index], next[index - 1]];
+                                        form.setData('profile_blocks', next);
+                                    }}
+                                    className="inline-flex size-9 items-center justify-center rounded-xl text-white/70 disabled:opacity-30"
+                                >
+                                    <ChevronUp className="size-4" />
+                                </button>
+                                <button
+                                    type="button"
+                                    aria-label={tr('Нижче')}
+                                    disabled={index === form.data.profile_blocks.length - 1}
+                                    onClick={() => {
+                                        const next = [...form.data.profile_blocks];
+                                        [next[index + 1], next[index]] = [next[index], next[index + 1]];
+                                        form.setData('profile_blocks', next);
+                                    }}
+                                    className="inline-flex size-9 items-center justify-center rounded-xl text-white/70 disabled:opacity-30"
+                                >
+                                    <ChevronDown className="size-4" />
+                                </button>
+                            </div>
+                        ))}
                     </div>
                 </SettingsCard>
 

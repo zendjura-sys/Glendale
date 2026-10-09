@@ -52,6 +52,7 @@ const TYPING_TTL_MS = 4000;
 type Props = {
     active: ConversationDetails;
     history: ChatHistory;
+    draft?: string | null;
     onRead: (conversationId: number) => void;
     onOpenInfo: () => void;
     onTypingChange: (name: string | null) => void;
@@ -76,6 +77,7 @@ function TypingDots() {
 export function ChatView({
     active,
     history,
+    draft = null,
     onRead,
     onOpenInfo,
     onTypingChange,
@@ -935,6 +937,7 @@ export function ChatView({
 
             <Composer
                 canWrite={active.can_write}
+                draft={draft}
                 replyTo={replyTo}
                 editing={editing}
                 onCancel={() => {

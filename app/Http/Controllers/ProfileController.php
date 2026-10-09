@@ -7,6 +7,7 @@ use App\Models\Photo;
 use App\Models\PhotoAlbum;
 use App\Models\Post;
 use App\Models\PostAttachment;
+use App\Models\ProfileVisit;
 use App\Models\User;
 use App\Models\UserBlock;
 use App\Services\Achievements;
@@ -20,6 +21,7 @@ use App\Services\PostCards;
 use App\Services\PostPresenter;
 use App\Services\Presence\SteamPresence;
 use App\Support\Modules\ModuleManager;
+use App\Support\ProfileBlocks;
 use chillerlan\QRCode\Output\QROutputInterface;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
@@ -51,6 +53,12 @@ class ProfileController extends Controller
     public function show(Request $request, User $user, Messenger $messenger, ModuleManager $modules, PhotoService $photoService): Response
     {
         $viewer = $request->user();
+        if ($viewer && ! $viewer->is($user) && $user->pref('show_visitors')) {
+            ProfileVisit::query()->updateOrCreate(
+                ['user_id' => $user->id, 'visitor_id' => $viewer->id],
+                ['visited_at' => now()],
+            );
+        }
         $relation = $this->friendships->status($viewer, $user);
         $limited = $viewer && ! $viewer->isStaff() && UserBlock::between($user, $viewer);
         $canSeeContent = ! $limited && (! $user->is_private || in_array($relation, [FriendshipService::SELF, FriendshipService::FRIENDS], true) || $viewer?->isStaff());
@@ -95,6 +103,11 @@ class ProfileController extends Controller
         $mark = $viewer && $relation === FriendshipService::FRIENDS
             ? FriendMark::query()->where('user_id', $viewer->id)->where('friend_id', $user->id)->first()
             : null;
+        $showVisitors = $viewer && $viewer->is($user) && (bool) $user->pref('show_visitors');
+        $birthdayToday = $canSeeContent
+            && $user->birthday !== null
+            && $user->birthday->month === now()->month
+            && $user->birthday->day === now()->day;
 
         return Inertia::render('profile/show', [
             'profile' => [
@@ -130,6 +143,30 @@ class ProfileController extends Controller
                 && $friendship->accepted_at->month === now()->month
                 && $friendship->accepted_at->day === now()->day,
             'anniversaryYears' => $friendship?->accepted_at ? now()->year - $friendship->accepted_at->year : 0,
+            'birthdayToday' => $birthdayToday,
+            'showVisitors' => $showVisitors,
+            'visitors' => $showVisitors
+                ? ProfileVisit::query()
+                    ->where('user_id', $user->id)
+                    ->with('visitor')
+                    ->orderByDesc('visited_at')
+                    ->limit(12)
+                    ->get()
+                    ->map(function (ProfileVisit $visit): ?array {
+                        if ($visit->visitor === null) {
+                            return null;
+                        }
+
+                        return [
+                            ...$visit->visitor->toCard(),
+                            'visited_at' => $visit->visited_at->toIso8601String(),
+                        ];
+                    })
+                    ->filter()
+                    ->values()
+                    ->all()
+                : [],
+            'blockOrder' => ProfileBlocks::normalize($user->pref('profile_blocks')),
             'canMessage' => $viewer !== null && $messenger->canMessage($viewer, $user),
             'canPost' => $viewer !== null && in_array($relation, [FriendshipService::SELF, FriendshipService::FRIENDS], true),
             'stats' => [
