@@ -108,7 +108,7 @@ class ProfileController extends Controller
             'canPost' => $viewer !== null && in_array($relation, [FriendshipService::SELF, FriendshipService::FRIENDS], true),
             'stats' => [
                 'friends' => count($friendIds),
-                'posts' => $user->posts()->count(),
+                'posts' => $user->posts()->where('is_draft', false)->count(),
                 'photos' => $photoCount,
                 'mutual' => $viewer && $relation !== FriendshipService::SELF ? $this->friendships->mutualCount($viewer, $user) : 0,
             ],

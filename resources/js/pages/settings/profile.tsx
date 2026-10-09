@@ -148,7 +148,7 @@ export default function Profile({
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="status">{tr('Статус')}</Label>
+                            <Label htmlFor="status">{tr('Короткий статус')}</Label>
                             <Input
                                 id="status"
                                 value={data.status}

@@ -121,7 +121,7 @@ export function PostComposer({
         );
     };
 
-    const submit = () => {
+    const submit = (asDraft = false) => {
         if (!canSubmit) return;
 
         form.transform((data) => {
@@ -129,6 +129,7 @@ export function PostComposer({
 
             return {
                 ...data,
+                draft: asDraft ? 1 : 0,
                 poll:
                     data.poll && data.poll.question.trim() && options.length >= 2
                         ? { question: data.poll.question.trim(), options }
@@ -496,9 +497,23 @@ export function PostComposer({
                     </div>
                 )}
 
+                <a
+                    href="/posts/drafts"
+                    className="inline-flex h-10 items-center rounded-xl px-2 text-xs font-medium text-white/45 hover:text-white"
+                >
+                    {tr('Чернетки')}
+                </a>
                 <button
                     type="button"
-                    onClick={submit}
+                    onClick={() => submit(true)}
+                    disabled={!canSubmit}
+                    className="inline-flex h-10 items-center rounded-xl px-3 text-sm font-medium text-white/70 hover:text-white disabled:pointer-events-none disabled:opacity-40"
+                >
+                    {tr('Чернетка')}
+                </button>
+                <button
+                    type="button"
+                    onClick={() => submit(false)}
                     disabled={!canSubmit}
                     aria-label={tr('Опублікувати')}
                     className="btn-glow ml-auto inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold disabled:pointer-events-none disabled:opacity-40 sm:px-5"

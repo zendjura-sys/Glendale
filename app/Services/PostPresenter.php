@@ -59,6 +59,14 @@ class PostPresenter
             ->get()
             ->groupBy('post_id');
 
+        $pinned = Comment::query()->with('user')->whereIn('post_id', $ids)->where('is_pinned', true)->get();
+        foreach ($pinned as $comment) {
+            $group = $previewComments->get($comment->post_id, collect());
+            if ($group->doesntContain(fn (Comment $item) => $item->id === $comment->id)) {
+                $previewComments->put($comment->post_id, $group->prepend($comment));
+            }
+        }
+
         $reactions = $viewer ? Like::query()
             ->where('user_id', $viewer->id)
             ->where('likeable_type', (new Post)->getMorphClass())
@@ -107,7 +115,12 @@ class PostPresenter
             $viewer,
             isset($reactions[$post->id]) ? (string) $reactions[$post->id] : null,
             $post->wall instanceof Community && isset($managed[$post->wall_id]),
-            array_values(($previewComments[$post->id] ?? collect())->map(fn (Comment $c) => $this->comment($c, $viewer, isset($likedCommentIds[$c->id])))->all()),
+            array_values(($previewComments[$post->id] ?? collect())->map(fn (Comment $c) => $this->comment(
+                $c,
+                $viewer,
+                isset($likedCommentIds[$c->id]),
+                $viewer !== null && ($viewer->id === $post->author_id || $viewer->isStaff()),
+            ))->all()),
         ))->all());
     }
 
@@ -215,18 +228,22 @@ class PostPresenter
     /**
      * @return array<string, mixed>
      */
-    public function comment(Comment $comment, ?User $viewer, bool $liked = false): array
+    public function comment(Comment $comment, ?User $viewer, bool $liked = false, bool $canPin = false): array
     {
+        $comment->loadMissing('user');
+
         return [
             'id' => $comment->id,
             'body' => $comment->body,
             'spoiler' => $comment->spoiler,
+            'is_pinned' => (bool) $comment->is_pinned,
             'parent_id' => $comment->parent_id,
             'likes_count' => $comment->likes_count,
             'liked' => $liked,
             'created_at' => $comment->created_at->toIso8601String(),
             'user' => $comment->user->toCard(),
             'can_delete' => $viewer !== null && ($viewer->id === $comment->user_id || $viewer->isStaff()),
+            'can_pin' => $canPin && $comment->parent_id === null,
         ];
     }
 }

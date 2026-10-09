@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { CornerDownRight, SendHorizontal, Trash2 } from 'lucide-react';
+import { CornerDownRight, Pin, SendHorizontal, Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { api, ApiError } from '@/lib/api';
@@ -98,6 +98,24 @@ export function Comments({
         onCountChange(response.comments_count);
     };
 
+    const pin = async (comment: CommentItem) => {
+        const response = await api<{ id: number; is_pinned: boolean }>(
+            'POST',
+            `/comments/${comment.id}/pin`,
+        );
+        setComments((list) =>
+            list.map((item) => ({
+                ...item,
+                is_pinned:
+                    item.id === response.id
+                        ? response.is_pinned
+                        : response.is_pinned
+                          ? false
+                          : item.is_pinned,
+            })),
+        );
+    };
+
     const toggleLike = async (comment: CommentItem) => {
         setComments((list) =>
             list.map((item) =>
@@ -141,7 +159,13 @@ export function Comments({
                 </button>
             )}
 
-            {comments.map((comment) => {
+            {[...comments]
+                .sort(
+                    (a, b) =>
+                        Number(!!b.is_pinned) - Number(!!a.is_pinned) ||
+                        a.id - b.id,
+                )
+                .map((comment) => {
                 const parent = comment.parent_id
                     ? byId.get(comment.parent_id)
                     : null;
@@ -159,6 +183,11 @@ export function Comments({
                         </Link>
                         <div className="min-w-0 flex-1">
                             <div className="inline-block max-w-full rounded-2xl rounded-tl-md bg-white/[0.045] px-3.5 py-2">
+                                {comment.is_pinned && (
+                                    <span className="mb-1 flex items-center gap-1 text-[11px] font-semibold text-gc-lilac-200">
+                                        <Pin className="size-3" /> {tr('Закріплено')}
+                                    </span>
+                                )}
                                 <Link
                                     href={`/${comment.user.username}`}
                                     className="flex items-center gap-1 text-[13px] font-semibold text-white hover:underline"
@@ -196,6 +225,17 @@ export function Comments({
                                         }}
                                     >
                                         {tr('Відповісти')}
+                                    </button>
+                                )}
+                                {comment.can_pin && (
+                                    <button
+                                        type="button"
+                                        className="font-medium hover:text-white"
+                                        onClick={() => void pin(comment)}
+                                    >
+                                        {comment.is_pinned
+                                            ? tr('Відкріпити')
+                                            : tr('Закріпити')}
                                     </button>
                                 )}
                                 {comment.can_delete && (

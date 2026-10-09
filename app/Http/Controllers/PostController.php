@@ -55,11 +55,45 @@ class PostController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $this->publish($request);
+        $post = $this->publish($request);
+        if ($post->is_draft) {
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Чернетку збережено.']);
+
+            return to_route('posts.drafts');
+        }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Запис опубліковано.']);
 
         return back();
+    }
+
+    public function drafts(Request $request): Response
+    {
+        $posts = Post::query()
+            ->where('author_id', $request->user()->id)
+            ->where('is_draft', true)
+            ->latest('id')
+            ->limit(30)
+            ->get();
+
+        return Inertia::render('posts/drafts', [
+            'drafts' => $posts->map(fn (Post $post) => [
+                'id' => $post->id,
+                'body' => $post->body,
+                'created_at' => $post->created_at->toIso8601String(),
+            ])->values(),
+        ]);
+    }
+
+    public function release(Request $request, Post $post): RedirectResponse
+    {
+        abort_unless($post->is_draft && $post->author_id === $request->user()->id, 403);
+        $post->forceFill(['is_draft' => false, 'created_at' => now()])->save();
+        $this->announce($post);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Запис опубліковано.']);
+
+        return to_route('posts.show', $post);
     }
 
     public function publish(Request $request): Post
@@ -80,6 +114,7 @@ class PostController extends Controller
             'poll.options.*' => ['required', 'string', 'max:80'],
             'visibility' => ['required', Rule::in(Post::VISIBILITIES)],
             'spoiler' => ['sometimes', 'boolean'],
+            'draft' => ['sometimes', 'boolean'],
             'wall' => ['nullable', 'string', 'exists:users,username'],
             'community' => ['nullable', 'string'],
             'as_community' => ['nullable', 'boolean'],
@@ -148,6 +183,7 @@ class PostController extends Controller
                 'card' => $card,
                 'visibility' => $data['visibility'],
                 'spoiler' => (bool) ($data['spoiler'] ?? false),
+                'is_draft' => $request->boolean('draft'),
             ]);
 
             if (isset($data['poll'])) {
@@ -179,14 +215,23 @@ class PostController extends Controller
             return $post;
         });
 
-        if ($wallOwner instanceof User && $wallOwner->isNot($user)) {
-            $excerpt = $post->spoiler ? 'Спойлер' : Str::limit((string) $post->body, 80);
-            $wallOwner->notify(new PostInteraction(PostInteraction::WALL, $user, $post, $excerpt));
+        if (! $post->is_draft) {
+            $this->announce($post);
         }
 
-        app(Mentions::class)->notify($user, $post->body, route('posts.show', $post, absolute: false));
-
         return $post;
+    }
+
+    private function announce(Post $post): void
+    {
+        $post->loadMissing('author', 'wall');
+        $wall = $post->wall;
+        if ($wall instanceof User && $wall->isNot($post->author)) {
+            $excerpt = $post->spoiler ? 'Спойлер' : Str::limit((string) $post->body, 80);
+            $wall->notify(new PostInteraction(PostInteraction::WALL, $post->author, $post, $excerpt));
+        }
+
+        app(Mentions::class)->notify($post->author, $post->body, route('posts.show', $post, absolute: false));
     }
 
     /**
@@ -334,6 +379,12 @@ class PostController extends Controller
 
     private function authorizeView(?User $viewer, Post $post): void
     {
+        if ($post->is_draft) {
+            abort_unless($viewer && ($viewer->id === $post->author_id || $viewer->isStaff()), 404);
+
+            return;
+        }
+
         $visible = Post::query()
             ->whereKey($post->id)
             ->visibleTo($viewer, $viewer ? $this->friendships->friendIds($viewer) : [])

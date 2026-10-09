@@ -100,7 +100,10 @@ class CinemaController extends Controller
         $this->cinema->recordView($movie, $request);
         $movie->load('sources');
 
-        $comments = $movie->comments()->with('user')->latest('id')->limit(self::PREVIEW_COMMENTS)->get()->reverse()->values();
+        $pinned = $movie->comments()->with('user')->where('is_pinned', true)->get();
+        $comments = $pinned->concat(
+            $movie->comments()->with('user')->where('is_pinned', false)->latest('id')->limit(self::PREVIEW_COMMENTS)->get()->reverse()->values(),
+        )->unique('id')->values();
         $liked = $this->likedComments($viewer, $comments);
 
         $genres = $movie->genres ?? [];
@@ -146,7 +149,7 @@ class CinemaController extends Controller
             'statuses' => $this->statusOptions(),
             'friends' => $this->friendsWatching($viewer, $movie),
             'similar' => $this->cards($similar),
-            'comments' => $comments->map(fn (Comment $c) => $this->presenter->comment($c, $viewer, $liked->has($c->id)))->values(),
+            'comments' => $comments->map(fn (Comment $c) => $this->presenter->comment($c, $viewer, $liked->has($c->id), $viewer->isStaff()))->values(),
             'can' => ['manage' => $viewer->isStaff()],
             'soundtrack' => $movie->tracks()->get()->map(fn (Track $track) => [
                 'id' => $track->id,
@@ -256,11 +259,11 @@ class CinemaController extends Controller
         $viewer = $request->user();
         abort_unless($movie->is_published || $viewer->isStaff(), 404);
 
-        $comments = $movie->comments()->with('user')->orderBy('id')->limit(500)->get();
+        $comments = $movie->comments()->with('user')->orderByDesc('is_pinned')->orderBy('id')->limit(500)->get();
         $liked = $this->likedComments($viewer, $comments);
 
         return response()->json([
-            'comments' => $comments->map(fn (Comment $c) => $this->presenter->comment($c, $viewer, $liked->has($c->id)))->values(),
+            'comments' => $comments->map(fn (Comment $c) => $this->presenter->comment($c, $viewer, $liked->has($c->id), $viewer->isStaff()))->values(),
         ]);
     }
 
@@ -289,7 +292,7 @@ class CinemaController extends Controller
         });
 
         return response()->json([
-            'comment' => $this->presenter->comment($comment->load('user'), $user),
+            'comment' => $this->presenter->comment($comment->load('user'), $user, false, $user->isStaff()),
             'comments_count' => $movie->fresh()->comments_count,
         ], 201);
     }

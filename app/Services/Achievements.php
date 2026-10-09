@@ -134,7 +134,7 @@ class Achievements
         $memberIds = FamilyMember::query()->where('user_id', $user->id)->pluck('id')->all();
 
         return [
-            'posts' => Post::query()->where('author_id', $user->id)->count(),
+            'posts' => Post::query()->where('author_id', $user->id)->where('is_draft', false)->count(),
             'comments' => Comment::query()->where('user_id', $user->id)->count(),
             'likes' => Like::query()->where('likeable_type', 'post')
                 ->whereIn('likeable_id', Post::query()->where('author_id', $user->id)->select('id'))

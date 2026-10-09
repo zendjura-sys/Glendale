@@ -47,6 +47,8 @@ export type CommentItem = {
     id: number;
     body: string;
     spoiler?: boolean;
+    is_pinned?: boolean;
+    can_pin?: boolean;
     parent_id: number | null;
     likes_count: number;
     liked: boolean;

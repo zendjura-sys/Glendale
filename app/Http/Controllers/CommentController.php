@@ -31,7 +31,7 @@ class CommentController extends Controller
         $viewer = $request->user();
         $this->authorizeView($request, $post);
 
-        $comments = $post->comments()->with('user')->orderBy('id')->limit(200)->get();
+        $comments = $post->comments()->with('user')->orderByDesc('is_pinned')->orderBy('id')->limit(200)->get();
         $liked = Like::query()
             ->where('user_id', $viewer->id)
             ->where('likeable_type', (new Comment)->getMorphClass())
@@ -39,8 +39,10 @@ class CommentController extends Controller
             ->pluck('likeable_id')
             ->flip();
 
+        $canPin = $viewer->id === $post->author_id || $viewer->isStaff();
+
         return response()->json([
-            'comments' => $comments->map(fn (Comment $c) => $this->presenter->comment($c, $viewer, $liked->has($c->id)))->values(),
+            'comments' => $comments->map(fn (Comment $c) => $this->presenter->comment($c, $viewer, $liked->has($c->id), $canPin))->values(),
         ]);
     }
 
@@ -84,9 +86,38 @@ class CommentController extends Controller
         app(Mentions::class)->notify($user, $comment->body, route('posts.show', $post, absolute: false));
 
         return response()->json([
-            'comment' => $this->presenter->comment($comment->load('user'), $user),
+            'comment' => $this->presenter->comment($comment->load('user'), $user, false, $user->id === $post->author_id || $user->isStaff()),
             'comments_count' => $post->fresh()->comments_count,
         ], 201);
+    }
+
+    public function pin(Request $request, Comment $comment): JsonResponse
+    {
+        $user = $request->user();
+        $comment->loadMissing('post', 'movie');
+        abort_unless($comment->parent_id === null, 422, 'Закріпити можна лише коментар, не відповідь.');
+
+        if ($comment->post_id !== null) {
+            $post = $comment->post;
+            abort_unless($post instanceof Post, 404);
+            $this->authorizeView($request, $post);
+            abort_unless($post->author_id === $user->id || $user->isStaff(), 403);
+            if (! $comment->is_pinned) {
+                Comment::query()->where('post_id', $post->id)->where('is_pinned', true)->update(['is_pinned' => false]);
+            }
+        } elseif ($comment->movie_id !== null) {
+            abort_unless($comment->movie instanceof Movie, 404);
+            abort_unless($user->isStaff(), 403);
+            if (! $comment->is_pinned) {
+                Comment::query()->where('movie_id', $comment->movie_id)->where('is_pinned', true)->update(['is_pinned' => false]);
+            }
+        } else {
+            abort(404);
+        }
+
+        $comment->update(['is_pinned' => ! $comment->is_pinned]);
+
+        return response()->json(['id' => $comment->id, 'is_pinned' => $comment->is_pinned]);
     }
 
     public function destroy(Request $request, Comment $comment): JsonResponse

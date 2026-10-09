@@ -70,7 +70,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('follows', [FollowController::class, 'toggle'])->middleware('throttle:60,1')->name('follows.toggle');
 
     Route::post('posts', [PostController::class, 'store'])->middleware('throttle:30,1')->name('posts.store');
+    Route::get('posts/drafts', [PostController::class, 'drafts'])->name('posts.drafts');
     Route::get('posts/{post}', [PostController::class, 'show'])->name('posts.show');
+    Route::post('posts/{post}/publish', [PostController::class, 'release'])->name('posts.publish');
     Route::delete('posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
     Route::post('posts/{post}/pin', [PostController::class, 'pin'])->name('posts.pin');
     Route::post('posts/{post}/like', [PostController::class, 'like'])->middleware('throttle:120,1')->name('posts.like');
@@ -82,6 +84,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('posts/{post}/comments', [CommentController::class, 'store'])->middleware('throttle:30,1')->name('comments.store');
     Route::delete('comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
     Route::post('comments/{comment}/like', [CommentController::class, 'like'])->middleware('throttle:120,1')->name('comments.like');
+    Route::post('comments/{comment}/pin', [CommentController::class, 'pin'])->name('comments.pin');
 
     Route::middleware('module:friends')->group(function () {
         Route::get('friends', [FriendController::class, 'index'])->name('friends.index');
