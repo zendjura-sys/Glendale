@@ -391,10 +391,19 @@ export function Comments({
 
 function SpoilerText({ text }: { text: string }) {
     const [open, setOpen] = useState(false);
+    const hideSpoilers = usePage().props.auth.user?.hide_spoilers === true;
     if (!open) {
         return (
-            <button type="button" className="text-white/70 underline" onClick={() => setOpen(true)}>
-                {tr('Спойлер')}
+            <button
+                type="button"
+                className="text-white/70 underline"
+                onClick={() => {
+                    if (!hideSpoilers) {
+                        setOpen(true);
+                    }
+                }}
+            >
+                {hideSpoilers ? tr('Спойлери приховано в налаштуваннях') : tr('Спойлер')}
             </button>
         );
     }

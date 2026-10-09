@@ -5,6 +5,7 @@ namespace App\Services\Cinema;
 use App\Models\Movie;
 use App\Models\MovieSource;
 use App\Models\User;
+use App\Notifications\MovieRatingNotice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -330,6 +331,17 @@ class CinemaService
     public function rate(User $user, Movie $movie, ?int $rating): void
     {
         $this->upsert($user, $movie, ['rating' => $rating]);
+        if ($rating === null) {
+            return;
+        }
+
+        $ids = DB::table('rating_follows')->where('author_id', $user->id)->pluck('user_id');
+        User::query()->whereIn('id', $ids)->each(function (User $follower) use ($user, $movie, $rating) {
+            if ($follower->is($user)) {
+                return;
+            }
+            $follower->notify(new MovieRatingNotice($user, $movie, $rating));
+        });
     }
 
     /**

@@ -1,4 +1,4 @@
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import {
     ChevronRight,
     Earth,
@@ -73,6 +73,7 @@ export function PostCard({
     const [deleted, setDeleted] = useState(false);
     const [poll, setPoll] = useState(post.poll ?? null);
     const [spoilerOpen, setSpoilerOpen] = useState(false);
+    const hideSpoilers = usePage().props.auth.user?.hide_spoilers === true;
     const [editing, setEditing] = useState(false);
     const [editBody, setEditBody] = useState(post.body ?? '');
     const [quoting, setQuoting] = useState(false);
@@ -369,10 +370,16 @@ export function PostCard({
             ) : body && post.spoiler && !spoilerOpen ? (
                 <button
                     type="button"
-                    onClick={() => setSpoilerOpen(true)}
+                    onClick={() => {
+                        if (!hideSpoilers) {
+                            setSpoilerOpen(true);
+                        }
+                    }}
                     className="mt-3.5 rounded-xl bg-white/10 px-3 py-2 text-sm text-white/70"
                 >
-                    {tr('Спойлер')}
+                    {hideSpoilers
+                        ? tr('Спойлери приховано в налаштуваннях')
+                        : tr('Спойлер')}
                 </button>
             ) : body && (
                 <div className="mt-3.5 text-[15px] leading-relaxed break-words whitespace-pre-line text-white/90">

@@ -256,7 +256,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::prefix('cinema')->name('cinema.')->middleware('module:cinema')->group(function () {
         Route::get('/', [CinemaController::class, 'index'])->name('index');
         Route::get('my', [CinemaController::class, 'my'])->name('my');
-        Route::post('requests', [CinemaController::class, 'requestMovie'])->middleware('throttle:20,1')->name('requests.store');
+        Route::get('ten/{user:username}', [CinemaController::class, 'ten'])->name('ten');
+        Route::post('ten', [CinemaController::class, 'toggleTen'])->name('ten.store');
+        Route::post('ratings/{user:username}', [CinemaController::class, 'followRatings'])->name('ratings.follow');
         Route::put('playback', [CinemaController::class, 'playback'])->name('playback');
         Route::get('search', [CinemaController::class, 'search'])->middleware('throttle:120,1')->name('search');
         Route::get('{movie}', [CinemaController::class, 'show'])->name('show');

@@ -57,6 +57,7 @@ type Form = {
     profile_blocks: string[];
     notify: NotifyPrefs;
     mute_words: string[];
+    hide_spoilers: boolean;
 };
 
 export default function Appearance({
@@ -72,6 +73,7 @@ export default function Appearance({
     closeFriends,
     notify,
     muteWords,
+    hideSpoilers,
 }: {
     palette: string;
     palettes: PaletteOption[];
@@ -85,6 +87,7 @@ export default function Appearance({
     closeFriends: number[];
     notify: NotifyPrefs;
     muteWords: string[];
+    hideSpoilers: boolean;
 }) {
     const form = useForm<Form>({
         palette,
@@ -98,6 +101,7 @@ export default function Appearance({
         profile_blocks,
         notify,
         mute_words: muteWords,
+        hide_spoilers: hideSpoilers,
     });
     const [phrase, setPhrase] = useState('');
 
@@ -275,6 +279,17 @@ export default function Appearance({
                         'Записи з цими словами зникають зі стрічки, а сповіщення про них не приходять.',
                     )}
                 >
+                    <label className="mb-3 flex min-h-11 items-center gap-3 text-sm text-white">
+                        <input
+                            type="checkbox"
+                            checked={form.data.hide_spoilers}
+                            onChange={(event) =>
+                                form.setData('hide_spoilers', event.target.checked)
+                            }
+                            className="size-4 accent-gc-lilac-400"
+                        />
+                        {tr('Ховати спойлери на всьому сайті')}
+                    </label>
                     <div className="flex gap-2">
                         <input
                             value={phrase}

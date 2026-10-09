@@ -86,6 +86,7 @@ class HandleInertiaRequests extends Middleware
                     'cover_url' => $user->cover_url,
                     'nav_tabs' => $this->modules->navTabsFor($user),
                     'palette' => $user->palette(),
+                    'hide_spoilers' => (bool) $user->pref('hide_spoilers'),
                     'created_at' => $user->created_at,
                     'updated_at' => $user->updated_at,
                 ] : null,

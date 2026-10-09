@@ -99,6 +99,53 @@ class CinemaController extends Controller
         ]);
     }
 
+    public function ten(User $user): Response
+    {
+        $ids = array_slice(array_map('intval', (array) $user->pref('top_ten', [])), 0, 10);
+        $movies = Movie::query()->published()->whereIn('id', $ids)->get()->sortBy(fn (Movie $movie) => array_search($movie->id, $ids, true))->values();
+
+        return Inertia::render('cinema/ten', [
+            'owner' => $user->toCard(),
+            'movies' => $this->cards($movies),
+            'mine' => $user->is(request()->user()),
+            'following' => DB::table('rating_follows')->where('user_id', request()->user()->id)->where('author_id', $user->id)->exists(),
+        ]);
+    }
+
+    public function toggleTen(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['movie_id' => ['required', 'integer']]);
+        $movie = Movie::query()->published()->find($data['movie_id']);
+        abort_unless($movie instanceof Movie, 404);
+        $ids = array_values(array_map('intval', (array) $request->user()->pref('top_ten', [])));
+        if (in_array($movie->id, $ids, true)) {
+            $ids = array_values(array_filter($ids, fn (int $id) => $id !== $movie->id));
+        } elseif (count($ids) < 10) {
+            $ids[] = $movie->id;
+        }
+        $request->user()->mergePref(['top_ten' => $ids]);
+
+        return back();
+    }
+
+    public function followRatings(Request $request, User $user): RedirectResponse
+    {
+        $viewer = $request->user();
+        abort_if($viewer->is($user), 422);
+        $exists = DB::table('rating_follows')->where('user_id', $viewer->id)->where('author_id', $user->id)->exists();
+        if ($exists) {
+            DB::table('rating_follows')->where('user_id', $viewer->id)->where('author_id', $user->id)->delete();
+        } else {
+            DB::table('rating_follows')->insert([
+                'user_id' => $viewer->id,
+                'author_id' => $user->id,
+                'created_at' => now(),
+            ]);
+        }
+
+        return back();
+    }
+
     public function requestMovie(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -210,6 +257,7 @@ class CinemaController extends Controller
             'saved' => app(SavedItems::class)->has($viewer, 'movie', $movie->id),
             'pinned' => is_array($pin = $viewer->pref('pin')) && ($pin['kind'] ?? null) === 'movie' && (int) ($pin['id'] ?? 0) === $movie->id,
             'playback' => $this->playbackPrefs($viewer),
+            'inTopTen' => in_array($movie->id, array_map('intval', (array) $viewer->pref('top_ten', [])), true),
         ]);
     }
 

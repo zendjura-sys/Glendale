@@ -17,6 +17,7 @@ export type User = {
     /** Ключі розділів нижньої панелі на телефоні (без «Меню»). */
     nav_tabs: string[];
     palette?: string;
+    hide_spoilers?: boolean;
     created_at: string;
     updated_at: string;
     /** Сумісність зі стартовими компонентами Laravel. */

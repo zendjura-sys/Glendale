@@ -37,6 +37,7 @@ class AppearanceController extends Controller
             'closeFriends' => array_map('intval', (array) $user->pref('close_friends', [])),
             'notify' => NotifyPrefs::for($user),
             'muteWords' => MutedWords::phrases($user),
+            'hideSpoilers' => (bool) $user->pref('hide_spoilers'),
         ]);
     }
 
@@ -66,6 +67,7 @@ class AppearanceController extends Controller
             'notify.push' => ['sometimes', 'boolean'],
             'mute_words' => ['sometimes', 'array', 'max:20'],
             'mute_words.*' => ['string', 'max:40'],
+            'hide_spoilers' => ['sometimes', 'boolean'],
         ]);
 
         $enabled = app(Locales::class)->enabled();
@@ -94,6 +96,9 @@ class AppearanceController extends Controller
         }
         if (array_key_exists('mute_words', $data)) {
             $patch['mute_words'] = MutedWords::normalize($data['mute_words']);
+        }
+        if (array_key_exists('hide_spoilers', $data)) {
+            $patch['hide_spoilers'] = (bool) $data['hide_spoilers'];
         }
         if (array_key_exists('notify', $data)) {
             $incoming = $data['notify'];

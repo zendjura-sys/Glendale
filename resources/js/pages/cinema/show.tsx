@@ -61,6 +61,7 @@ type Props = {
     saved: boolean;
     pinned: boolean;
     playback: { player: string; subs: string };
+    inTopTen: boolean;
 };
 
 type StateResponse = {
@@ -176,6 +177,7 @@ export default function CinemaShow({
     saved,
     pinned,
     playback,
+    inTopTen,
 }: Props) {
     const [state, setState] = useState(initialState);
     const [stats, setStats] = useState({
@@ -589,6 +591,17 @@ export default function CinemaShow({
                                         </button>
                                     )}
                                     <SaveButton kind="movie" id={movie.id} saved={saved} />
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            router.post('/cinema/ten', {
+                                                movie_id: movie.id,
+                                            })
+                                        }
+                                        className="inline-flex h-11 items-center rounded-xl border border-white/15 px-3 text-sm text-white"
+                                    >
+                                        {inTopTen ? tr('У десятці') : tr('У десятку')}
+                                    </button>
                                     <PinButton kind="movie" id={movie.id} pinned={pinned} />
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
