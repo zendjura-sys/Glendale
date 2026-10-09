@@ -15,6 +15,7 @@ use App\Services\MusicService;
 use App\Services\PhotoService;
 use App\Services\PostCards;
 use App\Services\PostPresenter;
+use App\Services\Presence\SteamPresence;
 use App\Support\Modules\ModuleManager;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
@@ -98,7 +99,9 @@ class ProfileController extends Controller
                 'pin' => $this->pinCard($user),
                 'looking_for_group' => (bool) $user->pref('looking_for_group'),
                 'languages' => array_values(array_filter((array) $user->pref('languages', []), 'is_string')),
+                'platforms' => $canSeeContent ? $this->platforms($user) : null,
             ],
+            'steamLibrary' => $canSeeContent ? app(SteamPresence::class)->library($user) : [],
             'relation' => $relation,
             'canSeeContent' => $canSeeContent,
             'canMessage' => $viewer !== null && $messenger->canMessage($viewer, $user),
@@ -175,6 +178,23 @@ class ProfileController extends Controller
         $user->mergePref(['pin' => ['kind' => $data['kind'], 'id' => (int) $data['id']]]);
 
         return response()->json(['pinned' => true, 'pin' => $card]);
+    }
+
+    /**
+     * @return array{steam: string|null, xbox: string|null, xbox_name: string|null, playstation: string|null, playstation_name: string|null}
+     */
+    private function platforms(User $user): array
+    {
+        $xbox = is_string($user->pref('xbox')) ? $user->pref('xbox') : null;
+        $playstation = is_string($user->pref('playstation')) ? $user->pref('playstation') : null;
+
+        return [
+            'steam' => $user->steam_id ? 'https://steamcommunity.com/profiles/'.$user->steam_id : null,
+            'xbox' => $xbox ? 'https://www.xbox.com/play/user/'.rawurlencode($xbox) : null,
+            'xbox_name' => $xbox,
+            'playstation' => $playstation ? 'https://psnprofiles.com/'.rawurlencode($playstation) : null,
+            'playstation_name' => $playstation,
+        ];
     }
 
     /**

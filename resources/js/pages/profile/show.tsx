@@ -58,6 +58,13 @@ type Profile = UserCard & {
     looking_for_group?: boolean;
     languages?: string[];
     pin?: { title: string; hint: string; href: string } | null;
+    platforms?: {
+        steam: string | null;
+        xbox: string | null;
+        xbox_name: string | null;
+        playstation: string | null;
+        playstation_name: string | null;
+    } | null;
 };
 
 type Props = {
@@ -79,6 +86,7 @@ type Props = {
     audio: { href: string; tracks: number } | null;
     nowPlaying?: NowPlaying | null;
     posts: ScrollData<PostItem>;
+    steamLibrary?: { name: string; hours: number; href: string | null }[];
 };
 
 function Counter({
@@ -166,6 +174,7 @@ export default function ProfileShow({
     audio,
     nowPlaying,
     posts,
+    steamLibrary,
 }: Props) {
     const { modules } = usePage().props;
     const isSelf = relation === 'self';
@@ -403,6 +412,49 @@ export default function ProfileShow({
             ) : (
                 <div className="mt-5 flex flex-col gap-5 xl:flex-row">
                     <aside className="w-full shrink-0 space-y-4 xl:sticky xl:top-[76px] xl:h-fit xl:w-[320px]">
+                        {profile.platforms &&
+                            (profile.platforms.steam ||
+                                profile.platforms.xbox ||
+                                profile.platforms.playstation) && (
+                                <Widget title={tr('Платформи')}>
+                                    <div className="flex flex-wrap gap-2 px-1">
+                                        {profile.platforms.steam && (
+                                            <a href={profile.platforms.steam} className="rounded-full bg-white/10 px-3 py-1 text-xs text-white" target="_blank" rel="noreferrer">
+                                                Steam
+                                            </a>
+                                        )}
+                                        {profile.platforms.xbox && (
+                                            <a href={profile.platforms.xbox} className="rounded-full bg-white/10 px-3 py-1 text-xs text-white" target="_blank" rel="noreferrer">
+                                                Xbox · {profile.platforms.xbox_name}
+                                            </a>
+                                        )}
+                                        {profile.platforms.playstation && (
+                                            <a href={profile.platforms.playstation} className="rounded-full bg-white/10 px-3 py-1 text-xs text-white" target="_blank" rel="noreferrer">
+                                                PlayStation · {profile.platforms.playstation_name}
+                                            </a>
+                                        )}
+                                    </div>
+                                </Widget>
+                            )}
+                        {(steamLibrary?.length ?? 0) > 0 && (
+                            <Widget title={tr('Бібліотека Steam')}>
+                                <div className="space-y-1 px-1">
+                                    {steamLibrary?.map((game) =>
+                                        game.href ? (
+                                            <Link key={game.name} href={game.href} className="flex justify-between gap-3 text-sm text-white">
+                                                <span className="truncate">{game.name}</span>
+                                                <span className="text-xs text-white/40">{game.hours}г</span>
+                                            </Link>
+                                        ) : (
+                                            <div key={game.name} className="flex justify-between gap-3 text-sm text-white/80">
+                                                <span className="truncate">{game.name}</span>
+                                                <span className="text-xs text-white/40">{game.hours}г</span>
+                                            </div>
+                                        ),
+                                    )}
+                                </div>
+                            </Widget>
+                        )}
                         {profile.about && (
                             <Widget title={tr('Про себе')}>
                                 <p className="px-1 text-sm leading-relaxed whitespace-pre-line text-white/75">

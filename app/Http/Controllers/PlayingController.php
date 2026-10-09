@@ -31,6 +31,8 @@ class PlayingController extends Controller
             'auto' => $user->playing_auto,
             'discord' => ['linked' => $user->discord_id !== null, 'available' => $discord->configured()],
             'steam' => ['linked' => $user->steam_id !== null, 'available' => $steam->configured(), 'profile' => $user->steam_id ? 'https://steamcommunity.com/profiles/'.$user->steam_id : null],
+            'xbox' => (string) $user->pref('xbox', ''),
+            'playstation' => (string) $user->pref('playstation', ''),
             'hours' => PlayingStatus::MANUAL_HOURS,
         ]);
     }
@@ -92,6 +94,22 @@ class PlayingController extends Controller
         $steam->link($this->user($request), (string) $data['profile']);
 
         return $this->done('Steam прив’язано. Статус з’явиться, щойно ви запустите гру.');
+    }
+
+    public function consoles(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'xbox' => ['nullable', 'string', 'max:16', 'regex:/^[A-Za-z0-9 ]*$/'],
+            'playstation' => ['nullable', 'string', 'max:16', 'regex:/^[A-Za-z0-9_-]*$/'],
+        ]);
+        $xbox = trim((string) ($data['xbox'] ?? ''));
+        $playstation = trim((string) ($data['playstation'] ?? ''));
+        $request->user()->mergePref([
+            'xbox' => $xbox !== '' ? $xbox : null,
+            'playstation' => $playstation !== '' ? $playstation : null,
+        ]);
+
+        return $this->done('Xbox і PlayStation збережено.');
     }
 
     public function unlinkSteam(Request $request, SteamPresence $steam): RedirectResponse

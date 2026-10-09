@@ -310,6 +310,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('suggest', [ServerController::class, 'suggest'])->middleware('throttle:5,10')->name('suggest');
         Route::get('{server}', [ServerController::class, 'show'])->name('show');
         Route::post('{server}/invite', [ServerController::class, 'invite'])->middleware('throttle:20,1')->name('invite');
+        Route::post('{server}/reviews', [ServerController::class, 'review'])->middleware('throttle:20,1')->name('reviews.store');
     });
 
     Route::middleware('module:families')->group(function () {
@@ -392,6 +393,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::delete('/', [PlayingController::class, 'destroy'])->name('destroy');
         Route::put('auto', [PlayingController::class, 'auto'])->name('auto');
         Route::post('steam', [PlayingController::class, 'linkSteam'])->middleware('throttle:10,1')->name('steam');
+        Route::put('consoles', [PlayingController::class, 'consoles'])->middleware('throttle:20,1')->name('consoles');
         Route::delete('steam', [PlayingController::class, 'unlinkSteam'])->name('steam.destroy');
     });
     Route::post('me/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');

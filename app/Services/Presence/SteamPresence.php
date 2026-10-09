@@ -5,6 +5,7 @@ namespace App\Services\Presence;
 use App\Models\User;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
 
@@ -111,6 +112,47 @@ class SteamPresence
             });
 
         return $playing;
+    }
+
+    /**
+     * Ігри з бібліотеки Steam, найдовше зіграні зверху. Порожньо, якщо ключа або профілю немає.
+     *
+     * @return list<array{name: string, hours: int, href: string|null}>
+     */
+    public function library(User $user, int $limit = 12): array
+    {
+        if ($user->steam_id === null || ! $this->configured()) {
+            return [];
+        }
+
+        return Cache::remember('steam.library.'.$user->steam_id, now()->addHour(), function () use ($user, $limit) {
+            $data = $this->get('IPlayerService/GetOwnedGames/v1/', [
+                'steamid' => (string) $user->steam_id,
+                'include_appinfo' => '1',
+                'include_played_free_games' => '1',
+            ]);
+            $games = is_array($data['response'] ?? null) ? ($data['response']['games'] ?? null) : null;
+            if (! is_array($games)) {
+                return [];
+            }
+            $games = array_values(array_filter($games, 'is_array'));
+            usort($games, fn (array $a, array $b) => ((int) ($b['playtime_forever'] ?? 0)) <=> ((int) ($a['playtime_forever'] ?? 0)));
+            $slice = array_slice($games, 0, $limit);
+            $cards = [];
+            foreach ($slice as $game) {
+                if (! is_array($game) || ! is_string($game['name'] ?? null)) {
+                    continue;
+                }
+                $appId = (string) ($game['appid'] ?? '');
+                $cards[] = [
+                    'name' => $game['name'],
+                    'hours' => (int) floor(((int) ($game['playtime_forever'] ?? 0)) / 60),
+                    'href' => $appId !== '' ? $this->status->steamGameHref($appId) : null,
+                ];
+            }
+
+            return $cards;
+        });
     }
 
     /**

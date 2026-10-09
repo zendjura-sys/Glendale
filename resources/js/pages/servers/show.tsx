@@ -41,6 +41,12 @@ type Props = {
     following: boolean;
     pinned: boolean;
     invites: { kind: 'family' | 'clan'; id: number; name: string; href: string }[];
+    reviews: {
+        average: number | null;
+        count: number;
+        can_review: boolean;
+        items: { name: string; username: string; stars: number; body: string }[];
+    };
 };
 
 export default function ServerShow({
@@ -56,6 +62,7 @@ export default function ServerShow({
     following,
     pinned,
     invites,
+    reviews,
 }: Props) {
     const [inviteUsername, setInviteUsername] = useState('');
     const [inviteTarget, setInviteTarget] = useState(invites[0] ? `${invites[0].kind}:${invites[0].id}` : '');
@@ -252,6 +259,58 @@ export default function ServerShow({
                             </div>
                         </details>
                     )}
+                </section>
+                <section className="glass rounded-3xl p-5">
+                    <h2 className="font-display text-lg font-semibold text-white">
+                        {tr('Відгуки')}
+                        {reviews.average !== null && (
+                            <span className="ml-2 text-sm font-medium text-amber-200">
+                                {reviews.average} · {reviews.count}
+                            </span>
+                        )}
+                    </h2>
+                    {reviews.can_review && (
+                        <form
+                            className="mt-3 space-y-2"
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                const form = new FormData(event.currentTarget);
+                                router.post(`/servers/${server.slug}/reviews`, {
+                                    stars: Number(form.get('stars')),
+                                    body: String(form.get('body') ?? ''),
+                                });
+                            }}
+                        >
+                            <select name="stars" defaultValue="5" className="h-11 rounded-xl bg-white/10 px-3 text-sm text-white">
+                                {[5, 4, 3, 2, 1].map((star) => (
+                                    <option key={star} value={star}>
+                                        {star}
+                                    </option>
+                                ))}
+                            </select>
+                            <textarea
+                                name="body"
+                                required
+                                maxLength={500}
+                                placeholder={tr('Як тут грається')}
+                                className="min-h-20 w-full rounded-xl bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/40"
+                            />
+                            <button type="submit" className="h-11 rounded-xl bg-white px-4 text-sm font-semibold text-black">
+                                {tr('Залишити відгук')}
+                            </button>
+                        </form>
+                    )}
+                    <div className="mt-4 space-y-3">
+                        {reviews.items.map((review) => (
+                            <div key={`${review.username}-${review.body.slice(0, 12)}`} className="rounded-2xl bg-white/[0.04] p-3">
+                                <Link href={`/${review.username}`} className="text-sm font-medium text-white">
+                                    {review.name}
+                                </Link>
+                                <p className="text-xs text-amber-200">{'★'.repeat(review.stars)}</p>
+                                <p className="mt-1 text-sm text-white/75">{review.body}</p>
+                            </div>
+                        ))}
+                    </div>
                 </section>
                 <section className="glass rounded-3xl p-5">
                     <header className="mb-4 flex flex-wrap items-center gap-3">

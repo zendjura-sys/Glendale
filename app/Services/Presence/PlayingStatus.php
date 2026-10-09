@@ -4,6 +4,7 @@ namespace App\Services\Presence;
 
 use App\Models\Game;
 use App\Models\GtaServer;
+use App\Models\PlayedPlace;
 use App\Models\User;
 use App\Services\FollowAlerts;
 use Illuminate\Support\Facades\Cache;
@@ -66,6 +67,14 @@ class PlayingStatus
             'playing_source' => $source,
         ])->save();
 
+        if (in_array($target['kind'], [PlayedPlace::GAME, PlayedPlace::SERVER], true) && $target['id'] !== null) {
+            PlayedPlace::query()->firstOrCreate([
+                'user_id' => $user->id,
+                'kind' => $target['kind'],
+                'subject_id' => $target['id'],
+            ]);
+        }
+
         if ($changedTarget) {
             app(FollowAlerts::class)->friendsStarted($user->fresh());
         }
@@ -114,6 +123,14 @@ class PlayingStatus
      *
      * @return array{kind: string, id: int|null, label: string, icon: string|null, url: string|null, note: string|null}
      */
+    public function steamGameHref(string $appId): ?string
+    {
+        $id = $this->steamApps()[$appId] ?? null;
+        $slug = $id !== null ? Game::query()->whereKey($id)->value('slug') : null;
+
+        return is_string($slug) && $slug !== '' ? '/games/'.$slug : null;
+    }
+
     public function fromSteam(string $appId, string $name): array
     {
         $gameId = $this->steamApps()[$appId] ?? null;

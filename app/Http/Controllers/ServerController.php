@@ -6,7 +6,9 @@ use App\Models\Clan;
 use App\Models\Family;
 use App\Models\FamilyMember;
 use App\Models\GtaServer;
+use App\Models\PlayedPlace;
 use App\Models\ServerEvent;
+use App\Models\ServerReview;
 use App\Models\User;
 use App\Notifications\GroupInvite;
 use App\Services\EventCalendar;
@@ -128,7 +130,49 @@ class ServerController extends Controller
             'following' => app(FollowAlerts::class)->has($request->user(), 'server', $server->id),
             'pinned' => is_array($pin = $request->user()->pref('pin')) && ($pin['kind'] ?? null) === 'server' && (int) ($pin['id'] ?? 0) === $server->id,
             'invites' => $this->inviteTargets($request->user(), $server),
+            'reviews' => $this->reviews($server, $request->user()),
         ]);
+    }
+
+    public function review(Request $request, GtaServer $server): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless(
+            PlayedPlace::query()->where('user_id', $user->id)->where('kind', PlayedPlace::SERVER)->where('subject_id', $server->id)->exists(),
+            403,
+            'Відгук можуть лишити ті, хто ставив «граю тут».',
+        );
+        $data = $request->validate([
+            'stars' => ['required', 'integer', 'min:1', 'max:5'],
+            'body' => ['required', 'string', 'max:500'],
+        ]);
+        ServerReview::query()->updateOrCreate(
+            ['user_id' => $user->id, 'gta_server_id' => $server->id],
+            ['stars' => (int) $data['stars'], 'body' => trim($data['body'])],
+        );
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Відгук збережено.']);
+
+        return back();
+    }
+
+    /**
+     * @return array{average: float|null, count: int, can_review: bool, items: list<array{name: string, username: string, stars: int, body: string}>}
+     */
+    private function reviews(GtaServer $server, User $viewer): array
+    {
+        $rows = ServerReview::query()->with('user')->where('gta_server_id', $server->id)->latest('id')->limit(8)->get();
+
+        return [
+            'average' => $rows->isEmpty() ? null : round((float) ServerReview::query()->where('gta_server_id', $server->id)->avg('stars'), 1),
+            'count' => ServerReview::query()->where('gta_server_id', $server->id)->count(),
+            'can_review' => PlayedPlace::query()->where('user_id', $viewer->id)->where('kind', PlayedPlace::SERVER)->where('subject_id', $server->id)->exists(),
+            'items' => $rows->map(fn (ServerReview $review) => [
+                'name' => $review->user->name,
+                'username' => $review->user->username,
+                'stars' => $review->stars,
+                'body' => $review->body,
+            ])->all(),
+        ];
     }
 
     public function invite(Request $request, GtaServer $server, FriendshipService $friendships): RedirectResponse
