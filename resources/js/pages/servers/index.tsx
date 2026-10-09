@@ -36,7 +36,9 @@ type Props = {
         q: string;
         sort: string;
         lang: string;
+        saved: boolean;
     };
+    favorites: GtaServerCard[];
     heading: string | null;
     languages: { code: string; native: string; count: number }[];
     stats: {
@@ -74,6 +76,7 @@ export default function Servers({
     stats,
     my_suggestions,
     options,
+    favorites,
 }: Props) {
     const [q, setQ] = useState(filters.q);
     const [suggesting, setSuggesting] = useState(false);
@@ -92,6 +95,7 @@ export default function Servers({
                 q: next.q || undefined,
                 sort: next.sort === 'online' ? undefined : next.sort,
                 lang: next.lang,
+                saved: next.saved || undefined,
             },
             { preserveState: true, preserveScroll: true, replace: true },
         );
@@ -247,6 +251,16 @@ export default function Servers({
                         </select>
                         <button
                             type="button"
+                            onClick={() => visit({ saved: !filters.saved })}
+                            className={cn(
+                                'inline-flex h-11 shrink-0 items-center rounded-xl px-4 text-sm font-semibold',
+                                filters.saved ? 'bg-white text-black' : 'bg-white/10 text-white',
+                            )}
+                        >
+                            {tr('Обрані')}
+                        </button>
+                        <button
+                            type="button"
                             onClick={() => setSuggesting(true)}
                             className="btn-glow inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold"
                         >
@@ -287,6 +301,17 @@ export default function Servers({
                             </span>
                         ))}
                     </div>
+                )}
+
+                {favorites.length > 0 && !filters.saved && (
+                    <section className="space-y-3">
+                        <h2 className="font-display text-xl font-bold text-white">{tr('Обрані')}</h2>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            {favorites.map((server, index) => (
+                                <ServerCard key={server.id} server={server} index={index} />
+                            ))}
+                        </div>
+                    </section>
                 )}
 
                 {servers.length === 0 ? (

@@ -161,6 +161,14 @@ class GtaServer extends Model
     }
 
     /**
+     * @return BelongsTo<User, $this>
+     */
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    /**
      * @param  Builder<GtaServer>  $query
      */
     public function scopePublished(Builder $query): void

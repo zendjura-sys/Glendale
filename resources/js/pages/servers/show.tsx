@@ -48,6 +48,13 @@ type Props = {
         can_review: boolean;
         items: { name: string; username: string; stars: number; body: string }[];
     };
+    ownership: {
+        owner: UserCard | null;
+        is_owner: boolean;
+        claim: string | null;
+        news: { id: number; body: string; name: string }[];
+        pending: { id: number; name: string; username: string; message: string | null }[];
+    };
 };
 
 export default function ServerShow({
@@ -64,6 +71,7 @@ export default function ServerShow({
     pinned,
     invites,
     reviews,
+    ownership,
 }: Props) {
     const [inviteUsername, setInviteUsername] = useState('');
     const [inviteTarget, setInviteTarget] = useState(invites[0] ? `${invites[0].kind}:${invites[0].id}` : '');
@@ -399,6 +407,92 @@ export default function ServerShow({
                             ))}
                         </div>
                     )}
+                </section>
+
+                <section className="glass space-y-4 rounded-3xl p-5">
+                    <h2 className="font-display text-xl font-bold text-white">{tr('Новини власника')}</h2>
+                    {ownership.owner && (
+                        <p className="text-sm text-white/55">
+                            {tr('Власник:')} {ownership.owner.name}
+                        </p>
+                    )}
+                    {ownership.news.length === 0 ? (
+                        <p className="text-sm text-white/45">{tr('Новин ще немає.')}</p>
+                    ) : (
+                        ownership.news.map((item) => (
+                            <article key={item.id} className="rounded-2xl bg-white/[0.04] px-4 py-3">
+                                <div className="text-xs text-white/40">{item.name}</div>
+                                <p className="mt-1 text-sm whitespace-pre-wrap text-white/85">{item.body}</p>
+                            </article>
+                        ))
+                    )}
+                    {ownership.is_owner && (
+                        <form
+                            className="flex flex-col gap-2"
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                const data = new FormData(event.currentTarget);
+                                router.post(`/servers/${server.slug}/news`, { body: String(data.get('body') ?? '') });
+                                event.currentTarget.reset();
+                            }}
+                        >
+                            <textarea
+                                name="body"
+                                required
+                                maxLength={1000}
+                                rows={3}
+                                placeholder={tr('Новина для сторінки сервера')}
+                                className="input-glass rounded-xl px-3 py-2 text-sm text-white"
+                            />
+                            <button type="submit" className="h-10 self-start rounded-xl bg-white px-4 text-sm font-semibold text-black">
+                                {tr('Опублікувати')}
+                            </button>
+                        </form>
+                    )}
+                    {!ownership.is_owner && ownership.claim !== 'pending' && (
+                        <form
+                            className="flex flex-col gap-2"
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                const data = new FormData(event.currentTarget);
+                                router.post(`/servers/${server.slug}/claim`, { message: String(data.get('message') ?? '') });
+                            }}
+                        >
+                            <input
+                                name="message"
+                                placeholder={tr('Чому це ваш сервер')}
+                                className="input-glass h-11 rounded-xl px-3 text-sm text-white"
+                            />
+                            <button type="submit" className="h-10 self-start rounded-xl bg-white/10 px-4 text-sm text-white">
+                                {tr('Це мій сервер')}
+                            </button>
+                        </form>
+                    )}
+                    {ownership.claim === 'pending' && (
+                        <p className="text-sm text-white/55">{tr('Заявку надіслано, чекаємо підтвердження.')}</p>
+                    )}
+                    {ownership.pending.map((claim) => (
+                        <div key={claim.id} className="flex flex-wrap items-center gap-2 text-sm text-white/75">
+                            <span>
+                                {claim.name}
+                                {claim.message ? ` — ${claim.message}` : ''}
+                            </span>
+                            <button
+                                type="button"
+                                className="rounded-lg bg-white px-3 py-1 text-xs font-semibold text-black"
+                                onClick={() => router.post(`/servers/${server.slug}/claims/${claim.id}`, { status: 'approved' })}
+                            >
+                                {tr('Підтвердити')}
+                            </button>
+                            <button
+                                type="button"
+                                className="rounded-lg bg-white/10 px-3 py-1 text-xs text-white"
+                                onClick={() => router.post(`/servers/${server.slug}/claims/${claim.id}`, { status: 'rejected' })}
+                            >
+                                {tr('Відхилити')}
+                            </button>
+                        </div>
+                    ))}
                 </section>
             </div>
         </>
