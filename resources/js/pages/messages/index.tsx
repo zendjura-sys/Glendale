@@ -135,6 +135,7 @@ export default function Messages({ conversations, active, history, draft = null 
                         key={active.id}
                         active={active}
                         history={history}
+                        conversations={list}
                         draft={draft}
                         onRead={onRead}
                         onOpenInfo={() => setInfoOpen(true)}

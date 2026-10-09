@@ -1,5 +1,5 @@
 import { Deferred, Head, InfiniteScroll, Link, router } from '@inertiajs/react';
-import { Briefcase, Clapperboard, Inbox, Radio, Search, Send, Sparkles, Swords, UsersRound } from 'lucide-react';
+import { Briefcase, Clapperboard, Inbox, MessageCircleOff, Radio, Search, Send, Sparkles, Swords, UsersRound } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { PersonCard } from '@/components/gc/person-card';
 import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import type { PersonCard as Person, ScrollData } from '@/types';
 import { tr } from '@/lib/i18n';
 
-type Tab = 'all' | 'online' | 'requests' | 'outgoing' | 'raid' | 'cinema' | 'work';
+type Tab = 'all' | 'online' | 'requests' | 'outgoing' | 'raid' | 'cinema' | 'work' | 'stale';
 
 type Props = {
     tab: Tab;
@@ -25,6 +25,7 @@ const tabs: { key: Tab; label: string; icon: typeof UsersRound }[] = [
     { key: 'raid', label: tr('Рейд'), icon: Swords },
     { key: 'cinema', label: tr('Кіно'), icon: Clapperboard },
     { key: 'work', label: tr('Робота'), icon: Briefcase },
+    { key: 'stale', label: tr('Давно не писали'), icon: MessageCircleOff },
 ];
 
 const empty: Record<Tab, { title: string; text: string }> = {
@@ -57,6 +58,10 @@ const empty: Record<Tab, { title: string; text: string }> = {
     work: {
         title: tr('У роботі нікого'),
         text: tr('Позначте друга списком «Робота» на його картці.'),
+    },
+    stale: {
+        title: tr('Усіх нещодавно написали'),
+        text: tr('Тут друзі, з якими не було листування довше місяця.'),
     },
 };
 

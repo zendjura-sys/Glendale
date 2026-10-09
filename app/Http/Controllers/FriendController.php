@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Conversation;
 use App\Models\FriendMark;
 use App\Models\User;
 use App\Services\FriendshipService;
@@ -14,7 +15,7 @@ use Inertia\Response;
 
 class FriendController extends Controller
 {
-    private const TABS = ['all', 'online', 'requests', 'outgoing', 'raid', 'cinema', 'work'];
+    private const TABS = ['all', 'online', 'requests', 'outgoing', 'raid', 'cinema', 'work', 'stale'];
 
     public function __construct(private readonly FriendshipService $friendships) {}
 
@@ -25,11 +26,13 @@ class FriendController extends Controller
         $search = trim((string) $request->query('q', ''));
 
         $marks = FriendMark::query()->where('user_id', $user->id)->get()->keyBy('friend_id');
+        $staleIds = $this->staleFriendIds($user);
         $query = match ($tab) {
             'requests' => $this->friendships->incomingQuery($user),
             'outgoing' => $this->friendships->outgoingQuery($user),
             'online' => $this->friendships->friendsQuery($user)->where('last_seen_at', '>=', now()->subMinutes(5)),
             'raid', 'cinema', 'work' => $this->friendships->friendsQuery($user)->whereIn('id', $marks->where('list', $tab)->pluck('friend_id')->all() ?: [0]),
+            'stale' => $this->friendships->friendsQuery($user)->whereIn('id', $staleIds ?: [0]),
             default => $this->friendships->friendsQuery($user),
         };
 
@@ -69,11 +72,35 @@ class FriendController extends Controller
                 'raid' => $marks->where('list', 'raid')->count(),
                 'cinema' => $marks->where('list', 'cinema')->count(),
                 'work' => $marks->where('list', 'work')->count(),
+                'stale' => count($staleIds),
             ],
             'suggestions' => Inertia::defer(fn () => collect($this->friendships->suggestions($user, 8))
                 ->map(fn (array $s) => [...$s['user']->toCard(), 'city' => $s['user']->city, 'mutual' => $s['mutual'], 'relation' => FriendshipService::NONE])
                 ->all()),
         ]);
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function staleFriendIds(User $user): array
+    {
+        $friendIds = $this->friendships->friendIds($user);
+        if ($friendIds === []) {
+            return [];
+        }
+
+        $recent = Conversation::query()
+            ->where('type', Conversation::TYPE_DIRECT)
+            ->where('last_message_at', '>=', now()->subDays(30))
+            ->whereHas('activeParticipants', fn ($query) => $query->where('user_id', $user->id))
+            ->with(['activeParticipants' => fn ($query) => $query->where('user_id', '!=', $user->id)])
+            ->get()
+            ->flatMap(fn (Conversation $conversation) => $conversation->activeParticipants->pluck('user_id'))
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        return array_values(array_diff($friendIds, $recent));
     }
 
     public function store(Request $request, User $user): RedirectResponse

@@ -36,6 +36,7 @@ import type {
     ChatHistory,
     ChatMessage,
     ConversationDetails,
+    ConversationSummary,
     OutgoingMessage,
 } from '@/types';
 import { Composer } from './composer';
@@ -52,6 +53,7 @@ const TYPING_TTL_MS = 4000;
 type Props = {
     active: ConversationDetails;
     history: ChatHistory;
+    conversations: ConversationSummary[];
     draft?: string | null;
     onRead: (conversationId: number) => void;
     onOpenInfo: () => void;
@@ -77,6 +79,7 @@ function TypingDots() {
 export function ChatView({
     active,
     history,
+    conversations,
     draft = null,
     onRead,
     onOpenInfo,
@@ -531,6 +534,7 @@ export function ChatView({
         Date.now() - new Date(message.created_at).getTime() < EDIT_WINDOW_MS;
 
     const [reportUrl, setReportUrl] = useState<string | null>(null);
+    const [forwarding, setForwarding] = useState<ChatMessage | null>(null);
     const actions: BubbleActions = {
         onReply: (message) => {
             setEditing(null);
@@ -562,6 +566,21 @@ export function ChatView({
             void navigator.clipboard
                 ?.writeText(message.body ?? '')
                 .then(() => toast.success(tr('Скопійовано.')));
+        },
+        onForward: (message) => setForwarding(message),
+        onStar: (message) => {
+            void api<{ starred: boolean }>(
+                'POST',
+                `/messages/${active.id}/messages/${message.id}/favorite`,
+            )
+                .then(({ starred }) =>
+                    setMessages((current) =>
+                        current.map((item) =>
+                            item.id === message.id ? { ...item, starred } : item,
+                        ),
+                    ),
+                )
+                .catch(() => toast.error(tr('Не вдалося зберегти.')));
         },
         onJump: (id) => {
             const node = document.getElementById(`message-${id}`);
@@ -934,6 +953,48 @@ export function ChatView({
                     </button>
                 )}
             </div>
+
+            {forwarding && (
+                <div className="border-t border-white/[0.06] bg-[#0b1020]/80 px-4 py-3">
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                        <p className="text-sm font-semibold text-white">{tr('Переслати')}</p>
+                        <button
+                            type="button"
+                            onClick={() => setForwarding(null)}
+                            className="text-xs text-white/50 hover:text-white"
+                        >
+                            {tr('Скасувати')}
+                        </button>
+                    </div>
+                    <div className="max-h-40 space-y-1 overflow-y-auto">
+                        {conversations.filter((item) => item.id !== active.id).length === 0 && (
+                            <p className="text-sm text-white/45">{tr('Немає інших чатів.')}</p>
+                        )}
+                        {conversations
+                            .filter((item) => item.id !== active.id)
+                            .map((item) => (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    onClick={() => {
+                                        const source = forwarding;
+                                        setForwarding(null);
+                                        void api(
+                                            'POST',
+                                            `/messages/${active.id}/messages/${source.id}/forward`,
+                                            { conversation_id: item.id },
+                                        )
+                                            .then(() => toast.success(tr('Переслано.')))
+                                            .catch(() => toast.error(tr('Не вдалося переслати.')));
+                                    }}
+                                    className="flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm text-white hover:bg-white/[0.06]"
+                                >
+                                    {item.title}
+                                </button>
+                            ))}
+                    </div>
+                </div>
+            )}
 
             <Composer
                 canWrite={active.can_write}

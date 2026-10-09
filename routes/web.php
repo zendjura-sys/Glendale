@@ -134,6 +134,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('/', [MessengerController::class, 'index'])->name('index');
         Route::get('contacts', [MessengerController::class, 'contacts'])->name('contacts');
         Route::get('stickers', [MessageController::class, 'stickers'])->name('stickers');
+        Route::get('saved', [MessengerController::class, 'saved'])->name('saved');
         Route::get('attachments/{attachment}', [MessageController::class, 'download'])->whereNumber('attachment')->name('attachments.download');
         Route::get('with/{user}', [MessengerController::class, 'direct'])->name('direct');
         Route::post('groups', [MessengerController::class, 'storeGroup'])->middleware('throttle:10,1')->name('groups.store');
@@ -150,6 +151,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::patch('{conversation}/messages/{message}', [MessageController::class, 'update'])->name('messages.update');
             Route::delete('{conversation}/messages/{message}', [MessageController::class, 'destroy'])->name('messages.destroy');
             Route::post('{conversation}/messages/{message}/report', [MessageController::class, 'report'])->middleware('throttle:20,1')->name('messages.report');
+            Route::post('{conversation}/messages/{message}/forward', [MessageController::class, 'forward'])->middleware('throttle:30,1')->name('messages.forward');
+            Route::post('{conversation}/messages/{message}/favorite', [MessageController::class, 'favorite'])->name('messages.favorite');
             // Дзвінки в бесіді (звук — через LiveKit).
             Route::get('{conversation}/call', [CallController::class, 'show'])->name('call.show');
             Route::post('{conversation}/call', [CallController::class, 'start'])->middleware('throttle:20,1')->name('call.start');

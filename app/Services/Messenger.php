@@ -277,6 +277,28 @@ class Messenger
         ], $replyToId);
     }
 
+    public function forward(Conversation $target, User $sender, Message $source): Message
+    {
+        $source->loadMissing(['user', 'attachments']);
+        $meta = $source->meta ?? [];
+        $meta['forward'] = [
+            'name' => $source->user?->name ?? 'GameCon',
+            'username' => $source->user?->username,
+        ];
+
+        return $this->deliver($target, $sender, [
+            'type' => $source->type,
+            'body' => $source->body,
+            'meta' => $meta,
+        ], null, function (Message $copy) use ($source): void {
+            foreach ($source->attachments as $attachment) {
+                $copy->attachments()->create($attachment->only([
+                    'type', 'disk', 'path', 'name', 'mime', 'width', 'height', 'size', 'duration', 'meta', 'position',
+                ]));
+            }
+        });
+    }
+
     /**
      * @param  array<string, mixed>  $attributes
      * @param  (callable(Message): void)|null  $attach

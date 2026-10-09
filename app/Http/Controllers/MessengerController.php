@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
+use App\Models\MessageFavorite;
 use App\Models\User;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
@@ -45,7 +46,7 @@ class MessengerController extends Controller
         return Inertia::render('messages/index', [
             'conversations' => $this->presenter->inbox($user, $this->messenger, $conversation->id),
             'active' => [...$this->presenter->details($conversation, $user, $me, $this->messenger), ...$calls->forViewer($conversation, $user)],
-            'history' => $this->presenter->history($conversation),
+            'history' => $this->presenter->history($conversation, viewer: $user),
             'draft' => $draft === '' ? null : mb_substr($draft, 0, 120),
         ]);
     }
@@ -55,7 +56,39 @@ class MessengerController extends Controller
         $this->participant($conversation, $request->user());
         $before = $request->integer('before') ?: null;
 
-        return response()->json($this->presenter->history($conversation, $before));
+        return response()->json($this->presenter->history($conversation, $before, $request->user()));
+    }
+
+    public function saved(Request $request): Response
+    {
+        $user = $request->user();
+        $items = MessageFavorite::query()
+            ->where('user_id', $user->id)
+            ->latest('id')
+            ->limit(50)
+            ->with(['message.user', 'message.attachments', 'message.conversation'])
+            ->get()
+            ->map(function (MessageFavorite $row) use ($user): ?array {
+                $message = $row->message;
+                if ($message === null || $message->trashed() || $message->conversation?->participantFor($user) === null) {
+                    return null;
+                }
+                $card = $this->presenter->message($message, true);
+
+                return [
+                    'id' => $message->id,
+                    'body' => $card['body'],
+                    'preview' => $card['preview'],
+                    'author' => $message->user?->first_name,
+                    'created_at' => $card['created_at'],
+                    'href' => '/messages/'.$message->conversation_id,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+
+        return Inertia::render('messages/saved', ['items' => $items]);
     }
 
     public function direct(Request $request, User $user): RedirectResponse

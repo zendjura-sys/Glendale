@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\MessageAttachment;
+use App\Models\MessageFavorite;
 use App\Models\MessageReport;
 use App\Models\Sticker;
 use App\Models\StickerPack;
@@ -207,5 +208,44 @@ class MessageController extends Controller
         $this->messenger->delete($message, $request->user());
 
         return response()->json(['deleted' => true]);
+    }
+
+    public function forward(Request $request, Conversation $conversation, Message $message): JsonResponse
+    {
+        $user = $request->user();
+        abort_if($conversation->participantFor($user) === null, 404);
+        abort_unless($message->conversation_id === $conversation->id && ! $message->trashed(), 404);
+        abort_if($message->type === Message::TYPE_SYSTEM, 422);
+
+        $data = $request->validate(['conversation_id' => ['required', 'integer']]);
+        $target = Conversation::query()->findOrFail($data['conversation_id']);
+        abort_if($target->participantFor($user) === null, 404);
+
+        if (! $target->isGroup()) {
+            $peer = $target->activeParticipants()->where('user_id', '!=', $user->id)->with('user')->first()?->user;
+            abort_unless($peer && $this->messenger->canMessage($user, $peer), 403);
+        }
+
+        $copy = $this->messenger->forward($target, $user, $message);
+
+        return response()->json(['message' => $this->presenter->message($this->presenter->load($copy))], 201);
+    }
+
+    public function favorite(Request $request, Conversation $conversation, Message $message): JsonResponse
+    {
+        $user = $request->user();
+        abort_if($conversation->participantFor($user) === null, 404);
+        abort_unless($message->conversation_id === $conversation->id && ! $message->trashed(), 404);
+
+        $existing = MessageFavorite::query()->where('user_id', $user->id)->where('message_id', $message->id)->first();
+        if ($existing) {
+            $existing->delete();
+
+            return response()->json(['starred' => false]);
+        }
+
+        MessageFavorite::query()->create(['user_id' => $user->id, 'message_id' => $message->id]);
+
+        return response()->json(['starred' => true]);
     }
 }

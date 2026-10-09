@@ -60,6 +60,8 @@ export type ChatMessage = {
     attachments: ChatAttachment[];
     edited_at: string | null;
     created_at: string;
+    starred?: boolean;
+    forward?: { name: string; username: string | null } | null;
     /** Локальний стан оптимістичної відправки. */
     pending?: 'sending' | 'failed';
     local_id?: string;

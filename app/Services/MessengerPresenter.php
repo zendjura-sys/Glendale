@@ -8,6 +8,7 @@ use App\Models\Family;
 use App\Models\FamilyMember;
 use App\Models\Message;
 use App\Models\MessageAttachment;
+use App\Models\MessageFavorite;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -31,9 +32,11 @@ class MessengerPresenter
     /**
      * @return array<string, mixed>
      */
-    public function message(Message $message): array
+    public function message(Message $message, bool $starred = false): array
     {
         $reply = $message->replyTo;
+        $meta = $message->meta ?? [];
+        $forward = is_array($meta['forward'] ?? null) ? $meta['forward'] : null;
 
         return [
             'id' => $message->id,
@@ -70,6 +73,11 @@ class MessengerPresenter
             'contact' => $message->type === Message::TYPE_CONTACT ? $this->contact($message)?->toCard() : null,
             'edited_at' => $message->edited_at?->toIso8601String(),
             'created_at' => $message->created_at->toIso8601String(),
+            'starred' => $starred,
+            'forward' => is_array($forward) && is_string($forward['name'] ?? null) ? [
+                'name' => $forward['name'],
+                'username' => is_string($forward['username'] ?? null) ? $forward['username'] : null,
+            ] : null,
         ];
     }
 
@@ -184,7 +192,7 @@ class MessengerPresenter
      *
      * @return array{messages: list<array<string, mixed>>, has_more: bool}
      */
-    public function history(Conversation $conversation, ?int $beforeId = null): array
+    public function history(Conversation $conversation, ?int $beforeId = null, ?User $viewer = null): array
     {
         $messages = $conversation->messages()
             ->with(['user', 'attachments', 'replyTo.user', 'replyTo.attachments'])
@@ -194,10 +202,16 @@ class MessengerPresenter
             ->get();
 
         $hasMore = $messages->count() > self::PAGE;
+        $page = $messages->take(self::PAGE);
         $this->preloadContacts($messages->concat($messages->pluck('replyTo')->filter()));
+        $starred = $viewer === null ? [] : array_map('intval', MessageFavorite::query()
+            ->where('user_id', $viewer->id)
+            ->whereIn('message_id', $page->pluck('id'))
+            ->pluck('message_id')
+            ->all());
 
         return [
-            'messages' => array_values($messages->take(self::PAGE)->reverse()->map(fn (Message $m) => $this->message($m))->all()),
+            'messages' => array_values($page->reverse()->map(fn (Message $m) => $this->message($m, in_array($m->id, $starred, true)))->all()),
             'has_more' => $hasMore,
         ];
     }

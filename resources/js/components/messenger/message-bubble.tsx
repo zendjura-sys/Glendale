@@ -2,7 +2,9 @@ import { Link } from '@inertiajs/react';
 import { useState } from 'react';
 import {
     Flag,
+    Forward,
     Languages,
+    Star,
     AlertCircle,
     Check,
     CheckCheck,
@@ -34,6 +36,8 @@ export type BubbleActions = {
     onReport?: (message: ChatMessage) => void;
     onRetry: (message: ChatMessage) => void;
     onCopy: (message: ChatMessage) => void;
+    onForward: (message: ChatMessage) => void;
+    onStar: (message: ChatMessage) => void;
     onJump: (id: number) => void;
     onOpenImage: (items: ChatAttachment[], index: number) => void;
     onMediaLoad: () => void;
@@ -278,6 +282,18 @@ export function MessageBubble({
                         </div>
                     )}
 
+                    {message.forward && (
+                        <p className={cn('mb-1 text-xs', own ? 'text-white/75' : 'text-white/50', hasImages && 'px-2 pt-1')}>
+                            {message.forward.username ? (
+                                <Link href={`/${message.forward.username}`} className="hover:underline">
+                                    {tr('Переслано від {name}', { name: message.forward.name })}
+                                </Link>
+                            ) : (
+                                tr('Переслано від {name}', { name: message.forward.name })
+                            )}
+                        </p>
+                    )}
+
                     {message.reply_to && (
                         <button
                             type="button"
@@ -444,6 +460,24 @@ export function MessageBubble({
                             <Pencil className="size-3.5" />
                         </button>
                     )}
+                    {message.type !== 'system' && (
+                        <button
+                            type="button"
+                            className={toolButton}
+                            onClick={() => actions.onForward(message)}
+                            title={tr('Переслати')}
+                        >
+                            <Forward className="size-3.5" />
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        className={cn(toolButton, message.starred && 'text-amber-300')}
+                        onClick={() => actions.onStar(message)}
+                        title={message.starred ? tr('Прибрати з обраних') : tr('В обране')}
+                    >
+                        <Star className={cn('size-3.5', message.starred && 'fill-current')} />
+                    </button>
                     {canDelete && (
                         <button
                             type="button"
