@@ -83,4 +83,28 @@ class SiteSearch
 
         return $hits;
     }
+
+    /**
+     * Ігри за популярністю каталогу і фільми за переглядами на сайті.
+     *
+     * @return list<array{kind: string, title: string, hint: string, href: string}>
+     */
+    public function popular(): array
+    {
+        $hits = [];
+        if ($this->modules->enabled('games')) {
+            Game::query()->published()->orderByDesc('popularity')->orderBy('name')->limit(4)->get()
+                ->each(function (Game $game) use (&$hits) {
+                    $hits[] = ['kind' => 'game', 'title' => $game->name, 'hint' => 'Гра', 'href' => '/games/'.$game->slug];
+                });
+        }
+        if ($this->modules->enabled('cinema')) {
+            Movie::query()->published()->orderByDesc('views_count')->orderByDesc('id')->limit(4)->get()
+                ->each(function (Movie $movie) use (&$hits) {
+                    $hits[] = ['kind' => 'movie', 'title' => $movie->title, 'hint' => 'Кіно', 'href' => '/cinema/'.$movie->slug];
+                });
+        }
+
+        return $hits;
+    }
 }

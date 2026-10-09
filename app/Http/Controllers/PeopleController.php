@@ -12,6 +12,7 @@ use App\Support\Modules\ModuleManager;
 use App\Support\RecentSearches;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -41,6 +42,7 @@ class PeopleController extends Controller
             ->withQueryString();
 
         return Inertia::render('people/index', [
+            'saved' => $this->savedFilters($viewer),
             'filters' => [
                 'q' => $filters['q'] ?? '',
                 'city' => $filters['city'] ?? '',
@@ -71,7 +73,13 @@ class PeopleController extends Controller
         $recent = RecentSearches::list($user);
 
         if (mb_strlen($q) < 2) {
-            return response()->json(['users' => [], 'communities' => [], 'hits' => [], 'recent' => $recent]);
+            return response()->json([
+                'users' => [],
+                'communities' => [],
+                'hits' => [],
+                'recent' => $recent,
+                'popular' => app(SiteSearch::class)->popular(),
+            ]);
         }
 
         return response()->json([
@@ -82,6 +90,31 @@ class PeopleController extends Controller
             'hits' => app(SiteSearch::class)->hits($q),
             'recent' => $recent,
         ]);
+    }
+
+    public function saveSearch(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'q' => ['nullable', 'string', 'max:80'],
+            'city' => ['nullable', 'string', 'max:80'],
+            'gender' => ['nullable', Rule::in(['male', 'female', ''])],
+            'online' => ['nullable', 'boolean'],
+            'language' => ['nullable', 'string', 'max:16'],
+            'country' => ['nullable', 'string', 'max:80'],
+            'game' => ['nullable', 'string', 'max:80'],
+        ]);
+        $saved = [
+            'q' => trim((string) ($data['q'] ?? '')),
+            'city' => trim((string) ($data['city'] ?? '')),
+            'gender' => (string) ($data['gender'] ?? ''),
+            'online' => $request->boolean('online'),
+            'language' => trim((string) ($data['language'] ?? '')),
+            'country' => trim((string) ($data['country'] ?? '')),
+            'game' => trim((string) ($data['game'] ?? '')),
+        ];
+        $request->user()->mergePref(['saved_search' => $saved]);
+
+        return back();
     }
 
     public function remember(Request $request): JsonResponse
@@ -132,5 +165,26 @@ class PeopleController extends Controller
                     }
                 });
             });
+    }
+
+    /**
+     * @return array{q: string, city: string, gender: string, online: bool, language: string, country: string, game: string}|null
+     */
+    private function savedFilters(User $user): ?array
+    {
+        $saved = $user->pref('saved_search');
+        if (! is_array($saved)) {
+            return null;
+        }
+
+        return [
+            'q' => (string) ($saved['q'] ?? ''),
+            'city' => (string) ($saved['city'] ?? ''),
+            'gender' => (string) ($saved['gender'] ?? ''),
+            'online' => (bool) ($saved['online'] ?? false),
+            'language' => (string) ($saved['language'] ?? ''),
+            'country' => (string) ($saved['country'] ?? ''),
+            'game' => (string) ($saved['game'] ?? ''),
+        ];
     }
 }

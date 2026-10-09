@@ -83,6 +83,7 @@ class CinemaController extends Controller
             'featured' => $filtered ? [] : $this->featured(),
             'rows' => $filtered ? [] : [
                 ['key' => 'continue', 'title' => 'Продовжити перегляд', 'movies' => $this->watching($user)],
+                ['key' => 'later', 'title' => 'Буду дивитися', 'movies' => $this->cards($this->listQuery($user, 'planned')->limit(12)->get())],
                 ['key' => 'popular', 'title' => 'Популярне зараз', 'movies' => $this->cards(Movie::query()->published()->orderByDesc('views_count')->orderByDesc('id')->limit(16)->get())],
                 ['key' => 'top', 'title' => 'Найвищий рейтинг', 'movies' => $this->cards(Movie::query()->published()->orderByRaw('coalesce(rating_imdb, rating_tmdb, rating_shikimori, 0) desc')->limit(16)->get())],
             ],

@@ -452,9 +452,13 @@ export default function CinemaIndex({
                                 )
                             }
                             action={
-                                row.key === 'continue' ? (
+                                row.key === 'continue' || row.key === 'later' ? (
                                     <Link
-                                        href="/cinema/my?status=watching"
+                                        href={
+                                            row.key === 'later'
+                                                ? '/cinema/my?status=planned'
+                                                : '/cinema/my?status=watching'
+                                        }
                                         className="text-xs font-medium text-gc-lilac-300 hover:text-white"
                                     >
                                         {tr('Усі')}

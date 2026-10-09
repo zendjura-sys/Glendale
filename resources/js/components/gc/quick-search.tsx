@@ -20,6 +20,7 @@ export function QuickSearch({ className }: { className?: string }) {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<Result[]>([]);
     const [recent, setRecent] = useState<string[]>([]);
+    const [popular, setPopular] = useState<Hit[]>([]);
     const [open, setOpen] = useState(false);
     const [active, setActive] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -65,9 +66,15 @@ export function QuickSearch({ className }: { className?: string }) {
         if (!open || query.trim().length >= 2) {
             return;
         }
-        api<{ recent?: string[] }>('GET', '/search/quick?q=')
-            .then((response) => setRecent(response.recent ?? []))
-            .catch(() => setRecent([]));
+        api<{ recent?: string[]; popular?: Hit[] }>('GET', '/search/quick?q=')
+            .then((response) => {
+                setRecent(response.recent ?? []);
+                setPopular(response.popular ?? []);
+            })
+            .catch(() => {
+                setRecent([]);
+                setPopular([]);
+            });
     }, [open, query]);
 
     useEffect(() => {
@@ -173,11 +180,13 @@ export function QuickSearch({ className }: { className?: string }) {
                 )}
             </label>
 
-            {open && query.trim().length < 2 && recent.length > 0 && (
+            {open && query.trim().length < 2 && (recent.length > 0 || popular.length > 0) && (
                 <div className="glass-strong absolute top-12 right-0 left-0 z-50 animate-rise overflow-hidden rounded-2xl p-1.5">
-                    <p className="px-2.5 py-1.5 text-xs text-white/40">
-                        {tr('Недавні запити')}
-                    </p>
+                    {recent.length > 0 && (
+                        <p className="px-2.5 py-1.5 text-xs text-white/40">
+                            {tr('Недавні запити')}
+                        </p>
+                    )}
                     {recent.map((item) => (
                         <button
                             key={item}
@@ -190,6 +199,23 @@ export function QuickSearch({ className }: { className?: string }) {
                         >
                             {item}
                         </button>
+                    ))}
+                    {popular.length > 0 && (
+                        <p className="px-2.5 py-1.5 text-xs text-white/40">
+                            {tr('Зараз популярне')}
+                        </p>
+                    )}
+                    {popular.map((item) => (
+                        <Link
+                            key={`${item.kind}-${item.href}`}
+                            href={item.href}
+                            className="flex w-full items-center justify-between gap-3 rounded-xl px-2.5 py-2 text-left text-sm text-white/80 hover:bg-white/5"
+                        >
+                            <span className="truncate">{item.title}</span>
+                            <span className="shrink-0 text-xs text-white/40">
+                                {tr(item.hint)}
+                            </span>
+                        </Link>
                     ))}
                 </div>
             )}
