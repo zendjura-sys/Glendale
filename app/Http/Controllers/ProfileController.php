@@ -70,6 +70,8 @@ class ProfileController extends Controller
                 'id' => $photo->id,
                 'url' => $photo->url,
                 'href' => '/albums/'.$photo->album_id.'?photo='.$photo->id,
+                'alt' => $photo->alt,
+                'is_sensitive' => $photo->is_sensitive,
             ])->all() : [];
         } else {
             $photoQuery = PostAttachment::query()

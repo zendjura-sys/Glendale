@@ -140,7 +140,7 @@ class CommunityController extends Controller
             $photos = [
                 'count' => Photo::query()->whereIn('album_id', $albumIds)->count(),
                 'items' => Photo::query()->whereIn('album_id', $albumIds)->latest('id')->limit(6)->get()
-                    ->map(fn (Photo $p) => ['id' => $p->id, 'url' => $p->url, 'href' => '/albums/'.$p->album_id.'?photo='.$p->id])
+                    ->map(fn (Photo $p) => ['id' => $p->id, 'url' => $p->url, 'href' => '/albums/'.$p->album_id.'?photo='.$p->id, 'alt' => $p->alt, 'is_sensitive' => $p->is_sensitive])
                     ->all(),
                 'can_create' => $photoService->canCreateAlbum($community, $viewer),
             ];

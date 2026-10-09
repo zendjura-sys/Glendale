@@ -24,7 +24,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $body
  * @property array<string, mixed>|null $music
  * @property int|null $movie_id
- * @property array{url: string, title: string, thumbnail: string|null, author: string|null}|null $link
+ * @property array{url: string, title: string, thumbnail: string|null, author: string|null, site?: string}|null $link
  * @property array{kind: string, id: int, title: string, hint: string, href: string, image: string|null}|null $card
  * @property string $visibility
  * @property bool $is_pinned

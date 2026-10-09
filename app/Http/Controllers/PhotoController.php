@@ -72,6 +72,8 @@ class PhotoController extends Controller
             'photo' => [
                 ...$photo->toThumb(),
                 'caption' => $photo->caption,
+                'alt' => $photo->alt,
+                'is_sensitive' => $photo->is_sensitive,
                 'views_count' => $photo->views_count,
                 'created_at' => $photo->created_at->toIso8601String(),
                 'user' => $photo->user?->toCard(),
@@ -100,10 +102,28 @@ class PhotoController extends Controller
         $user = $request->user();
         abort_unless($this->photos->canManage($photo->album, $user) || $photo->user_id === $user->id, 403);
 
-        $data = $request->validate(['caption' => ['nullable', 'string', 'max:500']]);
-        $photo->update(['caption' => isset($data['caption']) ? trim($data['caption']) ?: null : null]);
+        $data = $request->validate([
+            'caption' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'alt' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'is_sensitive' => ['sometimes', 'boolean'],
+        ]);
+        $changes = [];
+        if (array_key_exists('caption', $data)) {
+            $changes['caption'] = trim((string) $data['caption']) ?: null;
+        }
+        if (array_key_exists('alt', $data)) {
+            $changes['alt'] = trim((string) $data['alt']) ?: null;
+        }
+        if (array_key_exists('is_sensitive', $data)) {
+            $changes['is_sensitive'] = (bool) $data['is_sensitive'];
+        }
+        $photo->update($changes);
 
-        return response()->json(['caption' => $photo->caption]);
+        return response()->json([
+            'caption' => $photo->caption,
+            'alt' => $photo->alt,
+            'is_sensitive' => $photo->is_sensitive,
+        ]);
     }
 
     public function cover(Request $request, Photo $photo): JsonResponse

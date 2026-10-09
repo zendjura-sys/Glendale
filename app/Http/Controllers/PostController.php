@@ -18,6 +18,7 @@ use App\Notifications\PostInteraction;
 use App\Services\CommunityService;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
+use App\Services\Media\LinkPreview;
 use App\Services\Media\YoutubePreview;
 use App\Services\Moderation\ContentFilter;
 use App\Services\PostCards;
@@ -192,7 +193,7 @@ class PostController extends Controller
                 'sticker' => $data['sticker'] ?? null,
                 'music' => $music,
                 'movie_id' => $movieId,
-                'link' => app(YoutubePreview::class)->fromText($data['body'] ?? null),
+                'link' => $this->linkCard($data['body'] ?? null),
                 'card' => $card,
                 'visibility' => $data['visibility'],
                 'spoiler' => (bool) ($data['spoiler'] ?? false),
@@ -262,7 +263,7 @@ class PostController extends Controller
         $body = (string) app(ContentFilter::class)->clean(trim($data['body']));
         $post->update([
             'body' => $body,
-            'link' => app(YoutubePreview::class)->fromText($body),
+            'link' => $this->linkCard($body),
             'edited_at' => now(),
         ]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Запис змінено.']);
@@ -519,6 +520,14 @@ class PostController extends Controller
             'reaction' => $current,
             'likes_count' => $post->fresh()->likes_count,
         ]);
+    }
+
+    /**
+     * @return array{url: string, title: string, thumbnail: string|null, author: string|null, site: string}|null
+     */
+    private function linkCard(?string $text): ?array
+    {
+        return app(YoutubePreview::class)->fromText($text) ?? app(LinkPreview::class)->fromText($text);
     }
 
     private function managesWall(User $user, Post $post): bool

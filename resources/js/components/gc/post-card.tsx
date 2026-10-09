@@ -519,13 +519,16 @@ export function PostCard({
                     {post.link.thumbnail && (
                         <img
                             src={post.link.thumbnail}
-                            alt=""
+                            alt={post.link.title}
                             className="h-24 w-40 shrink-0 object-cover"
                         />
                     )}
                     <span className="min-w-0 p-3">
                         <span className="block text-xs text-white/40">
-                            YouTube
+                            {post.link.site ??
+                                (post.link.url.includes('youtu')
+                                    ? 'YouTube'
+                                    : '')}
                             {post.link.author ? ` · ${post.link.author}` : ''}
                         </span>
                         <span className="mt-1 block line-clamp-2 text-sm font-medium text-white">

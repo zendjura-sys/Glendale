@@ -80,7 +80,13 @@ type Props = {
         mutual: number;
     };
     friends: UserCard[];
-    photos: { id: number; url: string; href: string }[];
+    photos: {
+        id: number;
+        url: string;
+        href: string;
+        alt?: string | null;
+        is_sensitive?: boolean;
+    }[];
     photosHref: string | null;
     achievements?: AchievementsData;
     audio: { href: string; tracks: number } | null;
@@ -594,9 +600,14 @@ export default function ProfileShow({
                                         >
                                             <img
                                                 src={photo.url}
-                                                alt=""
+                                                alt={photo.alt ?? ''}
                                                 loading="lazy"
-                                                className="size-full object-cover transition duration-500 group-hover:scale-110"
+                                                className={cn(
+                                                    'size-full object-cover transition duration-500',
+                                                    photo.is_sensitive
+                                                        ? 'scale-110 blur-2xl'
+                                                        : 'group-hover:scale-110',
+                                                )}
                                             />
                                         </Link>
                                     ))}

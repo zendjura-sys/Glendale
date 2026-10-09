@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\Storage;
  * @property int|null $height
  * @property int|null $size
  * @property string|null $caption
+ * @property string|null $alt
+ * @property bool $is_sensitive
  * @property int $likes_count
  * @property int $comments_count
  * @property int $views_count
@@ -29,12 +31,17 @@ use Illuminate\Support\Facades\Storage;
  * @property-read PhotoAlbum $album
  * @property-read User|null $user
  */
-#[Fillable(['user_id', 'path', 'width', 'height', 'size', 'caption'])]
+#[Fillable(['user_id', 'path', 'width', 'height', 'size', 'caption', 'alt', 'is_sensitive'])]
 class Photo extends Model
 {
     use SoftDeletes;
 
     protected $appends = ['url'];
+
+    protected function casts(): array
+    {
+        return ['is_sensitive' => 'boolean'];
+    }
 
     /**
      * @return BelongsTo<PhotoAlbum, $this>
@@ -77,7 +84,7 @@ class Photo extends Model
     }
 
     /**
-     * @return array{id: int, url: string, width: int|null, height: int|null, likes_count: int, comments_count: int}
+     * @return array{id: int, url: string, width: int|null, height: int|null, likes_count: int, comments_count: int, alt: string|null, is_sensitive: bool}
      */
     public function toThumb(): array
     {
@@ -88,6 +95,8 @@ class Photo extends Model
             'height' => $this->height,
             'likes_count' => $this->likes_count,
             'comments_count' => $this->comments_count,
+            'alt' => $this->alt,
+            'is_sensitive' => $this->is_sensitive,
         ];
     }
 }

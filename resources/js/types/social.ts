@@ -86,7 +86,7 @@ export type PostItem = {
     attachments: Attachment[];
     music: TrackCard | null;
     movie: PostMovie | null;
-    link?: { url: string; title: string; thumbnail: string | null; author: string | null } | null;
+    link?: { url: string; title: string; thumbnail: string | null; author: string | null; site?: string } | null;
     card?: {
         kind: string;
         id: number;

@@ -30,6 +30,7 @@ import { UserAvatar } from '@/components/gc/user-avatar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { EmptyState, Widget } from '@/components/gc/widget';
 import { compactNumber, formatDate, plural } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import type {
     CommunityDetails,
     CommunityRole,
@@ -59,7 +60,13 @@ type Props = {
     managers: (UserCard & { role: CommunityRole })[];
     photos: {
         count: number;
-        items: { id: number; url: string; href: string }[];
+        items: {
+            id: number;
+            url: string;
+            href: string;
+            alt?: string | null;
+            is_sensitive?: boolean;
+        }[];
         can_create: boolean;
     } | null;
     posts: ScrollData<PostItem>;
@@ -376,9 +383,14 @@ export default function CommunityShow({
                                             >
                                                 <img
                                                     src={photo.url}
-                                                    alt=""
+                                                    alt={photo.alt ?? ''}
                                                     loading="lazy"
-                                                    className="size-full object-cover transition duration-500 group-hover:scale-110"
+                                                    className={cn(
+                                                        'size-full object-cover transition duration-500',
+                                                        photo.is_sensitive
+                                                            ? 'scale-110 blur-2xl'
+                                                            : 'group-hover:scale-110',
+                                                    )}
                                                 />
                                             </Link>
                                         ))}

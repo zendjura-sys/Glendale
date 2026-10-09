@@ -11,6 +11,8 @@ export type PhotoThumb = {
     likes_count: number;
     comments_count: number;
     album_id?: number;
+    alt?: string | null;
+    is_sensitive?: boolean;
 };
 
 export type PhotoOwner = {
@@ -41,6 +43,8 @@ export type PhotoAlbumDetails = PhotoAlbumCard & {
 
 export type PhotoDetails = PhotoThumb & {
     caption: string | null;
+    alt: string | null;
+    is_sensitive: boolean;
     views_count: number;
     created_at: string;
     user: UserCard | null;

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Http;
 class YoutubePreview
 {
     /**
-     * @return array{url: string, title: string, thumbnail: string|null, author: string|null}|null
+     * @return array{url: string, title: string, thumbnail: string|null, author: string|null, site: string}|null
      */
     public function fromText(?string $text): ?array
     {
@@ -27,7 +27,7 @@ class YoutubePreview
             $data = null;
         }
         if (! is_array($data)) {
-            return ['url' => $url, 'title' => 'YouTube', 'thumbnail' => null, 'author' => null];
+            return ['url' => $url, 'title' => 'YouTube', 'thumbnail' => null, 'author' => null, 'site' => 'YouTube'];
         }
 
         return [
@@ -35,6 +35,7 @@ class YoutubePreview
             'title' => (string) ($data['title'] ?? 'YouTube'),
             'thumbnail' => isset($data['thumbnail_url']) ? (string) $data['thumbnail_url'] : null,
             'author' => isset($data['author_name']) ? (string) $data['author_name'] : null,
+            'site' => 'YouTube',
         ];
     }
 }
