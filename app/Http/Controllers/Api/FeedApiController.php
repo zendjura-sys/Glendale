@@ -10,6 +10,7 @@ use App\Services\CommunityService;
 use App\Services\FeedSignals;
 use App\Services\FriendshipService;
 use App\Services\PostPresenter;
+use App\Support\MutedWords;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
@@ -59,6 +60,7 @@ class FeedApiController extends ApiController
         }
 
         $this->signals->apply($query, $user, $tab === 'discover');
+        MutedWords::hidePosts($query, $user);
 
         $posts = $query->orderByDesc('id')->paginate(10);
         $items = $this->presenter->many(new Collection($posts->items()), $user);

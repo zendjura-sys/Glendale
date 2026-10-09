@@ -12,6 +12,7 @@ use App\Services\FeedSignals;
 use App\Services\FollowAlerts;
 use App\Services\FriendshipService;
 use App\Services\PostPresenter;
+use App\Support\MutedWords;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
@@ -66,6 +67,7 @@ class FeedController extends Controller
         }
 
         $this->signals->apply($query, $user, $tab === 'discover');
+        MutedWords::hidePosts($query, $user);
 
         $posts = $query->orderByDesc('id')->cursorPaginate(self::PER_PAGE)->withQueryString();
         $items = $this->presenter->many(new Collection($posts->items()), $user);

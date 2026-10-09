@@ -19,6 +19,7 @@ type Result =
 export function QuickSearch({ className }: { className?: string }) {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<Result[]>([]);
+    const [recent, setRecent] = useState<string[]>([]);
     const [open, setOpen] = useState(false);
     const [active, setActive] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -49,6 +50,25 @@ export function QuickSearch({ className }: { className?: string }) {
             window.removeEventListener('mousedown', onClick);
         };
     }, []);
+
+    const remember = (value: string) => {
+        const text = value.trim();
+        if (text.length < 2) {
+            return;
+        }
+        api<{ recent: string[] }>('POST', '/search/recent', { q: text })
+            .then((response) => setRecent(response.recent))
+            .catch(() => undefined);
+    };
+
+    useEffect(() => {
+        if (!open || query.trim().length >= 2) {
+            return;
+        }
+        api<{ recent?: string[] }>('GET', '/search/quick?q=')
+            .then((response) => setRecent(response.recent ?? []))
+            .catch(() => setRecent([]));
+    }, [open, query]);
 
     useEffect(() => {
         if (query.trim().length < 2) {
@@ -99,6 +119,7 @@ export function QuickSearch({ className }: { className?: string }) {
         const target = results[active];
         setOpen(false);
 
+        remember(query);
         if (target) {
             router.visit(target.href);
         } else if (query.trim()) {
@@ -152,6 +173,27 @@ export function QuickSearch({ className }: { className?: string }) {
                 )}
             </label>
 
+            {open && query.trim().length < 2 && recent.length > 0 && (
+                <div className="glass-strong absolute top-12 right-0 left-0 z-50 animate-rise overflow-hidden rounded-2xl p-1.5">
+                    <p className="px-2.5 py-1.5 text-xs text-white/40">
+                        {tr('Недавні запити')}
+                    </p>
+                    {recent.map((item) => (
+                        <button
+                            key={item}
+                            type="button"
+                            onClick={() => {
+                                setQuery(item);
+                                setOpen(true);
+                            }}
+                            className="flex w-full rounded-xl px-2.5 py-2 text-left text-sm text-white/80 hover:bg-white/5"
+                        >
+                            {item}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             {open && query.trim().length >= 2 && (
                 <div className="glass-strong absolute top-12 right-0 left-0 z-50 animate-rise overflow-hidden rounded-2xl p-1.5">
                     {results.length === 0 ? (
@@ -163,7 +205,10 @@ export function QuickSearch({ className }: { className?: string }) {
                             <Link
                                 key={`${result.kind}-${result.href}`}
                                 href={result.href}
-                                onClick={() => setOpen(false)}
+                                onClick={() => {
+                                    remember(query);
+                                    setOpen(false);
+                                }}
                                 onMouseEnter={() => setActive(index)}
                                 className={cn(
                                     'flex items-center gap-3 rounded-xl px-2.5 py-2 transition',
@@ -224,7 +269,10 @@ export function QuickSearch({ className }: { className?: string }) {
                     )}
                     <Link
                         href={`/people?q=${encodeURIComponent(query.trim())}`}
-                        onClick={() => setOpen(false)}
+                        onClick={() => {
+                                    remember(query);
+                                    setOpen(false);
+                                }}
                         className="mt-1 block rounded-xl border-t border-white/5 px-3 py-2.5 text-center text-xs font-medium text-gc-lilac-300 hover:bg-white/5"
                     >
                         {tr('Показати всі результати')}

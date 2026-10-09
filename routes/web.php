@@ -419,6 +419,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
 
     Route::get('people', [PeopleController::class, 'index'])->middleware('module:people')->name('people.index');
     Route::get('search/quick', [PeopleController::class, 'quick'])->middleware('throttle:120,1')->name('search.quick');
+    Route::post('search/recent', [PeopleController::class, 'remember'])->middleware('throttle:60,1')->name('search.recent');
 
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('notifications/read', [NotificationController::class, 'markAllRead'])->name('notifications.read');

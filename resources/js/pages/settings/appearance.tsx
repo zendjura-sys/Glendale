@@ -1,6 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
 import { Bell, Check, ChevronDown, ChevronUp, Eye, Languages, Moon, UsersRound } from 'lucide-react';
-import type { FormEvent } from 'react';
+import { type FormEvent, useState } from 'react';
 import AppearanceController from '@/actions/App/Http/Controllers/Settings/AppearanceController';
 import { Button } from '@/components/ui/button';
 import { SettingsCard } from '@/layouts/settings/layout';
@@ -56,6 +56,7 @@ type Form = {
     show_visitors: boolean;
     profile_blocks: string[];
     notify: NotifyPrefs;
+    mute_words: string[];
 };
 
 export default function Appearance({
@@ -70,6 +71,7 @@ export default function Appearance({
     friends,
     closeFriends,
     notify,
+    muteWords,
 }: {
     palette: string;
     palettes: PaletteOption[];
@@ -82,6 +84,7 @@ export default function Appearance({
     friends: UserCard[];
     closeFriends: number[];
     notify: NotifyPrefs;
+    muteWords: string[];
 }) {
     const form = useForm<Form>({
         palette,
@@ -94,7 +97,9 @@ export default function Appearance({
         show_visitors,
         profile_blocks,
         notify,
+        mute_words: muteWords,
     });
+    const [phrase, setPhrase] = useState('');
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
@@ -260,6 +265,82 @@ export default function Appearance({
                                 />
                                 {tr(item.label)}
                             </label>
+                        ))}
+                    </div>
+                </SettingsCard>
+
+                <SettingsCard
+                    title={tr('Заглушені слова')}
+                    description={tr(
+                        'Записи з цими словами зникають зі стрічки, а сповіщення про них не приходять.',
+                    )}
+                >
+                    <div className="flex gap-2">
+                        <input
+                            value={phrase}
+                            onChange={(event) => setPhrase(event.target.value)}
+                            onKeyDown={(event) => {
+                                if (event.key !== 'Enter') {
+                                    return;
+                                }
+                                event.preventDefault();
+                                const next = phrase.trim();
+                                if (
+                                    !next ||
+                                    form.data.mute_words.includes(next) ||
+                                    form.data.mute_words.length >= 20
+                                ) {
+                                    return;
+                                }
+                                form.setData('mute_words', [
+                                    ...form.data.mute_words,
+                                    next,
+                                ]);
+                                setPhrase('');
+                            }}
+                            maxLength={40}
+                            placeholder={tr('Слово або фраза')}
+                            className="input-glass h-11 min-w-0 flex-1 rounded-xl px-3 text-sm text-white"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const next = phrase.trim();
+                                if (
+                                    !next ||
+                                    form.data.mute_words.includes(next) ||
+                                    form.data.mute_words.length >= 20
+                                ) {
+                                    return;
+                                }
+                                form.setData('mute_words', [
+                                    ...form.data.mute_words,
+                                    next,
+                                ]);
+                                setPhrase('');
+                            }}
+                            className="rounded-xl bg-white/10 px-4 text-sm font-medium text-white"
+                        >
+                            {tr('Додати')}
+                        </button>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        {form.data.mute_words.map((item) => (
+                            <button
+                                key={item}
+                                type="button"
+                                onClick={() =>
+                                    form.setData(
+                                        'mute_words',
+                                        form.data.mute_words.filter(
+                                            (word) => word !== item,
+                                        ),
+                                    )
+                                }
+                                className="min-h-11 rounded-full bg-white/[0.06] px-3 text-sm text-white/80"
+                            >
+                                {item} ×
+                            </button>
                         ))}
                     </div>
                 </SettingsCard>

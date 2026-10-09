@@ -8,7 +8,15 @@ import { cn } from '@/lib/utils';
 import type { PersonCard as Person, ScrollData } from '@/types';
 import { tr } from '@/lib/i18n';
 
-type Filters = { q: string; city: string; gender: string; online: boolean };
+type Filters = {
+    q: string;
+    city: string;
+    gender: string;
+    online: boolean;
+    language: string;
+    country: string;
+    game: string;
+};
 
 type Props = {
     filters: Filters;
@@ -29,6 +37,9 @@ export default function People({ filters, total, users }: Props) {
                     city: form.city || undefined,
                     gender: form.gender || undefined,
                     online: form.online ? 1 : undefined,
+                    language: form.language || undefined,
+                    country: form.country || undefined,
+                    game: form.game || undefined,
                 },
                 { preserveState: true, replace: true },
             );
@@ -127,6 +138,35 @@ export default function People({ filters, total, users }: Props) {
                             />{' '}
                             {tr('Зараз онлайн')}
                         </button>
+                    </div>
+                    <div className="relative mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        <input
+                            value={form.country}
+                            onChange={(event) =>
+                                setForm({ ...form, country: event.target.value })
+                            }
+                            placeholder={tr('Країна')}
+                            className="input-glass h-11 rounded-xl px-3.5 text-sm text-white placeholder:text-white/35"
+                        />
+                        <input
+                            value={form.language}
+                            onChange={(event) =>
+                                setForm({
+                                    ...form,
+                                    language: event.target.value,
+                                })
+                            }
+                            placeholder={tr('Мова, напр. uk')}
+                            className="input-glass h-11 rounded-xl px-3.5 text-sm text-white placeholder:text-white/35"
+                        />
+                        <input
+                            value={form.game}
+                            onChange={(event) =>
+                                setForm({ ...form, game: event.target.value })
+                            }
+                            placeholder={tr('Гра')}
+                            className="input-glass h-11 rounded-xl px-3.5 text-sm text-white placeholder:text-white/35"
+                        />
                     </div>
                 </section>
 

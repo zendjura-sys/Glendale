@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Services\FriendshipService;
 use App\Support\I18n\Locales;
+use App\Support\MutedWords;
 use App\Support\NotifyPrefs;
 use App\Support\Palette;
 use App\Support\ProfileBlocks;
@@ -35,6 +36,7 @@ class AppearanceController extends Controller
             'friends' => app(FriendshipService::class)->friendsQuery($user)->limit(40)->get()->map->toCard()->values(),
             'closeFriends' => array_map('intval', (array) $user->pref('close_friends', [])),
             'notify' => NotifyPrefs::for($user),
+            'muteWords' => MutedWords::phrases($user),
         ]);
     }
 
@@ -62,6 +64,8 @@ class AppearanceController extends Controller
             'notify.site' => ['sometimes', 'boolean'],
             'notify.email' => ['sometimes', 'boolean'],
             'notify.push' => ['sometimes', 'boolean'],
+            'mute_words' => ['sometimes', 'array', 'max:20'],
+            'mute_words.*' => ['string', 'max:40'],
         ]);
 
         $enabled = app(Locales::class)->enabled();
@@ -87,6 +91,9 @@ class AppearanceController extends Controller
         }
         if (array_key_exists('profile_blocks', $data)) {
             $patch['profile_blocks'] = ProfileBlocks::normalize($data['profile_blocks']);
+        }
+        if (array_key_exists('mute_words', $data)) {
+            $patch['mute_words'] = MutedWords::normalize($data['mute_words']);
         }
         if (array_key_exists('notify', $data)) {
             $incoming = $data['notify'];

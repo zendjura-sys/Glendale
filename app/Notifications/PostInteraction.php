@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Models\Post;
 use App\Models\User;
 use App\Notifications\Concerns\QuietHours;
+use App\Support\MutedWords;
 use Illuminate\Notifications\Notification;
 
 class PostInteraction extends Notification
@@ -31,6 +32,10 @@ class PostInteraction extends Notification
      */
     public function via(object $notifiable): array
     {
+        if ($notifiable instanceof User && MutedWords::blocks($notifiable, $this->post->body, $this->excerpt)) {
+            return [];
+        }
+
         return QuietHours::channels($notifiable, $this->kind);
     }
 

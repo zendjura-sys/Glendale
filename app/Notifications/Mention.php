@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\User;
 use App\Notifications\Concerns\QuietHours;
+use App\Support\MutedWords;
 use Illuminate\Notifications\Notification;
 
 class Mention extends Notification
@@ -19,6 +20,10 @@ class Mention extends Notification
      */
     public function via(object $notifiable): array
     {
+        if ($notifiable instanceof User && MutedWords::blocks($notifiable, $this->excerpt)) {
+            return [];
+        }
+
         return QuietHours::channels($notifiable, 'mention');
     }
 
