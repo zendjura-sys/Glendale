@@ -7,8 +7,10 @@ import {
     Headphones,
     Info,
     Loader2,
+    Folder,
     Phone,
     PhoneOff,
+    Pin,
     Sparkles,
 } from 'lucide-react';
 import {
@@ -354,6 +356,8 @@ export function ChatView({
         switch (outgoing.kind) {
             case 'text':
                 if (outgoing.body) form.append('body', outgoing.body);
+                if (outgoing.publishAt) form.append('publish_at', outgoing.publishAt);
+                if (outgoing.vanish) form.append('disappear', '1');
                 outgoing.images.forEach((file) =>
                     form.append('images[]', file),
                 );
@@ -535,6 +539,8 @@ export function ChatView({
 
     const [reportUrl, setReportUrl] = useState<string | null>(null);
     const [forwarding, setForwarding] = useState<ChatMessage | null>(null);
+    const [folderOpen, setFolderOpen] = useState(false);
+    const [folderName, setFolderName] = useState(active.folder ?? '');
     const actions: BubbleActions = {
         onReply: (message) => {
             setEditing(null);
@@ -662,6 +668,39 @@ export function ChatView({
                             {subtitle}
                         </span>
                     </span>
+                </button>
+                <button
+                    type="button"
+                    onClick={() =>
+                        router.post(
+                            `/messages/${active.id}/pin`,
+                            {},
+                            {
+                                preserveScroll: true,
+                                preserveState: true,
+                                only: ['active', 'conversations'],
+                            },
+                        )
+                    }
+                    className={cn(
+                        'flex size-9 items-center justify-center rounded-xl transition',
+                        active.pinned
+                            ? 'bg-white/10 text-white'
+                            : 'text-white/60 hover:bg-white/[0.07] hover:text-white',
+                    )}
+                    aria-label={active.pinned ? tr('Відкріпити') : tr('Закріпити')}
+                    title={active.pinned ? tr('Відкріпити') : tr('Закріпити')}
+                >
+                    <Pin className={cn('size-[18px]', active.pinned && 'fill-current')} />
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setFolderOpen((open) => !open)}
+                    className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
+                    aria-label={tr('Папка')}
+                    title={active.folder ? active.folder : tr('Папка')}
+                >
+                    <Folder className="size-[18px]" />
                 </button>
                 <button
                     type="button"
@@ -954,6 +993,35 @@ export function ChatView({
                 )}
             </div>
 
+            {folderOpen && (
+                <form
+                    className="flex items-center gap-2 border-t border-white/[0.06] px-4 py-3"
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        router.put(
+                            `/messages/${active.id}/folder`,
+                            { folder: folderName },
+                            {
+                                preserveScroll: true,
+                                preserveState: true,
+                                only: ['active', 'conversations'],
+                                onSuccess: () => setFolderOpen(false),
+                            },
+                        );
+                    }}
+                >
+                    <input
+                        value={folderName}
+                        onChange={(event) => setFolderName(event.target.value)}
+                        maxLength={24}
+                        placeholder={tr('Назва папки')}
+                        className="input-glass h-10 min-w-0 flex-1 rounded-xl px-3 text-sm text-white"
+                    />
+                    <button type="submit" className="h-10 rounded-xl bg-white px-3 text-sm font-semibold text-gc-ink">
+                        {tr('Зберегти')}
+                    </button>
+                </form>
+            )}
             {forwarding && (
                 <div className="border-t border-white/[0.06] bg-[#0b1020]/80 px-4 py-3">
                     <div className="mb-2 flex items-center justify-between gap-3">

@@ -35,7 +35,7 @@ export type StickerPackItem = {
 export type ContactCard = UserCard & { is_friend?: boolean };
 
 export type OutgoingMessage =
-    | { kind: 'text'; body: string; images: File[]; files: File[] }
+    | { kind: 'text'; body: string; images: File[]; files: File[]; publishAt?: string | null; vanish?: boolean }
     | { kind: 'sticker'; sticker: StickerItem }
     | { kind: 'voice'; blob: Blob; duration: number; waveform: number[] }
     | { kind: 'contact'; contact: ContactCard };
@@ -59,6 +59,8 @@ export type ChatMessage = {
     } | null;
     attachments: ChatAttachment[];
     edited_at: string | null;
+    publish_at?: string | null;
+    expires_at?: string | null;
     created_at: string;
     starred?: boolean;
     forward?: { name: string; username: string | null } | null;
@@ -76,6 +78,8 @@ export type ConversationSummary = {
     members_count: number;
     unread: number;
     is_muted: boolean;
+    pinned?: boolean;
+    folder?: string | null;
     last_message: {
         id: number;
         type: MessageType;
@@ -100,6 +104,8 @@ export type ConversationDetails = {
         | null;
     can_write: boolean;
     is_muted: boolean;
+    pinned?: boolean;
+    folder?: string | null;
     my_role: MemberRole;
     read_up_to: number;
     members: ConversationMember[];

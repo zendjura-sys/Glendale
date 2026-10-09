@@ -16,6 +16,7 @@ use App\Models\Sticker;
 use App\Models\User;
 use App\Models\UserBlock;
 use App\Services\Push\PushNotifier;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\QueryException;
@@ -201,7 +202,7 @@ class Messenger
      * @param  list<UploadedFile>  $images
      * @param  list<UploadedFile>  $documents
      */
-    public function send(Conversation $conversation, User $sender, ?string $body, array $images = [], ?int $replyToId = null, array $documents = []): Message
+    public function send(Conversation $conversation, User $sender, ?string $body, array $images = [], ?int $replyToId = null, array $documents = [], ?CarbonInterface $publishAt = null, ?CarbonInterface $expiresAt = null): Message
     {
         $body = $body !== null ? trim($body) : null;
 
@@ -209,10 +210,18 @@ class Messenger
             throw ValidationException::withMessages(['body' => 'Повідомлення порожнє.']);
         }
 
-        return $this->deliver($conversation, $sender, [
+        $attributes = [
             'type' => Message::TYPE_TEXT,
             'body' => $body === '' ? null : $body,
-        ], $replyToId, function (Message $message) use ($images, $documents) {
+        ];
+        if ($publishAt?->isFuture()) {
+            $attributes['publish_at'] = $publishAt;
+        }
+        if ($expiresAt?->isFuture()) {
+            $attributes['expires_at'] = $expiresAt;
+        }
+
+        return $this->deliver($conversation, $sender, $attributes, $replyToId, function (Message $message) use ($images, $documents) {
             $position = 0;
 
             foreach ($images as $file) {
@@ -309,7 +318,10 @@ class Messenger
             $replyToId = null;
         }
 
-        $message = DB::transaction(function () use ($conversation, $sender, $attributes, $replyToId, $attach) {
+        $publishAt = $attributes['publish_at'] ?? null;
+        $scheduled = $publishAt instanceof CarbonInterface && $publishAt->isFuture();
+
+        $message = DB::transaction(function () use ($conversation, $sender, $attributes, $replyToId, $attach, $scheduled) {
             $message = $conversation->messages()->create([
                 ...$attributes,
                 'user_id' => $sender->id,
@@ -320,15 +332,62 @@ class Messenger
                 $attach($message);
             }
 
-            $this->touch($conversation, $message);
-            $conversation->participants()->where('user_id', $sender->id)->update(['last_read_message_id' => $message->id]);
+            if (! $scheduled) {
+                $this->touch($conversation, $message);
+                $conversation->participants()->where('user_id', $sender->id)->update(['last_read_message_id' => $message->id]);
+            }
 
             return $message;
         });
 
-        $this->broadcastNew($conversation, $message);
+        if (! $scheduled) {
+            $this->broadcastNew($conversation, $message);
+        }
 
         return $message;
+    }
+
+    public function publishDue(): int
+    {
+        $count = 0;
+        Message::query()
+            ->whereNotNull('publish_at')
+            ->where('publish_at', '<=', now())
+            ->orderBy('id')
+            ->limit(100)
+            ->get()
+            ->each(function (Message $message) use (&$count): void {
+                $when = $message->publish_at ?? now();
+                $message->forceFill(['publish_at' => null, 'created_at' => $when])->save();
+                $conversation = $message->conversation;
+                $this->touch($conversation, $message);
+                if ($message->user_id) {
+                    $conversation->participants()->where('user_id', $message->user_id)->update(['last_read_message_id' => $message->id]);
+                }
+                $this->broadcastNew($conversation, $message);
+                $count++;
+            });
+
+        return $count;
+    }
+
+    public function expireDue(): int
+    {
+        $count = 0;
+        Message::query()
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<=', now())
+            ->orderBy('id')
+            ->limit(100)
+            ->get()
+            ->each(function (Message $message) use (&$count): void {
+                if (! $message->trashed()) {
+                    $this->remove($message);
+                    $count++;
+                }
+            });
+
+        return $count;
     }
 
     private function cleanName(string $name): string
@@ -379,7 +438,11 @@ class Messenger
             $message->delete();
 
             if ($conversation->last_message_id === $message->id) {
-                $previous = $conversation->messages()->latest('id')->first();
+                $previous = $conversation->messages()
+                    ->where(fn ($query) => $query->whereNull('publish_at')->orWhere('publish_at', '<=', now()))
+                    ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+                    ->latest('id')
+                    ->first();
                 $conversation->update([
                     'last_message_id' => $previous?->id,
                     'last_message_at' => $previous !== null ? $previous->created_at : $conversation->last_message_at,
@@ -435,6 +498,8 @@ class Messenger
                 ? 'messages.id > coalesce(me.last_read_message_id, 0)'
                 : 'messages.id > coalesce(conversation_participants.last_read_message_id, 0)')
             ->whereNull('messages.deleted_at')
+            ->where(fn ($q) => $q->whereNull('messages.publish_at')->orWhere('messages.publish_at', '<=', now()))
+            ->where(fn ($q) => $q->whereNull('messages.expires_at')->orWhere('messages.expires_at', '>', now()))
             ->where(fn ($q) => $q->whereNull('messages.user_id')->orWhere('messages.user_id', '!=', $userId));
     }
 

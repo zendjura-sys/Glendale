@@ -15,9 +15,11 @@ use App\Services\MessengerPresenter;
 use App\Services\Moderation\ContentFilter;
 use App\Services\Moderation\MessageReports;
 use App\Support\Settings\SiteSettings;
+use Carbon\CarbonInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -67,6 +69,8 @@ class MessageController extends Controller
             'voice' => ['nullable', 'file', 'max:'.self::MAX_VOICE_KB, 'mimetypes:'.implode(',', self::VOICE_MIMES)],
             'voice_duration' => ['required_with:voice', 'integer', 'min:1', 'max:'.self::MAX_VOICE_SECONDS],
             'voice_waveform' => ['nullable', 'string', 'max:1000'],
+            'publish_at' => ['nullable', 'date'],
+            'disappear' => ['nullable', 'boolean'],
         ], [
             'voice.mimetypes' => 'Непідтримуваний формат запису.',
             'voice.max' => 'Голосове повідомлення завелике.',
@@ -74,6 +78,8 @@ class MessageController extends Controller
         ]);
 
         $replyTo = isset($data['reply_to_id']) ? (int) $data['reply_to_id'] : null;
+        $publishAt = $this->publishAt($request);
+        $expiresAt = $request->boolean('disappear') ? ($publishAt ?? now())->copy()->addDay() : null;
         // Автомодерація: мут, флуд, повтори, посилання від новачків, мат.
         $data['body'] = $this->filter->guardMessage($user, $conversation, isset($data['body']) ? (string) $data['body'] : null);
 
@@ -102,7 +108,7 @@ class MessageController extends Controller
                 ),
                 $replyTo,
             ),
-            default => $this->sendText($conversation, $user, $data, $request),
+            default => $this->sendText($conversation, $user, $data, $request, $publishAt, $expiresAt),
         };
 
         return response()->json(['message' => $this->presenter->message($this->presenter->load($message))], 201);
@@ -136,7 +142,7 @@ class MessageController extends Controller
     /**
      * @param  array<string, mixed>  $data
      */
-    private function sendText(Conversation $conversation, User $user, array $data, Request $request): Message
+    private function sendText(Conversation $conversation, User $user, array $data, Request $request, ?CarbonInterface $publishAt = null, ?CarbonInterface $expiresAt = null): Message
     {
         $images = $this->uploadedList($request->file('images', []));
         $files = $this->uploadedList($request->file('files', []));
@@ -152,6 +158,8 @@ class MessageController extends Controller
             $images,
             isset($data['reply_to_id']) ? (int) $data['reply_to_id'] : null,
             $files,
+            $publishAt,
+            $expiresAt,
         );
     }
 
@@ -188,6 +196,24 @@ class MessageController extends Controller
         }
 
         return $peaks;
+    }
+
+    private function publishAt(Request $request): ?CarbonInterface
+    {
+        $raw = $request->input('publish_at');
+        if (! is_string($raw) || trim($raw) === '') {
+            return null;
+        }
+
+        $at = Carbon::parse($raw, 'Europe/Kyiv');
+        if ($at->lessThanOrEqualTo(now())) {
+            throw ValidationException::withMessages(['publish_at' => 'Оберіть час у майбутньому.']);
+        }
+        if ($at->greaterThan(now()->addDays(30))) {
+            throw ValidationException::withMessages(['publish_at' => 'Не далі ніж на 30 днів.']);
+        }
+
+        return $at;
     }
 
     public function update(Request $request, Conversation $conversation, Message $message): JsonResponse

@@ -72,6 +72,8 @@ class MessengerPresenter
             ] : null,
             'contact' => $message->type === Message::TYPE_CONTACT ? $this->contact($message)?->toCard() : null,
             'edited_at' => $message->edited_at?->toIso8601String(),
+            'publish_at' => $message->publish_at?->isFuture() ? $message->publish_at->toIso8601String() : null,
+            'expires_at' => $message->expires_at?->isFuture() ? $message->expires_at->toIso8601String() : null,
             'created_at' => $message->created_at->toIso8601String(),
             'starred' => $starred,
             'forward' => is_array($forward) && is_string($forward['name'] ?? null) ? [
@@ -196,6 +198,14 @@ class MessengerPresenter
     {
         $messages = $conversation->messages()
             ->with(['user', 'attachments', 'replyTo.user', 'replyTo.attachments'])
+            ->where(function ($query) use ($viewer) {
+                $query->where(fn ($visible) => $visible
+                    ->where(fn ($q) => $q->whereNull('publish_at')->orWhere('publish_at', '<=', now()))
+                    ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now())));
+                if ($viewer) {
+                    $query->orWhere(fn ($own) => $own->where('user_id', $viewer->id)->where('publish_at', '>', now()));
+                }
+            })
             ->when($beforeId, fn ($q, int $id) => $q->where('id', '<', $id))
             ->orderByDesc('id')
             ->limit(self::PAGE + 1)
@@ -229,11 +239,13 @@ class MessengerPresenter
                     ->where('me.user_id', $viewer->id)
                     ->whereNull('me.left_at');
             })
-            ->select('conversations.*', 'me.is_muted as my_muted', 'me.role as my_role')
+            ->select('conversations.*', 'me.is_muted as my_muted', 'me.role as my_role', 'me.pinned_at as my_pinned_at', 'me.folder as my_folder')
             ->selectSub(fn ($q) => $messenger->unreadMessages($q->selectRaw('count(*)'), $viewer->id, 'me'), 'unread_count')
             ->withCount('activeParticipants as members_count')
             ->with(['lastMessage' => fn ($q) => $q->with(['user', 'attachments'])])
             ->where(fn ($q) => $q->whereNotNull('conversations.last_message_id')->when($includeId, fn ($q, int $id) => $q->orWhere('conversations.id', $id)))
+            ->orderByRaw('case when me.pinned_at is null then 1 else 0 end')
+            ->orderByDesc('me.pinned_at')
             ->orderByDesc('conversations.last_message_at')
             ->orderByDesc('conversations.id')
             ->limit(100)
@@ -261,6 +273,10 @@ class MessengerPresenter
             'members_count' => (int) ($conversation->members_count ?? 0),
             'unread' => (int) ($conversation->unread_count ?? 0),
             'is_muted' => (bool) ($conversation->my_muted ?? false),
+            'pinned' => $conversation->getAttribute('my_pinned_at') !== null,
+            'folder' => is_string($conversation->getAttribute('my_folder')) && $conversation->getAttribute('my_folder') !== ''
+                ? $conversation->getAttribute('my_folder')
+                : null,
             'last_message' => $last ? [
                 'id' => $last->id,
                 'type' => $last->type,
@@ -294,6 +310,8 @@ class MessengerPresenter
             'peer' => $peer ? [...$peer->toCard(), 'last_seen_at' => $peer->last_seen_at?->toIso8601String(), 'gender' => $peer->gender] : null,
             'can_write' => $conversation->isGroup() || ($peer !== null && $messenger->canMessage($viewer, $peer)),
             'is_muted' => $me->is_muted,
+            'pinned' => $me->pinned_at !== null,
+            'folder' => $me->folder,
             'my_role' => $me->role,
             'read_up_to' => (int) $others->max('last_read_message_id'),
             'members' => $conversation->isGroup()

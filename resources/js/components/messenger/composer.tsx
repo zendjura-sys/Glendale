@@ -69,6 +69,8 @@ export function Composer({
 }: Props) {
     const { site } = usePage().props;
     const [body, setBody] = useState(draft ?? '');
+    const [publishAt, setPublishAt] = useState('');
+    const [vanish, setVanish] = useState(false);
     const [images, setImages] = useState<File[]>([]);
     const [docs, setDocs] = useState<File[]>([]);
     const [emojiOpen, setEmojiOpen] = useState(false);
@@ -182,6 +184,8 @@ export function Composer({
         setBody('');
         setImages([]);
         setDocs([]);
+        setPublishAt('');
+        setVanish(false);
         requestAnimationFrame(resize);
     };
 
@@ -198,7 +202,14 @@ export function Composer({
         if (editing) {
             onEdit(editing, trimmed);
         } else {
-            onSend({ kind: 'text', body: trimmed, images, files: docs });
+            onSend({
+                kind: 'text',
+                body: trimmed,
+                images,
+                files: docs,
+                publishAt: publishAt || null,
+                vanish,
+            });
         }
 
         reset();
@@ -273,6 +284,28 @@ export function Composer({
                 addFiles(event.dataTransfer.files);
             }}
         >
+            {!editing && (
+                <div className="mb-2 flex flex-wrap items-center gap-3 px-1 text-xs text-white/55">
+                    <label className="inline-flex min-h-8 items-center gap-2">
+                        <input
+                            type="checkbox"
+                            checked={vanish}
+                            onChange={(event) => setVanish(event.target.checked)}
+                            className="size-3.5 accent-gc-lilac-400"
+                        />
+                        {tr('Зникне за добу')}
+                    </label>
+                    <label className="inline-flex min-h-8 items-center gap-2">
+                        {tr('Відкласти')}
+                        <input
+                            type="datetime-local"
+                            value={publishAt}
+                            onChange={(event) => setPublishAt(event.target.value)}
+                            className="input-glass h-8 rounded-lg px-2 text-xs text-white"
+                        />
+                    </label>
+                </div>
+            )}
             {context && (
                 <div className="mb-2 flex animate-in items-center gap-3 rounded-xl bg-white/[0.04] px-3 py-2 fade-in slide-in-from-bottom-1">
                     {editing ? (

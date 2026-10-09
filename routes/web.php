@@ -146,6 +146,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('{conversation}/settings', [MessengerController::class, 'update'])->name('update');
             Route::post('{conversation}/read', [MessengerController::class, 'read'])->name('read');
             Route::post('{conversation}/mute', [MessengerController::class, 'mute'])->name('mute');
+            Route::post('{conversation}/pin', [MessengerController::class, 'pin'])->name('pin');
+            Route::put('{conversation}/folder', [MessengerController::class, 'folder'])->name('folder');
             Route::post('{conversation}/members', [MessengerController::class, 'addMembers'])->name('members.store');
             Route::delete('{conversation}/members/{user}', [MessengerController::class, 'removeMember'])->name('members.destroy');
             Route::patch('{conversation}/messages/{message}', [MessageController::class, 'update'])->name('messages.update');

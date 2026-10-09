@@ -282,6 +282,12 @@ export function MessageBubble({
                         </div>
                     )}
 
+                    {(message.publish_at || message.expires_at) && (
+                        <p className={cn('mb-1 text-[11px]', own ? 'text-white/70' : 'text-white/45', hasImages && 'px-2 pt-1')}>
+                            {message.publish_at ? tr('Заплановано') : tr('Зникне за добу')}
+                        </p>
+                    )}
+
                     {message.forward && (
                         <p className={cn('mb-1 text-xs', own ? 'text-white/75' : 'text-white/50', hasImages && 'px-2 pt-1')}>
                             {message.forward.username ? (

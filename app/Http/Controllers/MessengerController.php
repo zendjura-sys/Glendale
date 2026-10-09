@@ -177,6 +177,24 @@ class MessengerController extends Controller
         return back();
     }
 
+    public function pin(Request $request, Conversation $conversation): RedirectResponse
+    {
+        $me = $this->participant($conversation, $request->user());
+        $me->forceFill(['pinned_at' => $me->pinned_at ? null : now()])->save();
+
+        return back();
+    }
+
+    public function folder(Request $request, Conversation $conversation): RedirectResponse
+    {
+        $me = $this->participant($conversation, $request->user());
+        $data = $request->validate(['folder' => ['nullable', 'string', 'max:24']]);
+        $name = trim((string) ($data['folder'] ?? ''));
+        $me->forceFill(['folder' => $name === '' ? null : $name])->save();
+
+        return back();
+    }
+
     public function read(Request $request, Conversation $conversation): JsonResponse
     {
         $this->participant($conversation, $request->user());

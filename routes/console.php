@@ -21,6 +21,7 @@ Schedule::command('site:weekly')->weeklyOn(1, '09:00')->timezone('Europe/Kyiv')-
 
 Schedule::command('calls:expire')->everyMinute()->withoutOverlapping(5);
 Schedule::command('posts:publish')->everyMinute()->withoutOverlapping(5);
+Schedule::command('messages:tick')->everyMinute()->withoutOverlapping(5);
 Schedule::command('events:remind')->everyFiveMinutes()->withoutOverlapping(10);
 // Події серверів із Discord — що 15 хвилин, події й виходи ігор з IGDB — щогодини.
 Schedule::command('events:sync --servers')->everyFifteenMinutes()->withoutOverlapping(15);
