@@ -229,6 +229,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::patch('tracks/{track}', [TrackController::class, 'update'])->name('tracks.update');
             Route::delete('tracks/{track}', [TrackController::class, 'destroy'])->name('tracks.destroy');
             Route::get('tracks/{track}/download', [TrackController::class, 'download'])->name('tracks.download');
+            Route::get('tracks/{track}/lyrics', [TrackController::class, 'lyrics'])->name('tracks.lyrics');
             Route::post('tracks/{track}/library', [TrackController::class, 'add'])->name('tracks.add');
             Route::delete('tracks/{track}/library', [TrackController::class, 'remove'])->name('tracks.remove');
 
@@ -345,6 +346,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('queue', [ListenPartyController::class, 'enqueue'])->middleware('throttle:60,1')->name('queue');
         Route::delete('queue/{index}', [ListenPartyController::class, 'dequeue'])->whereNumber('index')->name('dequeue');
         Route::post('next', [ListenPartyController::class, 'next'])->middleware('throttle:60,1')->name('next');
+        Route::post('repeat', [ListenPartyController::class, 'repeat'])->name('repeat');
         Route::post('shared', [ListenPartyController::class, 'shared'])->name('shared');
         Route::post('invite', [ListenPartyController::class, 'invite'])->middleware('throttle:10,1')->name('invite');
         Route::post('share', [ListenPartyController::class, 'share'])->middleware('throttle:10,1')->name('share');
@@ -353,6 +355,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
 
     Route::prefix('servers')->name('servers.')->middleware('module:servers')->group(function () {
         Route::get('/', [ServerController::class, 'index'])->name('index');
+        Route::get('compare', [ServerController::class, 'compare'])->name('compare');
         Route::post('suggest', [ServerController::class, 'suggest'])->middleware('throttle:5,10')->name('suggest');
         Route::get('{server}', [ServerController::class, 'show'])->name('show');
         Route::post('{server}/invite', [ServerController::class, 'invite'])->middleware('throttle:20,1')->name('invite');

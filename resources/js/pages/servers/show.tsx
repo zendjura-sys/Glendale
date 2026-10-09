@@ -71,12 +71,20 @@ export default function ServerShow({
         <>
             <Head title={server.name} />
             <div className="space-y-5">
-                <Link
-                    href="/servers"
-                    className="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white"
-                >
-                    <ArrowLeft className="size-4" /> {tr('Усі сервери')}
-                </Link>
+                <div className="flex flex-wrap items-center gap-4">
+                    <Link
+                        href="/servers"
+                        className="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white"
+                    >
+                        <ArrowLeft className="size-4" /> {tr('Усі сервери')}
+                    </Link>
+                    <Link
+                        href={`/servers/compare?a=${server.slug}`}
+                        className="text-sm text-white/50 hover:text-white"
+                    >
+                        {tr('Порівняти з іншим')}
+                    </Link>
+                </div>
 
                 <section className="glass noise relative overflow-hidden rounded-3xl p-6 sm:p-8">
                     {server.icon && (

@@ -26,17 +26,26 @@ export function EditTrackDialog({
         artist: '',
         album: '',
         genre: '',
+        lyrics: '',
     });
     const [saving, setSaving] = useState(false);
+    const [ready, setReady] = useState(false);
 
     useEffect(() => {
-        if (track)
-            setData({
-                title: track.title,
-                artist: track.artist,
-                album: track.album ?? '',
-                genre: track.genre ?? '',
-            });
+        if (!track) return;
+        setReady(false);
+        setData({
+            title: track.title,
+            artist: track.artist,
+            album: track.album ?? '',
+            genre: track.genre ?? '',
+            lyrics: '',
+        });
+        void api<{ lyrics: string | null }>('GET', `/music/tracks/${track.id}/lyrics`)
+            .then((response) =>
+                setData((current) => ({ ...current, lyrics: response.lyrics ?? '' })),
+            )
+            .finally(() => setReady(true));
     }, [track]);
 
     const save = async () => {
@@ -86,6 +95,16 @@ export function EditTrackDialog({
                             />
                         </label>
                     ))}
+                    <label className="text-sm font-medium text-white/80">
+                        {tr('Текст пісні')}
+                        <textarea
+                            value={data.lyrics}
+                            onChange={(event) => setData({ ...data, lyrics: event.target.value })}
+                            maxLength={8000}
+                            rows={6}
+                            className="input-glass mt-1.5 w-full rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none"
+                        />
+                    </label>
                 </div>
                 <div className="mt-6 flex justify-end gap-2">
                     <button
@@ -99,7 +118,7 @@ export function EditTrackDialog({
                         type="button"
                         onClick={save}
                         disabled={
-                            saving || !data.title.trim() || !data.artist.trim()
+                            saving || !ready || !data.title.trim() || !data.artist.trim()
                         }
                         className="btn-glow rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
                     >

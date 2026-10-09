@@ -38,6 +38,7 @@ type Playback = {
     state_ms: number;
     server_ms: number;
     shared_control: boolean;
+    repeat: boolean;
 };
 
 type QueueItem = { index: number; track: LocalTrack; by: UserCard | null };
@@ -562,6 +563,20 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                             )}
                             {party.is_host && (
                                 <>
+                                    <label className="flex cursor-pointer items-center justify-between gap-2 rounded-xl px-1 py-2 text-sm text-white/75">
+                                        {tr('Повторювати цей трек')}
+                                        <input
+                                            type="checkbox"
+                                            checked={state.repeat}
+                                            onChange={(e) =>
+                                                void api<{ state: Playback }>(
+                                                    'POST',
+                                                    `${base}/repeat`,
+                                                    { repeat: e.target.checked },
+                                                ).then(apply)
+                                            }
+                                        />
+                                    </label>
                                     <label className="flex cursor-pointer items-center justify-between gap-2 rounded-xl px-1 py-2 text-sm text-white/75">
                                         {tr('Керувати можуть усі')}
                                         <input

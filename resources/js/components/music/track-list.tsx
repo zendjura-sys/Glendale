@@ -2,6 +2,7 @@ import {
     Check,
     Download,
     ExternalLink,
+    FileText,
     Headphones,
     ListEnd,
     ListPlus,
@@ -37,6 +38,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { LocalTrack, PlaylistCard, TrackCard } from '@/types';
 import { EditTrackDialog } from './edit-track-dialog';
+import { LyricsDialog } from './lyrics-dialog';
 import { PlaylistDialog } from './playlist-dialog';
 import { ShareTrackDialog } from './share-track-dialog';
 import { Equalizer, SpotifyLogo, TrackCover } from './track-cover';
@@ -70,6 +72,7 @@ export function TrackList({
     const [hidden, setHidden] = useState<string[]>([]);
     const [sharing, setSharing] = useState<TrackCard | null>(null);
     const [editing, setEditing] = useState<LocalTrack | null>(null);
+    const [lyricsFor, setLyricsFor] = useState<LocalTrack | null>(null);
     const [newPlaylistFor, setNewPlaylistFor] = useState<number | null>(null);
 
     const list = tracks
@@ -349,6 +352,14 @@ export function TrackList({
                                             <Headphones /> {tr('Схожі треки')}
                                         </DropdownMenuItem>
                                     )}
+                                    {track.source === 'local' && track.has_lyrics && (
+                                        <DropdownMenuItem
+                                            className={itemClass}
+                                            onSelect={() => setLyricsFor(track)}
+                                        >
+                                            <FileText /> {tr('Текст пісні')}
+                                        </DropdownMenuItem>
+                                    )}
                                     {track.source === 'local' ? (
                                         <DropdownMenuItem
                                             className={itemClass}
@@ -421,6 +432,7 @@ export function TrackList({
                 track={sharing}
                 onOpenChange={(open) => !open && setSharing(null)}
             />
+            <LyricsDialog track={lyricsFor} onOpenChange={(open) => !open && setLyricsFor(null)} />
             <EditTrackDialog
                 track={editing}
                 onOpenChange={(open) => !open && setEditing(null)}

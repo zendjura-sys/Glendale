@@ -95,6 +95,25 @@ class ServerController extends Controller
         ]);
     }
 
+    public function compare(Request $request): Response
+    {
+        $data = $request->validate([
+            'a' => ['nullable', 'string', 'max:80'],
+            'b' => ['nullable', 'string', 'max:80'],
+        ]);
+        $left = $this->publishedBySlug($data['a'] ?? null);
+        $right = $this->publishedBySlug($data['b'] ?? null);
+        abort_if($left instanceof GtaServer && $right instanceof GtaServer && $left->is($right), 422);
+
+        return Inertia::render('servers/compare', [
+            'left' => $left instanceof GtaServer ? $this->compareCard($left) : null,
+            'right' => $right instanceof GtaServer ? $this->compareCard($right) : null,
+            'servers' => GtaServer::query()->published()->orderBy('name')->limit(200)->get(['slug', 'name'])
+                ->map(fn (GtaServer $server) => ['slug' => $server->slug, 'name' => $server->name])
+                ->values(),
+        ]);
+    }
+
     public function show(Request $request, GtaServer $server, FamilyRating $rating, EventCalendar $calendar, PlayingStatus $playing, FriendshipService $friendships): Response
     {
         abort_unless($server->status === GtaServer::STATUS_PUBLISHED || $request->user()->isAdmin(), 404);
@@ -322,6 +341,30 @@ class ServerController extends Controller
     /**
      * @param  array<string, mixed>  $data
      */
+    private function publishedBySlug(?string $slug): ?GtaServer
+    {
+        if ($slug === null || $slug === '') {
+            return null;
+        }
+
+        return GtaServer::query()->published()->where('slug', $slug)->first();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function compareCard(GtaServer $server): array
+    {
+        $average = ServerReview::query()->where('gta_server_id', $server->id)->avg('stars');
+
+        return [
+            ...$server->toCard(),
+            'language_label' => GtaServer::LANGUAGES[$server->language] ?? $server->language,
+            'rating' => $average === null ? null : round((float) $average, 1),
+            'reviews' => ServerReview::query()->where('gta_server_id', $server->id)->count(),
+        ];
+    }
+
     private function duplicate(array $data): ?GtaServer
     {
         $host = isset($data['website']) ? preg_replace('/^www\./', '', (string) parse_url((string) $data['website'], PHP_URL_HOST)) : null;

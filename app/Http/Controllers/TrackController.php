@@ -44,6 +44,7 @@ class TrackController extends Controller
             'artist' => ['required', 'string', 'max:150'],
             'album' => ['nullable', 'string', 'max:150'],
             'genre' => ['nullable', 'string', 'max:40'],
+            'lyrics' => ['nullable', 'string', 'max:8000'],
             'cover_url' => ['nullable', 'url:https', 'max:500'],
         ]);
         $coverUrl = $data['cover_url'] ?? null;
@@ -60,6 +61,11 @@ class TrackController extends Controller
         }
 
         return response()->json(['track' => $track->toCard(true)]);
+    }
+
+    public function lyrics(Track $track): JsonResponse
+    {
+        return response()->json(['lyrics' => $track->lyrics]);
     }
 
     public function destroy(Request $request, Track $track): JsonResponse

@@ -105,6 +105,14 @@ class ListenPartyController extends Controller
         return response()->json($this->parties->state($party->refresh(), $user));
     }
 
+    public function repeat(Request $request, ListenParty $party): JsonResponse
+    {
+        $user = $this->live($request, $party);
+        $this->parties->setRepeat($party, $user, $request->boolean('repeat'));
+
+        return response()->json(['state' => $this->parties->playback($party->refresh())]);
+    }
+
     public function shared(Request $request, ListenParty $party): JsonResponse
     {
         $user = $this->live($request, $party);
