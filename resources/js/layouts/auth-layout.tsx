@@ -11,6 +11,7 @@ import { Aurora } from '@/components/gc/aurora';
 import { Logo } from '@/components/gc/logo';
 import { LanguageSelect } from '@/components/gc/language-switcher';
 import { tr } from '@/lib/i18n';
+import { PaletteSync } from '@/components/gc/palette-sync';
 
 const FEATURES = [
     {
@@ -113,6 +114,7 @@ export default function AuthLayout({
 
     return (
         <div className="relative flex min-h-dvh">
+            <PaletteSync />
             <Aurora intense />
             <Showcase />
 

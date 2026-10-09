@@ -46,6 +46,7 @@ import {
     LanguageSelect,
 } from '@/components/gc/language-switcher';
 import { tr } from '@/lib/i18n';
+import { PaletteSync } from '@/components/gc/palette-sync';
 
 function useIsActive() {
     const { currentUrl } = useCurrentUrl();
@@ -586,6 +587,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
 
     return (
         <div className="relative min-h-dvh">
+            <PaletteSync />
             {modules.includes('messages') && (
                 <>
                     <InboxListener userId={auth.user.id} />

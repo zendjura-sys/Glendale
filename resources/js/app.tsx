@@ -1,6 +1,5 @@
 import type { VisitOptions } from '@inertiajs/core';
-import { createInertiaApp, usePage } from '@inertiajs/react';
-import { useEffect } from 'react';
+import { createInertiaApp } from '@inertiajs/react';
 import { SkipLink } from '@/components/gc/skip-link';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -72,16 +71,6 @@ if (
     };
 }
 
-function PaletteSync() {
-    const palette = usePage().props.auth.user?.palette ?? 'aurora';
-
-    useEffect(() => {
-        document.documentElement.dataset.palette = palette;
-    }, [palette]);
-
-    return null;
-}
-
 function shouldViewTransition(options: VisitOptions): boolean {
     const method = (options.method ?? 'get').toLowerCase();
     const partial =
@@ -130,7 +119,6 @@ void createInertiaApp({
     withApp(app) {
         return (
             <TooltipProvider delayDuration={0}>
-                <PaletteSync />
                 <SkipLink />
                 {app}
                 <Toaster />

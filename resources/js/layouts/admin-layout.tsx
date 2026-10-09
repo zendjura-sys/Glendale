@@ -32,6 +32,7 @@ import { usePlayer } from '@/lib/player';
 import { cn } from '@/lib/utils';
 import { PageTransition } from '@/components/gc/page-transition';
 import { tr } from '@/lib/i18n';
+import { PaletteSync } from '@/components/gc/palette-sync';
 
 const items = [
     { label: tr('Огляд'), href: '/admin', icon: LayoutDashboard, exact: true },
@@ -85,6 +86,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
 
     return (
         <div className="relative min-h-dvh">
+            <PaletteSync />
             <Aurora className="opacity-70" />
 
             <aside className="fixed inset-y-0 left-0 z-40 hidden w-[256px] flex-col border-r border-white/[0.06] bg-void/80 p-4 backdrop-blur-2xl [view-transition-name:gc-sidebar] lg:flex">

@@ -54,7 +54,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
             <div className="flex flex-col gap-5 md:flex-row">
                 <aside className="md:w-[250px] md:shrink-0">
                     <nav
-                        className="glass flex gap-1 rounded-2xl p-2 md:sticky md:top-[76px] md:flex-col"
+                        className="glass scrollbar-none flex gap-1 overflow-x-auto rounded-2xl p-2 md:sticky md:top-[76px] md:flex-col md:overflow-visible"
                         aria-label={tr('Налаштування')}
                     >
                         {items.map(
@@ -66,7 +66,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                         key={toUrl(href)}
                                         href={href}
                                         className={cn(
-                                            'flex flex-1 items-center gap-3 rounded-xl px-3 py-2.5 transition',
+                                            'flex flex-1 shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 whitespace-nowrap transition',
                                             active
                                                 ? 'nav-active text-white'
                                                 : 'text-white/60 hover:bg-white/[0.045] hover:text-white',

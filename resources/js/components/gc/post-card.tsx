@@ -577,7 +577,7 @@ export function PostCard({
                 </a>
             )}
 
-            <footer className="mt-4 flex items-center gap-2">
+            <footer className="mt-4 flex flex-wrap items-center gap-2">
                 <ReactionBar
                     reaction={reaction}
                     count={likes}
