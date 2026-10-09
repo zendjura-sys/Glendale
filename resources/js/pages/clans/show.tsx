@@ -75,6 +75,12 @@ type Props = {
         starts_at: string;
         going_count: number;
         going: boolean;
+        repeat: string | null;
+        bracket: {
+            teams: string[];
+            semi: [number | null, number | null][];
+            final: [number | null, number | null];
+        } | null;
     }[];
     contributions: {
         id: number;
@@ -565,7 +571,7 @@ function EventsTab({
     events: Props['events'];
     canManage: boolean;
 }) {
-    const form = useForm({ title: '', description: '', starts_at: '' });
+    const form = useForm({ title: '', description: '', starts_at: '', weekly: false });
 
     return (
         <>
@@ -613,6 +619,14 @@ function EventsTab({
                                 {form.errors.starts_at}
                             </p>
                         )}
+                        <label className="flex items-center gap-2 text-sm text-white/70 sm:col-span-2">
+                            <input
+                                type="checkbox"
+                                checked={form.data.weekly}
+                                onChange={(e) => form.setData('weekly', e.target.checked)}
+                            />
+                            {tr('Щотижня')}
+                        </label>
                         <button
                             type="submit"
                             disabled={form.processing}
@@ -645,7 +659,9 @@ function EventsTab({
                         )}
                         <p className="mt-1 text-xs text-white/45">
                             {tr('Іде:')} {e.going_count}
+                            {e.repeat === 'weekly' ? ` · ${tr('Щотижня')}` : ''}
                         </p>
+                        {canManage && <BracketForm base={base} event={e} />}
                     </div>
                     <button
                         type="button"
@@ -1322,6 +1338,94 @@ function SettingsTab({
                     ))}
                 </Card>
             )}
+        </form>
+    );
+}
+
+function BracketForm({
+    base,
+    event,
+}: {
+    base: string;
+    event: Props['events'][number];
+}) {
+    const form = useForm({
+        teams: event.bracket?.teams ?? ['', '', '', ''],
+        semi: event.bracket?.semi ?? [
+            [null, null],
+            [null, null],
+        ],
+        final: event.bracket?.final ?? [null, null],
+    });
+    const field = 'input-glass h-9 w-full rounded-lg px-2 text-xs text-white placeholder:text-white/30 focus:outline-none';
+
+    return (
+        <form
+            className="mt-3 grid gap-2"
+            onSubmit={(e) => {
+                e.preventDefault();
+                form.post(`${base}/events/${event.id}/bracket`, { preserveScroll: true });
+            }}
+        >
+            <p className="text-xs text-white/45">{tr('Сітка на 4')}</p>
+            <div className="grid grid-cols-2 gap-2">
+                {form.data.teams.map((name, index) => (
+                    <input
+                        key={index}
+                        value={name}
+                        onChange={(e) => {
+                            const teams = [...form.data.teams];
+                            teams[index] = e.target.value;
+                            form.setData('teams', teams);
+                        }}
+                        placeholder={tr('Команда {n}', { n: index + 1 })}
+                        className={field}
+                    />
+                ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+                {form.data.semi.map((pair, index) => (
+                    <div key={index} className="flex gap-1">
+                        {pair.map((score, side) => (
+                            <input
+                                key={side}
+                                type="number"
+                                min={0}
+                                max={99}
+                                value={score ?? ''}
+                                onChange={(e) => {
+                                    const semi = form.data.semi.map((row) => [...row]) as [number | null, number | null][];
+                                    semi[index][side] = e.target.value === '' ? null : Number(e.target.value);
+                                    form.setData('semi', semi);
+                                }}
+                                placeholder={index === 0 ? tr('Півфінал') : tr('Півфінал')}
+                                className={field}
+                            />
+                        ))}
+                    </div>
+                ))}
+            </div>
+            <div className="flex gap-1">
+                {form.data.final.map((score, side) => (
+                    <input
+                        key={side}
+                        type="number"
+                        min={0}
+                        max={99}
+                        value={score ?? ''}
+                        onChange={(e) => {
+                            const final = [...form.data.final] as [number | null, number | null];
+                            final[side] = e.target.value === '' ? null : Number(e.target.value);
+                            form.setData('final', final);
+                        }}
+                        placeholder={tr('Фінал')}
+                        className={field}
+                    />
+                ))}
+            </div>
+            <button type="submit" className="h-9 rounded-lg bg-white/10 text-xs font-semibold text-white">
+                {tr('Зберегти сітку')}
+            </button>
         </form>
     );
 }

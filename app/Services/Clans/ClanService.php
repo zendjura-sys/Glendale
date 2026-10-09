@@ -270,10 +270,17 @@ class ClanService
         $news->delete();
     }
 
-    public function createEvent(Clan $clan, ClanMember $actor, string $title, ?string $description, Carbon $startsAt): ClanEvent
+    public function createEvent(Clan $clan, ClanMember $actor, string $title, ?string $description, Carbon $startsAt, ?string $repeat = null): ClanEvent
     {
         $this->authorize($actor, $clan, 'events.manage');
-        $event = ClanEvent::query()->create(['clan_id' => $clan->id, 'user_id' => $actor->user_id, 'title' => $title, 'description' => $description, 'starts_at' => $startsAt]);
+        $event = ClanEvent::query()->create([
+            'clan_id' => $clan->id,
+            'user_id' => $actor->user_id,
+            'title' => $title,
+            'description' => $description,
+            'starts_at' => $startsAt,
+            'repeat' => $repeat,
+        ]);
         $this->announce($clan, "📅 Новий захід: {$title} — ".$startsAt->timezone('Europe/Kyiv')->format('d.m H:i'));
 
         return $event;
@@ -286,6 +293,16 @@ class ClanService
         $going ? $event->going()->detach($member->user_id) : $event->going()->attach($member->user_id);
 
         return ! $going;
+    }
+
+    /**
+     * @param  array{teams: list<string>, semi: list<array{0: int|null, 1: int|null}>, final: array{0: int|null, 1: int|null}}  $bracket
+     */
+    public function saveBracket(Clan $clan, ClanMember $actor, ClanEvent $event, array $bracket): void
+    {
+        abort_unless($event->clan_id === $clan->id, 404);
+        $this->authorize($actor, $clan, 'events.manage');
+        $event->forceFill(['bracket' => $bracket])->save();
     }
 
     public function deleteEvent(Clan $clan, ClanMember $actor, ClanEvent $event): void

@@ -117,6 +117,8 @@ class ClanController extends Controller
                     'id' => $e->id, 'title' => $e->title, 'description' => $e->description,
                     'starts_at' => $e->starts_at->toIso8601String(), 'going_count' => (int) $e->getAttribute('going_count'),
                     'going' => $e->going->isNotEmpty(),
+                    'repeat' => $e->repeat,
+                    'bracket' => $e->bracket,
                 ])
             : [];
 
@@ -253,8 +255,20 @@ class ClanController extends Controller
     public function event(Request $request, Clan $clan): RedirectResponse
     {
         $this->feature($clan, 'events');
-        $data = $request->validate(['title' => ['required', 'string', 'max:120'], 'description' => ['nullable', 'string', 'max:1000'], 'starts_at' => ['required', 'date', 'after:now']]);
-        $this->clans->createEvent($clan, $this->me($request, $clan), trim($data['title']), $data['description'] ?? null, Carbon::parse($data['starts_at'], 'Europe/Kyiv')->utc());
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:120'],
+            'description' => ['nullable', 'string', 'max:1000'],
+            'starts_at' => ['required', 'date', 'after:now'],
+            'weekly' => ['sometimes', 'boolean'],
+        ]);
+        $this->clans->createEvent(
+            $clan,
+            $this->me($request, $clan),
+            trim($data['title']),
+            $data['description'] ?? null,
+            Carbon::parse($data['starts_at'], 'Europe/Kyiv')->utc(),
+            ($data['weekly'] ?? false) ? 'weekly' : null,
+        );
 
         return $this->done('Захід створено.');
     }
@@ -271,6 +285,33 @@ class ClanController extends Controller
         $this->clans->deleteEvent($clan, $this->me($request, $clan), $event);
 
         return $this->done('Захід видалено.');
+    }
+
+    public function bracket(Request $request, Clan $clan, ClanEvent $event): RedirectResponse
+    {
+        $this->feature($clan, 'events');
+        $data = $request->validate([
+            'teams' => ['required', 'array', 'size:4'],
+            'teams.*' => ['required', 'string', 'max:40'],
+            'semi' => ['required', 'array', 'size:2'],
+            'semi.*' => ['array', 'size:2'],
+            'semi.*.*' => ['nullable', 'integer', 'min:0', 'max:99'],
+            'final' => ['required', 'array', 'size:2'],
+            'final.*' => ['nullable', 'integer', 'min:0', 'max:99'],
+        ]);
+        $score = function (mixed $value): ?int {
+            return $value === null || $value === '' ? null : (int) $value;
+        };
+        $this->clans->saveBracket($clan, $this->me($request, $clan), $event, [
+            'teams' => array_map(fn ($name) => trim((string) $name), $data['teams']),
+            'semi' => [
+                [$score($data['semi'][0][0] ?? null), $score($data['semi'][0][1] ?? null)],
+                [$score($data['semi'][1][0] ?? null), $score($data['semi'][1][1] ?? null)],
+            ],
+            'final' => [$score($data['final'][0] ?? null), $score($data['final'][1] ?? null)],
+        ]);
+
+        return $this->done('Сітку збережено.');
     }
 
     public function contribute(Request $request, Clan $clan): RedirectResponse

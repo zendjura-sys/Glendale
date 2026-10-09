@@ -6,6 +6,7 @@ use App\Models\Comment;
 use App\Models\Like;
 use App\Models\Movie;
 use App\Models\MovieSource;
+use App\Models\Track;
 use App\Models\User;
 use App\Services\Cinema\CinemaService;
 use App\Services\Cinema\FlixcdnPlayer;
@@ -15,6 +16,7 @@ use App\Services\SavedItems;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -146,6 +148,12 @@ class CinemaController extends Controller
             'similar' => $this->cards($similar),
             'comments' => $comments->map(fn (Comment $c) => $this->presenter->comment($c, $viewer, $liked->has($c->id)))->values(),
             'can' => ['manage' => $viewer->isStaff()],
+            'soundtrack' => $movie->tracks()->get()->map(fn (Track $track) => [
+                'id' => $track->id,
+                'title' => $track->title,
+                'artist' => $track->artist,
+                'url' => $track->url,
+            ])->all(),
             'saved' => app(SavedItems::class)->has($viewer, 'movie', $movie->id),
             'pinned' => is_array($pin = $viewer->pref('pin')) && ($pin['kind'] ?? null) === 'movie' && (int) ($pin['id'] ?? 0) === $movie->id,
         ]);
@@ -227,6 +235,20 @@ class CinemaController extends Controller
         $this->cinema->progress($request->user(), $movie, isset($data['season']) ? (int) $data['season'] : null, $episode);
 
         return $this->stateResponse($request->user(), $movie);
+    }
+
+    public function soundtrack(Request $request, Movie $movie): RedirectResponse
+    {
+        abort_unless($request->user()->isStaff(), 403);
+        abort_unless($movie->is_published || $request->user()->isStaff(), 404);
+        $data = $request->validate(['track_id' => ['required', 'integer', 'exists:tracks,id']]);
+        $trackId = (int) $data['track_id'];
+        if (! $movie->tracks()->whereKey($trackId)->exists()) {
+            $movie->tracks()->attach($trackId, ['position' => $movie->tracks()->count()]);
+        }
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Трек додано до саундтреку.']);
+
+        return back();
     }
 
     public function comments(Request $request, Movie $movie): JsonResponse

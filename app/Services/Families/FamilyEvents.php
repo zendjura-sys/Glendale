@@ -20,7 +20,7 @@ class FamilyEvents
     ) {}
 
     /**
-     * @param  array{title: string, type: string, description?: string|null, starts_at: string, points?: int|null, reward?: int|null}  $data
+     * @param  array{title: string, type: string, description?: string|null, starts_at: string, points?: int|null, reward?: int|null, repeat?: string|null}  $data
      */
     public function create(Family $family, FamilyMember $creator, array $data): FamilyEvent
     {
@@ -33,6 +33,7 @@ class FamilyEvents
             'starts_at' => $data['starts_at'],
             'points' => (int) ($data['points'] ?? 0),
             'reward' => (int) ($data['reward'] ?? 0),
+            'repeat' => ($data['repeat'] ?? null) === 'weekly' ? 'weekly' : null,
         ]);
 
         $this->audit->log($family, 'EVENT_CREATE', $creator, null, ['event_id' => $event->id, 'title' => $event->title]);

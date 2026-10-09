@@ -68,6 +68,7 @@ class FamilyEventController extends FamilyBaseController
             'starts_at' => ['required', 'date', 'after:-1 day'],
             'points' => ['nullable', 'integer', 'min:0', 'max:1000'],
             'reward' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
+            'weekly' => ['sometimes', 'boolean'],
         ]);
 
         $description = $data['description'] ?? null;
@@ -78,6 +79,7 @@ class FamilyEventController extends FamilyBaseController
             'starts_at' => CarbonImmutable::parse($request->string('starts_at')->toString(), 'Europe/Kyiv')->utc()->toDateTimeString(),
             'points' => isset($data['points']) && is_numeric($data['points']) ? (int) $data['points'] : null,
             'reward' => isset($data['reward']) ? $this->money($data['reward']) : 0,
+            'repeat' => ($data['weekly'] ?? false) ? 'weekly' : null,
         ]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Подію створено й анонсовано в чаті сім’ї.']);
 

@@ -54,6 +54,7 @@ type Props = {
     similar: MovieCard[];
     comments: CommentItem[];
     can: { manage: boolean };
+    soundtrack: { id: number; title: string; artist: string; url: string }[];
     saved: boolean;
     pinned: boolean;
 };
@@ -164,6 +165,7 @@ export default function CinemaShow({
     similar,
     comments,
     can,
+    soundtrack,
     saved,
     pinned,
 }: Props) {
@@ -707,6 +709,28 @@ export default function CinemaShow({
                             </section>
                         )}
                         <section className="glass rounded-3xl p-5">
+                            <h2 className="mb-3 font-display text-lg font-semibold text-white">
+                                {tr('Саундтрек')}
+                            </h2>
+                            <div className="space-y-2">
+                                {soundtrack.map((track) => (
+                                    <a
+                                        key={track.id}
+                                        href={track.url}
+                                        className="block rounded-2xl bg-white/[0.04] px-3 py-2 text-sm text-white hover:bg-white/10"
+                                    >
+                                        {track.artist} — {track.title}
+                                    </a>
+                                ))}
+                                {soundtrack.length === 0 && (
+                                    <p className="text-sm text-white/45">{tr('Треків ще немає.')}</p>
+                                )}
+                            </div>
+                            {can.manage && (
+                                <SoundtrackForm slug={movie.slug} />
+                            )}
+                        </section>
+                        <section className="glass rounded-3xl p-5">
                             <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
                                 <MessageCircle className="size-5 text-gc-lilac-400" />
                                 {tr('Обговорення')}
@@ -802,5 +826,45 @@ export default function CinemaShow({
                 onOpenChange={setSharing}
             />
         </>
+    );
+}
+
+function SoundtrackForm({ slug }: { slug: string }) {
+    const [query, setQuery] = useState('');
+    const [hits, setHits] = useState<{ id: number; title: string; artist: string }[]>([]);
+
+    return (
+        <form
+            className="mt-3 space-y-2"
+            onSubmit={(event) => {
+                event.preventDefault();
+                void api<{ tracks: { id: number; title: string; artist: string }[] }>(
+                    'GET',
+                    `/music/search?q=${encodeURIComponent(query)}&scope=all`,
+                ).then((response) => setHits(response.tracks));
+            }}
+        >
+            <div className="flex gap-2">
+                <input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder={tr('Знайти трек')}
+                    className="h-11 min-w-0 flex-1 rounded-xl bg-white/10 px-3 text-sm text-white placeholder:text-white/40"
+                />
+                <button type="submit" className="h-11 rounded-xl bg-white/10 px-4 text-sm font-semibold text-white">
+                    {tr('Шукати')}
+                </button>
+            </div>
+            {hits.map((track) => (
+                <button
+                    key={track.id}
+                    type="button"
+                    className="block w-full rounded-xl bg-white/[0.04] px-3 py-2 text-left text-sm text-white hover:bg-white/10"
+                    onClick={() => router.post(`/cinema/${slug}/soundtrack`, { track_id: track.id })}
+                >
+                    {track.artist} — {track.title}
+                </button>
+            ))}
+        </form>
     );
 }

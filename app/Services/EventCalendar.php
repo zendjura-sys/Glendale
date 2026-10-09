@@ -238,6 +238,7 @@ class EventCalendar
             'description' => $data['description'],
             'starts_at' => $data['starts_at'],
             'is_official' => $data['family_id'] === null,
+            'repeat' => ($data['repeat'] ?? null) === 'weekly' ? 'weekly' : null,
         ]);
         ServerEventRsvp::query()->create(['server_event_id' => $event->id, 'user_id' => $user->id, 'status' => ServerEventRsvp::GOING]);
 

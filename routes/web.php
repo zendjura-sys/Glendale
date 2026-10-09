@@ -231,6 +231,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::put('{movie}/rating', [CinemaController::class, 'rate'])->middleware('throttle:60,1')->name('rate');
         Route::post('{movie}/started', [CinemaController::class, 'started'])->middleware('throttle:30,1')->name('started');
         Route::put('{movie}/progress', [CinemaController::class, 'progress'])->middleware('throttle:60,1')->name('progress');
+        Route::post('{movie}/soundtrack', [CinemaController::class, 'soundtrack'])->middleware('throttle:30,1')->name('soundtrack.store');
         Route::get('{movie}/comments', [CinemaController::class, 'comments'])->name('comments.index');
         Route::post('{movie}/comments', [CinemaController::class, 'comment'])->middleware('throttle:30,1')->name('comments.store');
         Route::post('{movie}/watch', [WatchPartyController::class, 'store'])->middleware('throttle:10,1')->name('watch.store');
@@ -257,6 +258,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('news', [ClanController::class, 'news'])->middleware('throttle:20,1')->name('news.store');
             Route::delete('news/{news}', [ClanController::class, 'deleteNews'])->whereNumber('news')->name('news.destroy');
             Route::post('events', [ClanController::class, 'event'])->middleware('throttle:20,1')->name('events.store');
+            Route::post('events/{event}/bracket', [ClanController::class, 'bracket'])->whereNumber('event')->middleware('throttle:30,1')->name('events.bracket');
             Route::post('events/{event}/rsvp', [ClanController::class, 'rsvp'])->whereNumber('event')->name('events.rsvp');
             Route::delete('events/{event}', [ClanController::class, 'deleteEvent'])->whereNumber('event')->name('events.destroy');
             Route::post('contributions', [ClanController::class, 'contribute'])->middleware('throttle:30,1')->name('contributions.store');

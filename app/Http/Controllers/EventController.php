@@ -55,6 +55,7 @@ class EventController extends Controller
             'description' => ['nullable', 'string', 'max:1000'],
             'starts_at' => ['required', 'date'],
             'family_id' => ['nullable', 'integer'],
+            'weekly' => ['sometimes', 'boolean'],
         ]);
         // Час із форми — київський; з часовим поясом (застосунок) — як є.
         $startsAt = Carbon::instance(CarbonImmutable::parse((string) $data['starts_at'], 'Europe/Kyiv')->utc()->toMutable());
@@ -67,6 +68,7 @@ class EventController extends Controller
             'description' => isset($data['description']) ? trim((string) $data['description']) : null,
             'starts_at' => $startsAt,
             'family_id' => isset($data['family_id']) ? (int) $data['family_id'] : null,
+            'repeat' => ($data['weekly'] ?? false) ? 'weekly' : null,
         ]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Подію додано в календар сервера.']);
 

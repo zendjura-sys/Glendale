@@ -260,6 +260,7 @@ export function ServerEventForm({
         title: '',
         starts_at: '',
         description: '',
+        weekly: false,
     });
     const input =
         'input-glass h-10 w-full min-w-0 rounded-xl px-3 text-sm text-white placeholder:text-white/30 focus:outline-none';
@@ -327,6 +328,14 @@ export function ServerEventForm({
                 placeholder={tr('Деталі (необов’язково)')}
                 className="input-glass w-full rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none sm:col-span-2"
             />
+            <label className="flex items-center gap-2 text-sm text-white/70 sm:col-span-2">
+                <input
+                    type="checkbox"
+                    checked={form.data.weekly}
+                    onChange={(e) => form.setData('weekly', e.target.checked)}
+                />
+                {tr('Щотижня')}
+            </label>
             {(form.errors.starts_at || form.errors.title) && (
                 <p className="text-xs text-rose-300 sm:col-span-2">
                     {form.errors.starts_at ?? form.errors.title}

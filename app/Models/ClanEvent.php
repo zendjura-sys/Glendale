@@ -18,13 +18,16 @@ use Illuminate\Support\Carbon;
  * @property string|null $description
  * @property Carbon $starts_at
  * @property Carbon|null $reminded_at
+ * @property array<string, mixed>|null $bracket
+ * @property string|null $repeat
+ * @property Carbon|null $spawned_at
  */
-#[Fillable(['clan_id', 'user_id', 'title', 'description', 'starts_at', 'reminded_at'])]
+#[Fillable(['clan_id', 'user_id', 'title', 'description', 'starts_at', 'reminded_at', 'bracket', 'repeat', 'spawned_at'])]
 class ClanEvent extends Model
 {
     protected function casts(): array
     {
-        return ['starts_at' => 'datetime', 'reminded_at' => 'datetime'];
+        return ['starts_at' => 'datetime', 'reminded_at' => 'datetime', 'spawned_at' => 'datetime', 'bracket' => 'array'];
     }
 
     /**

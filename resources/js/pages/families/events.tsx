@@ -78,6 +78,7 @@ export default function FamilyEvents(props: Props) {
         starts_at: kyivInput(),
         points: default_points,
         reward: '',
+        weekly: false,
     });
 
     const planned = events.filter((e) => e.status === 'planned');
@@ -305,6 +306,14 @@ export default function FamilyEvents(props: Props) {
                             ))}
                         </select>
                     </Field>
+                    <label className="flex items-center gap-2 text-sm text-white/70">
+                        <input
+                            type="checkbox"
+                            checked={form.data.weekly}
+                            onChange={(e) => form.setData('weekly', e.target.checked)}
+                        />
+                        {tr('Щотижня')}
+                    </label>
                     <Field
                         label={tr('Початок (за Києвом)')}
                         error={form.errors.starts_at}
