@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Comment;
 use App\Models\Like;
 use App\Models\Movie;
+use App\Models\MovieRequest;
 use App\Models\MovieSource;
 use App\Models\Track;
 use App\Models\User;
@@ -93,7 +94,49 @@ class CinemaController extends Controller
             'genres' => $this->genres(),
             'years' => Movie::query()->published()->whereNotNull('year')->distinct()->orderByDesc('year')->limit(60)->pluck('year')->map(fn ($y) => (int) $y)->values(),
             'myCounts' => $this->myCounts($user),
+            'requests' => MovieRequest::query()->where('user_id', $user->id)->latest('id')->limit(5)->pluck('title')->all(),
+            'playback' => $this->playbackPrefs($user),
         ]);
+    }
+
+    public function requestMovie(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:160'],
+            'year' => ['nullable', 'integer', 'min:1900', 'max:2100'],
+        ]);
+        MovieRequest::query()->updateOrCreate(
+            ['user_id' => $request->user()->id, 'title' => trim($data['title'])],
+            ['year' => $data['year'] ?? null],
+        );
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Запит збережено.']);
+
+        return back();
+    }
+
+    public function playback(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'player' => ['nullable', Rule::in(['kodik', 'flixcdn', 'youtube'])],
+            'subs' => ['nullable', Rule::in(['uk', 'en', 'ru'])],
+        ]);
+        $request->user()->mergePref([
+            'cinema_player' => (string) ($data['player'] ?? ''),
+            'cinema_subs' => (string) ($data['subs'] ?? ''),
+        ]);
+
+        return back();
+    }
+
+    /**
+     * @return array{player: string, subs: string}
+     */
+    private function playbackPrefs(User $user): array
+    {
+        return [
+            'player' => (string) $user->pref('cinema_player', ''),
+            'subs' => (string) $user->pref('cinema_subs', ''),
+        ];
     }
 
     public function show(Request $request, Movie $movie): Response
@@ -148,7 +191,7 @@ class CinemaController extends Controller
                 'shikimori_id' => $movie->shikimori_id,
                 'tmdb_id' => $movie->tmdb_id,
             ],
-            'players' => $this->cinema->players($movie),
+            'players' => $this->cinema->players($movie, $viewer),
             'state' => $this->cinema->stateFor($movie, $viewer),
             'statuses' => $this->statusOptions(),
             'friends' => $this->friendsWatching($viewer, $movie),
@@ -166,6 +209,7 @@ class CinemaController extends Controller
             ])->all(),
             'saved' => app(SavedItems::class)->has($viewer, 'movie', $movie->id),
             'pinned' => is_array($pin = $viewer->pref('pin')) && ($pin['kind'] ?? null) === 'movie' && (int) ($pin['id'] ?? 0) === $movie->id,
+            'playback' => $this->playbackPrefs($viewer),
         ]);
     }
 

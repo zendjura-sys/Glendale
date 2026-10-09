@@ -60,6 +60,7 @@ type Props = {
     soundtrack: { id: number; title: string; artist: string; url: string }[];
     saved: boolean;
     pinned: boolean;
+    playback: { player: string; subs: string };
 };
 
 type StateResponse = {
@@ -174,6 +175,7 @@ export default function CinemaShow({
     soundtrack,
     saved,
     pinned,
+    playback,
 }: Props) {
     const [state, setState] = useState(initialState);
     const [stats, setStats] = useState({
@@ -700,6 +702,48 @@ export default function CinemaShow({
                     ) : (
                         <>
                             <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.06] p-3">
+                                <form
+                                    className="flex flex-wrap items-center gap-2"
+                                    onSubmit={(event) => {
+                                        event.preventDefault();
+                                        const data = new FormData(event.currentTarget);
+                                        router.put(
+                                            '/cinema/playback',
+                                            {
+                                                player: String(data.get('player') ?? ''),
+                                                subs: String(data.get('subs') ?? ''),
+                                            },
+                                            { preserveScroll: true },
+                                        );
+                                    }}
+                                >
+                                    <select
+                                        name="player"
+                                        defaultValue={playback.player}
+                                        className="h-9 rounded-lg bg-white/10 px-2 text-xs text-white"
+                                    >
+                                        <option value="">{tr('Плеєр')}</option>
+                                        <option value="kodik">Kodik</option>
+                                        <option value="flixcdn">FlixCDN</option>
+                                        <option value="youtube">YouTube</option>
+                                    </select>
+                                    <select
+                                        name="subs"
+                                        defaultValue={playback.subs}
+                                        className="h-9 rounded-lg bg-white/10 px-2 text-xs text-white"
+                                    >
+                                        <option value="">{tr('Субтитри')}</option>
+                                        <option value="uk">{tr('Українська')}</option>
+                                        <option value="en">{tr('Англійська')}</option>
+                                        <option value="ru">{tr('Російська')}</option>
+                                    </select>
+                                    <button
+                                        type="submit"
+                                        className="h-9 rounded-lg bg-white/10 px-3 text-xs text-white"
+                                    >
+                                        {tr('Зберегти')}
+                                    </button>
+                                </form>
                                 <div className="flex gap-1">
                                     {tabs.map((tab) => (
                                         <button

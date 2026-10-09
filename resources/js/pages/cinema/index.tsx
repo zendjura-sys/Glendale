@@ -52,6 +52,7 @@ type Props = {
     genres: { name: string; count: number }[];
     years: number[];
     myCounts: Record<string, number>;
+    requests: string[];
 };
 
 const sorts: { key: Filters['sort']; label: string }[] = [
@@ -230,6 +231,7 @@ export default function CinemaIndex({
     genres,
     years,
     myCounts,
+    requests,
 }: Props) {
     const [search, setSearch] = useState(filters.q);
 
@@ -502,6 +504,47 @@ export default function CinemaIndex({
                         </InfiniteScroll>
                     </section>
                 )}
+                <form
+                    className="glass flex flex-wrap items-end gap-2 rounded-3xl p-4"
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        const data = new FormData(event.currentTarget);
+                        router.post('/cinema/requests', {
+                            title: String(data.get('title') ?? ''),
+                            year: data.get('year') || undefined,
+                        });
+                    }}
+                >
+                    <label className="min-w-[12rem] flex-1 text-xs text-white/45">
+                        {tr('Немає в каталозі')}
+                        <input
+                            name="title"
+                            required
+                            maxLength={160}
+                            placeholder={tr('Назва фільму')}
+                            className="input-glass mt-1 h-11 w-full rounded-xl px-3 text-sm text-white"
+                        />
+                    </label>
+                    <input
+                        name="year"
+                        type="number"
+                        min={1900}
+                        max={2100}
+                        placeholder={tr('Рік')}
+                        className="input-glass h-11 w-24 rounded-xl px-3 text-sm text-white"
+                    />
+                    <button
+                        type="submit"
+                        className="h-11 rounded-xl bg-white/10 px-4 text-sm font-medium text-white"
+                    >
+                        {tr('Запитати')}
+                    </button>
+                    {requests.length > 0 && (
+                        <p className="w-full text-xs text-white/40">
+                            {requests.join(' · ')}
+                        </p>
+                    )}
+                </form>
             </div>
         </>
     );

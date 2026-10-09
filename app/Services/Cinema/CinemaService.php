@@ -215,7 +215,7 @@ class CinemaService
      *
      * @return list<array<string, mixed>>
      */
-    public function players(Movie $movie): array
+    public function players(Movie $movie, ?User $user = null): array
     {
         $players = $movie->sources->map(fn (MovieSource $s) => $s->toPlayer())->all();
 
@@ -232,12 +232,69 @@ class CinemaService
             ];
         }
 
-        $order = array_flip(['kodik', 'flixcdn', 'custom']);
-        usort($players, fn ($a, $b) => ($order[$a['provider']] ?? 9) <=> ($order[$b['provider']] ?? 9));
+        $prefer = $user instanceof User ? (string) $user->pref('cinema_player', '') : '';
+        $subs = $user instanceof User ? (string) $user->pref('cinema_subs', '') : '';
+        usort($players, function (array $a, array $b) use ($prefer, $subs): int {
+            $rank = function (array $player) use ($prefer, $subs): array {
+                return [$this->providerRank($player, $prefer), $this->subtitleRank($player, $subs)];
+            };
+
+            return $rank($a) <=> $rank($b);
+        });
 
         return $players;
     }
 
+    /**
+     * @param  array<string, mixed>  $player
+     */
+    private function providerRank(array $player, string $prefer): int
+    {
+        if ($prefer === '') {
+            $order = ['kodik' => 0, 'flixcdn' => 1, 'custom' => 2];
+
+            return $order[$player['provider']] ?? 9;
+        }
+        $provider = (string) $player['provider'];
+        $link = (string) ($player['link'] ?? '');
+        $youtube = $provider === 'custom' && str_contains($link, 'youtube');
+        $match = match ($prefer) {
+            'youtube' => $youtube,
+            'kodik' => $provider === 'kodik',
+            'flixcdn' => $provider === 'flixcdn',
+            default => false,
+        };
+
+        return $match ? 0 : 1;
+    }
+
+    /**
+     * @param  array<string, mixed>  $player
+     */
+    private function subtitleRank(array $player, string $subs): int
+    {
+        if ($subs === '') {
+            return 1;
+        }
+        $text = mb_strtolower((string) ($player['translation'] ?? ''));
+        $needles = match ($subs) {
+            'uk' => ['україн', 'ukrain'],
+            'en' => ['english', 'англій', 'оригінал'],
+            'ru' => ['рус', 'росі', 'russian'],
+            default => [],
+        };
+        foreach ($needles as $needle) {
+            if (str_contains($text, $needle)) {
+                return 0;
+            }
+        }
+
+        return 1;
+    }
+
+    /**
+     * @return array{status: string|null, rating: int|null, season: int|null, episode: int|null}
+     */
     /**
      * @return array{status: string|null, rating: int|null, season: int|null, episode: int|null}
      */
