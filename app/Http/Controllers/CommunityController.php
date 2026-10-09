@@ -176,6 +176,7 @@ class CommunityController extends Controller
             'community' => $this->details($community),
             'categories' => Community::CATEGORIES,
             'isOwner' => $community->owner_id === $request->user()->id || $request->user()->isStaff(),
+            'widget' => $community->isClosed() ? null : url('/widget/'.$community->slug.'/card.js'),
         ]);
     }
 

@@ -7,6 +7,7 @@ import {
     Lock,
     MessageCircle,
     MoreHorizontal,
+    Pencil,
     Pin,
     PinOff,
     Trash2,
@@ -67,6 +68,8 @@ export function PostCard({
     const [deleted, setDeleted] = useState(false);
     const [poll, setPoll] = useState(post.poll ?? null);
     const [spoilerOpen, setSpoilerOpen] = useState(false);
+    const [editing, setEditing] = useState(false);
+    const [editBody, setEditBody] = useState(post.body ?? '');
 
     const Visibility = visibilityMeta[post.visibility].icon;
     const publisherHref = post.publisher?.href ?? `/${post.author.username}`;
@@ -144,6 +147,9 @@ export function PostCard({
                             className="hover:text-white/80"
                         >
                             {timeAgo(post.created_at)}
+                            {post.edited_at && (
+                                <span> · {tr('змінено')}</span>
+                            )}
                         </Link>
                         <span>·</span>
                         <Visibility
@@ -172,6 +178,14 @@ export function PostCard({
                         >
                             <Link2 /> {tr('Копіювати посилання')}
                         </DropdownMenuItem>
+                        {post.can.edit && (
+                            <DropdownMenuItem
+                                className="rounded-lg focus:bg-white/[0.06]"
+                                onSelect={() => setEditing(true)}
+                            >
+                                <Pencil /> {tr('Редагувати')}
+                            </DropdownMenuItem>
+                        )}
                         {post.can.pin && (
                             <DropdownMenuItem
                                 className="rounded-lg focus:bg-white/[0.06]"
@@ -210,7 +224,44 @@ export function PostCard({
                 </DropdownMenu>
             </header>
 
-            {body && post.spoiler && !spoilerOpen ? (
+            {editing ? (
+                <form
+                    className="mt-3 space-y-2"
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        router.patch(
+                            `/posts/${post.id}`,
+                            { body: editBody },
+                            {
+                                preserveScroll: true,
+                                onSuccess: () => setEditing(false),
+                            },
+                        );
+                    }}
+                >
+                    <textarea
+                        value={editBody}
+                        onChange={(event) => setEditBody(event.target.value)}
+                        rows={4}
+                        className="input-glass w-full rounded-xl px-3 py-2 text-sm text-white"
+                    />
+                    <div className="flex gap-2">
+                        <button type="submit" className="btn-glow h-9 rounded-xl px-3 text-sm font-semibold">
+                            {tr('Зберегти')}
+                        </button>
+                        <button
+                            type="button"
+                            className="h-9 rounded-xl px-3 text-sm text-white/60"
+                            onClick={() => {
+                                setEditBody(post.body ?? '');
+                                setEditing(false);
+                            }}
+                        >
+                            {tr('Скасувати')}
+                        </button>
+                    </div>
+                </form>
+            ) : body && post.spoiler && !spoilerOpen ? (
                 <button
                     type="button"
                     onClick={() => setSpoilerOpen(true)}

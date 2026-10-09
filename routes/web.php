@@ -8,6 +8,7 @@ use App\Http\Controllers\ClanController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityMemberController;
+use App\Http\Controllers\CommunityWidgetController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\FeedController;
@@ -72,6 +73,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('posts', [PostController::class, 'store'])->middleware('throttle:30,1')->name('posts.store');
     Route::get('posts/drafts', [PostController::class, 'drafts'])->name('posts.drafts');
     Route::get('posts/{post}', [PostController::class, 'show'])->name('posts.show');
+    Route::patch('posts/{post}', [PostController::class, 'update'])->name('posts.update');
     Route::post('posts/{post}/publish', [PostController::class, 'release'])->name('posts.publish');
     Route::delete('posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
     Route::post('posts/{post}/pin', [PostController::class, 'pin'])->name('posts.pin');
@@ -540,6 +542,11 @@ Route::get('music/spotify/callback', [SpotifyController::class, 'callback'])
 Route::get('play/embed', [CinemaController::class, 'embed'])
     ->middleware('throttle:120,1')
     ->name('cinema.embed');
+
+Route::middleware('module:communities')->group(function () {
+    Route::get('widget/{community}', [CommunityWidgetController::class, 'show'])->name('communities.widget');
+    Route::get('widget/{community}/card.js', [CommunityWidgetController::class, 'script'])->name('communities.widget.script');
+});
 
 Route::get('id{id}', [ProfileController::class, 'byId'])->whereNumber('id')->name('profile.id');
 Route::get('{user}', [ProfileController::class, 'show'])

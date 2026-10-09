@@ -30,6 +30,8 @@ use Illuminate\Support\Carbon;
  * @property bool $is_pinned
  * @property bool $is_draft
  * @property bool $spoiler
+ * @property Carbon|null $edited_at
+ * @property Carbon|null $publish_at
  * @property bool $comments_enabled
  * @property int $likes_count
  * @property int $comments_count
@@ -37,7 +39,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
-#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'card', 'visibility', 'is_pinned', 'is_draft', 'comments_enabled', 'spoiler'])]
+#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'card', 'visibility', 'is_pinned', 'is_draft', 'comments_enabled', 'spoiler', 'edited_at', 'publish_at'])]
 class Post extends Model
 {
     /** @use HasFactory<PostFactory> */
@@ -51,6 +53,9 @@ class Post extends Model
 
     public const VISIBILITIES = [self::VISIBILITY_PUBLIC, self::VISIBILITY_FRIENDS, self::VISIBILITY_PRIVATE];
 
+    /** Скільки хвилин після публікації автор ще може змінити текст. */
+    public const EDIT_MINUTES = 15;
+
     protected function casts(): array
     {
         return [
@@ -62,6 +67,8 @@ class Post extends Model
             'music' => 'array',
             'link' => 'array',
             'card' => 'array',
+            'edited_at' => 'datetime',
+            'publish_at' => 'datetime',
         ];
     }
 
@@ -130,6 +137,7 @@ class Post extends Model
     public function scopeVisibleTo(Builder $query, ?User $viewer, array $friendIds = []): void
     {
         $query->where('is_draft', false);
+        $query->where(fn (Builder $query) => $query->whereNull('publish_at')->orWhere('publish_at', '<=', now()));
 
         $query->where(function (Builder $query) use ($viewer, $friendIds) {
             $query->where('visibility', self::VISIBILITY_PUBLIC);

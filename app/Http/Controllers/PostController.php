@@ -17,17 +17,18 @@ use App\Services\CommunityService;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
 use App\Services\Media\YoutubePreview;
-use App\Services\Mentions;
 use App\Services\Moderation\ContentFilter;
 use App\Services\PostCards;
 use App\Services\PostPresenter;
+use App\Services\ScheduledPosts;
 use App\Services\Spotify\SpotifyClient;
 use App\Support\Settings\SiteSettings;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -41,6 +42,7 @@ class PostController extends Controller
         private readonly ImageStorage $images,
         private readonly SiteSettings $settings,
         private readonly CommunityService $communities,
+        private readonly ScheduledPosts $scheduled,
     ) {}
 
     public function show(Request $request, Post $post): Response
@@ -56,8 +58,8 @@ class PostController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $post = $this->publish($request);
-        if ($post->is_draft) {
-            Inertia::flash('toast', ['type' => 'success', 'message' => 'Чернетку збережено.']);
+        if ($post->is_draft || $post->publish_at?->isFuture()) {
+            Inertia::flash('toast', ['type' => 'success', 'message' => $post->is_draft ? 'Чернетку збережено.' : 'Запис заплановано.']);
 
             return to_route('posts.drafts');
         }
@@ -71,7 +73,7 @@ class PostController extends Controller
     {
         $posts = Post::query()
             ->where('author_id', $request->user()->id)
-            ->where('is_draft', true)
+            ->where(fn (Builder $query) => $query->where('is_draft', true)->orWhere('publish_at', '>', now()))
             ->latest('id')
             ->limit(30)
             ->get();
@@ -81,15 +83,17 @@ class PostController extends Controller
                 'id' => $post->id,
                 'body' => $post->body,
                 'created_at' => $post->created_at->toIso8601String(),
+                'publish_at' => $post->publish_at?->toIso8601String(),
             ])->values(),
         ]);
     }
 
     public function release(Request $request, Post $post): RedirectResponse
     {
-        abort_unless($post->is_draft && $post->author_id === $request->user()->id, 403);
-        $post->forceFill(['is_draft' => false, 'created_at' => now()])->save();
-        $this->announce($post);
+        $waiting = $post->publish_at?->isFuture() === true;
+        abort_unless($post->author_id === $request->user()->id && ($post->is_draft || $waiting), 403);
+        $post->forceFill(['is_draft' => false, 'publish_at' => null, 'created_at' => now()])->save();
+        $this->scheduled->announce($post);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Запис опубліковано.']);
 
@@ -115,6 +119,7 @@ class PostController extends Controller
             'visibility' => ['required', Rule::in(Post::VISIBILITIES)],
             'spoiler' => ['sometimes', 'boolean'],
             'draft' => ['sometimes', 'boolean'],
+            'publish_at' => ['nullable', 'date'],
             'wall' => ['nullable', 'string', 'exists:users,username'],
             'community' => ['nullable', 'string'],
             'as_community' => ['nullable', 'boolean'],
@@ -170,7 +175,9 @@ class PostController extends Controller
             }
         }
 
-        $post = DB::transaction(function () use ($request, $user, $wallOwner, $data, $asCommunity, $music, $movieId, $card) {
+        $publishAt = $this->schedule($request, $data);
+
+        $post = DB::transaction(function () use ($request, $user, $wallOwner, $data, $asCommunity, $music, $movieId, $card, $publishAt) {
             $post = Post::query()->create([
                 'author_id' => $user->id,
                 'wall_type' => $wallOwner->getMorphClass(),
@@ -184,6 +191,7 @@ class PostController extends Controller
                 'visibility' => $data['visibility'],
                 'spoiler' => (bool) ($data['spoiler'] ?? false),
                 'is_draft' => $request->boolean('draft'),
+                'publish_at' => $publishAt,
             ]);
 
             if (isset($data['poll'])) {
@@ -215,23 +223,57 @@ class PostController extends Controller
             return $post;
         });
 
-        if (! $post->is_draft) {
-            $this->announce($post);
+        if (! $post->is_draft && $publishAt === null) {
+            $this->scheduled->announce($post);
         }
 
         return $post;
     }
 
-    private function announce(Post $post): void
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function schedule(Request $request, array $data): ?Carbon
     {
-        $post->loadMissing('author', 'wall');
-        $wall = $post->wall;
-        if ($wall instanceof User && $wall->isNot($post->author)) {
-            $excerpt = $post->spoiler ? 'Спойлер' : Str::limit((string) $post->body, 80);
-            $wall->notify(new PostInteraction(PostInteraction::WALL, $post->author, $post, $excerpt));
+        if ($request->boolean('draft') || empty($data['publish_at'])) {
+            return null;
+        }
+        $at = Carbon::parse((string) $data['publish_at'], 'Europe/Kyiv');
+        if ($at->lte(now()) || $at->gt(now()->addDays(30))) {
+            throw ValidationException::withMessages(['publish_at' => 'Оберіть час у найближчі 30 днів.']);
         }
 
-        app(Mentions::class)->notify($post->author, $post->body, route('posts.show', $post, absolute: false));
+        return $at;
+    }
+
+    public function update(Request $request, Post $post): RedirectResponse
+    {
+        abort_unless($this->editable($request->user(), $post), 403, 'Час на редагування минув.');
+        $data = $request->validate([
+            'body' => ['required', 'string', 'max:'.(int) $this->settings->get('max_post_length')],
+        ]);
+        app(ContentFilter::class)->ensureCanPost($request->user());
+        $body = (string) app(ContentFilter::class)->clean(trim($data['body']));
+        $post->update([
+            'body' => $body,
+            'link' => app(YoutubePreview::class)->fromText($body),
+            'edited_at' => now(),
+        ]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Запис змінено.']);
+
+        return back();
+    }
+
+    private function editable(?User $user, Post $post): bool
+    {
+        if (! $user || $post->author_id !== $user->id) {
+            return false;
+        }
+        if ($post->is_draft || $post->publish_at?->isFuture()) {
+            return true;
+        }
+
+        return $post->created_at->greaterThan(now()->subMinutes(Post::EDIT_MINUTES));
     }
 
     /**
@@ -379,7 +421,7 @@ class PostController extends Controller
 
     private function authorizeView(?User $viewer, Post $post): void
     {
-        if ($post->is_draft) {
+        if ($post->is_draft || $post->publish_at?->isFuture()) {
             abort_unless($viewer && ($viewer->id === $post->author_id || $viewer->isStaff()), 404);
 
             return;

@@ -58,6 +58,7 @@ export function PostComposer({
     const [cardQuery, setCardQuery] = useState('');
     const [cardHits, setCardHits] = useState<NonNullable<PostItem['card']>[]>([]);
     const [pickingCard, setPickingCard] = useState(false);
+    const [publishAt, setPublishAt] = useState('');
     const fileRef = useRef<HTMLInputElement>(null);
     const form = useForm<{
         body: string;
@@ -130,6 +131,7 @@ export function PostComposer({
             return {
                 ...data,
                 draft: asDraft ? 1 : 0,
+                ...(!asDraft && publishAt ? { publish_at: publishAt } : {}),
                 poll:
                     data.poll && data.poll.question.trim() && options.length >= 2
                         ? { question: data.poll.question.trim(), options }
@@ -147,6 +149,7 @@ export function PostComposer({
                 setCard(null);
                 setPickingCard(false);
                 setFocused(false);
+                setPublishAt('');
             },
         });
     };
@@ -497,6 +500,13 @@ export function PostComposer({
                     </div>
                 )}
 
+                <input
+                    type="datetime-local"
+                    value={publishAt}
+                    onChange={(event) => setPublishAt(event.target.value)}
+                    aria-label={tr('Час публікації')}
+                    className="h-10 rounded-xl bg-transparent px-2 text-xs text-white/70"
+                />
                 <a
                     href="/posts/drafts"
                     className="inline-flex h-10 items-center rounded-xl px-2 text-xs font-medium text-white/45 hover:text-white"

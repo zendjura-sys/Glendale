@@ -20,6 +20,7 @@ Schedule::command('families:bank-digest')->weeklyOn(0, '20:00')->timezone('Europ
 Schedule::command('site:weekly')->weeklyOn(1, '09:00')->timezone('Europe/Kyiv')->withoutOverlapping(60);
 
 Schedule::command('calls:expire')->everyMinute()->withoutOverlapping(5);
+Schedule::command('posts:publish')->everyMinute()->withoutOverlapping(5);
 Schedule::command('events:remind')->everyFiveMinutes()->withoutOverlapping(10);
 // Події серверів із Discord — що 15 хвилин, події й виходи ігор з IGDB — щогодини.
 Schedule::command('events:sync --servers')->everyFifteenMinutes()->withoutOverlapping(15);

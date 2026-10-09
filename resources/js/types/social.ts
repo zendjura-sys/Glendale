@@ -70,6 +70,7 @@ export type PostItem = {
     comments_count: number;
     views_count: number;
     created_at: string;
+    edited_at?: string | null;
     author: UserCard;
     publisher: {
         id: number;
@@ -103,7 +104,7 @@ export type PostItem = {
     reaction?: string | null;
     liked: boolean;
     comments: CommentItem[];
-    can: { delete: boolean; pin: boolean; comment: boolean };
+    can: { delete: boolean; edit?: boolean; pin: boolean; comment: boolean };
 };
 
 export type NavEntry = {

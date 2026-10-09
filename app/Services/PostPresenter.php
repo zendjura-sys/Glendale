@@ -161,6 +161,7 @@ class PostPresenter
             'comments_count' => $post->comments_count,
             'views_count' => $post->views_count,
             'created_at' => $post->created_at->toIso8601String(),
+            'edited_at' => $post->edited_at?->toIso8601String(),
             'author' => $post->author->toCard(),
             'publisher' => $publisher ? [...$publisher->toCard(), 'href' => '/c/'.$publisher->slug] : null,
             'wall' => $wallCard,
@@ -182,6 +183,7 @@ class PostPresenter
             'comments' => $comments,
             'can' => [
                 'delete' => $viewer !== null && ($viewer->id === $post->author_id || $ownWall || $managesWall || $viewer->isStaff()),
+                'edit' => $viewer !== null && $post->author_id === $viewer->id && ($post->is_draft || $post->publish_at?->isFuture() || $post->created_at->greaterThan(now()->subMinutes(Post::EDIT_MINUTES))),
                 'pin' => $ownWall || $managesWall,
                 'comment' => $viewer !== null && $post->comments_enabled,
             ],

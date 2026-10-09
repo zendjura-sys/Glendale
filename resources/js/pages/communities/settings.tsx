@@ -1,4 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import { toast } from 'sonner';
 import { ArrowLeft, Globe2, Lock, Megaphone, UsersRound } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { selectClass } from '@/components/gc/admin';
@@ -12,6 +13,7 @@ type Props = {
     community: CommunityDetails;
     categories: Record<string, string>;
     isOwner: boolean;
+    widget: string | null;
 };
 
 const field =
@@ -72,6 +74,7 @@ export default function CommunitySettings({
     community,
     categories,
     isOwner,
+    widget,
 }: Props) {
     const form = useForm({
         name: community.name,
@@ -309,6 +312,35 @@ export default function CommunitySettings({
                                 </>
                             )}
                         </div>
+                    </SettingsCard>
+
+                    <SettingsCard
+                        title={tr('Віджет для сайту')}
+                        description={
+                            widget
+                                ? tr('Вставте код на сайт сервера — там з’являться назва, кількість учасників і останні записи.')
+                                : tr('Віджет доступний для відкритої спільноти.')
+                        }
+                    >
+                        {widget && (
+                            <div className="flex flex-col gap-2 sm:flex-row">
+                                <input
+                                    readOnly
+                                    value={`<script src="${widget}" async></script>`}
+                                    className={cn(field, 'h-11 font-mono text-xs')}
+                                />
+                                <button
+                                    type="button"
+                                    className="h-11 shrink-0 rounded-xl bg-white/10 px-4 text-sm font-semibold text-white"
+                                    onClick={() => {
+                                        void navigator.clipboard.writeText(`<script src="${widget}" async></script>`);
+                                        toast(tr('Код скопійовано'));
+                                    }}
+                                >
+                                    {tr('Копіювати')}
+                                </button>
+                            </div>
+                        )}
                     </SettingsCard>
 
                     <div className="flex justify-end">

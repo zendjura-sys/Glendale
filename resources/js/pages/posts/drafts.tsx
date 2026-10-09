@@ -6,6 +6,7 @@ type Draft = {
     id: number;
     body: string | null;
     created_at: string;
+    publish_at: string | null;
 };
 
 export default function Drafts({ drafts }: { drafts: Draft[] }) {
@@ -32,7 +33,11 @@ export default function Drafts({ drafts }: { drafts: Draft[] }) {
                             {draft.body || tr('Без тексту')}
                         </p>
                         <div className="flex items-center gap-2 text-xs text-white/40">
-                            <span>{timeAgo(draft.created_at)}</span>
+                            <span>
+                                {draft.publish_at
+                                    ? tr('Заплановано')
+                                    : timeAgo(draft.created_at)}
+                            </span>
                             <button
                                 type="button"
                                 className="btn-glow ml-auto h-9 rounded-xl px-3 text-sm font-semibold"
