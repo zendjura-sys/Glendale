@@ -177,6 +177,22 @@ class MessengerController extends Controller
         return back();
     }
 
+    public function markUnread(Request $request, Conversation $conversation): RedirectResponse
+    {
+        $this->participant($conversation, $request->user());
+        $this->messenger->markUnread($conversation, $request->user());
+
+        return to_route('messages.index');
+    }
+
+    public function receipts(Request $request, Conversation $conversation): RedirectResponse
+    {
+        $me = $this->participant($conversation, $request->user());
+        $me->forceFill(['share_receipts' => ! $me->share_receipts])->save();
+
+        return back();
+    }
+
     public function pin(Request $request, Conversation $conversation): RedirectResponse
     {
         $me = $this->participant($conversation, $request->user());

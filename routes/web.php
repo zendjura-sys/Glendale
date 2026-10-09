@@ -135,6 +135,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('contacts', [MessengerController::class, 'contacts'])->name('contacts');
         Route::get('stickers', [MessageController::class, 'stickers'])->name('stickers');
         Route::get('saved', [MessengerController::class, 'saved'])->name('saved');
+        Route::get('cards', [MessageController::class, 'cards'])->middleware('throttle:60,1')->name('cards');
         Route::get('attachments/{attachment}', [MessageController::class, 'download'])->whereNumber('attachment')->name('attachments.download');
         Route::get('with/{user}', [MessengerController::class, 'direct'])->name('direct');
         Route::post('groups', [MessengerController::class, 'storeGroup'])->middleware('throttle:10,1')->name('groups.store');
@@ -147,6 +148,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('{conversation}/read', [MessengerController::class, 'read'])->name('read');
             Route::post('{conversation}/mute', [MessengerController::class, 'mute'])->name('mute');
             Route::post('{conversation}/pin', [MessengerController::class, 'pin'])->name('pin');
+            Route::post('{conversation}/unread', [MessengerController::class, 'markUnread'])->name('unread');
+            Route::post('{conversation}/receipts', [MessengerController::class, 'receipts'])->name('receipts');
             Route::put('{conversation}/folder', [MessengerController::class, 'folder'])->name('folder');
             Route::post('{conversation}/members', [MessengerController::class, 'addMembers'])->name('members.store');
             Route::delete('{conversation}/members/{user}', [MessengerController::class, 'removeMember'])->name('members.destroy');

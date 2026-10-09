@@ -102,4 +102,28 @@ class PostCards
 
         return $hits;
     }
+
+    /**
+     * @return list<array{kind: string, id: int, title: string, hint: string, href: string, image: string|null}>
+     */
+    public function chatSearch(string $q): array
+    {
+        $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $q).'%';
+        $hits = [];
+        $groups = [
+            'game' => Game::query()->published()->where('name', 'like', $like)->orderByDesc('popularity')->limit(4)->get(),
+            'movie' => Movie::query()->published()->where('title', 'like', $like)->limit(4)->get(),
+            'server' => GtaServer::query()->published()->where('name', 'like', $like)->limit(4)->get(),
+        ];
+        foreach ($groups as $kind => $models) {
+            foreach ($models as $model) {
+                $card = $this->resolve($kind, $model->id);
+                if ($card) {
+                    $hits[] = $card;
+                }
+            }
+        }
+
+        return $hits;
+    }
 }

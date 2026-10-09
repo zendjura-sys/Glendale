@@ -399,6 +399,24 @@ export function MessageBubble({
                         />
                     )}
 
+                    {message.card && (
+                        <Link
+                            href={message.card.href}
+                            className={cn(
+                                'mb-1.5 flex items-center gap-2 rounded-xl p-2',
+                                own ? 'bg-white/15' : 'bg-black/20',
+                            )}
+                        >
+                            {message.card.image && (
+                                <img src={message.card.image} alt="" className="size-10 rounded-lg object-cover" />
+                            )}
+                            <span className="min-w-0">
+                                <span className="block text-[11px] opacity-60">{tr(message.card.hint)}</span>
+                                <span className="block truncate text-sm font-medium">{message.card.title}</span>
+                            </span>
+                        </Link>
+                    )}
+
                     {!onlyImages && (
                         <div
                             className={cn(

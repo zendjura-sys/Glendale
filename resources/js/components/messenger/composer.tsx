@@ -16,6 +16,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useVoiceRecorder } from '@/hooks/use-voice-recorder';
+import { api } from '@/lib/api';
 import { formatBytes, formatDuration } from '@/lib/format';
 import { usePlayer } from '@/lib/player';
 import { fitTextarea } from '@/lib/textarea';
@@ -71,6 +72,17 @@ export function Composer({
     const [body, setBody] = useState(draft ?? '');
     const [publishAt, setPublishAt] = useState('');
     const [vanish, setVanish] = useState(false);
+    const [card, setCard] = useState<{
+        kind: string;
+        id: number;
+        title: string;
+        hint: string;
+        href: string;
+        image: string | null;
+    } | null>(null);
+    const [cardQuery, setCardQuery] = useState('');
+    const [cardHits, setCardHits] = useState<NonNullable<typeof card>[]>([]);
+    const [pickingCard, setPickingCard] = useState(false);
     const [images, setImages] = useState<File[]>([]);
     const [docs, setDocs] = useState<File[]>([]);
     const [emojiOpen, setEmojiOpen] = useState(false);
@@ -177,7 +189,7 @@ export function Composer({
     const hasAttachments = images.length > 0 || docs.length > 0;
     const canSubmit = editing
         ? trimmed.length > 0 && trimmed !== editing.body
-        : trimmed.length > 0 || hasAttachments;
+        : trimmed.length > 0 || hasAttachments || card !== null;
     const showMic = !editing && !canSubmit && voice.supported;
 
     const reset = () => {
@@ -186,6 +198,9 @@ export function Composer({
         setDocs([]);
         setPublishAt('');
         setVanish(false);
+        setCard(null);
+        setPickingCard(false);
+        setCardQuery('');
         requestAnimationFrame(resize);
     };
 
@@ -209,6 +224,7 @@ export function Composer({
                 files: docs,
                 publishAt: publishAt || null,
                 vanish,
+                card,
             });
         }
 
@@ -284,8 +300,62 @@ export function Composer({
                 addFiles(event.dataTransfer.files);
             }}
         >
+            {!editing && card && (
+                <div className="mb-2 flex items-center justify-between gap-2 rounded-xl bg-white/[0.04] px-3 py-2">
+                    <span className="min-w-0">
+                        <span className="block text-[11px] text-white/40">{tr(card.hint)}</span>
+                        <span className="block truncate text-sm text-white">{card.title}</span>
+                    </span>
+                    <button type="button" onClick={() => setCard(null)} className="text-xs text-white/50">
+                        {tr('Прибрати')}
+                    </button>
+                </div>
+            )}
+            {!editing && pickingCard && !card && (
+                <div className="mb-2 rounded-xl bg-white/[0.04] p-2">
+                    <input
+                        value={cardQuery}
+                        onChange={(event) => {
+                            const value = event.target.value;
+                            setCardQuery(value);
+                            if (value.trim().length < 2) {
+                                setCardHits([]);
+                                return;
+                            }
+                            void api<{ cards: NonNullable<typeof card>[] }>(
+                                'GET',
+                                `/messages/cards?q=${encodeURIComponent(value.trim())}`,
+                            ).then((response) => setCardHits(response.cards));
+                        }}
+                        placeholder={tr('Гра, фільм або сервер')}
+                        className="input-glass h-10 w-full rounded-xl px-3 text-sm text-white"
+                    />
+                    <div className="mt-1 max-h-36 overflow-y-auto">
+                        {cardHits.map((hit) => (
+                            <button
+                                key={`${hit.kind}-${hit.id}`}
+                                type="button"
+                                onClick={() => {
+                                    setCard(hit);
+                                    setPickingCard(false);
+                                }}
+                                className="flex min-h-10 w-full items-center rounded-lg px-2 text-left text-sm text-white hover:bg-white/[0.06]"
+                            >
+                                {hit.title}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
             {!editing && (
                 <div className="mb-2 flex flex-wrap items-center gap-3 px-1 text-xs text-white/55">
+                    <button
+                        type="button"
+                        onClick={() => setPickingCard((open) => !open)}
+                        className="min-h-8 rounded-full bg-white/[0.06] px-3 text-white/80"
+                    >
+                        {tr('Картка')}
+                    </button>
                     <label className="inline-flex min-h-8 items-center gap-2">
                         <input
                             type="checkbox"

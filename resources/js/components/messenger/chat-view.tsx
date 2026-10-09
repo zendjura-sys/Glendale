@@ -7,7 +7,10 @@ import {
     Headphones,
     Info,
     Loader2,
+    Eye,
+    EyeOff,
     Folder,
+    Mail,
     Phone,
     PhoneOff,
     Pin,
@@ -358,6 +361,10 @@ export function ChatView({
                 if (outgoing.body) form.append('body', outgoing.body);
                 if (outgoing.publishAt) form.append('publish_at', outgoing.publishAt);
                 if (outgoing.vanish) form.append('disappear', '1');
+                if (outgoing.card) {
+                    form.append('card[kind]', outgoing.card.kind);
+                    form.append('card[id]', String(outgoing.card.id));
+                }
                 outgoing.images.forEach((file) =>
                     form.append('images[]', file),
                 );
@@ -668,6 +675,47 @@ export function ChatView({
                             {subtitle}
                         </span>
                     </span>
+                </button>
+                <button
+                    type="button"
+                    onClick={() => router.post(`/messages/${active.id}/unread`)}
+                    className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
+                    aria-label={tr('Непрочитане')}
+                    title={tr('Позначити непрочитаним')}
+                >
+                    <Mail className="size-[18px]" />
+                </button>
+                <button
+                    type="button"
+                    onClick={() =>
+                        router.post(
+                            `/messages/${active.id}/receipts`,
+                            {},
+                            {
+                                preserveScroll: true,
+                                preserveState: true,
+                                only: ['active'],
+                            },
+                        )
+                    }
+                    className={cn(
+                        'flex size-9 items-center justify-center rounded-xl transition',
+                        active.share_receipts === false
+                            ? 'bg-white/10 text-white'
+                            : 'text-white/60 hover:bg-white/[0.07] hover:text-white',
+                    )}
+                    aria-label={tr('Звіти про прочитання')}
+                    title={
+                        active.share_receipts === false
+                            ? tr('Звіти вимкнено')
+                            : tr('Звіти про прочитання')
+                    }
+                >
+                    {active.share_receipts === false ? (
+                        <EyeOff className="size-[18px]" />
+                    ) : (
+                        <Eye className="size-[18px]" />
+                    )}
                 </button>
                 <button
                     type="button"

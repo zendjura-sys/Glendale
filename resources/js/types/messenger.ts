@@ -35,7 +35,15 @@ export type StickerPackItem = {
 export type ContactCard = UserCard & { is_friend?: boolean };
 
 export type OutgoingMessage =
-    | { kind: 'text'; body: string; images: File[]; files: File[]; publishAt?: string | null; vanish?: boolean }
+    | {
+          kind: 'text';
+          body: string;
+          images: File[];
+          files: File[];
+          publishAt?: string | null;
+          vanish?: boolean;
+          card?: { kind: string; id: number; title: string; hint: string; href: string; image: string | null } | null;
+      }
     | { kind: 'sticker'; sticker: StickerItem }
     | { kind: 'voice'; blob: Blob; duration: number; waveform: number[] }
     | { kind: 'contact'; contact: ContactCard };
@@ -64,6 +72,7 @@ export type ChatMessage = {
     created_at: string;
     starred?: boolean;
     forward?: { name: string; username: string | null } | null;
+    card?: { kind: string; id: number; title: string; hint: string; href: string; image: string | null } | null;
     /** Локальний стан оптимістичної відправки. */
     pending?: 'sending' | 'failed';
     local_id?: string;
@@ -104,6 +113,7 @@ export type ConversationDetails = {
         | null;
     can_write: boolean;
     is_muted: boolean;
+    share_receipts?: boolean;
     pinned?: boolean;
     folder?: string | null;
     my_role: MemberRole;

@@ -76,6 +76,14 @@ class MessengerPresenter
             'expires_at' => $message->expires_at?->isFuture() ? $message->expires_at->toIso8601String() : null,
             'created_at' => $message->created_at->toIso8601String(),
             'starred' => $starred,
+            'card' => is_array($meta['card'] ?? null) && is_string($meta['card']['title'] ?? null) && is_string($meta['card']['href'] ?? null) ? [
+                'kind' => (string) ($meta['card']['kind'] ?? ''),
+                'id' => (int) ($meta['card']['id'] ?? 0),
+                'title' => $meta['card']['title'],
+                'hint' => (string) ($meta['card']['hint'] ?? ''),
+                'href' => $meta['card']['href'],
+                'image' => is_string($meta['card']['image'] ?? null) ? $meta['card']['image'] : null,
+            ] : null,
             'forward' => is_array($forward) && is_string($forward['name'] ?? null) ? [
                 'name' => $forward['name'],
                 'username' => is_string($forward['username'] ?? null) ? $forward['username'] : null,
@@ -144,6 +152,12 @@ class MessengerPresenter
     {
         if ($message->body !== null && $message->body !== '') {
             return $message->body;
+        }
+
+        $stored = $message->meta ?? [];
+        $card = $stored['card'] ?? null;
+        if (is_array($card) && is_string($card['title'] ?? null)) {
+            return $card['title'];
         }
 
         $attachments = $message->attachments;
@@ -239,7 +253,7 @@ class MessengerPresenter
                     ->where('me.user_id', $viewer->id)
                     ->whereNull('me.left_at');
             })
-            ->select('conversations.*', 'me.is_muted as my_muted', 'me.role as my_role', 'me.pinned_at as my_pinned_at', 'me.folder as my_folder')
+            ->select('conversations.*', 'me.is_muted as my_muted', 'me.role as my_role', 'me.pinned_at as my_pinned_at', 'me.folder as my_folder', 'me.marked_unread as my_marked_unread')
             ->selectSub(fn ($q) => $messenger->unreadMessages($q->selectRaw('count(*)'), $viewer->id, 'me'), 'unread_count')
             ->withCount('activeParticipants as members_count')
             ->with(['lastMessage' => fn ($q) => $q->with(['user', 'attachments'])])
@@ -271,7 +285,7 @@ class MessengerPresenter
             'avatar_url' => $conversation->isGroup() ? $conversation->avatar_url : $peer?->avatar_url,
             'peer' => $peer?->toCard(),
             'members_count' => (int) ($conversation->members_count ?? 0),
-            'unread' => (int) ($conversation->unread_count ?? 0),
+            'unread' => max((int) ($conversation->unread_count ?? 0), $conversation->getAttribute('my_marked_unread') ? 1 : 0),
             'is_muted' => (bool) ($conversation->my_muted ?? false),
             'pinned' => $conversation->getAttribute('my_pinned_at') !== null,
             'folder' => is_string($conversation->getAttribute('my_folder')) && $conversation->getAttribute('my_folder') !== ''
@@ -310,10 +324,11 @@ class MessengerPresenter
             'peer' => $peer ? [...$peer->toCard(), 'last_seen_at' => $peer->last_seen_at?->toIso8601String(), 'gender' => $peer->gender] : null,
             'can_write' => $conversation->isGroup() || ($peer !== null && $messenger->canMessage($viewer, $peer)),
             'is_muted' => $me->is_muted,
+            'share_receipts' => $me->share_receipts,
             'pinned' => $me->pinned_at !== null,
             'folder' => $me->folder,
             'my_role' => $me->role,
-            'read_up_to' => (int) $others->max('last_read_message_id'),
+            'read_up_to' => (int) $others->filter(fn (ConversationParticipant $participant) => $participant->share_receipts)->max('last_read_message_id'),
             'members' => $conversation->isGroup()
                 ? $participants
                     ->sortBy(fn (ConversationParticipant $p) => [$p->role === ConversationParticipant::ROLE_OWNER ? 0 : ($p->role === ConversationParticipant::ROLE_ADMIN ? 1 : 2), $p->user->name])

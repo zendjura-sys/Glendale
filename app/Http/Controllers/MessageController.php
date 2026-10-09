@@ -14,6 +14,7 @@ use App\Services\Messenger;
 use App\Services\MessengerPresenter;
 use App\Services\Moderation\ContentFilter;
 use App\Services\Moderation\MessageReports;
+use App\Services\PostCards;
 use App\Support\Settings\SiteSettings;
 use Carbon\CarbonInterface;
 use Illuminate\Http\JsonResponse;
@@ -71,6 +72,9 @@ class MessageController extends Controller
             'voice_waveform' => ['nullable', 'string', 'max:1000'],
             'publish_at' => ['nullable', 'date'],
             'disappear' => ['nullable', 'boolean'],
+            'card' => ['nullable', 'array'],
+            'card.kind' => ['required_with:card', Rule::in(['game', 'movie', 'server'])],
+            'card.id' => ['required_with:card', 'integer', 'min:1'],
         ], [
             'voice.mimetypes' => 'Непідтримуваний формат запису.',
             'voice.max' => 'Голосове повідомлення завелике.',
@@ -78,6 +82,7 @@ class MessageController extends Controller
         ]);
 
         $replyTo = isset($data['reply_to_id']) ? (int) $data['reply_to_id'] : null;
+        $card = $this->card($data);
         $publishAt = $this->publishAt($request);
         $expiresAt = $request->boolean('disappear') ? ($publishAt ?? now())->copy()->addDay() : null;
         // Автомодерація: мут, флуд, повтори, посилання від новачків, мат.
@@ -108,7 +113,7 @@ class MessageController extends Controller
                 ),
                 $replyTo,
             ),
-            default => $this->sendText($conversation, $user, $data, $request, $publishAt, $expiresAt),
+            default => $this->sendText($conversation, $user, $data, $request, $publishAt, $expiresAt, $card),
         };
 
         return response()->json(['message' => $this->presenter->message($this->presenter->load($message))], 201);
@@ -123,6 +128,14 @@ class MessageController extends Controller
         $reports->report($conversation, $message, $request->user(), (string) $data['reason'], $data['comment'] ?? null);
 
         return response()->json(['ok' => true, 'message' => 'Дякуємо! Скаргу надіслано модераторам.']);
+    }
+
+    public function cards(Request $request, PostCards $cards): JsonResponse
+    {
+        $q = trim((string) $request->query('q', ''));
+        abort_if(mb_strlen($q) < 2, 422);
+
+        return response()->json(['cards' => $cards->chatSearch($q)]);
     }
 
     public function stickers(): JsonResponse
@@ -142,7 +155,10 @@ class MessageController extends Controller
     /**
      * @param  array<string, mixed>  $data
      */
-    private function sendText(Conversation $conversation, User $user, array $data, Request $request, ?CarbonInterface $publishAt = null, ?CarbonInterface $expiresAt = null): Message
+    /**
+     * @param  array{kind: string, id: int, title: string, hint: string, href: string, image: string|null}|null  $card
+     */
+    private function sendText(Conversation $conversation, User $user, array $data, Request $request, ?CarbonInterface $publishAt = null, ?CarbonInterface $expiresAt = null, ?array $card = null): Message
     {
         $images = $this->uploadedList($request->file('images', []));
         $files = $this->uploadedList($request->file('files', []));
@@ -160,6 +176,7 @@ class MessageController extends Controller
             $files,
             $publishAt,
             $expiresAt,
+            $card,
         );
     }
 
@@ -196,6 +213,24 @@ class MessageController extends Controller
         }
 
         return $peaks;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array{kind: string, id: int, title: string, hint: string, href: string, image: string|null}|null
+     */
+    private function card(array $data): ?array
+    {
+        if (! isset($data['card']) || ! is_array($data['card'])) {
+            return null;
+        }
+
+        $card = app(PostCards::class)->resolve((string) $data['card']['kind'], (int) $data['card']['id']);
+        if ($card === null) {
+            throw ValidationException::withMessages(['card' => 'Картку не знайдено.']);
+        }
+
+        return $card;
     }
 
     private function publishAt(Request $request): ?CarbonInterface

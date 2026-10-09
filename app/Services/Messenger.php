@@ -202,11 +202,11 @@ class Messenger
      * @param  list<UploadedFile>  $images
      * @param  list<UploadedFile>  $documents
      */
-    public function send(Conversation $conversation, User $sender, ?string $body, array $images = [], ?int $replyToId = null, array $documents = [], ?CarbonInterface $publishAt = null, ?CarbonInterface $expiresAt = null): Message
+    public function send(Conversation $conversation, User $sender, ?string $body, array $images = [], ?int $replyToId = null, array $documents = [], ?CarbonInterface $publishAt = null, ?CarbonInterface $expiresAt = null, ?array $card = null): Message
     {
         $body = $body !== null ? trim($body) : null;
 
-        if (($body === null || $body === '') && $images === [] && $documents === []) {
+        if (($body === null || $body === '') && $images === [] && $documents === [] && $card === null) {
             throw ValidationException::withMessages(['body' => 'Повідомлення порожнє.']);
         }
 
@@ -214,6 +214,9 @@ class Messenger
             'type' => Message::TYPE_TEXT,
             'body' => $body === '' ? null : $body,
         ];
+        if ($card !== null) {
+            $attributes['meta'] = ['card' => $card];
+        }
         if ($publishAt?->isFuture()) {
             $attributes['publish_at'] = $publishAt;
         }
@@ -456,6 +459,12 @@ class Messenger
     public function markRead(Conversation $conversation, User $user, int $messageId): void
     {
         $messageId = min($messageId, (int) $conversation->last_message_id);
+        $me = $conversation->participantFor($user);
+
+        $conversation->participants()
+            ->where('user_id', $user->id)
+            ->whereNull('left_at')
+            ->update(['marked_unread' => false]);
 
         $updated = $conversation->participants()
             ->where('user_id', $user->id)
@@ -464,9 +473,19 @@ class Messenger
             ->update(['last_read_message_id' => $messageId]);
 
         if ($updated) {
-            $this->broadcast(new ConversationRead($conversation->id, $user->id, $messageId));
+            if ($me?->share_receipts !== false) {
+                $this->broadcast(new ConversationRead($conversation->id, $user->id, $messageId));
+            }
             $this->broadcast(new InboxUpdated($user->id, $conversation->id, null));
         }
+    }
+
+    public function markUnread(Conversation $conversation, User $user): void
+    {
+        $conversation->participants()
+            ->where('user_id', $user->id)
+            ->whereNull('left_at')
+            ->update(['marked_unread' => true]);
     }
 
     public function setMuted(Conversation $conversation, User $user, bool $muted): void
@@ -483,7 +502,9 @@ class Messenger
             ->where('user_id', $user->id)
             ->whereNull('left_at')
             ->where('is_muted', false)
-            ->whereExists(fn ($q) => $this->unreadMessages($q, $user->id, 'conversation_participants'))
+            ->where(fn ($query) => $query
+                ->where('marked_unread', true)
+                ->orWhereExists(fn ($q) => $this->unreadMessages($q, $user->id, 'conversation_participants')))
             ->count();
     }
 
