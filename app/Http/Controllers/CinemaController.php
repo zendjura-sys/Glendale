@@ -9,6 +9,7 @@ use App\Models\MovieSource;
 use App\Models\Track;
 use App\Models\User;
 use App\Services\Cinema\CinemaService;
+use App\Services\Cinema\EpisodeMarks;
 use App\Services\Cinema\FlixcdnPlayer;
 use App\Services\FriendshipService;
 use App\Services\PostPresenter;
@@ -151,6 +152,9 @@ class CinemaController extends Controller
             'state' => $this->cinema->stateFor($movie, $viewer),
             'statuses' => $this->statusOptions(),
             'friends' => $this->friendsWatching($viewer, $movie),
+            'seen' => $this->friendsSeen($viewer, $movie),
+            'taste' => $this->similarTaste($viewer),
+            'episodeMarks' => app(EpisodeMarks::class)->keys($viewer, $movie),
             'similar' => $this->cards($similar),
             'comments' => $comments->map(fn (Comment $c) => $this->presenter->comment($c, $viewer, $liked->has($c->id), $viewer->isStaff()))->values(),
             'can' => ['manage' => $viewer->isStaff()],
@@ -225,6 +229,23 @@ class CinemaController extends Controller
         $this->cinema->started($request->user(), $movie);
 
         return $this->stateResponse($request->user(), $movie);
+    }
+
+    public function episode(Request $request, Movie $movie): JsonResponse
+    {
+        $data = $request->validate([
+            'season' => ['required', 'integer', 'min:1', 'max:50'],
+            'episode' => ['required', 'integer', 'min:1', 'max:500'],
+        ]);
+
+        return response()->json([
+            'marks' => app(EpisodeMarks::class)->toggle(
+                $request->user(),
+                $movie,
+                (int) $data['season'],
+                (int) $data['episode'],
+            ),
+        ]);
     }
 
     public function progress(Request $request, Movie $movie): JsonResponse
@@ -381,6 +402,64 @@ class CinemaController extends Controller
     private function statusOptions(): array
     {
         return array_values(collect(Movie::STATUSES)->map(fn (string $label, string $key) => ['key' => $key, 'label' => $label])->all());
+    }
+
+    /**
+     * @return array{users: list<array<string, mixed>>, total: int}
+     */
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function friendsSeen(User $viewer, Movie $movie): array
+    {
+        $ids = $this->friendships->friendIds($viewer);
+        if ($ids === []) {
+            return [];
+        }
+
+        $rows = DB::table('movie_user')
+            ->where('movie_id', $movie->id)
+            ->whereIn('user_id', $ids)
+            ->where('status', 'watched')
+            ->orderByDesc('updated_at')
+            ->limit(8)
+            ->get(['user_id', 'rating']);
+        $users = User::query()->whereIn('id', $rows->pluck('user_id'))->get()->keyBy('id');
+
+        return array_values($rows->filter(fn ($row) => $users->has($row->user_id))->map(fn ($row) => [
+            ...$users[$row->user_id]->toCard(),
+            'movie_rating' => $row->rating !== null ? (int) $row->rating : null,
+        ])->all());
+    }
+
+    /**
+     * Друзі, з якими збігаються оцінки 8 і вище.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function similarTaste(User $viewer): array
+    {
+        $mine = DB::table('movie_user')->where('user_id', $viewer->id)->where('rating', '>=', 8)->pluck('movie_id');
+        $friendIds = $this->friendships->friendIds($viewer);
+        if ($mine->isEmpty() || $friendIds === []) {
+            return [];
+        }
+
+        $rows = DB::table('movie_user')
+            ->select('user_id', DB::raw('count(*) as shared'))
+            ->whereIn('user_id', $friendIds)
+            ->where('rating', '>=', 8)
+            ->whereIn('movie_id', $mine)
+            ->groupBy('user_id')
+            ->orderByDesc('shared')
+            ->limit(6)
+            ->get();
+        $users = User::query()->whereIn('id', $rows->pluck('user_id'))->get()->keyBy('id');
+
+        return array_values($rows->filter(fn ($row) => $users->has($row->user_id))->map(fn ($row) => [
+            ...$users[$row->user_id]->toCard(),
+            'shared' => (int) $row->shared,
+        ])->all());
     }
 
     /**

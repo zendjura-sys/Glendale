@@ -262,6 +262,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::put('{movie}/rating', [CinemaController::class, 'rate'])->middleware('throttle:60,1')->name('rate');
         Route::post('{movie}/started', [CinemaController::class, 'started'])->middleware('throttle:30,1')->name('started');
         Route::put('{movie}/progress', [CinemaController::class, 'progress'])->middleware('throttle:60,1')->name('progress');
+        Route::post('{movie}/episodes', [CinemaController::class, 'episode'])->middleware('throttle:60,1')->name('episodes');
         Route::post('{movie}/soundtrack', [CinemaController::class, 'soundtrack'])->middleware('throttle:30,1')->name('soundtrack.store');
         Route::get('{movie}/comments', [CinemaController::class, 'comments'])->name('comments.index');
         Route::post('{movie}/comments', [CinemaController::class, 'comment'])->middleware('throttle:30,1')->name('comments.store');

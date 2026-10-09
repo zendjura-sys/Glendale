@@ -51,6 +51,9 @@ type Props = {
     state: MovieState;
     statuses: MovieOption<MovieStatus>[];
     friends: { users: MovieFriend[]; total: number };
+    seen: MovieFriend[];
+    taste: (MovieFriend & { shared: number })[];
+    episodeMarks: string[];
     similar: MovieCard[];
     comments: CommentItem[];
     can: { manage: boolean };
@@ -162,6 +165,9 @@ export default function CinemaShow({
     state: initialState,
     statuses,
     friends,
+    seen,
+    taste,
+    episodeMarks,
     similar,
     comments,
     can,
@@ -176,6 +182,8 @@ export default function CinemaShow({
         watchers_count: movie.watchers_count,
     });
     const [commentsCount, setCommentsCount] = useState(movie.comments_count);
+    const [marks, setMarks] = useState(episodeMarks);
+    const [markSeason, setMarkSeason] = useState(1);
     const [sharing, setSharing] = useState(false);
     const providers = useMemo(
         () => [...new Set(players.map((p) => p.provider))],
@@ -484,6 +492,71 @@ export default function CinemaShow({
                                             </button>
                                         </form>
                                     )}
+                                    {(movie.episodes_count ?? 0) > 1 && (
+                                        <div className="mt-3 w-full">
+                                            <div className="mb-2 flex items-center gap-2">
+                                                <span className="text-xs text-white/45">
+                                                    {tr('Відмітки серій')}
+                                                </span>
+                                                {[1, 2, 3].map((season) => (
+                                                    <button
+                                                        key={season}
+                                                        type="button"
+                                                        onClick={() => setMarkSeason(season)}
+                                                        className={cn(
+                                                            'rounded-lg px-2 py-1 text-xs',
+                                                            markSeason === season
+                                                                ? 'bg-white text-gc-ink'
+                                                                : 'bg-white/10 text-white/70',
+                                                        )}
+                                                    >
+                                                        {tr('Сезон')} {season}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {Array.from(
+                                                    {
+                                                        length: Math.min(
+                                                            movie.episodes_count ?? 1,
+                                                            12,
+                                                        ),
+                                                    },
+                                                    (_, index) => index + 1,
+                                                ).map((episode) => {
+                                                    const key = `${markSeason}:${episode}`;
+                                                    const on = marks.includes(key);
+
+                                                    return (
+                                                        <button
+                                                            key={key}
+                                                            type="button"
+                                                            onClick={() =>
+                                                                api<{ marks: string[] }>(
+                                                                    'POST',
+                                                                    `/cinema/${movie.slug}/episodes`,
+                                                                    {
+                                                                        season: markSeason,
+                                                                        episode,
+                                                                    },
+                                                                ).then((response) =>
+                                                                    setMarks(response.marks),
+                                                                )
+                                                            }
+                                                            className={cn(
+                                                                'size-9 rounded-lg text-xs font-semibold',
+                                                                on
+                                                                    ? 'bg-gc-mint text-gc-ink'
+                                                                    : 'bg-white/10 text-white/70',
+                                                            )}
+                                                        >
+                                                            {episode}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
                                     {players.length > 0 && (
                                         <a
                                             href="#player"
@@ -756,6 +829,51 @@ export default function CinemaShow({
                         </section>
                     </div>
                     <aside className="space-y-5">
+                        {seen.length > 0 && (
+                            <section className="glass rounded-3xl p-5">
+                                <h2 className="mb-3 font-display text-sm font-semibold tracking-wide text-white/70 uppercase">
+                                    {tr('Уже бачили')}
+                                </h2>
+                                <ul className="space-y-2">
+                                    {seen.map((friend) => (
+                                        <li key={friend.id}>
+                                            <Link
+                                                href={`/${friend.username}`}
+                                                className="flex items-center gap-2 text-sm text-white"
+                                            >
+                                                <UserAvatar user={friend} size="sm" />
+                                                <span className="truncate">{friend.name}</span>
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </section>
+                        )}
+                        {taste.length > 0 && (
+                            <section className="glass rounded-3xl p-5">
+                                <h2 className="mb-3 font-display text-sm font-semibold tracking-wide text-white/70 uppercase">
+                                    {tr('Схожий смак')}
+                                </h2>
+                                <ul className="space-y-2">
+                                    {taste.map((friend) => (
+                                        <li key={friend.id}>
+                                            <Link
+                                                href={`/${friend.username}`}
+                                                className="flex items-center justify-between gap-2 text-sm text-white"
+                                            >
+                                                <span className="flex min-w-0 items-center gap-2">
+                                                    <UserAvatar user={friend} size="sm" />
+                                                    <span className="truncate">{friend.name}</span>
+                                                </span>
+                                                <span className="shrink-0 text-xs text-white/45">
+                                                    {friend.shared}
+                                                </span>
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </section>
+                        )}
                         <section className="glass rounded-3xl p-5">
                             <h2 className="mb-3 font-display text-sm font-semibold tracking-wide text-white/70 uppercase">
                                 {tr('Друзі та цей фільм')}
