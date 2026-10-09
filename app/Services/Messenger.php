@@ -14,6 +14,7 @@ use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\Sticker;
 use App\Models\User;
+use App\Models\UserBlock;
 use App\Services\Push\PushNotifier;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
@@ -33,7 +34,7 @@ class Messenger
 
     public function canMessage(User $from, User $to): bool
     {
-        if ($from->is($to) || $to->isBanned()) {
+        if ($from->is($to) || $to->isBanned() || UserBlock::either($from, $to)) {
             return false;
         }
 

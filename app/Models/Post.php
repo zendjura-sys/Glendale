@@ -161,6 +161,9 @@ class Post extends Model
     {
         $query->where('is_draft', false);
         $query->where(fn (Builder $query) => $query->whereNull('publish_at')->orWhere('publish_at', '<=', now()));
+        if ($viewer && ! $viewer->isStaff()) {
+            $query->whereNotIn('author_id', UserBlock::query()->where('blocked_id', $viewer->id)->select('user_id'));
+        }
 
         $query->where(function (Builder $query) use ($viewer, $friendIds) {
             $query->where('visibility', self::VISIBILITY_PUBLIC);

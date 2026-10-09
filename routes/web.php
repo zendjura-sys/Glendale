@@ -92,6 +92,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('comments/{comment}/like', [CommentController::class, 'like'])->middleware('throttle:120,1')->name('comments.like');
     Route::post('comments/{comment}/pin', [CommentController::class, 'pin'])->name('comments.pin');
 
+    Route::post('block/{user}', [ProfileController::class, 'block'])->name('blocks.toggle');
+
     Route::middleware('module:friends')->group(function () {
         Route::get('friends', [FriendController::class, 'index'])->name('friends.index');
         Route::post('friends/{user}', [FriendController::class, 'store'])->middleware('throttle:60,1')->name('friends.store');
@@ -557,6 +559,9 @@ Route::middleware('module:communities')->group(function () {
     Route::get('widget/{community}/card.js', [CommunityWidgetController::class, 'script'])->name('communities.widget.script');
 });
 
+Route::get('{user}/card', [ProfileController::class, 'card'])
+    ->where('user', '[A-Za-z][A-Za-z0-9_.]{1,30}[A-Za-z0-9]')
+    ->name('profile.card');
 Route::get('id{id}', [ProfileController::class, 'byId'])->whereNumber('id')->name('profile.id');
 Route::get('{user}', [ProfileController::class, 'show'])
     ->where('user', '[A-Za-z][A-Za-z0-9_.]{1,30}[A-Za-z0-9]')

@@ -7,9 +7,11 @@ import {
     usePage,
 } from '@inertiajs/react';
 import {
+    Ban,
     CalendarDays,
     Camera,
     Cake,
+    QrCode,
     Globe,
     ImageIcon,
     Lock,
@@ -74,6 +76,11 @@ type Props = {
     profile: Profile;
     relation: Relation;
     canSeeContent: boolean;
+    limited?: boolean;
+    blocked?: boolean;
+    friendsSince?: string | null;
+    anniversary?: boolean;
+    anniversaryYears?: number;
     canPost: boolean;
     canMessage: boolean;
     stats: {
@@ -174,6 +181,11 @@ export default function ProfileShow({
     profile,
     relation,
     canSeeContent,
+    limited = false,
+    blocked = false,
+    friendsSince = null,
+    anniversary = false,
+    anniversaryYears = 0,
     canPost,
     canMessage,
     stats,
@@ -334,6 +346,12 @@ export default function ProfileShow({
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2 pb-1">
+                            <Link
+                                href={`/${profile.username}/card`}
+                                className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"
+                            >
+                                <QrCode className="size-4" /> {tr('Картка')}
+                            </Link>
                             {isSelf ? (
                                 <Link
                                     href="/settings/profile"
@@ -358,6 +376,22 @@ export default function ProfileShow({
                                                 {tr('Написати')}
                                             </Link>
                                         )}
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            router.post(
+                                                `/block/${profile.username}`,
+                                                {},
+                                                { preserveScroll: true },
+                                            )
+                                        }
+                                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white/80 transition hover:bg-white/[0.11]"
+                                    >
+                                        <Ban className="size-4" />
+                                        {blocked
+                                            ? tr('Зняти обмеження')
+                                            : tr('Обмежити')}
+                                    </button>
                                 </>
                             )}
                         </div>
@@ -365,6 +399,18 @@ export default function ProfileShow({
 
                     <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
                         <div className="flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-white/55">
+                            {friendsSince && (
+                                <span className="inline-flex items-center gap-1.5">
+                                    <CalendarDays className="size-3.5" />
+                                    {anniversary
+                                        ? tr('Річниця дружби · {years}', {
+                                              years: anniversaryYears,
+                                          })
+                                        : tr('Друзі з {date}', {
+                                              date: formatDate(friendsSince, false),
+                                          })}
+                                </span>
+                            )}
                             {profile.city && (
                                 <span className="inline-flex items-center gap-1.5">
                                     <MapPin className="size-4 text-gc-lilac-400" />{' '}
@@ -438,11 +484,19 @@ export default function ProfileShow({
                 <div className="mt-5">
                     <EmptyState
                         icon={Lock}
-                        title={tr('Це закритий профіль')}
-                        text={tr(
-                            'Додайте {first_name} у друзі, щоб бачити записи, фото та інформацію.',
-                            { first_name: profile.first_name },
-                        )}
+                        title={
+                            limited
+                                ? tr('Перегляд обмежено')
+                                : tr('Це закритий профіль')
+                        }
+                        text={
+                            limited
+                                ? tr('Власник сторінки показує вам менше.')
+                                : tr(
+                                      'Додайте {first_name} у друзі, щоб бачити записи, фото та інформацію.',
+                                      { first_name: profile.first_name },
+                                  )
+                        }
                     />
                 </div>
             ) : (

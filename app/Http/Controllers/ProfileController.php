@@ -8,6 +8,7 @@ use App\Models\PhotoAlbum;
 use App\Models\Post;
 use App\Models\PostAttachment;
 use App\Models\User;
+use App\Models\UserBlock;
 use App\Services\Achievements;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
@@ -19,6 +20,9 @@ use App\Services\PostCards;
 use App\Services\PostPresenter;
 use App\Services\Presence\SteamPresence;
 use App\Support\Modules\ModuleManager;
+use chillerlan\QRCode\Output\QROutputInterface;
+use chillerlan\QRCode\QRCode;
+use chillerlan\QRCode\QROptions;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -48,7 +52,9 @@ class ProfileController extends Controller
     {
         $viewer = $request->user();
         $relation = $this->friendships->status($viewer, $user);
-        $canSeeContent = ! $user->is_private || in_array($relation, [FriendshipService::SELF, FriendshipService::FRIENDS], true) || $viewer?->isStaff();
+        $limited = $viewer && ! $viewer->isStaff() && UserBlock::between($user, $viewer);
+        $canSeeContent = ! $limited && (! $user->is_private || in_array($relation, [FriendshipService::SELF, FriendshipService::FRIENDS], true) || $viewer?->isStaff());
+        $friendship = $viewer && $relation === FriendshipService::FRIENDS ? $this->friendships->between($viewer, $user) : null;
         $friendIds = $this->friendships->friendIds($user);
         $viewerFriendIds = $viewer ? $this->friendships->friendIds($viewer) : [];
 
@@ -116,6 +122,14 @@ class ProfileController extends Controller
             'together' => $canSeeContent ? app(PlayedTogether::class)->cards($user) : [],
             'relation' => $relation,
             'canSeeContent' => $canSeeContent,
+            'limited' => $limited,
+            'blocked' => $viewer && UserBlock::between($viewer, $user),
+            'friendsSince' => $friendship?->accepted_at?->toIso8601String(),
+            'anniversary' => $friendship?->accepted_at !== null
+                && $friendship->accepted_at->year < now()->year
+                && $friendship->accepted_at->month === now()->month
+                && $friendship->accepted_at->day === now()->day,
+            'anniversaryYears' => $friendship?->accepted_at ? now()->year - $friendship->accepted_at->year : 0,
             'canMessage' => $viewer !== null && $messenger->canMessage($viewer, $user),
             'canPost' => $viewer !== null && in_array($relation, [FriendshipService::SELF, FriendshipService::FRIENDS], true),
             'stats' => [
@@ -141,6 +155,40 @@ class ProfileController extends Controller
             'nowPlaying' => $modules->enabled('music') && $canSeeContent ? Inertia::defer(fn () => app(MusicService::class)->currentFor($user, $viewer)) : null,
             'posts' => Inertia::scroll(fn () => $posts->setCollection(collect($items))),
         ]);
+    }
+
+    public function card(User $user): Response
+    {
+        abort_if($user->isBanned() && ! request()->user()?->isStaff(), 404);
+
+        $url = route('profile.show', $user);
+        $svg = (new QRCode(new QROptions([
+            'outputType' => QROutputInterface::MARKUP_SVG,
+            'outputBase64' => false,
+            'quietzoneSize' => 2,
+            'scale' => 6,
+        ])))->render($url);
+
+        return Inertia::render('profile/card', [
+            'profile' => $user->toCard(),
+            'url' => $url,
+            'qr' => preg_replace('/^<\?xml[^>]*>\s*/', '', $svg) ?: $svg,
+        ]);
+    }
+
+    public function block(Request $request, User $user): RedirectResponse
+    {
+        $viewer = $request->user();
+        abort_if($viewer->is($user), 422);
+
+        $existing = UserBlock::query()->where('user_id', $viewer->id)->where('blocked_id', $user->id)->first();
+        if ($existing) {
+            $existing->delete();
+        } else {
+            UserBlock::query()->create(['user_id' => $viewer->id, 'blocked_id' => $user->id]);
+        }
+
+        return back();
     }
 
     public function updateAvatar(Request $request): RedirectResponse

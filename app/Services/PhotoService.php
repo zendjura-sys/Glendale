@@ -7,6 +7,7 @@ use App\Models\Like;
 use App\Models\Photo;
 use App\Models\PhotoAlbum;
 use App\Models\User;
+use App\Models\UserBlock;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
@@ -54,6 +55,10 @@ class PhotoService
 
         if ($owner->is($viewer) || $viewer->isStaff()) {
             return PhotoAlbum::PRIVACIES;
+        }
+
+        if (UserBlock::between($owner, $viewer)) {
+            return [];
         }
 
         return $this->friendships->status($viewer, $owner) === FriendshipService::FRIENDS
