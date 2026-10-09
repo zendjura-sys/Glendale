@@ -16,6 +16,7 @@ use App\Services\FriendshipService;
 use App\Services\PostPresenter;
 use App\Services\SavedItems;
 use App\Support\CommentOrder;
+use App\Support\Plugins\Plugins;
 use App\Support\Stickers;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -54,6 +55,7 @@ class CinemaController extends Controller
             'q' => ['nullable', 'string', 'max:100'],
         ]);
         $sort = $filters['sort'] ?? 'new';
+        $plugins = app(Plugins::class);
         $filtered = filled($filters['type'] ?? null) || filled($filters['genre'] ?? null) || filled($filters['year'] ?? null) || filled($filters['q'] ?? null);
 
         $catalog = Movie::query()->published()
@@ -83,24 +85,25 @@ class CinemaController extends Controller
             'movies' => Inertia::scroll(fn () => $page),
             'total' => $page->total(),
             'featured' => $filtered ? [] : $this->featured(),
-            'rows' => $filtered ? [] : [
+            'rows' => $filtered ? [] : array_values(array_filter([
                 ['key' => 'continue', 'title' => 'Продовжити перегляд', 'movies' => $this->watching($user)],
-                ['key' => 'later', 'title' => 'Буду дивитися', 'movies' => $this->cards($this->listQuery($user, 'planned')->limit(12)->get())],
+                $plugins->on('watch_later') ? ['key' => 'later', 'title' => 'Буду дивитися', 'movies' => $this->cards($this->listQuery($user, 'planned')->limit(12)->get())] : null,
                 ['key' => 'popular', 'title' => 'Популярне зараз', 'movies' => $this->cards(Movie::query()->published()->orderByDesc('views_count')->orderByDesc('id')->limit(16)->get())],
                 ['key' => 'top', 'title' => 'Найвищий рейтинг', 'movies' => $this->cards(Movie::query()->published()->orderByRaw('coalesce(rating_imdb, rating_tmdb, rating_shikimori, 0) desc')->limit(16)->get())],
-            ],
+            ])),
             'types' => collect(Movie::TYPES)->map(fn (string $label, string $key) => ['key' => $key, 'label' => $label])->values(),
             'typeCounts' => Movie::query()->published()->selectRaw('type, count(*) as aggregate')->groupBy('type')->pluck('aggregate', 'type')->map(fn ($v) => (int) $v),
             'genres' => $this->genres(),
             'years' => Movie::query()->published()->whereNotNull('year')->distinct()->orderByDesc('year')->limit(60)->pluck('year')->map(fn ($y) => (int) $y)->values(),
             'myCounts' => $this->myCounts($user),
-            'requests' => MovieRequest::query()->where('user_id', $user->id)->latest('id')->limit(5)->pluck('title')->all(),
+            'requests' => $plugins->on('movie_request') ? MovieRequest::query()->where('user_id', $user->id)->latest('id')->limit(5)->pluck('title')->all() : [],
             'playback' => $this->playbackPrefs($user),
         ]);
     }
 
     public function ten(User $user): Response
     {
+        app(Plugins::class)->ensure('top_ten');
         $ids = array_slice(array_map('intval', (array) $user->pref('top_ten', [])), 0, 10);
         $movies = Movie::query()->published()->whereIn('id', $ids)->get()->sortBy(fn (Movie $movie) => array_search($movie->id, $ids, true))->values();
 
@@ -114,6 +117,7 @@ class CinemaController extends Controller
 
     public function toggleTen(Request $request): RedirectResponse
     {
+        app(Plugins::class)->ensure('top_ten');
         $data = $request->validate(['movie_id' => ['required', 'integer']]);
         $movie = Movie::query()->published()->find($data['movie_id']);
         abort_unless($movie instanceof Movie, 404);
@@ -130,6 +134,7 @@ class CinemaController extends Controller
 
     public function followRatings(Request $request, User $user): RedirectResponse
     {
+        app(Plugins::class)->ensure('rating_follow');
         $viewer = $request->user();
         abort_if($viewer->is($user), 422);
         $exists = DB::table('rating_follows')->where('user_id', $viewer->id)->where('author_id', $user->id)->exists();
@@ -148,6 +153,7 @@ class CinemaController extends Controller
 
     public function requestMovie(Request $request): RedirectResponse
     {
+        app(Plugins::class)->ensure('movie_request');
         $data = $request->validate([
             'title' => ['required', 'string', 'max:160'],
             'year' => ['nullable', 'integer', 'min:1900', 'max:2100'],
@@ -163,14 +169,20 @@ class CinemaController extends Controller
 
     public function playback(Request $request): RedirectResponse
     {
+        $plugins = app(Plugins::class);
+        abort_unless($plugins->on('preferred_player') || $plugins->on('subtitle_language'), 404);
         $data = $request->validate([
             'player' => ['nullable', Rule::in(['kodik', 'flixcdn', 'youtube'])],
             'subs' => ['nullable', Rule::in(['uk', 'en', 'ru'])],
         ]);
-        $request->user()->mergePref([
-            'cinema_player' => (string) ($data['player'] ?? ''),
-            'cinema_subs' => (string) ($data['subs'] ?? ''),
-        ]);
+        $patch = [];
+        if ($plugins->on('preferred_player')) {
+            $patch['cinema_player'] = (string) ($data['player'] ?? '');
+        }
+        if ($plugins->on('subtitle_language')) {
+            $patch['cinema_subs'] = (string) ($data['subs'] ?? '');
+        }
+        $request->user()->mergePref($patch);
 
         return back();
     }
@@ -180,9 +192,11 @@ class CinemaController extends Controller
      */
     private function playbackPrefs(User $user): array
     {
+        $plugins = app(Plugins::class);
+
         return [
-            'player' => (string) $user->pref('cinema_player', ''),
-            'subs' => (string) $user->pref('cinema_subs', ''),
+            'player' => $plugins->on('preferred_player') ? (string) $user->pref('cinema_player', '') : '',
+            'subs' => $plugins->on('subtitle_language') ? (string) $user->pref('cinema_subs', '') : '',
         ];
     }
 
@@ -242,9 +256,9 @@ class CinemaController extends Controller
             'state' => $this->cinema->stateFor($movie, $viewer),
             'statuses' => $this->statusOptions(),
             'friends' => $this->friendsWatching($viewer, $movie),
-            'seen' => $this->friendsSeen($viewer, $movie),
-            'taste' => $this->similarTaste($viewer),
-            'episodeMarks' => app(EpisodeMarks::class)->keys($viewer, $movie),
+            'seen' => app(Plugins::class)->on('friends_seen') ? $this->friendsSeen($viewer, $movie) : [],
+            'taste' => app(Plugins::class)->on('similar_taste') ? $this->similarTaste($viewer) : [],
+            'episodeMarks' => app(Plugins::class)->on('episode_marks') ? app(EpisodeMarks::class)->keys($viewer, $movie) : [],
             'similar' => $this->cards($similar),
             'comments' => $comments->map(fn (Comment $c) => $this->presenter->comment($c, $viewer, $liked->has($c->id), $viewer->isStaff()))->values(),
             'can' => ['manage' => $viewer->isStaff()],
@@ -257,7 +271,7 @@ class CinemaController extends Controller
             'saved' => app(SavedItems::class)->has($viewer, 'movie', $movie->id),
             'pinned' => is_array($pin = $viewer->pref('pin')) && ($pin['kind'] ?? null) === 'movie' && (int) ($pin['id'] ?? 0) === $movie->id,
             'playback' => $this->playbackPrefs($viewer),
-            'inTopTen' => in_array($movie->id, array_map('intval', (array) $viewer->pref('top_ten', [])), true),
+            'inTopTen' => app(Plugins::class)->on('top_ten') && in_array($movie->id, array_map('intval', (array) $viewer->pref('top_ten', [])), true),
         ]);
     }
 
@@ -325,6 +339,7 @@ class CinemaController extends Controller
 
     public function episode(Request $request, Movie $movie): JsonResponse
     {
+        app(Plugins::class)->ensure('episode_marks');
         $data = $request->validate([
             'season' => ['required', 'integer', 'min:1', 'max:50'],
             'episode' => ['required', 'integer', 'min:1', 'max:500'],

@@ -31,6 +31,7 @@ import { cn } from '@/lib/utils';
 import type { ClanCard, GameCard, UserCard } from '@/types';
 import { GameCover } from './index';
 import { LOCALE, tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 type Details = {
     summary?: string;
@@ -241,6 +242,7 @@ export default function GameShow({
     can_curate,
 }: Props) {
     const d = game.details ?? {};
+    const guidesOn = usePlugin('game_guides');
     const [video, setVideo] = useState<string | null>(null);
     const [shot, setShot] = useState<string | null>(null);
     const mp = d.multiplayer ?? {};
@@ -754,7 +756,7 @@ export default function GameShow({
                 </Section>
             )}
 
-            <Section title={tr('Гіди')} icon={BookOpen}>
+            {guidesOn && <Section title={tr('Гіди')} icon={BookOpen}>
                 <GuideForm slug={game.slug} />
                 {guides.length === 0 ? (
                     <p className="text-sm text-white/45">{tr('Гідів ще немає. Напишіть перший.')}</p>
@@ -786,7 +788,7 @@ export default function GameShow({
                         ))}
                     </div>
                 )}
-            </Section>
+            </Section>}
 
             {(d.websites?.length || d.igdb_url) && (
                 <Section title={tr('Спільнота й посилання')} icon={Globe}>

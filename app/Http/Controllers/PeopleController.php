@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\FriendshipService;
 use App\Services\Search\SiteSearch;
 use App\Support\Modules\ModuleManager;
+use App\Support\Plugins\Plugins;
 use App\Support\RecentSearches;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -34,6 +35,12 @@ class PeopleController extends Controller
             'game' => ['nullable', 'string', 'max:80'],
         ]);
         $viewer = $request->user();
+        if (! app(Plugins::class)->on('people_filters')) {
+            $filters['language'] = null;
+            $filters['country'] = null;
+            $filters['game'] = null;
+            $filters['online'] = null;
+        }
 
         $users = $this->search($filters)
             ->whereKeyNot($viewer->id)
@@ -94,6 +101,7 @@ class PeopleController extends Controller
 
     public function saveSearch(Request $request): RedirectResponse
     {
+        app(Plugins::class)->ensure('saved_search');
         $data = $request->validate([
             'q' => ['nullable', 'string', 'max:80'],
             'city' => ['nullable', 'string', 'max:80'],
@@ -172,6 +180,9 @@ class PeopleController extends Controller
      */
     private function savedFilters(User $user): ?array
     {
+        if (! app(Plugins::class)->on('saved_search')) {
+            return null;
+        }
         $saved = $user->pref('saved_search');
         if (! is_array($saved)) {
             return null;

@@ -6,6 +6,7 @@ use App\Models\Family;
 use App\Models\FamilyCashout;
 use App\Models\FamilyMember;
 use App\Models\User;
+use App\Support\Plugins\Plugins;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -73,7 +74,7 @@ class FamilyService
         if (! $family->is_recruiting && ! $invited) {
             throw ValidationException::withMessages(['family' => 'Набір у сім’ю закрито.']);
         }
-        if (DB::table('family_blocks')->where('family_id', $family->id)->where('user_id', $user->id)->exists()) {
+        if (app(Plugins::class)->on('family_blacklist') && DB::table('family_blocks')->where('family_id', $family->id)->where('user_id', $user->id)->exists()) {
             throw ValidationException::withMessages(['family' => 'Вас внесено до чорного списку сім’ї.']);
         }
         $this->ensureFreeOnServer($user, (int) $family->server_id, $family);

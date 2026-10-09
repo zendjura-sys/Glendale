@@ -50,6 +50,7 @@ import { MessageBubble, SystemMessage } from './message-bubble';
 import { ReportDialog } from './report-dialog';
 import type { BubbleActions } from './message-bubble';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 const EDIT_WINDOW_MS = 24 * 3600 * 1000;
 const GROUP_GAP_MS = 5 * 60 * 1000;
@@ -91,6 +92,9 @@ export function ChatView({
     onTypingChange,
 }: Props) {
     const { auth, modules } = usePage().props;
+    const unreadOn = usePlugin('mark_unread');
+    const receiptsOn = usePlugin('read_receipts');
+    const foldersOn = usePlugin('chat_folders');
     const me = auth.user;
     const isGroup = active.type === 'group';
     const canManage = active.my_role === 'owner' || active.my_role === 'admin';
@@ -676,7 +680,7 @@ export function ChatView({
                         </span>
                     </span>
                 </button>
-                <button
+                {unreadOn && <button
                     type="button"
                     onClick={() => router.post(`/messages/${active.id}/unread`)}
                     className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
@@ -684,8 +688,8 @@ export function ChatView({
                     title={tr('Позначити непрочитаним')}
                 >
                     <Mail className="size-[18px]" />
-                </button>
-                <button
+                </button>}
+                {receiptsOn && <button
                     type="button"
                     onClick={() =>
                         router.post(
@@ -716,7 +720,7 @@ export function ChatView({
                     ) : (
                         <Eye className="size-[18px]" />
                     )}
-                </button>
+                </button>}
                 <button
                     type="button"
                     onClick={() =>
@@ -741,7 +745,7 @@ export function ChatView({
                 >
                     <Pin className={cn('size-[18px]', active.pinned && 'fill-current')} />
                 </button>
-                <button
+                {foldersOn && <button
                     type="button"
                     onClick={() => setFolderOpen((open) => !open)}
                     className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
@@ -749,7 +753,7 @@ export function ChatView({
                     title={active.folder ? active.folder : tr('Папка')}
                 >
                     <Folder className="size-[18px]" />
-                </button>
+                </button>}
                 <button
                     type="button"
                     onClick={() =>

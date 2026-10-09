@@ -5,6 +5,7 @@ import AppearanceController from '@/actions/App/Http/Controllers/Settings/Appear
 import { Button } from '@/components/ui/button';
 import { SettingsCard } from '@/layouts/settings/layout';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
 import type { UserCard } from '@/types';
 
@@ -89,6 +90,15 @@ export default function Appearance({
     muteWords: string[];
     hideSpoilers: boolean;
 }) {
+    const palettesOn = usePlugin('palettes');
+    const quietOn = usePlugin('quiet_hours');
+    const notifyOn = usePlugin('notify_switches');
+    const mutedOn = usePlugin('muted_words');
+    const spoilersOn = usePlugin('spoiler_switch');
+    const languagesOn = usePlugin('spoken_languages');
+    const visitorsOn = usePlugin('profile_visitors');
+    const orderOn = usePlugin('profile_order');
+    const groupOn = usePlugin('looking_for_group');
     const form = useForm<Form>({
         palette,
         quiet_enabled: quiet.enabled,
@@ -126,7 +136,7 @@ export default function Appearance({
         <>
             <Head title={tr('Вигляд')} />
             <form onSubmit={submit} className="space-y-4">
-                <SettingsCard
+                {palettesOn && <SettingsCard
                     title={tr('Палітра')}
                     description={tr(
                         'Колір кнопок, меню і підсвітки. Фон лишається темним.',
@@ -173,9 +183,9 @@ export default function Appearance({
                             );
                         })}
                     </div>
-                </SettingsCard>
+                </SettingsCard>}
 
-                <SettingsCard
+                {quietOn && <SettingsCard
                     title={tr('Тихі години')}
                     description={tr(
                         'Лайки, коментарі й заявки в друзі не приходять у цей час. Нагадування про події лишаються.',
@@ -217,9 +227,9 @@ export default function Appearance({
                             />
                         </label>
                     </div>
-                </SettingsCard>
+                </SettingsCard>}
 
-                <SettingsCard
+                {notifyOn && <SettingsCard
                     title={tr('Сповіщення')}
                     description={tr(
                         'Лайки, коментарі, згадки, події й друзі в грі. Сайт, пошта і push вмикаються окремо.',
@@ -271,15 +281,15 @@ export default function Appearance({
                             </label>
                         ))}
                     </div>
-                </SettingsCard>
+                </SettingsCard>}
 
-                <SettingsCard
+                {(mutedOn || spoilersOn) && <SettingsCard
                     title={tr('Заглушені слова')}
                     description={tr(
                         'Записи з цими словами зникають зі стрічки, а сповіщення про них не приходять.',
                     )}
                 >
-                    <label className="mb-3 flex min-h-11 items-center gap-3 text-sm text-white">
+                    {spoilersOn && <label className="mb-3 flex min-h-11 items-center gap-3 text-sm text-white">
                         <input
                             type="checkbox"
                             checked={form.data.hide_spoilers}
@@ -289,7 +299,8 @@ export default function Appearance({
                             className="size-4 accent-gc-lilac-400"
                         />
                         {tr('Ховати спойлери на всьому сайті')}
-                    </label>
+                    </label>}
+                    {mutedOn && <>
                     <div className="flex gap-2">
                         <input
                             value={phrase}
@@ -358,15 +369,16 @@ export default function Appearance({
                             </button>
                         ))}
                     </div>
-                </SettingsCard>
+                    </>}
+                </SettingsCard>}
 
-                <SettingsCard
+                {(groupOn || visitorsOn || languagesOn) && <SettingsCard
                     title={tr('Як тебе бачать')}
                     description={tr(
                         'Мови спілкування і прапорець для тих, хто шукає групу.',
                     )}
                 >
-                    <label className="flex min-h-11 items-center gap-3 text-sm text-white">
+                    {groupOn && <label className="flex min-h-11 items-center gap-3 text-sm text-white">
                         <input
                             type="checkbox"
                             checked={form.data.looking_for_group}
@@ -380,8 +392,8 @@ export default function Appearance({
                         />
                         <UsersRound className="size-4 text-white/50" />
                         {tr('Шукаю групу')}
-                    </label>
-                    <label className="mt-2 flex min-h-11 items-center gap-3 text-sm text-white">
+                    </label>}
+                    {visitorsOn && <label className="mt-2 flex min-h-11 items-center gap-3 text-sm text-white">
                         <input
                             type="checkbox"
                             checked={form.data.show_visitors}
@@ -392,7 +404,8 @@ export default function Appearance({
                         />
                         <Eye className="size-4 text-white/50" />
                         {tr('Хто заходив')}
-                    </label>
+                    </label>}
+                    {languagesOn && <>
                     <p className="mt-4 mb-2 flex items-center gap-2 text-xs text-white/45">
                         <Languages className="size-3.5" />
                         {tr('Мови, якими говорю')}
@@ -421,7 +434,8 @@ export default function Appearance({
                             );
                         })}
                     </div>
-                </SettingsCard>
+                    </>}
+                </SettingsCard>}
 
                 <SettingsCard
                     title={tr('Близькі')}
@@ -459,7 +473,7 @@ export default function Appearance({
                     </div>
                 </SettingsCard>
 
-                <SettingsCard
+                {orderOn && <SettingsCard
                     title={tr('Порядок блоків')}
                     description={tr('Як блоки стоять на вашій сторінці.')}
                 >
@@ -501,7 +515,7 @@ export default function Appearance({
                             </div>
                         ))}
                     </div>
-                </SettingsCard>
+                </SettingsCard>}
 
                 <Button
                     type="submit"

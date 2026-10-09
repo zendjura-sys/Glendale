@@ -23,6 +23,7 @@ import { CommunityAvatar } from './community-avatar';
 import { StickerPicker, stickerEmoji } from './stickers';
 import { UserAvatar } from './user-avatar';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 const visibilityOptions: {
     value: Visibility;
@@ -53,6 +54,7 @@ export function PostComposer({
     className,
 }: Props) {
     const { auth, site, modules } = usePage().props;
+    const scheduleOn = usePlugin('scheduled_posts');
     const [focused, setFocused] = useState(false);
     const [picking, setPicking] = useState(false);
     const [track, setTrack] = useState<TrackCard | null>(null);
@@ -555,13 +557,13 @@ export function PostComposer({
                     </div>
                 )}
 
-                <input
+                {scheduleOn && <input
                     type="datetime-local"
                     value={publishAt}
                     onChange={(event) => setPublishAt(event.target.value)}
                     aria-label={tr('Час публікації')}
                     className="h-10 rounded-xl bg-transparent px-2 text-xs text-white/70"
-                />
+                />}
                 <a
                     href="/posts/drafts"
                     className="inline-flex h-10 items-center rounded-xl px-2 text-xs font-medium text-white/45 hover:text-white"

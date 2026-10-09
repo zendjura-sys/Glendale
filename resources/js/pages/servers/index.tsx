@@ -28,6 +28,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { GtaServerCard } from '@/types';
 import { LOCALE, tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 type Props = {
     servers: GtaServerCard[];
@@ -80,6 +81,8 @@ export default function Servers({
     favorites,
 }: Props) {
     const [q, setQ] = useState(filters.q);
+    const tagsOn = usePlugin('server_tags');
+    const favoritesOn = usePlugin('server_favorites');
     const [suggesting, setSuggesting] = useState(false);
     const myLanguage = LOCALE.split('-')[0];
     const form = useForm({
@@ -240,7 +243,7 @@ export default function Servers({
                                 ))}
                             </select>
                         )}
-                        <select
+                        {tagsOn && <select
                             value={filters.tag ?? ''}
                             onChange={(e) => visit({ tag: e.target.value || null })}
                             className={cn(selectClass, 'h-11')}
@@ -250,7 +253,7 @@ export default function Servers({
                             <option value="rp">{tr('RP')}</option>
                             <option value="pvp">{tr('PvP')}</option>
                             <option value="mixed">{tr('RP і PvP')}</option>
-                        </select>
+                        </select>}
                         <select
                             value={filters.sort}
                             onChange={(e) => visit({ sort: e.target.value })}
@@ -262,7 +265,7 @@ export default function Servers({
                                 </option>
                             ))}
                         </select>
-                        <button
+                        {favoritesOn && <button
                             type="button"
                             onClick={() => visit({ saved: !filters.saved })}
                             className={cn(
@@ -271,7 +274,7 @@ export default function Servers({
                             )}
                         >
                             {tr('Обрані')}
-                        </button>
+                        </button>}
                         <button
                             type="button"
                             onClick={() => setSuggesting(true)}
@@ -316,7 +319,7 @@ export default function Servers({
                     </div>
                 )}
 
-                {favorites.length > 0 && !filters.saved && (
+                {favoritesOn && favorites.length > 0 && !filters.saved && (
                     <section className="space-y-3">
                         <h2 className="font-display text-xl font-bold text-white">{tr('Обрані')}</h2>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">

@@ -35,6 +35,7 @@ declare module '@inertiajs/core' {
             };
             nav: NavEntry[];
             modules: string[];
+            plugins: Record<string, boolean>;
             music: SharedMusic;
             counters: {
                 friend_requests: number;

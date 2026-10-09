@@ -31,6 +31,7 @@ import type {
     ScrollData,
 } from '@/types';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 type Filters = {
     type: MovieType | null;
@@ -234,6 +235,7 @@ export default function CinemaIndex({
     requests,
 }: Props) {
     const [search, setSearch] = useState(filters.q);
+    const requestOn = usePlugin('movie_request');
 
     const apply = (patch: Partial<Filters>) => {
         const next = { ...filters, q: search, ...patch };
@@ -504,7 +506,7 @@ export default function CinemaIndex({
                         </InfiniteScroll>
                     </section>
                 )}
-                <form
+                {requestOn && <form
                     className="glass flex flex-wrap items-end gap-2 rounded-3xl p-4"
                     onSubmit={(event) => {
                         event.preventDefault();
@@ -544,7 +546,7 @@ export default function CinemaIndex({
                             {requests.join(' · ')}
                         </p>
                     )}
-                </form>
+                </form>}
             </div>
         </>
     );

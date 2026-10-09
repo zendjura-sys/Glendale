@@ -63,6 +63,7 @@ class SiteSettings
         'cinema_sync_last' => null,
         'maintenance_message' => null,
         'servers_auto_publish' => false,
+        'plugins' => [],
         'discord_client_id' => null,
         'discord_client_secret' => null,
         'firebase_api_key' => null,

@@ -10,6 +10,7 @@ import {
     LayoutDashboard,
     Music2,
     PlugZap,
+    Puzzle,
     Server,
     Settings2,
     Shield,
@@ -48,6 +49,7 @@ const items = [
     { label: tr('Сім’ї'), href: '/admin/families', icon: Crown },
     { label: tr('Стікери'), href: '/admin/stickers', icon: Sticker },
     { label: tr('Модулі'), href: '/admin/modules', icon: Blocks },
+    { label: tr('Плагіни'), href: '/admin/plugins', icon: Puzzle },
     { label: tr('Інтеграції'), href: '/admin/integrations', icon: PlugZap },
     { label: tr('Налаштування'), href: '/admin/settings', icon: Settings2 },
 ];

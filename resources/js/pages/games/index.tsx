@@ -14,6 +14,7 @@ import { EmptyState } from '@/components/gc/widget';
 import { cn } from '@/lib/utils';
 import type { GameCard, Paginated } from '@/types';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 type Category = GameCard['category'];
 
@@ -111,6 +112,7 @@ export default function GamesIndex({
     total,
 }: Props) {
     const [q, setQ] = useState(filters.q);
+    const collectionsOn = usePlugin('game_collections');
 
     const visit = (patch: Partial<Props['filters']>) =>
         router.get(
@@ -184,7 +186,7 @@ export default function GamesIndex({
                     })}
                 </div>
 
-                <div className="-mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1">
+                {collectionsOn && <div className="-mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1">
                     <Chip
                         small
                         active={filters.collection === 'duo'}
@@ -199,7 +201,7 @@ export default function GamesIndex({
                     >
                         {tr('На вечір')}
                     </Chip>
-                </div>
+                </div>}
 
                 {Object.keys(modes).length > 0 && (
                     <div className="-mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1">

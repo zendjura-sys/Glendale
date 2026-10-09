@@ -27,6 +27,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { api, ApiError } from '@/lib/api';
+import { usePlugin } from '@/lib/plugins';
 import { compactNumber, formatDuration } from '@/lib/format';
 import {
     patchTrack,
@@ -66,6 +67,7 @@ export function TrackList({
     removeLabel,
 }: Props) {
     const player = usePlayer();
+    const similarOn = usePlugin('similar_tracks');
     const [overrides, setOverrides] = useState<
         Record<string, Partial<LocalTrack>>
     >({});
@@ -344,7 +346,7 @@ export function TrackList({
                                     >
                                         <Share2 /> {tr('Поділитися на стіні')}
                                     </DropdownMenuItem>
-                                    {track.source === 'local' && (
+                                    {similarOn && track.source === 'local' && (
                                         <DropdownMenuItem
                                             className={itemClass}
                                             onSelect={() => void similar(track)}

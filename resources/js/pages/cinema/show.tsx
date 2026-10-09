@@ -33,6 +33,7 @@ import {
 import { api, ApiError } from '@/lib/api';
 import { compactNumber, plural } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { usePlugin } from '@/lib/plugins';
 import type {
     CommentItem,
     MovieCard,
@@ -180,6 +181,10 @@ export default function CinemaShow({
     inTopTen,
 }: Props) {
     const [state, setState] = useState(initialState);
+    const marksOn = usePlugin('episode_marks');
+    const tenOn = usePlugin('top_ten');
+    const playerOn = usePlugin('preferred_player');
+    const subsOn = usePlugin('subtitle_language');
     const [stats, setStats] = useState({
         user_rating: movie.user_rating,
         ratings_count: movie.ratings_count,
@@ -496,7 +501,7 @@ export default function CinemaShow({
                                             </button>
                                         </form>
                                     )}
-                                    {(movie.episodes_count ?? 0) > 1 && (
+                                    {marksOn && (movie.episodes_count ?? 0) > 1 && (
                                         <div className="mt-3 w-full">
                                             <div className="mb-2 flex items-center gap-2">
                                                 <span className="text-xs text-white/45">
@@ -591,6 +596,7 @@ export default function CinemaShow({
                                         </button>
                                     )}
                                     <SaveButton kind="movie" id={movie.id} saved={saved} />
+                                    {tenOn && (
                                     <button
                                         type="button"
                                         onClick={() =>
@@ -602,6 +608,7 @@ export default function CinemaShow({
                                     >
                                         {inTopTen ? tr('У десятці') : tr('У десятку')}
                                     </button>
+                                    )}
                                     <PinButton kind="movie" id={movie.id} pinned={pinned} />
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
@@ -730,7 +737,7 @@ export default function CinemaShow({
                                         );
                                     }}
                                 >
-                                    <select
+                                    {playerOn && <select
                                         name="player"
                                         defaultValue={playback.player}
                                         className="h-9 rounded-lg bg-white/10 px-2 text-xs text-white"
@@ -739,8 +746,8 @@ export default function CinemaShow({
                                         <option value="kodik">Kodik</option>
                                         <option value="flixcdn">FlixCDN</option>
                                         <option value="youtube">YouTube</option>
-                                    </select>
-                                    <select
+                                    </select>}
+                                    {subsOn && <select
                                         name="subs"
                                         defaultValue={playback.subs}
                                         className="h-9 rounded-lg bg-white/10 px-2 text-xs text-white"
@@ -749,13 +756,15 @@ export default function CinemaShow({
                                         <option value="uk">{tr('Українська')}</option>
                                         <option value="en">{tr('Англійська')}</option>
                                         <option value="ru">{tr('Російська')}</option>
-                                    </select>
+                                    </select>}
+                                    {(playerOn || subsOn) && (
                                     <button
                                         type="submit"
                                         className="h-9 rounded-lg bg-white/10 px-3 text-xs text-white"
                                     >
                                         {tr('Зберегти')}
                                     </button>
+                                    )}
                                 </form>
                                 <div className="flex gap-1">
                                     {tabs.map((tab) => (

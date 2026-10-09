@@ -28,6 +28,7 @@ import {
     usePlayer,
 } from '@/lib/player';
 import { cn } from '@/lib/utils';
+import { usePlugin } from '@/lib/plugins';
 import type { LocalTrack, UserCard } from '@/types';
 import { tr } from '@/lib/i18n';
 
@@ -73,6 +74,7 @@ const clock = (s: number) => {
  */
 export default function ListenTogether({ party: initial, friends }: Props) {
     const [party, setParty] = useState(initial);
+    const repeatOn = usePlugin('listen_repeat');
     const [synced, setSynced] = useState(true);
     const [search, setSearch] = useState('');
     const [results, setResults] = useState<LocalTrack[]>([]);
@@ -563,7 +565,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                             )}
                             {party.is_host && (
                                 <>
-                                    <label className="flex cursor-pointer items-center justify-between gap-2 rounded-xl px-1 py-2 text-sm text-white/75">
+                                    {repeatOn && <label className="flex cursor-pointer items-center justify-between gap-2 rounded-xl px-1 py-2 text-sm text-white/75">
                                         {tr('Повторювати цей трек')}
                                         <input
                                             type="checkbox"
@@ -576,7 +578,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                                 ).then(apply)
                                             }
                                         />
-                                    </label>
+                                    </label>}
                                     <label className="flex cursor-pointer items-center justify-between gap-2 rounded-xl px-1 py-2 text-sm text-white/75">
                                         {tr('Керувати можуть усі')}
                                         <input

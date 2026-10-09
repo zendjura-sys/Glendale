@@ -27,6 +27,7 @@ import {
 } from './message-media';
 import { useContentTranslation } from '@/components/gc/translate';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 export type BubbleActions = {
     onReply: (message: ChatMessage) => void;
@@ -142,6 +143,8 @@ export function MessageBubble({
     highlighted,
     actions,
 }: Props) {
+    const forwardOn = usePlugin('forward_message');
+    const favoriteOn = usePlugin('favorite_messages');
     const images = message.attachments.filter(
         (a) => (a.type ?? 'image') === 'image',
     );
@@ -484,7 +487,7 @@ export function MessageBubble({
                             <Pencil className="size-3.5" />
                         </button>
                     )}
-                    {message.type !== 'system' && (
+                    {forwardOn && message.type !== 'system' && (
                         <button
                             type="button"
                             className={toolButton}
@@ -494,14 +497,14 @@ export function MessageBubble({
                             <Forward className="size-3.5" />
                         </button>
                     )}
-                    <button
+                    {favoriteOn && <button
                         type="button"
                         className={cn(toolButton, message.starred && 'text-amber-300')}
                         onClick={() => actions.onStar(message)}
                         title={message.starred ? tr('Прибрати з обраних') : tr('В обране')}
                     >
                         <Star className={cn('size-3.5', message.starred && 'fill-current')} />
-                    </button>
+                    </button>}
                     {canDelete && (
                         <button
                             type="button"

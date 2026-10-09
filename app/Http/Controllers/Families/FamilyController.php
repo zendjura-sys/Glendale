@@ -14,6 +14,7 @@ use App\Services\Families\FamilyRating;
 use App\Services\Families\FamilyService;
 use App\Services\Families\MemberStats;
 use App\Services\ImageStorage;
+use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -155,6 +156,7 @@ class FamilyController extends FamilyBaseController
 
     public function block(Request $request, Family $family): RedirectResponse
     {
+        app(Plugins::class)->ensure('family_blacklist');
         $this->ensureLeader($request, $family);
         $data = $request->validate(['username' => ['required', 'string', 'max:32']]);
         $person = User::query()->where('username', $data['username'])->first();
@@ -171,6 +173,7 @@ class FamilyController extends FamilyBaseController
 
     public function unblock(Request $request, Family $family, User $user): RedirectResponse
     {
+        app(Plugins::class)->ensure('family_blacklist');
         $this->ensureLeader($request, $family);
         DB::table('family_blocks')->where('family_id', $family->id)->where('user_id', $user->id)->delete();
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Людину прибрано з чорного списку.']);
@@ -223,8 +226,8 @@ class FamilyController extends FamilyBaseController
         return Inertia::render('families/public', [
             'family' => [...$family->toCard(), 'description' => $family->description, 'created_at' => $family->created_at->toIso8601String()],
             'leaders' => $leaders,
-            'can_block' => $isLeader,
-            'blocked' => $isLeader
+            'can_block' => $isLeader && app(Plugins::class)->on('family_blacklist'),
+            'blocked' => $isLeader && app(Plugins::class)->on('family_blacklist')
                 ? User::query()->whereIn('id', DB::table('family_blocks')->where('family_id', $family->id)->pluck('user_id'))->get()->map(fn (User $user) => $user->toCard())->values()
                 : [],
             'application' => $application ? [

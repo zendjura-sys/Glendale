@@ -25,6 +25,7 @@ use App\Services\Servers\DiscordInvites;
 use App\Services\Servers\ServerDirectory;
 use App\Services\Servers\ServerIconFetcher;
 use App\Support\I18n\Locales;
+use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -52,8 +53,15 @@ class ServerController extends Controller
             'tag' => ['nullable', Rule::in(['rp', 'pvp', 'mixed'])],
         ]);
         $sort = $filters['sort'] ?? 'online';
-        $savedOnly = $request->boolean('saved');
-        $favoriteIds = Save::query()->where('user_id', $request->user()->id)->where('kind', Save::SERVER)->latest('id')->limit(24)->pluck('subject_id');
+        $plugins = app(Plugins::class);
+        $favoritesOn = $plugins->on('server_favorites');
+        $savedOnly = $favoritesOn && $request->boolean('saved');
+        if (! $plugins->on('server_tags')) {
+            $filters['tag'] = null;
+        }
+        $favoriteIds = $favoritesOn
+            ? Save::query()->where('user_id', $request->user()->id)->where('kind', Save::SERVER)->latest('id')->limit(24)->pluck('subject_id')
+            : collect();
 
         // Мова серверів: вибрана або мова інтерфейсу, якщо такі сервери є; інакше — усі.
         $languages = GtaServer::query()->published()->selectRaw('language, count(*) as total')->groupBy('language')->pluck('total', 'language')->map(fn ($n) => (int) $n);
@@ -81,10 +89,10 @@ class ServerController extends Controller
         return Inertia::render('servers/index', [
             'servers' => $servers->values()->map(fn (GtaServer $s) => $s->toCard()),
             'filters' => ['platform' => $filters['platform'] ?? null, 'q' => $filters['q'] ?? '', 'sort' => $sort, 'lang' => $lang, 'saved' => $savedOnly, 'tag' => $filters['tag'] ?? null],
-            'favorites' => GtaServer::query()->published()->whereIn('id', $favoriteIds)->get()
+            'favorites' => $favoritesOn ? GtaServer::query()->published()->whereIn('id', $favoriteIds)->get()
                 ->sortBy(fn (GtaServer $server) => $favoriteIds->search($server->id))
                 ->values()
-                ->map(fn (GtaServer $server) => $server->toCard()),
+                ->map(fn (GtaServer $server) => $server->toCard()) : [],
             // «Німецькі» — перекладається мовою інтерфейсу; «усі» — без прикметника.
             'heading' => $lang === 'all' ? null : GtaServer::LANGUAGES[$lang],
             'languages' => $languages->sortDesc()->map(fn (int $count, string $code) => ['code' => $code, 'native' => Locales::nativeName($code), 'count' => $count])->values(),
@@ -110,6 +118,7 @@ class ServerController extends Controller
 
     public function compare(Request $request): Response
     {
+        app(Plugins::class)->ensure('server_compare');
         $data = $request->validate([
             'a' => ['nullable', 'string', 'max:80'],
             'b' => ['nullable', 'string', 'max:80'],
@@ -171,6 +180,7 @@ class ServerController extends Controller
 
     public function tags(Request $request, GtaServer $server): RedirectResponse
     {
+        app(Plugins::class)->ensure('server_tags');
         $user = $request->user();
         abort_unless($server->owner_id === $user->id || $user->isStaff(), 403);
         $data = $request->validate([
@@ -188,6 +198,7 @@ class ServerController extends Controller
 
     public function claim(Request $request, GtaServer $server): RedirectResponse
     {
+        app(Plugins::class)->ensure('server_claim');
         abort_unless($server->status === GtaServer::STATUS_PUBLISHED, 404);
         $user = $request->user();
         abort_if($server->owner_id === $user->id, 422);
@@ -203,6 +214,7 @@ class ServerController extends Controller
 
     public function decideClaim(Request $request, GtaServer $server, ServerClaim $claim): RedirectResponse
     {
+        app(Plugins::class)->ensure('server_claim');
         abort_unless($request->user()->isStaff(), 403);
         abort_unless($claim->gta_server_id === $server->id, 404);
         $data = $request->validate(['status' => ['required', Rule::in([ServerClaim::APPROVED, ServerClaim::REJECTED])]]);
@@ -218,6 +230,7 @@ class ServerController extends Controller
 
     public function news(Request $request, GtaServer $server): RedirectResponse
     {
+        app(Plugins::class)->ensure('server_news');
         abort_unless($server->owner_id === $request->user()->id, 403);
         $data = $request->validate(['body' => ['required', 'string', 'max:1000']]);
         ServerNews::query()->create([
@@ -423,24 +436,29 @@ class ServerController extends Controller
      */
     private function ownership(GtaServer $server, User $viewer): array
     {
+        $plugins = app(Plugins::class);
         $server->loadMissing('owner');
-        $mine = ServerClaim::query()->where('user_id', $viewer->id)->where('gta_server_id', $server->id)->first();
-        $pending = $viewer->isStaff()
+        $mine = $plugins->on('server_claim')
+            ? ServerClaim::query()->where('user_id', $viewer->id)->where('gta_server_id', $server->id)->first()
+            : null;
+        $pending = $viewer->isStaff() && $plugins->on('server_claim')
             ? ServerClaim::query()->with('user')->where('gta_server_id', $server->id)->where('status', ServerClaim::PENDING)->latest('id')->limit(10)->get()
             : collect();
 
         return [
             'owner' => $server->owner?->toCard(),
             'is_owner' => $server->owner_id === $viewer->id,
-            'can_tag' => $server->owner_id === $viewer->id || $viewer->isStaff(),
+            'can_tag' => $plugins->on('server_tags') && ($server->owner_id === $viewer->id || $viewer->isStaff()),
             'claim' => $mine?->status,
-            'news' => ServerNews::query()->with('user')->where('gta_server_id', $server->id)->latest('id')->limit(5)->get()
-                ->map(fn (ServerNews $item) => [
-                    'id' => $item->id,
-                    'body' => $item->body,
-                    'name' => $item->user->name,
-                    'created_at' => $item->created_at->toIso8601String(),
-                ])->values(),
+            'news' => $plugins->on('server_news')
+                ? ServerNews::query()->with('user')->where('gta_server_id', $server->id)->latest('id')->limit(5)->get()
+                    ->map(fn (ServerNews $item) => [
+                        'id' => $item->id,
+                        'body' => $item->body,
+                        'name' => $item->user->name,
+                        'created_at' => $item->created_at->toIso8601String(),
+                    ])->values()
+                : [],
             'pending' => $pending->map(fn (ServerClaim $claim) => [
                 'id' => $claim->id,
                 'name' => $claim->user->name,
@@ -455,6 +473,10 @@ class ServerController extends Controller
      */
     private function onlineSeries(GtaServer $server): array
     {
+        if (! app(Plugins::class)->on('server_online')) {
+            return [];
+        }
+
         return DB::table('server_online_samples')
             ->where('gta_server_id', $server->id)
             ->orderByDesc('sampled_on')
@@ -471,6 +493,10 @@ class ServerController extends Controller
      */
     private function similarServers(GtaServer $server): array
     {
+        if (! app(Plugins::class)->on('similar_servers')) {
+            return [];
+        }
+
         return GtaServer::query()->published()
             ->whereKeyNot($server->id)
             ->where(function (Builder $query) use ($server) {

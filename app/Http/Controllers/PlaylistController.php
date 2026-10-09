@@ -9,6 +9,7 @@ use App\Services\FriendshipService;
 use App\Services\ImageStorage;
 use App\Services\MusicService;
 use App\Services\Spotify\SpotifyClient;
+use App\Support\Plugins\Plugins;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -103,6 +104,7 @@ class PlaylistController extends Controller
 
     public function share(Request $request, Playlist $playlist): RedirectResponse
     {
+        app(Plugins::class)->ensure('shared_playlist');
         $this->authorizeOwner($request, $playlist);
         $data = $request->validate(['username' => ['required', 'string', 'max:32']]);
         $friend = User::query()->where('username', $data['username'])->first();
@@ -119,6 +121,7 @@ class PlaylistController extends Controller
 
     public function importSpotify(Request $request, Playlist $playlist, SpotifyClient $spotify): RedirectResponse
     {
+        app(Plugins::class)->ensure('spotify_import');
         $this->authorizeManage($request, $playlist);
         $data = $request->validate(['playlist' => ['required', 'string', 'regex:/^[A-Za-z0-9]{10,40}$/']]);
         $account = $request->user()->spotifyAccount;
@@ -142,6 +145,8 @@ class PlaylistController extends Controller
 
     public function similar(Track $track): JsonResponse
     {
+        app(Plugins::class)->ensure('similar_tracks');
+
         return response()->json([
             'tracks' => $this->music->cards($this->music->similarTracks($track), request()->user()),
         ]);

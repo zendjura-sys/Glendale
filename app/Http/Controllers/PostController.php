@@ -26,6 +26,7 @@ use App\Services\PostPresenter;
 use App\Services\ReactionDigest;
 use App\Services\ScheduledPosts;
 use App\Services\Spotify\SpotifyClient;
+use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
 use App\Support\Stickers;
 use Illuminate\Database\Eloquent\Builder;
@@ -246,6 +247,7 @@ class PostController extends Controller
         if ($request->boolean('draft') || empty($data['publish_at'])) {
             return null;
         }
+        app(Plugins::class)->ensure('scheduled_posts');
         $at = Carbon::parse((string) $data['publish_at'], 'Europe/Kyiv');
         if ($at->lte(now()) || $at->gt(now()->addDays(30))) {
             throw ValidationException::withMessages(['publish_at' => 'Оберіть час у найближчі 30 днів.']);
@@ -256,6 +258,7 @@ class PostController extends Controller
 
     public function update(Request $request, Post $post): RedirectResponse
     {
+        app(Plugins::class)->ensure('post_edit');
         abort_unless($this->editable($request->user(), $post), 403, 'Час на редагування минув.');
         $data = $request->validate([
             'body' => ['required', 'string', 'max:'.(int) $this->settings->get('max_post_length')],
@@ -322,6 +325,7 @@ class PostController extends Controller
 
     public function hide(Request $request, Post $post): RedirectResponse
     {
+        app(Plugins::class)->ensure('not_interested');
         $user = $request->user();
         $this->authorizeView($user, $post);
         abort_if($post->author_id === $user->id, 422);
@@ -336,6 +340,7 @@ class PostController extends Controller
 
     public function mute(Request $request, Post $post): RedirectResponse
     {
+        app(Plugins::class)->ensure('mute_author');
         $user = $request->user();
         $this->authorizeView($user, $post);
         abort_if($post->author_id === $user->id, 422);
@@ -359,6 +364,7 @@ class PostController extends Controller
 
     public function share(Request $request, Post $post): RedirectResponse
     {
+        app(Plugins::class)->ensure('share_post');
         $user = $request->user();
         $this->authorizeView($user, $post);
         abort_if($post->is_draft || $post->publish_at?->isFuture(), 422);
@@ -392,6 +398,7 @@ class PostController extends Controller
 
     public function quote(Request $request, Post $post): RedirectResponse
     {
+        app(Plugins::class)->ensure('quote_post');
         $user = $request->user();
         $this->authorizeView($user, $post);
         abort_if($post->is_draft || $post->publish_at?->isFuture(), 422);
@@ -442,6 +449,7 @@ class PostController extends Controller
 
     public function vote(Request $request, Post $post): JsonResponse
     {
+        app(Plugins::class)->ensure('polls');
         $user = $request->user();
         $this->authorizeView($user, $post);
         $poll = $post->poll()->with('options')->firstOrFail();
@@ -472,6 +480,7 @@ class PostController extends Controller
 
     public function like(Request $request, Post $post): JsonResponse
     {
+        app(Plugins::class)->ensure('reactions');
         $user = $request->user();
         $this->authorizeView($user, $post);
 

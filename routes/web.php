@@ -561,6 +561,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('families/voice-rooms', [Admin\VoiceTemplateController::class, 'store'])->name('voice-templates.store');
         Route::patch('families/voice-rooms/{template}', [Admin\VoiceTemplateController::class, 'update'])->name('voice-templates.update');
         Route::delete('families/voice-rooms/{template}', [Admin\VoiceTemplateController::class, 'destroy'])->name('voice-templates.destroy');
+        Route::get('plugins', [Admin\PluginController::class, 'index'])->name('plugins.index');
+        Route::patch('plugins/{plugin}', [Admin\PluginController::class, 'update'])->name('plugins.update');
         Route::get('modules', [Admin\ModuleController::class, 'index'])->name('modules.index');
         Route::patch('modules/{module}', [Admin\ModuleController::class, 'update'])->name('modules.update');
         Route::get('settings', [Admin\SettingsController::class, 'edit'])->name('settings.edit');

@@ -12,6 +12,7 @@ use App\Services\Spotify\SpotifyClient;
 use App\Support\I18n\Locales;
 use App\Support\Modules\ModuleManager;
 use App\Support\NotifyPrefs;
+use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -86,13 +87,14 @@ class HandleInertiaRequests extends Middleware
                     'cover_url' => $user->cover_url,
                     'nav_tabs' => $this->modules->navTabsFor($user),
                     'palette' => $user->palette(),
-                    'hide_spoilers' => (bool) $user->pref('hide_spoilers'),
+                    'hide_spoilers' => app(Plugins::class)->on('spoiler_switch') && (bool) $user->pref('hide_spoilers'),
                     'created_at' => $user->created_at,
                     'updated_at' => $user->updated_at,
                 ] : null,
             ],
             'nav' => $user ? fn () => $this->modules->navigation() : [],
             'modules' => fn () => $this->modules->enabledKeys(),
+            'plugins' => fn () => app(Plugins::class)->flags(),
             'music' => $user ? fn () => $this->musicProps($user) : null,
             'counters' => $user ? fn () => [
                 'friend_requests' => $this->friendships->incomingCount($user),

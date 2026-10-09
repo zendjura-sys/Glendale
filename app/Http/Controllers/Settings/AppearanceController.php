@@ -8,6 +8,7 @@ use App\Support\I18n\Locales;
 use App\Support\MutedWords;
 use App\Support\NotifyPrefs;
 use App\Support\Palette;
+use App\Support\Plugins\Plugins;
 use App\Support\ProfileBlocks;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -76,31 +77,39 @@ class AppearanceController extends Controller
             fn (string $code) => in_array($code, $enabled, true),
         )));
 
-        $patch = [
-            'palette' => $data['palette'],
-            'quiet_enabled' => $data['quiet_enabled'],
-            'quiet_from' => $data['quiet_from'],
-            'quiet_to' => $data['quiet_to'],
-            'languages' => $languages,
-            'looking_for_group' => $data['looking_for_group'],
-        ];
+        $plugins = app(Plugins::class);
+        $patch = [];
+        if ($plugins->on('palettes')) {
+            $patch['palette'] = $data['palette'];
+        }
+        if ($plugins->on('quiet_hours')) {
+            $patch['quiet_enabled'] = $data['quiet_enabled'];
+            $patch['quiet_from'] = $data['quiet_from'];
+            $patch['quiet_to'] = $data['quiet_to'];
+        }
+        if ($plugins->on('spoken_languages')) {
+            $patch['languages'] = $languages;
+        }
+        if ($plugins->on('looking_for_group')) {
+            $patch['looking_for_group'] = $data['looking_for_group'];
+        }
         if (array_key_exists('close_friends', $data)) {
             $friendIds = app(FriendshipService::class)->friendIds($request->user());
             $patch['close_friends'] = array_values(array_intersect(array_map('intval', $data['close_friends']), $friendIds));
         }
-        if (array_key_exists('show_visitors', $data)) {
+        if ($plugins->on('profile_visitors') && array_key_exists('show_visitors', $data)) {
             $patch['show_visitors'] = (bool) $data['show_visitors'];
         }
-        if (array_key_exists('profile_blocks', $data)) {
+        if ($plugins->on('profile_order') && array_key_exists('profile_blocks', $data)) {
             $patch['profile_blocks'] = ProfileBlocks::normalize($data['profile_blocks']);
         }
-        if (array_key_exists('mute_words', $data)) {
+        if ($plugins->on('muted_words') && array_key_exists('mute_words', $data)) {
             $patch['mute_words'] = MutedWords::normalize($data['mute_words']);
         }
-        if (array_key_exists('hide_spoilers', $data)) {
+        if ($plugins->on('spoiler_switch') && array_key_exists('hide_spoilers', $data)) {
             $patch['hide_spoilers'] = (bool) $data['hide_spoilers'];
         }
-        if (array_key_exists('notify', $data)) {
+        if ($plugins->on('notify_switches') && array_key_exists('notify', $data)) {
             $incoming = $data['notify'];
             $notify = [];
             foreach (NotifyPrefs::KEYS as $key) {

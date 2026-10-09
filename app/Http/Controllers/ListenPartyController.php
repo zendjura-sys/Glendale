@@ -8,6 +8,7 @@ use App\Models\Track;
 use App\Models\User;
 use App\Services\FriendshipService;
 use App\Services\ListenParties;
+use App\Support\Plugins\Plugins;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -107,6 +108,7 @@ class ListenPartyController extends Controller
 
     public function repeat(Request $request, ListenParty $party): JsonResponse
     {
+        app(Plugins::class)->ensure('listen_repeat');
         $user = $this->live($request, $party);
         $this->parties->setRepeat($party, $user, $request->boolean('repeat'));
 

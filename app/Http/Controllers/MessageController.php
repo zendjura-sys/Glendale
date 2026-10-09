@@ -15,6 +15,7 @@ use App\Services\MessengerPresenter;
 use App\Services\Moderation\ContentFilter;
 use App\Services\Moderation\MessageReports;
 use App\Services\PostCards;
+use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
 use Carbon\CarbonInterface;
 use Illuminate\Http\JsonResponse;
@@ -82,6 +83,13 @@ class MessageController extends Controller
             'files.*.max' => 'Файл завеликий.',
         ]);
 
+        $plugins = app(Plugins::class);
+        if ($request->filled('publish_at')) {
+            $plugins->ensure('scheduled_messages');
+        }
+        if ($request->boolean('disappear')) {
+            $plugins->ensure('disappearing_messages');
+        }
         $replyTo = isset($data['reply_to_id']) ? (int) $data['reply_to_id'] : null;
         $card = $this->card($data);
         $publishAt = $this->publishAt($request);
@@ -274,6 +282,7 @@ class MessageController extends Controller
 
     public function forward(Request $request, Conversation $conversation, Message $message): JsonResponse
     {
+        app(Plugins::class)->ensure('forward_message');
         $user = $request->user();
         abort_if($conversation->participantFor($user) === null, 404);
         abort_unless($message->conversation_id === $conversation->id && ! $message->trashed(), 404);
@@ -295,6 +304,7 @@ class MessageController extends Controller
 
     public function favorite(Request $request, Conversation $conversation, Message $message): JsonResponse
     {
+        app(Plugins::class)->ensure('favorite_messages');
         $user = $request->user();
         abort_if($conversation->participantFor($user) === null, 404);
         abort_unless($message->conversation_id === $conversation->id && ! $message->trashed(), 404);

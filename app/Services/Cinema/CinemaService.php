@@ -6,6 +6,7 @@ use App\Models\Movie;
 use App\Models\MovieSource;
 use App\Models\User;
 use App\Notifications\MovieRatingNotice;
+use App\Support\Plugins\Plugins;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -233,8 +234,9 @@ class CinemaService
             ];
         }
 
-        $prefer = $user instanceof User ? (string) $user->pref('cinema_player', '') : '';
-        $subs = $user instanceof User ? (string) $user->pref('cinema_subs', '') : '';
+        $plugins = app(Plugins::class);
+        $prefer = $user instanceof User && $plugins->on('preferred_player') ? (string) $user->pref('cinema_player', '') : '';
+        $subs = $user instanceof User && $plugins->on('subtitle_language') ? (string) $user->pref('cinema_subs', '') : '';
         usort($players, function (array $a, array $b) use ($prefer, $subs): int {
             $rank = function (array $player) use ($prefer, $subs): array {
                 return [$this->providerRank($player, $prefer), $this->subtitleRank($player, $subs)];

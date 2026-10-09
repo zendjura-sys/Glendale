@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { api, ApiError } from '@/lib/api';
 import type { LocalTrack } from '@/types';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 const fields = [
     ['title', tr('Назва')],
@@ -21,6 +22,7 @@ export function EditTrackDialog({
     onOpenChange: (open: boolean) => void;
     onSaved: (track: LocalTrack) => void;
 }) {
+    const lyricsOn = usePlugin('lyrics');
     const [data, setData] = useState({
         title: '',
         artist: '',
@@ -95,7 +97,7 @@ export function EditTrackDialog({
                             />
                         </label>
                     ))}
-                    <label className="text-sm font-medium text-white/80">
+                    {lyricsOn && <label className="text-sm font-medium text-white/80">
                         {tr('Текст пісні')}
                         <textarea
                             value={data.lyrics}
@@ -104,7 +106,7 @@ export function EditTrackDialog({
                             rows={6}
                             className="input-glass mt-1.5 w-full rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none"
                         />
-                    </label>
+                    </label>}
                 </div>
                 <div className="mt-6 flex justify-end gap-2">
                     <button

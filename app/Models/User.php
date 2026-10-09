@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\Palette;
+use App\Support\Plugins\Plugins;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Translation\HasLocalePreference;
@@ -336,6 +337,9 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
 
     public function palette(): string
     {
+        if (! app(Plugins::class)->on('palettes')) {
+            return Palette::DEFAULT;
+        }
         $id = (string) $this->pref('palette', Palette::DEFAULT);
 
         return Palette::exists($id) ? $id : Palette::DEFAULT;
@@ -344,7 +348,7 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     /** Соціальні сповіщення мовчать у цьому вікні (може переходити через північ). */
     public function inQuietHours(): bool
     {
-        if (! $this->pref('quiet_enabled')) {
+        if (! app(Plugins::class)->on('quiet_hours') || ! $this->pref('quiet_enabled')) {
             return false;
         }
         $from = (string) $this->pref('quiet_from', '23:00');

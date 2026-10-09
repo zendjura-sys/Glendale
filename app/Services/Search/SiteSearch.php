@@ -11,6 +11,7 @@ use App\Models\Movie;
 use App\Models\Track;
 use App\Models\User;
 use App\Support\Modules\ModuleManager;
+use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -91,6 +92,9 @@ class SiteSearch
      */
     public function popular(): array
     {
+        if (! app(Plugins::class)->on('popular_search')) {
+            return [];
+        }
         $hits = [];
         if ($this->modules->enabled('games')) {
             Game::query()->published()->orderByDesc('popularity')->orderBy('name')->limit(4)->get()

@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\User;
+use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Notifications\DatabaseNotification;
@@ -42,6 +43,9 @@ class NotifyPrefs
 
     public static function enabled(User $user, string $key): bool
     {
+        if (! app(Plugins::class)->on('notify_switches')) {
+            return $key === 'email' ? $user->email_social !== false : true;
+        }
         $notify = $user->pref('notify');
         if (is_array($notify) && array_key_exists($key, $notify)) {
             return (bool) $notify[$key];

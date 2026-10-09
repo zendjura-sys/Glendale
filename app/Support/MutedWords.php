@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Post;
 use App\Models\User;
+use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -16,6 +17,9 @@ class MutedWords
      */
     public static function phrases(User $user): array
     {
+        if (! app(Plugins::class)->on('muted_words')) {
+            return [];
+        }
         $stored = $user->pref('mute_words', []);
         if (! is_array($stored)) {
             return [];

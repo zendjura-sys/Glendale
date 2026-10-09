@@ -13,6 +13,7 @@ use App\Services\FriendshipService;
 use App\Services\Presence\PlayingStatus;
 use App\Services\SavedItems;
 use App\Support\Modules\ModuleManager;
+use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -72,6 +73,9 @@ class GameController extends Controller
                 $filters[$param] = null;
             }
         }
+        if (! app(Plugins::class)->on('game_collections')) {
+            $filters['collection'] = null;
+        }
         $sort = $filters['sort'] ?? 'popular';
 
         $query = $this->query($filters, $on['alias_search']);
@@ -122,6 +126,7 @@ class GameController extends Controller
         abort_unless($game->is_published || $request->user()?->isStaff(), 404);
 
         $on = $this->features();
+        $plugins = app(Plugins::class);
         $details = $game->details ?? [];
         foreach (self::DETAIL_FEATURES as $feature => $keys) {
             if (! $on[$feature]) {
@@ -145,7 +150,7 @@ class GameController extends Controller
                 'released' => $game->released?->toDateString(),
                 'rating' => $game->rating,
                 'links' => $game->storeLinks(),
-                'collections' => array_values(array_intersect(['duo', 'evening'], $game->collections ?? [])),
+                'collections' => $plugins->on('game_collections') ? array_values(array_intersect(['duo', 'evening'], $game->collections ?? [])) : [],
                 'details' => (object) $details,
             ],
             'similar' => $similarIds === [] ? [] : Game::query()->published()->whereIn('igdb_id', $similarIds)
@@ -161,17 +166,19 @@ class GameController extends Controller
             'saved' => $request->user() ? app(SavedItems::class)->has($request->user(), 'game', $game->id) : false,
             'following' => $request->user() ? app(FollowAlerts::class)->has($request->user(), 'game', $game->id) : false,
             'pinned' => is_array($pin = $request->user()?->pref('pin')) && ($pin['kind'] ?? null) === 'game' && (int) ($pin['id'] ?? 0) === $game->id,
-            'steam_friends' => $this->steamFriends($game, $request->user(), $friendships),
-            'can_curate' => $request->user()?->isStaff() === true,
-            'guides' => GameGuide::query()->with('user')->where('game_id', $game->id)->latest('id')->limit(20)->get()
-                ->map(fn (GameGuide $guide) => [
-                    'id' => $guide->id,
-                    'title' => $guide->title,
-                    'body' => $guide->body,
-                    'created_at' => $guide->created_at->toIso8601String(),
-                    'user' => $guide->user?->toCard(),
-                    'mine' => $request->user()?->id === $guide->user_id || $request->user()?->isStaff() === true,
-                ])->values(),
+            'steam_friends' => $plugins->on('steam_friends') ? $this->steamFriends($game, $request->user(), $friendships) : [],
+            'can_curate' => $plugins->on('game_collections') && $request->user()?->isStaff() === true,
+            'guides' => $plugins->on('game_guides')
+                ? GameGuide::query()->with('user')->where('game_id', $game->id)->latest('id')->limit(20)->get()
+                    ->map(fn (GameGuide $guide) => [
+                        'id' => $guide->id,
+                        'title' => $guide->title,
+                        'body' => $guide->body,
+                        'created_at' => $guide->created_at->toIso8601String(),
+                        'user' => $guide->user?->toCard(),
+                        'mine' => $request->user()?->id === $guide->user_id || $request->user()?->isStaff() === true,
+                    ])->values()
+                : [],
         ];
 
         return $request->expectsJson() && ! $request->header('X-Inertia')
@@ -181,6 +188,7 @@ class GameController extends Controller
 
     public function collections(Request $request, Game $game): RedirectResponse
     {
+        app(Plugins::class)->ensure('game_collections');
         abort_unless($request->user()->isStaff(), 403);
         $data = $request->validate([
             'duo' => ['sometimes', 'boolean'],
@@ -201,6 +209,7 @@ class GameController extends Controller
 
     public function guide(Request $request, Game $game): RedirectResponse
     {
+        app(Plugins::class)->ensure('game_guides');
         abort_unless($game->is_published || $request->user()->isStaff(), 404);
         $data = $request->validate([
             'title' => ['required', 'string', 'min:3', 'max:80'],
@@ -218,6 +227,7 @@ class GameController extends Controller
 
     public function deleteGuide(Request $request, Game $game, GameGuide $guide): RedirectResponse
     {
+        app(Plugins::class)->ensure('game_guides');
         abort_unless($guide->game_id === $game->id, 404);
         abort_unless($guide->user_id === $request->user()->id || $request->user()->isStaff(), 403);
         $guide->delete();

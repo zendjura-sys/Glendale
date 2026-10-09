@@ -25,6 +25,7 @@ import type { ChatMessage, OutgoingMessage } from '@/types';
 import { ContactShareDialog } from './contact-share-dialog';
 import { EmojiPanel } from './emoji-panel';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 const MAX_ATTACHMENTS = 10;
 const MAX_LENGTH = 4096;
@@ -69,6 +70,8 @@ export function Composer({
     draft = null,
 }: Props) {
     const { site } = usePage().props;
+    const vanishOn = usePlugin('disappearing_messages');
+    const scheduleOn = usePlugin('scheduled_messages');
     const [body, setBody] = useState(draft ?? '');
     const [publishAt, setPublishAt] = useState('');
     const [vanish, setVanish] = useState(false);
@@ -356,7 +359,7 @@ export function Composer({
                     >
                         {tr('Картка')}
                     </button>
-                    <label className="inline-flex min-h-8 items-center gap-2">
+                    {vanishOn && <label className="inline-flex min-h-8 items-center gap-2">
                         <input
                             type="checkbox"
                             checked={vanish}
@@ -364,8 +367,8 @@ export function Composer({
                             className="size-3.5 accent-gc-lilac-400"
                         />
                         {tr('Зникне за добу')}
-                    </label>
-                    <label className="inline-flex min-h-8 items-center gap-2">
+                    </label>}
+                    {scheduleOn && <label className="inline-flex min-h-8 items-center gap-2">
                         {tr('Відкласти')}
                         <input
                             type="datetime-local"
@@ -373,7 +376,7 @@ export function Composer({
                             onChange={(event) => setPublishAt(event.target.value)}
                             className="input-glass h-8 rounded-lg px-2 text-xs text-white"
                         />
-                    </label>
+                    </label>}
                 </div>
             )}
             {context && (

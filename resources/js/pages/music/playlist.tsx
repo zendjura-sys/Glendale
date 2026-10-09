@@ -18,6 +18,7 @@ import { PlaylistCover } from '@/components/music/playlist-card';
 import { PlaylistDialog } from '@/components/music/playlist-dialog';
 import { TrackList } from '@/components/music/track-list';
 import { api } from '@/lib/api';
+import { usePlugin } from '@/lib/plugins';
 import { formatLength, plural } from '@/lib/format';
 import { playQueue, shuffled, toggle, usePlayer } from '@/lib/player';
 import type { PlaylistDetails, TrackCard } from '@/types';
@@ -31,6 +32,8 @@ type Props = {
 };
 
 export default function PlaylistShow({ playlist, tracks, can, collaborators }: Props) {
+    const shareOn = usePlugin('shared_playlist');
+    const spotifyOn = usePlugin('spotify_import');
     const { auth } = usePage().props;
     const player = usePlayer();
     const [editing, setEditing] = useState(false);
@@ -158,39 +161,46 @@ export default function PlaylistShow({ playlist, tracks, can, collaborators }: P
                         >
                             <Shuffle className="size-4" /> {tr('Перемішати')}
                         </button>
-                        {can.own && (
+                        {can.own && (shareOn || spotifyOn) && (
                             <form
                                 className="flex flex-wrap gap-2"
                                 onSubmit={(event) => {
                                     event.preventDefault();
+                                    if (!shareOn) return;
                                     const data = new FormData(event.currentTarget);
                                     router.post(`/music/playlists/${playlist.id}/share`, {
                                         username: String(data.get('username') ?? ''),
                                     });
                                 }}
                             >
-                                <input
-                                    name="username"
-                                    placeholder={tr('Нік друга')}
-                                    className="input-glass h-11 rounded-xl px-3 text-sm text-white"
-                                />
-                                <button type="submit" className="h-11 rounded-xl bg-white/10 px-3 text-sm text-white">
-                                    {tr('Спільний доступ')}
-                                </button>
-                                <input
-                                    name="spotify"
-                                    placeholder={tr('ID плейлиста Spotify')}
-                                    className="input-glass h-11 rounded-xl px-3 text-sm text-white"
-                                    onKeyDown={(event) => {
-                                        if (event.key !== 'Enter') return;
-                                        event.preventDefault();
-                                        const input = event.currentTarget;
-                                        router.post(`/music/playlists/${playlist.id}/spotify`, { playlist: input.value });
-                                    }}
-                                />
+                                {shareOn && (
+                                    <>
+                                        <input
+                                            name="username"
+                                            placeholder={tr('Нік друга')}
+                                            className="input-glass h-11 rounded-xl px-3 text-sm text-white"
+                                        />
+                                        <button type="submit" className="h-11 rounded-xl bg-white/10 px-3 text-sm text-white">
+                                            {tr('Спільний доступ')}
+                                        </button>
+                                    </>
+                                )}
+                                {spotifyOn && (
+                                    <input
+                                        name="spotify"
+                                        placeholder={tr('ID плейлиста Spotify')}
+                                        className="input-glass h-11 rounded-xl px-3 text-sm text-white"
+                                        onKeyDown={(event) => {
+                                            if (event.key !== 'Enter') return;
+                                            event.preventDefault();
+                                            const input = event.currentTarget;
+                                            router.post(`/music/playlists/${playlist.id}/spotify`, { playlist: input.value });
+                                        }}
+                                    />
+                                )}
                             </form>
                         )}
-                        {collaborators.length > 0 && (
+                        {shareOn && collaborators.length > 0 && (
                             <p className="text-xs text-white/45">
                                 {collaborators.map((person) => person.name).join(', ')}
                             </p>

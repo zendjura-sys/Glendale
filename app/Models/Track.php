@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -99,7 +100,7 @@ class Track extends Model
             'artist' => $this->artist,
             'album' => $this->album,
             'genre' => $this->genre,
-            'has_lyrics' => filled($this->lyrics),
+            'has_lyrics' => filled($this->lyrics) && app(Plugins::class)->on('lyrics'),
             'duration' => $this->duration,
             'url' => $this->url,
             'cover_url' => $this->cover_url,

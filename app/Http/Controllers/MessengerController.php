@@ -11,6 +11,7 @@ use App\Services\ImageStorage;
 use App\Services\Messenger;
 use App\Services\MessengerPresenter;
 use App\Services\Voice\Calls;
+use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -179,6 +180,7 @@ class MessengerController extends Controller
 
     public function slow(Request $request, Conversation $conversation): RedirectResponse
     {
+        app(Plugins::class)->ensure('slow_mode');
         $data = $request->validate(['seconds' => ['required', 'integer', 'in:0,10,30,60']]);
         $this->messenger->setSlow($conversation, $request->user(), (int) $data['seconds']);
 
@@ -187,6 +189,7 @@ class MessengerController extends Controller
 
     public function memberRole(Request $request, Conversation $conversation, User $user): RedirectResponse
     {
+        app(Plugins::class)->ensure('chat_roles');
         $data = $request->validate(['role' => ['required', 'in:admin,member']]);
         $this->messenger->setMemberRole($conversation, $request->user(), $user, $data['role']);
 
@@ -195,6 +198,7 @@ class MessengerController extends Controller
 
     public function markUnread(Request $request, Conversation $conversation): RedirectResponse
     {
+        app(Plugins::class)->ensure('mark_unread');
         $this->participant($conversation, $request->user());
         $this->messenger->markUnread($conversation, $request->user());
 
@@ -203,6 +207,7 @@ class MessengerController extends Controller
 
     public function receipts(Request $request, Conversation $conversation): RedirectResponse
     {
+        app(Plugins::class)->ensure('read_receipts');
         $me = $this->participant($conversation, $request->user());
         $me->forceFill(['share_receipts' => ! $me->share_receipts])->save();
 
@@ -219,6 +224,7 @@ class MessengerController extends Controller
 
     public function folder(Request $request, Conversation $conversation): RedirectResponse
     {
+        app(Plugins::class)->ensure('chat_folders');
         $me = $this->participant($conversation, $request->user());
         $data = $request->validate(['folder' => ['nullable', 'string', 'max:24']]);
         $name = trim((string) ($data['folder'] ?? ''));

@@ -24,6 +24,7 @@ import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { FamilyCard, GtaServerCard, UserCard } from '@/types';
 import { LOCALE, tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 type Props = {
     server: GtaServerCard & {
@@ -79,6 +80,12 @@ export default function ServerShow({
     similar,
 }: Props) {
     const [inviteUsername, setInviteUsername] = useState('');
+    const compareOn = usePlugin('server_compare');
+    const chartOn = usePlugin('server_online');
+    const tagsOn = usePlugin('server_tags');
+    const similarOn = usePlugin('similar_servers');
+    const newsOn = usePlugin('server_news');
+    const claimOn = usePlugin('server_claim');
     const [inviteTarget, setInviteTarget] = useState(invites[0] ? `${invites[0].kind}:${invites[0].id}` : '');
     return (
         <>
@@ -91,12 +98,14 @@ export default function ServerShow({
                     >
                         <ArrowLeft className="size-4" /> {tr('Усі сервери')}
                     </Link>
+                    {compareOn && (
                     <Link
                         href={`/servers/compare?a=${server.slug}`}
                         className="text-sm text-white/50 hover:text-white"
                     >
                         {tr('Порівняти з іншим')}
                     </Link>
+                    )}
                 </div>
 
                 <section className="glass noise relative overflow-hidden rounded-3xl p-6 sm:p-8">
@@ -414,9 +423,9 @@ export default function ServerShow({
                     )}
                 </section>
 
-                <section className="glass space-y-4 rounded-3xl p-5">
-                    <h2 className="font-display text-xl font-bold text-white">{tr('Онлайн за два тижні')}</h2>
-                    {online.length === 0 ? (
+                {(chartOn || tagsOn || similarOn) && <section className="glass space-y-4 rounded-3xl p-5">
+                    {chartOn && <h2 className="font-display text-xl font-bold text-white">{tr('Онлайн за два тижні')}</h2>}
+                    {chartOn && (online.length === 0 ? (
                         <p className="text-sm text-white/45">{tr('Ще немає зрізів онлайну.')}</p>
                     ) : (
                         <div className="flex h-24 items-end gap-1">
@@ -435,16 +444,16 @@ export default function ServerShow({
                                 );
                             })}
                         </div>
-                    )}
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-white/70">
+                    ))}
+                    {tagsOn && <div className="flex flex-wrap items-center gap-2 text-xs text-white/70">
                         {server.tags?.mode && (
                             <span className="rounded-full bg-white/10 px-2 py-0.5">{server.tags.mode.toUpperCase()}</span>
                         )}
                         {server.tags?.region && (
                             <span className="rounded-full bg-white/10 px-2 py-0.5">{server.tags.region}</span>
                         )}
-                    </div>
-                    {ownership.can_tag && (
+                    </div>}
+                    {tagsOn && ownership.can_tag && (
                         <form
                             className="flex flex-wrap gap-2"
                             onSubmit={(event) => {
@@ -465,7 +474,7 @@ export default function ServerShow({
                             <button type="submit" className="h-10 rounded-xl bg-white px-3 text-sm font-semibold text-black">{tr('Зберегти теги')}</button>
                         </form>
                     )}
-                    {similar.length > 0 && (
+                    {similarOn && similar.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                             {similar.map((item) => (
                                 <Link key={item.id} href={`/servers/${item.slug}`} className="rounded-full bg-white/10 px-3 py-1 text-sm text-white/80 hover:text-white">
@@ -474,16 +483,16 @@ export default function ServerShow({
                             ))}
                         </div>
                     )}
-                </section>
+                </section>}
 
-                <section className="glass space-y-4 rounded-3xl p-5">
-                    <h2 className="font-display text-xl font-bold text-white">{tr('Новини власника')}</h2>
+                {(newsOn || claimOn) && <section className="glass space-y-4 rounded-3xl p-5">
+                    {newsOn && <h2 className="font-display text-xl font-bold text-white">{tr('Новини власника')}</h2>}
                     {ownership.owner && (
                         <p className="text-sm text-white/55">
                             {tr('Власник:')} {ownership.owner.name}
                         </p>
                     )}
-                    {ownership.news.length === 0 ? (
+                    {newsOn && ownership.news.length === 0 ? (
                         <p className="text-sm text-white/45">{tr('Новин ще немає.')}</p>
                     ) : (
                         ownership.news.map((item) => (
@@ -493,7 +502,7 @@ export default function ServerShow({
                             </article>
                         ))
                     )}
-                    {ownership.is_owner && (
+                    {newsOn && ownership.is_owner && (
                         <form
                             className="flex flex-col gap-2"
                             onSubmit={(event) => {
@@ -516,7 +525,7 @@ export default function ServerShow({
                             </button>
                         </form>
                     )}
-                    {!ownership.is_owner && ownership.claim !== 'pending' && (
+                    {claimOn && !ownership.is_owner && ownership.claim !== 'pending' && (
                         <form
                             className="flex flex-col gap-2"
                             onSubmit={(event) => {
@@ -535,10 +544,10 @@ export default function ServerShow({
                             </button>
                         </form>
                     )}
-                    {ownership.claim === 'pending' && (
+                    {claimOn && ownership.claim === 'pending' && (
                         <p className="text-sm text-white/55">{tr('Заявку надіслано, чекаємо підтвердження.')}</p>
                     )}
-                    {ownership.pending.map((claim) => (
+                    {claimOn && ownership.pending.map((claim) => (
                         <div key={claim.id} className="flex flex-wrap items-center gap-2 text-sm text-white/75">
                             <span>
                                 {claim.name}
@@ -560,7 +569,7 @@ export default function ServerShow({
                             </button>
                         </div>
                     ))}
-                </section>
+                </section>}
             </div>
         </>
     );
