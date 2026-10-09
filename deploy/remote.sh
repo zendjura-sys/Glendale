@@ -25,7 +25,9 @@ php artisan optimize
 sudo chown -R cursor-agent:www-data storage bootstrap/cache
 sudo chmod -R ug+rwX storage bootstrap/cache
 
-sudo systemctl reload php8.3-fpm
+# Версія PHP-FPM залежить від релізу Ubuntu (24.04 — 8.3, 26.04 — 8.5): беремо ту, що встановлена.
+PHP_FPM="php$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')-fpm"
+sudo systemctl reload "$PHP_FPM"
 sudo systemctl restart gamecon-queue gamecon-reverb gamecon-scheduler
 
 echo "✅ Деплой завершено: $(git log -1 --format='%h %s' 2>/dev/null || cat REVISION 2>/dev/null)"
