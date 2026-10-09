@@ -2,7 +2,7 @@
 
 namespace App\Notifications\Concerns;
 
-use App\Models\User;
+use App\Support\NotifyPrefs;
 
 /**
  * Соціальні сповіщення мовчать у вибрані години. Нагадування про події лишаються.
@@ -12,12 +12,8 @@ class QuietHours
     /**
      * @return list<string>
      */
-    public static function channels(object $notifiable): array
+    public static function channels(object $notifiable, ?string $kind = null): array
     {
-        if ($notifiable instanceof User && $notifiable->inQuietHours()) {
-            return [];
-        }
-
-        return ['database'];
+        return NotifyPrefs::channels($notifiable, $kind);
     }
 }

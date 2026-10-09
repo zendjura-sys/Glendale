@@ -19,7 +19,7 @@ const items = [
     },
     {
         title: tr('Вигляд'),
-        description: tr('Палітра, тиша і як тебе бачать'),
+        description: tr('Палітра, тиша і сповіщення'),
         href: editAppearance(),
         icon: Palette,
     },

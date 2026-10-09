@@ -26,6 +26,7 @@ use App\Support\Mail\MailBrand;
 use App\Support\Mail\MailCategory;
 use App\Support\Mail\SocialMailer;
 use App\Support\Modules\ModuleManager;
+use App\Support\NotifyPrefs;
 use App\Support\Settings\SiteSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Translation\Loader;
@@ -115,8 +116,24 @@ class AppServiceProvider extends ServiceProvider
 
         // Кожне сповіщення дзвіночка сайту також іде push-ом у застосунок і листом у «Соцмережі».
         Event::listen(NotificationSent::class, function (NotificationSent $event) {
-            if ($event->channel === 'database' && $event->response instanceof DatabaseNotification) {
+            if ($event->channel !== 'database' || ! $event->response instanceof DatabaseNotification) {
+                return;
+            }
+
+            $user = $event->notifiable;
+            $data = $event->response->data;
+            $kind = (string) ($data['kind'] ?? '');
+            if ($user instanceof User && ! NotifyPrefs::allowsKind($user, $kind)) {
+                return;
+            }
+            if ($user instanceof User && ! NotifyPrefs::enabled($user, 'site')) {
+                $data['hidden'] = true;
+                $event->response->forceFill(['data' => $data])->save();
+            }
+            if (! $user instanceof User || NotifyPrefs::enabled($user, 'push')) {
                 rescue(fn () => app(PushNotifier::class)->notification($event->notifiable, $event->response), report: true);
+            }
+            if (! $user instanceof User || NotifyPrefs::enabled($user, 'email')) {
                 rescue(fn () => app(SocialMailer::class)->notification($event->notifiable, $event->response), report: true);
             }
         });

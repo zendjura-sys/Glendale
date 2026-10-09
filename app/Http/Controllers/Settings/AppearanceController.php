@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Services\FriendshipService;
 use App\Support\I18n\Locales;
+use App\Support\NotifyPrefs;
 use App\Support\Palette;
 use App\Support\ProfileBlocks;
 use Illuminate\Http\RedirectResponse;
@@ -33,6 +34,7 @@ class AppearanceController extends Controller
             'languageOptions' => app(Locales::class)->options(),
             'friends' => app(FriendshipService::class)->friendsQuery($user)->limit(40)->get()->map->toCard()->values(),
             'closeFriends' => array_map('intval', (array) $user->pref('close_friends', [])),
+            'notify' => NotifyPrefs::for($user),
         ]);
     }
 
@@ -51,6 +53,15 @@ class AppearanceController extends Controller
             'show_visitors' => ['sometimes', 'boolean'],
             'profile_blocks' => ['sometimes', 'array', 'max:12'],
             'profile_blocks.*' => ['string'],
+            'notify' => ['sometimes', 'array'],
+            'notify.likes' => ['sometimes', 'boolean'],
+            'notify.comments' => ['sometimes', 'boolean'],
+            'notify.mentions' => ['sometimes', 'boolean'],
+            'notify.events' => ['sometimes', 'boolean'],
+            'notify.playing' => ['sometimes', 'boolean'],
+            'notify.site' => ['sometimes', 'boolean'],
+            'notify.email' => ['sometimes', 'boolean'],
+            'notify.push' => ['sometimes', 'boolean'],
         ]);
 
         $enabled = app(Locales::class)->enabled();
@@ -76,6 +87,16 @@ class AppearanceController extends Controller
         }
         if (array_key_exists('profile_blocks', $data)) {
             $patch['profile_blocks'] = ProfileBlocks::normalize($data['profile_blocks']);
+        }
+        if (array_key_exists('notify', $data)) {
+            $incoming = $data['notify'];
+            $notify = [];
+            foreach (NotifyPrefs::KEYS as $key) {
+                $notify[$key] = array_key_exists($key, $incoming)
+                    ? (bool) $incoming[$key]
+                    : NotifyPrefs::enabled($request->user(), $key);
+            }
+            $patch['notify'] = $notify;
         }
         $request->user()->mergePref($patch);
 

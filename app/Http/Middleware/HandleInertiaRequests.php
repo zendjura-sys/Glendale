@@ -11,6 +11,7 @@ use App\Services\Messenger;
 use App\Services\Spotify\SpotifyClient;
 use App\Support\I18n\Locales;
 use App\Support\Modules\ModuleManager;
+use App\Support\NotifyPrefs;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -94,7 +95,7 @@ class HandleInertiaRequests extends Middleware
             'music' => $user ? fn () => $this->musicProps($user) : null,
             'counters' => $user ? fn () => [
                 'friend_requests' => $this->friendships->incomingCount($user),
-                'notifications' => $user->unreadNotifications()->count(),
+                'notifications' => NotifyPrefs::unreadCount($user),
                 'messages' => $this->modules->enabled('messages') ? app(Messenger::class)->unreadConversations($user) : 0,
             ] : null,
         ];

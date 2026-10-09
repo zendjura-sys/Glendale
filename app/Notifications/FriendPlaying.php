@@ -15,7 +15,7 @@ class FriendPlaying extends Notification
      */
     public function via(object $notifiable): array
     {
-        return QuietHours::channels($notifiable);
+        return QuietHours::channels($notifiable, 'friend_playing');
     }
 
     /**

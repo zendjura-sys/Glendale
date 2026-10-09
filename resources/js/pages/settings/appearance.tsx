@@ -1,5 +1,5 @@
 import { Head, useForm } from '@inertiajs/react';
-import { Check, ChevronDown, ChevronUp, Eye, Languages, Moon, UsersRound } from 'lucide-react';
+import { Bell, Check, ChevronDown, ChevronUp, Eye, Languages, Moon, UsersRound } from 'lucide-react';
 import type { FormEvent } from 'react';
 import AppearanceController from '@/actions/App/Http/Controllers/Settings/AppearanceController';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,31 @@ const BLOCK_LABELS: Record<string, string> = {
     photos: 'Фото',
 };
 
+type NotifyPrefs = {
+    likes: boolean;
+    comments: boolean;
+    mentions: boolean;
+    events: boolean;
+    playing: boolean;
+    site: boolean;
+    email: boolean;
+    push: boolean;
+};
+
+const NOTIFY_TYPES: { key: keyof NotifyPrefs; label: string }[] = [
+    { key: 'likes', label: 'Лайки' },
+    { key: 'comments', label: 'Коментарі' },
+    { key: 'mentions', label: 'Згадки' },
+    { key: 'events', label: 'Події' },
+    { key: 'playing', label: 'Друзі в грі' },
+];
+
+const NOTIFY_CHANNELS: { key: keyof NotifyPrefs; label: string }[] = [
+    { key: 'site', label: 'На сайті' },
+    { key: 'email', label: 'Пошта' },
+    { key: 'push', label: 'Push' },
+];
+
 type Form = {
     palette: string;
     quiet_enabled: boolean;
@@ -30,6 +55,7 @@ type Form = {
     close_friends: number[];
     show_visitors: boolean;
     profile_blocks: string[];
+    notify: NotifyPrefs;
 };
 
 export default function Appearance({
@@ -43,6 +69,7 @@ export default function Appearance({
     languageOptions,
     friends,
     closeFriends,
+    notify,
 }: {
     palette: string;
     palettes: PaletteOption[];
@@ -54,6 +81,7 @@ export default function Appearance({
     languageOptions: { code: string; native: string }[];
     friends: UserCard[];
     closeFriends: number[];
+    notify: NotifyPrefs;
 }) {
     const form = useForm<Form>({
         palette,
@@ -65,6 +93,7 @@ export default function Appearance({
         close_friends: closeFriends,
         show_visitors,
         profile_blocks,
+        notify,
     });
 
     const submit = (e: FormEvent) => {
@@ -178,6 +207,60 @@ export default function Appearance({
                                 className="input-glass mt-1 block h-11 rounded-xl px-3 text-sm text-white"
                             />
                         </label>
+                    </div>
+                </SettingsCard>
+
+                <SettingsCard
+                    title={tr('Сповіщення')}
+                    description={tr(
+                        'Лайки, коментарі, згадки, події й друзі в грі. Сайт, пошта і push вмикаються окремо.',
+                    )}
+                >
+                    <div className="grid gap-2 sm:grid-cols-2">
+                        {NOTIFY_TYPES.map((item) => (
+                            <label
+                                key={item.key}
+                                className="flex min-h-11 items-center gap-3 text-sm text-white"
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={form.data.notify[item.key]}
+                                    onChange={(e) =>
+                                        form.setData('notify', {
+                                            ...form.data.notify,
+                                            [item.key]: e.target.checked,
+                                        })
+                                    }
+                                    className="size-4 accent-gc-lilac-400"
+                                />
+                                {tr(item.label)}
+                            </label>
+                        ))}
+                    </div>
+                    <p className="mt-4 mb-2 flex items-center gap-2 text-xs text-white/45">
+                        <Bell className="size-3.5" />
+                        {tr('Куди надсилати')}
+                    </p>
+                    <div className="flex flex-wrap gap-4">
+                        {NOTIFY_CHANNELS.map((item) => (
+                            <label
+                                key={item.key}
+                                className="flex min-h-11 items-center gap-3 text-sm text-white"
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={form.data.notify[item.key]}
+                                    onChange={(e) =>
+                                        form.setData('notify', {
+                                            ...form.data.notify,
+                                            [item.key]: e.target.checked,
+                                        })
+                                    }
+                                    className="size-4 accent-gc-lilac-400"
+                                />
+                                {tr(item.label)}
+                            </label>
+                        ))}
                     </div>
                 </SettingsCard>
 

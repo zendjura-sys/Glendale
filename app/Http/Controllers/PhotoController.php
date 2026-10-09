@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Notifications\PhotoInteraction;
 use App\Services\PhotoService;
 use App\Services\PostPresenter;
+use App\Services\ReactionDigest;
 use App\Support\CommentOrder;
 use App\Support\Stickers;
 use Illuminate\Http\JsonResponse;
@@ -176,7 +177,7 @@ class PhotoController extends Controller
         $liked = $this->photos->toggleLike($photo, $user);
 
         if ($liked && $photo->user && $photo->user_id !== $user->id) {
-            $photo->user->notify(new PhotoInteraction(PhotoInteraction::LIKE, $user, $photo));
+            app(ReactionDigest::class)->record($photo->user, new PhotoInteraction(PhotoInteraction::LIKE, $user, $photo));
         }
 
         return response()->json(['liked' => $liked, 'likes_count' => $photo->fresh()->likes_count]);

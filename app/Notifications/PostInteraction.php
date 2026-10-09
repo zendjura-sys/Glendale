@@ -31,7 +31,7 @@ class PostInteraction extends Notification
      */
     public function via(object $notifiable): array
     {
-        return QuietHours::channels($notifiable);
+        return QuietHours::channels($notifiable, $this->kind);
     }
 
     /**

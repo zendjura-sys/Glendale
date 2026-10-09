@@ -23,6 +23,7 @@ use App\Services\Media\YoutubePreview;
 use App\Services\Moderation\ContentFilter;
 use App\Services\PostCards;
 use App\Services\PostPresenter;
+use App\Services\ReactionDigest;
 use App\Services\ScheduledPosts;
 use App\Services\Spotify\SpotifyClient;
 use App\Support\Settings\SiteSettings;
@@ -512,7 +513,8 @@ class PostController extends Controller
         });
 
         if ($created && $post->author_id !== $user->id) {
-            $post->author->notify(new PostInteraction(PostInteraction::LIKE, $user, $post));
+            $post->loadMissing('author');
+            app(ReactionDigest::class)->record($post->author, new PostInteraction(PostInteraction::LIKE, $user, $post));
         }
 
         return response()->json([

@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Support\NotifyPrefs;
 use Illuminate\Notifications\Notification;
 
 /**
@@ -20,7 +21,7 @@ class EventReminder extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return NotifyPrefs::channels($notifiable, 'event_reminder', honorQuiet: false);
     }
 
     /**
