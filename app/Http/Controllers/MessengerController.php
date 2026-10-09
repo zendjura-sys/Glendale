@@ -177,6 +177,22 @@ class MessengerController extends Controller
         return back();
     }
 
+    public function slow(Request $request, Conversation $conversation): RedirectResponse
+    {
+        $data = $request->validate(['seconds' => ['required', 'integer', 'in:0,10,30,60']]);
+        $this->messenger->setSlow($conversation, $request->user(), (int) $data['seconds']);
+
+        return back();
+    }
+
+    public function memberRole(Request $request, Conversation $conversation, User $user): RedirectResponse
+    {
+        $data = $request->validate(['role' => ['required', 'in:admin,member']]);
+        $this->messenger->setMemberRole($conversation, $request->user(), $user, $data['role']);
+
+        return back();
+    }
+
     public function markUnread(Request $request, Conversation $conversation): RedirectResponse
     {
         $this->participant($conversation, $request->user());

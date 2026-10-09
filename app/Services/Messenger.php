@@ -493,6 +493,39 @@ class Messenger
         $conversation->participants()->where('user_id', $user->id)->update(['is_muted' => $muted]);
     }
 
+    public function setSlow(Conversation $conversation, User $actor, int $seconds): void
+    {
+        $this->ensureGroup($conversation);
+        abort_unless($conversation->participantFor($actor)?->canManage(), 403);
+        abort_unless(in_array($seconds, [0, 10, 30, 60], true), 422);
+        $conversation->forceFill(['slow_seconds' => $seconds])->save();
+    }
+
+    public function setMemberRole(Conversation $conversation, User $actor, User $target, string $role): void
+    {
+        $this->ensureGroup($conversation);
+        abort_unless($conversation->participantFor($actor)?->role === ConversationParticipant::ROLE_OWNER, 403);
+        abort_unless(in_array($role, [ConversationParticipant::ROLE_ADMIN, ConversationParticipant::ROLE_MEMBER], true), 422);
+        $row = $conversation->participantFor($target);
+        abort_if($row === null || $row->role === ConversationParticipant::ROLE_OWNER || $actor->is($target), 422);
+        $row->forceFill(['role' => $role])->save();
+    }
+
+    public function assertCanSend(Conversation $conversation, User $user): void
+    {
+        $seconds = (int) $conversation->slow_seconds;
+        if ($seconds <= 0 || ! $conversation->isGroup()) {
+            return;
+        }
+        if ($conversation->participantFor($user)?->canManage()) {
+            return;
+        }
+        $last = $conversation->messages()->where('user_id', $user->id)->latest('id')->first();
+        if ($last && $last->created_at->gt(now()->subSeconds($seconds))) {
+            throw ValidationException::withMessages(['body' => 'Повільний режим: зачекайте перед наступним повідомленням.']);
+        }
+    }
+
     /**
      * Кількість бесід з непрочитаними повідомленнями (без вимкнених сповіщень).
      */

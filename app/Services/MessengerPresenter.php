@@ -324,6 +324,7 @@ class MessengerPresenter
             'peer' => $peer ? [...$peer->toCard(), 'last_seen_at' => $peer->last_seen_at?->toIso8601String(), 'gender' => $peer->gender] : null,
             'can_write' => $conversation->isGroup() || ($peer !== null && $messenger->canMessage($viewer, $peer)),
             'is_muted' => $me->is_muted,
+            'slow_seconds' => (int) $conversation->slow_seconds,
             'share_receipts' => $me->share_receipts,
             'pinned' => $me->pinned_at !== null,
             'folder' => $me->folder,

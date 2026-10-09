@@ -114,6 +114,7 @@ export type ConversationDetails = {
     can_write: boolean;
     is_muted: boolean;
     share_receipts?: boolean;
+    slow_seconds?: number;
     pinned?: boolean;
     folder?: string | null;
     my_role: MemberRole;

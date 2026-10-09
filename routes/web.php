@@ -149,6 +149,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('{conversation}/mute', [MessengerController::class, 'mute'])->name('mute');
             Route::post('{conversation}/pin', [MessengerController::class, 'pin'])->name('pin');
             Route::post('{conversation}/unread', [MessengerController::class, 'markUnread'])->name('unread');
+            Route::post('{conversation}/slow', [MessengerController::class, 'slow'])->name('slow');
+            Route::post('{conversation}/members/{user}/role', [MessengerController::class, 'memberRole'])->name('members.role');
             Route::post('{conversation}/receipts', [MessengerController::class, 'receipts'])->name('receipts');
             Route::put('{conversation}/folder', [MessengerController::class, 'folder'])->name('folder');
             Route::post('{conversation}/members', [MessengerController::class, 'addMembers'])->name('members.store');

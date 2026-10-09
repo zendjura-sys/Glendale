@@ -55,6 +55,7 @@ class MessageController extends Controller
             $peer = $conversation->activeParticipants()->where('user_id', '!=', $user->id)->with('user')->first()?->user;
             abort_unless($peer && $this->messenger->canMessage($user, $peer), 403, 'Ви не можете написати цьому користувачу.');
         }
+        $this->messenger->assertCanSend($conversation, $user);
 
         $maxKb = (int) $settings->get('max_upload_mb') * 1024;
 

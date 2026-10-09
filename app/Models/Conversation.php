@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\Storage;
  * @property Carbon|null $last_message_at
  * @property-read string|null $avatar_url
  */
-#[Fillable(['type', 'title', 'avatar_path', 'owner_id', 'family_id', 'direct_key', 'last_message_id', 'last_message_at'])]
+#[Fillable(['type', 'title', 'avatar_path', 'owner_id', 'family_id', 'direct_key', 'last_message_id', 'last_message_at', 'slow_seconds'])]
 class Conversation extends Model
 {
     public const TYPE_DIRECT = 'direct';
