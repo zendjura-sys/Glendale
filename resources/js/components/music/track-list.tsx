@@ -122,6 +122,26 @@ export function TrackList({
         }
     };
 
+    const similar = async (track: LocalTrack) => {
+        try {
+            const data = await api<{ tracks: TrackCard[] }>(
+                'GET',
+                `/music/tracks/${track.id}/similar`,
+            );
+            if (data.tracks.length === 0) {
+                toast(tr('Схожих треків у каталозі немає.'));
+                return;
+            }
+            playQueue([track, ...data.tracks], 0);
+        } catch (error) {
+            toast.error(
+                error instanceof ApiError
+                    ? error.message
+                    : tr('Не вдалося знайти схожі треки.'),
+            );
+        }
+    };
+
     const destroy = async (track: LocalTrack) => {
         if (
             !window.confirm(
@@ -321,6 +341,14 @@ export function TrackList({
                                     >
                                         <Share2 /> {tr('Поділитися на стіні')}
                                     </DropdownMenuItem>
+                                    {track.source === 'local' && (
+                                        <DropdownMenuItem
+                                            className={itemClass}
+                                            onSelect={() => void similar(track)}
+                                        >
+                                            <Headphones /> {tr('Схожі треки')}
+                                        </DropdownMenuItem>
+                                    )}
                                     {track.source === 'local' ? (
                                         <DropdownMenuItem
                                             className={itemClass}

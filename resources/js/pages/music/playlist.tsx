@@ -26,10 +26,11 @@ import { tr } from '@/lib/i18n';
 type Props = {
     playlist: PlaylistDetails;
     tracks: TrackCard[];
-    can: { manage: boolean };
+    can: { manage: boolean; own: boolean };
+    collaborators: { username: string; name: string }[];
 };
 
-export default function PlaylistShow({ playlist, tracks, can }: Props) {
+export default function PlaylistShow({ playlist, tracks, can, collaborators }: Props) {
     const { auth } = usePage().props;
     const player = usePlayer();
     const [editing, setEditing] = useState(false);
@@ -157,7 +158,44 @@ export default function PlaylistShow({ playlist, tracks, can }: Props) {
                         >
                             <Shuffle className="size-4" /> {tr('Перемішати')}
                         </button>
-                        {can.manage && (
+                        {can.own && (
+                            <form
+                                className="flex flex-wrap gap-2"
+                                onSubmit={(event) => {
+                                    event.preventDefault();
+                                    const data = new FormData(event.currentTarget);
+                                    router.post(`/music/playlists/${playlist.id}/share`, {
+                                        username: String(data.get('username') ?? ''),
+                                    });
+                                }}
+                            >
+                                <input
+                                    name="username"
+                                    placeholder={tr('Нік друга')}
+                                    className="input-glass h-11 rounded-xl px-3 text-sm text-white"
+                                />
+                                <button type="submit" className="h-11 rounded-xl bg-white/10 px-3 text-sm text-white">
+                                    {tr('Спільний доступ')}
+                                </button>
+                                <input
+                                    name="spotify"
+                                    placeholder={tr('ID плейлиста Spotify')}
+                                    className="input-glass h-11 rounded-xl px-3 text-sm text-white"
+                                    onKeyDown={(event) => {
+                                        if (event.key !== 'Enter') return;
+                                        event.preventDefault();
+                                        const input = event.currentTarget;
+                                        router.post(`/music/playlists/${playlist.id}/spotify`, { playlist: input.value });
+                                    }}
+                                />
+                            </form>
+                        )}
+                        {collaborators.length > 0 && (
+                            <p className="text-xs text-white/45">
+                                {collaborators.map((person) => person.name).join(', ')}
+                            </p>
+                        )}
+                        {can.own && (
                             <>
                                 <button
                                     type="button"

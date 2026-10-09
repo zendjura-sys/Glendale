@@ -237,6 +237,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::delete('playlists/{playlist}', [PlaylistController::class, 'destroy'])->name('playlists.destroy');
             Route::post('playlists/{playlist}/tracks/{track}', [PlaylistController::class, 'attach'])->name('playlists.attach');
             Route::delete('playlists/{playlist}/tracks/{track}', [PlaylistController::class, 'detach'])->name('playlists.detach');
+            Route::post('playlists/{playlist}/share', [PlaylistController::class, 'share'])->name('playlists.share');
+            Route::post('playlists/{playlist}/spotify', [PlaylistController::class, 'importSpotify'])->name('playlists.spotify');
+            Route::get('tracks/{track}/similar', [PlaylistController::class, 'similar'])->name('tracks.similar');
         });
 
         Route::prefix('spotify')->name('spotify.')->group(function () {
