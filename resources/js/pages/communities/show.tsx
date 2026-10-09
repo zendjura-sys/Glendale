@@ -24,6 +24,7 @@ import { CommunityAvatar } from '@/components/gc/community-avatar';
 import { PostCard } from '@/components/gc/post-card';
 import { PostComposer } from '@/components/gc/post-composer';
 import { PostSkeleton } from '@/components/gc/post-skeleton';
+import { VoiceRooms } from '@/components/gc/voice-rooms';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { EmptyState, Widget } from '@/components/gc/widget';
@@ -36,6 +37,7 @@ import type {
     ScrollData,
     UserCard,
 } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     community: CommunityDetails;
@@ -140,7 +142,8 @@ export default function CommunityShow({
                             field="cover"
                             className="absolute top-4 right-4 inline-flex items-center gap-2 rounded-xl bg-black/40 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-black/60"
                         >
-                            <Camera className="size-4" /> Змінити обкладинку
+                            <Camera className="size-4" />{' '}
+                            {tr('Змінити обкладинку')}
                         </ImageUpload>
                     )}
                 </div>
@@ -186,10 +189,10 @@ export default function CommunityShow({
                                         <UsersRound className="size-3.5" />
                                     )}
                                     {isPublic
-                                        ? 'Публічна сторінка'
+                                        ? tr('Публічна сторінка')
                                         : community.privacy === 'closed'
-                                          ? 'Закрита група'
-                                          : 'Відкрита група'}
+                                          ? tr('Закрита група')
+                                          : tr('Відкрита група')}
                                 </span>
                                 {community.category_label && (
                                     <span className="inline-flex items-center gap-1">
@@ -213,7 +216,7 @@ export default function CommunityShow({
                                         className="relative inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"
                                     >
                                         <UserPlus className="size-4" />
-                                        Учасники
+                                        {tr('Учасники')}
                                         {stats.requests > 0 && (
                                             <span className="rounded-full bg-gradient-brand px-1.5 text-[11px] leading-5">
                                                 {stats.requests}
@@ -223,8 +226,8 @@ export default function CommunityShow({
                                     <Link
                                         href={`/c/${community.slug}/settings`}
                                         className="inline-flex size-10 items-center justify-center rounded-xl bg-white/[0.07] text-white transition hover:bg-white/[0.11]"
-                                        aria-label="Керування"
-                                        title="Керування"
+                                        aria-label={tr('Керування')}
+                                        title={tr('Керування')}
                                     >
                                         <Settings className="size-4" />
                                     </Link>
@@ -237,7 +240,7 @@ export default function CommunityShow({
                         <div className="flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-white/55">
                             {community.city && (
                                 <span className="inline-flex items-center gap-1.5">
-                                    <MapPin className="size-4 text-[#8fa0ff]" />
+                                    <MapPin className="size-4 text-gc-lilac-400" />
                                     {community.city}
                                 </span>
                             )}
@@ -248,7 +251,7 @@ export default function CommunityShow({
                                     rel="noreferrer nofollow"
                                     className="inline-flex items-center gap-1.5 hover:text-white"
                                 >
-                                    <Globe className="size-4 text-[#38e1ff]" />
+                                    <Globe className="size-4 text-gc-cyan" />
                                     {community.website.replace(
                                         /^https?:\/\//,
                                         '',
@@ -257,7 +260,8 @@ export default function CommunityShow({
                             )}
                             <span className="inline-flex items-center gap-1.5">
                                 <CalendarDays className="size-4 text-white/40" />
-                                Створено {formatDate(community.created_at)}
+                                {tr('Створено')}{' '}
+                                {formatDate(community.created_at)}
                             </span>
                         </div>
                         <div className="flex">
@@ -303,7 +307,7 @@ export default function CommunityShow({
                                         {compactNumber(photos.count)}
                                     </span>
                                     <span className="text-xs text-white/45">
-                                        фото
+                                        {tr('фото')}
                                     </span>
                                 </Link>
                             )}
@@ -316,15 +320,24 @@ export default function CommunityShow({
                 <div className="mt-5">
                     <EmptyState
                         icon={Lock}
-                        title="Це закрита група"
-                        text="Записи та учасників бачать лише учасники. Подайте заявку — адміністратори розглянуть її найближчим часом."
+                        title={tr('Це закрита група')}
+                        text={tr(
+                            'Записи та учасників бачать лише учасники. Подайте заявку — адміністратори розглянуть її найближчим часом.',
+                        )}
                     />
                 </div>
             ) : (
                 <div className="mt-5 flex flex-col gap-5 xl:flex-row">
                     <aside className="w-full shrink-0 space-y-4 xl:sticky xl:top-[76px] xl:order-last xl:h-fit xl:w-[320px]">
+                        {membership?.status === 'active' && (
+                            <VoiceRooms
+                                owner={{ type: 'community', id: community.id }}
+                                label={community.name}
+                                href={`/c/${community.slug}`}
+                            />
+                        )}
                         {community.description && (
-                            <Widget title="Інформація" icon={Info}>
+                            <Widget title={tr('Інформація')} icon={Info}>
                                 <p className="px-1 text-sm leading-relaxed whitespace-pre-line text-white/75">
                                     {community.description}
                                 </p>
@@ -333,16 +346,18 @@ export default function CommunityShow({
 
                         {photos && (photos.count > 0 || photos.can_create) && (
                             <Widget
-                                title="Фотографії"
+                                title={tr('Фотографії')}
                                 icon={ImageIcon}
                                 action={
                                     <Link
                                         href={`/c/${community.slug}/photos`}
-                                        className="text-xs text-[#9aa8ff] hover:text-white"
+                                        className="text-xs text-gc-lilac-300 hover:text-white"
                                     >
                                         {photos.count > 0
-                                            ? `Усі ${photos.count}`
-                                            : 'Створити альбом'}
+                                            ? tr('Усі {count}', {
+                                                  count: photos.count,
+                                              })
+                                            : tr('Створити альбом')}
                                     </Link>
                                 }
                             >
@@ -365,19 +380,19 @@ export default function CommunityShow({
                                     </div>
                                 ) : (
                                     <p className="px-1 text-sm text-white/45">
-                                        Додайте перший альбом спільноти.
+                                        {tr('Додайте перший альбом спільноти.')}
                                     </p>
                                 )}
                             </Widget>
                         )}
 
                         <Widget
-                            title={isPublic ? 'Підписники' : 'Учасники'}
+                            title={isPublic ? tr('Підписники') : tr('Учасники')}
                             icon={UsersRound}
                             action={
                                 <Link
                                     href={`/c/${community.slug}/members`}
-                                    className="text-xs text-[#9aa8ff] hover:text-white"
+                                    className="text-xs text-gc-lilac-300 hover:text-white"
                                 >
                                     {membersLabel(stats.members, isPublic)}
                                 </Link>
@@ -391,7 +406,7 @@ export default function CommunityShow({
                                         'ваші друзі',
                                         'ваших друзів',
                                     ])}{' '}
-                                    тут
+                                    {tr('тут')}
                                 </p>
                             )}
                             <div className="grid grid-cols-3 gap-2">
@@ -411,7 +426,7 @@ export default function CommunityShow({
                         </Widget>
 
                         {managers.length > 0 && (
-                            <Widget title="Керівники" icon={ShieldCheck}>
+                            <Widget title={tr('Керівники')} icon={ShieldCheck}>
                                 <div className="space-y-1">
                                     {managers.map((manager) => (
                                         <Link
@@ -430,7 +445,7 @@ export default function CommunityShow({
                                                 <span className="flex items-center gap-1 text-xs text-white/45">
                                                     {manager.role ===
                                                         'owner' && (
-                                                        <Crown className="size-3 text-[#ffd36b]" />
+                                                        <Crown className="size-3 text-gc-gold" />
                                                     )}
                                                     {roleLabels[manager.role]}
                                                 </span>
@@ -459,11 +474,15 @@ export default function CommunityShow({
                         {posts.data.length === 0 ? (
                             <EmptyState
                                 icon={PenLine}
-                                title="Тут поки тихо"
+                                title={tr('Тут поки тихо')}
                                 text={
                                     can.post
-                                        ? 'Опублікуйте перший запис — розкажіть, про що ця спільнота.'
-                                        : 'Новини з’являться тут, щойно адміністратори щось опублікують.'
+                                        ? tr(
+                                              'Опублікуйте перший запис — розкажіть, про що ця спільнота.',
+                                          )
+                                        : tr(
+                                              'Новини з’являться тут, щойно адміністратори щось опублікують.',
+                                          )
                                 }
                             />
                         ) : (

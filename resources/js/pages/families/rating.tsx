@@ -5,6 +5,7 @@ import { Empty, Panel, RankBadge, Segmented } from '@/components/families/ui';
 import { uah } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type { FamilyShellProps, LeaderboardRow } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Props = FamilyShellProps & {
     period: 'week' | 'month' | 'all';
@@ -29,7 +30,7 @@ export default function FamilyRating(props: Props) {
     const top = leaderboard.slice(0, 3);
 
     return (
-        <FamilyShell {...props} title="Рейтинг">
+        <FamilyShell {...props} title={tr('Рейтинг')}>
             <div className="flex flex-wrap items-center gap-2">
                 <Segmented
                     value={period}
@@ -52,12 +53,12 @@ export default function FamilyRating(props: Props) {
                     )}
                 />
                 <span className="ml-auto text-xs text-white/40">
-                    Враховується:{' '}
+                    {tr('Враховується:')}{' '}
                     {[
-                        config.bizwar && 'бізвари',
-                        config.contracts && 'контракти',
-                        config.investments && 'інвестиції',
-                        config.events && 'події',
+                        config.bizwar && tr('бізвари'),
+                        config.contracts && tr('контракти'),
+                        config.investments && tr('інвестиції'),
+                        config.events && tr('події'),
                     ]
                         .filter(Boolean)
                         .join(', ')}
@@ -68,12 +69,12 @@ export default function FamilyRating(props: Props) {
                 <Panel>
                     <Empty
                         icon={BarChart3}
-                        text="За цей період балів ще ніхто не заробив"
+                        text={tr('За цей період балів ще ніхто не заробив')}
                     />
                 </Panel>
             ) : (
                 <>
-                    <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                         {top.map((row, i) => (
                             <div
                                 key={row.id}
@@ -107,7 +108,7 @@ export default function FamilyRating(props: Props) {
                                     {row.points}
                                 </div>
                                 <div className="text-xs text-white/45">
-                                    балів · {uah(row.earned)}
+                                    {tr('балів ·')} {uah(row.earned)}
                                 </div>
                             </div>
                         ))}
@@ -116,31 +117,31 @@ export default function FamilyRating(props: Props) {
                     <Panel padded={false} className="overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full min-w-[640px] text-sm">
-                                <thead className="text-left text-[11px] tracking-wide text-white/35 uppercase">
+                                <thead className="text-left text-xs tracking-wide text-white/35 uppercase">
                                     <tr className="border-b border-white/[0.06]">
                                         <th className="px-4 py-3 font-medium">
                                             #
                                         </th>
                                         <th className="py-3 font-medium">
-                                            Учасник
+                                            {tr('Учасник')}
                                         </th>
                                         <th className="py-3 text-center font-medium">
-                                            Бізвари
+                                            {tr('Бізвари')}
                                         </th>
                                         <th className="py-3 text-center font-medium">
-                                            Контракти
+                                            {tr('Контракти')}
                                         </th>
                                         <th className="py-3 text-right font-medium">
-                                            Інвестиції
+                                            {tr('Інвестиції')}
                                         </th>
                                         <th className="py-3 text-center font-medium">
-                                            Події
+                                            {tr('Події')}
                                         </th>
                                         <th className="py-3 text-right font-medium">
-                                            Заробіток
+                                            {tr('Заробіток')}
                                         </th>
                                         <th className="px-4 py-3 text-right font-medium">
-                                            Бали
+                                            {tr('Бали')}
                                         </th>
                                     </tr>
                                 </thead>
@@ -150,7 +151,7 @@ export default function FamilyRating(props: Props) {
                                             key={row.id}
                                             className={cn(
                                                 row.id === me.id &&
-                                                    'bg-[#6d5dfc]/10',
+                                                    'bg-gc-indigo/10',
                                             )}
                                         >
                                             <td className="px-4 py-2.5 text-white/45">
@@ -160,7 +161,7 @@ export default function FamilyRating(props: Props) {
                                                 <div className="font-mono text-xs text-white">
                                                     {row.display}
                                                 </div>
-                                                <div className="text-[11px] text-white/35">
+                                                <div className="text-xs text-white/35">
                                                     {row.rank_title}
                                                 </div>
                                             </td>

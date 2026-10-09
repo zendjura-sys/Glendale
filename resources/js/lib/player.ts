@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import type { SpotifyTrack, TrackCard } from '@/types';
+import { tr } from '@/lib/i18n';
 
 /**
  * Глобальний плеєр GameCon. Живе поза React-деревом, тому музика не зупиняється
@@ -131,7 +132,7 @@ function audioEl(): HTMLAudioElement {
     audio.addEventListener('error', () => {
         if (state.engine !== 'audio' || !audio!.src) return;
         set({ playing: false, loading: false });
-        toast.error('Не вдалося відтворити трек.');
+        toast.error(tr('Не вдалося відтворити трек.'));
     });
 
     return audio;
@@ -195,7 +196,7 @@ function loadSdk(): Promise<string> {
 
     sdkDevice = new Promise<string>((resolve, reject) => {
         const timeout = setTimeout(
-            () => reject(new Error('Spotify SDK не відповідає.')),
+            () => reject(new Error(tr('Spotify SDK не відповідає.'))),
             15000,
         );
 
@@ -206,7 +207,7 @@ function loadSdk(): Promise<string> {
                 getOAuthToken: (cb) => {
                     api<{ access_token: string }>('GET', '/music/spotify/token')
                         .then((r) => cb(r.access_token))
-                        .catch(() => reject(new Error('Немає токена.')));
+                        .catch(() => reject(new Error(tr('Немає токена.'))));
                 },
             });
 
@@ -485,7 +486,9 @@ async function start(index: number) {
                 return;
             } catch (error) {
                 toast.message(
-                    'Повне відтворення Spotify недоступне — вмикаємо вбудований плеєр.',
+                    tr(
+                        'Повне відтворення Spotify недоступне — вмикаємо вбудований плеєр.',
+                    ),
                     {
                         description:
                             error instanceof Error ? error.message : undefined,
@@ -503,7 +506,7 @@ async function start(index: number) {
         toast.error(
             error instanceof Error && error.message
                 ? error.message
-                : 'Не вдалося відтворити трек.',
+                : tr('Не вдалося відтворити трек.'),
         );
     }
 }
@@ -573,7 +576,7 @@ export function playNext(track: TrackCard) {
     const at = queue.findIndex((t) => t.key === state.current!.key) + 1;
     queue.splice(at, 0, track);
     set({ queue, index: at - 1 });
-    toast.success('Трек буде наступним.');
+    toast.success(tr('Трек буде наступним.'));
 }
 
 export function jumpTo(index: number) {

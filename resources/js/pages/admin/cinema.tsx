@@ -34,6 +34,7 @@ import { Input } from '@/components/ui/input';
 import { compactNumber, timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { MovieCard, MovieOption, MovieType, Paginated } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type AdminMovie = MovieCard & {
     is_published: boolean;
@@ -121,21 +122,21 @@ type Props = {
 };
 
 const filterTabs: { key: Filter; label: string }[] = [
-    { key: 'all', label: 'Усі' },
-    { key: 'published', label: 'Опубліковані' },
-    { key: 'hidden', label: 'Приховані' },
-    { key: 'featured', label: 'У банері' },
-    { key: 'no_sources', label: 'Без плеєра' },
-    { key: 'not_enriched', label: 'Без метаданих' },
-    { key: 'trashed', label: 'Кошик' },
+    { key: 'all', label: tr('Усі') },
+    { key: 'published', label: tr('Опубліковані') },
+    { key: 'hidden', label: tr('Приховані') },
+    { key: 'featured', label: tr('У банері') },
+    { key: 'no_sources', label: tr('Без плеєра') },
+    { key: 'not_enriched', label: tr('Без метаданих') },
+    { key: 'trashed', label: tr('Кошик') },
 ];
 
 function intervalLabel(minutes: number) {
-    if (minutes < 60) return `кожні ${minutes} хв`;
-    if (minutes === 60) return 'щогодини';
-    if (minutes === 1440) return 'раз на добу';
+    if (minutes < 60) return tr('кожні {minutes} хв', { minutes });
+    if (minutes === 60) return tr('щогодини');
+    if (minutes === 1440) return tr('раз на добу');
 
-    return `кожні ${minutes / 60} год`;
+    return tr('кожні {v} год', { v: minutes / 60 });
 }
 
 function AutoImportPanel({
@@ -178,57 +179,57 @@ function AutoImportPanel({
             key: 'kodik' as const,
             label: 'Kodik',
             ready: providers.kodik,
-            hint: 'Оновлення каталогу з усіма озвучками',
+            hint: tr('Оновлення каталогу з усіма озвучками'),
         },
         {
             key: 'flixcdn' as const,
             label: 'FlixCDN',
             ready: providers.flixcdn_api,
-            hint: 'Через «API: оновлення» з кабінету',
+            hint: tr('Через «API: оновлення» з кабінету'),
         },
     ];
 
     return (
         <section className="glass relative mb-5 overflow-hidden rounded-3xl p-5 sm:p-6">
-            <div className="pointer-events-none absolute -top-24 -right-20 size-80 rounded-full bg-[#6d5dfc]/15 blur-3xl" />
+            <div className="pointer-events-none absolute -top-24 -right-20 size-80 rounded-full bg-gc-indigo/15 blur-3xl" />
             <header className="relative mb-5 flex flex-wrap items-center gap-4">
-                <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#6d5dfc] to-[#f04fd8] shadow-[0_10px_30px_-10px_rgb(168_85_247/0.9)]">
+                <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-gc-indigo to-gc-pink shadow-[0_10px_30px_-10px_rgb(168_85_247/0.9)]">
                     <Bot className="size-6 text-white" />
                 </span>
                 <div className="min-w-0 flex-1">
                     <h2 className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold text-white">
-                        Автонаповнення каталогу
+                        {tr('Автонаповнення каталогу')}
                         {data.enabled ? (
                             <Pill tone="green">
                                 <CheckCircle2 className="size-3" />{' '}
                                 {intervalLabel(data.interval)}
                             </Pill>
                         ) : (
-                            <Pill>Вимкнено</Pill>
+                            <Pill>{tr('Вимкнено')}</Pill>
                         )}
                         {running && (
                             <Pill tone="blue">
                                 <Loader2 className="size-3 animate-spin" />{' '}
-                                Виконується
+                                {tr('Виконується')}
                             </Pill>
                         )}
                     </h2>
                     <p className="text-sm text-white/50">
-                        Нові тайтли з плеєрів додаються самі, плеєри наявних
-                        оновлюються, а метадані підтягуються з TMDB, Shikimori
-                        та IMDb.
+                        {tr(
+                            'Нові тайтли з плеєрів додаються самі, плеєри наявних оновлюються, а метадані підтягуються з TMDB, Shikimori та IMDb.',
+                        )}
                     </p>
                 </div>
                 <Toggle
                     checked={data.enabled}
                     onChange={(v) => setData('enabled', v)}
-                    label="Увімкнути автонаповнення"
+                    label={tr('Увімкнути автонаповнення')}
                 />
             </header>
 
-            <div className="relative grid gap-5 lg:grid-cols-[1fr_320px]">
+            <div className="relative grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
                 <div className="space-y-4">
-                    <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                         {providerCards.map((p) => {
                             const on = data.providers.includes(p.key);
 
@@ -240,7 +241,7 @@ function AutoImportPanel({
                                     className={cn(
                                         'flex items-start gap-3 rounded-2xl border p-3.5 text-left transition',
                                         on
-                                            ? 'border-[#8fa0ff]/40 bg-[#6d5dfc]/10'
+                                            ? 'border-gc-lilac-400/40 bg-gc-indigo/10'
                                             : 'border-white/[0.08] bg-white/[0.02] hover:border-white/15',
                                     )}
                                 >
@@ -261,11 +262,11 @@ function AutoImportPanel({
                                             {p.label}
                                             {p.ready ? (
                                                 <Pill tone="green">
-                                                    підключено
+                                                    {tr('підключено')}
                                                 </Pill>
                                             ) : (
                                                 <Pill tone="gold">
-                                                    немає ключів
+                                                    {tr('немає ключів')}
                                                 </Pill>
                                             )}
                                         </span>
@@ -280,9 +281,9 @@ function AutoImportPanel({
 
                     <div>
                         <p className="mb-2 text-xs font-medium text-white/50">
-                            Типи Kodik{' '}
+                            {tr('Типи Kodik')}{' '}
                             <span className="text-white/30">
-                                (нічого не вибрано — усі)
+                                {tr('(нічого не вибрано — усі)')}
                             </span>
                         </p>
                         <div className="flex flex-wrap gap-1.5">
@@ -296,7 +297,7 @@ function AutoImportPanel({
                                     className={cn(
                                         'rounded-full border px-3 py-1 text-xs transition',
                                         data.kodik_types.includes(t.key)
-                                            ? 'border-[#8fa0ff]/50 bg-[#6d5dfc]/20 text-white'
+                                            ? 'border-gc-lilac-400/50 bg-gc-indigo/20 text-white'
                                             : 'border-white/10 text-white/55 hover:text-white',
                                     )}
                                 >
@@ -306,9 +307,9 @@ function AutoImportPanel({
                         </div>
                     </div>
 
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                         <label className="grid gap-1.5 text-xs text-white/50">
-                            Частота
+                            {tr('Частота')}
                             <select
                                 value={data.interval}
                                 onChange={(e) =>
@@ -324,7 +325,7 @@ function AutoImportPanel({
                             </select>
                         </label>
                         <label className="grid gap-1.5 text-xs text-white/50">
-                            Сторінок за запуск (×100)
+                            {tr('Сторінок за запуск (×100)')}
                             <Input
                                 type="number"
                                 min={1}
@@ -336,12 +337,12 @@ function AutoImportPanel({
                             />
                         </label>
                         <label className="grid gap-1.5 text-xs text-white/50">
-                            Не старіші за рік
+                            {tr('Не старіші за рік')}
                             <Input
                                 type="number"
                                 min={1900}
                                 max={2100}
-                                placeholder="будь-які"
+                                placeholder={tr('будь-які')}
                                 value={data.min_year ?? ''}
                                 onChange={(e) =>
                                     setData(
@@ -354,7 +355,7 @@ function AutoImportPanel({
                             />
                         </label>
                         <label className="grid gap-1.5 text-xs text-white/50">
-                            Збагачувати за запуск
+                            {tr('Збагачувати за запуск')}
                             <Input
                                 type="number"
                                 min={1}
@@ -370,12 +371,12 @@ function AutoImportPanel({
                         </label>
                     </div>
 
-                    <div className="grid gap-2 sm:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                         {(
                             [
-                                ['publish', 'Публікувати одразу'],
-                                ['enrich', 'Підтягувати метадані'],
-                                ['only_with_ids', 'Лише із зовнішніми ID'],
+                                ['publish', tr('Публікувати одразу')],
+                                ['enrich', tr('Підтягувати метадані')],
+                                ['only_with_ids', tr('Лише із зовнішніми ID')],
                             ] as const
                         ).map(([key, label]) => (
                             <label
@@ -409,7 +410,7 @@ function AutoImportPanel({
                             }
                             className="btn-glow inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
                         >
-                            Зберегти
+                            {tr('Зберегти')}
                         </button>
                         <button
                             type="button"
@@ -426,7 +427,7 @@ function AutoImportPanel({
                                     running && 'animate-spin',
                                 )}
                             />
-                            Запустити зараз
+                            {tr('Запустити зараз')}
                         </button>
                         <button
                             type="button"
@@ -439,43 +440,46 @@ function AutoImportPanel({
                             className="inline-flex items-center gap-2 rounded-xl bg-white/[0.06] px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/10 disabled:opacity-40"
                         >
                             <Wand2 className="size-4" />
-                            Збагатити метадані ({notEnriched})
+                            {tr('Збагатити метадані (')}
+                            {notEnriched})
                         </button>
                     </div>
                 </div>
 
                 <aside className="rounded-2xl bg-white/[0.035] p-4 text-sm">
-                    <p className="font-semibold text-white">Останній запуск</p>
+                    <p className="font-semibold text-white">
+                        {tr('Останній запуск')}
+                    </p>
                     {last ? (
                         <>
                             <p className="mt-0.5 text-xs text-white/45">
                                 {timeAgo(last.finished_at)} ·{' '}
                                 {last.trigger === 'manual'
-                                    ? 'вручну'
-                                    : 'за розкладом'}{' '}
-                                · {last.duration} с
+                                    ? tr('вручну')
+                                    : tr('за розкладом')}{' '}
+                                · {last.duration} {tr('с')}
                             </p>
                             <div className="mt-3 grid grid-cols-2 gap-2">
                                 {(
                                     [
                                         [
                                             'created',
-                                            'Нових',
+                                            tr('Нових'),
                                             'text-emerald-300',
                                         ],
                                         [
                                             'updated',
-                                            'Оновлено',
-                                            'text-[#9cbcff]',
+                                            tr('Оновлено'),
+                                            'text-gc-sky',
                                         ],
                                         [
                                             'enriched',
-                                            'Збагачено',
+                                            tr('Збагачено'),
                                             'text-[#d3b0ff]',
                                         ],
                                         [
                                             'skipped',
-                                            'Пропущено',
+                                            tr('Пропущено'),
                                             'text-white/50',
                                         ],
                                     ] as const
@@ -492,7 +496,7 @@ function AutoImportPanel({
                                         >
                                             {compactNumber(last[key])}
                                         </p>
-                                        <p className="text-[11px] text-white/45">
+                                        <p className="text-xs text-white/45">
                                             {label}
                                         </p>
                                     </div>
@@ -509,8 +513,8 @@ function AutoImportPanel({
                                                 ? 'Kodik'
                                                 : 'FlixCDN'}
                                         </b>
-                                        : +{counts.created}, оновлено{' '}
-                                        {counts.updated}
+                                        : +{counts.created}
+                                        {tr(', оновлено')} {counts.updated}
                                     </p>
                                 ),
                             )}
@@ -530,20 +534,23 @@ function AutoImportPanel({
                         </>
                     ) : (
                         <p className="mt-1 text-xs text-white/45">
-                            Ще не запускалося. Підключіть Kodik або FlixCDN в{' '}
+                            {tr(
+                                'Ще не запускалося. Підключіть Kodik або FlixCDN в',
+                            )}{' '}
                             <Link
                                 href="/admin/integrations"
-                                className="text-[#9aa8ff] hover:text-white"
+                                className="text-gc-lilac-300 hover:text-white"
                             >
-                                інтеграціях
+                                {tr('інтеграціях')}
                             </Link>{' '}
-                            і натисніть «Запустити зараз».
+                            {tr('і натисніть «Запустити зараз».')}
                         </p>
                     )}
-                    <p className="mt-4 text-[11px] leading-relaxed text-white/35">
-                        Розклад працює через планувальник Laravel: на сервері
-                        має бути cron <code>php artisan schedule:run</code>{' '}
-                        щохвилини.
+                    <p className="mt-4 text-xs leading-relaxed text-white/35">
+                        {tr(
+                            'Розклад працює через планувальник Laravel: на сервері має бути cron',
+                        )}{' '}
+                        <code>php artisan schedule:run</code> {tr('щохвилини.')}
                     </p>
                 </aside>
             </div>
@@ -589,7 +596,9 @@ export default function AdminCinema({
     const remove = (movie: AdminMovie) => {
         if (
             movie.deleted_at &&
-            !confirm('Видалити фільм назавжди разом з коментарями та списками?')
+            !confirm(
+                tr('Видалити фільм назавжди разом з коментарями та списками?'),
+            )
         ) {
             return;
         }
@@ -598,54 +607,59 @@ export default function AdminCinema({
 
     return (
         <>
-            <Head title="Кіно — Адмін-панель" />
+            <Head title={tr('Кіно — Адмін-панель')} />
             <PageHeader
-                title="Кіно"
-                description="Каталог фільмів, плеєри Kodik/FlixCDN, автонаповнення й метадані"
+                title={tr('Кіно')}
+                description={tr(
+                    'Каталог фільмів, плеєри Kodik/FlixCDN, автонаповнення й метадані',
+                )}
                 actions={
                     <div className="flex flex-wrap gap-2">
                         <Link
                             href="/admin/cinema/import"
                             className="glass inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 hover:text-white"
                         >
-                            <DownloadCloud className="size-4" /> Імпорт
+                            <DownloadCloud className="size-4" /> {tr('Імпорт')}
                         </Link>
                         <Link
                             href="/admin/cinema/create"
                             className="btn-glow inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold"
                         >
-                            <Plus className="size-4" /> Додати вручну
+                            <Plus className="size-4" /> {tr('Додати вручну')}
                         </Link>
                     </div>
                 }
             />
 
-            <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <StatCard
-                    label="Тайтлів"
+                    label={tr('Тайтлів')}
                     value={compactNumber(stats.movies)}
                     icon={Film}
-                    hint={`${stats.published} опубліковано · ${stats.auto} автоматично`}
+                    hint={tr('{published} опубліковано · {auto} автоматично', {
+                        published: stats.published,
+                        auto: stats.auto,
+                    })}
                 />
                 <StatCard
-                    label="Плеєрів (озвучок)"
+                    label={tr('Плеєрів (озвучок)')}
                     value={compactNumber(stats.sources)}
                     icon={Clapperboard}
-                    tone="from-[#22d3a6] to-[#38e1ff]"
+                    tone="from-gc-mint to-gc-cyan"
                     delay={60}
                 />
                 <StatCard
-                    label="Переглядів"
+                    label={tr('Переглядів')}
                     value={compactNumber(stats.views)}
                     icon={Eye}
-                    tone="from-[#f5b342] to-[#f04fd8]"
+                    tone="from-gc-amber to-gc-pink"
                     delay={120}
                 />
                 <StatCard
-                    label="У списках глядачів"
+                    label={tr('У списках глядачів')}
                     value={compactNumber(stats.watchers)}
                     icon={UsersRound}
-                    tone="from-[#f04fd8] to-[#a855f7]"
+                    tone="from-gc-pink to-gc-purple"
                     delay={180}
                 />
             </div>
@@ -682,7 +696,7 @@ export default function AdminCinema({
                     <Input
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
-                        placeholder="Назва або оригінальна назва"
+                        placeholder={tr('Назва або оригінальна назва')}
                         className="h-10 pl-10"
                     />
                 </form>
@@ -695,7 +709,7 @@ export default function AdminCinema({
                     }
                     className={selectClass}
                 >
-                    <option value="">Усі типи</option>
+                    <option value="">{tr('Усі типи')}</option>
                     {types.map((t) => (
                         <option key={t.key} value={t.key}>
                             {t.label}
@@ -708,18 +722,22 @@ export default function AdminCinema({
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[900px] text-sm">
                         <thead>
-                            <tr className="border-b border-white/[0.06] text-left text-[11px] tracking-wider text-white/40 uppercase">
-                                <th className="px-4 py-3 font-medium">Тайтл</th>
+                            <tr className="border-b border-white/[0.06] text-left text-xs tracking-wider text-white/40 uppercase">
+                                <th className="px-4 py-3 font-medium">
+                                    {tr('Тайтл')}
+                                </th>
                                 <th className="px-3 py-3 font-medium">
-                                    Джерело
+                                    {tr('Джерело')}
                                 </th>
                                 <th className="px-3 py-3 text-right font-medium">
-                                    Плеєри
+                                    {tr('Плеєри')}
                                 </th>
                                 <th className="px-3 py-3 text-right font-medium">
-                                    Перегляди
+                                    {tr('Перегляди')}
                                 </th>
-                                <th className="px-3 py-3 font-medium">Показ</th>
+                                <th className="px-3 py-3 font-medium">
+                                    {tr('Показ')}
+                                </th>
                                 <th className="px-4 py-3" />
                             </tr>
                         </thead>
@@ -753,7 +771,7 @@ export default function AdminCinema({
                                                         .filter(Boolean)
                                                         .join(' · ')}
                                                     {movie.rating && (
-                                                        <span className="inline-flex items-center gap-0.5 text-[#f5b342]">
+                                                        <span className="inline-flex items-center gap-0.5 text-gc-amber">
                                                             <Star className="size-3 fill-current" />
                                                             {movie.rating.toFixed(
                                                                 1,
@@ -774,7 +792,7 @@ export default function AdminCinema({
                                                 }
                                             >
                                                 {movie.origin === 'manual'
-                                                    ? 'Вручну'
+                                                    ? tr('Вручну')
                                                     : movie.origin === 'kodik'
                                                       ? 'Kodik'
                                                       : 'FlixCDN'}
@@ -782,7 +800,7 @@ export default function AdminCinema({
                                             {movie.enriched_at ? (
                                                 <Pill tone="violet">
                                                     <Sparkles className="size-3" />
-                                                    метадані
+                                                    {tr('метадані')}
                                                 </Pill>
                                             ) : null}
                                         </div>
@@ -794,7 +812,7 @@ export default function AdminCinema({
                                             </span>
                                         ) : (
                                             <span className="text-amber-300/80">
-                                                немає
+                                                {tr('немає')}
                                             </span>
                                         )}
                                     </td>
@@ -805,7 +823,7 @@ export default function AdminCinema({
                                         <div className="flex items-center gap-3">
                                             <span
                                                 className="flex items-center gap-1.5 text-xs text-white/45"
-                                                title="Опубліковано"
+                                                title={tr('Опубліковано')}
                                             >
                                                 <Toggle
                                                     checked={movie.is_published}
@@ -818,7 +836,7 @@ export default function AdminCinema({
                                                     disabled={
                                                         !!movie.deleted_at
                                                     }
-                                                    label="Опубліковано"
+                                                    label={tr('Опубліковано')}
                                                 />
                                             </span>
                                             <button
@@ -832,7 +850,9 @@ export default function AdminCinema({
                                                         ? 'bg-amber-400/15 text-amber-300'
                                                         : 'text-white/30 hover:bg-white/10 hover:text-white',
                                                 )}
-                                                title="Показувати в банері"
+                                                title={tr(
+                                                    'Показувати в банері',
+                                                )}
                                             >
                                                 <Sparkles className="size-4" />
                                             </button>
@@ -844,7 +864,9 @@ export default function AdminCinema({
                                                 <a
                                                     href={movie.href}
                                                     className="flex size-8 items-center justify-center rounded-lg text-white/50 hover:bg-white/10 hover:text-white"
-                                                    title="Відкрити на сайті"
+                                                    title={tr(
+                                                        'Відкрити на сайті',
+                                                    )}
                                                 >
                                                     {movie.is_published ? (
                                                         <Eye className="size-4" />
@@ -866,7 +888,7 @@ export default function AdminCinema({
                                                         )
                                                     }
                                                     className="flex size-8 items-center justify-center rounded-lg text-emerald-300 hover:bg-emerald-400/10"
-                                                    title="Відновити"
+                                                    title={tr('Відновити')}
                                                 >
                                                     <RotateCcw className="size-4" />
                                                 </button>
@@ -877,8 +899,10 @@ export default function AdminCinema({
                                                 className="flex size-8 items-center justify-center rounded-lg text-rose-300 hover:bg-rose-400/10"
                                                 title={
                                                     movie.deleted_at
-                                                        ? 'Видалити назавжди'
-                                                        : 'У кошик'
+                                                        ? tr(
+                                                              'Видалити назавжди',
+                                                          )
+                                                        : tr('У кошик')
                                                 }
                                             >
                                                 <Trash2 className="size-4" />
@@ -892,7 +916,7 @@ export default function AdminCinema({
                 </div>
                 {movies.data.length === 0 && (
                     <div className="px-6 py-14 text-center text-sm text-white/40">
-                        Тайтлів не знайдено
+                        {tr('Тайтлів не знайдено')}
                     </div>
                 )}
             </div>

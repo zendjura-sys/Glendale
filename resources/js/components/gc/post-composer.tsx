@@ -18,15 +18,16 @@ import { cn } from '@/lib/utils';
 import type { TrackCard, Visibility } from '@/types';
 import { CommunityAvatar } from './community-avatar';
 import { UserAvatar } from './user-avatar';
+import { tr } from '@/lib/i18n';
 
 const visibilityOptions: {
     value: Visibility;
     label: string;
     icon: typeof Earth;
 }[] = [
-    { value: 'public', label: 'Усім', icon: Earth },
-    { value: 'friends', label: 'Друзям', icon: UsersRound },
-    { value: 'private', label: 'Тільки мені', icon: Lock },
+    { value: 'public', label: tr('Усім'), icon: Earth },
+    { value: 'friends', label: tr('Друзям'), icon: UsersRound },
+    { value: 'private', label: tr('Тільки мені'), icon: Lock },
 ];
 
 type Props = {
@@ -122,18 +123,20 @@ export function PostComposer({
 
     const placeholder = community
         ? asCommunity
-            ? `Новина від імені «${community.name}»…`
-            : 'Напишіть щось у спільноті…'
+            ? tr('Новина від імені «{name}»…', { name: community.name })
+            : tr('Напишіть щось у спільноті…')
         : wall
-          ? `Напишіть щось ${wall.first_name}…`
-          : `Що нового, ${auth.user.first_name}?`;
+          ? tr('Напишіть щось {first_name}…', { first_name: wall.first_name })
+          : tr('Що нового, {first_name}?', {
+                first_name: auth.user.first_name,
+            });
 
     return (
         <section
             className={cn(
                 'glass relative overflow-clip rounded-3xl p-4 transition sm:p-5',
                 expanded &&
-                    'border-[#7c8cff]/30 shadow-[0_0_0_1px_rgb(124_140_255/0.15),0_30px_60px_-30px_rgb(109_93_252/0.6)]',
+                    'border-gc-lilac-500/30 shadow-[0_0_0_1px_rgb(124_140_255/0.15),0_30px_60px_-30px_rgb(109_93_252/0.6)]',
                 className,
             )}
             onDragOver={(event) => event.preventDefault()}
@@ -142,7 +145,7 @@ export function PostComposer({
                 addFiles(event.dataTransfer.files);
             }}
         >
-            <div className="pointer-events-none absolute -top-24 -right-24 size-56 rounded-full bg-[#6d5dfc]/20 blur-3xl" />
+            <div className="pointer-events-none absolute -top-24 -right-24 size-56 rounded-full bg-gc-indigo/20 blur-3xl" />
             <div className="relative flex gap-3">
                 {asCommunity && community ? (
                     <CommunityAvatar community={community} size="md" />
@@ -206,8 +209,8 @@ export function PostComposer({
                                         ),
                                     )
                                 }
-                                className="absolute top-1.5 right-1.5 rounded-full bg-black/60 p-1 text-white opacity-0 backdrop-blur transition group-hover:opacity-100"
-                                aria-label="Прибрати фото"
+                                className="absolute top-1.5 right-1.5 rounded-full bg-black/60 p-1 text-white opacity-0 backdrop-blur transition group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+                                aria-label={tr('Прибрати фото')}
                             >
                                 <X className="size-3.5" />
                             </button>
@@ -223,7 +226,7 @@ export function PostComposer({
                         type="button"
                         onClick={() => setTrack(null)}
                         className="flex size-8 shrink-0 items-center justify-center rounded-full text-white/50 transition hover:bg-white/10 hover:text-white"
-                        aria-label="Прибрати трек"
+                        aria-label={tr('Прибрати трек')}
                     >
                         <X className="size-4" />
                     </button>
@@ -267,7 +270,7 @@ export function PostComposer({
                     className="inline-flex h-9 items-center gap-2 rounded-xl px-2.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white sm:px-3"
                 >
                     <ImagePlus className="size-[18px] text-[#6fa2ff]" />
-                    <span className="hidden sm:inline">Фото</span>
+                    <span className="hidden sm:inline">{tr('Фото')}</span>
                 </button>
                 {modules.includes('music') && (
                     <button
@@ -276,7 +279,7 @@ export function PostComposer({
                         className="inline-flex h-9 items-center gap-2 rounded-xl px-2.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white sm:px-3"
                     >
                         <Music2 className="size-[18px] text-[#c58bff]" />
-                        <span className="hidden sm:inline">Музика</span>
+                        <span className="hidden sm:inline">{tr('Музика')}</span>
                     </button>
                 )}
 
@@ -294,12 +297,12 @@ export function PostComposer({
                             className={cn(
                                 'inline-flex h-9 items-center gap-2 rounded-xl px-3 text-xs font-medium transition',
                                 form.data.as_community
-                                    ? 'bg-[#6d5dfc]/20 text-white'
+                                    ? 'bg-gc-indigo/20 text-white'
                                     : 'text-white/50 hover:bg-white/[0.06] hover:text-white',
                             )}
                         >
-                            <Megaphone className="size-4 text-[#a58bff]" />
-                            Від імені спільноти
+                            <Megaphone className="size-4 text-gc-violet-300" />
+                            {tr('Від імені спільноти')}
                         </button>
                     )}
 
@@ -340,14 +343,14 @@ export function PostComposer({
                     type="button"
                     onClick={submit}
                     disabled={!canSubmit}
-                    aria-label="Опублікувати"
+                    aria-label={tr('Опублікувати')}
                     className="btn-glow ml-auto inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold disabled:pointer-events-none disabled:opacity-40 sm:px-5"
                 >
                     <Sparkles className="size-4" />
                     <span className="hidden min-[440px]:inline">
-                        Опублікувати
+                        {tr('Опублікувати')}
                     </span>
-                    <span className="min-[440px]:hidden">Пост</span>
+                    <span className="min-[440px]:hidden">{tr('Пост')}</span>
                 </button>
             </div>
 

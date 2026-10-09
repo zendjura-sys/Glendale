@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Translation\HasLocalePreference;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -52,15 +53,29 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
  * @property string|null $remember_token
+ * @property list<string>|null $nav_tabs Розділи нижньої панелі (ключі модулів); null — типові.
+ * @property string|null $playing_kind «Граю в…»: server | game
+ * @property int|null $playing_ref_id
+ * @property string|null $playing_label
+ * @property string|null $playing_icon
+ * @property string|null $playing_url
+ * @property string|null $playing_note
+ * @property Carbon|null $playing_until
+ * @property string|null $playing_source manual | discord | steam
+ * @property bool $playing_auto Ставити статус автоматично з Discord і Steam
+ * @property string|null $steam_id
+ * @property Carbon|null $muted_until Тимчасовий мут на всьому сайті
+ * @property string|null $mute_reason
+ * @property string|null $locale
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
 #[Fillable([
     'username', 'first_name', 'last_name', 'email', 'password',
-    'status', 'about', 'city', 'birthday', 'gender', 'website', 'is_private', 'message_privacy',
+    'status', 'about', 'city', 'birthday', 'gender', 'website', 'is_private', 'message_privacy', 'email_social',
 ])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'email', 'ban_reason', 'google_email'])]
-class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
+class User extends Authenticatable implements HasLocalePreference, MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
@@ -72,6 +87,12 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public const ROLE_ADMIN = 'admin';
 
     public const ROLES = [self::ROLE_USER, self::ROLE_MODERATOR, self::ROLE_ADMIN];
+
+    /** Розділи нижньої панелі на телефоні, якщо користувач нічого не обрав. */
+    public const DEFAULT_NAV = ['profile', 'feed', 'messages', 'friends'];
+
+    /** Скільки розділів поміщається в панелі поруч із «Меню». */
+    public const MAX_NAV = 4;
 
     public const MESSAGES_EVERYONE = 'everyone';
 
@@ -96,9 +117,14 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'two_factor_confirmed_at' => 'datetime',
             'birthday' => 'date',
             'last_seen_at' => 'datetime',
+            'playing_until' => 'datetime',
+            'playing_auto' => 'boolean',
+            'muted_until' => 'datetime',
             'banned_at' => 'datetime',
             'is_verified' => 'boolean',
             'is_private' => 'boolean',
+            'email_social' => 'boolean',
+            'nav_tabs' => 'array',
         ];
     }
 
@@ -250,6 +276,41 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'is_online' => $this->is_online,
             'is_verified' => $this->is_verified,
             'status' => $this->status,
+            'playing' => $this->playing(),
+        ];
+    }
+
+    /** Мова листів і сповіщень (Laravel бере її автоматично). */
+    public function preferredLocale(): ?string
+    {
+        return $this->locale;
+    }
+
+    public function isMuted(): bool
+    {
+        return $this->muted_until !== null && $this->muted_until->isFuture();
+    }
+
+    /**
+     * «Граю в…»: де людина зараз, поки статус не сплив.
+     *
+     * @return array{kind: string, id: int|null, label: string, icon: string|null, url: string|null, note: string|null, until: string, auto: bool}|null
+     */
+    public function playing(): ?array
+    {
+        if ($this->playing_kind === null || $this->playing_label === null || $this->playing_until === null || $this->playing_until->isPast()) {
+            return null;
+        }
+
+        return [
+            'kind' => $this->playing_kind,
+            'id' => $this->playing_ref_id,
+            'label' => $this->playing_label,
+            'icon' => $this->playing_icon,
+            'url' => $this->playing_url,
+            'note' => $this->playing_note,
+            'until' => $this->playing_until->toIso8601String(),
+            'auto' => $this->playing_source !== null && $this->playing_source !== 'manual',
         ];
     }
 }

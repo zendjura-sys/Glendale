@@ -12,6 +12,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     status?: string;
@@ -23,7 +24,7 @@ export default function Login({ status, canResetPassword }: Props) {
 
     return (
         <>
-            <Head title="Вхід" />
+            <Head title={tr('Вхід')} />
 
             {status && (
                 <div className="mb-5 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200">
@@ -52,7 +53,9 @@ export default function Login({ status, canResetPassword }: Props) {
                     <>
                         <div className="grid gap-5">
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Електронна пошта</Label>
+                                <Label htmlFor="email">
+                                    {tr('Електронна пошта')}
+                                </Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -68,14 +71,16 @@ export default function Login({ status, canResetPassword }: Props) {
 
                             <div className="grid gap-2">
                                 <div className="flex items-center">
-                                    <Label htmlFor="password">Пароль</Label>
+                                    <Label htmlFor="password">
+                                        {tr('Пароль')}
+                                    </Label>
                                     {canResetPassword && (
                                         <TextLink
                                             href={request()}
                                             className="ml-auto text-xs"
                                             tabIndex={5}
                                         >
-                                            Забули пароль?
+                                            {tr('Забули пароль?')}
                                         </TextLink>
                                     )}
                                 </div>
@@ -100,7 +105,7 @@ export default function Login({ status, canResetPassword }: Props) {
                                     htmlFor="remember"
                                     className="text-sm text-white/60"
                                 >
-                                    Запам'ятати мене
+                                    {tr("Запам'ятати мене")}
                                 </Label>
                             </div>
 
@@ -113,15 +118,15 @@ export default function Login({ status, canResetPassword }: Props) {
                                 data-test="login-button"
                             >
                                 {processing && <Spinner />}
-                                Увійти
+                                {tr('Увійти')}
                             </Button>
                         </div>
 
                         {site?.registration_open !== false && (
                             <div className="text-center text-sm text-white/45">
-                                Ще немає акаунта?{' '}
+                                {tr('Ще немає акаунта?')}{' '}
                                 <TextLink href={register()} tabIndex={5}>
-                                    Зареєструватися
+                                    {tr('Зареєструватися')}
                                 </TextLink>
                             </div>
                         )}
@@ -133,6 +138,6 @@ export default function Login({ status, canResetPassword }: Props) {
 }
 
 Login.layout = {
-    title: 'З поверненням!',
-    description: 'Увійдіть, щоб продовжити спілкування з друзями',
+    title: tr('З поверненням!'),
+    description: tr('Увійдіть, щоб продовжити спілкування з друзями'),
 };

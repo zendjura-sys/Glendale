@@ -5,6 +5,7 @@ import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { compactNumber, plural } from '@/lib/format';
 import type { CommunityListItem } from '@/types';
 import { JoinButton } from './join-button';
+import { tr } from '@/lib/i18n';
 
 export function membersLabel(count: number, isPublic: boolean): string {
     return `${compactNumber(count)} ${
@@ -59,7 +60,7 @@ export function CommunityTile({ community }: { community: CommunityListItem }) {
                 <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/45">
                     <span className="inline-flex items-center gap-1">
                         {isPublic ? (
-                            <Megaphone className="size-3.5 text-[#a58bff]" />
+                            <Megaphone className="size-3.5 text-gc-violet-300" />
                         ) : (
                             <UsersRound className="size-3.5 text-[#6fa2ff]" />
                         )}
@@ -67,7 +68,7 @@ export function CommunityTile({ community }: { community: CommunityListItem }) {
                     </span>
                     {community.privacy === 'closed' && (
                         <span className="inline-flex items-center gap-1">
-                            <Lock className="size-3.5" /> Закрита
+                            <Lock className="size-3.5" /> {tr('Закрита')}
                         </span>
                     )}
                 </div>

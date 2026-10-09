@@ -7,6 +7,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { LOCALE } from '@/lib/i18n';
 
 export const btnPrimary =
     'btn-glow inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:opacity-50';
@@ -51,7 +52,9 @@ export function Panel({
                 >
                     {title && (
                         <h2 className="flex min-w-0 flex-1 items-center gap-2 font-display text-base font-semibold text-white">
-                            {Icon && <Icon className="size-4 text-[#a5b4fc]" />}
+                            {Icon && (
+                                <Icon className="size-4 text-gc-lilac-200" />
+                            )}
                             {title}
                         </h2>
                     )}
@@ -78,7 +81,7 @@ export function Metric({
 }) {
     return (
         <div className="glass relative overflow-hidden rounded-2xl px-4 py-3.5">
-            <div className="flex items-center justify-between gap-2 text-[11px] font-medium tracking-wide text-white/45 uppercase">
+            <div className="flex items-center justify-between gap-2 text-xs font-medium tracking-wide text-white/45 uppercase">
                 {label}
                 {Icon && <Icon className="size-4 text-white/30" />}
             </div>
@@ -119,7 +122,7 @@ export function RankBadge({
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap',
+                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap',
                 tone,
                 className,
             )}
@@ -162,7 +165,7 @@ export function Segmented<T extends string>({
                 >
                     {o.label}
                     {!!o.badge && (
-                        <span className="rounded-full bg-rose-500/80 px-1.5 text-[10px] leading-4 text-white">
+                        <span className="rounded-full bg-rose-500/80 px-1.5 text-[11px] leading-4 text-white">
                             {o.badge}
                         </span>
                     )}
@@ -258,7 +261,7 @@ export function Amount({
     );
 }
 
-const whole = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2 });
+const whole = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 2 });
 
 function formatSigned(minor: number): string {
     const text = `${whole.format(Math.abs(minor) / 100)} ₴`;
@@ -267,7 +270,7 @@ function formatSigned(minor: number): string {
 }
 
 export const kyivDateTime = (iso: string) =>
-    new Date(iso).toLocaleString('uk-UA', {
+    new Date(iso).toLocaleString(LOCALE, {
         timeZone: 'Europe/Kyiv',
         day: '2-digit',
         month: '2-digit',
@@ -276,7 +279,7 @@ export const kyivDateTime = (iso: string) =>
     });
 
 export const kyivDate = (date: string) =>
-    new Date(`${date}T12:00:00Z`).toLocaleDateString('uk-UA', {
+    new Date(`${date}T12:00:00Z`).toLocaleDateString(LOCALE, {
         day: 'numeric',
         month: 'long',
     });

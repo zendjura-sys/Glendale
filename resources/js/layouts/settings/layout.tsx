@@ -1,24 +1,32 @@
 import { Link } from '@inertiajs/react';
-import { ShieldCheck, UserRound } from 'lucide-react';
+import { PanelBottom, ShieldCheck, UserRound } from 'lucide-react';
 import type { PropsWithChildren } from 'react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
+import { edit as editNavigation } from '@/routes/navigation';
 import { edit } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import { PageTransition } from '@/components/gc/page-transition';
+import { tr } from '@/lib/i18n';
 
 const items = [
     {
-        title: 'Профіль',
-        description: "Ім'я, адреса сторінки, про себе",
+        title: tr('Профіль'),
+        description: tr("Ім'я, адреса сторінки, про себе"),
         href: edit(),
         icon: UserRound,
     },
     {
-        title: 'Безпека',
-        description: 'Пароль, 2FA, ключі доступу',
+        title: tr('Безпека'),
+        description: tr('Пароль, 2FA, ключі доступу'),
         href: editSecurity(),
         icon: ShieldCheck,
+    },
+    {
+        title: tr('Панель'),
+        description: tr('Розділи панелі на телефоні'),
+        href: editNavigation(),
+        icon: PanelBottom,
     },
 ];
 
@@ -29,10 +37,10 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
         <div className="mx-auto max-w-[980px]">
             <div className="mb-5">
                 <h1 className="font-display text-2xl font-bold text-white">
-                    Налаштування
+                    {tr('Налаштування')}
                 </h1>
                 <p className="mt-1 text-sm text-white/45">
-                    Керуйте сторінкою, приватністю та безпекою акаунта
+                    {tr('Керуйте сторінкою, приватністю та безпекою акаунта')}
                 </p>
             </div>
 
@@ -40,7 +48,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                 <aside className="md:w-[250px] md:shrink-0">
                     <nav
                         className="glass flex gap-1 rounded-2xl p-2 md:sticky md:top-[76px] md:flex-col"
-                        aria-label="Налаштування"
+                        aria-label={tr('Налаштування')}
                     >
                         {items.map(
                             ({ title, description, href, icon: Icon }) => {
@@ -61,7 +69,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                             className={cn(
                                                 'size-[18px] shrink-0',
                                                 active
-                                                    ? 'text-[#8fa0ff]'
+                                                    ? 'text-gc-lilac-400'
                                                     : 'text-white/40',
                                             )}
                                         />
@@ -69,7 +77,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                             <span className="block text-sm font-medium">
                                                 {title}
                                             </span>
-                                            <span className="hidden truncate text-[11px] text-white/35 md:block">
+                                            <span className="hidden truncate text-xs text-white/35 md:block">
                                                 {description}
                                             </span>
                                         </span>

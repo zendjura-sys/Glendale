@@ -4,15 +4,17 @@ import { useState } from 'react';
 import { messagePreview } from '@/components/gc/inbox-listener';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { shortTime } from '@/lib/format';
-import { cn } from '@/lib/utils';
+import { usePlayer } from '@/lib/player';
+import { cn, dockedAboveNav } from '@/lib/utils';
 import type { ConversationSummary } from '@/types';
 import { ConversationAvatar } from './conversation-avatar';
+import { tr } from '@/lib/i18n';
 
 function Preview({ conversation }: { conversation: ConversationSummary }) {
     const last = conversation.last_message;
 
     if (!last) {
-        return <span className="text-white/35">Немає повідомлень</span>;
+        return <span className="text-white/35">{tr('Немає повідомлень')}</span>;
     }
 
     if (last.type === 'system') {
@@ -20,7 +22,7 @@ function Preview({ conversation }: { conversation: ConversationSummary }) {
     }
 
     const prefix = last.is_own
-        ? 'Ви'
+        ? tr('Ви')
         : conversation.type === 'group'
           ? last.author
           : null;
@@ -49,6 +51,7 @@ export function ConversationList({
     className?: string;
 }) {
     const [query, setQuery] = useState('');
+    const playing = usePlayer().current !== null;
     const needle = query.trim().toLowerCase();
     const visible = needle
         ? conversations.filter((c) => c.title.toLowerCase().includes(needle))
@@ -58,14 +61,14 @@ export function ConversationList({
         <aside className={cn('flex min-h-0 flex-col', className)}>
             <div className="flex items-center justify-between gap-2 px-4 pt-4 pb-3">
                 <h1 className="font-display text-lg font-semibold text-white">
-                    Повідомлення
+                    {tr('Повідомлення')}
                 </h1>
                 <button
                     type="button"
                     onClick={onCompose}
                     className="flex size-9 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.07] hover:text-white"
-                    aria-label="Нове повідомлення"
-                    title="Нове повідомлення"
+                    aria-label={tr('Нове повідомлення')}
+                    title={tr('Нове повідомлення')}
                 >
                     <PenSquare className="size-[18px]" />
                 </button>
@@ -76,13 +79,18 @@ export function ConversationList({
                     <input
                         value={query}
                         onChange={(event) => setQuery(event.target.value)}
-                        placeholder="Пошук"
+                        placeholder={tr('Пошук')}
                         className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
                     />
                 </label>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
+            <div
+                className={cn(
+                    'min-h-0 flex-1 overflow-y-auto px-2',
+                    dockedAboveNav(playing, 'lg:pb-2'),
+                )}
+            >
                 {visible.length === 0 ? (
                     <div className="flex flex-col items-center px-6 py-14 text-center">
                         <span className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-white/[0.04]">
@@ -90,8 +98,8 @@ export function ConversationList({
                         </span>
                         <p className="text-sm text-white/50">
                             {needle
-                                ? 'Нічого не знайдено'
-                                : 'Тут з’являться ваші бесіди'}
+                                ? tr('Нічого не знайдено')
+                                : tr('Тут з’являться ваші бесіди')}
                         </p>
                         {!needle && (
                             <button
@@ -99,7 +107,7 @@ export function ConversationList({
                                 onClick={onCompose}
                                 className="btn-glow mt-4 rounded-xl px-4 py-2 text-sm font-semibold"
                             >
-                                Написати повідомлення
+                                {tr('Написати повідомлення')}
                             </button>
                         )}
                     </div>
@@ -135,7 +143,7 @@ export function ConversationList({
                                             <BellOff className="size-3.5 shrink-0 text-white/35" />
                                         )}
                                         {conversation.last_message && (
-                                            <span className="ml-auto shrink-0 pl-2 text-[11px] text-white/40">
+                                            <span className="ml-auto shrink-0 pl-2 text-xs text-white/40">
                                                 {shortTime(
                                                     conversation.last_message
                                                         .created_at,
@@ -149,8 +157,11 @@ export function ConversationList({
                                                 <span className="text-[#8fd8ff]">
                                                     {conversation.type ===
                                                     'group'
-                                                        ? `${typingName} друкує…`
-                                                        : 'друкує…'}
+                                                        ? tr(
+                                                              '{typingName} друкує…',
+                                                              { typingName },
+                                                          )
+                                                        : tr('друкує…')}
                                                 </span>
                                             ) : (
                                                 <Preview

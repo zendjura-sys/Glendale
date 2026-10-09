@@ -1,0 +1,106 @@
+<?php
+
+namespace App\Services\I18n;
+
+use App\Models\Comment;
+use App\Models\Message;
+use App\Models\Photo;
+use App\Models\Post;
+use App\Models\User;
+use App\Services\FriendshipService;
+use App\Services\PhotoService;
+use App\Support\I18n\Locales;
+use App\Support\Settings\SiteSettings;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+
+/**
+ * Кнопка «Перекласти» під записом, коментарем чи повідомленням: DeepL визначає мову тексту
+ * й перекладає мовою інтерфейсу людини. Переклад зберігається — повторно DeepL не викликаємо.
+ */
+class ContentTranslator
+{
+    public const TYPES = ['post', 'comment', 'message'];
+
+    public function __construct(
+        private readonly DeepL $deepl,
+        private readonly SiteSettings $settings,
+        private readonly FriendshipService $friendships,
+        private readonly PhotoService $photos,
+    ) {}
+
+    /** Кнопку показуємо, лише якщо є ключ DeepL і її не вимкнено в Адмінці → Мови. */
+    public function enabled(): bool
+    {
+        return $this->deepl->configured() && $this->settings->get('content_translation') !== false;
+    }
+
+    /**
+     * @return array{text: string, source: string|null, same: bool}
+     */
+    public function translate(string $type, int $id, User $user, string $locale): array
+    {
+        abort_unless($this->enabled(), 404);
+        $text = $this->textFor($type, $id, $user);
+        abort_if($text === null || trim($text) === '', 404);
+        $target = $this->deepl->target($locale);
+        if ($target === null) {
+            throw ValidationException::withMessages(['text' => 'Переклад цією мовою недоступний.']);
+        }
+        $hash = sha1($text);
+        $cached = DB::table('content_translations')->where(['type' => $type, 'item_id' => $id, 'locale' => $locale, 'hash' => $hash])->first(['text', 'source_lang']);
+        if ($cached !== null) {
+            $source = is_string($cached->source_lang) ? $cached->source_lang : null;
+
+            return ['text' => (string) $cached->text, 'source' => $source, 'same' => $source === Locales::primary($locale)];
+        }
+        $result = $this->deepl->content($text, $target);
+        if ($result === null) {
+            throw ValidationException::withMessages(['text' => 'Не вдалося перекласти — спробуйте пізніше.']);
+        }
+        DB::table('content_translations')->insertOrIgnore([
+            'type' => $type, 'item_id' => $id, 'locale' => $locale, 'hash' => $hash,
+            'text' => $result['text'], 'source_lang' => $result['source'] ?: null, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        return ['text' => $result['text'], 'source' => $result['source'] ?: null, 'same' => $result['source'] === Locales::primary($locale)];
+    }
+
+    /** Текст, якщо людина має право його бачити. */
+    private function textFor(string $type, int $id, User $user): ?string
+    {
+        return match ($type) {
+            'post' => Post::query()->visibleTo($user, $this->friendships->friendIds($user))->whereKey($id)->value('body'),
+            'comment' => $this->comment($id, $user),
+            'message' => $this->message($id, $user),
+            default => null,
+        };
+    }
+
+    private function comment(int $id, User $user): ?string
+    {
+        $comment = Comment::query()->find($id);
+        if (! $comment instanceof Comment) {
+            return null;
+        }
+        if ($comment->post_id !== null) {
+            $visible = Post::query()->visibleTo($user, $this->friendships->friendIds($user))->whereKey($comment->post_id)->exists();
+
+            return $visible ? $comment->body : null;
+        }
+        if ($comment->photo_id !== null) {
+            $photo = Photo::query()->with('album')->find($comment->photo_id);
+
+            return $photo instanceof Photo && $this->photos->canView($photo->album, $user) ? $comment->body : null;
+        }
+
+        return $comment->body;
+    }
+
+    private function message(int $id, User $user): ?string
+    {
+        $message = Message::query()->with('conversation')->find($id);
+
+        return $message instanceof Message && $message->conversation?->participantFor($user) !== null ? $message->body : null;
+    }
+}

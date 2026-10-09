@@ -3,6 +3,7 @@ import { Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PostMovie } from '@/types';
 import { MoviePoster, RatingBadge } from './movie-tile';
+import { tr } from '@/lib/i18n';
 
 /**
  * Фільм, прикріплений до запису на стіні.
@@ -27,7 +28,7 @@ export function MovieCardEmbed({
                     className="pointer-events-none absolute inset-0 size-full object-cover opacity-30 blur-[2px] transition duration-700 group-hover:scale-105"
                 />
             )}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#070914] via-[#070914]/85 to-[#070914]/40" />
+            <div className="absolute inset-0 bg-gradient-to-r from-gc-ink via-gc-ink/85 to-gc-ink/40" />
             <div className="relative flex gap-4 p-3.5">
                 <MoviePoster
                     movie={movie}
@@ -37,7 +38,7 @@ export function MovieCardEmbed({
                     <div className="flex items-center gap-2">
                         <RatingBadge value={movie.rating} />
                         {movie.age_rating && (
-                            <span className="rounded-md bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-white/70">
+                            <span className="rounded-md bg-white/10 px-1.5 py-0.5 text-xs font-semibold text-white/70">
                                 {movie.age_rating}
                             </span>
                         )}
@@ -57,11 +58,11 @@ export function MovieCardEmbed({
                         {movie.available ? (
                             <span className="btn-glow inline-flex h-8 items-center gap-1.5 rounded-lg px-3.5 text-xs font-semibold">
                                 <Play className="size-3.5 fill-current" />{' '}
-                                Дивитися
+                                {tr('Дивитися')}
                             </span>
                         ) : (
                             <span className="text-xs text-white/40">
-                                Фільм більше недоступний
+                                {tr('Фільм більше недоступний')}
                             </span>
                         )}
                     </span>
@@ -71,7 +72,7 @@ export function MovieCardEmbed({
     );
 
     const classes = cn(
-        'group relative block overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0a0c1c] transition hover:border-[#8fa0ff]/40',
+        'group relative block overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0a0c1c] transition hover:border-gc-lilac-400/40',
         className,
     );
 

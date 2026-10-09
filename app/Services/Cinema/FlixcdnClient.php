@@ -191,7 +191,7 @@ class FlixcdnClient
         if (! $response->successful() || ! is_array($json)) {
             throw new CinemaException('FlixCDN тимчасово недоступний.');
         }
-        if (isset($json['error']) && is_string($json['error']) && ! Arr::isList($json)) {
+        if (isset($json['error']) && is_string($json['error'])) {
             throw new CinemaException('FlixCDN: '.Str::limit($json['error'], 120));
         }
 
@@ -289,11 +289,11 @@ class FlixcdnClient
             return [];
         }
 
-        return collect($value)
+        return array_values(collect($value)
             ->map(fn ($v) => is_array($v) ? ($v['title'] ?? $v['name'] ?? null) : $v)
             ->filter(fn ($v) => is_scalar($v) && trim((string) $v) !== '')
             ->map(fn ($v) => trim((string) $v))
-            ->unique()->take(8)->values()->all();
+            ->unique()->take(8)->all());
     }
 
     private static function str(mixed $value): ?string

@@ -12,7 +12,7 @@ export default function TextLink({
     return (
         <Link
             className={cn(
-                'font-medium text-[#9aa8ff] transition-colors hover:text-white',
+                'font-medium text-gc-lilac-300 transition-colors hover:text-white',
                 className,
             )}
             {...props}

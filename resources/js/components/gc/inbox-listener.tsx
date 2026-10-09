@@ -5,6 +5,7 @@ import { useRealtime } from '@/hooks/use-realtime';
 import { inbox } from '@/lib/inbox';
 import type { ChatMessage, InboxEvent } from '@/types';
 import { UserAvatar } from './user-avatar';
+import { tr } from '@/lib/i18n';
 
 export function messagePreview(message: {
     body: string | null;
@@ -16,8 +17,8 @@ export function messagePreview(message: {
     if (message.preview) return message.preview;
 
     return message.has_attachments || message.attachments?.length
-        ? 'Фотографія'
-        : 'Повідомлення';
+        ? tr('Фотографія')
+        : tr('Повідомлення');
 }
 
 function notify(message: ChatMessage) {

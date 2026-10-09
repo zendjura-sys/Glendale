@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.2" baseProfile="tiny-ps" viewBox="0 0 512 512">
+  <title>GameCon</title>
+  <defs>
+    <linearGradient id="g" x1="128" y1="96" x2="416" y2="416" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6fa2ff"/>
+      <stop offset="0.55" stop-color="#8b6bff"/>
+      <stop offset="1" stop-color="#f04fd8"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#070b18"/>
+  <rect x="120" y="120" width="272" height="272" rx="62" fill="none" stroke="url(#g)" stroke-width="14"/>
+  <path d="M196 182c0-16 18-26 31-18l112 70c13 8 13 27 0 35l-112 70c-13 8-31-2-31-18V182z" fill="url(#g)"/>
+</svg>

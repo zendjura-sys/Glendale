@@ -6,6 +6,7 @@ export type GtaServerCard = {
     platform_label: string;
     multiplayer: string;
     multiplayer_label: string;
+    language: string;
     tagline: string | null;
     icon: string | null;
     website: string | null;

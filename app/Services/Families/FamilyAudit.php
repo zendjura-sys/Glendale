@@ -16,7 +16,7 @@ class FamilyAudit
     {
         return FamilyAuditLog::query()->create([
             'family_id' => $family->id,
-            'actor_user_id' => $actorUser?->id ?? $actor?->user_id,
+            'actor_user_id' => $actorUser->id ?? $actor?->user_id,
             'actor_member_id' => $actor?->id,
             'target_member_id' => $target?->id,
             'action' => $action,

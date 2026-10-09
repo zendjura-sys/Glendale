@@ -115,4 +115,24 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    | Адреси за типом листа. Порожньо — службові з MAIL_FROM_ADDRESS,
+    | соціальні з social@ того самого домену. Окремий DKIM не потрібен.
+    */
+
+    'updates' => [
+        'address' => env('MAIL_UPDATES_ADDRESS'),
+    ],
+
+    'social' => [
+        'address' => env('MAIL_SOCIAL_ADDRESS'),
+    ],
+
+    'markdown' => [
+        'theme' => 'default',
+        'paths' => [
+            resource_path('views/vendor/mail'),
+        ],
+    ],
+
 ];

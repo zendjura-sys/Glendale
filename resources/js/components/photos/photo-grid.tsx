@@ -13,7 +13,7 @@ export function PhotoTile({
         <button
             type="button"
             onClick={() => onOpen(photo)}
-            className="group relative aspect-square overflow-hidden rounded-2xl bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-[#7c8cff] focus-visible:outline-none"
+            className="group relative aspect-square overflow-hidden rounded-2xl bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-gc-lilac-500 focus-visible:outline-none"
         >
             <img
                 src={photo.url}

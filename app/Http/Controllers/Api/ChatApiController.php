@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\FriendshipService;
 use App\Services\Messenger;
 use App\Services\MessengerPresenter;
+use App\Services\Voice\Calls;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -31,14 +32,14 @@ class ChatApiController extends ApiController
         ]);
     }
 
-    public function show(Request $request, Conversation $conversation): JsonResponse
+    public function show(Request $request, Conversation $conversation, Calls $calls): JsonResponse
     {
         $user = $this->user($request);
         $me = $conversation->participantFor($user);
         abort_if($me === null, 404);
 
         return response()->json([
-            'conversation' => $this->presenter->details($conversation, $user, $me, $this->messenger),
+            'conversation' => [...$this->presenter->details($conversation, $user, $me, $this->messenger), ...$calls->forViewer($conversation, $user)],
             'history' => $this->presenter->history($conversation),
         ]);
     }

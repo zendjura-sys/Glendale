@@ -14,6 +14,7 @@ import { Field, inputClass } from '@/components/servers/server-form';
 import { uah } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type { FamilyShellProps } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Punishment = {
     id: number;
@@ -36,6 +37,7 @@ type Props = FamilyShellProps & {
     scope: 'me' | 'family';
     punishments: Punishment[];
     types: Record<string, string>;
+    mute_hours?: number[];
     config: {
         warn_days: number;
         warn_limit: number;
@@ -51,6 +53,7 @@ const typeTones: Record<string, string> = {
     fine: 'bg-rose-400/10 text-rose-200',
     demote: 'bg-violet-400/10 text-violet-200',
     kick: 'bg-rose-500/20 text-rose-100',
+    mute: 'bg-sky-400/10 text-sky-200',
 };
 
 export default function FamilyDiscipline(props: Props) {
@@ -62,38 +65,44 @@ export default function FamilyDiscipline(props: Props) {
         type: 'warn',
         reason: '',
         amount: '',
+        hours: 3,
     });
     const target = roster.find((m) => m.id === form.data.member_id);
 
     return (
-        <FamilyShell {...props} title="Дисципліна">
+        <FamilyShell {...props} title={tr('Дисципліна')}>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
                 <Metric
-                    label="Мої попередження"
+                    label={tr('Мої попередження')}
                     value={`${my_warns}/${config.warn_limit}`}
                     tone={my_warns > 0 ? 'text-rose-300' : 'text-emerald-300'}
                     icon={ShieldAlert}
                 />
                 <Metric
-                    label="Термін дії попередження"
-                    value={`${config.warn_days} дн.`}
+                    label={tr('Термін дії попередження')}
+                    value={tr('{warn_days} дн.', {
+                        warn_days: config.warn_days,
+                    })}
                     icon={Gavel}
                 />
                 <Metric
-                    label="При досягненні ліміту"
+                    label={tr('При досягненні ліміту')}
                     value={
                         config.escalation === 'kick'
-                            ? 'Виключення'
-                            : 'Пониження'
+                            ? tr('Виключення')
+                            : tr('Пониження')
                     }
-                    hint="Застосовується автоматично"
+                    hint={tr('Застосовується автоматично')}
                 />
             </div>
 
             {can['sanctions.issue'] && (
-                <Panel title="Видати покарання" icon={Gavel}>
-                    <div className="grid gap-3 lg:grid-cols-[1fr_200px_1.5fr_140px_auto]">
-                        <Field label="Учасник" error={form.errors.member_id}>
+                <Panel title={tr('Видати покарання')} icon={Gavel}>
+                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_200px_1.5fr_140px_auto]">
+                        <Field
+                            label={tr('Учасник')}
+                            error={form.errors.member_id}
+                        >
                             <select
                                 value={form.data.member_id}
                                 onChange={(e) =>
@@ -106,16 +115,17 @@ export default function FamilyDiscipline(props: Props) {
                                 }
                                 className={cn(selectClass, 'h-11 w-full')}
                             >
-                                <option value="">Оберіть…</option>
+                                <option value="">{tr('Оберіть…')}</option>
                                 {roster.map((m) => (
                                     <option key={m.id} value={m.id}>
-                                        {m.display} · р.{m.rank}
+                                        {m.display} {tr('· р.')}
+                                        {m.rank}
                                         {m.warns ? ` · ⚠${m.warns}` : ''}
                                     </option>
                                 ))}
                             </select>
                         </Field>
-                        <Field label="Тип" error={form.errors.type}>
+                        <Field label={tr('Тип')} error={form.errors.type}>
                             <select
                                 value={form.data.type}
                                 onChange={(e) =>
@@ -130,17 +140,48 @@ export default function FamilyDiscipline(props: Props) {
                                 ))}
                             </select>
                         </Field>
-                        <Field label="Причина" error={form.errors.reason}>
+                        <Field label={tr('Причина')} error={form.errors.reason}>
                             <input
                                 value={form.data.reason}
                                 onChange={(e) =>
                                     form.setData('reason', e.target.value)
                                 }
-                                placeholder="Пункт статуту або опис порушення"
+                                placeholder={tr(
+                                    'Пункт статуту або опис порушення',
+                                )}
                                 className={inputClass}
                             />
                         </Field>
-                        <Field label="Сума, ₴" error={form.errors.amount}>
+                        {form.data.type === 'mute' && (
+                            <Field
+                                label={tr('На скільки')}
+                                error={form.errors.hours}
+                            >
+                                <select
+                                    value={form.data.hours}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            'hours',
+                                            Number(e.target.value),
+                                        )
+                                    }
+                                    className={inputClass}
+                                >
+                                    {(
+                                        props.mute_hours ?? [
+                                            1, 3, 6, 12, 24, 72, 168,
+                                        ]
+                                    ).map((h) => (
+                                        <option key={h} value={h}>
+                                            {h < 24
+                                                ? tr('{h} год', { h })
+                                                : tr('{v} дн', { v: h / 24 })}
+                                        </option>
+                                    ))}
+                                </select>
+                            </Field>
+                        )}
+                        <Field label={tr('Сума, ₴')} error={form.errors.amount}>
                             <input
                                 value={form.data.amount}
                                 disabled={form.data.type !== 'fine'}
@@ -169,7 +210,7 @@ export default function FamilyDiscipline(props: Props) {
                                 }
                                 className={cn(btnPrimary, 'h-11 w-full')}
                             >
-                                Видати
+                                {tr('Видати')}
                             </button>
                         </div>
                     </div>
@@ -177,18 +218,18 @@ export default function FamilyDiscipline(props: Props) {
                         form.data.type === 'warn' &&
                         target.warns + 1 >= config.warn_limit && (
                             <p className="mt-2 text-xs text-rose-300">
-                                Це {target.warns + 1}-е попередження з{' '}
-                                {config.warn_limit} —{' '}
+                                {tr('Це')} {target.warns + 1}
+                                {tr('-е попередження з')} {config.warn_limit} —{' '}
                                 {config.escalation === 'kick'
-                                    ? 'учасника буде автоматично виключено.'
-                                    : 'ранг буде автоматично знижено.'}
+                                    ? tr('учасника буде автоматично виключено.')
+                                    : tr('ранг буде автоматично знижено.')}
                             </p>
                         )}
                 </Panel>
             )}
 
             <Panel
-                title="Історія"
+                title={tr('Історія')}
                 icon={ShieldAlert}
                 actions={
                     can['sanctions.issue'] && (
@@ -206,8 +247,8 @@ export default function FamilyDiscipline(props: Props) {
                                 )
                             }
                             options={[
-                                { value: 'family', label: 'Уся сім’я' },
-                                { value: 'me', label: 'Мої' },
+                                { value: 'family', label: tr('Уся сім’я') },
+                                { value: 'me', label: tr('Мої') },
                             ]}
                         />
                     )
@@ -216,7 +257,7 @@ export default function FamilyDiscipline(props: Props) {
                 {punishments.length === 0 ? (
                     <Empty
                         icon={ShieldAlert}
-                        text="Порушень немає — так тримати"
+                        text={tr('Порушень немає — так тримати')}
                     />
                 ) : (
                     <ul className="space-y-2">
@@ -230,7 +271,7 @@ export default function FamilyDiscipline(props: Props) {
                             >
                                 <span
                                     className={cn(
-                                        'rounded-full px-2.5 py-1 text-[11px] font-semibold',
+                                        'rounded-full px-2.5 py-1 text-xs font-semibold',
                                         typeTones[p.type] ??
                                             'bg-white/[0.06] text-white/60',
                                     )}
@@ -256,9 +297,15 @@ export default function FamilyDiscipline(props: Props) {
                                         {kyivDateTime(p.created_at)}
                                         {p.expires_at &&
                                             p.active &&
-                                            ` · діє до ${kyivDateTime(p.expires_at)}`}
+                                            tr(' · діє до {kyivDateTime}', {
+                                                kyivDateTime: kyivDateTime(
+                                                    p.expires_at,
+                                                ),
+                                            })}
                                         {p.revoked_at &&
-                                            ` · знято: ${p.revoke_reason}`}
+                                            tr(' · знято: {revoke_reason}', {
+                                                revoke_reason: p.revoke_reason,
+                                            })}
                                     </div>
                                 </div>
                                 {can['sanctions.issue'] &&
@@ -269,7 +316,9 @@ export default function FamilyDiscipline(props: Props) {
                                             type="button"
                                             onClick={() => {
                                                 const reason = prompt(
-                                                    'Причина зняття покарання',
+                                                    tr(
+                                                        'Причина зняття покарання',
+                                                    ),
                                                 );
                                                 if (reason) {
                                                     router.post(
@@ -283,7 +332,8 @@ export default function FamilyDiscipline(props: Props) {
                                             }}
                                             className="inline-flex items-center gap-1 text-xs text-white/45 hover:text-white"
                                         >
-                                            <Undo2 className="size-3.5" /> Зняти
+                                            <Undo2 className="size-3.5" />{' '}
+                                            {tr('Зняти')}
                                         </button>
                                     )}
                             </li>

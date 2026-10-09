@@ -21,6 +21,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useClipboard } from '@/hooks/use-clipboard';
 import { OTP_MAX_LENGTH } from '@/hooks/use-two-factor-auth';
 import { confirm } from '@/routes/two-factor';
+import { tr } from '@/lib/i18n';
 
 function GridScanIcon() {
     return (
@@ -96,7 +97,7 @@ function TwoFactorSetupStep({
                     <div className="relative flex w-full items-center justify-center">
                         <div className="absolute inset-0 top-1/2 h-px w-full bg-border" />
                         <span className="relative bg-card px-2 py-1">
-                            або введіть код вручну
+                            {tr('або введіть код вручну')}
                         </span>
                     </div>
 
@@ -202,7 +203,7 @@ function TwoFactorVerificationStep({
                                 onClick={onBack}
                                 disabled={processing}
                             >
-                                Назад
+                                {tr('Назад')}
                             </Button>
                             <Button
                                 type="submit"
@@ -211,7 +212,7 @@ function TwoFactorVerificationStep({
                                     processing || code.length < OTP_MAX_LENGTH
                                 }
                             >
-                                Підтвердити
+                                {tr('Підтвердити')}
                             </Button>
                         </div>
                     </div>
@@ -254,26 +255,28 @@ export default function TwoFactorSetupModal({
     }>(() => {
         if (twoFactorEnabled) {
             return {
-                title: 'Двофакторну автентифікацію ввімкнено',
-                description:
+                title: tr('Двофакторну автентифікацію ввімкнено'),
+                description: tr(
                     'Готово! Відскануйте QR-код або введіть ключ у застосунку-автентифікаторі.',
-                buttonText: 'Закрити',
+                ),
+                buttonText: tr('Закрити'),
             };
         }
 
         if (showVerificationStep) {
             return {
-                title: 'Підтвердіть код',
-                description: 'Введіть 6-значний код із застосунку',
-                buttonText: 'Продовжити',
+                title: tr('Підтвердіть код'),
+                description: tr('Введіть 6-значний код із застосунку'),
+                buttonText: tr('Продовжити'),
             };
         }
 
         return {
-            title: 'Увімкнення двофакторної автентифікації',
-            description:
+            title: tr('Увімкнення двофакторної автентифікації'),
+            description: tr(
                 'Відскануйте QR-код або введіть ключ налаштування у застосунку-автентифікаторі',
-            buttonText: 'Продовжити',
+            ),
+            buttonText: tr('Продовжити'),
         };
     }, [twoFactorEnabled, showVerificationStep]);
 

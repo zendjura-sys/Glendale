@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { compactNumber, formatBytes, timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { Paginated, PhotoThumb, UserCard } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type AdminPhoto = PhotoThumb & {
     caption: string | null;
@@ -50,25 +51,30 @@ export default function AdminPhotos({ photos, filters, stats }: Props) {
     };
 
     const remove = (photo: AdminPhoto) => {
-        if (photo.deleted_at && !confirm('Видалити фото назавжди?')) return;
+        if (photo.deleted_at && !confirm(tr('Видалити фото назавжди?'))) return;
         router.delete(`/admin/photos/${photo.id}`, { preserveScroll: true });
     };
 
     return (
         <>
-            <Head title="Фотографії — Адмін-панель" />
+            <Head title={tr('Фотографії — Адмін-панель')} />
             <PageHeader
-                title="Фотографії"
+                title={tr('Фотографії')}
                 description={
                     filters.trashed
-                        ? `У кошику: ${photos.total}`
-                        : 'Модерація фото з усіх альбомів мережі'
+                        ? tr('У кошику: {total}', { total: photos.total })
+                        : tr('Модерація фото з усіх альбомів мережі')
                 }
                 actions={
                     <div className="glass flex rounded-xl p-1 text-sm">
                         {[
-                            { label: 'Активні', value: false },
-                            { label: `Кошик (${stats.trashed})`, value: true },
+                            { label: tr('Активні'), value: false },
+                            {
+                                label: tr('Кошик ({trashed})', {
+                                    trashed: stats.trashed,
+                                }),
+                                value: true,
+                            },
                         ].map((tab) => (
                             <button
                                 key={String(tab.value)}
@@ -88,24 +94,24 @@ export default function AdminPhotos({ photos, filters, stats }: Props) {
                 }
             />
 
-            <div className="mb-5 grid gap-3 sm:grid-cols-3">
+            <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <StatCard
-                    label="Фотографій"
+                    label={tr('Фотографій')}
                     value={compactNumber(stats.photos)}
                     icon={Images}
                 />
                 <StatCard
-                    label="Альбомів"
+                    label={tr('Альбомів')}
                     value={compactNumber(stats.albums)}
                     icon={FolderOpen}
-                    tone="from-[#22d3a6] to-[#38e1ff]"
+                    tone="from-gc-mint to-gc-cyan"
                     delay={60}
                 />
                 <StatCard
-                    label="Займають на диску"
+                    label={tr('Займають на диску')}
                     value={formatBytes(stats.size)}
                     icon={HardDrive}
-                    tone="from-[#f04fd8] to-[#a855f7]"
+                    tone="from-gc-pink to-gc-purple"
                     delay={120}
                 />
             </div>
@@ -118,7 +124,7 @@ export default function AdminPhotos({ photos, filters, stats }: Props) {
                 <Input
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
-                    placeholder="Опис, автор або назва альбому"
+                    placeholder={tr('Опис, автор або назва альбому')}
                     className="h-10 pl-10"
                 />
             </form>
@@ -139,7 +145,7 @@ export default function AdminPhotos({ photos, filters, stats }: Props) {
                                 loading="lazy"
                                 className="size-full object-cover"
                             />
-                            <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 transition group-hover:opacity-100">
+                            <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 transition group-hover:opacity-100 [@media(hover:none)]:opacity-100">
                                 {photo.deleted_at && (
                                     <button
                                         type="button"
@@ -151,7 +157,7 @@ export default function AdminPhotos({ photos, filters, stats }: Props) {
                                             )
                                         }
                                         className="flex size-8 items-center justify-center rounded-lg bg-black/60 text-emerald-300 backdrop-blur hover:bg-black/80"
-                                        title="Відновити"
+                                        title={tr('Відновити')}
                                     >
                                         <RotateCcw className="size-4" />
                                     </button>
@@ -162,14 +168,14 @@ export default function AdminPhotos({ photos, filters, stats }: Props) {
                                     className="flex size-8 items-center justify-center rounded-lg bg-black/60 text-rose-300 backdrop-blur hover:bg-black/80"
                                     title={
                                         photo.deleted_at
-                                            ? 'Видалити назавжди'
-                                            : 'У кошик'
+                                            ? tr('Видалити назавжди')
+                                            : tr('У кошик')
                                     }
                                 >
                                     <Trash2 className="size-4" />
                                 </button>
                             </div>
-                            <div className="absolute inset-x-0 bottom-0 flex gap-3 bg-gradient-to-t from-black/75 to-transparent px-2.5 pt-6 pb-2 text-[11px] text-white/80">
+                            <div className="absolute inset-x-0 bottom-0 flex gap-3 bg-gradient-to-t from-black/75 to-transparent px-2.5 pt-6 pb-2 text-xs text-white/80">
                                 <span className="inline-flex items-center gap-1">
                                     <Heart className="size-3" />
                                     {photo.likes_count}
@@ -206,7 +212,7 @@ export default function AdminPhotos({ photos, filters, stats }: Props) {
             </div>
             {photos.data.length === 0 && (
                 <div className="glass rounded-3xl px-6 py-14 text-center text-sm text-white/40">
-                    Фотографій не знайдено
+                    {tr('Фотографій не знайдено')}
                 </div>
             )}
 

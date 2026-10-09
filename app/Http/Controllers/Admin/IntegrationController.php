@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Game;
 use App\Models\MovieSource;
+use App\Models\PushDevice;
 use App\Models\SpotifyAccount;
 use App\Models\User;
+use App\Models\VoiceParticipant;
+use App\Models\VoiceRoom;
 use App\Services\Auth\DiscordOAuth;
 use App\Services\Auth\FirebaseAuth;
 use App\Services\Cinema\CinemaException;
@@ -15,7 +19,13 @@ use App\Services\Cinema\KodikClient;
 use App\Services\Cinema\Metadata\OmdbProvider;
 use App\Services\Cinema\Metadata\ShikimoriProvider;
 use App\Services\Cinema\Metadata\TmdbProvider;
+use App\Services\Games\GameCatalog;
+use App\Services\Games\Igdb;
+use App\Services\I18n\DeepL;
+use App\Services\Presence\SteamPresence;
+use App\Services\Push\FcmClient;
 use App\Services\Spotify\SpotifyClient;
+use App\Services\Voice\LiveKit;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -38,6 +48,12 @@ class IntegrationController extends Controller
         private readonly OmdbProvider $omdb,
         private readonly DiscordOAuth $discord,
         private readonly FirebaseAuth $firebase,
+        private readonly FcmClient $fcm,
+        private readonly LiveKit $livekit,
+        private readonly GameCatalog $games,
+        private readonly Igdb $igdb,
+        private readonly SteamPresence $steam,
+        private readonly DeepL $deepl,
     ) {}
 
     public function index(): Response
@@ -103,7 +119,11 @@ class IntegrationController extends Controller
 
     public function updateCinema(Request $request, string $provider): RedirectResponse
     {
-        $fields = collect($this->cinemaProviders()[$provider]['fields'] ?? abort(404));
+        $meta = $this->cinemaProviders()[$provider] ?? null;
+        if (! is_array($meta) || ! isset($meta['fields']) || ! is_array($meta['fields'])) {
+            abort(404);
+        }
+        $fields = collect($this->providerFields($meta));
 
         if ($request->boolean('clear')) {
             foreach ($fields as $field) {
@@ -128,6 +148,9 @@ class IntegrationController extends Controller
             };
         }
         Cache::forget('cinema.meta.down.'.$provider);
+        if ($provider === 'push') {
+            $this->fcm->forgetAccessToken();
+        }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Налаштування '.$this->cinemaProviders()[$provider]['label'].' збережено.']);
 
@@ -152,31 +175,69 @@ class IntegrationController extends Controller
      */
     private function cinemaCards(): array
     {
-        return collect($this->cinemaProviders())->map(fn (array $p, string $key) => [
-            'key' => $key,
-            'label' => $p['label'],
-            'group' => $p['group'],
-            'description' => $p['description'],
-            'docs' => $p['docs'],
-            'steps' => $p['steps'],
-            'configured' => $p['configured'],
-            'stat' => $p['stat'] ?? null,
-            'fields' => collect($p['fields'])->map(function (array $f) {
-                $value = $f['type'] === 'secret' ? $this->settings->secret($f['setting']) : $this->settings->get($f['setting']);
-
-                return [
-                    'name' => $f['name'],
-                    'label' => $f['label'],
-                    'type' => $f['type'],
-                    'placeholder' => $f['placeholder'] ?? null,
-                    'help' => $f['help'] ?? null,
-                    'options' => $f['options'] ?? null,
-                    'value' => $f['type'] === 'secret' ? null : $value,
-                    'hint' => $f['type'] === 'secret' ? $this->hint($value ?: ($f['env'] ?? null)) : null,
-                    'from_env' => blank($value) && filled($f['env'] ?? null),
+        $cards = [];
+        foreach ($this->cinemaProviders() as $key => $provider) {
+            $fields = [];
+            foreach ($this->providerFields($provider) as $field) {
+                $setting = $field['setting'] ?? null;
+                $setting = is_string($setting) ? $setting : '';
+                $type = $field['type'] ?? null;
+                $value = $type === 'secret' ? $this->settings->secret($setting) : $this->settings->get($setting);
+                $env = $field['env'] ?? null;
+                $fields[] = [
+                    'name' => $field['name'] ?? null,
+                    'label' => $field['label'] ?? null,
+                    'type' => $type,
+                    'placeholder' => $field['placeholder'] ?? null,
+                    'help' => $field['help'] ?? null,
+                    'options' => $field['options'] ?? null,
+                    'value' => $type === 'secret' ? null : $value,
+                    'hint' => $type === 'secret' ? $this->hint(is_string($value) && $value !== '' ? $value : (is_string($env) ? $env : null)) : null,
+                    'from_env' => blank($value) && filled($env),
                 ];
-            })->values()->all(),
-        ])->values()->all();
+            }
+            $cards[] = [
+                'key' => $key,
+                'label' => $provider['label'] ?? null,
+                'group' => $provider['group'] ?? null,
+                'description' => $provider['description'] ?? null,
+                'docs' => $provider['docs'] ?? null,
+                'steps' => $provider['steps'] ?? null,
+                'configured' => $provider['configured'] ?? null,
+                'stat' => $provider['stat'] ?? null,
+                'fields' => $fields,
+            ];
+        }
+
+        return $cards;
+    }
+
+    /**
+     * @param  array<string, mixed>  $provider
+     * @return list<array<string, mixed>>
+     */
+    private function providerFields(array $provider): array
+    {
+        $raw = $provider['fields'] ?? null;
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        $fields = [];
+        foreach ($raw as $field) {
+            if (! is_array($field)) {
+                continue;
+            }
+            $row = [];
+            foreach ($field as $name => $value) {
+                if (is_string($name)) {
+                    $row[$name] = $value;
+                }
+            }
+            $fields[] = $row;
+        }
+
+        return $fields;
     }
 
     /**
@@ -192,12 +253,16 @@ class IntegrationController extends Controller
             'discord' => [
                 'label' => 'Discord',
                 'group' => 'auth',
-                'description' => 'Вхід і реєстрація в один клік, прив’язка Discord до профілю та RP-сімей.',
+                'description' => 'Вхід і реєстрація в один клік, прив’язка Discord до профілю та RP-сімей. З ботом — автоматичний статус «Граю в…» з Discord Rich Presence і події серверів із Discord у календарі.',
                 'docs' => 'https://discord.com/developers/applications',
                 'steps' => [
                     'Discord Developer Portal → New Application → OAuth2.',
                     'Додайте Redirect: '.$this->discord->redirectUri(),
                     'Скопіюйте Client ID і Client Secret сюди.',
+                    'Для статусу «Граю в…»: у тому ж застосунку → Bot → Reset Token, скопіюйте токен; увімкніть Presence Intent і Server Members Intent.',
+                    'OAuth2 → URL Generator → scope «bot» → відкрийте посилання й додайте бота на Discord-сервер GameCon. ID сервера: ПКМ по серверу → «Копіювати ID» (потрібен режим розробника).',
+                    'Гравці мають прив’язати Discord у GameCon, бути на цьому Discord-сервері й увімкнути показ активності.',
+                    'Календар: якщо адміністрація проєкту GTA додасть цього ж бота на свій Discord (посилання — на сторінці сервера в розділі «Події»), заплановані події того Discord самі з’являться в календарі GameCon.',
                 ],
                 'configured' => $this->discord->configured(),
                 'stat' => User::query()->whereNotNull('discord_id')->count().' профілів із Discord',
@@ -207,6 +272,10 @@ class IntegrationController extends Controller
                         'rules' => ['nullable', 'string', 'regex:/^\d{15,22}$/'], 'message' => 'Client ID Discord — це 15–22 цифри.'],
                     ['name' => 'client_secret', 'setting' => 'discord_client_secret', 'type' => 'secret', 'label' => 'Client Secret', 'env' => config('services.discord.client_secret'),
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_\-]{20,64}$/'], 'message' => 'Client Secret містить недопустимі символи.'],
+                    ['name' => 'bot_token', 'setting' => 'discord_bot_token', 'type' => 'secret', 'label' => 'Bot Token (статус «Граю в…»)', 'env' => config('services.discord.bot_token'),
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_\-\.]{50,100}$/'], 'message' => 'Токен бота Discord має вигляд «MTA…xxx.yyy.zzz».'],
+                    ['name' => 'guild_id', 'setting' => 'discord_guild_id', 'type' => 'text', 'label' => 'ID Discord-сервера GameCon', 'placeholder' => '123456789012345678',
+                        'rules' => ['nullable', 'string', 'regex:/^\d{15,22}$/'], 'message' => 'ID сервера Discord — це 15–22 цифри.'],
                 ],
             ],
             'firebase' => [
@@ -233,6 +302,95 @@ class IntegrationController extends Controller
                     ['name' => 'app_id', 'setting' => 'firebase_app_id', 'type' => 'text', 'label' => 'appId', 'placeholder' => '1:1234567890:web:abc123',
                         'help' => 'Обов’язково: з номера проєкту в appId сервер перевіряє, що токен Google виданий саме вашому сайту.',
                         'rules' => ['nullable', 'string', 'max:100', 'regex:/^\d+:\d+:web:[0-9a-f]+$/'], 'message' => 'appId має вигляд 1:123…:web:…'],
+                ],
+            ],
+            'push' => [
+                'label' => 'Push-сповіщення (Firebase)',
+                'group' => 'push',
+                'description' => 'Сповіщення дзвіночка й нові повідомлення чатів приходять у застосунок GameCon, навіть коли він закритий.',
+                'docs' => 'https://console.firebase.google.com',
+                'steps' => [
+                    'Firebase Console → Project settings → Cloud Messaging: переконайтеся, що Firebase Cloud Messaging API (V1) увімкнено.',
+                    'Project settings → Service accounts → Generate new private key — завантажиться JSON-файл.',
+                    'Відкрийте файл і вставте весь його вміст у поле нижче, потім натисніть «Перевірити».',
+                    'Проєкт має бути тим самим, що й у google-services.json застосунку (пакет online.gamecon.app).',
+                ],
+                'configured' => $this->fcm->configured(),
+                'stat' => PushDevice::query()->count().' пристроїв · '.PushDevice::query()->distinct()->count('user_id').' користувачів',
+                'test' => fn () => $this->fcm->testCredentials(),
+                'fields' => [
+                    ['name' => 'service_account', 'setting' => 'fcm_service_account', 'type' => 'secret', 'label' => 'Ключ сервісного акаунта (JSON)', 'placeholder' => '{"type": "service_account", …}',
+                        'env' => config('services.firebase.credentials'),
+                        'rules' => ['nullable', 'string', 'max:10000', fn (string $attribute, mixed $value, \Closure $fail) => is_string($value) && FcmClient::parse($value) === null
+                            ? $fail('Вставте повний JSON ключа сервісного акаунта Firebase (type: service_account).') : null],
+                    ],
+                ],
+            ],
+            'voice' => [
+                'label' => 'Голосові кімнати (LiveKit)',
+                'group' => 'voice',
+                'description' => 'Голосові канали сімей і спільнот на сайті й у застосунку — як у Discord. Звук іде через ваш сервер LiveKit.',
+                'docs' => 'https://docs.livekit.io/home/self-hosting/deployment/',
+                'steps' => [
+                    'Встановіть LiveKit на сервер: sudo bash deploy/livekit/setup-livekit.sh — скрипт видасть адресу, API Key і Secret.',
+                    'Вставте їх нижче й натисніть «Перевірити».',
+                    'Вебхук LiveKit скрипт уже налаштував на '.url('/api/livekit/webhook').' — так сайт бачить, хто в кімнаті.',
+                ],
+                'configured' => $this->livekit->configured(),
+                'stat' => VoiceRoom::query()->count().' кімнат · '.VoiceParticipant::query()->count().' зараз у голосі',
+                'test' => fn () => $this->livekit->test(),
+                'fields' => [
+                    ['name' => 'url', 'setting' => 'livekit_url', 'type' => 'text', 'label' => 'Адреса сервера', 'placeholder' => 'wss://voice.gamecon.online',
+                        'env' => config('services.livekit.url'),
+                        'rules' => ['nullable', 'string', 'max:255', 'regex:#^wss?://[^\s]+$#'], 'message' => 'Адреса має починатися з wss://'],
+                    ['name' => 'api_key', 'setting' => 'livekit_api_key', 'type' => 'text', 'label' => 'API Key', 'placeholder' => 'APIxxxxxxxx',
+                        'env' => config('services.livekit.key'),
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_\-]{6,64}$/'], 'message' => 'API Key — латинські літери й цифри.'],
+                    ['name' => 'api_secret', 'setting' => 'livekit_api_secret', 'type' => 'secret', 'label' => 'API Secret',
+                        'env' => config('services.livekit.secret'),
+                        'rules' => ['nullable', 'string', 'min:16', 'max:128'], 'message' => 'Секрет LiveKit — щонайменше 16 символів.'],
+                ],
+            ],
+            'igdb' => [
+                'label' => 'Каталог ігор (IGDB)',
+                'group' => 'games',
+                'description' => 'Основне джерело каталогу мультиплеєрних ігор (база Twitch): ПК, телефони й консолі — обкладинки, жанри й прямі посилання на Steam, Google Play, App Store, Epic та інші магазини.',
+                'docs' => 'https://api-docs.igdb.com/#account-creation',
+                'steps' => [
+                    'Увійдіть на dev.twitch.tv акаунтом Twitch (потрібна двоетапна автентифікація в налаштуваннях Twitch).',
+                    'Your Console → Applications → Register Your Application: назва будь-яка, OAuth Redirect URL — http://localhost, категорія — Website Integration, тип клієнта — Confidential.',
+                    'Відкрийте застосунок (Manage), скопіюйте Client ID, натисніть «New Secret» і скопіюйте Client Secret.',
+                    'Вставте обидва значення нижче й натисніть «Перевірити». Безкоштовно.',
+                    'Каталог оновлюється щодня о 04:40; першу синхронізацію можна запустити одразу: php artisan games:sync',
+                ],
+                'configured' => $this->igdb->configured(),
+                'stat' => Game::query()->whereNotNull('igdb_id')->count().' ігор з IGDB · усього '.Game::query()->count(),
+                'test' => fn () => $this->igdb->test(),
+                'fields' => [
+                    ['name' => 'client_id', 'setting' => 'igdb_client_id', 'type' => 'text', 'label' => 'Client ID', 'placeholder' => 'abcdefghij0123456789abcdefghij',
+                        'env' => config('services.igdb.client_id'),
+                        'rules' => ['nullable', 'string', 'regex:/^[a-z0-9]{20,40}$/'], 'message' => 'Client ID — 20–40 малих латинських літер і цифр.'],
+                    ['name' => 'client_secret', 'setting' => 'igdb_client_secret', 'type' => 'secret', 'label' => 'Client Secret',
+                        'env' => config('services.igdb.client_secret'),
+                        'rules' => ['nullable', 'string', 'regex:/^[a-z0-9]{20,40}$/'], 'message' => 'Client Secret — 20–40 малих латинських літер і цифр.'],
+                ],
+            ],
+            'rawg' => [
+                'label' => 'Каталог ігор (RAWG)',
+                'group' => 'games',
+                'description' => 'Запасне джерело каталогу ігор: використовується, лише якщо IGDB не налаштовано.',
+                'docs' => 'https://rawg.io/apidocs',
+                'steps' => [
+                    'Зареєструйтеся на rawg.io і відкрийте rawg.io/apidocs → «Get API Key» (безкоштовно, до 20 000 запитів на місяць).',
+                    'Вставте ключ нижче й натисніть «Перевірити».',
+                    'Каталог оновлюється щодня о 04:40; першу синхронізацію можна запустити одразу: php artisan games:sync',
+                ],
+                'configured' => $this->games->key() !== null,
+                'stat' => Game::query()->whereNotNull('rawg_id')->count().' ігор з RAWG',
+                'test' => fn () => $this->games->test(),
+                'fields' => [
+                    ['name' => 'key', 'setting' => 'rawg_key', 'type' => 'secret', 'label' => 'API Key', 'env' => config('services.rawg.key'),
+                        'rules' => ['nullable', 'string', 'regex:/^[a-f0-9]{32}$/'], 'message' => 'Ключ RAWG — 32 символи (цифри й літери a–f).'],
                 ],
             ],
             'kodik' => [
@@ -303,6 +461,41 @@ class IntegrationController extends Controller
                 'fields' => [
                     ['name' => 'enabled', 'setting' => 'shikimori_enabled', 'type' => 'bool', 'label' => 'Використовувати Shikimori', 'rules' => ['required', 'boolean']],
                     ['name' => 'url', 'setting' => 'shikimori_url', 'type' => 'url', 'label' => 'Дзеркало', 'placeholder' => 'https://shikimori.one', 'rules' => $url],
+                ],
+            ],
+            'steam' => [
+                'label' => 'Steam',
+                'group' => 'games',
+                'description' => 'Автоматичний статус «Граю в…» для ПК-ігор: хто прив’язав профіль Steam, у того статус ставиться сам.',
+                'docs' => 'https://steamcommunity.com/dev/apikey',
+                'steps' => [
+                    'Відкрийте steamcommunity.com/dev/apikey (потрібен акаунт Steam), домен — gamecon.online.',
+                    'Скопіюйте ключ сюди й натисніть «Перевірити».',
+                    'Гравці прив’язують профіль у Налаштування → «Граю в…»; профіль і «Деталі гри» в Steam мають бути відкриті.',
+                ],
+                'configured' => $this->steam->configured(),
+                'stat' => User::query()->whereNotNull('steam_id')->count().' профілів зі Steam',
+                'test' => fn () => $this->steam->test(),
+                'fields' => [
+                    ['name' => 'key', 'setting' => 'steam_api_key', 'type' => 'secret', 'label' => 'Web API Key', 'env' => config('services.steam.key'),
+                        'rules' => ['nullable', 'string', 'regex:/^[A-F0-9]{32}$/'], 'message' => 'Ключ Steam — 32 символи (цифри й літери A–F).'],
+                ],
+            ],
+            'deepl' => [
+                'label' => 'DeepL',
+                'group' => 'translate',
+                'description' => 'Автопереклад інтерфейсу на додані мови (Адмінка → Мови) і кнопка «Перекласти» під записами та коментарями.',
+                'docs' => 'https://www.deepl.com/pro-api',
+                'steps' => [
+                    'Зареєструйтеся на deepl.com → DeepL API (Free — до 500 000 символів на місяць безкоштовно, або Pro).',
+                    'Account → API Keys → скопіюйте ключ. Ключ Free закінчується на «:fx».',
+                    'Вставте ключ нижче й натисніть «Перевірити», потім додайте мови в Адмінці → Мови.',
+                ],
+                'configured' => $this->deepl->configured(),
+                'test' => fn () => $this->deepl->test(),
+                'fields' => [
+                    ['name' => 'key', 'setting' => 'deepl_key', 'type' => 'secret', 'label' => 'Authentication Key', 'env' => config('services.deepl.key'),
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9\-]{30,48}(:fx)?$/'], 'message' => 'Ключ DeepL має вигляд xxxxxxxx-xxxx-…:fx'],
                 ],
             ],
             'omdb' => [

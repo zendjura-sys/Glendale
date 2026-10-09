@@ -38,8 +38,7 @@ class FamilyRating
 
         return Cache::remember("family.rating.{$family->id}.{$period}.{$version}", now()->addMinutes(5), function () use ($family, $since) {
             $rating = $family->resolvedSettings()['rating'];
-            $rows = [];
-            $row = fn () => ['points' => 0, 'bizwar_wins' => 0, 'bizwar_losses' => 0, 'contracts' => 0, 'invested' => 0, 'events' => 0, 'earned' => 0];
+            $rows = $this->emptyScores();
 
             FamilyReport::query()
                 ->where('family_id', $family->id)
@@ -47,34 +46,35 @@ class FamilyRating
                 ->when($since, fn ($q, CarbonImmutable $s) => $q->where('event_date', '>=', $s->toDateString()))
                 ->select(['id', 'type', 'beneficiary_id', 'data', 'reward'])
                 ->lazyById(1000)
-                ->each(function (FamilyReport $report) use (&$rows, $rating, $row) {
-                    $r = &$rows[$report->beneficiary_id];
-                    $r ??= $row();
+                ->each(function (FamilyReport $report) use (&$rows, $rating) {
+                    $id = $report->beneficiary_id;
+                    if (! array_key_exists($id, $rows)) {
+                        $rows[$id] = $this->blankScore();
+                    }
                     $data = $report->data ?? [];
-                    $r['earned'] += $report->reward;
+                    $rows[$id]['earned'] += $report->reward;
 
                     switch ($report->type) {
                         case FamilyReport::TYPE_BIZWAR:
-                            $r['bizwar_wins'] += (int) ($data['wins'] ?? 0);
-                            $r['bizwar_losses'] += (int) ($data['losses'] ?? 0);
+                            $rows[$id]['bizwar_wins'] += (int) ($data['wins'] ?? 0);
+                            $rows[$id]['bizwar_losses'] += (int) ($data['losses'] ?? 0);
                             if ($rating['bizwar']) {
-                                $r['points'] += (int) ($data['wins'] ?? 0) * (int) $rating['points_bizwar_win'] + (int) ($data['losses'] ?? 0) * (int) $rating['points_bizwar_loss'];
+                                $rows[$id]['points'] += (int) ($data['wins'] ?? 0) * (int) $rating['points_bizwar_win'] + (int) ($data['losses'] ?? 0) * (int) $rating['points_bizwar_loss'];
                             }
                             break;
                         case FamilyReport::TYPE_CONTRACT:
-                            $r['contracts'] += (int) ($data['count'] ?? 0);
+                            $rows[$id]['contracts'] += (int) ($data['count'] ?? 0);
                             if ($rating['contracts']) {
-                                $r['points'] += (int) ($data['count'] ?? 0) * (int) ($rating['points_contract_'.($data['tier'] ?? 'light')] ?? 0);
+                                $rows[$id]['points'] += (int) ($data['count'] ?? 0) * (int) ($rating['points_contract_'.($data['tier'] ?? 'light')] ?? 0);
                             }
                             break;
                         case FamilyReport::TYPE_INVESTMENT:
-                            $r['invested'] += (int) ($data['amount'] ?? 0);
+                            $rows[$id]['invested'] += (int) ($data['amount'] ?? 0);
                             if ($rating['investments']) {
-                                $r['points'] += intdiv((int) ($data['amount'] ?? 0), 100_000) * (int) $rating['points_per_1000'];
+                                $rows[$id]['points'] += intdiv((int) ($data['amount'] ?? 0), 100_000) * (int) $rating['points_per_1000'];
                             }
                             break;
                     }
-                    unset($r);
                 });
 
             FamilyEventAttendance::query()
@@ -84,15 +84,19 @@ class FamilyRating
                 ->where('family_event_attendance.status', FamilyEventAttendance::STATUS_ATTENDED)
                 ->when($since, fn ($q, CarbonImmutable $s) => $q->where('family_events.starts_at', '>=', $s->utc()))
                 ->get(['family_event_attendance.member_id', 'family_events.points', 'family_events.reward'])
-                ->each(function ($a) use (&$rows, $rating, $row) {
-                    $r = &$rows[$a->member_id];
-                    $r ??= $row();
-                    $r['events']++;
-                    $r['earned'] += (int) $a->reward;
-                    if ($rating['events']) {
-                        $r['points'] += (int) $a->points > 0 ? (int) $a->points : (int) $rating['points_event'];
+                ->each(function (FamilyEventAttendance $a) use (&$rows, $rating) {
+                    $id = $a->member_id;
+                    if (! array_key_exists($id, $rows)) {
+                        $rows[$id] = $this->blankScore();
                     }
-                    unset($r);
+                    $rows[$id]['events']++;
+                    $reward = $a->getAttribute('reward');
+                    $points = $a->getAttribute('points');
+                    $rows[$id]['earned'] += is_numeric($reward) ? (int) $reward : 0;
+                    if ($rating['events']) {
+                        $pointValue = is_numeric($points) ? (int) $points : 0;
+                        $rows[$id]['points'] += $pointValue > 0 ? $pointValue : (int) $rating['points_event'];
+                    }
                 });
 
             $members = FamilyMember::query()->with('user')
@@ -100,13 +104,31 @@ class FamilyRating
                 ->where('status', FamilyMember::STATUS_ACTIVE)
                 ->get();
 
-            return $members
-                ->map(fn (FamilyMember $m) => [...$m->toCard($family), ...($rows[$m->id] ?? $row())])
+            $ranked = $members
+                ->map(fn (FamilyMember $m) => [...$m->toCard($family), ...(array_key_exists($m->id, $rows) ? $rows[$m->id] : $this->blankScore())])
                 ->sortByDesc(fn (array $r) => [$r['points'], $r['earned']])
                 ->values()
                 ->map(fn (array $r, int $i) => [...$r, 'place' => $i + 1])
                 ->all();
+
+            return array_values($ranked);
         });
+    }
+
+    /**
+     * @return array{points: int, bizwar_wins: int, bizwar_losses: int, contracts: int, invested: int, events: int, earned: int}
+     */
+    private function blankScore(): array
+    {
+        return ['points' => 0, 'bizwar_wins' => 0, 'bizwar_losses' => 0, 'contracts' => 0, 'invested' => 0, 'events' => 0, 'earned' => 0];
+    }
+
+    /**
+     * @return array<int, array{points: int, bizwar_wins: int, bizwar_losses: int, contracts: int, invested: int, events: int, earned: int}>
+     */
+    private function emptyScores(): array
+    {
+        return [];
     }
 
     /**

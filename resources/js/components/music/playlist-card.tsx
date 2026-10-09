@@ -45,7 +45,7 @@ export function PlaylistCover({
                 />
             ) : (
                 <div className="flex size-full items-center justify-center">
-                    <span className="absolute size-2/3 rounded-full bg-[#6d5dfc]/30 blur-2xl" />
+                    <span className="absolute size-2/3 rounded-full bg-gc-indigo/30 blur-2xl" />
                     <Music2 className="relative size-1/3 text-white/60" />
                 </div>
             )}
@@ -56,7 +56,7 @@ export function PlaylistCover({
 export function PlaylistTile({ playlist }: { playlist: Playlist }) {
     return (
         <Link href={`/music/playlists/${playlist.id}`} className="group block">
-            <div className="relative overflow-hidden rounded-2xl shadow-[0_18px_40px_-20px_rgb(109_93_252/0.7)] ring-1 ring-white/10 transition duration-300 group-hover:-translate-y-1 group-hover:ring-[#8fa0ff]/40">
+            <div className="relative overflow-hidden rounded-2xl shadow-[0_18px_40px_-20px_rgb(109_93_252/0.7)] ring-1 ring-white/10 transition duration-300 group-hover:-translate-y-1 group-hover:ring-gc-lilac-400/40">
                 <PlaylistCover
                     playlist={playlist}
                     className="transition duration-500 group-hover:scale-105"

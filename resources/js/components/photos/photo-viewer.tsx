@@ -29,6 +29,7 @@ import {
 import { api, ApiError } from '@/lib/api';
 import { compactNumber, timeAgo } from '@/lib/format';
 import type { CommentItem, PhotoDetails, PhotoShowResponse } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     photoId: number | null;
@@ -70,8 +71,8 @@ export function PhotoViewer({
             .catch((error) => {
                 toast.error(
                     error instanceof ApiError && error.status === 404
-                        ? 'Фото недоступне.'
-                        : 'Не вдалося відкрити фото.',
+                        ? tr('Фото недоступне.')
+                        : tr('Не вдалося відкрити фото.'),
                 );
                 onClose();
             });
@@ -135,13 +136,13 @@ export function PhotoViewer({
         await api('POST', `/photos/${photo.id}/cover`);
         patch({ is_cover: true });
         onCover?.(photo);
-        toast.success('Обкладинку альбому оновлено.');
+        toast.success(tr('Обкладинку альбому оновлено.'));
     };
 
     const remove = async () => {
-        if (!photo || !window.confirm('Видалити це фото?')) return;
+        if (!photo || !window.confirm(tr('Видалити це фото?'))) return;
         await api('DELETE', `/photos/${photo.id}`);
-        toast.success('Фото видалено.');
+        toast.success(tr('Фото видалено.'));
         onDeleted?.(photo.id);
         const next = photo.next_id ?? photo.prev_id;
         if (next) onNavigate(next);
@@ -153,7 +154,7 @@ export function PhotoViewer({
         await navigator.clipboard?.writeText(
             `${window.location.origin}/albums/${photo.album.id}?photo=${photo.id}`,
         );
-        toast.success('Посилання скопійовано.');
+        toast.success(tr('Посилання скопійовано.'));
     };
 
     const imageUrl = photo?.url ?? previewUrl ?? null;
@@ -171,7 +172,7 @@ export function PhotoViewer({
                     className="fixed inset-0 z-50 flex flex-col outline-none lg:flex-row"
                 >
                     <DialogPrimitive.Title className="sr-only">
-                        Перегляд фото
+                        {tr('Перегляд фото')}
                     </DialogPrimitive.Title>
 
                     <div
@@ -196,7 +197,7 @@ export function PhotoViewer({
                                 type="button"
                                 onClick={() => onNavigate(photo.prev_id!)}
                                 className="absolute top-1/2 left-3 flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/[0.06] text-white/80 ring-1 ring-white/10 backdrop-blur transition hover:bg-white/15 hover:text-white sm:left-6"
-                                aria-label="Попереднє фото"
+                                aria-label={tr('Попереднє фото')}
                             >
                                 <ChevronLeft className="size-6" />
                             </button>
@@ -206,7 +207,7 @@ export function PhotoViewer({
                                 type="button"
                                 onClick={() => onNavigate(photo.next_id!)}
                                 className="absolute top-1/2 right-3 flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/[0.06] text-white/80 ring-1 ring-white/10 backdrop-blur transition hover:bg-white/15 hover:text-white sm:right-6"
-                                aria-label="Наступне фото"
+                                aria-label={tr('Наступне фото')}
                             >
                                 <ChevronRight className="size-6" />
                             </button>
@@ -215,7 +216,7 @@ export function PhotoViewer({
                         <div className="absolute top-3 left-3 flex items-center gap-2 sm:top-5 sm:left-6">
                             {photo && (
                                 <span className="rounded-full bg-black/40 px-3 py-1.5 text-xs font-medium text-white/75 backdrop-blur">
-                                    {photo.position} з{' '}
+                                    {photo.position} {tr('з')}{' '}
                                     {photo.album.photos_count} ·{' '}
                                     <Link
                                         href={`/albums/${photo.album.id}`}
@@ -228,7 +229,7 @@ export function PhotoViewer({
                         </div>
                         <DialogPrimitive.Close
                             className="absolute top-3 right-3 flex size-10 items-center justify-center rounded-full bg-white/[0.06] text-white/80 ring-1 ring-white/10 backdrop-blur transition hover:bg-white/15 hover:text-white sm:top-5 sm:right-6 lg:hidden"
-                            aria-label="Закрити"
+                            aria-label={tr('Закрити')}
                         >
                             <X className="size-5" />
                         </DialogPrimitive.Close>
@@ -268,7 +269,9 @@ export function PhotoViewer({
                                             {timeAgo(photo!.created_at)}
                                             {photo!.user &&
                                                 owner.type === 'community' &&
-                                                ` · додав(ла) ${photo!.user.name}`}
+                                                tr(' · додав(ла) {name}', {
+                                                    name: photo!.user.name,
+                                                })}
                                         </p>
                                     </div>
                                 </>
@@ -292,7 +295,8 @@ export function PhotoViewer({
                                             className={itemClass}
                                             onSelect={copyLink}
                                         >
-                                            <Link2 /> Копіювати посилання
+                                            <Link2 />{' '}
+                                            {tr('Копіювати посилання')}
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
                                             className={itemClass}
@@ -304,7 +308,7 @@ export function PhotoViewer({
                                                 target="_blank"
                                                 rel="noreferrer"
                                             >
-                                                <Download /> Завантажити
+                                                <Download /> {tr('Завантажити')}
                                             </a>
                                         </DropdownMenuItem>
                                         {photo.can.edit && (
@@ -317,7 +321,8 @@ export function PhotoViewer({
                                                     setEditing(true);
                                                 }}
                                             >
-                                                <PenLine /> Редагувати опис
+                                                <PenLine />{' '}
+                                                {tr('Редагувати опис')}
                                             </DropdownMenuItem>
                                         )}
                                         {photo.can.cover && !photo.is_cover && (
@@ -325,8 +330,8 @@ export function PhotoViewer({
                                                 className={itemClass}
                                                 onSelect={makeCover}
                                             >
-                                                <ImageIcon /> Зробити
-                                                обкладинкою
+                                                <ImageIcon />{' '}
+                                                {tr('Зробити обкладинкою')}
                                             </DropdownMenuItem>
                                         )}
                                         {photo.can.delete && (
@@ -337,7 +342,7 @@ export function PhotoViewer({
                                                     onSelect={remove}
                                                 >
                                                     <Trash2 className="text-rose-300" />{' '}
-                                                    Видалити фото
+                                                    {tr('Видалити фото')}
                                                 </DropdownMenuItem>
                                             </>
                                         )}
@@ -346,7 +351,7 @@ export function PhotoViewer({
                             )}
                             <DialogPrimitive.Close
                                 className="hidden rounded-full p-1.5 text-white/50 transition hover:bg-white/[0.06] hover:text-white lg:block"
-                                aria-label="Закрити"
+                                aria-label={tr('Закрити')}
                             >
                                 <X className="size-5" />
                             </DialogPrimitive.Close>
@@ -367,7 +372,9 @@ export function PhotoViewer({
                                                 maxLength={500}
                                                 rows={3}
                                                 autoFocus
-                                                placeholder="Опис фотографії"
+                                                placeholder={tr(
+                                                    'Опис фотографії',
+                                                )}
                                                 className="input-glass w-full resize-none rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none"
                                             />
                                             <div className="mt-2 flex justify-end gap-2">
@@ -378,14 +385,14 @@ export function PhotoViewer({
                                                     }
                                                     className="rounded-lg px-3 py-1.5 text-xs text-white/60 hover:bg-white/5 hover:text-white"
                                                 >
-                                                    Скасувати
+                                                    {tr('Скасувати')}
                                                 </button>
                                                 <button
                                                     type="button"
                                                     onClick={saveCaption}
                                                     className="btn-glow rounded-lg px-4 py-1.5 text-xs font-semibold"
                                                 >
-                                                    Зберегти
+                                                    {tr('Зберегти')}
                                                 </button>
                                             </div>
                                         </div>
@@ -404,8 +411,8 @@ export function PhotoViewer({
                                             onToggle={toggleLike}
                                         />
                                         {photo.is_cover && (
-                                            <span className="rounded-full bg-[#6d5dfc]/15 px-3 py-1.5 text-xs font-medium text-[#b3bcff]">
-                                                Обкладинка альбому
+                                            <span className="rounded-full bg-gc-indigo/15 px-3 py-1.5 text-xs font-medium text-[#b3bcff]">
+                                                {tr('Обкладинка альбому')}
                                             </span>
                                         )}
                                         <span className="ml-auto inline-flex items-center gap-1.5 text-xs text-white/40">
@@ -428,7 +435,9 @@ export function PhotoViewer({
                                         />
                                     ) : (
                                         <p className="border-t border-white/[0.06] pt-4 text-center text-xs text-white/40">
-                                            Коментарі до цього альбому вимкнено.
+                                            {tr(
+                                                'Коментарі до цього альбому вимкнено.',
+                                            )}
                                         </p>
                                     )}
                                 </>

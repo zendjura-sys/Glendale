@@ -37,7 +37,7 @@ class ProofHasher
             $bits = '';
             for ($y = 0; $y < 8; $y++) {
                 for ($x = 0; $x < 8; $x++) {
-                    $bits .= $this->luma($image->pickColor($x, $y)->toArray()) > $this->luma($image->pickColor($x + 1, $y)->toArray()) ? '1' : '0';
+                    $bits .= $this->luma($this->channels($image->pickColor($x, $y)->toArray())) > $this->luma($this->channels($image->pickColor($x + 1, $y)->toArray())) ? '1' : '0';
                 }
             }
             $phash = str_pad(base_convert(substr($bits, 0, 32), 2, 16), 8, '0', STR_PAD_LEFT)
@@ -104,10 +104,32 @@ class ProofHasher
     }
 
     /**
-     * @param  array<string, mixed>  $rgba
+     * Channel values from Intervention Image color arrays are a list (R, G, B, …).
+     *
+     * @param  array<mixed>  $rgba
+     * @return list<int|float>
+     */
+    private function channels(array $rgba): array
+    {
+        $channels = [];
+        foreach ($rgba as $value) {
+            if (is_int($value) || is_float($value)) {
+                $channels[] = $value;
+            }
+        }
+
+        return $channels;
+    }
+
+    /**
+     * @param  list<int|float>|array{0: int|float, 1: int|float, 2: int|float}  $rgba
      */
     private function luma(array $rgba): float
     {
-        return 0.299 * (float) ($rgba[0] ?? 0) + 0.587 * (float) ($rgba[1] ?? 0) + 0.114 * (float) ($rgba[2] ?? 0);
+        $red = array_key_exists(0, $rgba) ? (float) $rgba[0] : 0.0;
+        $green = array_key_exists(1, $rgba) ? (float) $rgba[1] : 0.0;
+        $blue = array_key_exists(2, $rgba) ? (float) $rgba[2] : 0.0;
+
+        return 0.299 * $red + 0.587 * $green + 0.114 * $blue;
     }
 }

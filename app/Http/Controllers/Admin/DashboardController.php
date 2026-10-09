@@ -77,10 +77,10 @@ class DashboardController extends Controller
             ->groupBy('d')
             ->pluck('c', 'd');
 
-        return collect(range(0, $days - 1))->map(function (int $offset) use ($from, $users, $posts) {
+        return array_values(collect(range(0, $days - 1))->map(function (int $offset) use ($from, $users, $posts) {
             $date = $from->addDays($offset)->toDateString();
 
             return ['date' => $date, 'users' => (int) ($users[$date] ?? 0), 'posts' => (int) ($posts[$date] ?? 0)];
-        })->all();
+        })->all());
     }
 }

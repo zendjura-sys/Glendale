@@ -33,6 +33,7 @@ import type {
     MembershipStatus,
     ScrollData,
 } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Tab = 'all' | 'managers' | 'friends' | 'requests';
 
@@ -47,9 +48,9 @@ type Props = {
 };
 
 const roleStyle: Record<CommunityRole, string> = {
-    owner: 'bg-[#ffd36b]/10 text-[#ffd36b]',
-    admin: 'bg-[#4f8bff]/10 text-[#8fb4ff]',
-    editor: 'bg-[#a855f7]/10 text-[#cfa8ff]',
+    owner: 'bg-gc-gold/10 text-gc-gold',
+    admin: 'bg-gc-blue/10 text-[#8fb4ff]',
+    editor: 'bg-gc-purple/10 text-[#cfa8ff]',
     member: '',
 };
 
@@ -86,18 +87,22 @@ export default function CommunityMembers({
     const tabs: { value: Tab; label: string }[] = [
         {
             value: 'all',
-            label: community.type === 'public' ? 'Підписники' : 'Учасники',
+            label:
+                community.type === 'public' ? tr('Підписники') : tr('Учасники'),
         },
-        { value: 'managers', label: 'Керівники' },
-        { value: 'friends', label: 'Друзі' },
-        ...(isAdmin ? [{ value: 'requests' as Tab, label: 'Заявки' }] : []),
+        { value: 'managers', label: tr('Керівники') },
+        { value: 'friends', label: tr('Друзі') },
+        ...(isAdmin ? [{ value: 'requests' as Tab, label: tr('Заявки') }] : []),
     ];
 
     const setRole = (member: CommunityMemberItem, role: CommunityRole) => {
         if (
             role === 'owner' &&
             !window.confirm(
-                `Передати права власника ${member.name}? Ви станете адміністратором.`,
+                tr(
+                    'Передати права власника {name}? Ви станете адміністратором.',
+                    { name: member.name },
+                ),
             )
         ) {
             return;
@@ -106,7 +111,11 @@ export default function CommunityMembers({
     };
 
     const remove = (member: CommunityMemberItem) => {
-        if (window.confirm(`Виключити ${member.name} зі спільноти?`)) {
+        if (
+            window.confirm(
+                tr('Виключити {name} зі спільноти?', { name: member.name }),
+            )
+        ) {
             router.delete(`${base}/${member.username}`, options);
         }
     };
@@ -118,15 +127,15 @@ export default function CommunityMembers({
 
     return (
         <>
-            <Head title={`Учасники — ${community.name}`} />
+            <Head title={tr('Учасники — {name}', { name: community.name })} />
             <div className="space-y-5">
                 <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-6">
-                    <div className="pointer-events-none absolute -top-24 right-0 size-72 rounded-full bg-[#6d5dfc]/20 blur-3xl" />
+                    <div className="pointer-events-none absolute -top-24 right-0 size-72 rounded-full bg-gc-indigo/20 blur-3xl" />
                     <div className="relative flex items-center gap-4">
                         <Link
                             href={`/c/${community.slug}`}
                             className="flex size-10 items-center justify-center rounded-xl bg-white/[0.05] text-white/70 transition hover:bg-white/10 hover:text-white"
-                            aria-label="Назад"
+                            aria-label={tr('Назад')}
                         >
                             <ArrowLeft className="size-5" />
                         </Link>
@@ -139,7 +148,7 @@ export default function CommunityMembers({
                                 )}
                             </h1>
                             <p className="text-sm text-white/50">
-                                Учасники спільноти
+                                {tr('Учасники спільноти')}
                             </p>
                         </div>
                     </div>
@@ -173,14 +182,14 @@ export default function CommunityMembers({
                                 </Link>
                             ))}
                         </div>
-                        <label className="input-glass flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-3.5">
+                        <label className="input-glass flex h-11 min-h-11 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-3.5">
                             <Search className="size-4 text-white/40" />
                             <input
                                 value={query}
                                 onChange={(event) =>
                                     setQuery(event.target.value)
                                 }
-                                placeholder="Пошук учасників"
+                                placeholder={tr('Пошук учасників')}
                                 className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
                             />
                         </label>
@@ -192,8 +201,8 @@ export default function CommunityMembers({
                         icon={UsersRound}
                         title={
                             tab === 'requests'
-                                ? 'Нових заявок немає'
-                                : 'Нікого не знайдено'
+                                ? tr('Нових заявок немає')
+                                : tr('Нікого не знайдено')
                         }
                     />
                 ) : (
@@ -225,14 +234,14 @@ export default function CommunityMembers({
                                     <p className="flex flex-wrap items-center gap-x-2 text-xs text-white/45">
                                         {member.is_friend && (
                                             <span className="text-emerald-300/80">
-                                                Ваш друг
+                                                {tr('Ваш друг')}
                                             </span>
                                         )}
                                         {member.joined_at && (
                                             <span>
                                                 {tab === 'requests'
-                                                    ? 'Заявка '
-                                                    : 'У спільноті з '}
+                                                    ? tr('Заявка ')
+                                                    : tr('У спільноті з ')}
                                                 {timeAgo(member.joined_at)}
                                             </span>
                                         )}
@@ -242,7 +251,7 @@ export default function CommunityMembers({
                                 {member.role !== 'member' && (
                                     <span
                                         className={cn(
-                                            'hidden items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium sm:inline-flex',
+                                            'hidden items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium sm:inline-flex',
                                             roleStyle[member.role],
                                         )}
                                     >
@@ -269,7 +278,7 @@ export default function CommunityMembers({
                                             className="btn-glow inline-flex h-9 items-center gap-1.5 rounded-xl px-3.5 text-[13px] font-semibold"
                                         >
                                             <Check className="size-4" />
-                                            Прийняти
+                                            {tr('Прийняти')}
                                         </button>
                                         <button
                                             type="button"
@@ -280,7 +289,7 @@ export default function CommunityMembers({
                                                 )
                                             }
                                             className="inline-flex size-9 items-center justify-center rounded-xl bg-white/[0.06] text-white/60 transition hover:bg-rose-500/15 hover:text-rose-200"
-                                            aria-label="Відхилити"
+                                            aria-label={tr('Відхилити')}
                                         >
                                             <X className="size-4" />
                                         </button>
@@ -296,7 +305,7 @@ export default function CommunityMembers({
                                                 className="glass-strong w-60 rounded-2xl border-white/10 p-1.5 text-white"
                                             >
                                                 <DropdownMenuLabel className="text-xs text-white/45">
-                                                    Роль
+                                                    {tr('Роль')}
                                                 </DropdownMenuLabel>
                                                 {(
                                                     [
@@ -332,7 +341,7 @@ export default function CommunityMembers({
                                                 ))}
                                                 {isOwner && (
                                                     <DropdownMenuItem
-                                                        className="rounded-lg text-[#ffd36b] focus:bg-[#ffd36b]/10 focus:text-[#ffe39b]"
+                                                        className="rounded-lg text-gc-gold focus:bg-gc-gold/10 focus:text-[#ffe39b]"
                                                         onSelect={() =>
                                                             setRole(
                                                                 member,
@@ -340,8 +349,10 @@ export default function CommunityMembers({
                                                             )
                                                         }
                                                     >
-                                                        <Crown className="text-[#ffd36b]" />
-                                                        Передати права власника
+                                                        <Crown className="text-gc-gold" />
+                                                        {tr(
+                                                            'Передати права власника',
+                                                        )}
                                                     </DropdownMenuItem>
                                                 )}
                                                 <DropdownMenuSeparator className="bg-white/5" />
@@ -352,7 +363,7 @@ export default function CommunityMembers({
                                                     }
                                                 >
                                                     <UserMinus className="text-rose-300" />
-                                                    Виключити
+                                                    {tr('Виключити')}
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>

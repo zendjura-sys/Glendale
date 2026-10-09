@@ -5,6 +5,7 @@ import {
     KeyRound,
     Search,
     Settings2,
+    TriangleAlert,
     UserCheck,
     Users,
     X,
@@ -30,6 +31,7 @@ import { lastSeen, timeAgo } from '@/lib/format';
 import { uah } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type { FamilyShellProps, MemberCard } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Member = MemberCard & {
     joined_at: string | null;
@@ -48,6 +50,7 @@ type Props = FamilyShellProps & {
     applications: Application[];
     permissions: Record<string, string>;
     matrix: Record<string, number[]>;
+    voice_rooms: Record<string, string>;
     warn_limit: number;
 };
 
@@ -61,6 +64,7 @@ export default function FamilyMembers(props: Props) {
         applications,
         permissions,
         matrix,
+        voice_rooms,
         warn_limit,
     } = props;
     const base = `/f/${family.slug}`;
@@ -86,7 +90,7 @@ export default function FamilyMembers(props: Props) {
         );
 
     return (
-        <FamilyShell {...props} title="Учасники">
+        <FamilyShell {...props} title={tr('Учасники')}>
             <div className="flex min-w-0 flex-wrap items-center gap-2">
                 {can['members.manage'] && (
                     <Segmented
@@ -96,11 +100,13 @@ export default function FamilyMembers(props: Props) {
                         options={[
                             {
                                 value: 'members',
-                                label: `Учасники · ${members.length}`,
+                                label: tr('Учасники · {length}', {
+                                    length: members.length,
+                                }),
                             },
                             {
                                 value: 'applications',
-                                label: 'Заявки',
+                                label: tr('Заявки'),
                                 badge: applications.length,
                             },
                         ]}
@@ -112,7 +118,7 @@ export default function FamilyMembers(props: Props) {
                         <input
                             value={q}
                             onChange={(e) => setQ(e.target.value)}
-                            placeholder="Нік, ID або обов’язки"
+                            placeholder={tr('Нік, ID або обов’язки')}
                             className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
                         />
                     </label>
@@ -123,15 +129,18 @@ export default function FamilyMembers(props: Props) {
                         onClick={() => setRanksOpen(true)}
                         className={cn(btnGhost, 'ml-auto')}
                     >
-                        <KeyRound className="size-4" /> Ранги й права
+                        <KeyRound className="size-4" /> {tr('Ранги й права')}
                     </button>
                 )}
             </div>
 
             {tab === 'applications' ? (
-                <Panel title="Заявки на вступ" icon={UserCheck}>
+                <Panel title={tr('Заявки на вступ')} icon={UserCheck}>
                     {applications.length === 0 ? (
-                        <Empty icon={UserCheck} text="Нових заявок немає" />
+                        <Empty
+                            icon={UserCheck}
+                            text={tr('Нових заявок немає')}
+                        />
                     ) : (
                         <div className="space-y-2">
                             {applications.map((a) => (
@@ -186,13 +195,15 @@ export default function FamilyMembers(props: Props) {
                                             )}
                                         >
                                             <Check className="size-4" />{' '}
-                                            Прийняти
+                                            {tr('Прийняти')}
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => {
                                                 const reason = prompt(
-                                                    'Причина відмови (необов’язково)',
+                                                    tr(
+                                                        'Причина відмови (необов’язково)',
+                                                    ),
                                                 );
                                                 if (reason !== null) {
                                                     router.post(
@@ -209,7 +220,8 @@ export default function FamilyMembers(props: Props) {
                                                 'h-11 w-full sm:w-auto',
                                             )}
                                         >
-                                            <X className="size-4" /> Відхилити
+                                            <X className="size-4" />{' '}
+                                            {tr('Відхилити')}
                                         </button>
                                     </div>
                                 </div>
@@ -220,7 +232,7 @@ export default function FamilyMembers(props: Props) {
             ) : (
                 <Panel padded={false} className="overflow-hidden">
                     {filtered.length === 0 ? (
-                        <Empty icon={Users} text="Нікого не знайдено" />
+                        <Empty icon={Users} text={tr('Нікого не знайдено')} />
                     ) : (
                         <ul className="divide-y divide-white/[0.05]">
                             {filtered.map((m) => (
@@ -250,8 +262,15 @@ export default function FamilyMembers(props: Props) {
                                                 title={m.rank_title}
                                             />
                                             {m.warns > 0 && (
-                                                <span className="rounded-full bg-rose-500/10 px-2 py-0.5 text-[11px] text-rose-200">
-                                                    ⚠ {m.warns}/{warn_limit}
+                                                <span
+                                                    className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-xs text-rose-200"
+                                                    title={tr('Попередження')}
+                                                >
+                                                    <TriangleAlert
+                                                        className="size-3"
+                                                        aria-hidden
+                                                    />
+                                                    {m.warns}/{warn_limit}
                                                 </span>
                                             )}
                                         </div>
@@ -268,10 +287,14 @@ export default function FamilyMembers(props: Props) {
                                                 </span>
                                             )}
                                             {m.is_online
-                                                ? 'онлайн'
+                                                ? tr('онлайн')
                                                 : lastSeen(m.last_seen_at)}
                                             {m.joined_at &&
-                                                ` · у сім’ї ${timeAgo(m.joined_at).replace(' тому', '')}`}
+                                                tr(' · у сім’ї {replace}', {
+                                                    replace: timeAgo(
+                                                        m.joined_at,
+                                                    ).replace(' тому', ''),
+                                                })}
                                         </div>
                                     </div>
                                     {m.balance !== null && (
@@ -295,7 +318,7 @@ export default function FamilyMembers(props: Props) {
                                             type="button"
                                             onClick={() => setEditing(m)}
                                             className="flex size-9 items-center justify-center rounded-xl text-white/50 hover:bg-white/[0.06] hover:text-white"
-                                            aria-label="Керувати"
+                                            aria-label={tr('Керувати')}
                                         >
                                             <Settings2 className="size-4" />
                                         </button>
@@ -324,6 +347,7 @@ export default function FamilyMembers(props: Props) {
                     action={`${base}/ranks`}
                     titles={family.rank_titles}
                     permissions={permissions}
+                    voiceRooms={voice_rooms}
                     matrix={matrix}
                     maxRank={can.owner ? 9 : me.rank - 1}
                     onClose={() => setRanksOpen(false)}
@@ -376,12 +400,15 @@ function MemberDialog({
             open
             onClose={onClose}
             title={member.display}
-            description={`Ранг ${member.rank} · ${member.rank_title ?? ''}`}
+            description={tr('Ранг {rank} · {v}', {
+                rank: member.rank,
+                v: member.rank_title ?? '',
+            })}
             wide
         >
             {manage && !member.is_owner && (
-                <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-                    <Field label="Ранг" error={form.errors.rank}>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
+                    <Field label={tr('Ранг')} error={form.errors.rank}>
                         <select
                             value={form.data.rank}
                             onChange={(e) =>
@@ -405,7 +432,7 @@ function MemberDialog({
                             onClick={() => save(['rank'])}
                             className={cn(btnPrimary, 'h-11')}
                         >
-                            Змінити ранг
+                            {tr('Змінити ранг')}
                         </button>
                     </div>
                 </div>
@@ -413,10 +440,12 @@ function MemberDialog({
 
             {member.rank === 9 &&
                 (manage || (isSelf && can['ranks.manage'])) && (
-                    <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
                         <Field
-                            label="Обов’язки"
-                            hint="Напр. «Казначей», «Відповідальний за склад»"
+                            label={tr('Обов’язки')}
+                            hint={tr(
+                                'Напр. «Казначей», «Відповідальний за склад»',
+                            )}
                             error={form.errors.duties}
                         >
                             <input
@@ -434,15 +463,18 @@ function MemberDialog({
                                 onClick={() => save(['duties'])}
                                 className={cn(btnGhost, 'h-11')}
                             >
-                                Зберегти
+                                {tr('Зберегти')}
                             </button>
                         </div>
                     </div>
                 )}
 
             {can['members.manage'] && (manage || isSelf) && (
-                <div className="grid gap-3 rounded-2xl bg-white/[0.03] p-3 sm:grid-cols-[1fr_140px_auto]">
-                    <Field label="RP-нікнейм" error={form.errors.rp_nickname}>
+                <div className="grid grid-cols-1 gap-3 rounded-2xl bg-white/[0.03] p-3 sm:grid-cols-[1fr_140px_auto]">
+                    <Field
+                        label={tr('RP-нікнейм')}
+                        error={form.errors.rp_nickname}
+                    >
                         <input
                             value={form.data.rp_nickname}
                             onChange={(e) =>
@@ -469,7 +501,7 @@ function MemberDialog({
                             onClick={() => save(['rp_nickname', 'static_id'])}
                             className={cn(btnGhost, 'h-11')}
                         >
-                            Оновити
+                            {tr('Оновити')}
                         </button>
                     </div>
                 </div>
@@ -478,13 +510,13 @@ function MemberDialog({
             {manage && !member.is_owner && (
                 <div className="rounded-2xl border border-rose-400/20 bg-rose-500/[0.05] p-3">
                     <div className="mb-2 text-sm font-semibold text-rose-100">
-                        Виключити з сім’ї
+                        {tr('Виключити з сім’ї')}
                     </div>
                     <div className="flex gap-2">
                         <input
                             value={kickReason}
                             onChange={(e) => setKickReason(e.target.value)}
-                            placeholder="Причина (обов’язково)"
+                            placeholder={tr('Причина (обов’язково)')}
                             className={cn(inputClass, 'h-10')}
                         />
                         <button
@@ -502,7 +534,7 @@ function MemberDialog({
                             }
                             className={btnDanger}
                         >
-                            Виключити
+                            {tr('Виключити')}
                         </button>
                     </div>
                 </div>
@@ -513,7 +545,10 @@ function MemberDialog({
                     type="button"
                     onClick={() =>
                         confirm(
-                            `Передати лідерство ${member.display}? Ви станете заступником (ранг 9).`,
+                            tr(
+                                'Передати лідерство {display}? Ви станете заступником (ранг 9).',
+                                { display: member.display },
+                            ),
                         ) &&
                         router.post(
                             `${url}/transfer`,
@@ -523,7 +558,7 @@ function MemberDialog({
                     }
                     className={cn(btnGhost, 'w-full text-amber-200')}
                 >
-                    <Crown className="size-4" /> Передати лідерство
+                    <Crown className="size-4" /> {tr('Передати лідерство')}
                 </button>
             )}
         </Modal>
@@ -534,6 +569,7 @@ function RanksDialog({
     action,
     titles,
     permissions,
+    voiceRooms,
     matrix,
     maxRank,
     onClose,
@@ -541,6 +577,7 @@ function RanksDialog({
     action: string;
     titles: Record<string, string>;
     permissions: Record<string, string>;
+    voiceRooms: Record<string, string>;
     matrix: Record<string, number[]>;
     maxRank: number;
     onClose: () => void;
@@ -550,6 +587,36 @@ function RanksDialog({
         matrix,
     });
     const ranks = Array.from({ length: 9 }, (_, i) => i + 1);
+
+    const row = (perm: string, label: string) => (
+        <tr key={perm}>
+            <td className="py-2 pr-2 text-white/70">{label}</td>
+            {ranks.map((r) => {
+                const on = (form.data.matrix[perm] ?? []).includes(r);
+                const locked = r > maxRank;
+
+                return (
+                    <td key={r} className="text-center">
+                        <button
+                            type="button"
+                            disabled={locked}
+                            onClick={() => toggle(perm, r)}
+                            className={cn(
+                                'size-6 rounded-md transition disabled:cursor-not-allowed',
+                                on
+                                    ? 'bg-gradient-brand text-white'
+                                    : 'bg-white/[0.05] hover:bg-white/10',
+                                locked && 'opacity-30',
+                            )}
+                            aria-label={tr('{label}: ранг {r}', { label, r })}
+                        >
+                            {on && <Check className="mx-auto size-3.5" />}
+                        </button>
+                    </td>
+                );
+            })}
+        </tr>
+    );
 
     const toggle = (perm: string, rank: number) => {
         const current = form.data.matrix[perm] ?? [];
@@ -565,8 +632,10 @@ function RanksDialog({
         <Modal
             open
             onClose={onClose}
-            title="Ранги й права"
-            description="Лідер (ранг 10) має всі права. Видати право рангу, вищому за ваш, неможливо."
+            title={tr('Ранги й права')}
+            description={tr(
+                'Лідер (ранг 10) має всі права. Видати право рангу, вищому за ваш, неможливо.',
+            )}
             wide
             footer={
                 <>
@@ -575,7 +644,7 @@ function RanksDialog({
                         onClick={onClose}
                         className={btnGhost}
                     >
-                        Скасувати
+                        {tr('Скасувати')}
                     </button>
                     <button
                         type="button"
@@ -588,7 +657,7 @@ function RanksDialog({
                         }
                         className={btnPrimary}
                     >
-                        Зберегти
+                        {tr('Зберегти')}
                     </button>
                 </>
             }
@@ -596,8 +665,8 @@ function RanksDialog({
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                 {form.data.titles.map((t, i) => (
                     <label key={i} className="block">
-                        <span className="mb-1 block text-[11px] text-white/45">
-                            Ранг {i + 1}
+                        <span className="mb-1 block text-xs text-white/45">
+                            {tr('Ранг')} {i + 1}
                         </span>
                         <input
                             value={t}
@@ -621,7 +690,7 @@ function RanksDialog({
                     <thead>
                         <tr className="text-white/40">
                             <th className="py-2 text-left font-medium">
-                                Право
+                                {tr('Право')}
                             </th>
                             {ranks.map((r) => (
                                 <th key={r} className="w-9 py-2 font-medium">
@@ -631,41 +700,22 @@ function RanksDialog({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/[0.05]">
-                        {Object.entries(permissions).map(([perm, label]) => (
-                            <tr key={perm}>
-                                <td className="py-2 pr-2 text-white/70">
-                                    {label}
+                        {Object.entries(permissions).map(([perm, label]) =>
+                            row(perm, label),
+                        )}
+                        {Object.keys(voiceRooms).length > 0 && (
+                            <tr>
+                                <td
+                                    colSpan={10}
+                                    className="pt-4 pb-1 text-xs font-semibold tracking-wide text-white/45 uppercase"
+                                >
+                                    {tr('Голосові кімнати — хто може заходити')}
                                 </td>
-                                {ranks.map((r) => {
-                                    const on = (
-                                        form.data.matrix[perm] ?? []
-                                    ).includes(r);
-                                    const locked = r > maxRank;
-
-                                    return (
-                                        <td key={r} className="text-center">
-                                            <button
-                                                type="button"
-                                                disabled={locked}
-                                                onClick={() => toggle(perm, r)}
-                                                className={cn(
-                                                    'size-6 rounded-md transition disabled:cursor-not-allowed',
-                                                    on
-                                                        ? 'bg-gradient-brand text-white'
-                                                        : 'bg-white/[0.05] hover:bg-white/10',
-                                                    locked && 'opacity-30',
-                                                )}
-                                                aria-label={`${label}: ранг ${r}`}
-                                            >
-                                                {on && (
-                                                    <Check className="mx-auto size-3.5" />
-                                                )}
-                                            </button>
-                                        </td>
-                                    );
-                                })}
                             </tr>
-                        ))}
+                        )}
+                        {Object.entries(voiceRooms).map(([perm, label]) =>
+                            row(perm, label),
+                        )}
                     </tbody>
                 </table>
             </div>

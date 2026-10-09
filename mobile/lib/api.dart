@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'i18n.dart';
+
 class ApiException implements Exception {
   ApiException(this.message);
   final String message;
@@ -18,7 +20,7 @@ class Listing {
   bool get more => current < last;
 
   static Listing parse(dynamic block) {
-    if (block is! Map) return Listing(const [], 1, 1);
+    if (block is! Map) return Listing([], 1, 1);
     final raw = block['data'];
     final items = raw is List
         ? raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList()
@@ -34,7 +36,7 @@ int _int(dynamic value, int fallback) {
 }
 
 List<Map<String, dynamic>> maps(dynamic value) {
-  if (value is! List) return const [];
+  if (value is! List) return [];
   return value.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
 }
 
@@ -61,11 +63,22 @@ String hryvnia(dynamic minor) {
   return '${negative ? '−' : ''}$grouped$tail ₴';
 }
 
+/// Коротка сума для вузьких плиток: 99 999 ₴, 100к ₴, 1,5М ₴, 10М ₴, 2,3млрд ₴.
+String hryvniaShort(dynamic minor) {
+  final value = minor is int ? minor : int.tryParse('$minor') ?? 0;
+  final whole = value.abs() ~/ 100;
+  if (whole < 100000) return hryvnia(value - value % 100);
+  final (unit, suffix) = whole >= 1000000000 ? (1000000000, tr('млрд')) : (whole >= 1000000 ? (1000000, tr('М')) : (1000, tr('к')));
+  final scaled = whole / unit;
+  final digits = scaled < 10 ? ((scaled * 10).floor() / 10).toString().replaceFirst(RegExp(r'\.0$'), '').replaceAll('.', ',') : '${scaled.floor()}';
+  return '${value < 0 ? '−' : ''}$digits$suffix ₴';
+}
+
 String joinedLabel(dynamic iso) {
   final dt = DateTime.tryParse(text(iso) ?? '');
   if (dt == null) return '';
-  const months = ['січня', 'лютого', 'березня', 'квітня', 'травня', 'червня', 'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня'];
-  return 'В GameCon з ${dt.day} ${months[dt.month - 1]} ${dt.year} р.';
+  final months = [tr('січня'), tr('лютого'), tr('березня'), tr('квітня'), tr('травня'), tr('червня'), tr('липня'), tr('серпня'), tr('вересня'), tr('жовтня'), tr('листопада'), tr('грудня')];
+  return tr('В GameCon з {day} {v} {year} р.', {'day': dt.day, 'v': months[dt.month - 1], 'year': dt.year});
 }
 
 String? absolute(dynamic value) {
@@ -87,12 +100,18 @@ class Api {
   Future<Map<String, dynamic>> post(String path, [Map<String, dynamic>? body]) => _send('POST', path, body);
   Future<Map<String, dynamic>> put(String path, Map<String, dynamic> body) => _send('PUT', path, body);
   Future<Map<String, dynamic>> patch(String path, Map<String, dynamic> body) => _send('PATCH', path, body);
-  Future<Map<String, dynamic>> delete(String path) => _send('DELETE', path);
+  Future<Map<String, dynamic>> delete(String path, [Map<String, dynamic>? body]) => _send('DELETE', path, body);
 
-  Future<Map<String, dynamic>> upload(String path, Map<String, String> fields, List<http.MultipartFile> files) async {
+  /// Дії сайту через міст `/api/v1/site/...` (ті самі шляхи, що в routes/web.php).
+  static String site(String path) => '/api/v1/site${path.startsWith('/') ? path : '/$path'}';
+
+  /// Multipart-запит. Для PATCH/PUT Laravel приймає `_method` у формі.
+  Future<Map<String, dynamic>> upload(String path, Map<String, String> fields, List<http.MultipartFile> files, {String method = 'POST'}) async {
     final request = http.MultipartRequest('POST', Uri.parse('$root$path'));
+    if (method != 'POST') request.fields['_method'] = method;
     request.headers['Accept'] = 'application/json';
     request.headers['User-Agent'] = 'GameCon/1.0 (Flutter)';
+    request.headers['X-Locale'] = I18n.requested;
     final bearer = token();
     if (bearer != null) request.headers['Authorization'] = 'Bearer $bearer';
     request.fields.addAll(fields);
@@ -103,7 +122,7 @@ class Api {
       response = await http.Response.fromStream(streamed);
     } catch (e) {
       if (e is ApiException) rethrow;
-      throw ApiException('Немає зв’язку з GameCon.');
+      throw ApiException(tr('Немає зв’язку з GameCon.'));
     }
     if (response.statusCode >= 400) throw ApiException(_explain(response.body));
     if (response.body.isEmpty) return {};
@@ -116,7 +135,7 @@ class Api {
   Future<Map<String, dynamic>> me() async {
     final json = await get('/api/v1/me');
     final user = json['user'];
-    if (user is! Map) throw ApiException('Профіль не повернувся.');
+    if (user is! Map) throw ApiException(tr('Профіль не повернувся.'));
     return Map<String, dynamic>.from(user);
   }
 
@@ -125,6 +144,7 @@ class Api {
     final headers = {
       'Accept': 'application/json',
       'User-Agent': 'GameCon/1.0 (Flutter)',
+      'X-Locale': I18n.requested,
       if (body != null) 'Content-Type': 'application/json',
       if (token() != null) 'Authorization': 'Bearer ${token()}',
     };
@@ -136,12 +156,12 @@ class Api {
         'POST' => http.post(uri, headers: headers, body: encoded ?? '{}'),
         'PUT' => http.put(uri, headers: headers, body: encoded),
         'PATCH' => http.patch(uri, headers: headers, body: encoded),
-        'DELETE' => http.delete(uri, headers: headers),
-        _ => throw ApiException('Невідомий метод.'),
+        'DELETE' => http.delete(uri, headers: headers, body: encoded),
+        _ => throw ApiException(tr('Невідомий метод.')),
       }.timeout(const Duration(seconds: 40));
     } catch (e) {
       if (e is ApiException) rethrow;
-      throw ApiException('Немає зв’язку з GameCon.');
+      throw ApiException(tr('Немає зв’язку з GameCon.'));
     }
     if (response.statusCode >= 400) {
       throw ApiException(_explain(response.body));
@@ -161,11 +181,22 @@ class Api {
         if (errors is Map && errors.isNotEmpty) {
           final first = errors.values.first;
           if (first is List && first.isNotEmpty) return '${first.first}';
+          if (first is String) return first;
         }
         final message = text(json['message']);
         if (message != null) return message;
       }
     } catch (_) {}
-    return 'Щось пішло не так.';
+    return tr('Щось пішло не так.');
+  }
+
+  /// Завантаження файлу з авторизацією (докази звітів, вкладення чату).
+  Future<List<int>> bytes(String path) async {
+    final response = await http.get(Uri.parse(path.startsWith('http') ? path : '$root$path'), headers: {
+      'User-Agent': 'GameCon/1.0 (Flutter)',
+      if (token() != null) 'Authorization': 'Bearer ${token()}',
+    });
+    if (response.statusCode >= 400) throw ApiException(tr('Файл недоступний.'));
+    return response.bodyBytes;
   }
 }

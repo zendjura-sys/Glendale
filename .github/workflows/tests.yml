@@ -31,7 +31,13 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Create SQLite database
+        run: touch database/database.sqlite
+
       - name: Setup Application
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
         run: composer setup
 
       - name: Run CI Checks

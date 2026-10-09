@@ -1,0 +1,104 @@
+# Фонова музика застосунку на емуляторі Android (release-збірка, як у користувачів):
+# трек грає → застосунок згортається → foreground-сервіс, медіасесія й сповіщення мають жити.
+# Збірка й емулятор — на різних раннерах: емулятор стартує на чистій машині без Gradle.
+name: App background audio
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - mobile/lib/audio.dart
+      - mobile/lib/state.dart
+      - mobile/lib/main.dart
+      - mobile/android/**
+      - mobile/pubspec.yaml
+      - mobile/tool/audio_check.sh
+      - .github/workflows/app-audio-check.yml
+
+concurrency:
+  group: app-audio-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    if: github.repository == 'zendjura-sys/Glendale'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+
+      # Раннер має 16 ГБ пам’яті: Gradle з 8 ГБ, демон Kotlin і нативна збірка WebRTC його вичерпували,
+      # і GitHub вимикав машину посеред збірки. Обмежуємо пам’ять і звільняємо диск.
+      - name: Ресурси для Gradle
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL || true
+          mkdir -p ~/.gradle
+          cat >> ~/.gradle/gradle.properties <<'PROPS'
+          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:ReservedCodeCacheSize=256m
+          org.gradle.workers.max=2
+          kotlin.daemon.jvmargs=-Xmx2g
+          PROPS
+          df -h / | tail -1
+          free -h | head -2
+
+      - name: Release APK з тестовим треком
+        working-directory: mobile
+        run: |
+          flutter pub get
+          flutter build apk --release --dart-define=GC_AUDIO_TEST_URL=https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: audio-check-apk
+          path: mobile/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 1
+
+  emulator:
+    needs: apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: audio-check-apk
+          path: ${{ runner.temp }}/apk
+
+      - name: KVM для емулятора
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          cores: 3
+          ram-size: 3072M
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
+          script: APK=${{ runner.temp }}/apk/app-release.apk bash mobile/tool/audio_check.sh
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audio-check
+          path: audio-check/
+          retention-days: 7

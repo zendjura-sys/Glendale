@@ -18,7 +18,7 @@ class Discipline
         private readonly FamilyService $families,
     ) {}
 
-    public function issue(Family $family, FamilyMember $issuer, FamilyMember $target, string $type, string $reason, ?int $amount = null): FamilyPunishment
+    public function issue(Family $family, FamilyMember $issuer, FamilyMember $target, string $type, string $reason, ?int $amount = null, ?int $hours = null): FamilyPunishment
     {
         if (! $issuer->outranks($target, $family)) {
             throw ValidationException::withMessages(['member_id' => 'Карати можна лише учасників із нижчим рангом.']);
@@ -26,8 +26,11 @@ class Discipline
         if ($type === FamilyPunishment::TYPE_FINE && ($amount === null || $amount < 100)) {
             throw ValidationException::withMessages(['amount' => 'Вкажіть суму штрафу (від 1 ₴).']);
         }
+        if ($type === FamilyPunishment::TYPE_MUTE && ! in_array($hours, FamilyPunishment::MUTE_HOURS, true)) {
+            throw ValidationException::withMessages(['hours' => 'Оберіть, на скільки заглушити.']);
+        }
 
-        $punishment = DB::transaction(function () use ($family, $issuer, $target, $type, $reason, $amount) {
+        $punishment = DB::transaction(function () use ($family, $issuer, $target, $type, $reason, $amount, $hours) {
             $punishment = FamilyPunishment::query()->create([
                 'family_id' => $family->id,
                 'member_id' => $target->id,
@@ -35,7 +38,12 @@ class Discipline
                 'type' => $type,
                 'reason' => $reason,
                 'amount' => $type === FamilyPunishment::TYPE_FINE ? $amount : null,
-                'expires_at' => $type === FamilyPunishment::TYPE_WARN ? now()->addDays((int) $family->setting('discipline.warn_days', 30)) : null,
+                'expires_at' => match ($type) {
+                    FamilyPunishment::TYPE_WARN => now()->addDays((int) $family->setting('discipline.warn_days', 30)),
+                    // Мут у чаті сім’ї діє до цього моменту; писати в чат сім’ї учасник не зможе.
+                    FamilyPunishment::TYPE_MUTE => now()->addHours((int) $hours),
+                    default => null,
+                },
             ]);
 
             if ($type === FamilyPunishment::TYPE_FINE) {
@@ -56,7 +64,7 @@ class Discipline
             return $punishment;
         });
 
-        $label = FamilyPunishment::TYPES[$type].($type === FamilyPunishment::TYPE_FINE ? ' '.Money::format((int) $amount) : '');
+        $label = FamilyPunishment::TYPES[$type].($type === FamilyPunishment::TYPE_FINE ? ' '.Money::format((int) $amount) : '').($type === FamilyPunishment::TYPE_MUTE ? " на {$hours} год" : '');
         $this->notifier->members($target, $family, 'sanction', "{$label}: {$reason}", route('families.discipline', $family, absolute: false));
 
         if ($type === FamilyPunishment::TYPE_WARN) {

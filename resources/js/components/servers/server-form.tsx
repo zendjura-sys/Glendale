@@ -1,11 +1,13 @@
 import { Monitor, Smartphone } from 'lucide-react';
 import { selectClass } from '@/components/gc/admin';
 import { cn } from '@/lib/utils';
+import { tr } from '@/lib/i18n';
 
 export type ServerFormData = {
     name: string;
     platform: 'pc' | 'mobile';
     multiplayer: string;
+    language: string;
     tagline: string;
     description: string;
     website: string;
@@ -19,6 +21,7 @@ export const emptyServer: ServerFormData = {
     name: '',
     platform: 'pc',
     multiplayer: 'ragemp',
+    language: 'uk',
     tagline: '',
     description: '',
     website: '',
@@ -57,9 +60,7 @@ export function Field({
             </span>
             {children}
             {hint && !error && (
-                <span className="mt-1 block text-[11px] text-white/35">
-                    {hint}
-                </span>
+                <span className="mt-1 block text-xs text-white/35">{hint}</span>
             )}
             <FieldError message={error} />
         </label>
@@ -71,6 +72,7 @@ export function ServerFormFields({
     setData,
     errors,
     multiplayers,
+    languages,
     compact = false,
 }: {
     data: ServerFormData;
@@ -80,28 +82,29 @@ export function ServerFormFields({
     ) => void;
     errors: Partial<Record<string, string>>;
     multiplayers: Record<string, string>;
+    languages?: Record<string, string>;
     compact?: boolean;
 }) {
     return (
-        <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Назва сервера" error={errors.name}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label={tr('Назва сервера')} error={errors.name}>
                 <input
                     value={data.name}
                     onChange={(e) => setData('name', e.target.value)}
-                    placeholder="Напр. Kyiv RP"
+                    placeholder={tr('Напр. Kyiv RP')}
                     className={inputClass}
                     autoFocus
                 />
             </Field>
             <div>
                 <span className="mb-1.5 block text-xs font-medium text-white/60">
-                    Платформа
+                    {tr('Платформа')}
                 </span>
                 <div className="grid grid-cols-2 gap-2">
                     {(
                         [
-                            ['pc', 'ПК', Monitor],
-                            ['mobile', 'Мобільний', Smartphone],
+                            ['pc', tr('ПК'), Monitor],
+                            ['mobile', tr('Мобільний'), Smartphone],
                         ] as const
                     ).map(([value, label, Icon]) => (
                         <button
@@ -119,7 +122,7 @@ export function ServerFormFields({
                             className={cn(
                                 'flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-medium transition',
                                 data.platform === value
-                                    ? 'border-[#7c8cff]/60 bg-[#6d5dfc]/15 text-white'
+                                    ? 'border-gc-lilac-500/60 bg-gc-indigo/15 text-white'
                                     : 'border-white/[0.07] bg-white/[0.03] text-white/55 hover:text-white',
                             )}
                         >
@@ -128,7 +131,10 @@ export function ServerFormFields({
                     ))}
                 </div>
             </div>
-            <Field label="Мультиплеєр / клієнт" error={errors.multiplayer}>
+            <Field
+                label={tr('Мультиплеєр / клієнт')}
+                error={errors.multiplayer}
+            >
                 <select
                     value={data.multiplayer}
                     onChange={(e) => setData('multiplayer', e.target.value)}
@@ -141,9 +147,24 @@ export function ServerFormFields({
                     ))}
                 </select>
             </Field>
+            {languages && (
+                <Field label={tr('Мова сервера')} error={errors.language}>
+                    <select
+                        value={data.language}
+                        onChange={(e) => setData('language', e.target.value)}
+                        className={cn(selectClass, 'h-11 w-full')}
+                    >
+                        {Object.entries(languages).map(([value, label]) => (
+                            <option key={value} value={value}>
+                                {label}
+                            </option>
+                        ))}
+                    </select>
+                </Field>
+            )}
             <Field
-                label="Адреса підключення"
-                hint="ip:port, домен:port або код cfx.re"
+                label={tr('Адреса підключення')}
+                hint={tr('ip:port, домен:port або код cfx.re')}
                 error={errors.connect}
             >
                 <input
@@ -153,7 +174,7 @@ export function ServerFormFields({
                     className={cn(inputClass, 'font-mono')}
                 />
             </Field>
-            <Field label="Сайт" error={errors.website}>
+            <Field label={tr('Сайт')} error={errors.website}>
                 <input
                     value={data.website}
                     onChange={(e) => setData('website', e.target.value)}
@@ -162,8 +183,10 @@ export function ServerFormFields({
                 />
             </Field>
             <Field
-                label="Discord-запрошення"
-                hint="Звідси автоматично підтягнемо іконку й кількість гравців"
+                label={tr('Discord-запрошення')}
+                hint={tr(
+                    'Звідси автоматично підтягнемо іконку й кількість гравців',
+                )}
                 error={errors.discord}
             >
                 <input
@@ -182,8 +205,8 @@ export function ServerFormFields({
                 />
             </Field>
             <Field
-                label="Пряме посилання на іконку"
-                hint="Необов’язково — якщо автоматично не знайдеться"
+                label={tr('Пряме посилання на іконку')}
+                hint={tr('Необов’язково — якщо автоматично не знайдеться')}
                 error={errors.icon_url}
             >
                 <input
@@ -194,21 +217,23 @@ export function ServerFormFields({
                 />
             </Field>
             <Field
-                label="Коротко про сервер"
+                label={tr('Коротко про сервер')}
                 error={errors.tagline}
                 className="sm:col-span-2"
             >
                 <input
                     value={data.tagline}
                     onChange={(e) => setData('tagline', e.target.value)}
-                    placeholder="Мапа України, голосовий чат, власна економіка…"
+                    placeholder={tr(
+                        'Мапа України, голосовий чат, власна економіка…',
+                    )}
                     maxLength={160}
                     className={inputClass}
                 />
             </Field>
             {!compact && (
                 <Field
-                    label="Опис"
+                    label={tr('Опис')}
                     error={errors.description}
                     className="sm:col-span-2"
                 >

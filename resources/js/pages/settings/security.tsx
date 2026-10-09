@@ -10,6 +10,7 @@ import type { Props as ManagePasskeysProps } from '@/components/manage-passkeys'
 import ManagePasskeys from '@/components/manage-passkeys';
 import type { Props as ManageTwoFactorProps } from '@/components/manage-two-factor';
 import ManageTwoFactor from '@/components/manage-two-factor';
+import { tr } from '@/lib/i18n';
 
 // oxfmt-ignore
 type Props = {
@@ -23,15 +24,15 @@ export default function Security(props: Props) {
 
     return (
         <>
-            <Head title="Безпека" />
+            <Head title={tr('Безпека')} />
 
-            <h1 className="sr-only">Безпека</h1>
+            <h1 className="sr-only">{tr('Безпека')}</h1>
 
             <div className="glass space-y-6 rounded-3xl p-6 sm:p-7">
                 <Heading
                     variant="small"
-                    title="Зміна пароля"
-                    description="Використовуйте довгий унікальний пароль"
+                    title={tr('Зміна пароля')}
+                    description={tr('Використовуйте довгий унікальний пароль')}
                 />
 
                 <Form
@@ -60,7 +61,7 @@ export default function Security(props: Props) {
                         <>
                             <div className="grid gap-2">
                                 <Label htmlFor="current_password">
-                                    Поточний пароль
+                                    {tr('Поточний пароль')}
                                 </Label>
 
                                 <PasswordInput
@@ -76,7 +77,9 @@ export default function Security(props: Props) {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="password">Новий пароль</Label>
+                                <Label htmlFor="password">
+                                    {tr('Новий пароль')}
+                                </Label>
 
                                 <PasswordInput
                                     id="password"
@@ -84,7 +87,7 @@ export default function Security(props: Props) {
                                     name="password"
                                     className="mt-1 block w-full"
                                     autoComplete="new-password"
-                                    placeholder="Мінімум 8 символів"
+                                    placeholder={tr('Мінімум 8 символів')}
                                     passwordrules={props.passwordRules}
                                 />
 
@@ -93,7 +96,7 @@ export default function Security(props: Props) {
 
                             <div className="grid gap-2">
                                 <Label htmlFor="password_confirmation">
-                                    Повторіть пароль
+                                    {tr('Повторіть пароль')}
                                 </Label>
 
                                 <PasswordInput
@@ -115,7 +118,7 @@ export default function Security(props: Props) {
                                     disabled={processing}
                                     data-test="update-password-button"
                                 >
-                                    Оновити пароль
+                                    {tr('Оновити пароль')}
                                 </Button>
                             </div>
                         </>

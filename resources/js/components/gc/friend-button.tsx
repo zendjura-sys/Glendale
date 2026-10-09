@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import type { Relation } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     username: string;
@@ -49,7 +50,8 @@ export function FriendButton({
                     )}
                     disabled={busy}
                 >
-                    <UserCheck className="size-4 text-emerald-300" /> У друзях
+                    <UserCheck className="size-4 text-emerald-300" />{' '}
+                    {tr('У друзях')}
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                     align="end"
@@ -61,8 +63,8 @@ export function FriendButton({
                             router.delete(`/friends/${username}`, options)
                         }
                     >
-                        <UserMinus className="text-rose-300" /> Видалити з
-                        друзів
+                        <UserMinus className="text-rose-300" />{' '}
+                        {tr('Видалити з друзів')}
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
@@ -80,7 +82,7 @@ export function FriendButton({
                     }
                     className={cn(base, 'btn-glow')}
                 >
-                    <Check className="size-4" /> Прийняти
+                    <Check className="size-4" /> {tr('Прийняти')}
                 </button>
                 <button
                     type="button"
@@ -92,7 +94,7 @@ export function FriendButton({
                         base,
                         'bg-white/[0.06] px-3 text-white/70 hover:bg-white/10 hover:text-white',
                     )}
-                    aria-label="Відхилити"
+                    aria-label={tr('Відхилити')}
                 >
                     <X className="size-4" />
                 </button>
@@ -113,8 +115,12 @@ export function FriendButton({
             >
                 <Clock className="size-4 group-hover:hidden" />
                 <X className="hidden size-4 group-hover:block" />
-                <span className="group-hover:hidden">Заявку надіслано</span>
-                <span className="hidden group-hover:inline">Скасувати</span>
+                <span className="group-hover:hidden">
+                    {tr('Заявку надіслано')}
+                </span>
+                <span className="hidden group-hover:inline">
+                    {tr('Скасувати')}
+                </span>
             </button>
         );
     }
@@ -126,7 +132,7 @@ export function FriendButton({
             onClick={() => router.post(`/friends/${username}`, {}, options)}
             className={cn(base, 'btn-glow')}
         >
-            <UserPlus className="size-4" /> Додати в друзі
+            <UserPlus className="size-4" /> {tr('Додати в друзі')}
         </button>
     );
 }

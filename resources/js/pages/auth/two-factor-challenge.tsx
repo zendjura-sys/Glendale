@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/input-otp';
 import { OTP_MAX_LENGTH } from '@/hooks/use-two-factor-auth';
 import { store } from '@/routes/two-factor/login';
+import { tr } from '@/lib/i18n';
 
 export default function TwoFactorChallenge() {
     const [showRecoveryInput, setShowRecoveryInput] = useState<boolean>(false);
@@ -23,16 +24,16 @@ export default function TwoFactorChallenge() {
     }>(() => {
         if (showRecoveryInput) {
             return {
-                title: 'Код відновлення',
-                description: 'Введіть один із резервних кодів відновлення.',
-                toggleText: 'увійти за кодом із застосунку',
+                title: tr('Код відновлення'),
+                description: tr('Введіть один із резервних кодів відновлення.'),
+                toggleText: tr('увійти за кодом із застосунку'),
             };
         }
 
         return {
-            title: 'Код автентифікації',
-            description: 'Введіть код із застосунку-автентифікатора.',
-            toggleText: 'використати код відновлення',
+            title: tr('Код автентифікації'),
+            description: tr('Введіть код із застосунку-автентифікатора.'),
+            toggleText: tr('використати код відновлення'),
         };
     }, [showRecoveryInput]);
 
@@ -49,7 +50,7 @@ export default function TwoFactorChallenge() {
 
     return (
         <>
-            <Head title="Двофакторна автентифікація" />
+            <Head title={tr('Двофакторна автентифікація')} />
 
             <div className="space-y-6">
                 <Form
@@ -65,7 +66,7 @@ export default function TwoFactorChallenge() {
                                     <Input
                                         name="recovery_code"
                                         type="text"
-                                        placeholder="Код відновлення"
+                                        placeholder={tr('Код відновлення')}
                                         autoFocus={showRecoveryInput}
                                         required
                                     />
@@ -107,14 +108,14 @@ export default function TwoFactorChallenge() {
                                 className="w-full"
                                 disabled={processing}
                             >
-                                Продовжити
+                                {tr('Продовжити')}
                             </Button>
 
                             <div className="text-center text-sm text-white/45">
-                                <span>або </span>
+                                <span>{tr('або')} </span>
                                 <button
                                     type="button"
-                                    className="cursor-pointer text-[#9aa8ff] underline decoration-white/20 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+                                    className="cursor-pointer text-gc-lilac-300 underline decoration-white/20 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
                                     onClick={() =>
                                         toggleRecoveryMode(clearErrors)
                                     }

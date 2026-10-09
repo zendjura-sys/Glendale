@@ -29,6 +29,9 @@ import { UserAvatar } from '@/components/gc/user-avatar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { EmptyState, Widget } from '@/components/gc/widget';
 import { NowPlayingCard } from '@/components/music/now-playing';
+import { AchievementsCard } from '@/components/gc/achievements';
+import { PlayingBadge } from '@/components/gc/playing';
+import type { AchievementsData } from '@/components/gc/achievements';
 import { compactNumber, formatDate, lastSeen, plural } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type {
@@ -38,6 +41,7 @@ import type {
     ScrollData,
     UserCard,
 } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Profile = UserCard & {
     last_name: string;
@@ -68,6 +72,7 @@ type Props = {
     friends: UserCard[];
     photos: { id: number; url: string; href: string }[];
     photosHref: string | null;
+    achievements?: AchievementsData;
     audio: { href: string; tracks: number } | null;
     nowPlaying?: NowPlaying | null;
     posts: ScrollData<PostItem>;
@@ -154,6 +159,7 @@ export default function ProfileShow({
     friends,
     photos,
     photosHref,
+    achievements,
     audio,
     nowPlaying,
     posts,
@@ -162,9 +168,9 @@ export default function ProfileShow({
     const isSelf = relation === 'self';
     const roleBadge =
         profile.role === 'admin'
-            ? 'Адміністратор'
+            ? tr('Адміністратор')
             : profile.role === 'moderator'
-              ? 'Модератор'
+              ? tr('Модератор')
               : null;
 
     return (
@@ -190,7 +196,8 @@ export default function ProfileShow({
                             url="/me/cover"
                             className="absolute top-4 right-4 inline-flex items-center gap-2 rounded-xl bg-black/40 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-black/60"
                         >
-                            <Camera className="size-4" /> Змінити обкладинку
+                            <Camera className="size-4" />{' '}
+                            {tr('Змінити обкладинку')}
                         </Uploader>
                     )}
                 </div>
@@ -219,7 +226,7 @@ export default function ProfileShow({
                                     <VerifiedBadge className="size-6" />
                                 )}
                                 {roleBadge && (
-                                    <span className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-[11px] font-semibold text-gold">
+                                    <span className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-xs font-semibold text-gold">
                                         <ShieldCheck className="size-3" />{' '}
                                         {roleBadge}
                                     </span>
@@ -230,11 +237,17 @@ export default function ProfileShow({
                                     {profile.status}
                                 </p>
                             )}
+                            {/* «Граю в…» — лише коли людина справді грає; налаштування — у Налаштуваннях профілю. */}
+                            {profile.playing && (
+                                <div className="mt-2">
+                                    <PlayingBadge playing={profile.playing} />
+                                </div>
+                            )}
                             <p className="mt-1.5 flex items-center gap-1.5 text-xs text-white/45">
                                 {profile.is_online ? (
                                     <>
                                         <span className="size-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgb(52_211_153)]" />{' '}
-                                        онлайн
+                                        {tr('онлайн')}
                                     </>
                                 ) : (
                                     lastSeen(
@@ -251,8 +264,8 @@ export default function ProfileShow({
                                     href="/settings/profile"
                                     className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"
                                 >
-                                    <PenLine className="size-4" /> Редагувати
-                                    профіль
+                                    <PenLine className="size-4" />{' '}
+                                    {tr('Редагувати профіль')}
                                 </Link>
                             ) : (
                                 <>
@@ -267,7 +280,7 @@ export default function ProfileShow({
                                                 className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"
                                             >
                                                 <MessageCircle className="size-4" />{' '}
-                                                Написати
+                                                {tr('Написати')}
                                             </Link>
                                         )}
                                 </>
@@ -279,13 +292,13 @@ export default function ProfileShow({
                         <div className="flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-white/55">
                             {profile.city && (
                                 <span className="inline-flex items-center gap-1.5">
-                                    <MapPin className="size-4 text-[#8fa0ff]" />{' '}
+                                    <MapPin className="size-4 text-gc-lilac-400" />{' '}
                                     {profile.city}
                                 </span>
                             )}
                             {profile.birthday && (
                                 <span className="inline-flex items-center gap-1.5">
-                                    <Cake className="size-4 text-[#f04fd8]" />{' '}
+                                    <Cake className="size-4 text-gc-pink" />{' '}
                                     {formatDate(profile.birthday, false)}
                                 </span>
                             )}
@@ -296,7 +309,7 @@ export default function ProfileShow({
                                     rel="noreferrer nofollow"
                                     className="inline-flex items-center gap-1.5 hover:text-white"
                                 >
-                                    <Globe className="size-4 text-[#38e1ff]" />{' '}
+                                    <Globe className="size-4 text-gc-cyan" />{' '}
                                     {profile.website.replace(
                                         /^https?:\/\//,
                                         '',
@@ -306,7 +319,8 @@ export default function ProfileShow({
                             {profile.joined_at && (
                                 <span className="inline-flex items-center gap-1.5">
                                     <CalendarDays className="size-4 text-white/40" />{' '}
-                                    В GameCon з {formatDate(profile.joined_at)}
+                                    {tr('В GameCon з')}{' '}
+                                    {formatDate(profile.joined_at)}
                                 </span>
                             )}
                         </div>
@@ -330,13 +344,13 @@ export default function ProfileShow({
                             />
                             <Counter
                                 value={stats.photos}
-                                label="фото"
+                                label={tr('фото')}
                                 href={photosHref ?? undefined}
                             />
                             {audio && (
                                 <Counter
                                     value={audio.tracks}
-                                    label="аудіо"
+                                    label={tr('аудіо')}
                                     href={audio.href}
                                 />
                             )}
@@ -349,19 +363,29 @@ export default function ProfileShow({
                 <div className="mt-5">
                     <EmptyState
                         icon={Lock}
-                        title="Це закритий профіль"
-                        text={`Додайте ${profile.first_name} у друзі, щоб бачити записи, фото та інформацію.`}
+                        title={tr('Це закритий профіль')}
+                        text={tr(
+                            'Додайте {first_name} у друзі, щоб бачити записи, фото та інформацію.',
+                            { first_name: profile.first_name },
+                        )}
                     />
                 </div>
             ) : (
                 <div className="mt-5 flex flex-col gap-5 xl:flex-row">
                     <aside className="w-full shrink-0 space-y-4 xl:sticky xl:top-[76px] xl:h-fit xl:w-[320px]">
                         {profile.about && (
-                            <Widget title="Про себе">
+                            <Widget title={tr('Про себе')}>
                                 <p className="px-1 text-sm leading-relaxed whitespace-pre-line text-white/75">
                                     {profile.about}
                                 </p>
                             </Widget>
+                        )}
+
+                        {achievements && (
+                            <AchievementsCard
+                                data={achievements}
+                                isSelf={isSelf}
+                            />
                         )}
 
                         {audio && (
@@ -380,12 +404,12 @@ export default function ProfileShow({
                                 href={audio.href}
                                 className="glass group flex items-center gap-3 rounded-3xl p-4 transition hover:border-white/15"
                             >
-                                <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#a855f7] to-[#4f8bff] shadow-[0_10px_30px_-10px_rgb(168_85_247/0.9)]">
+                                <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-gc-purple to-gc-blue shadow-[0_10px_30px_-10px_rgb(168_85_247/0.9)]">
                                     <Music2 className="size-5 text-white" />
                                 </span>
                                 <span className="min-w-0 flex-1">
                                     <span className="block text-sm font-semibold text-white">
-                                        Аудіозаписи
+                                        {tr('Аудіозаписи')}
                                     </span>
                                     <span className="block text-xs text-white/45">
                                         {audio.tracks}{' '}
@@ -397,13 +421,13 @@ export default function ProfileShow({
                                     </span>
                                 </span>
                                 <span className="text-xs text-white/40 transition group-hover:text-white">
-                                    Слухати →
+                                    {tr('Слухати →')}
                                 </span>
                             </Link>
                         )}
 
                         <Widget
-                            title="Друзі"
+                            title={tr('Друзі')}
                             icon={UsersRound}
                             action={
                                 stats.mutual > 0 ? (
@@ -420,7 +444,7 @@ export default function ProfileShow({
                         >
                             {friends.length === 0 ? (
                                 <p className="px-1 text-sm text-white/45">
-                                    Поки немає друзів.
+                                    {tr('Поки немає друзів.')}
                                 </p>
                             ) : (
                                 <div className="grid grid-cols-3 gap-2">
@@ -445,7 +469,7 @@ export default function ProfileShow({
 
                         {photos.length > 0 && (
                             <Widget
-                                title="Фото"
+                                title={tr('Фото')}
                                 icon={ImageIcon}
                                 action={
                                     photosHref ? (
@@ -453,7 +477,7 @@ export default function ProfileShow({
                                             href={photosHref}
                                             className="text-xs text-cyan-300/80 transition hover:text-cyan-200"
                                         >
-                                            Усі {stats.photos}
+                                            {tr('Усі')} {stats.photos}
                                         </Link>
                                     ) : undefined
                                 }
@@ -486,11 +510,19 @@ export default function ProfileShow({
                         {posts.data.length === 0 ? (
                             <EmptyState
                                 icon={PenLine}
-                                title="На стіні поки порожньо"
+                                title={tr('На стіні поки порожньо')}
                                 text={
                                     isSelf
-                                        ? 'Розкажіть світу щось цікаве — перший запис завжди найкращий.'
-                                        : `${profile.first_name} ще нічого не публікував(-ла).`
+                                        ? tr(
+                                              'Розкажіть світу щось цікаве — перший запис завжди найкращий.',
+                                          )
+                                        : tr(
+                                              '{first_name} ще нічого не публікував(-ла).',
+                                              {
+                                                  first_name:
+                                                      profile.first_name,
+                                              },
+                                          )
                                 }
                             />
                         ) : (

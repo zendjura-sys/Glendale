@@ -4,6 +4,7 @@ namespace App\Services\Cinema\Metadata;
 
 use App\Models\Movie;
 use App\Services\Cinema\CinemaException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -92,7 +93,7 @@ class MetadataEnricher
             }
         }
 
-        $movie->enriched_at = now();
+        $movie->enriched_at = Carbon::now();
         $movie->save();
 
         return ['providers' => $used, 'changed' => array_values(array_unique($changed)), 'errors' => $errors];

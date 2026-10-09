@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { api, ApiError } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import type { MovieOption, MovieType } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Provider = 'kodik' | 'flixcdn';
 
@@ -51,7 +52,7 @@ type Props = {
 };
 
 const searchBy = [
-    { key: 'title', label: 'За назвою' },
+    { key: 'title', label: tr('За назвою') },
     { key: 'imdb_id', label: 'IMDb ID' },
     { key: 'shikimori_id', label: 'Shikimori ID' },
 ];
@@ -80,7 +81,7 @@ export default function AdminCinemaImport({ providers }: Props) {
             toast.error(
                 e instanceof ApiError
                     ? e.message
-                    : 'Не вдалося виконати запит.',
+                    : tr('Не вдалося виконати запит.'),
             );
         } finally {
             setLoading(false);
@@ -125,7 +126,9 @@ export default function AdminCinemaImport({ providers }: Props) {
             );
         } catch (e) {
             toast.error(
-                e instanceof ApiError ? e.message : 'Не вдалося імпортувати.',
+                e instanceof ApiError
+                    ? e.message
+                    : tr('Не вдалося імпортувати.'),
             );
         } finally {
             setImporting((s) => {
@@ -147,16 +150,18 @@ export default function AdminCinemaImport({ providers }: Props) {
 
     return (
         <>
-            <Head title="Імпорт фільмів — Адмін-панель" />
+            <Head title={tr('Імпорт фільмів — Адмін-панель')} />
             <Link
                 href="/admin/cinema"
                 className="mb-3 inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white"
             >
-                <ArrowLeft className="size-4" /> До каталогу
+                <ArrowLeft className="size-4" /> {tr('До каталогу')}
             </Link>
             <PageHeader
-                title="Імпорт тайтлів"
-                description="Знайдіть фільм, серіал чи аніме в Kodik або FlixCDN — усі озвучки стануть плеєрами, а метадані підтягнуться з TMDB, Shikimori та IMDb."
+                title={tr('Імпорт тайтлів')}
+                description={tr(
+                    'Знайдіть фільм, серіал чи аніме в Kodik або FlixCDN — усі озвучки стануть плеєрами, а метадані підтягнуться з TMDB, Shikimori та IMDb.',
+                )}
             />
 
             <div className="glass mb-5 space-y-3 rounded-3xl p-4">
@@ -178,7 +183,7 @@ export default function AdminCinemaImport({ providers }: Props) {
                         >
                             {p === 'kodik' ? 'Kodik' : 'FlixCDN'}
                             {!providers[p].configured && (
-                                <Pill tone="gold">немає ключів</Pill>
+                                <Pill tone="gold">{tr('немає ключів')}</Pill>
                             )}
                         </button>
                     ))}
@@ -187,30 +192,30 @@ export default function AdminCinemaImport({ providers }: Props) {
                             <Toggle
                                 checked={publish}
                                 onChange={setPublish}
-                                label="Публікувати"
+                                label={tr('Публікувати')}
                             />
-                            Публікувати
+                            {tr('Публікувати')}
                         </label>
                         <label className="flex items-center gap-2">
                             <Toggle
                                 checked={enrich}
                                 onChange={setEnrich}
-                                label="Метадані"
+                                label={tr('Метадані')}
                             />
-                            Метадані
+                            {tr('Метадані')}
                         </label>
                     </div>
                 </div>
 
                 {!caps.configured ? (
                     <p className="rounded-2xl bg-amber-300/10 px-4 py-3 text-sm text-amber-100/90">
-                        {provider === 'kodik' ? 'Kodik' : 'FlixCDN'} ще не
-                        підключено. Вкажіть ключі в{' '}
+                        {provider === 'kodik' ? 'Kodik' : 'FlixCDN'}{' '}
+                        {tr('ще не підключено. Вкажіть ключі в')}{' '}
                         <Link
                             href="/admin/integrations"
                             className="font-semibold underline"
                         >
-                            Інтеграціях
+                            {tr('Інтеграціях')}
                         </Link>
                         .
                     </p>
@@ -238,8 +243,10 @@ export default function AdminCinemaImport({ providers }: Props) {
                                 onChange={(e) => setQ(e.target.value)}
                                 placeholder={
                                     caps.search
-                                        ? 'Наприклад: Дюна, tt1160419 …'
-                                        : 'Пошук недоступний: не задано адресу «API: пошук»'
+                                        ? tr('Наприклад: Дюна, tt1160419 …')
+                                        : tr(
+                                              'Пошук недоступний: не задано адресу «API: пошук»',
+                                          )
                                 }
                                 disabled={!caps.search}
                                 className="h-10 pl-10"
@@ -250,7 +257,7 @@ export default function AdminCinemaImport({ providers }: Props) {
                             disabled={!caps.search || loading || !q.trim()}
                             className="btn-glow inline-flex h-10 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold disabled:opacity-40"
                         >
-                            Знайти
+                            {tr('Знайти')}
                         </button>
                         <button
                             type="button"
@@ -260,7 +267,8 @@ export default function AdminCinemaImport({ providers }: Props) {
                             }
                             className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-white/[0.06] px-4 text-sm text-white/80 transition hover:bg-white/10 disabled:opacity-40"
                         >
-                            <Sparkles className="size-4" /> Свіжі оновлення
+                            <Sparkles className="size-4" />{' '}
+                            {tr('Свіжі оновлення')}
                         </button>
                     </form>
                 )}
@@ -268,15 +276,15 @@ export default function AdminCinemaImport({ providers }: Props) {
 
             {loading && (
                 <div className="flex items-center justify-center gap-2 py-16 text-sm text-white/50">
-                    <Loader2 className="size-5 animate-spin" /> Шукаємо…
+                    <Loader2 className="size-5 animate-spin" /> {tr('Шукаємо…')}
                 </div>
             )}
 
             {!loading && results !== null && results.length === 0 && (
                 <EmptyState
                     icon={Search}
-                    title="Нічого не знайдено"
-                    text="Спробуйте іншу назву або пошук за ID."
+                    title={tr('Нічого не знайдено')}
+                    text={tr('Спробуйте іншу назву або пошук за ID.')}
                 />
             )}
 
@@ -284,7 +292,8 @@ export default function AdminCinemaImport({ providers }: Props) {
                 <>
                     <div className="mb-3 flex items-center gap-3">
                         <p className="flex-1 text-sm text-white/50">
-                            Знайдено {results.length}, нових {fresh}
+                            {tr('Знайдено')} {results.length}
+                            {tr(', нових')} {fresh}
                         </p>
                         <button
                             type="button"
@@ -292,11 +301,11 @@ export default function AdminCinemaImport({ providers }: Props) {
                             onClick={importAll}
                             className="glass inline-flex h-9 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white/85 hover:text-white disabled:opacity-40"
                         >
-                            <DownloadCloud className="size-4" /> Імпортувати всі
-                            нові
+                            <DownloadCloud className="size-4" />{' '}
+                            {tr('Імпортувати всі нові')}
                         </button>
                     </div>
-                    <div className="grid gap-3 md:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                         {results.map((c) => (
                             <article
                                 key={c.key}
@@ -326,7 +335,7 @@ export default function AdminCinemaImport({ providers }: Props) {
                                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                                         {(c.rating_imdb ??
                                             c.rating_shikimori) && (
-                                            <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-[#f5b342]">
+                                            <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-gc-amber">
                                                 <Star className="size-3 fill-current" />
                                                 {(
                                                     c.rating_imdb ??
@@ -337,14 +346,15 @@ export default function AdminCinemaImport({ providers }: Props) {
                                         <Pill tone="blue">
                                             {c.sources_count}{' '}
                                             {c.sources_count === 1
-                                                ? 'плеєр'
-                                                : 'плеєрів'}
+                                                ? tr('плеєр')
+                                                : tr('плеєрів')}
                                         </Pill>
                                         {c.quality && <Pill>{c.quality}</Pill>}
                                         {c.episodes_count &&
                                             c.episodes_count > 1 && (
                                                 <Pill>
-                                                    {c.episodes_count} еп.
+                                                    {c.episodes_count}{' '}
+                                                    {tr('еп.')}
                                                 </Pill>
                                             )}
                                     </div>
@@ -358,13 +368,13 @@ export default function AdminCinemaImport({ providers }: Props) {
                                             <>
                                                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-300">
                                                     <Check className="size-4" />{' '}
-                                                    У каталозі
+                                                    {tr('У каталозі')}
                                                 </span>
                                                 <Link
                                                     href={`/admin/cinema/${c.imported.id}/edit`}
-                                                    className="ml-auto text-xs text-[#9aa8ff] hover:text-white"
+                                                    className="ml-auto text-xs text-gc-lilac-300 hover:text-white"
                                                 >
-                                                    Редагувати
+                                                    {tr('Редагувати')}
                                                 </Link>
                                                 <button
                                                     type="button"
@@ -374,7 +384,7 @@ export default function AdminCinemaImport({ providers }: Props) {
                                                     )}
                                                     className="text-xs text-white/50 hover:text-white"
                                                 >
-                                                    Оновити плеєри
+                                                    {tr('Оновити плеєри')}
                                                 </button>
                                             </>
                                         ) : (
@@ -389,7 +399,7 @@ export default function AdminCinemaImport({ providers }: Props) {
                                                 ) : (
                                                     <DownloadCloud className="size-3.5" />
                                                 )}
-                                                Імпортувати
+                                                {tr('Імпортувати')}
                                             </button>
                                         )}
                                     </div>

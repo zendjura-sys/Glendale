@@ -1,5 +1,6 @@
-import { usePage } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import {
+    Headphones,
     ListMusic,
     Loader2,
     Pause,
@@ -15,6 +16,7 @@ import {
     X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useCurrentUrl } from '@/hooks/use-current-url';
 import { formatDuration } from '@/lib/format';
 import {
     closePlayer,
@@ -33,6 +35,7 @@ import {
 } from '@/lib/player';
 import { cn } from '@/lib/utils';
 import { Equalizer, SpotifyLogo, TrackCover } from './track-cover';
+import { tr } from '@/lib/i18n';
 
 function Range({
     value,
@@ -86,7 +89,7 @@ function IconButton({
             className={cn(
                 'flex size-9 items-center justify-center rounded-full transition',
                 active
-                    ? 'text-[#8fa0ff] drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]'
+                    ? 'text-gc-lilac-400 drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]'
                     : 'text-white/60 hover:bg-white/[0.06] hover:text-white',
                 className,
             )}
@@ -99,6 +102,7 @@ function IconButton({
 export function PlayerBar({ standalone }: { standalone?: boolean }) {
     const player = usePlayer();
     const { music } = usePage().props;
+    const { currentUrl } = useCurrentUrl();
     const [queueOpen, setQueueOpen] = useState(false);
     const track = player.current;
 
@@ -119,7 +123,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
         <button
             type="button"
             onClick={toggle}
-            aria-label={player.playing ? 'Пауза' : 'Відтворити'}
+            aria-label={player.playing ? tr('Пауза') : tr('Відтворити')}
             className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-[#0b0d1d] shadow-[0_0_24px_-4px_rgb(139_107_255/0.9)] transition hover:scale-105"
         >
             {player.loading && !player.playing ? (
@@ -143,7 +147,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                 >
                     <header className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
                         <span className="font-display text-sm font-semibold text-white">
-                            Черга відтворення
+                            {tr('Черга відтворення')}
                         </span>
                         <span className="text-xs text-white/45">
                             {player.queue.length}
@@ -193,8 +197,8 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                                         <button
                                             type="button"
                                             onClick={() => removeFromQueue(i)}
-                                            className="rounded-full p-1 text-white/30 opacity-0 transition group-hover:opacity-100 hover:text-white"
-                                            aria-label="Прибрати з черги"
+                                            className="rounded-full p-1 text-white/30 opacity-0 transition group-hover:opacity-100 hover:text-white [@media(hover:none)]:opacity-100"
+                                            aria-label={tr('Прибрати з черги')}
                                         >
                                             <X className="size-3.5" />
                                         </button>
@@ -208,13 +212,13 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
 
             <div
                 className={cn(
-                    'fixed inset-x-0 z-40 px-2 pb-2 [view-transition-name:gc-player] lg:bottom-0 lg:px-0 lg:pb-0',
+                    'pointer-events-none fixed inset-x-0 z-40 bg-transparent px-3 [view-transition-name:gc-player]',
                     standalone
-                        ? 'bottom-[env(safe-area-inset-bottom)] lg:left-[256px]'
-                        : 'bottom-[calc(57px+env(safe-area-inset-bottom))]',
+                        ? 'bottom-[calc(env(safe-area-inset-bottom)+12px)] lg:left-[256px]'
+                        : 'bottom-[calc(4.25rem+env(safe-area-inset-bottom))] lg:bottom-4',
                 )}
             >
-                <div className="glass-strong relative mx-auto overflow-hidden rounded-2xl border border-white/10 shadow-[0_-10px_50px_-20px_rgb(109_93_252/0.6)] lg:rounded-none lg:border-x-0 lg:border-b-0">
+                <div className="pointer-events-auto relative mx-auto max-w-[1100px] overflow-hidden rounded-2xl border border-white/10 bg-[#0f1426]/70 shadow-[0_18px_50px_-28px_rgb(109_93_252/0.85)] backdrop-blur-md">
                     {player.current?.cover_url && (
                         <img
                             src={player.current.cover_url}
@@ -253,12 +257,12 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                                 <p className="truncate text-xs text-white/50">
                                     {track.artist}
                                     {player.engine === 'embed' && (
-                                        <span className="ml-1.5 text-[#1ed760]/80">
-                                            · плеєр Spotify
+                                        <span className="ml-1.5 text-spotify/80">
+                                            {tr('· плеєр Spotify')}
                                         </span>
                                     )}
                                     {player.engine === 'sdk' && (
-                                        <span className="ml-1.5 text-[#1ed760]/80">
+                                        <span className="ml-1.5 text-spotify/80">
                                             · Spotify Premium
                                         </span>
                                     )}
@@ -270,33 +274,39 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                             <div className="flex items-center gap-2">
                                 <IconButton
                                     onClick={toggleShuffle}
-                                    label="Перемішати"
+                                    label={tr('Перемішати')}
                                     active={player.shuffle}
                                 >
                                     <Shuffle className="size-4" />
                                 </IconButton>
-                                <IconButton onClick={prev} label="Попередній">
+                                <IconButton
+                                    onClick={prev}
+                                    label={tr('Попередній')}
+                                >
                                     <SkipBack className="size-5 fill-current" />
                                 </IconButton>
                                 {playButton}
-                                <IconButton onClick={next} label="Наступний">
+                                <IconButton
+                                    onClick={next}
+                                    label={tr('Наступний')}
+                                >
                                     <SkipForward className="size-5 fill-current" />
                                 </IconButton>
                                 <IconButton
                                     onClick={cycleRepeat}
                                     label={
                                         player.repeat === 'one'
-                                            ? 'Повторювати трек'
+                                            ? tr('Повторювати трек')
                                             : player.repeat === 'all'
-                                              ? 'Повторювати чергу'
-                                              : 'Без повтору'
+                                              ? tr('Повторювати чергу')
+                                              : tr('Без повтору')
                                     }
                                     active={player.repeat !== 'off'}
                                 >
                                     <RepeatIcon className="size-4" />
                                 </IconButton>
                             </div>
-                            <div className="flex w-full max-w-[560px] items-center gap-2.5 text-[11px] text-white/45 tabular-nums">
+                            <div className="flex w-full max-w-[560px] items-center gap-2.5 text-xs text-white/45 tabular-nums">
                                 <span className="w-9 text-right">
                                     {formatDuration(player.position)}
                                 </span>
@@ -304,7 +314,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                                     value={player.position}
                                     max={player.duration}
                                     onChange={seek}
-                                    label="Перемотати"
+                                    label={tr('Перемотати')}
                                 />
                                 <span className="w-9">
                                     {formatDuration(player.duration)}
@@ -316,7 +326,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                             <div className="lg:hidden">{playButton}</div>
                             <IconButton
                                 onClick={next}
-                                label="Наступний"
+                                label={tr('Наступний')}
                                 className="lg:hidden"
                             >
                                 <SkipForward className="size-5 fill-current" />
@@ -324,7 +334,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                             <div className="hidden items-center gap-1 lg:flex">
                                 <IconButton
                                     onClick={toggleMute}
-                                    label="Гучність"
+                                    label={tr('Гучність')}
                                 >
                                     <VolumeIcon className="size-[18px]" />
                                 </IconButton>
@@ -332,13 +342,26 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                                     value={player.muted ? 0 : player.volume}
                                     max={1}
                                     onChange={setVolume}
-                                    label="Гучність"
+                                    label={tr('Гучність')}
                                     className="w-24"
                                 />
                             </div>
+                            {track?.source === 'local' &&
+                                !currentUrl.startsWith('/listen/') && (
+                                    <IconButton
+                                        onClick={() =>
+                                            router.post('/music/together', {
+                                                track_id: track.id,
+                                            })
+                                        }
+                                        label={tr('Слухати разом')}
+                                    >
+                                        <Headphones className="size-[18px]" />
+                                    </IconButton>
+                                )}
                             <IconButton
                                 onClick={() => setQueueOpen((open) => !open)}
-                                label="Черга"
+                                label={tr('Черга')}
                                 active={queueOpen}
                             >
                                 <ListMusic className="size-[18px]" />
@@ -348,7 +371,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                                     setQueueOpen(false);
                                     closePlayer();
                                 }}
-                                label="Закрити плеєр"
+                                label={tr('Закрити плеєр')}
                             >
                                 <X className="size-[18px]" />
                             </IconButton>

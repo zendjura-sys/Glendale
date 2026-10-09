@@ -52,6 +52,7 @@ class FamilyDisciplineController extends FamilyBaseController
             'scope' => $scope,
             'punishments' => $list,
             'types' => FamilyPunishment::TYPES,
+            'mute_hours' => FamilyPunishment::MUTE_HOURS,
             'config' => $family->resolvedSettings()['discipline'],
             'roster' => $can['sanctions.issue']
                 ? FamilyMember::query()->where('family_id', $family->id)->where('status', FamilyMember::STATUS_ACTIVE)
@@ -72,13 +73,15 @@ class FamilyDisciplineController extends FamilyBaseController
             'type' => ['required', Rule::in(array_keys(FamilyPunishment::TYPES))],
             'reason' => ['required', 'string', 'min:3', 'max:500'],
             'amount' => ['nullable', 'required_if:type,fine', 'numeric', 'min:1', 'max:10000000'],
+            'hours' => ['nullable', 'required_if:type,mute', 'integer', Rule::in(FamilyPunishment::MUTE_HOURS)],
         ], ['amount.required_if' => 'Вкажіть суму штрафу.']);
 
-        $target = FamilyMember::query()->where('family_id', $family->id)->where('status', FamilyMember::STATUS_ACTIVE)->findOrFail($data['member_id']);
-        $punishment = $discipline->issue($family, $issuer, $target, $data['type'], $data['reason'], isset($data['amount']) ? $this->money($data['amount']) : null);
+        $target = FamilyMember::query()->where('family_id', $family->id)->where('status', FamilyMember::STATUS_ACTIVE)->findOrFail($request->integer('member_id'));
+        $punishment = $discipline->issue($family, $issuer, $target, $data['type'], $data['reason'], isset($data['amount']) ? $this->money($data['amount']) : null, isset($data['hours']) ? (int) $data['hours'] : null);
 
         $target->refresh();
-        $message = FamilyPunishment::TYPES[$punishment->type].' для '.$target->displayName().($punishment->amount ? ' · '.Money::format($punishment->amount) : '');
+        $message = FamilyPunishment::TYPES[$punishment->type].' для '.$target->displayName().($punishment->amount ? ' · '.Money::format($punishment->amount) : '')
+            .($punishment->type === FamilyPunishment::TYPE_MUTE && $punishment->expires_at ? ' до '.$punishment->expires_at->setTimezone('Europe/Kyiv')->format('d.m H:i') : '');
         if ($punishment->type === FamilyPunishment::TYPE_WARN && $target->status === FamilyMember::STATUS_KICKED) {
             $message .= ' — ліміт попереджень, учасника автоматично виключено.';
         } elseif ($punishment->type === FamilyPunishment::TYPE_WARN && FamilyPunishment::query()->where('member_id', $target->id)->where('is_auto', true)->where('created_at', '>=', now()->subMinute())->exists()) {

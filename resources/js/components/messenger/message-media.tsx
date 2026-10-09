@@ -20,6 +20,7 @@ import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { formatBytes, formatDuration } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { ChatAttachment, ContactCard } from '@/types';
+import { tr } from '@/lib/i18n';
 
 let playing: HTMLAudioElement | null = null;
 
@@ -125,7 +126,7 @@ export function VoicePlayer({
                         ? 'bg-white text-[#5b4cf0]'
                         : 'bg-gradient-brand text-white shadow-[0_0_18px_-4px_rgb(124_92_255/0.9)]',
                 )}
-                aria-label={isPlaying ? 'Пауза' : 'Відтворити'}
+                aria-label={isPlaying ? tr('Пауза') : tr('Відтворити')}
             >
                 {isPlaying ? (
                     <Pause className="size-[18px] fill-current" />
@@ -137,7 +138,7 @@ export function VoicePlayer({
                 <div
                     role="slider"
                     tabIndex={0}
-                    aria-label="Позиція відтворення"
+                    aria-label={tr('Позиція відтворення')}
                     aria-valuemin={0}
                     aria-valuemax={100}
                     aria-valuenow={Math.round(progress * 100)}
@@ -157,7 +158,7 @@ export function VoicePlayer({
                                             ? 'bg-white'
                                             : 'bg-white/40'
                                         : active
-                                          ? 'bg-[#8fa0ff]'
+                                          ? 'bg-gc-lilac-400'
                                           : 'bg-white/25',
                                 )}
                                 style={{
@@ -169,7 +170,7 @@ export function VoicePlayer({
                 </div>
                 <div
                     className={cn(
-                        'mt-0.5 flex items-center gap-2 text-[11px]',
+                        'mt-0.5 flex items-center gap-2 text-xs',
                         own ? 'text-white/75' : 'text-white/45',
                     )}
                 >
@@ -182,7 +183,7 @@ export function VoicePlayer({
                         type="button"
                         onClick={cycleSpeed}
                         className={cn(
-                            'rounded-md px-1.5 py-px text-[10px] font-bold transition',
+                            'rounded-md px-1.5 py-px text-xs font-bold transition',
                             own
                                 ? 'bg-white/15 hover:bg-white/25'
                                 : 'bg-white/[0.07] hover:bg-white/15',
@@ -206,16 +207,16 @@ function fileVisual(name: string | null | undefined, mime?: string | null) {
         return { icon: FileSpreadsheet, tone: 'from-emerald-400 to-teal-500' };
     }
     if (mime?.startsWith('audio/')) {
-        return { icon: FileAudio, tone: 'from-[#f04fd8] to-[#a855f7]' };
+        return { icon: FileAudio, tone: 'from-gc-pink to-gc-purple' };
     }
     if (mime?.startsWith('video/')) {
-        return { icon: FileVideo, tone: 'from-rose-400 to-[#f04fd8]' };
+        return { icon: FileVideo, tone: 'from-rose-400 to-gc-pink' };
     }
     if (['js', 'ts', 'php', 'json', 'html', 'css', 'py', 'cs'].includes(ext)) {
-        return { icon: FileCode, tone: 'from-[#38e1ff] to-[#4f8bff]' };
+        return { icon: FileCode, tone: 'from-gc-cyan to-gc-blue' };
     }
     if (['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt', 'md'].includes(ext)) {
-        return { icon: FileText, tone: 'from-[#4f8bff] to-[#6d5dfc]' };
+        return { icon: FileText, tone: 'from-gc-blue to-gc-indigo' };
     }
 
     return { icon: FileIcon, tone: 'from-slate-400 to-slate-600' };
@@ -251,7 +252,7 @@ export function FileAttachment({
             </span>
             <span className="min-w-0 flex-1">
                 <span className="block truncate text-[14px] font-medium">
-                    {attachment.name ?? 'Файл'}
+                    {attachment.name ?? tr('Файл')}
                 </span>
                 <span
                     className={cn(
@@ -280,7 +281,7 @@ export function ContactAttachment({
                 <span className="flex size-11 items-center justify-center rounded-full bg-white/10">
                     <UserRound className="size-5" />
                 </span>
-                Акаунт видалено
+                {tr('Акаунт видалено')}
             </div>
         );
     }
@@ -319,7 +320,7 @@ export function ContactAttachment({
                             : 'bg-white/[0.06] hover:bg-white/10',
                     )}
                 >
-                    <UserRound className="size-3.5" /> Профіль
+                    <UserRound className="size-3.5" /> {tr('Профіль')}
                 </Link>
                 <Link
                     href={`/messages/with/${contact.username}`}
@@ -327,10 +328,10 @@ export function ContactAttachment({
                         'flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition',
                         own
                             ? 'bg-white/15 hover:bg-white/25'
-                            : 'bg-[#6d5dfc]/20 text-[#c7c0ff] hover:bg-[#6d5dfc]/30',
+                            : 'bg-gc-indigo/20 text-[#c7c0ff] hover:bg-gc-indigo/30',
                     )}
                 >
-                    <MessageCircle className="size-3.5" /> Написати
+                    <MessageCircle className="size-3.5" /> {tr('Написати')}
                 </Link>
             </div>
         </div>

@@ -17,6 +17,26 @@
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
 
+    /* Brand palette. Use these (text-gc-lilac-400, from-gc-blue…) instead of raw hex. */
+    --color-gc-blue: #4f8bff;
+    --color-gc-indigo: #6d5dfc;
+    --color-gc-purple: #a855f7;
+    --color-gc-pink: #f04fd8;
+    --color-gc-cyan: #38e1ff;
+    --color-gc-mint: #22d3a6;
+    --color-gc-sky: #9cbcff;
+    --color-gc-lilac-200: #a5b4fc;
+    --color-gc-lilac-300: #9aa8ff;
+    --color-gc-lilac-400: #8fa0ff;
+    --color-gc-lilac-500: #7c8cff;
+    --color-gc-violet-300: #a58bff;
+    --color-gc-violet-400: #8b6bff;
+    --color-gc-amber: #f5b342;
+    --color-gc-gold: #ffd36b;
+    --color-gc-coral: #ff7a59;
+    --color-gc-ink: #070914;
+    --color-spotify: #1ed760;
+
     --color-background: var(--background);
     --color-foreground: var(--foreground);
 
@@ -176,10 +196,10 @@
 
     --gc-gradient: linear-gradient(
         120deg,
-        #4f8bff 0%,
-        #6d5dfc 45%,
-        #a855f7 80%,
-        #f04fd8 100%
+        var(--color-gc-blue) 0%,
+        var(--color-gc-indigo) 45%,
+        var(--color-gc-purple) 80%,
+        var(--color-gc-pink) 100%
     );
 }
 
@@ -366,17 +386,17 @@
     }
 
     .input-glass {
-        background: rgb(255 255 255 / 0.04);
-        border: 1px solid rgb(255 255 255 / 0.08);
+        background-color: #101428;
+        border: 1px solid rgb(255 255 255 / 0.1);
         transition:
             border-color 0.2s,
             box-shadow 0.2s,
-            background 0.2s;
+            background-color 0.2s;
     }
     .input-glass:focus,
     .input-glass:focus-within {
         outline: none;
-        background: rgb(255 255 255 / 0.06);
+        background-color: #161b34;
         border-color: rgb(124 140 255 / 0.55);
         box-shadow: 0 0 0 4px rgb(109 93 252 / 0.16);
     }
@@ -642,8 +662,9 @@
 
     /*
      * backdrop-filter на предку поля вводу змушує Chrome перерахувати шар,
-     * коли з’являється меню мови, і клавіатура згортається. На телефоні панелі
-     * й шапка лишаються щільними без розмиття.
+     * коли з’являється меню мови, і клавіатура згортається. Щільними лишаються
+     * картки й шапка з сильним розмиттям. Нижнє меню — окремий шар
+     * (backdrop-blur-md), воно не обгортає поле, тож розмиття там лишається.
      */
     .glass,
     .glass-strong,
@@ -681,4 +702,38 @@
     ::view-transition-new(*) {
         animation: none !important;
     }
+}
+
+/*
+ * Keyboard focus ring. Unlayered on purpose: it must win over the
+ * `outline-none` utilities that many custom buttons and links carry.
+ * Only shows for keyboard focus (:focus-visible), never on mouse clicks.
+ * Fields keep their own glow; shadcn controls that already draw a
+ * focus ring (button, checkbox, toggle, select) keep theirs.
+ */
+:where(
+        a,
+        button,
+        summary,
+        [role='button'],
+        [role='tab'],
+        [role='link'],
+        [role='menuitem'],
+        [role='option'],
+        [role='switch'],
+        [tabindex]:not([tabindex='-1'])
+    ):not(
+        [data-slot='button'],
+        [data-slot='badge'],
+        [data-slot='checkbox'],
+        [data-slot='toggle'],
+        [data-slot='select-trigger']
+    ):focus-visible,
+label:has(
+    > input.sr-only:focus-visible,
+    > input[type='checkbox']:focus-visible,
+    > input[type='radio']:focus-visible
+) {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
 }

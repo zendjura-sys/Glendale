@@ -9,6 +9,7 @@ use App\Models\Photo;
 use App\Models\Post;
 use App\Notifications\PostInteraction;
 use App\Services\FriendshipService;
+use App\Services\Moderation\ContentFilter;
 use App\Services\PhotoService;
 use App\Services\PostPresenter;
 use Illuminate\Http\JsonResponse;
@@ -52,6 +53,10 @@ class CommentController extends Controller
             'body' => ['required', 'string', 'max:2000'],
             'parent_id' => ['nullable', 'integer'],
         ]);
+
+        $filter = app(ContentFilter::class);
+        $filter->ensureCanPost($user);
+        $data['body'] = (string) $filter->clean(trim($data['body']));
 
         $parentId = isset($data['parent_id'])
             ? $post->comments()->whereKey($data['parent_id'])->value('id')

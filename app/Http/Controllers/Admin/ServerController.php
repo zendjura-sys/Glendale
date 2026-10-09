@@ -67,7 +67,7 @@ class ServerController extends Controller
                 GtaServer::STATUS_REJECTED => GtaServer::query()->where('status', GtaServer::STATUS_REJECTED)->count(),
                 'trashed' => GtaServer::onlyTrashed()->count(),
             ],
-            'options' => ['platforms' => GtaServer::PLATFORMS, 'multiplayers' => GtaServer::MULTIPLAYERS],
+            'options' => ['platforms' => GtaServer::PLATFORMS, 'multiplayers' => GtaServer::MULTIPLAYERS, 'languages' => GtaServer::languageOptions()],
             'auto_publish' => (bool) $this->settings->get('servers_auto_publish'),
         ]);
     }

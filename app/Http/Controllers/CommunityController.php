@@ -41,13 +41,14 @@ class CommunityController extends Controller
             ? $request->query('tab')
             : ($joined === [] ? 'discover' : 'mine');
         $term = trim((string) $request->query('q', ''));
-        $category = array_key_exists((string) $request->query('category'), Community::CATEGORIES) ? $request->query('category') : null;
+        $rawCategory = $request->query('category');
+        $category = is_string($rawCategory) && array_key_exists($rawCategory, Community::CATEGORIES) ? $rawCategory : null;
 
         $query = Community::query()
             ->when($tab === 'mine', fn (Builder $q) => $q->whereIn('id', $joined))
             ->when($tab === 'managed', fn (Builder $q) => $q->whereIn('id', $managed))
             ->when($term !== '', fn (Builder $q) => $q->search($term))
-            ->when($category, fn (Builder $q, string $c) => $q->where('category', $c))
+            ->when($category, $this->restrictCategory(...))
             ->orderByDesc('is_verified')
             ->orderByDesc('members_count')
             ->orderByDesc('id');
@@ -106,12 +107,25 @@ class CommunityController extends Controller
 
         $friendsInside = $community->activeMembers()->whereIn('user_id', $friendIds);
 
-        $preview = User::query()
-            ->whereIn('id', $community->activeMembers()->select('user_id'))
-            ->orderByRaw('case when id in ('.(implode(',', array_map('intval', $friendIds ?: [0]))).') then 0 else 1 end')
-            ->orderByDesc('last_seen_at')
-            ->limit(6)
-            ->get();
+        $memberIds = fn () => $community->activeMembers()->select('user_id');
+        $friendsFirst = $friendIds === []
+            ? new Collection
+            : User::query()
+                ->whereIn('id', $memberIds())
+                ->whereIn('id', $friendIds)
+                ->orderByDesc('last_seen_at')
+                ->limit(6)
+                ->get();
+        $remaining = 6 - $friendsFirst->count();
+        $others = $remaining > 0
+            ? User::query()
+                ->whereIn('id', $memberIds())
+                ->when($friendIds !== [], fn (Builder $q) => $q->whereNotIn('id', $friendIds))
+                ->orderByDesc('last_seen_at')
+                ->limit($remaining)
+                ->get()
+            : new Collection;
+        $preview = $friendsFirst->concat($others);
 
         $managers = $community->activeMembers()
             ->with('user')
@@ -262,6 +276,15 @@ class CommunityController extends Controller
         $this->communities->leave($community, $request->user());
 
         return back();
+    }
+
+    /**
+     * @param  Builder<Community>  $query
+     * @return Builder<Community>
+     */
+    private function restrictCategory(Builder $query, string $category): Builder
+    {
+        return $query->where('category', $category);
     }
 
     /**

@@ -297,12 +297,12 @@ class CinemaController extends Controller
             $movies = Movie::query()->published()->whereNotNull('description')->orderByDesc('views_count')->limit(5)->get();
         }
 
-        return $movies->map(fn (Movie $m) => [
+        return array_values($movies->map(fn (Movie $m) => [
             ...$m->toCard(),
             'description' => $m->description,
             'duration' => $m->duration,
             'genres' => array_slice($m->genres ?? [], 0, 4),
-        ])->all();
+        ])->all());
     }
 
     /**
@@ -310,7 +310,7 @@ class CinemaController extends Controller
      */
     private function genres(): array
     {
-        return Cache::remember('cinema.genres', now()->addMinutes(10), fn () => Movie::query()->published()
+        return Cache::remember('cinema.genres', now()->addMinutes(10), fn () => array_values(Movie::query()->published()
             ->whereNotNull('genres')
             ->pluck('genres')
             ->flatten()
@@ -318,8 +318,7 @@ class CinemaController extends Controller
             ->sortDesc()
             ->take(30)
             ->map(fn (int $count, string $name) => ['name' => $name, 'count' => $count])
-            ->values()
-            ->all());
+            ->all()));
     }
 
     /**
@@ -327,7 +326,7 @@ class CinemaController extends Controller
      */
     private function statusOptions(): array
     {
-        return collect(Movie::STATUSES)->map(fn (string $label, string $key) => ['key' => $key, 'label' => $label])->values()->all();
+        return array_values(collect(Movie::STATUSES)->map(fn (string $label, string $key) => ['key' => $key, 'label' => $label])->all());
     }
 
     /**
@@ -345,11 +344,11 @@ class CinemaController extends Controller
         $users = User::query()->whereIn('id', $rows->pluck('user_id'))->get()->keyBy('id');
 
         return [
-            'users' => $rows->filter(fn ($r) => $users->has($r->user_id))->map(fn ($r) => [
+            'users' => array_values($rows->filter(fn ($r) => $users->has($r->user_id))->map(fn ($r) => [
                 ...$users[$r->user_id]->toCard(),
                 'movie_status' => $r->status,
                 'movie_rating' => $r->rating !== null ? (int) $r->rating : null,
-            ])->values()->all(),
+            ])->all()),
             'total' => $query->count(),
         ];
     }
@@ -360,7 +359,7 @@ class CinemaController extends Controller
      */
     private function cards(Collection $movies): array
     {
-        return $movies->map(fn (Movie $m) => $m->toCard())->values()->all();
+        return array_values($movies->map(fn (Movie $m) => $m->toCard())->all());
     }
 
     /**
@@ -395,7 +394,16 @@ class CinemaController extends Controller
         <meta name="referrer" content="origin">
         <style>html,body,iframe{margin:0;width:100%;height:100%;border:0;background:#000}</style>
         </head>
-        <body><iframe src="{$src}" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="origin"></iframe></body>
+        <body><iframe src="{$src}" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="origin"></iframe>
+        <script>
+        // Міст для спільного перегляду в застосунку: події плеєра — у Flutter, команди — у плеєр.
+        window.addEventListener('message', function (e) {
+            if (window.GcBridge && e.source === document.querySelector('iframe').contentWindow) {
+                try { GcBridge.postMessage(JSON.stringify(e.data)); } catch (_) {}
+            }
+        });
+        window.gcSend = function (msg) { document.querySelector('iframe').contentWindow.postMessage(msg, '*'); };
+        </script></body>
         </html>
         HTML;
 

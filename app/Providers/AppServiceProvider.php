@@ -17,15 +17,31 @@ use App\Models\User;
 use App\Services\CommunityService;
 use App\Services\Families\FamilyGate;
 use App\Services\FriendshipService;
+use App\Services\Push\PushNotifier;
+use App\Support\I18n\CatalogLoader;
+use App\Support\I18n\Locales;
+use App\Support\I18n\Translations;
+use App\Support\Mail\AccountMail;
+use App\Support\Mail\MailBrand;
+use App\Support\Mail\MailCategory;
+use App\Support\Mail\SocialMailer;
 use App\Support\Modules\ModuleManager;
 use App\Support\Settings\SiteSettings;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Translation\Loader;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Mail\Events\MessageSending;
+use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Notifications\Events\NotificationSent;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Inertia\Ssr\SsrState;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -36,6 +52,9 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(ModuleManager::class, fn () => new ModuleManager(config('modules')));
         $this->app->singleton(SiteSettings::class);
+        $this->app->scoped(Translations::class);
+        // Повідомлення валідації для мов без файлів у lang/ — з каталогу перекладів.
+        $this->app->extend('translation.loader', fn (Loader $loader) => new CatalogLoader($loader));
         $this->app->scoped(FriendshipService::class);
         $this->app->scoped(CommunityService::class);
         $this->app->scoped(FamilyGate::class);
@@ -47,6 +66,24 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        // $t у шаблонах листів: переклад мовою отримувача (Laravel ставить її з preferredLocale).
+        View::share('t', fn (string $text, array $params = []) => (string) preg_replace_callback(
+            '/\{(\w+)\}/',
+            fn (array $m) => array_key_exists($m[1], $params) ? (string) $params[$m[1]] : $m[0],
+            app(Translations::class)->line($text),
+        ));
+
+        // Перша сторінка Inertia вбудована в HTML — її рядки перекладаємо так само, як JSON.
+        // <x-inertia::app /> бере сторінку з SsrState, а не з $page, тож оновлюємо обидва.
+        View::composer('app', function (\Illuminate\View\View $view) {
+            $page = $view->getData()['page'] ?? null;
+            if (is_array($page) && App::getLocale() !== Locales::SOURCE) {
+                $page = app(Translations::class)->tree($page);
+                $view->with('page', $page);
+                app(SsrState::class)->setPage($page);
+            }
+        });
 
         Relation::enforceMorphMap([
             'user' => User::class,
@@ -64,6 +101,22 @@ class AppServiceProvider extends ServiceProvider
         ]);
 
         Model::preventLazyLoading(! app()->isProduction());
+
+        AccountMail::register();
+
+        // Тип листа визначає адресу: no-reply@ — «Оповіщення», social@ — «Соцмережі».
+        Event::listen(MessageSending::class, function (MessageSending $event) {
+            MailCategory::apply($event->message);
+            MailBrand::embed($event->message);
+        });
+
+        // Кожне сповіщення дзвіночка сайту також іде push-ом у застосунок і листом у «Соцмережі».
+        Event::listen(NotificationSent::class, function (NotificationSent $event) {
+            if ($event->channel === 'database' && $event->response instanceof DatabaseNotification) {
+                rescue(fn () => app(PushNotifier::class)->notification($event->notifiable, $event->response), report: true);
+                rescue(fn () => app(SocialMailer::class)->notification($event->notifiable, $event->response), report: true);
+            }
+        });
     }
 
     /**

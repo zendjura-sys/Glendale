@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { Paginated, UserCard, Visibility } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type AdminPost = {
     id: number;
@@ -42,9 +43,9 @@ type Props = {
 };
 
 const VISIBILITY = {
-    public: { label: 'Усім', icon: Globe },
-    friends: { label: 'Друзям', icon: UsersRound },
-    private: { label: 'Лише автор', icon: Lock },
+    public: { label: tr('Усім'), icon: Globe },
+    friends: { label: tr('Друзям'), icon: UsersRound },
+    private: { label: tr('Лише автор'), icon: Lock },
 } as const;
 
 export default function AdminPosts({ posts, filters }: Props) {
@@ -67,7 +68,7 @@ export default function AdminPosts({ posts, filters }: Props) {
     const remove = (post: AdminPost) => {
         if (
             post.deleted_at &&
-            !confirm('Видалити запис назавжди разом із фото?')
+            !confirm(tr('Видалити запис назавжди разом із фото?'))
         ) {
             return;
         }
@@ -77,19 +78,19 @@ export default function AdminPosts({ posts, filters }: Props) {
 
     return (
         <>
-            <Head title="Записи — Адмін-панель" />
+            <Head title={tr('Записи — Адмін-панель')} />
             <PageHeader
-                title="Записи"
+                title={tr('Записи')}
                 description={
                     filters.trashed
-                        ? `У кошику: ${posts.total}`
-                        : `Усього: ${posts.total}`
+                        ? tr('У кошику: {total}', { total: posts.total })
+                        : tr('Усього: {total}', { total: posts.total })
                 }
                 actions={
                     <div className="glass flex rounded-xl p-1 text-sm">
                         {[
-                            { label: 'Опубліковані', value: false },
-                            { label: 'Кошик', value: true },
+                            { label: tr('Опубліковані'), value: false },
+                            { label: tr('Кошик'), value: true },
                         ].map((tab) => (
                             <button
                                 key={tab.label}
@@ -118,7 +119,7 @@ export default function AdminPosts({ posts, filters }: Props) {
                     <Input
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
-                        placeholder="Текст запису або автор"
+                        placeholder={tr('Текст запису або автор')}
                         className="h-10 pl-10"
                     />
                 </form>
@@ -127,7 +128,7 @@ export default function AdminPosts({ posts, filters }: Props) {
                     onChange={(e) => apply({ visibility: e.target.value })}
                     className={selectClass}
                 >
-                    <option value="">Будь-яка видимість</option>
+                    <option value="">{tr('Будь-яка видимість')}</option>
                     {Object.entries(VISIBILITY).map(([key, v]) => (
                         <option key={key} value={key}>
                             {v.label}
@@ -173,13 +174,13 @@ export default function AdminPosts({ posts, filters }: Props) {
                                         <V.icon className="size-3" /> {V.label}
                                     </Pill>
                                     {p.deleted_at && (
-                                        <Pill tone="red">У кошику</Pill>
+                                        <Pill tone="red">{tr('У кошику')}</Pill>
                                     )}
                                 </div>
                                 <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed whitespace-pre-line text-white/80">
                                     {p.body || (
                                         <span className="text-white/35 italic">
-                                            Без тексту
+                                            {tr('Без тексту')}
                                         </span>
                                     )}
                                 </p>
@@ -201,9 +202,9 @@ export default function AdminPosts({ posts, filters }: Props) {
                                     {!p.deleted_at && (
                                         <Link
                                             href={`/posts/${p.id}`}
-                                            className="ml-auto text-[#9aa8ff] hover:underline"
+                                            className="ml-auto text-gc-lilac-300 hover:underline"
                                         >
-                                            Відкрити
+                                            {tr('Відкрити')}
                                         </Link>
                                     )}
                                 </div>
@@ -220,7 +221,7 @@ export default function AdminPosts({ posts, filters }: Props) {
                                             )
                                         }
                                         className="flex size-9 items-center justify-center rounded-xl text-emerald-300 transition hover:bg-emerald-400/10"
-                                        title="Відновити"
+                                        title={tr('Відновити')}
                                     >
                                         <RotateCcw className="size-4" />
                                     </button>
@@ -231,8 +232,8 @@ export default function AdminPosts({ posts, filters }: Props) {
                                     className="flex size-9 items-center justify-center rounded-xl text-rose-300 transition hover:bg-rose-500/10"
                                     title={
                                         p.deleted_at
-                                            ? 'Видалити назавжди'
-                                            : 'У кошик'
+                                            ? tr('Видалити назавжди')
+                                            : tr('У кошик')
                                     }
                                 >
                                     <Trash2 className="size-4" />
@@ -243,7 +244,7 @@ export default function AdminPosts({ posts, filters }: Props) {
                 })}
                 {posts.data.length === 0 && (
                     <div className="glass rounded-3xl px-6 py-14 text-center text-sm text-white/40">
-                        Записів не знайдено
+                        {tr('Записів не знайдено')}
                     </div>
                 )}
             </div>

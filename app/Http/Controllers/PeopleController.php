@@ -78,12 +78,18 @@ class PeopleController extends Controller
         return User::query()
             ->whereNull('banned_at')
             ->when($filters['q'] ?? null, function (Builder $query, string $q) {
-                foreach (preg_split('/\s+/', trim($q)) as $word) {
+                $words = preg_split('/\s+/', trim($q));
+                if ($words === false) {
+                    return $query;
+                }
+                foreach ($words as $word) {
                     $query->where(fn (Builder $w) => $w
                         ->where('first_name', 'like', "{$word}%")
                         ->orWhere('last_name', 'like', "{$word}%")
                         ->orWhere('username', 'like', "{$word}%"));
                 }
+
+                return $query;
             })
             ->when($filters['city'] ?? null, fn (Builder $q, string $city) => $q->where('city', 'like', "{$city}%"))
             ->when($filters['gender'] ?? null, fn (Builder $q, string $gender) => $q->where('gender', $gender))

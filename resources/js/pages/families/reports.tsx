@@ -19,6 +19,7 @@ import type {
     ReportType,
     RosterEntry,
 } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Tier = 'light' | 'medium' | 'heavy';
 
@@ -59,10 +60,10 @@ export default function FamilyReports(props: Props) {
     );
 
     return (
-        <FamilyShell {...props} title="Звіти">
-            <div className="grid gap-4 lg:grid-cols-[440px_1fr]">
+        <FamilyShell {...props} title={tr('Звіти')}>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[440px_1fr]">
                 <Panel
-                    title="Новий звіт"
+                    title={tr('Новий звіт')}
                     icon={FilePlus2}
                     className="hidden h-fit lg:sticky lg:top-20 lg:block"
                 >
@@ -74,11 +75,11 @@ export default function FamilyReports(props: Props) {
                     onClick={() => setSheet(true)}
                     className={`${btnPrimary} h-12 lg:hidden`}
                 >
-                    <FilePlus2 className="size-5" /> Подати звіт
+                    <FilePlus2 className="size-5" /> {tr('Подати звіт')}
                 </button>
 
                 <Panel
-                    title="Мої звіти"
+                    title={tr('Мої звіти')}
                     icon={FileText}
                     actions={
                         <Segmented
@@ -96,10 +97,10 @@ export default function FamilyReports(props: Props) {
                                 )
                             }
                             options={[
-                                { value: 'all', label: 'Усі' },
-                                { value: 'pending', label: 'Очікують' },
-                                { value: 'approved', label: 'Схвалені' },
-                                { value: 'rejected', label: 'Відхилені' },
+                                { value: 'all', label: tr('Усі') },
+                                { value: 'pending', label: tr('Очікують') },
+                                { value: 'approved', label: tr('Схвалені') },
+                                { value: 'rejected', label: tr('Відхилені') },
                             ]}
                         />
                     }
@@ -107,7 +108,7 @@ export default function FamilyReports(props: Props) {
                     {reports.data.length === 0 ? (
                         <Empty
                             icon={FileText}
-                            text="Звітів ще немає — подайте перший"
+                            text={tr('Звітів ще немає — подайте перший')}
                         />
                     ) : (
                         <InfiniteScroll
@@ -126,7 +127,7 @@ export default function FamilyReports(props: Props) {
             <Modal
                 open={sheet}
                 onClose={() => setSheet(false)}
-                title="Новий звіт"
+                title={tr('Новий звіт')}
                 wide
             >
                 {form(() => setSheet(false))}

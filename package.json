@@ -8,7 +8,9 @@
         "dev": "vp dev",
         "check": "vp check",
         "check:fix": "vp check --fix",
-        "types:check": "tsc --noEmit"
+        "types:check": "tsc --noEmit",
+        "i18n:extract": "node scripts/i18n/extract.mjs",
+        "i18n:check": "node scripts/i18n/extract.mjs --check"
     },
     "dependencies": {
         "@inertiajs/react": "^3.0.0",
@@ -39,6 +41,7 @@
         "input-otp": "^1.4.2",
         "laravel-echo": "^2.5.0",
         "laravel-vite-plugin": "^3.0.0",
+        "livekit-client": "^2.22.3",
         "lucide-react": "^0.475.0",
         "pusher-js": "^8.6.0",
         "react": "^19.2.0",

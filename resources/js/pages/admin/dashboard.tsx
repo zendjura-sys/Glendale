@@ -16,6 +16,7 @@ import { PageHeader, Pill, StatCard } from '@/components/gc/admin';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { compactNumber, formatDate, timeAgo } from '@/lib/format';
 import type { UserCard } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Stats = {
     users: number;
@@ -50,8 +51,8 @@ type Props = {
 };
 
 const SERIES = {
-    posts: { label: 'Записи', color: '#a855f7' },
-    users: { label: 'Реєстрації', color: '#4f8bff' },
+    posts: { label: tr('Записи'), color: '#a855f7' },
+    users: { label: tr('Реєстрації'), color: '#4f8bff' },
 } as const;
 
 function path(points: [number, number][]) {
@@ -124,7 +125,7 @@ function ActivityChart({ data }: { data: ChartPoint[] }) {
                 {point && (
                     <div className="ml-auto text-sm text-white/55">
                         {formatDate(point.date, false)}:{' '}
-                        <span className="text-[#9cbcff]">{point.users}</span> /{' '}
+                        <span className="text-gc-sky">{point.users}</span> /{' '}
                         <span className="text-[#d3b0ff]">{point.posts}</span>
                     </div>
                 )}
@@ -232,7 +233,7 @@ function ActivityChart({ data }: { data: ChartPoint[] }) {
                                       ? 'end'
                                       : 'middle'
                             }
-                            className="fill-white/30 text-[11px]"
+                            className="fill-white/30 text-xs"
                         >
                             {formatDate(d.date, false)}
                         </text>
@@ -252,65 +253,69 @@ export default function AdminDashboard({
 }: Props) {
     return (
         <>
-            <Head title="Адмін-панель" />
+            <Head title={tr('Адмін-панель')} />
             <PageHeader
-                title="Огляд"
-                description="Пульс спільноти GameCon у реальному часі"
+                title={tr('Огляд')}
+                description={tr('Пульс спільноти GameCon у реальному часі')}
             />
 
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <StatCard
-                    label="Користувачі"
+                    label={tr('Користувачі')}
                     value={compactNumber(stats.users)}
                     hint={
                         <>
                             <span className="text-emerald-300">
                                 +{stats.users_today}
                             </span>{' '}
-                            сьогодні
+                            {tr('сьогодні')}
                         </>
                     }
                     icon={UsersRound}
                 />
                 <StatCard
-                    label="Онлайн зараз"
+                    label={tr('Онлайн зараз')}
                     value={stats.online}
-                    hint={`${stats.active_week} активних за тиждень`}
+                    hint={tr('{active_week} активних за тиждень', {
+                        active_week: stats.active_week,
+                    })}
                     icon={Wifi}
-                    tone="from-[#22d3a6] to-[#38e1ff]"
+                    tone="from-gc-mint to-gc-cyan"
                     delay={60}
                 />
                 <StatCard
-                    label="Записи"
+                    label={tr('Записи')}
                     value={compactNumber(stats.posts)}
                     hint={
                         <>
                             <span className="text-emerald-300">
                                 +{stats.posts_today}
                             </span>{' '}
-                            сьогодні
+                            {tr('сьогодні')}
                         </>
                     }
                     icon={FileText}
-                    tone="from-[#6d5dfc] to-[#a855f7]"
+                    tone="from-gc-indigo to-gc-purple"
                     delay={120}
                 />
                 <StatCard
-                    label="Реакції"
+                    label={tr('Реакції')}
                     value={compactNumber(stats.likes)}
-                    hint={`${compactNumber(stats.comments)} коментарів`}
+                    hint={tr('{compactNumber} коментарів', {
+                        compactNumber: compactNumber(stats.comments),
+                    })}
                     icon={Heart}
-                    tone="from-[#f04fd8] to-[#ff8a5c]"
+                    tone="from-gc-pink to-[#ff8a5c]"
                     delay={180}
                 />
             </div>
 
-            <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_340px]">
+            <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[1fr_340px]">
                 <section className="glass rounded-3xl p-5 sm:p-6">
                     <div className="mb-4 flex items-center gap-2">
-                        <Activity className="size-4 text-[#8fa0ff]" />
+                        <Activity className="size-4 text-gc-lilac-400" />
                         <h2 className="font-display text-sm font-semibold tracking-wide text-white/90 uppercase">
-                            Активність за 30 днів
+                            {tr('Активність за 30 днів')}
                         </h2>
                     </div>
                     <Deferred
@@ -326,11 +331,13 @@ export default function AdminDashboard({
                 <div className="grid gap-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="glass rounded-3xl p-4">
-                            <UserPlus className="size-4 text-[#9cbcff]" />
+                            <UserPlus className="size-4 text-gc-sky" />
                             <div className="mt-3 font-display text-2xl font-bold text-white">
                                 {compactNumber(stats.friendships)}
                             </div>
-                            <div className="text-xs text-white/45">дружб</div>
+                            <div className="text-xs text-white/45">
+                                {tr('дружб')}
+                            </div>
                         </div>
                         <div className="glass rounded-3xl p-4">
                             <Ban className="size-4 text-rose-300" />
@@ -338,7 +345,7 @@ export default function AdminDashboard({
                                 {stats.banned}
                             </div>
                             <div className="text-xs text-white/45">
-                                заблоковано
+                                {tr('заблоковано')}
                             </div>
                         </div>
                     </div>
@@ -349,7 +356,7 @@ export default function AdminDashboard({
                         <div className="flex items-center justify-between">
                             <Blocks className="size-5 text-[#d3b0ff]" />
                             <span className="text-xs text-white/40 group-hover:text-white/70">
-                                Керувати →
+                                {tr('Керувати →')}
                             </span>
                         </div>
                         <div className="mt-3 font-display text-2xl font-bold text-white">
@@ -360,7 +367,7 @@ export default function AdminDashboard({
                             </span>
                         </div>
                         <div className="text-xs text-white/45">
-                            модулів увімкнено
+                            {tr('модулів увімкнено')}
                         </div>
                         <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
                             <div
@@ -373,9 +380,9 @@ export default function AdminDashboard({
                     </Link>
                     <section className="glass rounded-3xl p-5">
                         <div className="mb-3 flex items-center gap-2">
-                            <Server className="size-4 text-[#8fa0ff]" />
+                            <Server className="size-4 text-gc-lilac-400" />
                             <h2 className="font-display text-xs font-semibold tracking-wide text-white/80 uppercase">
-                                Система
+                                {tr('Система')}
                             </h2>
                         </div>
                         <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
@@ -402,17 +409,17 @@ export default function AdminDashboard({
                 </div>
             </div>
 
-            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <section className="glass rounded-3xl p-5">
                     <div className="mb-3 flex items-center justify-between">
                         <h2 className="font-display text-sm font-semibold tracking-wide text-white/90 uppercase">
-                            Нові користувачі
+                            {tr('Нові користувачі')}
                         </h2>
                         <Link
                             href="/admin/users"
                             className="text-xs text-white/45 hover:text-white"
                         >
-                            Усі
+                            {tr('Усі')}
                         </Link>
                     </div>
                     <ul className="divide-y divide-white/[0.05]">
@@ -434,7 +441,7 @@ export default function AdminDashboard({
                                     </span>
                                 </Link>
                                 {u.is_online ? (
-                                    <Pill tone="green">онлайн</Pill>
+                                    <Pill tone="green">{tr('онлайн')}</Pill>
                                 ) : null}
                                 <span className="text-xs text-white/35">
                                     {timeAgo(u.created_at)}
@@ -446,13 +453,13 @@ export default function AdminDashboard({
                 <section className="glass rounded-3xl p-5">
                     <div className="mb-3 flex items-center justify-between">
                         <h2 className="font-display text-sm font-semibold tracking-wide text-white/90 uppercase">
-                            Останні записи
+                            {tr('Останні записи')}
                         </h2>
                         <Link
                             href="/admin/posts"
                             className="text-xs text-white/45 hover:text-white"
                         >
-                            Усі
+                            {tr('Усі')}
                         </Link>
                     </div>
                     <ul className="divide-y divide-white/[0.05]">
@@ -474,10 +481,10 @@ export default function AdminDashboard({
                                         · {timeAgo(p.created_at)}
                                     </span>
                                     <span className="line-clamp-2 text-sm text-white/70">
-                                        {p.body || 'Фото'}
+                                        {p.body || tr('Фото')}
                                     </span>
                                 </Link>
-                                <span className="flex shrink-0 flex-col items-end gap-1 text-[11px] text-white/40">
+                                <span className="flex shrink-0 flex-col items-end gap-1 text-xs text-white/40">
                                     <span className="flex items-center gap-1">
                                         <Heart className="size-3" />{' '}
                                         {p.likes_count}

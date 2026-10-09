@@ -42,6 +42,7 @@ class AuthenticateApiToken
         }
 
         Auth::setUser($user);
+        $request->attributes->set('api_token_id', $record->id);
 
         return $next($request);
     }

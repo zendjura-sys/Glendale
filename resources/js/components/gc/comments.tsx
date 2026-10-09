@@ -10,6 +10,11 @@ import type { CommentItem } from '@/types';
 import { LikeButton } from './like-button';
 import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
+import {
+    TranslateToggle,
+    useContentTranslation,
+} from '@/components/gc/translate';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     /** Базовий URL коментарів, напр. `/posts/1/comments`. */
@@ -68,7 +73,7 @@ export function Comments({
             toast.error(
                 error instanceof ApiError
                     ? error.message
-                    : 'Не вдалося надіслати коментар.',
+                    : tr('Не вдалося надіслати коментар.'),
             );
         } finally {
             setSending(false);
@@ -125,9 +130,9 @@ export function Comments({
                 <button
                     type="button"
                     onClick={loadAll}
-                    className="text-[13px] font-medium text-[#9aa8ff] hover:text-white"
+                    className="text-[13px] font-medium text-gc-lilac-300 hover:text-white"
                 >
-                    Показати всі {total}{' '}
+                    {tr('Показати всі')} {total}{' '}
                     {plural(total, ['коментар', 'коментарі', 'коментарів'])}
                 </button>
             )}
@@ -161,11 +166,14 @@ export function Comments({
                                 </Link>
                                 <p className="text-[14px] leading-snug break-words whitespace-pre-line text-white/85">
                                     {parent && (
-                                        <span className="mr-1 text-[#9aa8ff]">
+                                        <span className="mr-1 text-gc-lilac-300">
                                             {parent.user.first_name},
                                         </span>
                                     )}
-                                    {comment.body}
+                                    <CommentText
+                                        id={comment.id}
+                                        body={comment.body}
+                                    />
                                 </p>
                             </div>
                             <div className="mt-1 flex items-center gap-3 pl-2 text-xs text-white/40">
@@ -179,15 +187,15 @@ export function Comments({
                                             inputRef.current?.focus();
                                         }}
                                     >
-                                        Відповісти
+                                        {tr('Відповісти')}
                                     </button>
                                 )}
                                 {comment.can_delete && (
                                     <button
                                         type="button"
-                                        className="opacity-0 transition group-hover:opacity-100 hover:text-rose-300"
+                                        className="opacity-0 transition group-hover:opacity-100 hover:text-rose-300 [@media(hover:none)]:opacity-100"
                                         onClick={() => remove(comment)}
-                                        aria-label="Видалити коментар"
+                                        aria-label={tr('Видалити коментар')}
                                     >
                                         <Trash2 className="size-3.5" />
                                     </button>
@@ -211,15 +219,15 @@ export function Comments({
                     <UserAvatar user={auth.user} size="sm" showOnline={false} />
                     <div className="input-glass flex min-w-0 flex-1 flex-col rounded-2xl">
                         {replyTo && (
-                            <div className="flex items-center gap-1.5 px-3.5 pt-2 text-xs text-[#9aa8ff]">
+                            <div className="flex items-center gap-1.5 px-3.5 pt-2 text-xs text-gc-lilac-300">
                                 <CornerDownRight className="size-3.5" />{' '}
-                                Відповідь для {replyTo.user.first_name}
+                                {tr('Відповідь для')} {replyTo.user.first_name}
                                 <button
                                     type="button"
                                     className="ml-auto text-white/40 hover:text-white"
                                     onClick={() => setReplyTo(null)}
                                 >
-                                    скасувати
+                                    {tr('скасувати')}
                                 </button>
                             </div>
                         )}
@@ -242,15 +250,15 @@ export function Comments({
                                         void submit();
                                     }
                                 }}
-                                placeholder="Написати коментар…"
+                                placeholder={tr('Написати коментар…')}
                                 className="[field-sizing:content] max-h-40 min-h-10 flex-1 resize-none bg-transparent px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 focus:outline-none"
                             />
                             <button
                                 type="button"
                                 onClick={submit}
                                 disabled={!body.trim() || sending}
-                                className="m-1 flex size-8 items-center justify-center rounded-xl text-[#9aa8ff] transition hover:bg-white/10 disabled:opacity-30"
-                                aria-label="Надіслати"
+                                className="m-1 flex size-8 items-center justify-center rounded-xl text-gc-lilac-300 transition hover:bg-white/10 disabled:opacity-30"
+                                aria-label={tr('Надіслати')}
                             >
                                 <SendHorizontal className="size-[18px]" />
                             </button>
@@ -259,5 +267,21 @@ export function Comments({
                 </div>
             )}
         </div>
+    );
+}
+
+/** Текст коментаря з кнопкою «Перекласти». */
+function CommentText({ id, body }: { id: number; body: string }) {
+    const translation = useContentTranslation('comment', id);
+
+    return (
+        <>
+            {translation.text ?? body}
+            {translation.enabled && (
+                <span className="mt-0.5 block">
+                    <TranslateToggle state={translation} />
+                </span>
+            )}
+        </>
     );
 }

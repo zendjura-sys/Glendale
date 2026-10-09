@@ -16,6 +16,7 @@ import type {
     PhotoThumb,
     ScrollData,
 } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     owner: PhotoOwner;
@@ -41,16 +42,16 @@ export default function PhotosIndex({
 
     const title =
         owner.type === 'community'
-            ? `Фотографії спільноти ${owner.name}`
-            : `Фотографії ${owner.name}`;
+            ? tr('Фотографії спільноти {name}', { name: owner.name })
+            : tr('Фотографії {name}', { name: owner.name });
 
     return (
         <>
             <Head title={title} />
             <div className="space-y-5">
                 <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-6">
-                    <div className="pointer-events-none absolute -top-28 -right-10 size-80 rounded-full bg-[#38e1ff]/15 blur-3xl" />
-                    <div className="pointer-events-none absolute -bottom-32 left-16 size-72 rounded-full bg-[#a855f7]/20 blur-3xl" />
+                    <div className="pointer-events-none absolute -top-28 -right-10 size-80 rounded-full bg-gc-cyan/15 blur-3xl" />
+                    <div className="pointer-events-none absolute -bottom-32 left-16 size-72 rounded-full bg-gc-purple/20 blur-3xl" />
                     <div className="relative flex flex-wrap items-center gap-4">
                         <Link href={owner.href} className="shrink-0">
                             {owner.community ? (
@@ -70,12 +71,12 @@ export default function PhotosIndex({
                             >
                                 <ArrowLeft className="size-3.5" />
                                 {owner.type === 'community'
-                                    ? 'До спільноти'
-                                    : 'До профілю'}
+                                    ? tr('До спільноти')
+                                    : tr('До профілю')}
                             </Link>
                             <h1 className="mt-0.5 truncate font-display text-2xl font-bold text-white">
                                 <span className="text-gradient">
-                                    Фотографії
+                                    {tr('Фотографії')}
                                 </span>{' '}
                                 {owner.name}
                             </h1>
@@ -100,8 +101,8 @@ export default function PhotosIndex({
                                 onClick={() => setCreating(true)}
                                 className="btn-glow inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold"
                             >
-                                <FolderPlus className="size-4" /> Створити
-                                альбом
+                                <FolderPlus className="size-4" />{' '}
+                                {tr('Створити альбом')}
                             </button>
                         )}
                     </div>
@@ -110,11 +111,15 @@ export default function PhotosIndex({
                 {albums.length === 0 ? (
                     <EmptyState
                         icon={Camera}
-                        title="Тут поки немає альбомів"
+                        title={tr('Тут поки немає альбомів')}
                         text={
                             can.create
-                                ? 'Створіть перший альбом і поділіться найкращими кадрами.'
-                                : 'Коли з’являться відкриті альбоми, вони будуть тут.'
+                                ? tr(
+                                      'Створіть перший альбом і поділіться найкращими кадрами.',
+                                  )
+                                : tr(
+                                      'Коли з’являться відкриті альбоми, вони будуть тут.',
+                                  )
                         }
                         action={
                             can.create && (
@@ -123,7 +128,7 @@ export default function PhotosIndex({
                                     onClick={() => setCreating(true)}
                                     className="btn-glow rounded-xl px-5 py-2.5 text-sm font-semibold"
                                 >
-                                    Створити альбом
+                                    {tr('Створити альбом')}
                                 </button>
                             )
                         }
@@ -132,7 +137,7 @@ export default function PhotosIndex({
                     <>
                         <section>
                             <h2 className="mb-3 px-1 font-display text-[13px] font-semibold tracking-wide text-white/70 uppercase">
-                                Альбоми
+                                {tr('Альбоми')}
                             </h2>
                             <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
                                 {albums.map((album) => (
@@ -144,8 +149,8 @@ export default function PhotosIndex({
                         {photos.data.length > 0 && (
                             <section className="glass rounded-3xl p-3 sm:p-4">
                                 <h2 className="mb-3 flex items-center gap-2 px-1 font-display text-[13px] font-semibold tracking-wide text-white/70 uppercase">
-                                    <Images className="size-4 text-[#8fa0ff]" />
-                                    Усі фотографії
+                                    <Images className="size-4 text-gc-lilac-400" />
+                                    {tr('Усі фотографії')}
                                 </h2>
                                 <InfiniteScroll
                                     data="photos"

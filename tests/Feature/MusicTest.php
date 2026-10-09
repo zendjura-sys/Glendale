@@ -131,6 +131,35 @@ class MusicTest extends TestCase
         $this->assertSame(0, Track::query()->count());
     }
 
+    public function test_owner_sets_cover_from_catalog_url_only_from_allowed_host(): void
+    {
+        $owner = User::factory()->create();
+        $track = $this->track($owner);
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
+        Http::fake([
+            'is1-ssl.mzstatic.com/*' => Http::response($png, 200, ['Content-Type' => 'image/png']),
+            '*' => Http::response('nope', 404),
+        ]);
+
+        $this->actingAs($owner)->patchJson(route('tracks.update', $track), [
+            'title' => 'Респаун',
+            'artist' => 'Lag Spike',
+            'cover_url' => 'https://example.com/cover.png',
+        ])->assertOk();
+        $this->assertNull($track->fresh()->cover_path);
+        Http::assertNothingSent();
+
+        $this->actingAs($owner)->patchJson(route('tracks.update', $track), [
+            'title' => 'Респаун',
+            'artist' => 'Lag Spike',
+            'cover_url' => 'https://is1-ssl.mzstatic.com/image/thumb/Music/600x600bb.jpg',
+        ])->assertOk()->assertJsonPath('track.title', 'Респаун');
+
+        $cover = $track->fresh()->cover_path;
+        $this->assertNotNull($cover);
+        Storage::disk('public')->assertExists($cover);
+    }
+
     public function test_library_add_and_remove_and_non_owner_cannot_edit(): void
     {
         $owner = User::factory()->create();
@@ -227,7 +256,17 @@ class MusicTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->where('audio.href', '/music/u/'.$user->username)
                 ->missing('nowPlaying')
-                ->loadDeferredProps(fn (Assert $reload) => $reload->where('nowPlaying.key', 'local:'.$track->id)->where('nowPlaying.via', 'gamecon')));
+                ->loadDeferredProps(fn (Assert $reload) => $reload->where('nowPlaying.key', 'local:'.$track->id)->where('nowPlaying.via', 'gamecon')->where('nowPlaying.in_library', false)));
+
+        $this->actingAs($viewer)->postJson(route('tracks.add', $track))->assertOk();
+
+        $this->actingAs($viewer)->get(route('music.user', $user))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload->where('nowPlaying.key', 'local:'.$track->id)->where('nowPlaying.in_library', true)));
+
+        $this->actingAs($user)->get(route('profile.show', $user))
+            ->assertInertia(fn (Assert $page) => $page
+                ->loadDeferredProps(fn (Assert $reload) => $reload->where('nowPlaying.in_library', false)));
 
         $this->actingAs($user)->deleteJson(route('music.now-playing'))->assertOk();
         $this->assertNull(app(MusicService::class)->currentFor($user->fresh()));

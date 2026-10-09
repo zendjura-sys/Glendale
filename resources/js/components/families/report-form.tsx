@@ -16,6 +16,7 @@ import { toMinor, uah } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type { ReportConfig, ReportType, RosterEntry } from '@/types';
 import { btnPrimary, kyivDate, textareaClass } from './ui';
+import { tr } from '@/lib/i18n';
 
 type Tier = 'light' | 'medium' | 'heavy';
 
@@ -173,7 +174,9 @@ export function ReportForm({
                             title={
                                 enabled
                                     ? undefined
-                                    : 'Ваш ранг не може подавати цей тип звіту'
+                                    : tr(
+                                          'Ваш ранг не може подавати цей тип звіту',
+                                      )
                             }
                             onClick={() => setData('type', type)}
                             className={cn(
@@ -195,8 +198,8 @@ export function ReportForm({
                 <div className="grid grid-cols-2 gap-1 rounded-2xl bg-white/[0.04] p-1">
                     {(
                         [
-                            ['self', 'За себе', User],
-                            ['friend', 'За друга', UserPlus],
+                            ['self', tr('За себе'), User],
+                            ['friend', tr('За друга'), UserPlus],
                         ] as const
                     ).map(([value, label, Icon]) => (
                         <button
@@ -228,16 +231,17 @@ export function ReportForm({
                             }
                             className={cn(inputClass, '[color-scheme:dark]')}
                         >
-                            <option value="">Оберіть учасника…</option>
+                            <option value="">{tr('Оберіть учасника…')}</option>
                             {friends.map((m) => (
                                 <option key={m.id} value={m.id}>
-                                    {m.display} · ранг {m.rank}
+                                    {m.display} {tr('· ранг')} {m.rank}
                                 </option>
                             ))}
                         </select>
-                        <p className="mt-1 text-[11px] text-white/40">
-                            Винагорода піде на рахунок друга, а ви будете
-                            вказані як автор звіту.
+                        <p className="mt-1 text-xs text-white/40">
+                            {tr(
+                                'Винагорода піде на рахунок друга, а ви будете вказані як автор звіту.',
+                            )}
                         </p>
                         <FieldError message={errors.beneficiary_id} />
                     </div>
@@ -247,10 +251,11 @@ export function ReportForm({
             <div>
                 <div className="mb-1.5 flex items-center justify-between text-xs">
                     <span className="font-medium text-white/60">
-                        Дата події
+                        {tr('Дата події')}
                     </span>
                     <span className="text-white/35">
-                        Звіт приймається {config.deadline_hours} год
+                        {tr('Звіт приймається')} {config.deadline_hours}{' '}
+                        {tr('год')}
                     </span>
                 </div>
                 <div className="flex gap-1.5 overflow-x-auto pb-1">
@@ -267,9 +272,9 @@ export function ReportForm({
                             )}
                         >
                             {i === 0
-                                ? 'Сьогодні'
+                                ? tr('Сьогодні')
                                 : i === 1
-                                  ? 'Вчора'
+                                  ? tr('Вчора')
                                   : kyivDate(d)}
                         </button>
                     ))}
@@ -281,14 +286,14 @@ export function ReportForm({
                 <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                         <Stepper
-                            label="Перемоги"
+                            label={tr('Перемоги')}
                             value={data.wins}
                             onChange={(v) => setData('wins', v)}
                             tone="text-emerald-300"
                             hint={uah(toMinor(config.rates.bizwar_win ?? 0))}
                         />
                         <Stepper
-                            label="Поразки"
+                            label={tr('Поразки')}
                             value={data.losses}
                             onChange={(v) => setData('losses', v)}
                             tone="text-rose-300"
@@ -298,7 +303,7 @@ export function ReportForm({
                     <FieldError message={errors.wins} />
                     <div>
                         <div className="mb-1.5 text-xs font-medium text-white/60">
-                            Години бізварів
+                            {tr('Години бізварів')}
                         </div>
                         <div className="flex flex-wrap gap-1.5">
                             {config.hours.map((h) => (
@@ -333,14 +338,14 @@ export function ReportForm({
                                 className={cn(
                                     'rounded-2xl border px-2 py-2.5 text-center transition',
                                     data.tier === tier
-                                        ? 'border-[#7c8cff]/60 bg-[#6d5dfc]/15 text-white'
+                                        ? 'border-gc-lilac-500/60 bg-gc-indigo/15 text-white'
                                         : 'border-white/[0.07] bg-white/[0.03] text-white/55 hover:text-white',
                                 )}
                             >
                                 <div className="text-sm font-semibold">
                                     {config.tiers[tier]}
                                 </div>
-                                <div className="text-[11px] text-white/45">
+                                <div className="text-xs text-white/45">
                                     {uah(
                                         toMinor(
                                             config.rates[`contract_${tier}`] ??
@@ -352,21 +357,30 @@ export function ReportForm({
                         ))}
                     </div>
                     <Stepper
-                        label="Кількість"
+                        label={tr('Кількість')}
                         value={data.count}
                         min={1}
                         max={left ?? config.contract_limit}
                         onChange={(v) => setData('count', v)}
                         hint={
                             left === null
-                                ? `Ліміт ${config.contract_limit} на день`
-                                : `Сьогодні використано ${used}/${config.contract_limit}`
+                                ? tr('Ліміт {contract_limit} на день', {
+                                      contract_limit: config.contract_limit,
+                                  })
+                                : tr(
+                                      'Сьогодні використано {used}/{contract_limit}',
+                                      {
+                                          used,
+                                          contract_limit: config.contract_limit,
+                                      },
+                                  )
                         }
                     />
                     {left === 0 && (
                         <p className="text-xs text-rose-300">
-                            Ліміт контрактів цього рівня на обрану дату
-                            вичерпано.
+                            {tr(
+                                'Ліміт контрактів цього рівня на обрану дату вичерпано.',
+                            )}
                         </p>
                     )}
                     <FieldError message={errors.count ?? errors.tier} />
@@ -376,7 +390,7 @@ export function ReportForm({
             {data.type === 'investment' && (
                 <div>
                     <div className="mb-1.5 text-xs font-medium text-white/60">
-                        Сума інвестиції в скарбницю, ₴
+                        {tr('Сума інвестиції в скарбницю, ₴')}
                     </div>
                     <input
                         inputMode="decimal"
@@ -396,8 +410,10 @@ export function ReportForm({
                     rows={data.type === 'other' ? 3 : 2}
                     placeholder={
                         data.type === 'other'
-                            ? 'Що саме зроблено? Офіцер визначить винагороду.'
-                            : 'Коментар (необов’язково)'
+                            ? tr(
+                                  'Що саме зроблено? Офіцер визначить винагороду.',
+                              )
+                            : tr('Коментар (необов’язково)')
                     }
                     className={textareaClass}
                 />
@@ -407,7 +423,7 @@ export function ReportForm({
             <div>
                 <div className="mb-1.5 flex items-center justify-between text-xs">
                     <span className="font-medium text-white/60">
-                        Скріншоти-докази
+                        {tr('Скріншоти-докази')}
                         {config.require_proof && (
                             <span className="text-rose-300"> *</span>
                         )}
@@ -436,7 +452,7 @@ export function ReportForm({
                                     )
                                 }
                                 className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/70 text-white"
-                                aria-label="Прибрати"
+                                aria-label={tr('Прибрати')}
                             >
                                 <X className="size-3.5" />
                             </button>
@@ -446,9 +462,9 @@ export function ReportForm({
                         <button
                             type="button"
                             onClick={() => fileRef.current?.click()}
-                            className="flex size-20 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-white/15 text-[11px] text-white/45 transition hover:border-white/30 hover:text-white"
+                            className="flex size-20 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-white/15 text-xs text-white/45 transition hover:border-white/30 hover:text-white"
                         >
-                            <ImagePlus className="size-5" /> Додати
+                            <ImagePlus className="size-5" /> {tr('Додати')}
                         </button>
                     )}
                 </div>
@@ -475,11 +491,11 @@ export function ReportForm({
 
             <div className="flex items-center gap-3 rounded-2xl bg-white/[0.03] p-3 ring-1 ring-white/[0.06]">
                 <div className="min-w-0 flex-1">
-                    <div className="text-[11px] tracking-wide text-white/40 uppercase">
-                        Очікувана винагорода
+                    <div className="text-xs tracking-wide text-white/40 uppercase">
+                        {tr('Очікувана винагорода')}
                     </div>
                     <div className="font-display text-xl font-bold text-emerald-300">
-                        {reward === null ? 'визначить офіцер' : uah(reward)}
+                        {reward === null ? tr('визначить офіцер') : uah(reward)}
                     </div>
                 </div>
                 <button
@@ -492,7 +508,7 @@ export function ReportForm({
                     }
                     className={cn(btnPrimary, 'h-12 px-6')}
                 >
-                    {form.processing ? 'Надсилаємо…' : 'Надіслати звіт'}
+                    {form.processing ? tr('Надсилаємо…') : tr('Надіслати звіт')}
                 </button>
             </div>
         </div>

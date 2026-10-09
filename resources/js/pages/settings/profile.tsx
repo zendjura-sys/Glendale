@@ -1,8 +1,9 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { AtSign, Globe, Lock, MapPin, MessageCircle } from 'lucide-react';
+import { AtSign, Globe, Lock, Mail, MapPin, MessageCircle } from 'lucide-react';
 import type { FormEvent } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import { ConnectedAccounts } from '@/components/auth/connected-accounts';
+import { PlayingSettingsCard } from '@/components/gc/playing';
 import DeleteUser from '@/components/delete-user';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -10,9 +11,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { SettingsCard } from '@/layouts/settings/layout';
-import { cn } from '@/lib/utils';
+import { usePlayer } from '@/lib/player';
+import { cn, floatingAboveNav } from '@/lib/utils';
 import { send } from '@/routes/verification';
 import type { SocialConnection } from '@/types/auth';
+import { tr } from '@/lib/i18n';
 
 type ProfileForm = {
     first_name: string;
@@ -27,6 +30,7 @@ type ProfileForm = {
     website: string;
     is_private: boolean;
     message_privacy: string;
+    email_social: boolean;
 };
 
 type Props = {
@@ -46,6 +50,7 @@ export default function Profile({
     connections,
 }: Props) {
     const { auth } = usePage().props;
+    const playing = usePlayer().current !== null;
     const form = useForm<ProfileForm>({
         first_name: profile.first_name ?? '',
         last_name: profile.last_name ?? '',
@@ -59,6 +64,7 @@ export default function Profile({
         website: profile.website ?? '',
         is_private: !!profile.is_private,
         message_privacy: profile.message_privacy ?? 'everyone',
+        email_social: profile.email_social !== false,
     });
     const { data, setData, errors, processing } = form;
 
@@ -72,17 +78,17 @@ export default function Profile({
 
     return (
         <>
-            <Head title="Налаштування профілю" />
+            <Head title={tr('Налаштування профілю')} />
 
             <form onSubmit={submit} className="space-y-5">
                 <SettingsCard
-                    title="Основне"
-                    description="Так вас бачать інші учасники"
+                    title={tr('Основне')}
+                    description={tr('Так вас бачать інші учасники')}
                 >
-                    <div className="grid gap-5">
-                        <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-5">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="grid gap-2">
-                                <Label htmlFor="first_name">Ім'я</Label>
+                                <Label htmlFor="first_name">{tr("Ім'я")}</Label>
                                 <Input
                                     id="first_name"
                                     value={data.first_name}
@@ -95,7 +101,9 @@ export default function Profile({
                                 <InputError message={errors.first_name} />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="last_name">Прізвище</Label>
+                                <Label htmlFor="last_name">
+                                    {tr('Прізвище')}
+                                </Label>
                                 <Input
                                     id="last_name"
                                     value={data.last_name}
@@ -109,7 +117,9 @@ export default function Profile({
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="username">Адреса сторінки</Label>
+                            <Label htmlFor="username">
+                                {tr('Адреса сторінки')}
+                            </Label>
                             <div className="input-glass flex h-11 items-center rounded-xl pl-3.5 text-sm">
                                 <span className="shrink-0 text-white/35">
                                     gamecon.online/
@@ -123,21 +133,22 @@ export default function Profile({
                                             e.target.value.toLowerCase(),
                                         )
                                     }
-                                    className="h-full min-w-0 flex-1 bg-transparent pr-3 text-white outline-none"
+                                    className="h-full w-0 min-w-0 flex-1 bg-transparent pr-3 text-white outline-none"
                                     required
                                     maxLength={32}
                                 />
-                                <AtSign className="mr-3 size-4 text-white/25" />
+                                <AtSign className="mr-3 size-4 shrink-0 text-white/25" />
                             </div>
-                            <p className="text-[11px] text-white/35">
-                                Латиниця, цифри, крапка та підкреслення. 3–32
-                                символи.
+                            <p className="text-xs text-white/35">
+                                {tr(
+                                    'Латиниця, цифри, крапка та підкреслення. 3–32 символи.',
+                                )}
                             </p>
                             <InputError message={errors.username} />
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="status">Статус</Label>
+                            <Label htmlFor="status">{tr('Статус')}</Label>
                             <Input
                                 id="status"
                                 value={data.status}
@@ -145,18 +156,18 @@ export default function Profile({
                                     setData('status', e.target.value)
                                 }
                                 maxLength={140}
-                                placeholder="Що у вас нового?"
+                                placeholder={tr('Що у вас нового?')}
                             />
                             <div className="flex justify-between">
                                 <InputError message={errors.status} />
-                                <span className="ml-auto text-[11px] text-white/30">
+                                <span className="ml-auto text-xs text-white/30">
                                     {data.status.length}/140
                                 </span>
                             </div>
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="about">Про себе</Label>
+                            <Label htmlFor="about">{tr('Про себе')}</Label>
                             <textarea
                                 id="about"
                                 value={data.about}
@@ -165,7 +176,9 @@ export default function Profile({
                                 }
                                 rows={4}
                                 maxLength={2000}
-                                placeholder="Розкажіть про свої захоплення, улюблені ігри та фільми"
+                                placeholder={tr(
+                                    'Розкажіть про свої захоплення, улюблені ігри та фільми',
+                                )}
                                 className={cn(
                                     fieldClass,
                                     'resize-y py-3 leading-relaxed',
@@ -176,10 +189,10 @@ export default function Profile({
                     </div>
                 </SettingsCard>
 
-                <SettingsCard title="Особиста інформація">
-                    <div className="grid gap-4 sm:grid-cols-2">
+                <SettingsCard title={tr('Особиста інформація')}>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div className="grid gap-2">
-                            <Label htmlFor="city">Місто</Label>
+                            <Label htmlFor="city">{tr('Місто')}</Label>
                             <div className="relative">
                                 <MapPin className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-white/30" />
                                 <Input
@@ -189,13 +202,15 @@ export default function Profile({
                                         setData('city', e.target.value)
                                     }
                                     className="pl-10"
-                                    placeholder="Київ"
+                                    placeholder={tr('Київ')}
                                 />
                             </div>
                             <InputError message={errors.city} />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="birthday">Дата народження</Label>
+                            <Label htmlFor="birthday">
+                                {tr('Дата народження')}
+                            </Label>
                             <Input
                                 id="birthday"
                                 type="date"
@@ -208,7 +223,7 @@ export default function Profile({
                             <InputError message={errors.birthday} />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="gender">Стать</Label>
+                            <Label htmlFor="gender">{tr('Стать')}</Label>
                             <select
                                 id="gender"
                                 value={data.gender}
@@ -220,14 +235,14 @@ export default function Profile({
                                     'h-11 [color-scheme:dark]',
                                 )}
                             >
-                                <option value="">Не вказано</option>
-                                <option value="male">Чоловіча</option>
-                                <option value="female">Жіноча</option>
+                                <option value="">{tr('Не вказано')}</option>
+                                <option value="male">{tr('Чоловіча')}</option>
+                                <option value="female">{tr('Жіноча')}</option>
                             </select>
                             <InputError message={errors.gender} />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="website">Вебсайт</Label>
+                            <Label htmlFor="website">{tr('Вебсайт')}</Label>
                             <div className="relative">
                                 <Globe className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-white/30" />
                                 <Input
@@ -246,10 +261,12 @@ export default function Profile({
                     </div>
                 </SettingsCard>
 
-                <SettingsCard title="Акаунт і приватність">
-                    <div className="grid gap-5">
+                <SettingsCard title={tr('Акаунт і приватність')}>
+                    <div className="grid grid-cols-1 gap-5">
                         <div className="grid gap-2">
-                            <Label htmlFor="email">Електронна пошта</Label>
+                            <Label htmlFor="email">
+                                {tr('Електронна пошта')}
+                            </Label>
                             <Input
                                 id="email"
                                 type="email"
@@ -265,18 +282,18 @@ export default function Profile({
                             {mustVerifyEmail &&
                                 auth.user.email_verified_at === null && (
                                     <p className="text-xs text-amber-200/80">
-                                        Пошту не підтверджено.{' '}
+                                        {tr('Пошту не підтверджено.')}{' '}
                                         <Link
                                             href={send()}
                                             as="button"
-                                            className="text-[#9aa8ff] underline underline-offset-4"
+                                            className="text-gc-lilac-300 underline underline-offset-4"
                                         >
-                                            Надіслати лист ще раз
+                                            {tr('Надіслати лист ще раз')}
                                         </Link>
                                         {status ===
                                             'verification-link-sent' && (
                                             <span className="ml-1 text-emerald-300">
-                                                Посилання надіслано.
+                                                {tr('Посилання надіслано.')}
                                             </span>
                                         )}
                                     </p>
@@ -285,15 +302,16 @@ export default function Profile({
 
                         <label className="flex cursor-pointer items-start gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 transition hover:border-white/15">
                             <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.05]">
-                                <Lock className="size-[18px] text-[#a58bff]" />
+                                <Lock className="size-[18px] text-gc-violet-300" />
                             </span>
                             <span className="flex-1">
                                 <span className="block text-sm font-semibold text-white">
-                                    Закритий профіль
+                                    {tr('Закритий профіль')}
                                 </span>
                                 <span className="mt-0.5 block text-xs leading-relaxed text-white/45">
-                                    Записи, друзів і фото бачитимуть лише ваші
-                                    друзі.
+                                    {tr(
+                                        'Записи, друзів і фото бачитимуть лише ваші друзі.',
+                                    )}
                                 </span>
                             </span>
                             <input
@@ -307,22 +325,52 @@ export default function Profile({
                             <span className="relative mt-2 h-6 w-11 shrink-0 rounded-full bg-white/10 transition peer-checked:bg-gradient-brand after:absolute after:top-0.5 after:left-0.5 after:size-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5" />
                         </label>
 
+                        <label className="flex cursor-pointer items-start gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 transition hover:border-white/15">
+                            <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.05]">
+                                <Mail className="size-[18px] text-gc-violet-300" />
+                            </span>
+                            <span className="flex-1">
+                                <span className="block text-sm font-semibold text-white">
+                                    {tr('Листи про активність')}
+                                </span>
+                                <span className="mt-0.5 block text-xs leading-relaxed text-white/45">
+                                    {tr(
+                                        'Друзі, коментарі, спільноти й сім’ї — на пошту. Службові листи (підтвердження, пароль) приходять завжди.',
+                                    )}
+                                </span>
+                            </span>
+                            <input
+                                type="checkbox"
+                                checked={data.email_social}
+                                onChange={(e) =>
+                                    setData('email_social', e.target.checked)
+                                }
+                                className="peer sr-only"
+                            />
+                            <span className="relative mt-2 h-6 w-11 shrink-0 rounded-full bg-white/10 transition peer-checked:bg-gradient-brand after:absolute after:top-0.5 after:left-0.5 after:size-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5" />
+                        </label>
+
                         <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4">
                             <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.05]">
-                                <MessageCircle className="size-[18px] text-[#a58bff]" />
+                                <MessageCircle className="size-[18px] text-gc-violet-300" />
                             </span>
                             <span className="min-w-[160px] flex-1">
                                 <span className="block text-sm font-semibold text-white">
-                                    Хто може писати мені
+                                    {tr('Хто може писати мені')}
                                 </span>
                                 <span className="mt-0.5 block text-xs text-white/45">
-                                    Особисті повідомлення від інших учасників
+                                    {tr(
+                                        'Особисті повідомлення від інших учасників',
+                                    )}
                                 </span>
                             </span>
                             <div className="glass flex rounded-xl p-1 text-sm">
                                 {[
-                                    { value: 'everyone', label: 'Усі' },
-                                    { value: 'friends', label: 'Лише друзі' },
+                                    { value: 'everyone', label: tr('Усі') },
+                                    {
+                                        value: 'friends',
+                                        label: tr('Лише друзі'),
+                                    },
                                 ].map((option) => (
                                     <button
                                         key={option.value}
@@ -349,10 +397,15 @@ export default function Profile({
                     </div>
                 </SettingsCard>
 
-                <div className="glass-strong sticky bottom-20 z-10 flex items-center justify-end gap-3 rounded-2xl p-3 lg:bottom-4">
+                <div
+                    className={cn(
+                        'glass-strong sticky z-10 flex items-center justify-end gap-3 rounded-2xl p-3',
+                        floatingAboveNav(playing),
+                    )}
+                >
                     {form.recentlySuccessful && (
                         <span className="text-sm text-emerald-300">
-                            Збережено
+                            {tr('Збережено')}
                         </span>
                     )}
                     <Button
@@ -360,10 +413,12 @@ export default function Profile({
                         data-test="update-profile-button"
                     >
                         {processing && <Spinner />}
-                        Зберегти зміни
+                        {tr('Зберегти зміни')}
                     </Button>
                 </div>
             </form>
+
+            <PlayingSettingsCard />
 
             <div className="mt-5">
                 <ConnectedAccounts connections={connections} />

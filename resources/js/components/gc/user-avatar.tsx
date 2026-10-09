@@ -1,8 +1,9 @@
 import { initials } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { tr } from '@/lib/i18n';
 
 const sizes = {
-    xs: 'size-7 text-[10px]',
+    xs: 'size-7 text-xs',
     sm: 'size-9 text-xs',
     md: 'size-11 text-sm',
     lg: 'size-14 text-base',
@@ -20,12 +21,12 @@ const dotSizes = {
 } as const;
 
 const palettes = [
-    'from-[#4f8bff] to-[#6d5dfc]',
-    'from-[#6d5dfc] to-[#a855f7]',
-    'from-[#a855f7] to-[#f04fd8]',
-    'from-[#38e1ff] to-[#4f8bff]',
-    'from-[#f04fd8] to-[#ff7a59]',
-    'from-[#22d3a6] to-[#38e1ff]',
+    'from-gc-blue to-gc-indigo',
+    'from-gc-indigo to-gc-purple',
+    'from-gc-purple to-gc-pink',
+    'from-gc-cyan to-gc-blue',
+    'from-gc-pink to-gc-coral',
+    'from-gc-mint to-gc-cyan',
 ];
 
 type Props = {
@@ -94,7 +95,7 @@ export function UserAvatar({
                         dotSizes[size],
                         size !== 'xs' && 'animate-pulse-ring',
                     )}
-                    title="Онлайн"
+                    title={tr('Онлайн')}
                 />
             )}
         </span>

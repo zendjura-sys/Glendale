@@ -3,12 +3,13 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { api, ApiError } from '@/lib/api';
 import type { LocalTrack } from '@/types';
+import { tr } from '@/lib/i18n';
 
 const fields = [
-    ['title', 'Назва'],
-    ['artist', 'Виконавець'],
-    ['album', 'Альбом'],
-    ['genre', 'Жанр'],
+    ['title', tr('Назва')],
+    ['artist', tr('Виконавець')],
+    ['album', tr('Альбом')],
+    ['genre', tr('Жанр')],
 ] as const;
 
 export function EditTrackDialog({
@@ -49,10 +50,10 @@ export function EditTrackDialog({
             );
             onSaved(response.track);
             onOpenChange(false);
-            toast.success('Трек оновлено.');
+            toast.success(tr('Трек оновлено.'));
         } catch (error) {
             toast.error(
-                error instanceof ApiError ? error.message : 'Не вдалося.',
+                error instanceof ApiError ? error.message : tr('Не вдалося.'),
             );
         } finally {
             setSaving(false);
@@ -63,7 +64,7 @@ export function EditTrackDialog({
         <Dialog open={track !== null} onOpenChange={onOpenChange}>
             <DialogContent className="glass-strong gap-0 rounded-3xl border-white/10 p-6 text-white sm:max-w-md">
                 <DialogTitle className="font-display text-xl">
-                    Редагування треку
+                    {tr('Редагування треку')}
                 </DialogTitle>
                 <div className="mt-5 grid gap-3">
                     {fields.map(([key, label]) => (
@@ -92,7 +93,7 @@ export function EditTrackDialog({
                         onClick={() => onOpenChange(false)}
                         className="rounded-xl px-4 py-2.5 text-sm text-white/60 hover:bg-white/5 hover:text-white"
                     >
-                        Скасувати
+                        {tr('Скасувати')}
                     </button>
                     <button
                         type="button"
@@ -102,7 +103,7 @@ export function EditTrackDialog({
                         }
                         className="btn-glow rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
                     >
-                        Зберегти
+                        {tr('Зберегти')}
                     </button>
                 </div>
             </DialogContent>

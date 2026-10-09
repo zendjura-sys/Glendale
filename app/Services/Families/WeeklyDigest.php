@@ -40,7 +40,7 @@ class WeeklyDigest
     }
 
     /**
-     * @return array{lines: list<array<string, mixed>>, total: int, start: CarbonImmutable, end: CarbonImmutable}
+     * @return array{lines: list<array{member: FamilyMember, total: int, parts: array<string, int>}>, total: int, start: CarbonImmutable, end: CarbonImmutable}
      */
     public function build(Family $family, ?CarbonImmutable $at = null): array
     {
@@ -57,26 +57,49 @@ class WeeklyDigest
 
         $members = FamilyMember::query()->whereKey($rows->pluck('member_id')->unique()->all())->get()->keyBy('id');
 
-        $lines = $rows->groupBy('member_id')
-            ->map(function ($group, $memberId) use ($members) {
-                $member = $members[$memberId] ?? null;
+        $grouped = $this->emptyDigestGroups();
+        foreach ($rows as $transaction) {
+            $memberId = $transaction->member_id;
+            if ($memberId === null) {
+                continue;
+            }
+            $amount = $transaction->getAttribute('total');
+            $value = is_numeric($amount) ? (int) $amount : 0;
+            if (! array_key_exists($memberId, $grouped)) {
+                $grouped[$memberId] = ['total' => 0, 'parts' => []];
+            }
+            $grouped[$memberId]['total'] += $value;
+            $grouped[$memberId]['parts'][$transaction->type] = $value;
+        }
 
-                return $member ? [
-                    'member' => $member,
-                    'total' => (int) $group->sum('total'),
-                    'parts' => $group->mapWithKeys(fn ($r) => [$r->type => (int) $r->total])->all(),
-                ] : null;
-            })
-            ->filter(fn ($line) => $line !== null && $line['total'] > self::THRESHOLD)
-            ->sortByDesc('total')
-            ->values()
-            ->all();
+        $lines = [];
+        foreach ($grouped as $memberId => $row) {
+            $member = $members->get($memberId);
+            if (! $member instanceof FamilyMember || $row['total'] <= self::THRESHOLD) {
+                continue;
+            }
+            $lines[] = [
+                'member' => $member,
+                'total' => $row['total'],
+                'parts' => $row['parts'],
+            ];
+        }
 
-        return ['lines' => $lines, 'total' => (int) array_sum(array_column($lines, 'total')), 'start' => $start, 'end' => $end];
+        $lines = collect($lines)->sortByDesc('total')->values()->all();
+
+        return ['lines' => array_values($lines), 'total' => (int) array_sum(array_column($lines, 'total')), 'start' => $start, 'end' => $end];
     }
 
     /**
-     * @param  array{lines: list<array<string, mixed>>, total: int, start: CarbonImmutable, end: CarbonImmutable}  $digest
+     * @return array<int, array{total: int, parts: array<string, int>}>
+     */
+    private function emptyDigestGroups(): array
+    {
+        return [];
+    }
+
+    /**
+     * @param  array{lines: list<array{member: FamilyMember, total: int, parts: array<string, int>}>, total: int, start: CarbonImmutable, end: CarbonImmutable}  $digest
      */
     public function format(Family $family, array $digest): string
     {

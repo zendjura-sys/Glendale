@@ -24,6 +24,9 @@ class FamilyEventAttendance extends Model
 
     public const STATUS_ABSENT = 'absent';
 
+    /** Відповів «не піду» до початку. */
+    public const STATUS_DECLINED = 'declined';
+
     /**
      * @return BelongsTo<FamilyMember, $this>
      */

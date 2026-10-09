@@ -8,13 +8,14 @@ use App\Models\Track;
 use App\Models\User;
 use App\Services\Spotify\SpotifyClient;
 use App\Services\Spotify\SpotifyException;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class MusicService
 {
@@ -24,13 +25,14 @@ class MusicService
     ) {}
 
     /**
-     * @param  array{title: string, artist: string, album?: string|null, genre?: string|null, duration?: int|null}  $meta
+     * @param  array{title: string, artist: string, album?: string|null, genre?: string|null, duration?: int|null, cover_url?: string|null}  $meta
      */
     public function upload(User $user, UploadedFile $audio, array $meta, ?UploadedFile $cover = null): Track
     {
         $extension = strtolower($audio->getClientOriginalExtension() ?: $audio->extension() ?: 'mp3');
         $path = $audio->storeAs('music/'.now()->format('Y/m'), Str::random(32).'.'.$extension, 'public');
-        $coverPath = $cover ? $this->images->store($cover, 'music/covers', cover: [600, 600])['path'] : null;
+        $coverPath = $cover ? $this->images->store($cover, 'music/covers', cover: [600, 600])['path']
+            : (filled($meta['cover_url'] ?? null) ? $this->coverFromUrl((string) $meta['cover_url']) : null);
 
         $track = Track::query()->create([
             'user_id' => $user->id,
@@ -48,6 +50,53 @@ class MusicService
         $this->add($user, $track);
 
         return $track;
+    }
+
+    /** Хости, звідки сервер сам завантажує обкладинки за посиланням (каталог iTunes). */
+    public const COVER_HOSTS = ['mzstatic.com'];
+
+    /**
+     * Обкладинка за посиланням із каталогу (автозаповнення в застосунку): лише https і лише з COVER_HOSTS,
+     * щоб сервер не ходив куди завгодно. Повертає шлях збереженої обкладинки або null.
+     */
+    public function coverFromUrl(string $url): ?string
+    {
+        $parts = parse_url($url);
+        $host = strtolower((string) ($parts['host'] ?? ''));
+        $allowed = collect(self::COVER_HOSTS)->contains(fn (string $h) => $host === $h || str_ends_with($host, '.'.$h));
+        if (($parts['scheme'] ?? '') !== 'https' || ! $allowed) {
+            return null;
+        }
+
+        try {
+            $response = Http::timeout(10)->withOptions(['allow_redirects' => false])->get($url);
+        } catch (ConnectionException) {
+            return null;
+        }
+
+        $body = $response->body();
+        if (! $response->successful() || ! str_starts_with((string) $response->header('Content-Type'), 'image/') || $body === '' || strlen($body) > 5 * 1024 * 1024) {
+            return null;
+        }
+
+        $temp = tempnam(sys_get_temp_dir(), 'cover');
+        if ($temp === false) {
+            return null;
+        }
+
+        try {
+            file_put_contents($temp, $body);
+            $file = new UploadedFile($temp, 'cover', null, null, true);
+            if (! str_starts_with((string) $file->getMimeType(), 'image/')) {
+                return null;
+            }
+
+            return $this->images->store($file, 'music/covers', cover: [600, 600])['path'];
+        } catch (Throwable) {
+            return null;
+        } finally {
+            @unlink($temp);
+        }
     }
 
     public function add(User $user, Track $track): bool
@@ -79,29 +128,41 @@ class MusicService
      */
     public function libraryIds(User $user, iterable $trackIds): array
     {
-        $ids = collect($trackIds)->unique()->values();
-        if ($ids->isEmpty()) {
+        $ids = [];
+        foreach ($trackIds as $id) {
+            $ids[] = $id;
+        }
+        $ids = array_values(array_unique($ids));
+        if ($ids === []) {
             return [];
         }
 
-        return DB::table('music_library')
-            ->where('user_id', $user->id)
-            ->whereIn('track_id', $ids)
-            ->pluck('track_id')
-            ->mapWithKeys(fn ($id) => [(int) $id => true])
-            ->all();
+        $owned = [];
+        foreach (DB::table('music_library')->where('user_id', $user->id)->whereIn('track_id', $ids)->pluck('track_id') as $id) {
+            if (is_numeric($id)) {
+                $owned[(int) $id] = true;
+            }
+        }
+
+        return $owned;
     }
 
     /**
-     * @param  Collection<int, Track>|\Illuminate\Support\Collection<int, Track>  $tracks
+     * @param  iterable<int|string, Track>  $tracks
      * @return list<array<string, mixed>>
      */
     public function cards(iterable $tracks, User $viewer): array
     {
         $tracks = collect($tracks);
-        $owned = $this->libraryIds($viewer, $tracks->pluck('id'));
+        $trackIds = [];
+        foreach ($tracks->pluck('id') as $id) {
+            if (is_numeric($id)) {
+                $trackIds[] = (int) $id;
+            }
+        }
+        $owned = $this->libraryIds($viewer, $trackIds);
 
-        return $tracks->map(fn (Track $t) => $t->toCard(isset($owned[$t->id])))->values()->all();
+        return array_values($tracks->map(fn (Track $t) => $t->toCard(isset($owned[$t->id])))->all());
     }
 
     public function canManageTrack(Track $track, User $user): bool
@@ -109,6 +170,9 @@ class MusicService
         return $track->user_id === $user->id || $user->isStaff();
     }
 
+    /**
+     * @param  array{title: string, description: string|null, is_public: bool}  $data
+     */
     public function createPlaylist(User $user, array $data): Playlist
     {
         if ($user->playlists()->count() >= Playlist::MAX_PER_USER) {
@@ -156,7 +220,7 @@ class MusicService
      */
     public function nowPlaying(User $user, ?Track $track, ?array $spotifyTrack = null): void
     {
-        $duration = $track?->duration ?? (int) ($spotifyTrack['duration'] ?? 0);
+        $duration = $track !== null ? $track->duration : (int) ($spotifyTrack['duration'] ?? 0);
 
         MusicStatus::query()->updateOrCreate(['user_id' => $user->id], [
             'source' => $track ? 'local' : 'spotify',
@@ -180,10 +244,24 @@ class MusicService
 
     /**
      * Що зараз слухає користувач: трек із плеєра GameCon або з Spotify.
+     * Позначка «вже у моїх аудіозаписах» рахується для [$viewer] поза кешем, бо кеш спільний для всіх глядачів.
      *
      * @return array<string, mixed>|null
      */
-    public function currentFor(User $user): ?array
+    public function currentFor(User $user, ?User $viewer = null): ?array
+    {
+        $now = $this->cachedCurrent($user);
+        if ($now !== null && ($now['source'] ?? null) === 'local' && isset($now['id'])) {
+            $now['in_library'] = $viewer !== null && $viewer->library()->whereKey($now['id'])->exists();
+        }
+
+        return $now;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function cachedCurrent(User $user): ?array
     {
         return Cache::remember($this->statusCacheKey($user), now()->addSeconds(30), function () use ($user) {
             $status = $user->musicStatus()->with('track')->first();

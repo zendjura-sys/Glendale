@@ -3,6 +3,7 @@ import {
     CalendarDays,
     Crown,
     Film,
+    Gamepad2,
     Image,
     MessageCircle,
     Music,
@@ -10,6 +11,7 @@ import {
     Search,
     Server,
     Shield,
+    Swords,
     UserRound,
     UsersRound,
 } from 'lucide-react';
@@ -27,6 +29,8 @@ const icons: Record<string, LucideIcon> = {
     film: Film,
     server: Server,
     crown: Crown,
+    'gamepad-2': Gamepad2,
+    swords: Swords,
     'calendar-days': CalendarDays,
 };
 

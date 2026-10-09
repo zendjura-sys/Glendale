@@ -1,0 +1,213 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Clan;
+use App\Models\Game;
+use App\Models\GameEvent;
+use App\Services\EventCalendar;
+use App\Services\FriendshipService;
+use App\Services\Presence\PlayingStatus;
+use App\Support\Modules\ModuleManager;
+use App\Support\Settings\SiteSettings;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
+use Inertia\Response;
+
+/**
+ * Каталог мультиплеєрних ігор: пошук, розділи ПК / мобільні / консолі, покажчик A–Z.
+ */
+class GameController extends Controller
+{
+    /** Які поля картки гри належать до кожної можливості (Адмінка → Ігри). */
+    private const DETAIL_FEATURES = [
+        'summary' => ['summary', 'storyline'],
+        'media' => ['screenshots', 'artworks', 'videos'],
+        'multiplayer' => ['multiplayer'],
+        'ratings' => ['ratings'],
+        'about' => ['developers', 'publishers', 'engines', 'franchises', 'themes', 'perspectives', 'hypes'],
+        'age_ratings' => ['age_ratings'],
+        'release_dates' => ['release_dates'],
+        'languages' => ['languages'],
+        'time_to_beat' => ['time_to_beat'],
+        'websites' => ['websites', 'igdb_url'],
+    ];
+
+    public function __construct(private readonly SiteSettings $settings) {}
+
+    /**
+     * @return array<string, bool>
+     */
+    private function features(): array
+    {
+        return Game::features($this->settings->get('games_features'));
+    }
+
+    public function index(Request $request): Response|JsonResponse
+    {
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:80'],
+            'category' => ['nullable', Rule::in(array_keys(Game::CATEGORIES))],
+            'platform' => ['nullable', Rule::in(array_keys(Game::PLATFORMS))],
+            'letter' => ['nullable', 'string', 'regex:/^([A-Z]|#)$/'],
+            'genre' => ['nullable', 'string', 'max:60'],
+            'mode' => ['nullable', Rule::in(array_keys(Game::MODES))],
+            'sort' => ['nullable', Rule::in(array_keys(Game::SORTS))],
+        ]);
+        $on = $this->features();
+        // Вимкнені фільтри ігноруються, навіть якщо параметр прийшов у запиті.
+        foreach (['genre' => 'filter_genres', 'mode' => 'filter_modes', 'sort' => 'sorting'] as $param => $feature) {
+            if (! $on[$feature]) {
+                $filters[$param] = null;
+            }
+        }
+        $sort = $filters['sort'] ?? 'popular';
+
+        $query = $this->query($filters, $on['alias_search']);
+        match ($sort) {
+            'rating' => $query->orderByRaw('rating is null')->orderByDesc('rating')->orderByDesc('popularity'),
+            'new' => $query->whereNotNull('released')->where('released', '<=', now())->orderByDesc('released'),
+            'name' => $query->orderBy('name'),
+            default => $query->orderByDesc('popularity')->orderBy('name'),
+        };
+        $games = $query
+            ->paginate(36)
+            ->withQueryString()
+            ->through(fn (Game $g) => $g->toCard());
+
+        $letters = Game::query()->published()
+            ->when($filters['category'] ?? null, fn (Builder $q, string $c) => $q->where('category', $c))
+            ->distinct()->orderBy('letter')->pluck('letter')->values();
+
+        $props = [
+            'games' => $games,
+            'filters' => [
+                'q' => $filters['q'] ?? '',
+                'category' => $filters['category'] ?? null,
+                'platform' => $filters['platform'] ?? null,
+                'letter' => $filters['letter'] ?? null,
+                'genre' => $filters['genre'] ?? null,
+                'mode' => $filters['mode'] ?? null,
+                'sort' => $sort,
+            ],
+            'categories' => Game::CATEGORIES,
+            'modes' => $on['filter_modes'] ? Game::MODES : (object) [],
+            'sorts' => $on['sorting'] ? Game::SORTS : (object) [],
+            'genres' => $on['filter_genres'] ? $this->genres() : [],
+            'features' => $on,
+            'platforms' => Game::PLATFORMS,
+            'letters' => $letters,
+            'total' => Game::query()->published()->count(),
+        ];
+
+        return $request->expectsJson() && ! $request->header('X-Inertia')
+            ? response()->json($props)
+            : Inertia::render('games/index', $props);
+    }
+
+    public function show(Request $request, Game $game, PlayingStatus $playing, FriendshipService $friendships): Response|JsonResponse
+    {
+        abort_unless($game->is_published || $request->user()?->isStaff(), 404);
+
+        $on = $this->features();
+        $details = $game->details ?? [];
+        foreach (self::DETAIL_FEATURES as $feature => $keys) {
+            if (! $on[$feature]) {
+                $details = array_diff_key($details, array_flip($keys));
+            }
+        }
+        $similarIds = ! $on['similar'] ? [] : array_values(array_filter(array_map('intval', (array) ($details['similar'] ?? []))));
+        unset($details['similar']);
+        if (isset($details['release_dates'])) {
+            $details['release_dates'] = array_values(array_map(fn (array $r) => [
+                'platform' => Game::PLATFORMS[(string) ($r['platform'] ?? '')] ?? (string) ($r['platform'] ?? ''),
+                'date' => $r['date'] ?? null,
+            ], array_filter((array) $details['release_dates'], 'is_array')));
+        }
+
+        $props = [
+            'game' => [
+                ...$game->toCard(),
+                'genres' => $game->genres ?? [],
+                'modes' => array_map(fn (string $m) => ['key' => $m, 'label' => Game::MODES[$m]], $game->toCard()['modes']),
+                'released' => $game->released?->toDateString(),
+                'rating' => $game->rating,
+                'links' => $game->storeLinks(),
+                'details' => (object) $details,
+            ],
+            'similar' => $similarIds === [] ? [] : Game::query()->published()->whereIn('igdb_id', $similarIds)
+                ->orderByDesc('popularity')->limit(12)->get()->map(fn (Game $g) => $g->toCard())->values(),
+            'clans' => ! $on['clans'] ? [] : Clan::query()->where('game_id', $game->id)->orderByDesc('members_count')->limit(30)->get()
+                ->map(fn (Clan $c) => $c->toCard())->values(),
+            'features' => $on,
+            'playing_now' => $request->user() ? $playing->playingNow('game', $game->id, $friendships->friendIds($request->user())) : [],
+            'playing_count' => $playing->countNow('game', $game->id),
+            'events' => ($on['events'] || $on['release_events']) && app(ModuleManager::class)->enabled('events') ? app(EventCalendar::class)->forGame($game, $request->user()) : [],
+            'event_types' => GameEvent::TYPES,
+            'can_add_event' => $on['events'] && $request->user()?->isStaff() === true,
+        ];
+
+        return $request->expectsJson() && ! $request->header('X-Inertia')
+            ? response()->json($props)
+            : Inertia::render('games/show', $props);
+    }
+
+    /** Швидкий пошук для вибору гри (створення клану тощо). */
+    public function search(Request $request): JsonResponse
+    {
+        $q = trim((string) $request->query('q', ''));
+
+        return response()->json([
+            'games' => $this->query(['q' => $q], $this->features()['alias_search'])
+                ->orderByDesc('popularity')
+                ->limit(12)
+                ->get()
+                ->map(fn (Game $g) => $g->toCard())
+                ->values(),
+        ]);
+    }
+
+    /**
+     * Жанри для фільтра — найпоширеніші в каталозі (кеш на годину).
+     *
+     * @return list<string>
+     */
+    private function genres(): array
+    {
+        return Cache::remember('games.genres', 3600, function () {
+            $counts = [];
+            Game::query()->published()->whereNotNull('genres')->select('genres')->cursor()->each(function (Game $g) use (&$counts) {
+                foreach ($g->genres ?? [] as $genre) {
+                    $counts[$genre] = ($counts[$genre] ?? 0) + 1;
+                }
+            });
+            arsort($counts);
+
+            return array_map('strval', array_keys(array_slice($counts, 0, 24, true)));
+        });
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return Builder<Game>
+     */
+    private function query(array $filters, bool $aliases = true): Builder
+    {
+        $q = trim((string) ($filters['q'] ?? ''));
+
+        return Game::query()->published()
+            ->when($q !== '', fn (Builder $query) => $query->where(fn (Builder $w) => $w
+                ->where('name', 'like', '%'.str_replace(['%', '_'], ['\%', '\_'], $q).'%')
+                ->orWhere('slug', 'like', '%'.str_replace(['%', '_', ' '], ['\%', '\_', '-'], mb_strtolower($q)).'%')
+                ->when($aliases, fn (Builder $a) => $a->orWhere('aliases', 'like', '%'.str_replace(['%', '_'], ['\%', '\_'], $q).'%'))))
+            ->when($filters['genre'] ?? null, fn (Builder $query, string $g) => $query->whereJsonContains('genres', $g))
+            ->when($filters['mode'] ?? null, fn (Builder $query, string $m) => $query->whereJsonContains('modes', $m))
+            ->when($filters['category'] ?? null, fn (Builder $query, string $c) => $query->where('category', $c))
+            ->when($filters['platform'] ?? null, fn (Builder $query, string $p) => $query->whereJsonContains('platforms', $p))
+            ->when($filters['letter'] ?? null, fn (Builder $query, string $l) => $query->where('letter', $l));
+    }
+}

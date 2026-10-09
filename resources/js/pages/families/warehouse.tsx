@@ -28,6 +28,7 @@ import {
 } from '@/components/servers/server-form';
 import { cn } from '@/lib/utils';
 import type { FamilyShellProps } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Item = {
     id: number;
@@ -90,18 +91,18 @@ export default function FamilyWarehouse(props: Props) {
         );
 
     return (
-        <FamilyShell {...props} title="Склад">
+        <FamilyShell {...props} title={tr('Склад')}>
             <div className="flex flex-wrap items-center gap-2">
                 {can['warehouse.logs'] && (
                     <Segmented
                         value={tab}
                         onChange={switchTab}
                         options={[
-                            { value: 'stock', label: 'Залишки' },
-                            { value: 'log', label: 'Журнал' },
+                            { value: 'stock', label: tr('Залишки') },
+                            { value: 'log', label: tr('Журнал') },
                             {
                                 value: 'alerts',
-                                label: 'Підозрілі',
+                                label: tr('Підозрілі'),
                                 badge: badges?.alerts,
                             },
                         ]}
@@ -113,22 +114,25 @@ export default function FamilyWarehouse(props: Props) {
                         onClick={() => setEditing('new')}
                         className={cn(btnGhost, 'ml-auto')}
                     >
-                        <Plus className="size-4" /> Позиція
+                        <Plus className="size-4" /> {tr('Позиція')}
                     </button>
                 )}
             </div>
 
             {tab === 'stock' ? (
-                <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
                     <div className="space-y-4">
                         {grouped.length === 0 && (
                             <Panel>
-                                <Empty icon={Package} text="Склад порожній" />
+                                <Empty
+                                    icon={Package}
+                                    text={tr('Склад порожній')}
+                                />
                             </Panel>
                         )}
                         {grouped.map((g) => (
                             <Panel key={g.key} title={g.label} icon={Package}>
-                                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                                     {g.items.map((item) => (
                                         <div
                                             key={item.id}
@@ -146,13 +150,25 @@ export default function FamilyWarehouse(props: Props) {
                                                     <div className="truncate text-sm font-semibold text-white">
                                                         {item.name}
                                                     </div>
-                                                    <div className="text-[11px] text-white/40">
+                                                    <div className="text-xs text-white/40">
                                                         {item.hourly_quota
-                                                            ? `квота ${item.hourly_quota}/год`
-                                                            : 'без квоти'}
+                                                            ? tr(
+                                                                  'квота {hourly_quota}/год',
+                                                                  {
+                                                                      hourly_quota:
+                                                                          item.hourly_quota,
+                                                                  },
+                                                              )
+                                                            : tr('без квоти')}
                                                         {item.min_stock !==
                                                             null &&
-                                                            ` · мін. ${item.min_stock}`}
+                                                            tr(
+                                                                ' · мін. {min_stock}',
+                                                                {
+                                                                    min_stock:
+                                                                        item.min_stock,
+                                                                },
+                                                            )}
                                                     </div>
                                                 </div>
                                                 <div
@@ -187,7 +203,7 @@ export default function FamilyWarehouse(props: Props) {
                                                     className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg bg-white/[0.06] text-xs font-medium text-white/80 hover:bg-white/10 disabled:opacity-30"
                                                 >
                                                     <ArrowUpFromLine className="size-3.5" />{' '}
-                                                    Взяти
+                                                    {tr('Взяти')}
                                                 </button>
                                                 <button
                                                     type="button"
@@ -201,7 +217,7 @@ export default function FamilyWarehouse(props: Props) {
                                                     className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg bg-white/[0.06] text-xs font-medium text-white/80 hover:bg-white/10 disabled:opacity-30"
                                                 >
                                                     <ArrowDownToLine className="size-3.5" />{' '}
-                                                    Покласти
+                                                    {tr('Покласти')}
                                                 </button>
                                                 {can['warehouse.manage'] && (
                                                     <button
@@ -210,7 +226,9 @@ export default function FamilyWarehouse(props: Props) {
                                                             setEditing(item)
                                                         }
                                                         className="flex size-8 items-center justify-center rounded-lg text-white/45 hover:bg-white/[0.06] hover:text-white"
-                                                        aria-label="Редагувати"
+                                                        aria-label={tr(
+                                                            'Редагувати',
+                                                        )}
                                                     >
                                                         <Pencil className="size-3.5" />
                                                     </button>
@@ -223,7 +241,7 @@ export default function FamilyWarehouse(props: Props) {
                         ))}
                     </div>
                     <Panel
-                        title="Мої останні дії"
+                        title={tr('Мої останні дії')}
                         icon={Gauge}
                         className="h-fit"
                     >
@@ -231,24 +249,24 @@ export default function FamilyWarehouse(props: Props) {
                     </Panel>
                 </div>
             ) : (
-                <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_300px]">
                     <Panel
                         title={
                             tab === 'alerts'
-                                ? 'Перевищення квот'
-                                : 'Журнал складу'
+                                ? tr('Перевищення квот')
+                                : tr('Журнал складу')
                         }
                         icon={tab === 'alerts' ? AlertTriangle : Package}
                     >
                         <LogList logs={logs} />
                     </Panel>
                     <Panel
-                        title="Найбільше взяли за добу"
+                        title={tr('Найбільше взяли за добу')}
                         icon={Gauge}
                         className="h-fit"
                     >
                         {top_takers.length === 0 ? (
-                            <Empty icon={Gauge} text="Немає даних" />
+                            <Empty icon={Gauge} text={tr('Немає даних')} />
                         ) : (
                             <ol className="space-y-1.5">
                                 {top_takers.map((t, i) => (
@@ -263,7 +281,8 @@ export default function FamilyWarehouse(props: Props) {
                                             {t.display}
                                         </span>
                                         <span className="text-xs text-white/50">
-                                            {t.total} шт · {t.times} раз
+                                            {t.total} {tr('шт ·')} {t.times}{' '}
+                                            {tr('раз')}
                                         </span>
                                     </li>
                                 ))}
@@ -297,7 +316,7 @@ export default function FamilyWarehouse(props: Props) {
 
 function LogList({ logs, compact }: { logs: Log[]; compact?: boolean }) {
     if (logs.length === 0) {
-        return <Empty icon={Package} text="Записів немає" />;
+        return <Empty icon={Package} text={tr('Записів немає')} />;
     }
 
     return (
@@ -343,7 +362,7 @@ function LogList({ logs, compact }: { logs: Log[]; compact?: boolean }) {
                             {l.is_suspicious && (
                                 <span className="text-rose-300">
                                     {' '}
-                                    · понад квоту
+                                    {tr('· понад квоту')}
                                 </span>
                             )}
                         </div>
@@ -353,9 +372,9 @@ function LogList({ logs, compact }: { logs: Log[]; compact?: boolean }) {
                             href={l.proof_url}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-xs text-[#a5b4fc] hover:underline"
+                            className="text-xs text-gc-lilac-200 hover:underline"
                         >
-                            скрін
+                            {tr('скрін')}
                         </a>
                     )}
                     <div className="text-right">
@@ -369,8 +388,8 @@ function LogList({ logs, compact }: { logs: Log[]; compact?: boolean }) {
                                 ? l.quantity_after
                                 : l.quantity}
                         </div>
-                        <div className="text-[10px] text-white/35">
-                            залишок {l.quantity_after}
+                        <div className="text-xs text-white/35">
+                            {tr('залишок')} {l.quantity_after}
                         </div>
                     </div>
                 </li>
@@ -403,8 +422,17 @@ function MoveDialog({
         <Modal
             open
             onClose={onClose}
-            title={`${direction === 'take' ? 'Взяти' : 'Покласти'}: ${item.name}`}
-            description={`На складі ${item.quantity}${item.unit ? ` ${item.unit}` : ''}${item.hourly_quota && direction === 'take' ? ` · квота ${item.hourly_quota} на годину` : ''}`}
+            title={`${direction === 'take' ? tr('Взяти') : tr('Покласти')}: ${item.name}`}
+            description={tr('На складі {quantity}{v}{v2}', {
+                quantity: item.quantity,
+                v: item.unit ? ` ${item.unit}` : '',
+                v2:
+                    item.hourly_quota && direction === 'take'
+                        ? tr(' · квота {hourly_quota} на годину', {
+                              hourly_quota: item.hourly_quota,
+                          })
+                        : '',
+            })}
             footer={
                 <>
                     <button
@@ -412,7 +440,7 @@ function MoveDialog({
                         onClick={onClose}
                         className={btnGhost}
                     >
-                        Скасувати
+                        {tr('Скасувати')}
                     </button>
                     <button
                         type="button"
@@ -426,7 +454,7 @@ function MoveDialog({
                         }
                         className={btnPrimary}
                     >
-                        Підтвердити
+                        {tr('Підтвердити')}
                     </button>
                 </>
             }
@@ -461,7 +489,7 @@ function MoveDialog({
             <input
                 value={form.data.comment}
                 onChange={(e) => form.setData('comment', e.target.value)}
-                placeholder="Для чого (необов’язково)"
+                placeholder={tr('Для чого (необов’язково)')}
                 className={inputClass}
             />
             <button
@@ -472,7 +500,7 @@ function MoveDialog({
                 <ImagePlus className="size-4" />
                 {form.data.proof
                     ? form.data.proof.name
-                    : 'Скріншот (необов’язково)'}
+                    : tr('Скріншот (необов’язково)')}
             </button>
             <input
                 ref={fileRef}
@@ -522,8 +550,14 @@ function ItemDialog({
         <Modal
             open
             onClose={onClose}
-            title={item ? `Позиція «${item.name}»` : 'Нова позиція'}
-            description="Зміни квот і кількості записуються в журнал аудиту."
+            title={
+                item
+                    ? tr('Позиція «{name}»', { name: item.name })
+                    : tr('Нова позиція')
+            }
+            description={tr(
+                'Зміни квот і кількості записуються в журнал аудиту.',
+            )}
             wide
             footer={
                 <>
@@ -532,7 +566,7 @@ function ItemDialog({
                         onClick={onClose}
                         className={btnGhost}
                     >
-                        Скасувати
+                        {tr('Скасувати')}
                     </button>
                     <button
                         type="button"
@@ -540,20 +574,20 @@ function ItemDialog({
                         onClick={submit}
                         className={btnPrimary}
                     >
-                        Зберегти
+                        {tr('Зберегти')}
                     </button>
                 </>
             }
         >
-            <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Назва" error={form.errors.name}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Field label={tr('Назва')} error={form.errors.name}>
                     <input
                         value={form.data.name}
                         onChange={(e) => form.setData('name', e.target.value)}
                         className={inputClass}
                     />
                 </Field>
-                <Field label="Категорія" error={form.errors.category}>
+                <Field label={tr('Категорія')} error={form.errors.category}>
                     <select
                         value={form.data.category}
                         onChange={(e) =>
@@ -569,8 +603,8 @@ function ItemDialog({
                     </select>
                 </Field>
                 <Field
-                    label="Одиниця"
-                    hint="шт, кг, пач…"
+                    label={tr('Одиниця')}
+                    hint={tr('шт, кг, пач…')}
                     error={form.errors.unit}
                 >
                     <input
@@ -580,7 +614,11 @@ function ItemDialog({
                     />
                 </Field>
                 <Field
-                    label={item ? 'Фактична кількість' : 'Початкова кількість'}
+                    label={
+                        item
+                            ? tr('Фактична кількість')
+                            : tr('Початкова кількість')
+                    }
                     error={form.errors.quantity}
                 >
                     <input
@@ -594,8 +632,8 @@ function ItemDialog({
                     />
                 </Field>
                 <Field
-                    label="Квота на годину"
-                    hint="Скільки один учасник може взяти за годину"
+                    label={tr('Квота на годину')}
+                    hint={tr('Скільки один учасник може взяти за годину')}
                     error={form.errors.hourly_quota}
                 >
                     <input
@@ -612,8 +650,8 @@ function ItemDialog({
                     />
                 </Field>
                 <Field
-                    label="Мінімальний залишок"
-                    hint="Нижче — позиція підсвічується"
+                    label={tr('Мінімальний залишок')}
+                    hint={tr('Нижче — позиція підсвічується')}
                     error={form.errors.min_stock}
                 >
                     <input
@@ -632,7 +670,7 @@ function ItemDialog({
                 {item && (
                     <>
                         <Field
-                            label="Коментар до інвентаризації"
+                            label={tr('Коментар до інвентаризації')}
                             className="sm:col-span-2"
                         >
                             <input
@@ -644,11 +682,11 @@ function ItemDialog({
                             />
                         </Field>
                         <label className="flex items-center justify-between text-sm text-white/70 sm:col-span-2">
-                            В архіві (приховано для учасників)
+                            {tr('В архіві (приховано для учасників)')}
                             <Toggle
                                 checked={form.data.is_archived}
                                 onChange={(v) => form.setData('is_archived', v)}
-                                label="Архів"
+                                label={tr('Архів')}
                             />
                         </label>
                     </>

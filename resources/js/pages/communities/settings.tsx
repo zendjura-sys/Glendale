@@ -6,6 +6,7 @@ import { CommunityAvatar } from '@/components/gc/community-avatar';
 import { SettingsCard } from '@/layouts/settings/layout';
 import { cn } from '@/lib/utils';
 import type { CommunityDetails } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     community: CommunityDetails;
@@ -32,7 +33,7 @@ function Segmented<T extends string>({
     options: { value: T; label: string; icon: typeof Lock; hint: string }[];
 }) {
     return (
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {options.map((option) => (
                 <button
                     key={option.value}
@@ -41,7 +42,7 @@ function Segmented<T extends string>({
                     className={cn(
                         'flex items-start gap-3 rounded-2xl border p-3.5 text-left transition',
                         value === option.value
-                            ? 'border-[#7c8cff]/60 bg-[#6d5dfc]/15'
+                            ? 'border-gc-lilac-500/60 bg-gc-indigo/15'
                             : 'border-white/[0.07] bg-white/[0.02] hover:border-white/15',
                     )}
                 >
@@ -94,20 +95,20 @@ export default function CommunitySettings({
 
     return (
         <>
-            <Head title={`Керування — ${community.name}`} />
+            <Head title={tr('Керування — {name}', { name: community.name })} />
             <div className="mx-auto max-w-3xl space-y-5">
                 <div className="flex items-center gap-4">
                     <Link
                         href={`/c/${community.slug}`}
                         className="flex size-10 items-center justify-center rounded-xl bg-white/[0.05] text-white/70 transition hover:bg-white/10 hover:text-white"
-                        aria-label="Назад"
+                        aria-label={tr('Назад')}
                     >
                         <ArrowLeft className="size-5" />
                     </Link>
                     <CommunityAvatar community={community} size="md" />
                     <div>
                         <h1 className="font-display text-xl font-bold text-white">
-                            Керування спільнотою
+                            {tr('Керування спільнотою')}
                         </h1>
                         <p className="text-sm text-white/50">
                             {community.name}
@@ -117,12 +118,12 @@ export default function CommunitySettings({
 
                 <form onSubmit={submit} className="space-y-5">
                     <SettingsCard
-                        title="Основна інформація"
-                        description="Назва, адреса та опис спільноти"
+                        title={tr('Основна інформація')}
+                        description={tr('Назва, адреса та опис спільноти')}
                     >
                         <div className="grid gap-4">
                             <label className="text-sm font-medium text-white/80">
-                                Назва
+                                {tr('Назва')}
                                 <input
                                     value={data.name}
                                     onChange={(e) =>
@@ -134,7 +135,7 @@ export default function CommunitySettings({
                                 <Error message={errors.name} />
                             </label>
                             <label className="text-sm font-medium text-white/80">
-                                Адреса сторінки
+                                {tr('Адреса сторінки')}
                                 <div className="input-glass mt-1.5 flex h-11 items-center rounded-xl pl-3.5 text-sm">
                                     <span className="text-white/35">
                                         gamecon.online/c/
@@ -154,20 +155,20 @@ export default function CommunitySettings({
                                 <Error message={errors.slug} />
                             </label>
                             <label className="text-sm font-medium text-white/80">
-                                Статус
+                                {tr('Статус')}
                                 <input
                                     value={data.status}
                                     onChange={(e) =>
                                         setData('status', e.target.value)
                                     }
                                     maxLength={140}
-                                    placeholder="Коротко про головне"
+                                    placeholder={tr('Коротко про головне')}
                                     className={cn(field, 'mt-1.5 h-11')}
                                 />
                                 <Error message={errors.status} />
                             </label>
                             <label className="text-sm font-medium text-white/80">
-                                Опис
+                                {tr('Опис')}
                                 <textarea
                                     value={data.description}
                                     onChange={(e) =>
@@ -182,9 +183,9 @@ export default function CommunitySettings({
                                 />
                                 <Error message={errors.description} />
                             </label>
-                            <div className="grid gap-4 sm:grid-cols-3">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                                 <label className="text-sm font-medium text-white/80">
-                                    Тематика
+                                    {tr('Тематика')}
                                     <select
                                         value={data.category}
                                         onChange={(e) =>
@@ -205,7 +206,7 @@ export default function CommunitySettings({
                                     </select>
                                 </label>
                                 <label className="text-sm font-medium text-white/80">
-                                    Місто
+                                    {tr('Місто')}
                                     <input
                                         value={data.city}
                                         onChange={(e) =>
@@ -215,7 +216,7 @@ export default function CommunitySettings({
                                     />
                                 </label>
                                 <label className="text-sm font-medium text-white/80">
-                                    Сайт
+                                    {tr('Сайт')}
                                     <input
                                         value={data.website}
                                         onChange={(e) =>
@@ -231,8 +232,8 @@ export default function CommunitySettings({
                     </SettingsCard>
 
                     <SettingsCard
-                        title="Тип і доступ"
-                        description="Хто може бачити й публікувати"
+                        title={tr('Тип і доступ')}
+                        description={tr('Хто може бачити й публікувати')}
                     >
                         <div className="space-y-5">
                             <Segmented
@@ -241,15 +242,17 @@ export default function CommunitySettings({
                                 options={[
                                     {
                                         value: 'group',
-                                        label: 'Група',
+                                        label: tr('Група'),
                                         icon: UsersRound,
-                                        hint: 'Обговорення та стіна для учасників',
+                                        hint: tr(
+                                            'Обговорення та стіна для учасників',
+                                        ),
                                     },
                                     {
                                         value: 'public',
-                                        label: 'Публічна сторінка',
+                                        label: tr('Публічна сторінка'),
                                         icon: Megaphone,
-                                        hint: 'Новини від імені сторінки',
+                                        hint: tr('Новини від імені сторінки'),
                                     },
                                 ]}
                             />
@@ -263,15 +266,19 @@ export default function CommunitySettings({
                                         options={[
                                             {
                                                 value: 'open',
-                                                label: 'Відкрита',
+                                                label: tr('Відкрита'),
                                                 icon: Globe2,
-                                                hint: 'Вступити може будь-хто',
+                                                hint: tr(
+                                                    'Вступити може будь-хто',
+                                                ),
                                             },
                                             {
                                                 value: 'closed',
-                                                label: 'Закрита',
+                                                label: tr('Закрита'),
                                                 icon: Lock,
-                                                hint: 'Вступ за заявкою, записи лише для учасників',
+                                                hint: tr(
+                                                    'Вступ за заявкою, записи лише для учасників',
+                                                ),
                                             },
                                         ]}
                                     />
@@ -283,15 +290,19 @@ export default function CommunitySettings({
                                         options={[
                                             {
                                                 value: 'open',
-                                                label: 'Відкрита стіна',
+                                                label: tr('Відкрита стіна'),
                                                 icon: UsersRound,
-                                                hint: 'Учасники можуть публікувати записи',
+                                                hint: tr(
+                                                    'Учасники можуть публікувати записи',
+                                                ),
                                             },
                                             {
                                                 value: 'closed',
-                                                label: 'Обмежена стіна',
+                                                label: tr('Обмежена стіна'),
                                                 icon: Megaphone,
-                                                hint: 'Публікують лише керівники',
+                                                hint: tr(
+                                                    'Публікують лише керівники',
+                                                ),
                                             },
                                         ]}
                                     />
@@ -306,15 +317,17 @@ export default function CommunitySettings({
                             disabled={form.processing || !form.isDirty}
                             className="btn-glow rounded-xl px-6 py-2.5 text-sm font-semibold disabled:opacity-50"
                         >
-                            Зберегти зміни
+                            {tr('Зберегти зміни')}
                         </button>
                     </div>
                 </form>
 
                 {isOwner && (
                     <SettingsCard
-                        title="Видалення спільноти"
-                        description="Спільнота й усі записи зникнуть для всіх учасників"
+                        title={tr('Видалення спільноти')}
+                        description={tr(
+                            'Спільнота й усі записи зникнуть для всіх учасників',
+                        )}
                         tone="danger"
                     >
                         <form
@@ -329,7 +342,10 @@ export default function CommunitySettings({
                                 onChange={(e) =>
                                     remove.setData('confirm', e.target.value)
                                 }
-                                placeholder={`Введіть «${community.slug}» для підтвердження`}
+                                placeholder={tr(
+                                    'Введіть «{slug}» для підтвердження',
+                                    { slug: community.slug },
+                                )}
                                 className={cn(field, 'h-11 flex-1')}
                             />
                             <button
@@ -339,7 +355,7 @@ export default function CommunitySettings({
                                 }
                                 className="h-11 rounded-xl bg-rose-500/80 px-5 text-sm font-semibold text-white transition hover:bg-rose-500 disabled:opacity-40"
                             >
-                                Видалити
+                                {tr('Видалити')}
                             </button>
                         </form>
                         <Error message={remove.errors.confirm} />

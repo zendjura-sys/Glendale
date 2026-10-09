@@ -11,6 +11,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { regenerateRecoveryCodes } from '@/routes/two-factor';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     recoveryCodesList: string[];
@@ -57,11 +58,12 @@ export default function TwoFactorRecoveryCodes({
             <CardHeader>
                 <CardTitle className="flex gap-3">
                     <LockKeyhole className="size-4" aria-hidden="true" />
-                    Коди відновлення 2FA
+                    {tr('Коди відновлення 2FA')}
                 </CardTitle>
                 <CardDescription>
-                    Допоможуть увійти, якщо ви втратите телефон. Зберігайте їх у
-                    менеджері паролів.
+                    {tr(
+                        'Допоможуть увійти, якщо ви втратите телефон. Зберігайте їх у менеджері паролів.',
+                    )}
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -76,7 +78,9 @@ export default function TwoFactorRecoveryCodes({
                             className="size-4"
                             aria-hidden="true"
                         />
-                        {codesAreVisible ? 'Сховати коди' : 'Показати коди'}
+                        {codesAreVisible
+                            ? tr('Сховати коди')
+                            : tr('Показати коди')}
                     </Button>
 
                     {canRegenerateCodes && (
@@ -92,7 +96,7 @@ export default function TwoFactorRecoveryCodes({
                                     disabled={processing}
                                     aria-describedby="regenerate-warning"
                                 >
-                                    <RefreshCw /> Оновити коди
+                                    <RefreshCw /> {tr('Оновити коди')}
                                 </Button>
                             )}
                         </Form>
@@ -112,7 +116,7 @@ export default function TwoFactorRecoveryCodes({
                                     ref={codesSectionRef}
                                     className="grid gap-1 rounded-lg bg-white/[0.04] p-4 font-mono text-sm"
                                     role="list"
-                                    aria-label="Коди відновлення"
+                                    aria-label={tr('Коди відновлення')}
                                 >
                                     {recoveryCodesList.length ? (
                                         recoveryCodesList.map((code, index) => (
@@ -127,7 +131,9 @@ export default function TwoFactorRecoveryCodes({
                                     ) : (
                                         <div
                                             className="space-y-2"
-                                            aria-label="Завантаження кодів"
+                                            aria-label={tr(
+                                                'Завантаження кодів',
+                                            )}
                                         >
                                             {Array.from(
                                                 { length: 8 },
@@ -145,9 +151,9 @@ export default function TwoFactorRecoveryCodes({
 
                                 <div className="text-xs text-white/45 select-none">
                                     <p id="regenerate-warning">
-                                        Кожен код можна використати лише один
-                                        раз. Потрібно більше — натисніть
-                                        «Оновити коди».
+                                        {tr(
+                                            'Кожен код можна використати лише один раз. Потрібно більше — натисніть «Оновити коди».',
+                                        )}
                                     </p>
                                 </div>
                             </>

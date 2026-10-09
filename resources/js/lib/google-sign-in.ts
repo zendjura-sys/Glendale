@@ -1,17 +1,22 @@
 import type { FirebaseConfig } from '@/types/auth';
+import { LOCALE, tr } from '@/lib/i18n';
 
 export class GoogleSignInCancelled extends Error {}
 
 const messages: Record<string, string> = {
-    'auth/popup-blocked':
+    'auth/popup-blocked': tr(
         'Браузер заблокував вікно Google. Дозвольте спливаючі вікна для сайту.',
-    'auth/unauthorized-domain':
+    ),
+    'auth/unauthorized-domain': tr(
         'Цей домен не додано в Firebase → Authentication → Authorized domains.',
-    'auth/operation-not-allowed':
+    ),
+    'auth/operation-not-allowed': tr(
         'Вхід через Google вимкнено в Firebase Console.',
-    'auth/network-request-failed':
+    ),
+    'auth/network-request-failed': tr(
         'Немає з’єднання з Google. Спробуйте ще раз.',
-    'auth/invalid-api-key': 'Неправильний apiKey Firebase.',
+    ),
+    'auth/invalid-api-key': tr('Неправильний apiKey Firebase.'),
 };
 
 /**
@@ -41,7 +46,7 @@ export async function googleIdToken(
             'gamecon',
         );
     const auth = firebaseAuth.getAuth(app);
-    auth.languageCode = 'uk';
+    auth.languageCode = LOCALE;
     await firebaseAuth.setPersistence(auth, firebaseAuth.inMemoryPersistence);
 
     const provider = new firebaseAuth.GoogleAuthProvider();
@@ -69,7 +74,7 @@ export async function googleIdToken(
 
         throw new Error(
             messages[code] ??
-                'Не вдалося увійти через Google. Спробуйте ще раз.',
+                tr('Не вдалося увійти через Google. Спробуйте ще раз.'),
         );
     }
 }

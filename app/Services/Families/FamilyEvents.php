@@ -50,11 +50,11 @@ class FamilyEvents
             throw ValidationException::withMessages(['event' => 'Подію вже завершено.']);
         }
 
-        if ($going) {
-            FamilyEventAttendance::query()->updateOrCreate(['event_id' => $event->id, 'member_id' => $member->id], ['status' => FamilyEventAttendance::STATUS_GOING]);
-        } else {
-            FamilyEventAttendance::query()->where('event_id', $event->id)->where('member_id', $member->id)->delete();
-        }
+        // «Не піду» теж запам’ятовуємо: такому учасникові не надсилаємо нагадування.
+        FamilyEventAttendance::query()->updateOrCreate(
+            ['event_id' => $event->id, 'member_id' => $member->id],
+            ['status' => $going ? FamilyEventAttendance::STATUS_GOING : FamilyEventAttendance::STATUS_DECLINED],
+        );
         $this->notifier->refresh($family, 'events');
     }
 
@@ -84,6 +84,7 @@ class FamilyEvents
                 ->get();
 
             FamilyEventAttendance::query()->where('event_id', $event->id)->whereNotIn('member_id', $members->pluck('id')->all() ?: [0])
+                ->where('status', '!=', FamilyEventAttendance::STATUS_DECLINED)
                 ->update(['status' => FamilyEventAttendance::STATUS_ABSENT]);
 
             foreach ($members as $member) {

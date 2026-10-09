@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/gc/widget';
 import { plural } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { PersonCard as Person, ScrollData } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Filters = { q: string; city: string; gender: string; online: boolean };
 
@@ -38,20 +39,22 @@ export default function People({ filters, total, users }: Props) {
 
     return (
         <>
-            <Head title="Пошук людей" />
+            <Head title={tr('Пошук людей')} />
             <div className="space-y-5">
                 <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-6">
-                    <div className="pointer-events-none absolute -top-24 right-0 size-72 rounded-full bg-[#4f8bff]/20 blur-3xl" />
+                    <div className="pointer-events-none absolute -top-24 right-0 size-72 rounded-full bg-gc-blue/20 blur-3xl" />
                     <h1 className="relative font-display text-2xl font-bold text-white">
-                        Знайдіть{' '}
-                        <span className="text-gradient">своїх людей</span>
+                        {tr('Знайдіть')}{' '}
+                        <span className="text-gradient">
+                            {tr('своїх людей')}
+                        </span>
                     </h1>
                     <p className="relative mt-1 text-sm text-white/50">
                         {total} {plural(total, ['людина', 'людини', 'людей'])}{' '}
-                        за вашим запитом
+                        {tr('за вашим запитом')}
                     </p>
 
-                    <div className="relative mt-5 grid gap-3 md:grid-cols-[1fr_220px_auto_auto]">
+                    <div className="relative mt-5 grid grid-cols-1 gap-3 md:grid-cols-[1fr_220px_auto_auto]">
                         <label className="input-glass flex h-11 items-center gap-2.5 rounded-xl px-3.5">
                             <Search className="size-4 text-white/40" />
                             <input
@@ -60,7 +63,7 @@ export default function People({ filters, total, users }: Props) {
                                 onChange={(event) =>
                                     setForm({ ...form, q: event.target.value })
                                 }
-                                placeholder="Ім’я, прізвище або нікнейм"
+                                placeholder={tr('Ім’я, прізвище або нікнейм')}
                                 className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
                             />
                         </label>
@@ -74,15 +77,15 @@ export default function People({ filters, total, users }: Props) {
                                         city: event.target.value,
                                     })
                                 }
-                                placeholder="Місто"
+                                placeholder={tr('Місто')}
                                 className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
                             />
                         </label>
                         <div className="flex rounded-xl bg-white/[0.04] p-1">
                             {[
-                                { value: '', label: 'Усі' },
-                                { value: 'male', label: 'Чоловіки' },
-                                { value: 'female', label: 'Жінки' },
+                                { value: '', label: tr('Усі') },
+                                { value: 'male', label: tr('Чоловіки') },
+                                { value: 'female', label: tr('Жінки') },
                             ].map((option) => (
                                 <button
                                     key={option.value}
@@ -122,7 +125,7 @@ export default function People({ filters, total, users }: Props) {
                                     form.online && 'text-emerald-300',
                                 )}
                             />{' '}
-                            Зараз онлайн
+                            {tr('Зараз онлайн')}
                         </button>
                     </div>
                 </section>
@@ -130,8 +133,10 @@ export default function People({ filters, total, users }: Props) {
                 {users.data.length === 0 ? (
                     <EmptyState
                         icon={SearchX}
-                        title="Нікого не знайдено"
-                        text="Спробуйте змінити запит або прибрати фільтри."
+                        title={tr('Нікого не знайдено')}
+                        text={tr(
+                            'Спробуйте змінити запит або прибрати фільтри.',
+                        )}
                     />
                 ) : (
                     <InfiniteScroll

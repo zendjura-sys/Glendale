@@ -7,13 +7,11 @@ use App\Models\FamilyAuditLog;
 use App\Models\FamilyEvent;
 use App\Models\FamilyItem;
 use App\Models\FamilyMember;
-use App\Models\FamilyPunishment;
-use App\Models\FamilyReport;
 use App\Models\FamilyTransaction;
 use App\Models\GtaServer;
 use App\Services\Families\FamilyRating;
 use App\Services\Families\FamilyService;
-use App\Services\Families\WeeklyDigest;
+use App\Services\Families\MemberStats;
 use App\Services\ImageStorage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -111,7 +109,7 @@ class FamilyController extends FamilyBaseController
         return to_route('families.show', $family);
     }
 
-    public function show(Request $request, Family $family, FamilyRating $rating, WeeklyDigest $digest): Response
+    public function show(Request $request, Family $family, FamilyRating $rating, MemberStats $stats): Response
     {
         $member = $this->gate->member($family, $request->user());
         if (! $member) {
@@ -119,16 +117,9 @@ class FamilyController extends FamilyBaseController
         }
 
         $can = $this->gate->abilities($member, $family);
-        $week = $digest->build($family);
 
         return $this->page($family, $member, 'families/overview', 'overview', [
-            'stats' => [
-                'week_earned' => (int) (collect($week['lines'])->firstWhere('member.id', $member->id)['total'] ?? 0),
-                'week_total' => $week['total'],
-                'pending_reports' => FamilyReport::query()->where('beneficiary_id', $member->id)->where('status', FamilyReport::STATUS_PENDING)->count(),
-                'warns' => FamilyPunishment::query()->active()->where('member_id', $member->id)->where('type', FamilyPunishment::TYPE_WARN)->count(),
-                'warn_limit' => (int) $family->setting('discipline.warn_limit', 3),
-            ],
+            'stats' => $stats->overview($family, $member),
             'leaders' => array_slice($rating->leaderboard($family, 'week'), 0, 5),
             'events' => FamilyEvent::query()->where('family_id', $family->id)
                 ->where('status', FamilyEvent::STATUS_PLANNED)
@@ -182,7 +173,7 @@ class FamilyController extends FamilyBaseController
     public function chat(Request $request, Family $family): RedirectResponse
     {
         $this->member($request, $family);
-        abort_unless($family->conversation_id, 404, 'Чат з’явиться після верифікації сім’ї.');
+        abort_unless($family->conversation_id !== null, 404, 'Чат з’явиться після верифікації сім’ї.');
 
         return redirect()->route('messages.show', $family->conversation_id);
     }
@@ -214,8 +205,10 @@ class FamilyController extends FamilyBaseController
      */
     private function servers(): array
     {
-        return GtaServer::query()->published()->orderByDesc('is_featured')->orderBy('name')->get()
+        $servers = GtaServer::query()->published()->orderByDesc('is_featured')->orderBy('name')->get()
             ->map(fn (GtaServer $s) => ['id' => $s->id, 'slug' => $s->slug, 'name' => $s->name, 'icon' => $s->icon, 'platform' => $s->platform])
             ->all();
+
+        return array_values($servers);
     }
 }

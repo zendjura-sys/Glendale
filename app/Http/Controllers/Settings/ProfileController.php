@@ -40,6 +40,7 @@ class ProfileController extends Controller
                 'website' => $user->website,
                 'is_private' => $user->is_private,
                 'message_privacy' => $user->message_privacy,
+                'email_social' => $user->email_social,
             ],
             'connections' => $social->connections($user, [
                 'discord' => $discord->configured(),

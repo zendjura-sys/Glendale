@@ -1,3 +1,4 @@
+import type { CallState } from '@/lib/voice';
 import type { UserCard } from './social';
 
 export type ConversationType = 'direct' | 'group';
@@ -101,6 +102,10 @@ export type ConversationDetails = {
     read_up_to: number;
     members: ConversationMember[];
     members_count: number;
+    /** Дзвінок, що триває в бесіді, і чи можна дзвонити. */
+    call?: CallState | null;
+    can_call?: boolean;
+    calls_enabled?: boolean;
 };
 
 export type ChatHistory = {

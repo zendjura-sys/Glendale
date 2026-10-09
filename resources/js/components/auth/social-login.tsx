@@ -5,6 +5,7 @@ import { DiscordIcon, GoogleIcon } from '@/components/auth/brand-icons';
 import { Spinner } from '@/components/ui/spinner';
 import { GoogleSignInCancelled, googleIdToken } from '@/lib/google-sign-in';
 import { cn } from '@/lib/utils';
+import { tr } from '@/lib/i18n';
 
 export function useGoogleSignIn() {
     const config = usePage().props.site.social?.google ?? null;
@@ -53,7 +54,7 @@ export function SocialLogin({
         return null;
     }
 
-    const verb = mode === 'login' ? 'Увійти' : 'Продовжити';
+    const verb = mode === 'login' ? tr('Увійти') : tr('Продовжити');
 
     return (
         <div className="grid gap-3">
@@ -79,7 +80,7 @@ export function SocialLogin({
                         ) : (
                             <GoogleIcon className="size-[18px]" />
                         )}
-                        {verb} з Google
+                        {verb} {tr('з Google')}
                     </button>
                 )}
                 {discord && (
@@ -92,15 +93,15 @@ export function SocialLogin({
                         data-test="discord-login"
                     >
                         <DiscordIcon className="size-5" />
-                        {verb} з Discord
+                        {verb} {tr('з Discord')}
                     </a>
                 )}
             </div>
 
             {divider && (
-                <div className="flex items-center gap-3 text-[11px] font-medium tracking-[0.2em] text-white/30 uppercase">
+                <div className="flex items-center gap-3 text-xs font-medium tracking-[0.2em] text-white/30 uppercase">
                     <span className="h-px flex-1 bg-white/10" />
-                    або поштою
+                    {tr('або поштою')}
                     <span className="h-px flex-1 bg-white/10" />
                 </div>
             )}

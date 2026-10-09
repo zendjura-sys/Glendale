@@ -14,6 +14,7 @@ import { uah } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type { FamilyReportItem, ReportType } from '@/types';
 import { kyivDate } from './ui';
+import { tr } from '@/lib/i18n';
 
 export const reportIcons: Record<ReportType, LucideIcon> = {
     bizwar: Swords,
@@ -22,36 +23,46 @@ export const reportIcons: Record<ReportType, LucideIcon> = {
     other: Sparkles,
 };
 
-const tierLabels = { light: 'Легкий', medium: 'Середній', heavy: 'Важкий' };
+const tierLabels = {
+    light: tr('Легкий'),
+    medium: tr('Середній'),
+    heavy: tr('Важкий'),
+};
 
 export function reportSummary(r: FamilyReportItem): string {
     const d = r.data ?? {};
     switch (r.type) {
         case 'bizwar':
-            return `${d.wins ?? 0} перемог · ${d.losses ?? 0} поразок${d.hours?.length ? ` · ${d.hours.map((h) => `${h}:00`).join(', ')}` : ''}`;
+            return tr('{v} перемог · {v2} поразок{v3}', {
+                v: d.wins ?? 0,
+                v2: d.losses ?? 0,
+                v3: d.hours?.length
+                    ? ` · ${d.hours.map((h) => `${h}:00`).join(', ')}`
+                    : '',
+            });
         case 'contract':
             return `${d.count ?? 0} × ${tierLabels[d.tier ?? 'light']}`;
         case 'investment':
-            return `Інвестиція ${uah(d.amount ?? 0)}`;
+            return tr('Інвестиція {uah}', { uah: uah(d.amount ?? 0) });
         default:
-            return r.description ?? 'Інше';
+            return r.description ?? tr('Інше');
     }
 }
 
 const statusView = {
     pending: {
         icon: Clock3,
-        label: 'На перевірці',
+        label: tr('На перевірці'),
         tone: 'bg-amber-300/10 text-amber-200',
     },
     approved: {
         icon: CheckCircle2,
-        label: 'Схвалено',
+        label: tr('Схвалено'),
         tone: 'bg-emerald-400/10 text-emerald-200',
     },
     rejected: {
         icon: XCircle,
-        label: 'Відхилено',
+        label: tr('Відхилено'),
         tone: 'bg-rose-400/10 text-rose-200',
     },
 };
@@ -66,7 +77,7 @@ export function ReportStatus({
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium',
+                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
                 s.tone,
             )}
         >
@@ -99,8 +110,9 @@ export function ReportRow({
                     </span>
                     <ReportStatus status={report.status} />
                     {report.flags?.similar_reports && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[11px] text-rose-200">
-                            <AlertTriangle className="size-3" /> схожий скрін
+                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-xs text-rose-200">
+                            <AlertTriangle className="size-3" />{' '}
+                            {tr('схожий скрін')}
                         </span>
                     )}
                 </div>
@@ -110,11 +122,17 @@ export function ReportRow({
                 <div className="mt-1 text-xs text-white/40">
                     {report.for_friend &&
                         (report.beneficiary.id === meId
-                            ? `від ${report.submitter.display} · `
-                            : `за ${report.beneficiary.display} · `)}
+                            ? tr('від {display} · ', {
+                                  display: report.submitter.display,
+                              })
+                            : tr('за {display} · ', {
+                                  display: report.beneficiary.display,
+                              }))}
                     {timeAgo(report.created_at)}
                     {report.reviewer &&
-                        ` · перевірив ${report.reviewer.display}`}
+                        tr(' · перевірив {display}', {
+                            display: report.reviewer.display,
+                        })}
                 </div>
                 {report.review_comment && (
                     <div className="mt-1.5 rounded-lg bg-white/[0.04] px-2.5 py-1.5 text-xs text-white/60">
@@ -136,8 +154,8 @@ export function ReportRow({
                     {report.reward > 0 ? uah(report.reward) : '—'}
                 </div>
                 {report.points > 0 && (
-                    <div className="text-[11px] text-amber-200/70">
-                        +{report.points} балів
+                    <div className="text-xs text-amber-200/70">
+                        +{report.points} {tr('балів')}
                     </div>
                 )}
             </div>

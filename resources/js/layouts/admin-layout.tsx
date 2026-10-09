@@ -5,6 +5,7 @@ import {
     Clapperboard,
     Crown,
     FileText,
+    Gamepad2,
     Images,
     LayoutDashboard,
     Music2,
@@ -12,10 +13,14 @@ import {
     Server,
     Settings2,
     Shield,
+    ShieldAlert,
+    Languages,
+    Globe2,
     ShieldCheck,
     Sticker,
     UsersRound,
 } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import type { PropsWithChildren } from 'react';
 import { Aurora } from '@/components/gc/aurora';
 import { LogoMark } from '@/components/gc/logo';
@@ -25,21 +30,26 @@ import { useCurrentUrl } from '@/hooks/use-current-url';
 import { usePlayer } from '@/lib/player';
 import { cn } from '@/lib/utils';
 import { PageTransition } from '@/components/gc/page-transition';
+import { tr } from '@/lib/i18n';
 
 const items = [
-    { label: 'Огляд', href: '/admin', icon: LayoutDashboard, exact: true },
-    { label: 'Користувачі', href: '/admin/users', icon: UsersRound },
-    { label: 'Записи', href: '/admin/posts', icon: FileText },
-    { label: 'Спільноти', href: '/admin/communities', icon: Shield },
-    { label: 'Фото', href: '/admin/photos', icon: Images },
-    { label: 'Музика', href: '/admin/music', icon: Music2 },
-    { label: 'Кіно', href: '/admin/cinema', icon: Clapperboard },
-    { label: 'Сервери GTA', href: '/admin/servers', icon: Server },
-    { label: 'Сім’ї', href: '/admin/families', icon: Crown },
-    { label: 'Стікери', href: '/admin/stickers', icon: Sticker },
-    { label: 'Модулі', href: '/admin/modules', icon: Blocks },
-    { label: 'Інтеграції', href: '/admin/integrations', icon: PlugZap },
-    { label: 'Налаштування', href: '/admin/settings', icon: Settings2 },
+    { label: tr('Огляд'), href: '/admin', icon: LayoutDashboard, exact: true },
+    { label: tr('Користувачі'), href: '/admin/users', icon: UsersRound },
+    { label: tr('Записи'), href: '/admin/posts', icon: FileText },
+    { label: tr('Модерація'), href: '/admin/moderation', icon: ShieldAlert },
+    { label: tr('Мови'), href: '/admin/languages', icon: Languages },
+    { label: tr('Країни'), href: '/admin/geo', icon: Globe2 },
+    { label: tr('Спільноти'), href: '/admin/communities', icon: Shield },
+    { label: tr('Фото'), href: '/admin/photos', icon: Images },
+    { label: tr('Музика'), href: '/admin/music', icon: Music2 },
+    { label: tr('Кіно'), href: '/admin/cinema', icon: Clapperboard },
+    { label: tr('Сервери GTA'), href: '/admin/servers', icon: Server },
+    { label: tr('Ігри'), href: '/admin/games', icon: Gamepad2 },
+    { label: tr('Сім’ї'), href: '/admin/families', icon: Crown },
+    { label: tr('Стікери'), href: '/admin/stickers', icon: Sticker },
+    { label: tr('Модулі'), href: '/admin/modules', icon: Blocks },
+    { label: tr('Інтеграції'), href: '/admin/integrations', icon: PlugZap },
+    { label: tr('Налаштування'), href: '/admin/settings', icon: Settings2 },
 ];
 
 function useActive() {
@@ -57,6 +67,19 @@ export default function AdminLayout({ children }: PropsWithChildren) {
     const { auth, modules } = usePage().props;
     const isActive = useActive();
     const { current } = usePlayer();
+    const { currentUrl } = useCurrentUrl();
+    const topNav = useRef<HTMLElement>(null);
+
+    // On phones the section bar scrolls sideways: keep the open section in view.
+    useEffect(() => {
+        const nav = topNav.current;
+        const link = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+
+        if (nav && link) {
+            nav.scrollLeft =
+                link.offsetLeft - (nav.clientWidth - link.offsetWidth) / 2;
+        }
+    }, [currentUrl]);
 
     return (
         <div className="relative min-h-dvh">
@@ -72,8 +95,9 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                         <span className="block font-display text-[15px] font-bold text-white">
                             Game<span className="text-gradient">Con</span>
                         </span>
-                        <span className="flex items-center gap-1 text-[11px] font-medium tracking-wider text-gold uppercase">
-                            <ShieldCheck className="size-3" /> Адмін-панель
+                        <span className="flex items-center gap-1 text-xs font-medium tracking-wider text-gold uppercase">
+                            <ShieldCheck className="size-3" />{' '}
+                            {tr('Адмін-панель')}
                         </span>
                     </span>
                 </Link>
@@ -98,7 +122,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                                     className={cn(
                                         'size-[18px]',
                                         active
-                                            ? 'text-[#8fa0ff] drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]'
+                                            ? 'text-gc-lilac-400 drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]'
                                             : 'text-white/40 group-hover:text-white/75',
                                     )}
                                 />
@@ -113,7 +137,8 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                         href="/feed"
                         className="glass flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 transition hover:text-white"
                     >
-                        <ArrowLeft className="size-4" /> Повернутися на сайт
+                        <ArrowLeft className="size-4" />{' '}
+                        {tr('Повернутися на сайт')}
                     </Link>
                     <div className="flex items-center gap-3 px-2">
                         <UserAvatar
@@ -125,15 +150,18 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                             <span className="block truncate text-sm font-semibold text-white">
                                 {auth.user.name}
                             </span>
-                            <span className="block text-[11px] text-white/40">
-                                Адміністратор
+                            <span className="block text-xs text-white/40">
+                                {tr('Адміністратор')}
                             </span>
                         </span>
                     </div>
                 </div>
             </aside>
 
-            <header className="sticky top-0 z-30 scrollbar-none flex items-center gap-2 overflow-x-auto border-b border-white/[0.06] bg-[#060915]/85 px-3 py-2 backdrop-blur-2xl [view-transition-name:gc-topbar] lg:hidden">
+            <header
+                ref={topNav}
+                className="sticky top-0 z-30 scrollbar-none flex items-center gap-2 overflow-x-auto border-b border-white/[0.06] bg-[#060915]/85 px-3 py-2 backdrop-blur-2xl [view-transition-name:gc-topbar] lg:hidden"
+            >
                 <Link href="/feed" className="mr-1 shrink-0">
                     <LogoMark className="size-8" />
                 </Link>
@@ -141,8 +169,11 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                     <Link
                         key={href}
                         href={href}
+                        aria-current={
+                            isActive(href, exact) ? 'page' : undefined
+                        }
                         className={cn(
-                            'flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium',
+                            'flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium',
                             isActive(href, exact)
                                 ? 'bg-white/[0.08] text-white'
                                 : 'text-white/55',

@@ -36,11 +36,18 @@ class FamilyPunishment extends Model
 
     public const TYPE_KICK = 'kick';
 
+    /** Тимчасовий мут у чаті сім’ї (до expires_at). */
+    public const TYPE_MUTE = 'mute';
+
+    /** На скільки годин можна заглушити. */
+    public const MUTE_HOURS = [1, 3, 6, 12, 24, 72, 168];
+
     public const TYPES = [
         self::TYPE_WARN => 'Попередження',
         self::TYPE_REPRIMAND => 'Догана',
         self::TYPE_FINE => 'Штраф',
         self::TYPE_KICK => 'Виключення',
+        self::TYPE_MUTE => 'Мут у чаті',
     ];
 
     protected function casts(): array

@@ -10,27 +10,28 @@ import {
     store as confirmStore,
 } from '@/actions/Laravel/Passkeys/Http/Controllers/PasskeyConfirmationController';
 import PasskeyVerify from '@/components/passkey-verify';
+import { tr } from '@/lib/i18n';
 
 export default function ConfirmPassword() {
     return (
         <>
-            <Head title="Підтвердження пароля" />
+            <Head title={tr('Підтвердження пароля')} />
 
             <PasskeyVerify
                 routes={{
                     options: confirmOptions(),
                     submit: confirmStore(),
                 }}
-                label="Підтвердити ключем доступу"
-                loadingLabel="Підтвердження…"
-                separator="Або підтвердьте паролем"
+                label={tr('Підтвердити ключем доступу')}
+                loadingLabel={tr('Підтвердження…')}
+                separator={tr('Або підтвердьте паролем')}
             />
 
             <Form {...store.form()} resetOnSuccess={['password']}>
                 {({ processing, errors }) => (
                     <div className="space-y-6">
                         <div className="grid gap-2">
-                            <Label htmlFor="password">Пароль</Label>
+                            <Label htmlFor="password">{tr('Пароль')}</Label>
                             <PasswordInput
                                 id="password"
                                 name="password"
@@ -49,7 +50,7 @@ export default function ConfirmPassword() {
                                 data-test="confirm-password-button"
                             >
                                 {processing && <Spinner />}
-                                Підтвердити
+                                {tr('Підтвердити')}
                             </Button>
                         </div>
                     </div>
@@ -60,6 +61,6 @@ export default function ConfirmPassword() {
 }
 
 ConfirmPassword.layout = {
-    title: 'Підтвердіть пароль',
-    description: 'Це захищена дія. Підтвердіть пароль, щоб продовжити.',
+    title: tr('Підтвердіть пароль'),
+    description: tr('Це захищена дія. Підтвердіть пароль, щоб продовжити.'),
 };

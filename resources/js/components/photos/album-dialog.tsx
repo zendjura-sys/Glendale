@@ -8,18 +8,27 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import type { AlbumPrivacy, PhotoAlbumCard } from '@/types';
+import { tr } from '@/lib/i18n';
 
 export const privacyMeta: Record<
     AlbumPrivacy,
     { label: string; text: string; icon: typeof Globe2 }
 > = {
-    public: { label: 'Усі', text: 'Бачать усі користувачі', icon: Globe2 },
+    public: {
+        label: tr('Усі'),
+        text: tr('Бачать усі користувачі'),
+        icon: Globe2,
+    },
     friends: {
-        label: 'Друзі',
-        text: 'Лише ваші друзі',
+        label: tr('Друзі'),
+        text: tr('Лише ваші друзі'),
         icon: UsersRound,
     },
-    private: { label: 'Тільки я', text: 'Приватний альбом', icon: Lock },
+    private: {
+        label: tr('Тільки я'),
+        text: tr('Приватний альбом'),
+        icon: Lock,
+    },
 };
 
 export function AlbumDialog({
@@ -60,15 +69,16 @@ export function AlbumDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="glass-strong gap-0 rounded-3xl border-white/10 p-6 text-white sm:max-w-lg">
                 <DialogTitle className="font-display text-xl">
-                    {album ? 'Редагування альбому' : 'Новий альбом'}
+                    {album ? tr('Редагування альбому') : tr('Новий альбом')}
                 </DialogTitle>
                 <DialogDescription className="mt-1 text-sm text-white/50">
-                    Скріншоти, турніри, косплей чи меми — збирайте моменти
-                    разом.
+                    {tr(
+                        'Скріншоти, турніри, косплей чи меми — збирайте моменти разом.',
+                    )}
                 </DialogDescription>
 
                 <label className="mt-5 block text-sm font-medium text-white/80">
-                    Назва
+                    {tr('Назва')}
                     <input
                         value={form.data.title}
                         onChange={(event) =>
@@ -76,7 +86,7 @@ export function AlbumDialog({
                         }
                         maxLength={80}
                         autoFocus
-                        placeholder="Наприклад, «Кращі моменти сезону»"
+                        placeholder={tr('Наприклад, «Кращі моменти сезону»')}
                         className="input-glass mt-1.5 h-11 w-full rounded-xl px-3.5 text-sm text-white placeholder:text-white/30 focus:outline-none"
                     />
                 </label>
@@ -87,7 +97,7 @@ export function AlbumDialog({
                 )}
 
                 <label className="mt-4 block text-sm font-medium text-white/80">
-                    Опис
+                    {tr('Опис')}
                     <textarea
                         value={form.data.description}
                         onChange={(event) =>
@@ -95,13 +105,13 @@ export function AlbumDialog({
                         }
                         maxLength={500}
                         rows={3}
-                        placeholder="Необов'язково"
+                        placeholder={tr("Необов'язково")}
                         className="input-glass mt-1.5 w-full resize-none rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none"
                     />
                 </label>
 
                 <div className="mt-4 text-sm font-medium text-white/80">
-                    Хто бачить альбом
+                    {tr('Хто бачить альбом')}
                     <div
                         className={cn(
                             'mt-1.5 grid gap-2',
@@ -124,15 +134,15 @@ export function AlbumDialog({
                                     className={cn(
                                         'flex flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 text-xs transition',
                                         active
-                                            ? 'border-[#7c8cff]/60 bg-[#6d5dfc]/15 text-white shadow-[0_0_24px_-10px_rgb(124_92_255/0.9)]'
+                                            ? 'border-gc-lilac-500/60 bg-gc-indigo/15 text-white shadow-[0_0_24px_-10px_rgb(124_92_255/0.9)]'
                                             : 'border-white/[0.07] bg-white/[0.03] text-white/55 hover:border-white/15',
                                     )}
                                 >
                                     <meta.icon className="size-4" />
                                     {value === 'public' && community
-                                        ? 'Усі відвідувачі'
+                                        ? tr('Усі відвідувачі')
                                         : value === 'private' && community
-                                          ? 'Лише керівники'
+                                          ? tr('Лише керівники')
                                           : meta.label}
                                 </button>
                             );
@@ -141,8 +151,8 @@ export function AlbumDialog({
                 </div>
 
                 <label className="mt-4 flex cursor-pointer items-center gap-3 rounded-2xl bg-white/[0.03] px-4 py-3 text-sm text-white/80">
-                    <MessageCircle className="size-4 text-[#9aa8ff]" />
-                    <span className="flex-1">Дозволити коментарі</span>
+                    <MessageCircle className="size-4 text-gc-lilac-300" />
+                    <span className="flex-1">{tr('Дозволити коментарі')}</span>
                     <input
                         type="checkbox"
                         checked={form.data.comments_enabled}
@@ -162,7 +172,7 @@ export function AlbumDialog({
                         onClick={() => onOpenChange(false)}
                         className="rounded-xl px-4 py-2.5 text-sm text-white/60 hover:bg-white/5 hover:text-white"
                     >
-                        Скасувати
+                        {tr('Скасувати')}
                     </button>
                     <button
                         type="button"
@@ -172,7 +182,7 @@ export function AlbumDialog({
                         }
                         className="btn-glow rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
                     >
-                        {album ? 'Зберегти' : 'Створити'}
+                        {album ? tr('Зберегти') : tr('Створити')}
                     </button>
                 </div>
             </DialogContent>

@@ -371,12 +371,31 @@ class CinemaController extends Controller
                     $match ??= filled($c[$field]) ? $existing[$field.':'.$c[$field]] ?? null : null;
                 }
 
+                $sources = $this->candidateSources($c);
+                $translations = [];
+                $quality = null;
+                foreach ($sources as $source) {
+                    $translation = $source['translation'] ?? null;
+                    if (is_scalar($translation)) {
+                        $translation = trim((string) $translation);
+                        if ($translation !== '' && ! in_array($translation, $translations, true)) {
+                            $translations[] = $translation;
+                        }
+                    }
+                    if ($quality === null) {
+                        $candidateQuality = $source['quality'] ?? null;
+                        if (is_scalar($candidateQuality) && trim((string) $candidateQuality) !== '') {
+                            $quality = $candidateQuality;
+                        }
+                    }
+                }
+
                 return [
                     ...collect($c)->except(['sources', 'rating_kp', 'kinopoisk_id'])->all(),
                     'type_label' => Movie::TYPES[$c['type']] ?? $c['type'],
-                    'translations' => collect($c['sources'])->pluck('translation')->filter()->unique()->values()->all(),
-                    'sources_count' => count($c['sources']),
-                    'quality' => collect($c['sources'])->pluck('quality')->filter()->first(),
+                    'translations' => $translations,
+                    'sources_count' => count($sources),
+                    'quality' => $quality,
                     'imported' => $match,
                 ];
             })->values(),
@@ -449,8 +468,11 @@ class CinemaController extends Controller
 
         $clean = fn (?array $list) => array_values(array_unique(array_filter(array_map(fn ($v) => trim((string) $v), $list ?? []))));
 
+        $attributes = $data;
+        unset($attributes['poster'], $attributes['backdrop'], $attributes['remove_poster'], $attributes['remove_backdrop'], $attributes['genres'], $attributes['countries']);
+
         $movie->fill([
-            ...collect($data)->except(['poster', 'backdrop', 'remove_poster', 'remove_backdrop', 'genres', 'countries'])->all(),
+            ...$attributes,
             'genres' => $clean($data['genres'] ?? null) ?: null,
             'countries' => $clean($data['countries'] ?? null) ?: null,
         ]);
@@ -494,7 +516,35 @@ class CinemaController extends Controller
      */
     private function typeOptions(): array
     {
-        return collect(Movie::TYPES)->map(fn (string $label, string $key) => ['key' => $key, 'label' => $label])->values()->all();
+        return array_values(collect(Movie::TYPES)->map(fn (string $label, string $key) => ['key' => $key, 'label' => $label])->all());
+    }
+
+    /**
+     * @param  array<string, mixed>  $candidate
+     * @return list<array<string, mixed>>
+     */
+    private function candidateSources(array $candidate): array
+    {
+        $raw = $candidate['sources'] ?? null;
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        $sources = [];
+        foreach ($raw as $source) {
+            if (! is_array($source)) {
+                continue;
+            }
+            $row = [];
+            foreach ($source as $key => $value) {
+                if (is_string($key)) {
+                    $row[$key] = $value;
+                }
+            }
+            $sources[] = $row;
+        }
+
+        return $sources;
     }
 
     /**

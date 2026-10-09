@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import type { CommunityCard, CommunityRole, MembershipStatus } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     community: Pick<CommunityCard, 'slug' | 'type' | 'privacy'>;
@@ -45,10 +46,10 @@ export function JoinButton({
 
     if (status === null) {
         const label = isPublic
-            ? 'Підписатися'
+            ? tr('Підписатися')
             : community.privacy === 'closed'
-              ? 'Подати заявку'
-              : 'Вступити';
+              ? tr('Подати заявку')
+              : tr('Вступити');
 
         return (
             <button
@@ -77,7 +78,7 @@ export function JoinButton({
                 type="button"
                 disabled={busy}
                 onClick={() => router.delete(url, options)}
-                title="Скасувати заявку"
+                title={tr('Скасувати заявку')}
                 className={cn(
                     'group inline-flex items-center justify-center gap-2 rounded-xl bg-white/[0.07] font-semibold text-white/80 transition hover:bg-rose-500/15 hover:text-rose-200',
                     height,
@@ -85,8 +86,12 @@ export function JoinButton({
                 )}
             >
                 <Clock3 className="size-4" />
-                <span className="group-hover:hidden">Заявку надіслано</span>
-                <span className="hidden group-hover:inline">Скасувати</span>
+                <span className="group-hover:hidden">
+                    {tr('Заявку надіслано')}
+                </span>
+                <span className="hidden group-hover:inline">
+                    {tr('Скасувати')}
+                </span>
             </button>
         );
     }
@@ -102,7 +107,7 @@ export function JoinButton({
                 )}
             >
                 <Check className="size-4 text-emerald-300" />
-                {isPublic ? 'Ви підписані' : 'Ви учасник'}
+                {isPublic ? tr('Ви підписані') : tr('Ви учасник')}
                 <ChevronDown className="size-4 text-white/45" />
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -111,8 +116,9 @@ export function JoinButton({
             >
                 {role === 'owner' ? (
                     <div className="px-2.5 py-2 text-xs leading-relaxed text-white/50">
-                        Ви власник. Щоб вийти, передайте права іншому
-                        адміністратору в розділі «Учасники».
+                        {tr(
+                            'Ви власник. Щоб вийти, передайте права іншому адміністратору в розділі «Учасники».',
+                        )}
                     </div>
                 ) : (
                     <DropdownMenuItem
@@ -120,7 +126,9 @@ export function JoinButton({
                         onSelect={() => router.delete(url, options)}
                     >
                         <LogOut className="text-rose-300" />
-                        {isPublic ? 'Відписатися' : 'Вийти зі спільноти'}
+                        {isPublic
+                            ? tr('Відписатися')
+                            : tr('Вийти зі спільноти')}
                     </DropdownMenuItem>
                 )}
             </DropdownMenuContent>

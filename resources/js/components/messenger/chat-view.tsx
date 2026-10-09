@@ -4,8 +4,11 @@ import {
     Bell,
     BellOff,
     ChevronLeft,
+    Headphones,
     Info,
     Loader2,
+    Phone,
+    PhoneOff,
     Sparkles,
 } from 'lucide-react';
 import {
@@ -23,6 +26,10 @@ import { useRealtime } from '@/hooks/use-realtime';
 import { api, ApiError } from '@/lib/api';
 import { dayLabel, lastSeen, plural } from '@/lib/format';
 import { inbox } from '@/lib/inbox';
+import { getPlayerState } from '@/lib/player';
+import { cn } from '@/lib/utils';
+import { leaveVoice, startCall, useVoice } from '@/lib/voice';
+import type { CallState } from '@/lib/voice';
 import type {
     Attachment,
     ChatAttachment,
@@ -34,7 +41,9 @@ import type {
 import { Composer } from './composer';
 import { ConversationAvatar } from './conversation-avatar';
 import { MessageBubble, SystemMessage } from './message-bubble';
+import { ReportDialog } from './report-dialog';
 import type { BubbleActions } from './message-bubble';
+import { tr } from '@/lib/i18n';
 
 const EDIT_WINDOW_MS = 24 * 3600 * 1000;
 const GROUP_GAP_MS = 5 * 60 * 1000;
@@ -71,10 +80,19 @@ export function ChatView({
     onOpenInfo,
     onTypingChange,
 }: Props) {
-    const { auth } = usePage().props;
+    const { auth, modules } = usePage().props;
     const me = auth.user;
     const isGroup = active.type === 'group';
     const canManage = active.my_role === 'owner' || active.my_role === 'admin';
+
+    const voice = useVoice();
+    const [call, setCall] = useState<CallState | null>(active.call ?? null);
+    useEffect(() => setCall(active.call ?? null), [active.id, active.call]);
+    const inThisCall =
+        voice.kind === 'call' &&
+        voice.conversationId === active.id &&
+        voice.status !== 'idle';
+    const canCall = Boolean(active.can_call && active.calls_enabled);
 
     const [messages, setMessages] = useState<ChatMessage[]>(history.messages);
     const [hasMore, setHasMore] = useState(history.has_more);
@@ -173,7 +191,7 @@ export function ChatView({
         ? isGroup
             ? typingNames.length === 1
                 ? typingNames[0]
-                : `${typingNames.length} учасники`
+                : tr('{length} учасники', { length: typingNames.length })
             : (active.peer?.first_name ?? '')
         : null;
 
@@ -257,6 +275,12 @@ export function ChatView({
         },
         'conversation.updated': () => {
             router.reload({ only: ['active', 'conversations'] });
+        },
+        'call.updated': (event: {
+            conversation_id: number;
+            call: CallState | null;
+        }) => {
+            if (event.conversation_id === active.id) setCall(event.call);
         },
         'client-typing': (event: { user_id: number; name: string }) => {
             if (event.user_id === me.id) return;
@@ -386,7 +410,7 @@ export function ChatView({
                 toast.error(
                     error instanceof ApiError
                         ? (Object.values(error.errors)[0]?.[0] ?? error.message)
-                        : 'Не вдалося надіслати повідомлення.',
+                        : tr('Не вдалося надіслати повідомлення.'),
                 );
             });
     };
@@ -492,7 +516,7 @@ export function ChatView({
                 toast.error(
                     error instanceof ApiError
                         ? error.message
-                        : 'Не вдалося зберегти зміни.',
+                        : tr('Не вдалося зберегти зміни.'),
                 );
             });
     };
@@ -504,6 +528,7 @@ export function ChatView({
         !!message.body &&
         Date.now() - new Date(message.created_at).getTime() < EDIT_WINDOW_MS;
 
+    const [reportUrl, setReportUrl] = useState<string | null>(null);
     const actions: BubbleActions = {
         onReply: (message) => {
             setEditing(null);
@@ -520,22 +545,26 @@ export function ChatView({
             );
 
             void api('DELETE', `/messages/${active.id}/messages/${message.id}`)
-                .then(() => toast.success('Повідомлення видалено.'))
+                .then(() => toast.success(tr('Повідомлення видалено.')))
                 .catch(() => {
                     setMessages(snapshot);
-                    toast.error('Не вдалося видалити повідомлення.');
+                    toast.error(tr('Не вдалося видалити повідомлення.'));
                 });
         },
+        onReport: (message) =>
+            setReportUrl(
+                `/messages/${active.id}/messages/${message.id}/report`,
+            ),
         onRetry: (message) => message.local_id && deliver(message.local_id),
         onCopy: (message) => {
             void navigator.clipboard
                 ?.writeText(message.body ?? '')
-                .then(() => toast.success('Скопійовано.'));
+                .then(() => toast.success(tr('Скопійовано.')));
         },
         onJump: (id) => {
             const node = document.getElementById(`message-${id}`);
             if (!node) {
-                toast('Повідомлення далеко в історії.');
+                toast(tr('Повідомлення далеко в історії.'));
 
                 return;
             }
@@ -567,12 +596,15 @@ export function ChatView({
 
     const subtitle = typingLabel ? (
         <span className="flex items-center gap-1.5 text-[#8fd8ff]">
-            {isGroup ? `${typingLabel} друкує` : 'друкує'} <TypingDots />
+            {isGroup
+                ? tr('{typingLabel} друкує', { typingLabel })
+                : tr('друкує')}{' '}
+            <TypingDots />
         </span>
     ) : isGroup ? (
         `${active.members_count} ${plural(active.members_count, ['учасник', 'учасники', 'учасників'])}`
     ) : active.peer?.is_online ? (
-        <span className="text-emerald-300">в мережі</span>
+        <span className="text-emerald-300">{tr('в мережі')}</span>
     ) : (
         lastSeen(active.peer?.last_seen_at ?? null, active.peer?.gender)
     );
@@ -583,7 +615,7 @@ export function ChatView({
                 <Link
                     href="/messages"
                     className="flex size-9 items-center justify-center rounded-xl text-white/70 hover:bg-white/[0.07] md:hidden"
-                    aria-label="Назад"
+                    aria-label={tr('Назад')}
                 >
                     <ChevronLeft className="size-5" />
                 </Link>
@@ -623,8 +655,8 @@ export function ChatView({
                                 onSuccess: () =>
                                     toast.success(
                                         active.is_muted
-                                            ? 'Сповіщення увімкнено.'
-                                            : 'Сповіщення вимкнено.',
+                                            ? tr('Сповіщення увімкнено.')
+                                            : tr('Сповіщення вимкнено.'),
                                     ),
                             },
                         )
@@ -632,13 +664,13 @@ export function ChatView({
                     className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
                     aria-label={
                         active.is_muted
-                            ? 'Увімкнути сповіщення'
-                            : 'Вимкнути сповіщення'
+                            ? tr('Увімкнути сповіщення')
+                            : tr('Вимкнути сповіщення')
                     }
                     title={
                         active.is_muted
-                            ? 'Увімкнути сповіщення'
-                            : 'Вимкнути сповіщення'
+                            ? tr('Увімкнути сповіщення')
+                            : tr('Вимкнути сповіщення')
                     }
                 >
                     {active.is_muted ? (
@@ -647,18 +679,102 @@ export function ChatView({
                         <Bell className="size-[18px]" />
                     )}
                 </button>
+                {(canCall || inThisCall) && (
+                    <button
+                        type="button"
+                        onClick={() =>
+                            inThisCall
+                                ? void leaveVoice()
+                                : void startCall({
+                                      id: active.id,
+                                      title: active.title,
+                                  })
+                        }
+                        className={cn(
+                            'flex size-9 items-center justify-center rounded-xl transition',
+                            inThisCall
+                                ? 'bg-rose-500 text-white hover:bg-rose-500/85'
+                                : 'text-white/60 hover:bg-white/[0.07] hover:text-white',
+                        )}
+                        aria-label={
+                            inThisCall
+                                ? tr('Покласти слухавку')
+                                : call
+                                  ? tr('Приєднатися до дзвінка')
+                                  : tr('Зателефонувати')
+                        }
+                        title={
+                            inThisCall
+                                ? tr('Покласти слухавку')
+                                : call
+                                  ? tr('Приєднатися до дзвінка')
+                                  : tr('Зателефонувати')
+                        }
+                    >
+                        {inThisCall ? (
+                            <PhoneOff className="size-[18px]" />
+                        ) : (
+                            <Phone className="size-[18px]" />
+                        )}
+                    </button>
+                )}
+                {modules.includes('music') && (
+                    <button
+                        type="button"
+                        onClick={() =>
+                            router.post('/music/together', {
+                                conversation_id: active.id,
+                                track_id:
+                                    getPlayerState().current?.source === 'local'
+                                        ? getPlayerState().current?.id
+                                        : null,
+                            })
+                        }
+                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
+                        aria-label={tr('Слухати музику разом')}
+                        title={tr('Слухати музику разом')}
+                    >
+                        <Headphones className="size-[18px]" />
+                    </button>
+                )}
                 {isGroup && (
                     <button
                         type="button"
                         onClick={onOpenInfo}
                         className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
-                        aria-label="Інформація про бесіду"
-                        title="Інформація про бесіду"
+                        aria-label={tr('Інформація про бесіду')}
+                        title={tr('Інформація про бесіду')}
                     >
                         <Info className="size-[18px]" />
                     </button>
                 )}
             </header>
+
+            {call && !inThisCall && call.joined.length > 0 && (
+                <div className="flex items-center gap-3 border-b border-white/[0.06] bg-emerald-400/[0.07] px-3 py-2 sm:px-4">
+                    <Phone className="size-4 shrink-0 text-emerald-300" />
+                    <span className="min-w-0 flex-1 truncate text-sm text-white/80">
+                        {isGroup
+                            ? tr('Іде груповий дзвінок')
+                            : tr('Іде дзвінок')}{' '}
+                        · {call.joined.map((p) => p.name).join(', ')}
+                    </span>
+                    {canCall && (
+                        <button
+                            type="button"
+                            onClick={() =>
+                                void startCall({
+                                    id: active.id,
+                                    title: active.title,
+                                })
+                            }
+                            className="inline-flex h-8 shrink-0 items-center rounded-lg bg-emerald-500 px-3 text-xs font-semibold text-white transition hover:bg-emerald-500/85"
+                        >
+                            {tr('Приєднатися')}
+                        </button>
+                    )}
+                </div>
+            )}
 
             <div className="relative min-h-0 flex-1">
                 <div
@@ -683,7 +799,7 @@ export function ChatView({
                                 {active.title}
                             </p>
                             <p className="text-xs text-white/40">
-                                Початок історії повідомлень
+                                {tr('Початок історії повідомлень')}
                             </p>
                         </div>
                     )}
@@ -691,7 +807,7 @@ export function ChatView({
                     {messages.length === 0 && (
                         <div className="flex h-full flex-col items-center justify-center px-6 text-center">
                             <div className="relative mb-5">
-                                <div className="absolute inset-0 rounded-full bg-[#6d5dfc]/40 blur-2xl" />
+                                <div className="absolute inset-0 rounded-full bg-gc-indigo/40 blur-2xl" />
                                 <ConversationAvatar
                                     conversation={active}
                                     size="lg"
@@ -702,8 +818,9 @@ export function ChatView({
                                 {active.title}
                             </p>
                             <p className="mt-1 max-w-xs text-sm text-white/45">
-                                Тут ще порожньо. Надішліть перше повідомлення —
-                                привітайтесь!
+                                {tr(
+                                    'Тут ще порожньо. Надішліть перше повідомлення — привітайтесь!',
+                                )}
                             </p>
                             {active.can_write && (
                                 <button
@@ -718,8 +835,8 @@ export function ChatView({
                                     }
                                     className="glass mt-5 inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-medium text-white transition hover:border-white/20"
                                 >
-                                    <Sparkles className="size-4 text-[#ffd36b]" />
-                                    Надіслати 👋
+                                    <Sparkles className="size-4 text-gc-gold" />
+                                    {tr('Надіслати 👋')}
                                 </button>
                             )}
                         </div>
@@ -837,6 +954,7 @@ export function ChatView({
                     onClose={() => setLightbox(null)}
                 />
             )}
+            <ReportDialog url={reportUrl} onClose={() => setReportUrl(null)} />
         </section>
     );
 }
@@ -844,7 +962,7 @@ export function ChatView({
 function DaySeparator({ iso }: { iso: string }) {
     return (
         <div className="sticky top-1 z-10 flex justify-center py-2">
-            <span className="rounded-full border border-white/[0.06] bg-[#0b1020]/80 px-3 py-1 text-[11px] font-medium text-white/60 backdrop-blur-xl">
+            <span className="rounded-full border border-white/[0.06] bg-[#0b1020]/80 px-3 py-1 text-xs font-medium text-white/60 backdrop-blur-xl">
                 {dayLabel(iso)}
             </span>
         </div>

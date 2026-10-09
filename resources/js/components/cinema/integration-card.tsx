@@ -15,6 +15,7 @@ import { Pill, Toggle, selectClass } from '@/components/gc/admin';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { tr } from '@/lib/i18n';
 
 export type IntegrationField = {
     name: string;
@@ -31,7 +32,7 @@ export type IntegrationField = {
 export type CinemaIntegration = {
     key: string;
     label: string;
-    group: 'players' | 'metadata';
+    group: 'auth' | 'push' | 'voice' | 'players' | 'metadata';
     description: string;
     docs: string;
     steps: string[];
@@ -41,11 +42,11 @@ export type CinemaIntegration = {
 };
 
 const tones: Record<string, string> = {
-    kodik: 'from-[#4f8bff] to-[#6d5dfc]',
-    flixcdn: 'from-[#a855f7] to-[#f04fd8]',
-    tmdb: 'from-[#01b4e4] to-[#22d3a6]',
-    shikimori: 'from-[#5b7cfa] to-[#38e1ff]',
-    omdb: 'from-[#f5c518] to-[#f5b342]',
+    kodik: 'from-gc-blue to-gc-indigo',
+    flixcdn: 'from-gc-purple to-gc-pink',
+    tmdb: 'from-[#01b4e4] to-gc-mint',
+    shikimori: 'from-[#5b7cfa] to-gc-cyan',
+    omdb: 'from-[#f5c518] to-gc-amber',
 };
 
 function initialValues(fields: IntegrationField[]) {
@@ -102,12 +103,13 @@ export function IntegrationCard({
                         {integration.label}
                         {integration.configured ? (
                             <Pill tone="green">
-                                <CheckCircle2 className="size-3" /> Підключено
+                                <CheckCircle2 className="size-3" />{' '}
+                                {tr('Підключено')}
                             </Pill>
                         ) : (
-                            <Pill tone="gold">Не налаштовано</Pill>
+                            <Pill tone="gold">{tr('Не налаштовано')}</Pill>
                         )}
-                        {fromEnv && <Pill tone="blue">з .env</Pill>}
+                        {fromEnv && <Pill tone="blue">{tr('з .env')}</Pill>}
                     </h3>
                     <p className="mt-0.5 text-[13px] leading-snug text-white/50">
                         {integration.description}
@@ -118,7 +120,7 @@ export function IntegrationCard({
                     target="_blank"
                     rel="noreferrer"
                     className="shrink-0 rounded-lg p-1.5 text-white/40 transition hover:bg-white/10 hover:text-white"
-                    title="Відкрити сайт сервісу"
+                    title={tr('Відкрити сайт сервісу')}
                 >
                     <ExternalLink className="size-4" />
                 </a>
@@ -203,8 +205,10 @@ export function IntegrationCard({
                                         placeholder={
                                             f.type === 'secret'
                                                 ? f.hint
-                                                    ? `Збережено ${f.hint}`
-                                                    : 'Вставте ключ'
+                                                    ? tr('Збережено {hint}', {
+                                                          hint: f.hint,
+                                                      })
+                                                    : tr('Вставте ключ')
                                                 : (f.placeholder ?? '')
                                         }
                                         autoComplete={
@@ -228,7 +232,7 @@ export function IntegrationCard({
                                                 }))
                                             }
                                             className="absolute top-1/2 right-2 -translate-y-1/2 rounded-lg p-1.5 text-white/40 hover:text-white"
-                                            aria-label="Показати"
+                                            aria-label={tr('Показати')}
                                         >
                                             {reveal[f.name] ? (
                                                 <EyeOff className="size-4" />
@@ -245,7 +249,9 @@ export function IntegrationCard({
                                 (f.help || (f.type === 'secret' && f.hint)) && (
                                     <p className="text-xs text-white/40">
                                         {f.help ??
-                                            'Залиште порожнім, щоб не змінювати.'}
+                                            tr(
+                                                'Залиште порожнім, щоб не змінювати.',
+                                            )}
                                     </p>
                                 )
                             )}
@@ -267,7 +273,7 @@ export function IntegrationCard({
                     disabled={form.processing}
                     className="btn-glow inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-50"
                 >
-                    <KeyRound className="size-4" /> Зберегти
+                    <KeyRound className="size-4" /> {tr('Зберегти')}
                 </button>
                 <button
                     type="button"
@@ -281,14 +287,16 @@ export function IntegrationCard({
                     disabled={!integration.configured}
                     className="inline-flex items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 py-2 text-sm text-white/80 transition hover:bg-white/10 disabled:opacity-40"
                 >
-                    <PlugZap className="size-4" /> Перевірити
+                    <PlugZap className="size-4" /> {tr('Перевірити')}
                 </button>
                 {integration.configured && !fromEnv && (
                     <button
                         type="button"
                         onClick={() =>
                             window.confirm(
-                                `Видалити налаштування ${integration.label}?`,
+                                tr('Видалити налаштування {label}?', {
+                                    label: integration.label,
+                                }),
                             ) &&
                             router.put(
                                 `/admin/integrations/cinema/${integration.key}`,

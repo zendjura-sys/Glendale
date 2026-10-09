@@ -24,6 +24,7 @@ import { Field, inputClass } from '@/components/servers/server-form';
 import { uah } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type { FamilyShellProps, RosterEntry } from '@/types';
+import { LOCALE, tr } from '@/lib/i18n';
 
 type FamilyEvent = {
     id: number;
@@ -83,10 +84,10 @@ export default function FamilyEvents(props: Props) {
     const past = events.filter((e) => e.status !== 'planned');
 
     return (
-        <FamilyShell {...props} title="Події">
+        <FamilyShell {...props} title={tr('Події')}>
             <div className="flex items-center gap-2">
                 <h2 className="mr-auto font-display text-lg font-semibold text-white">
-                    Заплановані
+                    {tr('Заплановані')}
                 </h2>
                 {can['events.manage'] && (
                     <button
@@ -94,7 +95,7 @@ export default function FamilyEvents(props: Props) {
                         onClick={() => setCreating(true)}
                         className={btnPrimary}
                     >
-                        <CalendarPlus className="size-4" /> Нова подія
+                        <CalendarPlus className="size-4" /> {tr('Нова подія')}
                     </button>
                 )}
             </div>
@@ -103,11 +104,11 @@ export default function FamilyEvents(props: Props) {
                 <Panel>
                     <Empty
                         icon={CalendarDays}
-                        text="Запланованих подій немає"
+                        text={tr('Запланованих подій немає')}
                     />
                 </Panel>
             ) : (
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     {planned.map((e) => (
                         <Panel key={e.id}>
                             <div className="flex items-start gap-3">
@@ -115,15 +116,15 @@ export default function FamilyEvents(props: Props) {
                                     <span className="font-display text-lg leading-none font-bold text-white">
                                         {new Date(
                                             e.starts_at,
-                                        ).toLocaleDateString('uk-UA', {
+                                        ).toLocaleDateString(LOCALE, {
                                             timeZone: 'Europe/Kyiv',
                                             day: 'numeric',
                                         })}
                                     </span>
-                                    <span className="text-[10px] text-white/55 uppercase">
+                                    <span className="text-xs text-white/55 uppercase">
                                         {new Date(
                                             e.starts_at,
-                                        ).toLocaleDateString('uk-UA', {
+                                        ).toLocaleDateString(LOCALE, {
                                             timeZone: 'Europe/Kyiv',
                                             month: 'short',
                                         })}
@@ -145,7 +146,7 @@ export default function FamilyEvents(props: Props) {
                                     <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-white/50">
                                         <span className="flex items-center gap-1">
                                             <Users className="size-3.5" />
-                                            {e.attendance.length} йдуть
+                                            {e.attendance.length} {tr('йдуть')}
                                         </span>
                                         {e.points > 0 && (
                                             <span className="flex items-center gap-1 text-amber-200">
@@ -179,10 +180,11 @@ export default function FamilyEvents(props: Props) {
                                 >
                                     {e.going ? (
                                         <>
-                                            <Check className="size-4" /> Я буду
+                                            <Check className="size-4" />{' '}
+                                            {tr('Я буду')}
                                         </>
                                     ) : (
-                                        'Піду'
+                                        tr('Піду')
                                     )}
                                 </button>
                                 {can['events.manage'] && (
@@ -191,7 +193,7 @@ export default function FamilyEvents(props: Props) {
                                         onClick={() => setClosing(e)}
                                         className={btnGhost}
                                     >
-                                        Підсумок
+                                        {tr('Підсумок')}
                                     </button>
                                 )}
                             </div>
@@ -201,7 +203,7 @@ export default function FamilyEvents(props: Props) {
             )}
 
             {past.length > 0 && (
-                <Panel title="Минулі події" icon={CalendarDays}>
+                <Panel title={tr('Минулі події')} icon={CalendarDays}>
                     <ul className="divide-y divide-white/[0.05]">
                         {past.map((e) => (
                             <li
@@ -219,7 +221,7 @@ export default function FamilyEvents(props: Props) {
                                 </div>
                                 {e.status === 'cancelled' ? (
                                     <span className="text-xs text-white/40">
-                                        скасовано
+                                        {tr('скасовано')}
                                     </span>
                                 ) : (
                                     <span className="text-xs text-emerald-300">
@@ -228,7 +230,7 @@ export default function FamilyEvents(props: Props) {
                                                 (a) => a.status === 'attended',
                                             ).length
                                         }{' '}
-                                        були
+                                        {tr('були')}
                                     </span>
                                 )}
                             </li>
@@ -240,8 +242,10 @@ export default function FamilyEvents(props: Props) {
             <Modal
                 open={creating}
                 onClose={() => setCreating(false)}
-                title="Нова подія"
-                description="Анонс з’явиться в чаті сім’ї, учасники отримають сповіщення."
+                title={tr('Нова подія')}
+                description={tr(
+                    'Анонс з’явиться в чаті сім’ї, учасники отримають сповіщення.',
+                )}
                 wide
                 footer={
                     <>
@@ -250,7 +254,7 @@ export default function FamilyEvents(props: Props) {
                             onClick={() => setCreating(false)}
                             className={btnGhost}
                         >
-                            Скасувати
+                            {tr('Скасувати')}
                         </button>
                         <button
                             type="button"
@@ -266,14 +270,14 @@ export default function FamilyEvents(props: Props) {
                             }
                             className={btnPrimary}
                         >
-                            Створити
+                            {tr('Створити')}
                         </button>
                     </>
                 }
             >
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <Field
-                        label="Назва"
+                        label={tr('Назва')}
                         error={form.errors.title}
                         className="sm:col-span-2"
                     >
@@ -282,11 +286,11 @@ export default function FamilyEvents(props: Props) {
                             onChange={(e) =>
                                 form.setData('title', e.target.value)
                             }
-                            placeholder="Збори сім’ї в маєтку"
+                            placeholder={tr('Збори сім’ї в маєтку')}
                             className={inputClass}
                         />
                     </Field>
-                    <Field label="Тип">
+                    <Field label={tr('Тип')}>
                         <select
                             value={form.data.type}
                             onChange={(e) =>
@@ -302,7 +306,7 @@ export default function FamilyEvents(props: Props) {
                         </select>
                     </Field>
                     <Field
-                        label="Початок (за Києвом)"
+                        label={tr('Початок (за Києвом)')}
                         error={form.errors.starts_at}
                     >
                         <input
@@ -315,7 +319,7 @@ export default function FamilyEvents(props: Props) {
                         />
                     </Field>
                     <Field
-                        label="Бали за присутність"
+                        label={tr('Бали за присутність')}
                         error={form.errors.points}
                     >
                         <input
@@ -329,7 +333,7 @@ export default function FamilyEvents(props: Props) {
                         />
                     </Field>
                     <Field
-                        label="Нагорода кожному, ₴"
+                        label={tr('Нагорода кожному, ₴')}
                         error={form.errors.reward}
                     >
                         <input
@@ -342,7 +346,7 @@ export default function FamilyEvents(props: Props) {
                             className={inputClass}
                         />
                     </Field>
-                    <Field label="Опис" className="sm:col-span-2">
+                    <Field label={tr('Опис')} className="sm:col-span-2">
                         <textarea
                             value={form.data.description}
                             onChange={(e) =>
@@ -394,8 +398,16 @@ function CloseDialog({
         <Modal
             open
             onClose={onClose}
-            title={`Підсумок: ${event.title}`}
-            description={`Позначте, хто був присутній. Кожен отримає +${event.points} балів${event.reward ? ` і ${uah(event.reward)}` : ''}.`}
+            title={tr('Підсумок: {title}', { title: event.title })}
+            description={tr(
+                'Позначте, хто був присутній. Кожен отримає +{points} балів{v}.',
+                {
+                    points: event.points,
+                    v: event.reward
+                        ? tr(' і {uah}', { uah: uah(event.reward) })
+                        : '',
+                },
+            )}
             wide
             footer={
                 <>
@@ -404,19 +416,19 @@ function CloseDialog({
                         onClick={() => send(true)}
                         className={btnGhost}
                     >
-                        Скасувати подію
+                        {tr('Скасувати подію')}
                     </button>
                     <button
                         type="button"
                         onClick={() => send(false)}
                         className={btnPrimary}
                     >
-                        Зберегти · {attended.length}
+                        {tr('Зберегти ·')} {attended.length}
                     </button>
                 </>
             }
         >
-            <div className="grid max-h-[50vh] gap-1.5 overflow-y-auto sm:grid-cols-2">
+            <div className="grid max-h-[50vh] grid-cols-1 gap-1.5 overflow-y-auto sm:grid-cols-2">
                 {roster.map((m) => {
                     const on = attended.includes(m.id);
 
@@ -452,8 +464,8 @@ function CloseDialog({
                                 {m.display}
                             </span>
                             {going.has(m.id) && (
-                                <span className="text-[10px] text-white/40">
-                                    записався
+                                <span className="text-xs text-white/40">
+                                    {tr('записався')}
                                 </span>
                             )}
                         </button>

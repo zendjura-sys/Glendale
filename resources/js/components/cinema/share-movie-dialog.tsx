@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import type { MovieCard } from '@/types';
 import { MovieCardEmbed } from './movie-card';
+import { tr } from '@/lib/i18n';
 
 export function ShareMovieDialog({
     movie,
@@ -43,10 +44,10 @@ export function ShareMovieDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="glass-strong gap-0 rounded-3xl border-white/10 p-6 text-white sm:max-w-lg">
                 <DialogTitle className="font-display text-xl">
-                    Порадити друзям
+                    {tr('Порадити друзям')}
                 </DialogTitle>
                 <DialogDescription className="mt-1 text-sm text-white/50">
-                    Фільм з’явиться на вашій стіні та в стрічці друзів.
+                    {tr('Фільм з’явиться на вашій стіні та в стрічці друзів.')}
                 </DialogDescription>
                 <textarea
                     value={body}
@@ -54,7 +55,7 @@ export function ShareMovieDialog({
                     rows={3}
                     maxLength={2000}
                     autoFocus
-                    placeholder="Чим вас зачепив цей фільм?"
+                    placeholder={tr('Чим вас зачепив цей фільм?')}
                     className="input-glass mt-5 w-full resize-none rounded-2xl px-4 py-3 text-sm text-white placeholder:text-white/35 focus:outline-none"
                 />
                 <MovieCardEmbed
@@ -67,7 +68,7 @@ export function ShareMovieDialog({
                         onClick={() => onOpenChange(false)}
                         className="rounded-xl px-4 py-2.5 text-sm text-white/60 hover:bg-white/5 hover:text-white"
                     >
-                        Скасувати
+                        {tr('Скасувати')}
                     </button>
                     <button
                         type="button"
@@ -75,7 +76,7 @@ export function ShareMovieDialog({
                         disabled={sending}
                         className="btn-glow rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
                     >
-                        Опублікувати
+                        {tr('Опублікувати')}
                     </button>
                 </div>
             </DialogContent>

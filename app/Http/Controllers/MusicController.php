@@ -9,8 +9,8 @@ use App\Services\MusicService;
 use App\Services\Spotify\SpotifyClient;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -82,7 +82,7 @@ class MusicController extends Controller
             'tracks' => Inertia::scroll(fn () => $tracks),
             'total' => $user->library()->count(),
             'playlists' => $this->playlistCards($user->playlists()->when($viewer->isNot($user), fn (Builder $q) => $q->where('is_public', true))),
-            'nowPlaying' => Inertia::defer(fn () => $this->music->currentFor($user)),
+            'nowPlaying' => Inertia::defer(fn () => $this->music->currentFor($user, $viewer)),
         ]);
     }
 
@@ -107,11 +107,11 @@ class MusicController extends Controller
      */
     private function playlistCards($query): array
     {
-        return $query
-            ->with(['tracks' => fn (BelongsToMany $q) => $q->whereNotNull('cover_path')->limit(4)])
+        return array_values($query
+            ->with(['tracks' => fn (Relation $q) => $q->whereNotNull('cover_path')->limit(4)])
             ->latest('updated_at')
             ->get()
             ->map(fn (Playlist $p) => $p->toCard())
-            ->all();
+            ->all());
     }
 }

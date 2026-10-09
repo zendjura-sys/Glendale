@@ -1,285 +1,382 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'people.dart';
+import 'posts.dart';
 import 'state.dart';
+import 'stories.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'i18n.dart';
+
+/// Сторінки записів з підвантаженням: стрічка, стіна профілю, спільнота.
+class PostPager {
+  PostPager(this.load);
+
+  /// Повертає відповідь API з `posts` (пагінація Laravel) для сторінки [page].
+  final Future<Map<String, dynamic>> Function(int page) load;
+  final posts = <Map<String, dynamic>>[];
+  Map<String, dynamic> first = {};
+  int page = 0;
+  bool more = true;
+  bool loading = false;
+
+  Future<void> reset() async {
+    page = 0;
+    more = true;
+    final data = await load(1);
+    first = data;
+    final listing = Listing.parse(data['posts']);
+    posts
+      ..clear()
+      ..addAll(listing.items);
+    page = 1;
+    more = listing.more;
+  }
+
+  Future<bool> next() async {
+    if (loading || !more) return false;
+    loading = true;
+    try {
+      final listing = Listing.parse((await load(page + 1))['posts']);
+      final known = {for (final p in posts) '${p['id']}'};
+      posts.addAll(listing.items.where((p) => !known.contains('${p['id']}')));
+      page += 1;
+      more = listing.more;
+      return true;
+    } finally {
+      loading = false;
+    }
+  }
+}
+
+/// Хвіст списку: підвантажує наступну сторінку, коли доходить до низу.
+class LoadMore extends StatelessWidget {
+  const LoadMore({required this.more, required this.onMore, super.key});
+  final bool more;
+  final VoidCallback onMore;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!more) return const SizedBox(height: 8);
+    WidgetsBinding.instance.addPostFrameCallback((_) => onMore());
+    return const Padding(padding: EdgeInsets.all(18), child: Center(child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2))));
+  }
+}
+
+// ───────────────────────── Новини ─────────────────────────
 
 class FeedScreen extends StatefulWidget {
-  const FeedScreen({required this.session, super.key});
-  final Session session;
+  const FeedScreen({super.key});
 
   @override
   State<FeedScreen> createState() => _FeedScreenState();
 }
 
 class _FeedScreenState extends State<FeedScreen> {
-  final composer = TextEditingController();
   String tab = 'friends';
-  String visibility = 'public';
-  int page = 1;
+  late final pager = PostPager((page) => AppScope.read(context).session.api.get('/api/v1/feed?page=$page&tab=$tab'));
+  bool ready = false;
+  Object? error;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reload());
+  }
+
+  final stories = GlobalKey<StoriesStripState>();
+
+  Future<void> _reload() async {
+    unawaited(stories.currentState?.reload());
+    try {
+      await pager.reset();
+      error = null;
+      tab = text(pager.first['tab']) ?? tab;
+    } catch (e) {
+      error = e;
+    }
+    if (mounted) setState(() => ready = true);
+  }
+
+  Future<void> _more() async {
+    try {
+      if (await pager.next() && mounted) setState(() {});
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final online = maps(pager.first['online_friends']);
+    final suggestions = maps(pager.first['suggestions']);
+    return ScreenScroll(
+      onRefresh: _reload,
+      children: [
+        StoriesStrip(key: stories),
+        Composer(onPosted: _reload),
+        SizedBox(height: 12),
+        Segmented(
+          options: [SegmentOption('friends', tr('Друзі'), icon: LucideIcons.usersRound), SegmentOption('discover', tr('Рекомендації'), icon: LucideIcons.flame)],
+          selected: tab,
+          onSelect: (value) {
+            setState(() {
+              tab = value;
+              ready = false;
+            });
+            _reload();
+          },
+        ),
+        const SizedBox(height: 12),
+        if (online.isNotEmpty) ...[
+          Glass(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CardTitle(tr('Зараз онлайн'), icon: LucideIcons.radio, trailing: '${online.length}'),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 78,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: online.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 14),
+                    itemBuilder: (_, i) => _AvatarChip(user: online[i]),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        if (!ready)
+          const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)))
+        else if (error != null)
+          EmptyState(icon: LucideIcons.wifiOff, title: tr('Не вдалося завантажити'), text: '$error', action: tr('Спробувати знову'), onAction: _reload)
+        else if (pager.posts.isEmpty)
+          EmptyState(
+            icon: tab == 'discover' ? LucideIcons.compass : LucideIcons.newspaper,
+            title: tab == 'discover' ? tr('Тут ще нічого немає') : tr('Стрічка поки порожня'),
+            text: tr('Напишіть перший запис або знайдіть друзів — і стрічка оживе.'),
+            action: tr('Знайти друзів'),
+            actionIcon: LucideIcons.userRoundPlus,
+            onAction: () => context.push('/people'),
+          )
+        else ...[
+          for (final post in pager.posts) PostCard(key: ValueKey('post-${post['id']}'), post: post, onDeleted: () => pager.posts.remove(post)),
+          LoadMore(more: pager.more, onMore: _more),
+        ],
+        if (suggestions.isNotEmpty && ready) ...[
+          const SizedBox(height: 4),
+          Glass(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CardTitle(tr('Можливо, ви знайомі'), icon: LucideIcons.userRoundPlus, trailing: tr('Усі'), onTrailing: () => context.push('/people')),
+                const SizedBox(height: 6),
+                for (final user in suggestions)
+                  UserTile(
+                    user: user,
+                    subtitle: intOf(user['mutual']) > 0 ? '${user['mutual']} ${plural(intOf(user['mutual']), 'спільний друг', 'спільні друзі', 'спільних друзів')}' : '@${user['username']}',
+                    trailing: FriendAction(username: '${user['username']}', relation: 'none', compact: true),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _AvatarChip extends StatelessWidget {
+  const _AvatarChip({required this.user});
+  final Map<String, dynamic> user;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = text(user['first_name']) ?? text(user['name']) ?? '';
+    return GestureDetector(
+      onTap: () => context.push('/u/${user['username']}'),
+      child: SizedBox(
+        width: 58,
+        child: Column(
+          children: [
+            Avatar(url: text(user['avatar_url']), name: text(user['name']) ?? name, size: 50, online: true),
+            const SizedBox(height: 6),
+            Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11.5, color: soft)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ───────────────────────── Один запис ─────────────────────────
+
+class PostScreen extends StatelessWidget {
+  const PostScreen({required this.id, super.key});
+  final int id;
+
+  @override
+  Widget build(BuildContext context) {
+    final api = AppScope.of(context).session.api;
+    return Remote(
+      load: () => api.get('/api/v1/posts/$id'),
+      builder: (data, reload) => ScreenScroll(
+        onRefresh: reload,
+        children: [
+          Row(
+            children: [
+              RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.canPop() ? context.pop() : context.go('/feed')),
+              const SizedBox(width: 8),
+              Text(tr('Запис'), style: display(18)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          PostCard(post: mapOf(data['post']), expanded: true, onDeleted: () => context.canPop() ? context.pop() : context.go('/feed')),
+        ],
+      ),
+    );
+  }
+}
+
+// ───────────────────────── Пошук ─────────────────────────
+
+/// Пошук людей і спільнот із шапки (як випадаючий пошук сайту).
+class SearchScreen extends StatefulWidget {
+  const SearchScreen({this.initial = '', super.key});
+  final String initial;
+
+  @override
+  State<SearchScreen> createState() => _SearchScreenState();
+}
+
+class _SearchScreenState extends State<SearchScreen> {
+  late final query = TextEditingController(text: widget.initial);
+  List<Map<String, dynamic>> users = [];
+  List<Map<String, dynamic>> communities = [];
+  bool loading = false;
+  Timer? debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initial.isNotEmpty) WidgetsBinding.instance.addPostFrameCallback((_) => _search());
+  }
 
   @override
   void dispose() {
-    composer.dispose();
+    query.dispose();
+    debounce?.cancel();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Remote(
-      watch: '$tab:$page',
-      load: () => widget.session.api.get('/api/v1/feed?page=$page&tab=$tab'),
-      builder: (data, reload) {
-        final posts = Listing.parse(data['posts']);
-        return ScreenScroll(
-          onRefresh: reload,
-          children: [
-            _Composer(
-              session: widget.session,
-              controller: composer,
-              visibility: visibility,
-              onVisibility: (value) => setState(() => visibility = value),
-              onPublish: () => _publish(context, reload),
-            ),
-            const SizedBox(height: 12),
-            _FeedTabs(
-              selected: tab,
-              onSelect: (value) => setState(() {
-                tab = value;
-                page = 1;
-              }),
-            ),
-            const SizedBox(height: 12),
-            if (posts.items.isEmpty)
-              _EmptyFeed(onFind: () => context.go('/people')),
-            for (final post in posts.items)
-              PostCard(
-                post: post,
-                onLike: () async {
-                  try {
-                    final result = await widget.session.api.post('/api/v1/posts/${post['id']}/like');
-                    setState(() {
-                      post['liked'] = result['liked'];
-                      post['likes_count'] = result['likes_count'];
-                    });
-                  } catch (e) {
-                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-                  }
-                },
-                onComment: () => openComments(context, widget.session.api, _intId(post['id'])),
-              ),
-            if (posts.more)
-              TextButton(onPressed: () => setState(() => page += 1), child: const Text('Ще', style: TextStyle(color: cyan))),
-          ],
-        );
-      },
-    );
-  }
-}
-
-int _intId(dynamic value) => value is int ? value : int.tryParse('$value') ?? 0;
-
-class _Composer extends StatelessWidget {
-  const _Composer({required this.session, required this.controller, required this.visibility, required this.onVisibility, required this.onPublish});
-  final Session session;
-  final TextEditingController controller;
-  final String visibility;
-  final ValueChanged<String> onVisibility;
-  final VoidCallback onPublish;
-
-  @override
-  Widget build(BuildContext context) {
-    final name = text(session.me?['first_name']) ?? text(session.me?['name']) ?? '';
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-      decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(22), border: Border.all(color: Colors.white.withValues(alpha: 0.05))),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Avatar(url: text(session.me?['avatar_url']), name: text(session.me?['name']) ?? 'Я', size: 40),
-              const SizedBox(width: 10),
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  style: onest,
-                  cursorColor: neonBlue,
-                  minLines: 1,
-                  maxLines: 4,
-                  decoration: InputDecoration(
-                    hintText: name.isEmpty ? 'Що нового?' : 'Що нового, $name?',
-                    hintStyle: onest.copyWith(color: muted),
-                    border: InputBorder.none,
-                    isCollapsed: true,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _VisIcon(icon: Icons.public_rounded, selected: visibility == 'public', onTap: () => onVisibility('public')),
-              _VisIcon(icon: Icons.people_alt_outlined, selected: visibility == 'friends', onTap: () => onVisibility('friends')),
-              _VisIcon(icon: Icons.lock_outline_rounded, selected: visibility == 'private', onTap: () => onVisibility('private')),
-              const Spacer(),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: onPublish,
-                  borderRadius: BorderRadius.circular(14),
-                  child: Ink(
-                    decoration: BoxDecoration(gradient: brand, borderRadius: BorderRadius.circular(14)),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 16),
-                        SizedBox(width: 6),
-                        Text('Опублікувати', style: TextStyle(color: Colors.white, fontFamily: 'Onest', fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _VisIcon extends StatelessWidget {
-  const _VisIcon({required this.icon, required this.selected, required this.onTap});
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 6),
-      child: Material(
-        color: selected ? indigo.withValues(alpha: 0.35) : const Color(0xFF1C2236),
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: SizedBox(width: 36, height: 32, child: Icon(icon, size: 16, color: selected ? Colors.white : muted)),
-        ),
-      ),
-    );
-  }
-}
-
-class _FeedTabs extends StatelessWidget {
-  const _FeedTabs({required this.selected, required this.onSelect});
-  final String selected;
-  final ValueChanged<String> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(16)),
-      child: Row(
-        children: [
-          Expanded(child: _tab('friends', Icons.people_alt_outlined, 'Друзі')),
-          Expanded(child: _tab('discover', Icons.local_fire_department_outlined, 'Рекомендації')),
-        ],
-      ),
-    );
-  }
-
-  Widget _tab(String id, IconData icon, String label) {
-    final on = selected == id;
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: () => onSelect(id),
-        borderRadius: BorderRadius.circular(12),
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            gradient: on ? const LinearGradient(colors: [Color(0xFF243056), Color(0xFF1A2038)]) : null,
-            border: Border.all(color: on ? neonBlue.withValues(alpha: 0.45) : Colors.transparent),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 16, color: on ? neonBlue : muted),
-              const SizedBox(width: 6),
-              Text(label, style: onest.copyWith(color: on ? Colors.white : muted, fontWeight: FontWeight.w600, fontSize: 13)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyFeed extends StatelessWidget {
-  const _EmptyFeed({required this.onFind});
-  final VoidCallback onFind;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
-      decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(22), border: Border.all(color: Colors.white.withValues(alpha: 0.05))),
-      child: Column(
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(color: const Color(0xFF1C2236), borderRadius: BorderRadius.circular(16)),
-            child: const Icon(Icons.article_outlined, color: neonBlue),
-          ),
-          const SizedBox(height: 14),
-          Text('Стрічка поки порожня', style: unbounded.copyWith(fontSize: 18)),
-          const SizedBox(height: 8),
-          Text('Напишіть перший запис або знайдіть друзів — і стрічка оживе.', textAlign: TextAlign.center, style: onest.copyWith(color: muted, height: 1.4)),
-          const SizedBox(height: 16),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onFind,
-              borderRadius: BorderRadius.circular(14),
-              child: Ink(
-                decoration: BoxDecoration(gradient: brand, borderRadius: BorderRadius.circular(14)),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.person_add_alt_1_rounded, color: Colors.white, size: 16),
-                    SizedBox(width: 6),
-                    Text('Знайти друзів', style: TextStyle(color: Colors.white, fontFamily: 'Onest', fontWeight: FontWeight.w600)),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-extension on _FeedScreenState {
-  Future<void> _publish(BuildContext context, Future<void> Function() reload) async {
-    final body = composer.text.trim();
-    if (body.isEmpty) return;
-    try {
-      await widget.session.api.post('/api/v1/posts', {'body': body, 'visibility': visibility});
-      composer.clear();
-      await reload();
-    } catch (e) {
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+  Future<void> _search() async {
+    final q = query.text.trim();
+    if (q.length < 2) {
+      setState(() {
+        users = [];
+        communities = [];
+      });
+      return;
     }
+    final api = AppScope.read(context).session.api;
+    setState(() => loading = true);
+    try {
+      final encoded = Uri.encodeQueryComponent(q);
+      final results = await Future.wait([
+        api.get('/api/v1/search?q=$encoded'),
+        api.get('/api/v1/communities?tab=all&q=$encoded').catchError((_) => <String, dynamic>{}),
+      ]);
+      if (!mounted || query.text.trim() != q) return;
+      setState(() {
+        users = maps(results[0]['users']);
+        communities = Listing.parse(results[1]['communities']).items.take(6).toList();
+      });
+    } catch (e) {
+      if (mounted) toast(context, e);
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final q = query.text.trim();
+    return ScreenScroll(
+      children: [
+        Row(
+          children: [
+            RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.canPop() ? context.pop() : context.go('/feed')),
+            const SizedBox(width: 8),
+            Expanded(
+              child: GcField(
+                controller: query,
+                label: tr('Пошук людей і спільнот'),
+                icon: LucideIcons.search,
+                autofocus: widget.initial.isEmpty,
+                dense: true,
+                onChanged: (_) {
+                  debounce?.cancel();
+                  debounce = Timer(const Duration(milliseconds: 300), _search);
+                  setState(() {});
+                },
+                onSubmit: _search,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        if (loading && users.isEmpty && communities.isEmpty)
+          const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+        else if (q.length < 2)
+          QuietEmpty(icon: LucideIcons.search, text: tr('Введіть щонайменше 2 символи'))
+        else if (users.isEmpty && communities.isEmpty)
+          QuietEmpty(icon: LucideIcons.userRoundSearch, text: tr('За запитом «{q}» нічого не знайдено', {'q': q}))
+        else ...[
+          if (users.isNotEmpty)
+            Glass(
+              padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(padding: EdgeInsets.only(left: 4), child: CardTitle(tr('Люди'), icon: LucideIcons.usersRound)),
+                  const SizedBox(height: 4),
+                  for (final user in users) UserTile(user: user, trailing: FriendAction(username: '${user['username']}', relation: text(user['relation']) ?? 'none', compact: true)),
+                ],
+              ),
+            ),
+          if (communities.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Glass(
+              padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(padding: EdgeInsets.only(left: 4), child: CardTitle(tr('Спільноти'), icon: LucideIcons.usersRound)),
+                  const SizedBox(height: 4),
+                  for (final community in communities)
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                      leading: Avatar(url: text(community['avatar_url']), name: text(community['name']) ?? '?', size: 44, square: true),
+                      title: Text(text(community['name']) ?? '', style: body(15, weight: FontWeight.w600)),
+                      subtitle: Text('${compact(community['members_count'])} ${plural(intOf(community['members_count']), 'учасник', 'учасники', 'учасників')}', style: body(12.5, color: muted)),
+                      onTap: () => context.push('/communities/${community['slug']}'),
+                    ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          GhostButton(label: tr('Розширений пошук людей'), icon: LucideIcons.slidersHorizontal, onPressed: () => context.push('/people?q=${Uri.encodeQueryComponent(q)}')),
+        ],
+      ],
+    );
   }
 }

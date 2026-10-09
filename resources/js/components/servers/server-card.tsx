@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import type { GtaServerCard } from '@/types';
 import { OnlineMeter, ServerIcon } from './server-icon';
+import { LOCALE, tr } from '@/lib/i18n';
 
 export function ConnectButton({ value }: { value: string }) {
     const [copied, setCopied] = useState(false);
@@ -28,8 +29,8 @@ export function ConnectButton({ value }: { value: string }) {
                     setTimeout(() => setCopied(false), 1500);
                 });
             }}
-            className="group/copy inline-flex max-w-full items-center gap-1.5 rounded-lg bg-white/[0.05] px-2 py-1 font-mono text-[11px] text-white/60 ring-1 ring-white/[0.06] transition hover:text-white"
-            title="Скопіювати адресу підключення"
+            className="group/copy inline-flex max-w-full items-center gap-1.5 rounded-lg bg-white/[0.05] px-2 py-1 font-mono text-xs text-white/60 ring-1 ring-white/[0.06] transition hover:text-white"
+            title={tr('Скопіювати адресу підключення')}
         >
             {copied ? (
                 <Check className="size-3 shrink-0 text-emerald-300" />
@@ -49,7 +50,7 @@ export function ServerLinks({
     className?: string;
 }) {
     const links = [
-        { href: server.website, icon: Globe, label: 'Сайт' },
+        { href: server.website, icon: Globe, label: tr('Сайт') },
         { href: server.discord, icon: MessageCircle, label: 'Discord' },
         { href: server.telegram, icon: Send, label: 'Telegram' },
     ].filter((link) => link.href);
@@ -88,11 +89,11 @@ export function ServerCard({
             className={cn(
                 'glass group relative flex animate-rise flex-col gap-4 overflow-hidden rounded-3xl p-5 transition hover:-translate-y-0.5 hover:border-white/15',
                 server.is_featured &&
-                    'shadow-[0_20px_60px_-30px_rgb(124_92_255/0.9)] ring-1 ring-[#7c8cff]/30',
+                    'shadow-[0_20px_60px_-30px_rgb(124_92_255/0.9)] ring-1 ring-gc-lilac-500/30',
             )}
             style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}
         >
-            <div className="pointer-events-none absolute -top-16 -right-12 size-40 rounded-full bg-[#6d5dfc]/15 blur-3xl transition group-hover:bg-[#6d5dfc]/30" />
+            <div className="pointer-events-none absolute -top-16 -right-12 size-40 rounded-full bg-gc-indigo/15 blur-3xl transition group-hover:bg-gc-indigo/30" />
             <div className="relative flex items-start gap-3.5">
                 <ServerIcon
                     name={server.name}
@@ -108,16 +109,18 @@ export function ServerCard({
                             <Sparkles className="size-4 shrink-0 text-amber-300" />
                         )}
                     </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] font-medium">
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium">
                         <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2 py-0.5 text-white/65">
                             <PlatformIcon className="size-3" />
                             {server.platform_label}
                         </span>
-                        <span className="rounded-full bg-[#6d5dfc]/15 px-2 py-0.5 text-[#b9b0ff]">
+                        <span className="rounded-full bg-gc-indigo/15 px-2 py-0.5 text-[#b9b0ff]">
                             {server.multiplayer_label}
                         </span>
                         <span className="rounded-full bg-[#facc15]/10 px-2 py-0.5 text-[#fde68a]">
-                            🇺🇦 UA
+                            {server.language === 'uk'
+                                ? '🇺🇦 UA'
+                                : server.language.toUpperCase()}
                         </span>
                     </div>
                 </div>
@@ -137,12 +140,17 @@ export function ServerCard({
                 {server.players_online === null &&
                     server.discord_members !== null && (
                         <div className="text-xs text-white/50">
-                            <span className="font-semibold text-[#9cbcff]">
-                                {server.discord_members.toLocaleString('uk-UA')}
+                            <span className="font-semibold text-gc-sky">
+                                {server.discord_members.toLocaleString(LOCALE)}
                             </span>{' '}
-                            у Discord
+                            {tr('у Discord')}
                             {server.discord_online !== null &&
-                                ` · ${server.discord_online.toLocaleString('uk-UA')} в мережі`}
+                                tr(' · {toLocaleString} в мережі', {
+                                    toLocaleString:
+                                        server.discord_online.toLocaleString(
+                                            LOCALE,
+                                        ),
+                                })}
                         </div>
                     )}
                 <div className="flex items-center justify-between gap-2">
@@ -152,7 +160,7 @@ export function ServerCard({
                         ) : (
                             <span className="inline-flex items-center gap-1 text-xs text-white/40">
                                 <Crown className="size-3.5" />
-                                {server.families_count} сімей
+                                {server.families_count} {tr('сімей')}
                             </span>
                         )}
                     </div>

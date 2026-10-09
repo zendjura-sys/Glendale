@@ -211,7 +211,7 @@ class MediaApiController extends ApiController
         $track = isset($data['track_id']) ? Track::query()->whereKey($data['track_id'])->first() : null;
         $track ? $this->music->nowPlaying($user, $track) : $this->music->stop($user);
 
-        return response()->json(['now' => $this->music->currentFor($user)]);
+        return response()->json(['now' => $this->music->currentFor($user, $user)]);
     }
 
     public function spotifyStart(Request $request): JsonResponse

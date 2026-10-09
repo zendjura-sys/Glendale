@@ -16,6 +16,7 @@ import InputError from '@/components/input-error';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import type { StickerItem } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type AdminPack = {
     id: number;
@@ -46,26 +47,32 @@ export default function AdminStickers({ packs, stats, limits }: Props) {
 
     return (
         <>
-            <Head title="Стікери — Адмін-панель" />
+            <Head title={tr('Стікери — Адмін-панель')} />
             <PageHeader
-                title="Стікери"
-                description="Набори стікерів для месенджера. Вимкнені набори зникають з панелі, але вже надіслані стікери лишаються в чатах."
+                title={tr('Стікери')}
+                description={tr(
+                    'Набори стікерів для месенджера. Вимкнені набори зникають з панелі, але вже надіслані стікери лишаються в чатах.',
+                )}
             />
 
-            <div className="mb-5 grid gap-3 sm:grid-cols-3">
-                <StatCard label="Наборів" value={stats.packs} icon={Smile} />
+            <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <StatCard
-                    label="Стікерів"
+                    label={tr('Наборів')}
+                    value={stats.packs}
+                    icon={Smile}
+                />
+                <StatCard
+                    label={tr('Стікерів')}
                     value={stats.stickers}
                     icon={StickerIcon}
-                    tone="from-[#f04fd8] to-[#a855f7]"
+                    tone="from-gc-pink to-gc-purple"
                     delay={60}
                 />
                 <StatCard
-                    label="Надіслано в чатах"
+                    label={tr('Надіслано в чатах')}
                     value={stats.sent}
                     icon={Send}
-                    tone="from-[#22d3a6] to-[#38e1ff]"
+                    tone="from-gc-mint to-gc-cyan"
                     delay={120}
                 />
             </div>
@@ -78,7 +85,7 @@ export default function AdminStickers({ packs, stats, limits }: Props) {
                     <Input
                         value={form.data.name}
                         onChange={(e) => form.setData('name', e.target.value)}
-                        placeholder="Назва нового набору"
+                        placeholder={tr('Назва нового набору')}
                         className="h-10"
                     />
                     <InputError message={form.errors.name} className="mt-1" />
@@ -86,7 +93,7 @@ export default function AdminStickers({ packs, stats, limits }: Props) {
                 <Input
                     value={form.data.author}
                     onChange={(e) => form.setData('author', e.target.value)}
-                    placeholder="Автор (необов’язково)"
+                    placeholder={tr('Автор (необов’язково)')}
                     className="h-10 w-full sm:w-56"
                 />
                 <button
@@ -94,7 +101,7 @@ export default function AdminStickers({ packs, stats, limits }: Props) {
                     disabled={form.processing || !form.data.name.trim()}
                     className="btn-glow flex h-10 items-center gap-2 rounded-xl bg-gradient-brand px-4 text-sm font-semibold text-white disabled:opacity-50"
                 >
-                    <Plus className="size-4" /> Створити набір
+                    <Plus className="size-4" /> {tr('Створити набір')}
                 </button>
             </form>
 
@@ -110,8 +117,9 @@ export default function AdminStickers({ packs, stats, limits }: Props) {
                 ))}
                 {packs.length === 0 && (
                     <div className="glass rounded-3xl px-6 py-14 text-center text-sm text-white/40">
-                        Наборів ще немає. Створіть перший і завантажте PNG, WebP
-                        або GIF до 1 МБ.
+                        {tr(
+                            'Наборів ще немає. Створіть перший і завантажте PNG, WebP або GIF до 1 МБ.',
+                        )}
                     </div>
                 )}
             </div>
@@ -152,7 +160,7 @@ function PackCard({
                 preserveScroll: true,
                 onError: (errors) =>
                     setError(
-                        Object.values(errors)[0] ?? 'Помилка завантаження',
+                        Object.values(errors)[0] ?? tr('Помилка завантаження'),
                     ),
                 onFinish: () => setUploading(false),
             },
@@ -187,14 +195,16 @@ function PackCard({
                             {pack.name}
                         </h2>
                         <Pill tone={pack.is_active ? 'green' : 'default'}>
-                            {pack.is_active ? 'Активний' : 'Вимкнено'}
+                            {pack.is_active ? tr('Активний') : tr('Вимкнено')}
                         </Pill>
                         <Pill>
                             {pack.stickers.length} / {limit}
                         </Pill>
                     </div>
                     <p className="mt-0.5 text-xs text-white/40">
-                        {pack.author ? `Автор: ${pack.author}` : pack.slug}
+                        {pack.author
+                            ? tr('Автор: {author}', { author: pack.author })
+                            : pack.slug}
                     </p>
                 </div>
                 <div className="flex items-center gap-1">
@@ -203,7 +213,7 @@ function PackCard({
                         className={iconButton}
                         disabled={first}
                         onClick={() => patch({ move: 'up' })}
-                        title="Вище"
+                        title={tr('Вище')}
                     >
                         <ArrowUp className="size-4" />
                     </button>
@@ -212,7 +222,7 @@ function PackCard({
                         className={iconButton}
                         disabled={last}
                         onClick={() => patch({ move: 'down' })}
-                        title="Нижче"
+                        title={tr('Нижче')}
                     >
                         <ArrowDown className="size-4" />
                     </button>
@@ -220,20 +230,26 @@ function PackCard({
                         <Toggle
                             checked={pack.is_active}
                             onChange={(value) => patch({ is_active: value })}
-                            label="Активний"
+                            label={tr('Активний')}
                         />
                     </span>
                     <button
                         type="button"
                         className={cn(iconButton, 'hover:text-rose-300')}
                         onClick={() => {
-                            if (confirm(`Видалити набір «${pack.name}»?`)) {
+                            if (
+                                confirm(
+                                    tr('Видалити набір «{name}»?', {
+                                        name: pack.name,
+                                    }),
+                                )
+                            ) {
                                 router.delete(`/admin/stickers/${pack.id}`, {
                                     preserveScroll: true,
                                 });
                             }
                         }}
-                        title="Видалити набір"
+                        title={tr('Видалити набір')}
                     >
                         <Trash2 className="size-4" />
                     </button>
@@ -265,8 +281,8 @@ function PackCard({
                                     { preserveScroll: true },
                                 )
                             }
-                            className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/70 text-rose-200 opacity-0 transition group-hover:opacity-100"
-                            title="Видалити"
+                            className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/70 text-rose-200 opacity-0 transition group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+                            title={tr('Видалити')}
                         >
                             <Trash2 className="size-3" />
                         </button>
@@ -279,19 +295,21 @@ function PackCard({
                     className="flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-white/15 text-xs text-white/45 transition hover:border-[#8b7dff]/60 hover:text-white disabled:opacity-40"
                 >
                     <ImagePlus className="size-5" />
-                    {uploading ? 'Завантаження…' : 'Додати'}
+                    {uploading ? tr('Завантаження…') : tr('Додати')}
                 </button>
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-white/40">
-                <span>Емодзі для нових стікерів:</span>
+                <span>{tr('Емодзі для нових стікерів:')}</span>
                 <input
                     value={emoji}
                     onChange={(e) => setEmoji(e.target.value.slice(0, 8))}
                     placeholder="😎"
                     className="input-glass h-8 w-16 rounded-lg px-2 text-center text-sm text-white"
                 />
-                <span>PNG, WebP або GIF · до 1 МБ · до 1024×1024 px</span>
+                <span>
+                    {tr('PNG, WebP або GIF · до 1 МБ · до 1024×1024 px')}
+                </span>
             </div>
             {error && <p className="mt-2 text-xs text-rose-300">{error}</p>}
 

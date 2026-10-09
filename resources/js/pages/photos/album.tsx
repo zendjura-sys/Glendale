@@ -21,6 +21,7 @@ import type {
     PhotoThumb,
     ScrollData,
 } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     album: PhotoAlbumDetails;
@@ -62,7 +63,11 @@ export default function PhotoAlbum({
         );
         if (files.length === 0) return;
         if (files.length > limits.upload) {
-            toast.error(`За раз можна завантажити до ${limits.upload} фото.`);
+            toast.error(
+                tr('За раз можна завантажити до {upload} фото.', {
+                    upload: limits.upload,
+                }),
+            );
 
             return;
         }
@@ -77,7 +82,7 @@ export default function PhotoAlbum({
                 onError: (errors) =>
                     toast.error(
                         Object.values(errors)[0] ??
-                            'Не вдалося завантажити фото.',
+                            tr('Не вдалося завантажити фото.'),
                     ),
                 onFinish: () => setProgress(null),
             },
@@ -87,7 +92,9 @@ export default function PhotoAlbum({
     const destroy = () => {
         if (
             !window.confirm(
-                `Видалити альбом «${album.title}» разом з усіма фото?`,
+                tr('Видалити альбом «{title}» разом з усіма фото?', {
+                    title: album.title,
+                }),
             )
         )
             return;
@@ -125,7 +132,7 @@ export default function PhotoAlbum({
                             className="absolute inset-0 size-full scale-110 object-cover opacity-25 blur-2xl"
                         />
                     )}
-                    <div className="pointer-events-none absolute -top-28 -right-10 size-80 rounded-full bg-[#a855f7]/20 blur-3xl" />
+                    <div className="pointer-events-none absolute -top-28 -right-10 size-80 rounded-full bg-gc-purple/20 blur-3xl" />
                     <div className="relative flex flex-wrap items-end gap-4 p-5 sm:p-6">
                         <div className="min-w-0 flex-1">
                             <Link
@@ -133,7 +140,7 @@ export default function PhotoAlbum({
                                 className="inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-white"
                             >
                                 <ArrowLeft className="size-3.5" />
-                                Фотографії {album.owner.name}
+                                {tr('Фотографії')} {album.owner.name}
                             </Link>
                             <h1 className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl">
                                 {album.title}
@@ -159,11 +166,11 @@ export default function PhotoAlbum({
                                 {!album.comments_enabled && (
                                     <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1">
                                         <MessageCircleOff className="size-3.5" />
-                                        Коментарі вимкнено
+                                        {tr('Коментарі вимкнено')}
                                     </span>
                                 )}
                                 <span className="px-1">
-                                    Оновлено{' '}
+                                    {tr('Оновлено')}{' '}
                                     {formatDate(album.updated_at, false)}
                                 </span>
                             </div>
@@ -178,14 +185,14 @@ export default function PhotoAlbum({
                                     >
                                         <PenLine className="size-4" />
                                         <span className="hidden sm:inline">
-                                            Редагувати
+                                            {tr('Редагувати')}
                                         </span>
                                     </button>
                                     <button
                                         type="button"
                                         onClick={destroy}
                                         className="inline-flex size-11 items-center justify-center rounded-xl bg-white/[0.06] text-white/60 transition hover:bg-rose-500/15 hover:text-rose-300"
-                                        aria-label="Видалити альбом"
+                                        aria-label={tr('Видалити альбом')}
                                     >
                                         <Trash2 className="size-4" />
                                     </button>
@@ -198,7 +205,8 @@ export default function PhotoAlbum({
                                     disabled={progress !== null}
                                     className="btn-glow inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold disabled:opacity-60"
                                 >
-                                    <ImagePlus className="size-4" /> Додати фото
+                                    <ImagePlus className="size-4" />{' '}
+                                    {tr('Додати фото')}
                                 </button>
                             )}
                         </div>
@@ -233,23 +241,23 @@ export default function PhotoAlbum({
                             className={cn(
                                 'glass flex w-full flex-col items-center rounded-3xl border-2 border-dashed px-6 py-16 text-center transition',
                                 dragging
-                                    ? 'border-[#7c8cff] bg-[#6d5dfc]/10'
+                                    ? 'border-gc-lilac-500 bg-gc-indigo/10'
                                     : 'border-white/10 hover:border-white/25',
                             )}
                         >
-                            <UploadCloud className="size-12 text-[#9aa8ff]" />
+                            <UploadCloud className="size-12 text-gc-lilac-300" />
                             <span className="mt-4 font-display text-lg font-semibold text-white">
-                                Перетягніть фото сюди
+                                {tr('Перетягніть фото сюди')}
                             </span>
                             <span className="mt-1 text-sm text-white/50">
-                                або натисніть, щоб вибрати — до {limits.upload}{' '}
-                                файлів за раз
+                                {tr('або натисніть, щоб вибрати — до')}{' '}
+                                {limits.upload} {tr('файлів за раз')}
                             </span>
                         </button>
                     ) : (
                         <EmptyState
                             icon={ImagePlus}
-                            title="Альбом поки порожній"
+                            title={tr('Альбом поки порожній')}
                         />
                     )
                 ) : (
@@ -275,10 +283,11 @@ export default function PhotoAlbum({
 
             {dragging && can.upload && (
                 <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-[#05061a]/70 backdrop-blur-sm">
-                    <div className="flex flex-col items-center rounded-3xl border-2 border-dashed border-[#7c8cff] bg-[#6d5dfc]/10 px-16 py-12 text-center">
-                        <UploadCloud className="size-14 animate-bounce text-[#9aa8ff]" />
+                    <div className="flex flex-col items-center rounded-3xl border-2 border-dashed border-gc-lilac-500 bg-gc-indigo/10 px-16 py-12 text-center">
+                        <UploadCloud className="size-14 animate-bounce text-gc-lilac-300" />
                         <p className="mt-4 font-display text-xl font-semibold text-white">
-                            Відпустіть, щоб завантажити в «{album.title}»
+                            {tr('Відпустіть, щоб завантажити в «')}
+                            {album.title}»
                         </p>
                     </div>
                 </div>

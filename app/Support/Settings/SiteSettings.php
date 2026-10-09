@@ -15,6 +15,10 @@ class SiteSettings
     public const DEFAULTS = [
         'site_name' => 'GameCon',
         'tagline' => 'Соціальна мережа нового покоління',
+        'seo_description' => 'GameCon — соціальна мережа для геймерів і кіноманів: друзі, спільноти, музика, кіно, сімʼї та ігрові сервери.',
+        'play_store_enabled' => false,
+        'play_store_url' => null,
+        'play_store_badge' => 'get',
         'registration_open' => true,
         'email_verification' => false,
         'max_post_length' => 5000,
@@ -32,6 +36,27 @@ class SiteSettings
         'tmdb_token' => null,
         'tmdb_language' => 'uk-UA',
         'omdb_key' => null,
+        'rawg_key' => null,
+        'igdb_client_id' => null,
+        'igdb_client_secret' => null,
+        'games_features' => [],
+        'discord_bot_token' => null,
+        'discord_guild_id' => null,
+        'steam_api_key' => null,
+        'deepl_key' => null,
+        'moderation' => [],
+        // Мови інтерфейсу: [{code, enabled}], українська — завжди; типова — для решти відвідувачів.
+        'languages' => [],
+        'default_locale' => 'uk',
+        // Кнопка «Перекласти» під записами (потрібен ключ DeepL).
+        'content_translation' => true,
+        // Блокування країн: ISO-коди; база IP → країна; Cloudflare визначає країну сам.
+        'geo_blocked' => [],
+        'geo_trust_cloudflare' => false,
+        'geo_db_source' => null,
+        'geo_db_updated_at' => null,
+        'maxmind_account_id' => null,
+        'maxmind_license_key' => null,
         'shikimori_enabled' => true,
         'shikimori_url' => null,
         'cinema_auto' => [],
@@ -44,10 +69,14 @@ class SiteSettings
         'firebase_auth_domain' => null,
         'firebase_project_id' => null,
         'firebase_app_id' => null,
+        'fcm_service_account' => null,
+        'livekit_url' => null,
+        'livekit_api_key' => null,
+        'livekit_api_secret' => null,
     ];
 
     /** Ключі, які не можна віддавати у фронтенд. */
-    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret'];
+    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key', 'deepl_key', 'maxmind_license_key'];
 
     /** @var array<string, mixed>|null */
     private ?array $values = null;
@@ -94,6 +123,32 @@ class SiteSettings
     public function putSecret(string $key, ?string $value): void
     {
         $this->put([$key => $value === null || $value === '' ? null : Crypt::encryptString($value)]);
+    }
+
+    public function seoDescription(): string
+    {
+        $value = $this->get('seo_description');
+
+        return is_string($value) && trim($value) !== ''
+            ? trim($value)
+            : (string) self::DEFAULTS['seo_description'];
+    }
+
+    public function playStoreUrl(): ?string
+    {
+        if (! $this->get('play_store_enabled')) {
+            return null;
+        }
+
+        $url = $this->get('play_store_url');
+
+        return is_string($url) && preg_match('#\Ahttps?://#i', $url) === 1 ? $url : null;
+    }
+
+    /** Офіційний значок Google Play: «Get it on» (застосунок опубліковано) або «Pre-register» (попередня реєстрація). */
+    public function playStoreBadge(): string
+    {
+        return $this->get('play_store_badge') === 'preregister' ? 'preregister' : 'get';
     }
 
     /**

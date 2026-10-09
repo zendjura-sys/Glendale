@@ -7,6 +7,7 @@ import { playTrack, toggle, usePlayer } from '@/lib/player';
 import { cn } from '@/lib/utils';
 import type { TrackCard } from '@/types';
 import { Equalizer, SpotifyLogo, TrackCover } from './track-cover';
+import { tr } from '@/lib/i18n';
 
 /**
  * Картка треку у записі на стіні, у «Зараз грає» та в діалогах.
@@ -33,7 +34,7 @@ export function MusicCard({
             next ? 'POST' : 'DELETE',
             `/music/tracks/${track.id}/library`,
         );
-        if (next) toast.success('Додано до ваших аудіозаписів.');
+        if (next) toast.success(tr('Додано до ваших аудіозаписів.'));
     };
 
     return (
@@ -41,7 +42,7 @@ export function MusicCard({
             className={cn(
                 'group relative flex items-center gap-3 overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.035] p-2.5 pr-3 transition hover:border-white/15',
                 isCurrent &&
-                    'border-[#7c8cff]/40 shadow-[0_0_30px_-14px_rgb(124_92_255/0.9)]',
+                    'border-gc-lilac-500/40 shadow-[0_0_30px_-14px_rgb(124_92_255/0.9)]',
                 className,
             )}
         >
@@ -56,7 +57,7 @@ export function MusicCard({
                 type="button"
                 onClick={() => (isCurrent ? toggle() : playTrack(track))}
                 className="relative shrink-0"
-                aria-label={playing ? 'Пауза' : 'Слухати'}
+                aria-label={playing ? tr('Пауза') : tr('Слухати')}
             >
                 <TrackCover
                     url={track.cover_url}
@@ -71,7 +72,7 @@ export function MusicCard({
                         'absolute inset-0 flex items-center justify-center rounded-xl bg-black/45 transition',
                         isCurrent
                             ? 'opacity-100'
-                            : 'opacity-0 group-hover:opacity-100',
+                            : 'opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100',
                     )}
                 >
                     {playing ? (
@@ -103,13 +104,13 @@ export function MusicCard({
                     className={cn(
                         'relative flex size-8 items-center justify-center rounded-full transition',
                         track.in_library
-                            ? 'text-[#8fa0ff]'
+                            ? 'text-gc-lilac-400'
                             : 'text-white/45 hover:bg-white/10 hover:text-white',
                     )}
                     aria-label={
                         track.in_library
-                            ? 'Прибрати з моїх аудіозаписів'
-                            : 'Додати до моїх аудіозаписів'
+                            ? tr('Прибрати з моїх аудіозаписів')
+                            : tr('Додати до моїх аудіозаписів')
                     }
                 >
                     {track.in_library ? (
@@ -123,8 +124,8 @@ export function MusicCard({
                     href={track.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="relative flex items-center gap-1.5 rounded-full px-2 py-1 text-[11px] font-medium text-[#1ed760] transition hover:bg-[#1ed760]/10"
-                    title="Відкрити у Spotify"
+                    className="relative flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium text-spotify transition hover:bg-spotify/10"
+                    title={tr('Відкрити у Spotify')}
                 >
                     <SpotifyLogo className="size-4" />
                     <ExternalLink className="size-3" />

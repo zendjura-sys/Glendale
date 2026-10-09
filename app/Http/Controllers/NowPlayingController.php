@@ -28,7 +28,7 @@ class NowPlayingController extends Controller
         ]);
 
         if ($data['source'] === 'local') {
-            $this->music->nowPlaying($request->user(), Track::query()->findOrFail($data['track_id']));
+            $this->music->nowPlaying($request->user(), Track::query()->findOrFail($request->integer('track_id')));
         } else {
             $this->music->nowPlaying($request->user(), null, SpotifyClient::sanitize($data['track']));
         }

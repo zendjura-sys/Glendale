@@ -7,6 +7,7 @@ import TwoFactorSetupModal from '@/components/two-factor-setup-modal';
 import { Button } from '@/components/ui/button';
 import { useTwoFactorAuth } from '@/hooks/use-two-factor-auth';
 import { disable, enable } from '@/routes/two-factor';
+import { tr } from '@/lib/i18n';
 
 export type Props = {
     canManageTwoFactor?: boolean;
@@ -48,14 +49,15 @@ export default function ManageTwoFactor(props: Props) {
         <div className="glass space-y-6 rounded-3xl p-6 sm:p-7">
             <Heading
                 variant="small"
-                title="Двофакторна автентифікація"
-                description="Додатковий захист входу кодом із телефона"
+                title={tr('Двофакторна автентифікація')}
+                description={tr('Додатковий захист входу кодом із телефона')}
             />
             {twoFactorEnabled ? (
                 <div className="flex flex-col items-start justify-start space-y-4">
                     <p className="text-sm text-white/50">
-                        Під час входу ми запитаємо одноразовий код із
-                        застосунку-автентифікатора.
+                        {tr(
+                            'Під час входу ми запитаємо одноразовий код із застосунку-автентифікатора.',
+                        )}
                     </p>
 
                     <div className="relative inline">
@@ -66,7 +68,7 @@ export default function ManageTwoFactor(props: Props) {
                                     type="submit"
                                     disabled={processing}
                                 >
-                                    Вимкнути 2FA
+                                    {tr('Вимкнути 2FA')}
                                 </Button>
                             )}
                         </Form>
@@ -81,16 +83,16 @@ export default function ManageTwoFactor(props: Props) {
             ) : (
                 <div className="flex flex-col items-start justify-start space-y-4">
                     <p className="text-sm text-white/50">
-                        Після ввімкнення під час входу потрібен буде код із
-                        Google Authenticator, 1Password або іншого
-                        TOTP-застосунку.
+                        {tr(
+                            'Після ввімкнення під час входу потрібен буде код із Google Authenticator, 1Password або іншого TOTP-застосунку.',
+                        )}
                     </p>
 
                     <div>
                         {hasSetupData ? (
                             <Button onClick={() => setShowSetupModal(true)}>
                                 <ShieldCheck />
-                                Продовжити налаштування
+                                {tr('Продовжити налаштування')}
                             </Button>
                         ) : (
                             <Form
@@ -99,7 +101,7 @@ export default function ManageTwoFactor(props: Props) {
                             >
                                 {({ processing }) => (
                                     <Button type="submit" disabled={processing}>
-                                        Увімкнути 2FA
+                                        {tr('Увімкнути 2FA')}
                                     </Button>
                                 )}
                             </Form>

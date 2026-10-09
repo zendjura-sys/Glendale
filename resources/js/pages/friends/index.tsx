@@ -5,6 +5,7 @@ import { PersonCard } from '@/components/gc/person-card';
 import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
 import { cn } from '@/lib/utils';
 import type { PersonCard as Person, ScrollData } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Tab = 'all' | 'online' | 'requests' | 'outgoing';
 
@@ -17,28 +18,30 @@ type Props = {
 };
 
 const tabs: { key: Tab; label: string; icon: typeof UsersRound }[] = [
-    { key: 'all', label: 'Усі друзі', icon: UsersRound },
-    { key: 'online', label: 'Онлайн', icon: Radio },
-    { key: 'requests', label: 'Заявки', icon: Inbox },
-    { key: 'outgoing', label: 'Надіслані', icon: Send },
+    { key: 'all', label: tr('Усі друзі'), icon: UsersRound },
+    { key: 'online', label: tr('Онлайн'), icon: Radio },
+    { key: 'requests', label: tr('Заявки'), icon: Inbox },
+    { key: 'outgoing', label: tr('Надіслані'), icon: Send },
 ];
 
 const empty: Record<Tab, { title: string; text: string }> = {
     all: {
-        title: 'У вас поки немає друзів',
-        text: 'Знайдіть знайомих через пошук або подивіться рекомендації нижче.',
+        title: tr('У вас поки немає друзів'),
+        text: tr(
+            'Знайдіть знайомих через пошук або подивіться рекомендації нижче.',
+        ),
     },
     online: {
-        title: 'Ніхто не онлайн',
-        text: 'Коли друзі зайдуть у мережу, вони з’являться тут.',
+        title: tr('Ніхто не онлайн'),
+        text: tr('Коли друзі зайдуть у мережу, вони з’являться тут.'),
     },
     requests: {
-        title: 'Нових заявок немає',
-        text: 'Коли хтось захоче додати вас у друзі, заявка з’явиться тут.',
+        title: tr('Нових заявок немає'),
+        text: tr('Коли хтось захоче додати вас у друзі, заявка з’явиться тут.'),
     },
     outgoing: {
-        title: 'Немає надісланих заявок',
-        text: 'Заявки, які ви надіслали, чекають тут на відповідь.',
+        title: tr('Немає надісланих заявок'),
+        text: tr('Заявки, які ви надіслали, чекають тут на відповідь.'),
     },
 };
 
@@ -63,7 +66,7 @@ export default function Friends({ tab, q, users, counts, suggestions }: Props) {
 
     return (
         <>
-            <Head title="Друзі" />
+            <Head title={tr('Друзі')} />
             <div className="space-y-5">
                 <div className="glass flex flex-col gap-3 rounded-3xl p-3 md:flex-row md:items-center">
                     <div className="scrollbar-none flex gap-1 overflow-x-auto">
@@ -85,7 +88,7 @@ export default function Friends({ tab, q, users, counts, suggestions }: Props) {
                                 <item.icon
                                     className={cn(
                                         'size-4',
-                                        tab === item.key && 'text-[#8fa0ff]',
+                                        tab === item.key && 'text-gc-lilac-400',
                                     )}
                                 />
                                 {item.label}
@@ -108,7 +111,7 @@ export default function Friends({ tab, q, users, counts, suggestions }: Props) {
                         <input
                             value={search}
                             onChange={(event) => setSearch(event.target.value)}
-                            placeholder="Пошук серед друзів"
+                            placeholder={tr('Пошук серед друзів')}
                             className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
                         />
                     </label>
@@ -132,7 +135,7 @@ export default function Friends({ tab, q, users, counts, suggestions }: Props) {
                     </InfiniteScroll>
                 )}
 
-                <Widget title="Можливо, ви знайомі" icon={Sparkles}>
+                <Widget title={tr('Можливо, ви знайомі')} icon={Sparkles}>
                     <Deferred
                         data="suggestions"
                         fallback={<WidgetSkeleton rows={2} />}
@@ -148,7 +151,7 @@ export default function Friends({ tab, q, users, counts, suggestions }: Props) {
                             </div>
                         ) : (
                             <p className="px-1 text-sm text-white/45">
-                                Рекомендацій поки немає.
+                                {tr('Рекомендацій поки немає.')}
                             </p>
                         )}
                     </Deferred>

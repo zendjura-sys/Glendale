@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import type { Paginated } from '@/types';
+import { tr } from '@/lib/i18n';
 
 export function PageHeader({
     title,
@@ -15,8 +16,9 @@ export function PageHeader({
     actions?: ReactNode;
 }) {
     return (
-        <div className="mb-6 flex flex-wrap items-end gap-4">
-            <div className="min-w-0 flex-1">
+        <div className="mb-6 flex flex-wrap items-end gap-x-4 gap-y-3">
+            {/* На телефоні заголовок займає весь рядок, а кнопки переносяться під нього. */}
+            <div className="min-w-[min(100%,18rem)] flex-1">
                 <h1 className="font-display text-[26px] leading-tight font-bold text-white">
                     {title}
                 </h1>
@@ -24,7 +26,11 @@ export function PageHeader({
                     <p className="mt-1 text-sm text-white/45">{description}</p>
                 )}
             </div>
-            {actions}
+            {actions && (
+                <div className="flex flex-wrap items-center gap-2">
+                    {actions}
+                </div>
+            )}
         </div>
     );
 }
@@ -34,7 +40,7 @@ export function StatCard({
     value,
     hint,
     icon: Icon,
-    tone = 'from-[#4f8bff] to-[#6d5dfc]',
+    tone = 'from-gc-blue to-gc-indigo',
     delay = 0,
 }: {
     label: string;
@@ -46,7 +52,7 @@ export function StatCard({
 }) {
     return (
         <div
-            className="glass group relative animate-rise overflow-hidden rounded-3xl p-5"
+            className="glass group relative animate-rise overflow-hidden rounded-3xl p-4 sm:p-5"
             style={{ animationDelay: `${delay}ms` }}
         >
             <div
@@ -55,20 +61,20 @@ export function StatCard({
                     tone,
                 )}
             />
-            <div className="relative flex items-start justify-between">
-                <span className="text-[13px] font-medium text-white/50">
+            <div className="relative flex items-start justify-between gap-2">
+                <span className="min-w-0 text-[13px] font-medium text-white/50">
                     {label}
                 </span>
                 <span
                     className={cn(
-                        'flex size-9 items-center justify-center rounded-xl bg-gradient-to-br shadow-[0_8px_24px_-8px_rgb(109_93_252/0.8)]',
+                        'flex size-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br shadow-[0_8px_24px_-8px_rgb(109_93_252/0.8)] sm:size-9',
                         tone,
                     )}
                 >
                     <Icon className="size-[18px] text-white" />
                 </span>
             </div>
-            <div className="relative mt-3 font-display text-[30px] leading-none font-bold text-white">
+            <div className="relative mt-3 font-display text-2xl leading-none font-bold text-white sm:text-[30px]">
                 {value}
             </div>
             {hint && (
@@ -118,8 +124,8 @@ export function Toggle({
 
 const pillTones = {
     default: 'border-white/10 bg-white/[0.04] text-white/60',
-    blue: 'border-[#4f8bff]/30 bg-[#4f8bff]/10 text-[#9cbcff]',
-    violet: 'border-[#a855f7]/30 bg-[#a855f7]/10 text-[#d3b0ff]',
+    blue: 'border-gc-blue/30 bg-gc-blue/10 text-gc-sky',
+    violet: 'border-gc-purple/30 bg-gc-purple/10 text-[#d3b0ff]',
     gold: 'border-amber-300/30 bg-amber-300/10 text-amber-200',
     green: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200',
     red: 'border-rose-400/30 bg-rose-400/10 text-rose-200',
@@ -137,7 +143,7 @@ export function Pill({
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium whitespace-nowrap',
+                'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap',
                 pillTones[tone],
                 className,
             )}
@@ -155,7 +161,7 @@ export function Pagination({ data }: { data: Paginated<unknown> }) {
     return (
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm">
             <span className="text-white/40">
-                {data.from}–{data.to} з {data.total}
+                {data.from}–{data.to} {tr('з')} {data.total}
             </span>
             <div className="flex flex-wrap gap-1">
                 {data.links.map((link, i) => {

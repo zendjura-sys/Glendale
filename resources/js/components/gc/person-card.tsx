@@ -3,13 +3,14 @@ import { MapPin } from 'lucide-react';
 import { plural } from '@/lib/format';
 import type { PersonCard as Person } from '@/types';
 import { FriendButton } from './friend-button';
+import { PlayingBadge } from './playing';
 import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
 
 export function PersonCard({ person }: { person: Person }) {
     return (
         <div className="glass group relative flex flex-col items-center overflow-hidden rounded-3xl p-5 text-center transition hover:-translate-y-0.5 hover:border-white/15">
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#6d5dfc]/20 to-transparent opacity-0 transition group-hover:opacity-100" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-gc-indigo/20 to-transparent opacity-0 transition group-hover:opacity-100" />
             <Link href={`/${person.username}`} className="relative">
                 <UserAvatar user={person} size="xl" />
             </Link>
@@ -20,6 +21,12 @@ export function PersonCard({ person }: { person: Person }) {
                 <span className="truncate">{person.name}</span>
                 {person.is_verified && <VerifiedBadge />}
             </Link>
+            {person.playing && (
+                <PlayingBadge
+                    playing={person.playing}
+                    className="relative mt-1.5"
+                />
+            )}
             <div className="relative mt-1 min-h-5 text-xs text-white/45">
                 {person.mutual ? (
                     <span>
@@ -74,11 +81,20 @@ export function PersonRow({
                         <VerifiedBadge className="size-3.5" />
                     )}
                 </Link>
-                <div className="truncate text-xs text-white/45">
-                    {person.mutual
-                        ? `${person.mutual} ${plural(person.mutual, ['спільний друг', 'спільні друзі', 'спільних друзів'])}`
-                        : person.status || person.city || `@${person.username}`}
-                </div>
+                {person.playing ? (
+                    <PlayingBadge
+                        playing={person.playing}
+                        className="mt-0.5 py-0.5"
+                    />
+                ) : (
+                    <div className="truncate text-xs text-white/45">
+                        {person.mutual
+                            ? `${person.mutual} ${plural(person.mutual, ['спільний друг', 'спільні друзі', 'спільних друзів'])}`
+                            : person.status ||
+                              person.city ||
+                              `@${person.username}`}
+                    </div>
+                )}
             </div>
             {action}
         </div>

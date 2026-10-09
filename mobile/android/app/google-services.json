@@ -15,6 +15,30 @@
       },
       "oauth_client": [
         {
+          "client_id": "142512043248-0n7doia9eofv2up79t2h9eiumteresqi.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "online.gamecon.app",
+            "certificate_hash": "e04d4b5b8e02711c07eeadd71c0df1eaff2f503b"
+          }
+        },
+        {
+          "client_id": "142512043248-0svjfjs276b95n2rnqsq2vvp419c00s5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "online.gamecon.app",
+            "certificate_hash": "e1259bdc0e64c72c5a480d71b51626310f12797c"
+          }
+        },
+        {
+          "client_id": "142512043248-n00879botnkei6cmhjgl30l30lo8skvi.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "online.gamecon.app",
+            "certificate_hash": "24e93e4da8ae34573e7fc02bf0e484b6fe413582"
+          }
+        },
+        {
           "client_id": "142512043248-9aa67rq1ki4lucintlei0fena6hm98iq.apps.googleusercontent.com",
           "client_type": 3
         }

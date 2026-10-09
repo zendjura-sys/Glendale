@@ -45,7 +45,8 @@ class AdminTest extends TestCase
         $admin = User::factory()->admin()->create();
 
         $this->actingAs($admin)->patch(route('admin.modules.update', 'feed'), ['enabled' => false])->assertStatus(422);
-        $this->actingAs($admin)->patch(route('admin.modules.update', 'events'), ['enabled' => true])->assertStatus(422);
+        // Календар подій тепер доступний: адмін вмикає й вимикає його, як інші модулі.
+        $this->actingAs($admin)->patch(route('admin.modules.update', 'events'), ['enabled' => false])->assertRedirect();
     }
 
     public function test_banned_user_is_logged_out(): void
@@ -115,12 +116,96 @@ class AdminTest extends TestCase
             'max_message_file_mb' => 40,
             'music_max_track_mb' => 25,
             'maintenance_message' => 'Технічні роботи о 03:00',
+            'seo_description' => 'Опис для пошуку',
+            'play_store_enabled' => false,
+            'play_store_url' => 'https://play.google.com/store/apps/details?id=online.gamecon.app',
         ])->assertSessionHasNoErrors();
 
         $this->actingAs($admin)->get(route('feed'))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('site.name', 'GameCon UA')
+                ->where('site.description', 'Опис для пошуку')
+                ->where('site.play_store', null)
                 ->where('site.announcement', 'Технічні роботи о 03:00'));
+    }
+
+    public function test_play_store_button_appears_only_with_a_valid_link(): void
+    {
+        $description = app(SiteSettings::class)->seoDescription();
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('<meta name="description" content="'.e($description).'"', false)
+            ->assertSee('property="og:image"', false)
+            ->assertSee('/og.jpg', false)
+            ->assertSee('/favicon.svg', false)
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('site.description', $description)
+                ->where('site.play_store', null));
+
+        $admin = User::factory()->admin()->create();
+        $payload = [
+            'site_name' => 'GameCon',
+            'tagline' => 'Тест',
+            'registration_open' => true,
+            'email_verification' => false,
+            'max_post_length' => 5000,
+            'max_attachments' => 10,
+            'max_upload_mb' => 20,
+            'max_message_file_mb' => 50,
+            'music_max_track_mb' => 30,
+            'maintenance_message' => null,
+            'seo_description' => $description,
+            'play_store_enabled' => true,
+            'play_store_url' => 'not-a-url',
+        ];
+
+        $this->actingAs($admin)->put(route('admin.settings.update'), $payload)
+            ->assertSessionHasErrors('play_store_url');
+
+        $payload['play_store_url'] = 'https://play.google.com/store/apps/details?id=online.gamecon.app';
+
+        $this->actingAs($admin)->put(route('admin.settings.update'), $payload)
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($admin)->get(route('feed'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('site.play_store.url', $payload['play_store_url'])
+                ->where('site.play_store.badge', 'get'));
+
+        $this->actingAs($admin)->put(route('admin.settings.update'), [...$payload, 'play_store_badge' => 'beta'])
+            ->assertSessionHasErrors('play_store_badge');
+
+        $this->actingAs($admin)->put(route('admin.settings.update'), [...$payload, 'play_store_badge' => 'preregister'])
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($admin)->get(route('feed'))
+            ->assertInertia(fn (Assert $page) => $page->where('site.play_store.badge', 'preregister'));
+    }
+
+    public function test_admin_sees_mail_status_and_sends_a_test_mail(): void
+    {
+        config(['mail.default' => 'array', 'mail.from.address' => 'no-reply@gamecon.online']);
+        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
+
+        $this->actingAs($admin)->get(route('admin.settings.edit'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('mail.mailer', 'array')
+                ->where('mail.from', 'no-reply@gamecon.online')
+                ->where('mail.social', 'social@gamecon.online')
+                ->where('mail.ready', false));
+
+        $this->actingAs($user)->post(route('admin.settings.mail-test'), ['email' => 'x@example.com'])->assertForbidden();
+        $this->actingAs($admin)->post(route('admin.settings.mail-test'), ['email' => 'not-an-email'])->assertSessionHasErrors('email');
+
+        $this->actingAs($admin)->post(route('admin.settings.mail-test'), ['email' => 'owner@example.com'])->assertRedirect();
+
+        $messages = app('mail.manager')->mailer('array')->getSymfonyTransport()->messages();
+        $this->assertCount(2, $messages);
+        foreach ($messages as $message) {
+            $this->assertSame('owner@example.com', $message->getEnvelope()->getRecipients()[0]->getAddress());
+        }
     }
 
     public function test_email_verification_setting_gates_the_site(): void

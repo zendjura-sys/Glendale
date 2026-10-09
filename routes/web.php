@@ -2,13 +2,20 @@
 
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Auth\SocialAuthController;
+use App\Http\Controllers\CallController;
 use App\Http\Controllers\CinemaController;
+use App\Http\Controllers\ClanController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityMemberController;
+use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FriendController;
+use App\Http\Controllers\GameController;
+use App\Http\Controllers\ListenPartyController;
+use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\Mail\UnsubscribeController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
 use App\Http\Controllers\MusicController;
@@ -17,14 +24,24 @@ use App\Http\Controllers\NowPlayingController;
 use App\Http\Controllers\PeopleController;
 use App\Http\Controllers\PhotoAlbumController;
 use App\Http\Controllers\PhotoController;
+use App\Http\Controllers\PlayingController;
 use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\SpotifyController;
+use App\Http\Controllers\StoryController;
 use App\Http\Controllers\TrackController;
+use App\Http\Controllers\TranslateController;
+use App\Http\Controllers\VoiceController;
+use App\Http\Controllers\WatchPartyController;
 use App\Http\Controllers\WelcomeController;
+use App\Models\VoiceRoom;
 use Illuminate\Support\Facades\Route;
+
+// Мова інтерфейсу: ручний вибір і словник сайту.
+Route::post('locale', [LocaleController::class, 'update'])->middleware('throttle:30,1')->name('locale.update');
+Route::get('i18n/{locale}.js', [LocaleController::class, 'script'])->where('locale', '[A-Za-z]{2,3}(-[A-Za-z0-9]{2,4}){0,2}')->name('locale.script');
 
 Route::get('/', WelcomeController::class)->name('home');
 
@@ -58,6 +75,34 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::delete('friends/{user}', [FriendController::class, 'destroy'])->name('friends.destroy');
     });
 
+    // Історії на 24 години.
+    Route::prefix('stories')->name('stories.')->middleware('module:feed')->group(function () {
+        Route::get('/', [StoryController::class, 'index'])->name('index');
+        Route::post('/', [StoryController::class, 'store'])->middleware('throttle:20,1')->name('store');
+        Route::get('u/{user}', [StoryController::class, 'ofUser'])->name('user');
+        Route::post('{story}/view', [StoryController::class, 'view'])->whereNumber('story')->middleware('throttle:240,1')->name('view');
+        Route::post('{story}/react', [StoryController::class, 'react'])->whereNumber('story')->middleware('throttle:30,1')->name('react');
+        Route::post('{story}/reply', [StoryController::class, 'reply'])->whereNumber('story')->middleware('throttle:30,1')->name('reply');
+        Route::get('{story}/viewers', [StoryController::class, 'viewers'])->whereNumber('story')->name('viewers');
+        Route::delete('{story}', [StoryController::class, 'destroy'])->whereNumber('story')->name('destroy');
+    });
+
+    // Голосові кімнати сімей і спільнот (звук — через LiveKit).
+    Route::prefix('voice')->name('voice.')->group(function () {
+        Route::get('{type}/{id}', [VoiceController::class, 'index'])->whereIn('type', VoiceRoom::OWNERS)->whereNumber('id')->name('index');
+        Route::post('{type}/{id}', [VoiceController::class, 'store'])->whereIn('type', VoiceRoom::OWNERS)->whereNumber('id')->middleware('throttle:20,1')->name('store');
+        Route::patch('rooms/{room}', [VoiceController::class, 'update'])->whereNumber('room')->name('update');
+        Route::delete('rooms/{room}', [VoiceController::class, 'destroy'])->whereNumber('room')->name('destroy');
+        Route::post('rooms/{room}/join', [VoiceController::class, 'join'])->whereNumber('room')->middleware('throttle:30,1')->name('join');
+        Route::post('rooms/{room}/members/{user:id}', [VoiceController::class, 'moderate'])->whereNumber(['room', 'user'])->withoutScopedBindings()->name('moderate');
+    });
+
+    Route::prefix('calls/{call}')->name('calls.')->whereNumber('call')->middleware('module:messages')->group(function () {
+        Route::post('join', [CallController::class, 'join'])->middleware('throttle:30,1')->name('join');
+        Route::post('decline', [CallController::class, 'decline'])->name('decline');
+        Route::post('leave', [CallController::class, 'leave'])->name('leave');
+    });
+
     Route::prefix('messages')->name('messages.')->middleware('module:messages')->group(function () {
         Route::get('/', [MessengerController::class, 'index'])->name('index');
         Route::get('contacts', [MessengerController::class, 'contacts'])->name('contacts');
@@ -77,6 +122,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::delete('{conversation}/members/{user}', [MessengerController::class, 'removeMember'])->name('members.destroy');
             Route::patch('{conversation}/messages/{message}', [MessageController::class, 'update'])->name('messages.update');
             Route::delete('{conversation}/messages/{message}', [MessageController::class, 'destroy'])->name('messages.destroy');
+            Route::post('{conversation}/messages/{message}/report', [MessageController::class, 'report'])->middleware('throttle:20,1')->name('messages.report');
+            // Дзвінки в бесіді (звук — через LiveKit).
+            Route::get('{conversation}/call', [CallController::class, 'show'])->name('call.show');
+            Route::post('{conversation}/call', [CallController::class, 'start'])->middleware('throttle:20,1')->name('call.start');
         });
     });
 
@@ -131,6 +180,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::delete('now-playing', [NowPlayingController::class, 'destroy'])->name('music.now-playing.destroy');
 
         Route::post('tracks', [TrackController::class, 'store'])->middleware('throttle:60,1')->name('tracks.store');
+        Route::post('together', [ListenPartyController::class, 'store'])->middleware('throttle:10,1')->name('listen.store');
         Route::post('playlists', [PlaylistController::class, 'store'])->middleware('throttle:20,1')->name('playlists.store');
 
         Route::whereNumber(['track', 'playlist'])->group(function () {
@@ -171,6 +221,77 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('{movie}/started', [CinemaController::class, 'started'])->middleware('throttle:30,1')->name('started');
         Route::get('{movie}/comments', [CinemaController::class, 'comments'])->name('comments.index');
         Route::post('{movie}/comments', [CinemaController::class, 'comment'])->middleware('throttle:30,1')->name('comments.store');
+        Route::post('{movie}/watch', [WatchPartyController::class, 'store'])->middleware('throttle:10,1')->name('watch.store');
+    });
+
+    // Каталог мультиплеєрних ігор.
+    Route::prefix('games')->name('games.')->middleware('module:games')->group(function () {
+        Route::get('/', [GameController::class, 'index'])->name('index');
+        Route::get('search', [GameController::class, 'search'])->middleware('throttle:120,1')->name('search');
+        Route::get('{game}', [GameController::class, 'show'])->name('show');
+    });
+
+    // Клани й гільдії мультиплеєрних ігор.
+    Route::prefix('clans')->name('clans.')->middleware('module:clans')->group(function () {
+        Route::get('/', [ClanController::class, 'index'])->name('index');
+        Route::get('create', [ClanController::class, 'create'])->name('create');
+        Route::post('/', [ClanController::class, 'store'])->middleware('throttle:10,1')->name('store');
+        Route::prefix('{clan}')->group(function () {
+            Route::get('/', [ClanController::class, 'show'])->name('show');
+            Route::post('join', [ClanController::class, 'join'])->middleware('throttle:20,1')->name('join');
+            Route::post('leave', [ClanController::class, 'leave'])->name('leave');
+            Route::post('members/{member}', [ClanController::class, 'member'])->whereNumber('member')->name('members.update');
+            Route::post('settings', [ClanController::class, 'update'])->name('update');
+            Route::post('news', [ClanController::class, 'news'])->middleware('throttle:20,1')->name('news.store');
+            Route::delete('news/{news}', [ClanController::class, 'deleteNews'])->whereNumber('news')->name('news.destroy');
+            Route::post('events', [ClanController::class, 'event'])->middleware('throttle:20,1')->name('events.store');
+            Route::post('events/{event}/rsvp', [ClanController::class, 'rsvp'])->whereNumber('event')->name('events.rsvp');
+            Route::delete('events/{event}', [ClanController::class, 'deleteEvent'])->whereNumber('event')->name('events.destroy');
+            Route::post('contributions', [ClanController::class, 'contribute'])->middleware('throttle:30,1')->name('contributions.store');
+            Route::post('contributions/{contribution}', [ClanController::class, 'review'])->whereNumber('contribution')->name('contributions.review');
+            Route::post('spend', [ClanController::class, 'spend'])->middleware('throttle:30,1')->name('spend');
+            Route::get('chat', [ClanController::class, 'chat'])->name('chat');
+        });
+    });
+
+    // Спільний перегляд: доступ за посиланням із кодом.
+    Route::prefix('watch/{party}')->name('watch.')->middleware('module:cinema')->group(function () {
+        Route::get('/', [WatchPartyController::class, 'show'])->name('show');
+        Route::get('state', [WatchPartyController::class, 'poll'])->name('poll');
+        Route::post('state', [WatchPartyController::class, 'control'])->middleware('throttle:240,1')->name('control');
+        Route::post('shared', [WatchPartyController::class, 'shared'])->name('shared');
+        Route::post('messages', [WatchPartyController::class, 'message'])->middleware('throttle:30,1')->name('messages');
+        Route::post('voice', [WatchPartyController::class, 'voice'])->middleware('throttle:20,1')->name('voice');
+        Route::post('invite', [WatchPartyController::class, 'invite'])->middleware('throttle:10,1')->name('invite');
+        Route::delete('/', [WatchPartyController::class, 'end'])->name('end');
+    });
+
+    // «Перекласти» під записами, коментарями й повідомленнями (DeepL).
+    Route::post('translate', TranslateController::class)->middleware('throttle:60,1')->name('translate');
+
+    // Календар подій: сім’ї, клани, сервери, ігри.
+    Route::prefix('events')->name('events.')->middleware('module:events')->group(function () {
+        Route::get('/', [EventController::class, 'index'])->name('index');
+        Route::post('server/{server}', [EventController::class, 'storeServer'])->middleware('throttle:20,1')->name('server.store');
+        Route::post('server/{event}/rsvp', [EventController::class, 'rsvpServer'])->whereNumber('event')->name('server.rsvp');
+        Route::delete('server/{event}', [EventController::class, 'destroyServer'])->whereNumber('event')->name('server.destroy');
+        Route::post('game/{game}', [EventController::class, 'storeGame'])->middleware('throttle:20,1')->name('game.store');
+        Route::post('game/{event}/rsvp', [EventController::class, 'rsvpGame'])->whereNumber('event')->name('game.rsvp');
+        Route::delete('game/{event}', [EventController::class, 'destroyGame'])->whereNumber('event')->name('game.destroy');
+    });
+
+    // Спільне прослуховування: доступ за посиланням із кодом.
+    Route::prefix('listen/{party}')->name('listen.')->middleware('module:music')->group(function () {
+        Route::get('/', [ListenPartyController::class, 'show'])->name('show');
+        Route::get('state', [ListenPartyController::class, 'poll'])->name('poll');
+        Route::post('state', [ListenPartyController::class, 'control'])->middleware('throttle:240,1')->name('control');
+        Route::post('queue', [ListenPartyController::class, 'enqueue'])->middleware('throttle:60,1')->name('queue');
+        Route::delete('queue/{index}', [ListenPartyController::class, 'dequeue'])->whereNumber('index')->name('dequeue');
+        Route::post('next', [ListenPartyController::class, 'next'])->middleware('throttle:60,1')->name('next');
+        Route::post('shared', [ListenPartyController::class, 'shared'])->name('shared');
+        Route::post('invite', [ListenPartyController::class, 'invite'])->middleware('throttle:10,1')->name('invite');
+        Route::post('share', [ListenPartyController::class, 'share'])->middleware('throttle:10,1')->name('share');
+        Route::delete('/', [ListenPartyController::class, 'end'])->name('end');
     });
 
     Route::prefix('servers')->name('servers.')->middleware('module:servers')->group(function () {
@@ -251,6 +372,16 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('notifications/read', [NotificationController::class, 'markAllRead'])->name('notifications.read');
 
     Route::get('me', [ProfileController::class, 'me'])->name('profile.me');
+    // «Граю в…»: ручний статус, автоматичний (Discord, Steam, телефон).
+    Route::prefix('me/playing')->name('playing.')->group(function () {
+        Route::get('/', [PlayingController::class, 'show'])->name('show');
+        Route::get('search', [PlayingController::class, 'search'])->middleware('throttle:120,1')->name('search');
+        Route::put('/', [PlayingController::class, 'update'])->middleware('throttle:30,1')->name('update');
+        Route::delete('/', [PlayingController::class, 'destroy'])->name('destroy');
+        Route::put('auto', [PlayingController::class, 'auto'])->name('auto');
+        Route::post('steam', [PlayingController::class, 'linkSteam'])->middleware('throttle:10,1')->name('steam');
+        Route::delete('steam', [PlayingController::class, 'unlinkSteam'])->name('steam.destroy');
+    });
     Route::post('me/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
     Route::delete('me/avatar', [ProfileController::class, 'destroyAvatar'])->name('profile.avatar.destroy');
     Route::post('me/cover', [ProfileController::class, 'updateCover'])->name('profile.cover');
@@ -321,18 +452,55 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
                 Route::post('{server}/restore', [Admin\ServerController::class, 'restore'])->name('restore');
             });
         });
+        Route::prefix('games')->name('games.')->group(function () {
+            Route::get('/', [Admin\GameController::class, 'index'])->name('index');
+            Route::put('features', [Admin\GameController::class, 'features'])->name('features');
+            Route::post('sync', [Admin\GameController::class, 'sync'])->middleware('throttle:5,1')->name('sync');
+            Route::patch('{game:id}', [Admin\GameController::class, 'update'])->whereNumber('game')->name('update');
+        });
+        Route::prefix('geo')->name('geo.')->group(function () {
+            Route::get('/', [Admin\GeoController::class, 'index'])->name('index');
+            Route::put('/', [Admin\GeoController::class, 'update'])->name('update');
+            Route::put('maxmind', [Admin\GeoController::class, 'maxmind'])->name('maxmind');
+            Route::post('refresh', [Admin\GeoController::class, 'refresh'])->middleware('throttle:5,1')->name('refresh');
+        });
+        Route::prefix('languages')->name('languages.')->group(function () {
+            Route::get('/', [Admin\LanguageController::class, 'index'])->name('index');
+            Route::post('/', [Admin\LanguageController::class, 'store'])->name('store');
+            Route::put('settings', [Admin\LanguageController::class, 'settings'])->name('settings');
+            Route::where(['code' => '[A-Za-z]{2,3}(-[A-Za-z0-9]{2,4}){0,2}'])->group(function () {
+                Route::patch('{code}', [Admin\LanguageController::class, 'update'])->name('update');
+                Route::delete('{code}', [Admin\LanguageController::class, 'destroy'])->name('destroy');
+                Route::post('{code}/translate', [Admin\LanguageController::class, 'translate'])->middleware('throttle:10,1')->name('translate');
+                Route::get('{code}/strings', [Admin\LanguageController::class, 'strings'])->name('strings');
+                Route::put('{code}/strings', [Admin\LanguageController::class, 'updateString'])->name('strings.update');
+            });
+        });
+        Route::prefix('moderation')->name('moderation.')->group(function () {
+            Route::get('/', [Admin\ModerationController::class, 'index'])->name('index');
+            Route::put('settings', [Admin\ModerationController::class, 'settings'])->name('settings');
+            Route::post('reports/{report}', [Admin\ModerationController::class, 'resolve'])->whereNumber('report')->name('resolve');
+            Route::post('users/{user:id}/unmute', [Admin\ModerationController::class, 'unmute'])->whereNumber('user')->name('unmute');
+        });
         Route::get('families', [Admin\FamilyController::class, 'index'])->name('families.index');
         Route::patch('families/{family:id}', [Admin\FamilyController::class, 'update'])->whereNumber('family')->name('families.update');
+        Route::post('families/voice-rooms', [Admin\VoiceTemplateController::class, 'store'])->name('voice-templates.store');
+        Route::patch('families/voice-rooms/{template}', [Admin\VoiceTemplateController::class, 'update'])->name('voice-templates.update');
+        Route::delete('families/voice-rooms/{template}', [Admin\VoiceTemplateController::class, 'destroy'])->name('voice-templates.destroy');
         Route::get('modules', [Admin\ModuleController::class, 'index'])->name('modules.index');
         Route::patch('modules/{module}', [Admin\ModuleController::class, 'update'])->name('modules.update');
         Route::get('settings', [Admin\SettingsController::class, 'edit'])->name('settings.edit');
         Route::put('settings', [Admin\SettingsController::class, 'update'])->name('settings.update');
+        Route::post('settings/mail-test', [Admin\SettingsController::class, 'mailTest'])->middleware('throttle:6,1')->name('settings.mail-test');
     });
 });
 
 require __DIR__.'/settings.php';
 
 // Колбек Spotify поза сесією браузера: застосунок передає користувача в state.
+Route::match(['get', 'post'], 'mail/unsubscribe/{user:id}', UnsubscribeController::class)
+    ->whereNumber('user')->middleware(['signed', 'throttle:20,1'])->name('mail.unsubscribe');
+
 Route::get('music/spotify/callback', [SpotifyController::class, 'callback'])
     ->middleware('module:music')
     ->name('spotify.callback');

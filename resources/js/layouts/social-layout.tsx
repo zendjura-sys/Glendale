@@ -5,6 +5,7 @@ import {
     LayoutGrid,
     LogOut,
     Megaphone,
+    PanelBottom,
     MessageCircle,
     Settings,
     ShieldCheck,
@@ -15,12 +16,14 @@ import {
 import { useEffect, useState } from 'react';
 import type { PropsWithChildren } from 'react';
 import { Aurora } from '@/components/gc/aurora';
+import { IncomingCall } from '@/components/gc/incoming-call';
 import { InboxListener } from '@/components/gc/inbox-listener';
 import { Logo, LogoMark } from '@/components/gc/logo';
 import { ModuleIcon } from '@/components/gc/module-icon';
 import { NotificationsMenu } from '@/components/gc/notifications-menu';
 import { QuickSearch } from '@/components/gc/quick-search';
 import { UserAvatar } from '@/components/gc/user-avatar';
+import { VoiceBar } from '@/components/gc/voice-bar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { PlayerBar } from '@/components/music/player-bar';
 import {
@@ -33,8 +36,15 @@ import {
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useUnreadMessages } from '@/lib/inbox';
 import { usePlayer } from '@/lib/player';
+import { MOBILE_LABEL } from '@/lib/nav';
 import { cn } from '@/lib/utils';
 import { PageTransition } from '@/components/gc/page-transition';
+import { PlayStoreLink } from '@/components/gc/play-store';
+import {
+    LanguageMenu,
+    LanguageSelect,
+} from '@/components/gc/language-switcher';
+import { tr } from '@/lib/i18n';
 
 function useIsActive() {
     const { currentUrl } = useCurrentUrl();
@@ -110,7 +120,7 @@ function Sidebar() {
                                 className={cn(
                                     'size-[19px] transition',
                                     active
-                                        ? 'text-[#8fa0ff] drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]'
+                                        ? 'text-gc-lilac-400 drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]'
                                         : 'text-white/45 group-hover:text-white/80',
                                 )}
                             />
@@ -131,13 +141,15 @@ function Sidebar() {
                     className="glass mt-3 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-white/70 transition hover:text-white"
                 >
                     <ShieldCheck className="size-[18px] text-gold" />
-                    Адмін-панель
+                    {tr('Адмін-панель')}
                 </Link>
             )}
 
-            <div className="mt-auto px-3 pt-4 text-[11px] leading-relaxed text-white/30">
-                © {new Date().getFullYear()} GameCon · Соціальна мережа нового
-                покоління
+            <PlayStoreLink compact className="mt-3 self-center" />
+
+            <div className="mt-auto px-3 pt-4 text-xs leading-relaxed text-white/30">
+                © {new Date().getFullYear()}{' '}
+                {tr('GameCon · Соціальна мережа нового покоління')}
             </div>
         </aside>
     );
@@ -155,12 +167,12 @@ function UserMenu() {
                     <span className="block text-[13px] font-semibold text-white">
                         {user.first_name}
                     </span>
-                    <span className="block text-[11px] text-white/45">
+                    <span className="block text-xs text-white/45">
                         {user.is_admin
-                            ? 'Адміністратор'
+                            ? tr('Адміністратор')
                             : user.role === 'moderator'
-                              ? 'Модератор'
-                              : 'Учасник'}
+                              ? tr('Модератор')
+                              : tr('Учасник')}
                     </span>
                 </span>
                 <ChevronDown className="hidden size-4 text-white/40 xl:block" />
@@ -189,7 +201,7 @@ function UserMenu() {
                     className="rounded-lg focus:bg-white/[0.06]"
                 >
                     <Link href={`/${user.username}`}>
-                        <UserRound /> Моя сторінка
+                        <UserRound /> {tr('Моя сторінка')}
                     </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -197,7 +209,7 @@ function UserMenu() {
                     className="rounded-lg focus:bg-white/[0.06]"
                 >
                     <Link href="/settings/profile">
-                        <Settings /> Налаштування
+                        <Settings /> {tr('Налаштування')}
                     </Link>
                 </DropdownMenuItem>
                 {user.is_admin && (
@@ -206,16 +218,17 @@ function UserMenu() {
                         className="rounded-lg focus:bg-white/[0.06]"
                     >
                         <Link href="/admin">
-                            <LayoutDashboard /> Адмін-панель
+                            <LayoutDashboard /> {tr('Адмін-панель')}
                         </Link>
                     </DropdownMenuItem>
                 )}
+                <LanguageMenu />
                 <DropdownMenuSeparator className="bg-white/5" />
                 <DropdownMenuItem
                     className="rounded-lg text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
                     onSelect={() => router.post('/logout')}
                 >
-                    <LogOut className="text-rose-300" /> Вийти
+                    <LogOut className="text-rose-300" /> {tr('Вийти')}
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
@@ -227,8 +240,13 @@ function Topbar() {
     const unreadMessages = useUnreadMessages();
 
     return (
-        <header className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.06] bg-[#05070f]/70 backdrop-blur-2xl [view-transition-name:gc-topbar]">
-            <div className="mx-auto flex h-16 max-w-[1320px] items-center gap-2 px-3 sm:gap-4 sm:px-5">
+        <header className="pointer-events-none fixed inset-x-0 top-0 z-40 bg-transparent [view-transition-name:gc-topbar]">
+            {/* Підкладка: контент, що прокручується під шапку, не накладається на пошук і кнопки. */}
+            <div
+                aria-hidden
+                className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-background/95 via-background/80 to-transparent [mask-image:linear-gradient(to_bottom,black_65%,transparent)] backdrop-blur-xl"
+            />
+            <div className="pointer-events-auto relative mx-auto flex h-16 max-w-[1320px] items-center gap-2 px-3 sm:gap-4 sm:px-5">
                 <Link href="/feed" className="shrink-0 lg:w-[232px]">
                     <Logo className="hidden sm:inline-flex" />
                     <LogoMark className="sm:hidden" />
@@ -238,11 +256,11 @@ function Topbar() {
                     <Link
                         href="/friends?tab=requests"
                         className="relative hidden size-10 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white sm:flex"
-                        aria-label="Заявки в друзі"
+                        aria-label={tr('Заявки в друзі')}
                     >
                         <UsersRound className="size-[19px]" />
                         {!!counters?.friend_requests && (
-                            <span className="absolute top-1.5 right-1.5 flex min-w-4 items-center justify-center rounded-full bg-gradient-brand px-1 text-[10px] leading-4 font-bold text-white">
+                            <span className="absolute top-1.5 right-1.5 flex min-w-4 items-center justify-center rounded-full bg-gradient-brand px-1 text-[11px] leading-4 font-bold text-white">
                                 {counters.friend_requests}
                             </span>
                         )}
@@ -251,11 +269,20 @@ function Topbar() {
                         <Link
                             href="/messages"
                             className="relative hidden size-10 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white sm:flex"
-                            aria-label="Повідомлення"
+                            aria-label={
+                                unreadMessages > 0
+                                    ? tr('Повідомлення: {count} непрочитаних', {
+                                          count: unreadMessages,
+                                      })
+                                    : tr('Повідомлення')
+                            }
                         >
                             <MessageCircle className="size-[19px]" />
                             {unreadMessages > 0 && (
-                                <span className="absolute top-1.5 right-1.5 flex min-w-4 animate-in items-center justify-center rounded-full bg-gradient-brand px-1 text-[10px] leading-4 font-bold text-white shadow-[0_0_12px_rgb(124_140_255/0.9)] zoom-in-50">
+                                <span
+                                    aria-hidden
+                                    className="absolute -top-0.5 -right-0.5 flex h-[18px] min-w-[18px] animate-in items-center justify-center rounded-full bg-gradient-brand px-1 text-[11px] leading-none font-bold text-white ring-2 ring-background zoom-in-50"
+                                >
                                     {unreadMessages > 99
                                         ? '99+'
                                         : unreadMessages}
@@ -271,15 +298,6 @@ function Topbar() {
         </header>
     );
 }
-
-const PRIMARY_MOBILE = ['feed', 'messages', 'friends', 'profile'];
-
-const MOBILE_LABEL: Record<string, string> = {
-    profile: 'Сторінка',
-    messages: 'Чати',
-    friends: 'Друзі',
-    feed: 'Новини',
-};
 
 function useNavItems() {
     const { nav, auth, counters } = usePage().props;
@@ -297,22 +315,29 @@ function useNavItems() {
     }));
 }
 
+/** Закріплені користувачем розділи — у панелі (в його порядку), решта — у «Меню». */
+function useMobileSplit<T extends { key: string }>(items: T[]) {
+    const { auth } = usePage().props;
+    const tabs = auth.user.nav_tabs ?? [];
+    const primary = tabs
+        .map((key) => items.find((i) => i.key === key))
+        .filter((i): i is T => i !== undefined);
+
+    return { primary, rest: items.filter((i) => !primary.includes(i)) };
+}
+
 function MobileNav() {
     const isActive = useIsActive();
     const items = useNavItems();
     const [open, setOpen] = useState(false);
 
-    const primary = [
-        ...items.filter((i) => PRIMARY_MOBILE.includes(i.key)),
-        ...items.filter((i) => !PRIMARY_MOBILE.includes(i.key)),
-    ].slice(0, 4);
-    const rest = items.filter((i) => !primary.includes(i));
+    const { primary, rest } = useMobileSplit(items);
     const restActive = rest.some((i) => isActive(i.href, i.key));
     const restBadge = rest.reduce((sum, i) => sum + i.badge, 0);
 
     return (
         <>
-            <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.07] bg-[#070a16]/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl [view-transition-name:gc-tabbar] lg:hidden">
+            <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-[#0f0a1e]/60 pb-[env(safe-area-inset-bottom)] backdrop-blur-md [view-transition-name:gc-tabbar] lg:hidden">
                 <div className="flex items-stretch justify-around">
                     {primary.map((item) => {
                         const active = isActive(item.href, item.key);
@@ -322,12 +347,12 @@ function MobileNav() {
                                 key={item.key}
                                 href={item.href}
                                 className={cn(
-                                    'relative flex min-w-0 flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium transition active:scale-95',
+                                    'relative flex min-w-0 flex-1 flex-col items-center gap-1 py-2 text-xs font-medium transition active:scale-95',
                                     active ? 'text-white' : 'text-white/45',
                                 )}
                             >
                                 {item.badge > 0 && (
-                                    <span className="absolute top-1 left-1/2 ml-1.5 min-w-4 rounded-full bg-gradient-brand px-1 text-center text-[10px] leading-4 font-bold text-white">
+                                    <span className="absolute top-1 left-1/2 ml-1.5 min-w-4 rounded-full bg-gradient-brand px-1 text-center text-[11px] leading-4 font-bold text-white">
                                         {item.badge > 99 ? '99+' : item.badge}
                                     </span>
                                 )}
@@ -336,7 +361,7 @@ function MobileNav() {
                                     className={cn(
                                         'size-5',
                                         active &&
-                                            'text-[#8fa0ff] drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]',
+                                            'text-gc-lilac-400 drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]',
                                     )}
                                 />
                                 <span className="max-w-full truncate px-0.5">
@@ -351,12 +376,12 @@ function MobileNav() {
                         aria-expanded={open}
                         data-test="mobile-menu"
                         className={cn(
-                            'relative flex min-w-0 flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium transition active:scale-95',
+                            'relative flex min-w-0 flex-1 flex-col items-center gap-1 py-2 text-xs font-medium transition active:scale-95',
                             open || restActive ? 'text-white' : 'text-white/45',
                         )}
                     >
                         {restBadge > 0 && (
-                            <span className="absolute top-1 left-1/2 ml-1.5 min-w-4 rounded-full bg-gradient-brand px-1 text-center text-[10px] leading-4 font-bold text-white">
+                            <span className="absolute top-1 left-1/2 ml-1.5 min-w-4 rounded-full bg-gradient-brand px-1 text-center text-[11px] leading-4 font-bold text-white">
                                 {restBadge}
                             </span>
                         )}
@@ -364,10 +389,10 @@ function MobileNav() {
                             className={cn(
                                 'size-5',
                                 (open || restActive) &&
-                                    'text-[#8fa0ff] drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]',
+                                    'text-gc-lilac-400 drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]',
                             )}
                         />
-                        Меню
+                        {tr('Меню')}
                     </button>
                 </div>
             </nav>
@@ -380,7 +405,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
     const { auth } = usePage().props;
     const user = auth.user;
     const isActive = useIsActive();
-    const items = useNavItems();
+    const { rest: items } = useMobileSplit(useNavItems());
 
     useEffect(() => {
         const offNavigate = router.on('start', onClose);
@@ -397,9 +422,18 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
     }, [onClose]);
 
     const extra = [
-        { href: '/settings/profile', label: 'Налаштування', icon: Settings },
+        {
+            href: '/settings/navigation',
+            label: tr('Налаштувати нижню панель'),
+            icon: PanelBottom,
+        },
+        {
+            href: '/settings/profile',
+            label: tr('Налаштування'),
+            icon: Settings,
+        },
         ...(user.is_admin
-            ? [{ href: '/admin', label: 'Адмін-панель', icon: ShieldCheck }]
+            ? [{ href: '/admin', label: tr('Адмін-панель'), icon: ShieldCheck }]
             : []),
     ];
 
@@ -407,7 +441,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal>
             <button
                 type="button"
-                aria-label="Закрити меню"
+                aria-label={tr('Закрити меню')}
                 onClick={onClose}
                 className="absolute inset-0 animate-in bg-black/60 backdrop-blur-sm fade-in-0"
             />
@@ -435,7 +469,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                     <button
                         type="button"
                         onClick={onClose}
-                        aria-label="Закрити"
+                        aria-label={tr('Закрити')}
                         className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/[0.04] text-white/60"
                     >
                         <X className="size-5" />
@@ -453,7 +487,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                                 className={cn(
                                     'relative flex aspect-[1/0.9] flex-col items-center justify-center gap-2 rounded-2xl border p-2 text-center text-[12px] leading-tight font-medium transition active:scale-[0.97]',
                                     active
-                                        ? 'nav-active border-[#8fa0ff]/30 text-white'
+                                        ? 'nav-active border-gc-lilac-400/30 text-white'
                                         : 'border-white/[0.06] bg-white/[0.03] text-white/75 active:bg-white/[0.08]',
                                 )}
                             >
@@ -467,7 +501,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                                     className={cn(
                                         'size-6',
                                         active
-                                            ? 'text-[#8fa0ff] drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]'
+                                            ? 'text-gc-lilac-400 drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]'
                                             : 'text-[#a9b4ff]',
                                     )}
                                 />
@@ -488,13 +522,18 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                             {link.label}
                         </Link>
                     ))}
+                    <PlayStoreLink
+                        compact
+                        className="mx-1.5 my-1.5 justify-self-start"
+                    />
+                    <LanguageSelect className="mx-3 my-1.5" />
                     <button
                         type="button"
                         onClick={() => router.post('/logout')}
                         className="flex items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-rose-300 active:bg-rose-500/10"
                     >
                         <LogOut className="size-[18px]" />
-                        Вийти
+                        {tr('Вийти')}
                     </button>
                 </div>
             </div>
@@ -511,7 +550,7 @@ function Announcement() {
 
     return (
         <div className="gradient-border glass mb-4 flex items-start gap-3 rounded-2xl px-4 py-3 text-sm text-white/80">
-            <Megaphone className="mt-0.5 size-4 shrink-0 text-[#a58bff]" />
+            <Megaphone className="mt-0.5 size-4 shrink-0 text-gc-violet-300" />
             <p className="leading-relaxed whitespace-pre-line">
                 {site.announcement}
             </p>
@@ -526,7 +565,10 @@ export default function SocialLayout({ children }: PropsWithChildren) {
     return (
         <div className="relative min-h-dvh">
             {modules.includes('messages') && (
-                <InboxListener userId={auth.user.id} />
+                <>
+                    <InboxListener userId={auth.user.id} />
+                    <IncomingCall userId={auth.user.id} />
+                </>
             )}
             <Aurora />
             <Topbar />
@@ -542,6 +584,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                     <PageTransition>{children}</PageTransition>
                 </main>
             </div>
+            <VoiceBar />
             {modules.includes('music') && <PlayerBar />}
             <MobileNav />
         </div>

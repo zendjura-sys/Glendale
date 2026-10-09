@@ -37,6 +37,7 @@ import {
 import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { GtaServerCard, UserCard } from '@/types';
+import { LOCALE, tr } from '@/lib/i18n';
 
 type AdminServer = GtaServerCard & {
     description: string | null;
@@ -63,6 +64,7 @@ type Props = {
     options: {
         platforms: Record<string, string>;
         multiplayers: Record<string, string>;
+        languages: Record<string, string>;
     };
     auto_publish: boolean;
 };
@@ -75,17 +77,17 @@ type FormData = ServerFormData & {
 };
 
 const tabs: { value: Status; label: string }[] = [
-    { value: 'published', label: 'Опубліковані' },
-    { value: 'pending', label: 'На модерації' },
-    { value: 'rejected', label: 'Відхилені' },
-    { value: 'trashed', label: 'Приховані' },
+    { value: 'published', label: tr('Опубліковані') },
+    { value: 'pending', label: tr('На модерації') },
+    { value: 'rejected', label: tr('Відхилені') },
+    { value: 'trashed', label: tr('Приховані') },
 ];
 
 const iconSources: Record<string, string> = {
-    upload: 'завантажено',
-    manual: 'за посиланням',
-    discord: 'з Discord',
-    website: 'із сайту',
+    upload: tr('завантажено'),
+    manual: tr('за посиланням'),
+    discord: tr('з Discord'),
+    website: tr('із сайту'),
     favicon: 'favicon',
     google: 'Google favicon',
 };
@@ -97,6 +99,7 @@ const toForm = (s?: AdminServer): FormData => ({
               name: s.name,
               platform: s.platform,
               multiplayer: s.multiplayer,
+              language: s.language,
               tagline: s.tagline ?? '',
               description: s.description ?? '',
               website: s.website ?? '',
@@ -164,10 +167,12 @@ export default function AdminServers({
 
     return (
         <>
-            <Head title="Сервери GTA — Адмін-панель" />
+            <Head title={tr('Сервери GTA — Адмін-панель')} />
             <PageHeader
-                title="Сервери GTA"
-                description="Каталог українських RP-проєктів: ручне додавання, пропозиції гравців і автосинхронізація"
+                title={tr('Сервери GTA')}
+                description={tr(
+                    'Каталог українських RP-проєктів: ручне додавання, пропозиції гравців і автосинхронізація',
+                )}
                 actions={
                     <div className="flex flex-wrap gap-2">
                         <button
@@ -175,66 +180,71 @@ export default function AdminServers({
                             onClick={() => sync('stats')}
                             className="glass inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white"
                         >
-                            <RefreshCw className="size-4" /> Онлайн
+                            <RefreshCw className="size-4" /> {tr('Онлайн')}
                         </button>
                         <button
                             type="button"
                             onClick={() => sync('discover')}
                             className="glass inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white"
-                            title="Пошук нових UA-серверів у майстер-списку RAGE:MP"
+                            title={tr(
+                                'Пошук нових UA-серверів у майстер-списку RAGE:MP',
+                            )}
                         >
-                            <Sparkles className="size-4" /> Знайти нові
+                            <Sparkles className="size-4" /> {tr('Знайти нові')}
                         </button>
                         <button
                             type="button"
                             onClick={() => sync('seed')}
                             className="glass inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white"
-                            title="Додати відсутні сервери з базового списку"
+                            title={tr(
+                                'Додати відсутні сервери з базового списку',
+                            )}
                         >
-                            <DownloadCloud className="size-4" /> Базовий список
+                            <DownloadCloud className="size-4" />{' '}
+                            {tr('Базовий список')}
                         </button>
                         <button
                             type="button"
                             onClick={() => setEditing('new')}
                             className="btn-glow inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold"
                         >
-                            <Plus className="size-4" /> Додати сервер
+                            <Plus className="size-4" /> {tr('Додати сервер')}
                         </button>
                     </div>
                 }
             />
 
-            <div className="mb-5 grid gap-3 sm:grid-cols-3">
+            <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <StatCard
-                    label="Опубліковано"
+                    label={tr('Опубліковано')}
                     value={counts.published}
                     icon={Server}
                 />
                 <StatCard
-                    label="Чекають модерації"
+                    label={tr('Чекають модерації')}
                     value={counts.pending}
                     icon={Clock3}
                     tone="from-[#f59e0b] to-[#ef4444]"
                     delay={60}
                 />
                 <StatCard
-                    label="Онлайн у вибірці"
-                    value={online.toLocaleString('uk-UA')}
+                    label={tr('Онлайн у вибірці')}
+                    value={online.toLocaleString(LOCALE)}
                     icon={UsersRound}
-                    tone="from-[#22d3a6] to-[#38e1ff]"
+                    tone="from-gc-mint to-gc-cyan"
                     delay={120}
                 />
             </div>
 
             <div className="glass mb-4 flex flex-wrap items-center gap-2 rounded-2xl p-2.5">
-                <div className="flex rounded-xl bg-white/[0.04] p-1 text-sm">
+                <div className="scrollbar-none flex max-w-full overflow-x-auto rounded-xl bg-white/[0.04] p-1 text-sm">
                     {tabs.map((tab) => (
                         <button
                             key={tab.value}
                             type="button"
                             onClick={() => visit({ status: tab.value })}
                             className={cn(
-                                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium transition',
+                                'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium whitespace-nowrap transition',
                                 filters.status === tab.value
                                     ? 'bg-gradient-brand text-white'
                                     : 'text-white/55 hover:text-white',
@@ -261,12 +271,12 @@ export default function AdminServers({
                     <input
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
-                        placeholder="Назва сервера"
+                        placeholder={tr('Назва сервера')}
                         className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
                     />
                 </label>
                 <label className="flex items-center gap-2 px-2 text-xs text-white/55">
-                    Автопублікація знайдених
+                    {tr('Автопублікація знайдених')}
                     <Toggle
                         checked={auto_publish}
                         onChange={(v) =>
@@ -276,7 +286,7 @@ export default function AdminServers({
                                 { preserveScroll: true },
                             )
                         }
-                        label="Автопублікація"
+                        label={tr('Автопублікація')}
                     />
                 </label>
             </div>
@@ -340,23 +350,27 @@ export default function AdminServers({
                                         {s.players_max
                                             ? ` / ${s.players_max}`
                                             : ''}{' '}
-                                        онлайн
+                                        {tr('онлайн')}
                                     </span>
                                 )}
                                 <span>
-                                    Іконка:{' '}
+                                    {tr('Іконка:')}{' '}
                                     {s.icon_source
                                         ? (iconSources[s.icon_source] ??
                                           s.icon_source)
-                                        : 'немає'}
+                                        : tr('немає')}
                                 </span>
-                                <span>сімей: {s.families_count}</span>
-                                <span>додано {timeAgo(s.created_at)}</span>
+                                <span>
+                                    {tr('сімей:')} {s.families_count}
+                                </span>
+                                <span>
+                                    {tr('додано')} {timeAgo(s.created_at)}
+                                </span>
                             </div>
                             {s.suggester && (
                                 <div className="mt-2 flex items-center gap-2 text-xs text-white/55">
                                     <UserAvatar user={s.suggester} size="xs" />
-                                    Запропонував{' '}
+                                    {tr('Запропонував')}{' '}
                                     <Link
                                         href={`/${s.suggester.username}`}
                                         className="text-white/80 hover:underline"
@@ -372,14 +386,14 @@ export default function AdminServers({
                             )}
                             {s.review_note && (
                                 <div className="mt-1 text-xs text-rose-200/80">
-                                    Причина: {s.review_note}
+                                    {tr('Причина:')} {s.review_note}
                                 </div>
                             )}
                         </div>
                         <div className="flex shrink-0 flex-wrap gap-1.5">
                             {s.deleted_at ? (
                                 <IconButton
-                                    title="Відновити"
+                                    title={tr('Відновити')}
                                     tone="green"
                                     onClick={() =>
                                         router.post(
@@ -402,12 +416,12 @@ export default function AdminServers({
                                             className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-emerald-400/15 px-3 text-sm font-medium text-emerald-200 hover:bg-emerald-400/25"
                                         >
                                             <Check className="size-4" />{' '}
-                                            Опублікувати
+                                            {tr('Опублікувати')}
                                         </button>
                                     )}
                                     {s.status === 'pending' && (
                                         <IconButton
-                                            title="Відхилити"
+                                            title={tr('Відхилити')}
                                             tone="red"
                                             onClick={() => {
                                                 setNote('');
@@ -418,7 +432,7 @@ export default function AdminServers({
                                         </IconButton>
                                     )}
                                     <IconButton
-                                        title="Оновити іконку й онлайн"
+                                        title={tr('Оновити іконку й онлайн')}
                                         onClick={() =>
                                             router.post(
                                                 `/admin/servers/${s.id}/refresh`,
@@ -430,17 +444,20 @@ export default function AdminServers({
                                         <RefreshCw className="size-4" />
                                     </IconButton>
                                     <IconButton
-                                        title="Редагувати"
+                                        title={tr('Редагувати')}
                                         onClick={() => setEditing(s)}
                                     >
                                         <Pencil className="size-4" />
                                     </IconButton>
                                     <IconButton
-                                        title="Приховати"
+                                        title={tr('Приховати')}
                                         tone="red"
                                         onClick={() =>
                                             confirm(
-                                                `Приховати «${s.name}» з каталогу?`,
+                                                tr(
+                                                    'Приховати «{name}» з каталогу?',
+                                                    { name: s.name },
+                                                ),
                                             ) &&
                                             router.delete(
                                                 `/admin/servers/${s.id}`,
@@ -458,8 +475,8 @@ export default function AdminServers({
                 {servers.length === 0 && (
                     <div className="glass rounded-3xl px-6 py-14 text-center text-sm text-white/40">
                         {filters.status === 'pending'
-                            ? 'Нових пропозицій немає'
-                            : 'Серверів не знайдено'}
+                            ? tr('Нових пропозицій немає')
+                            : tr('Серверів не знайдено')}
                     </div>
                 )}
             </div>
@@ -469,6 +486,7 @@ export default function AdminServers({
                     key={editing === 'new' ? 'new' : editing.id}
                     server={editing === 'new' ? null : editing}
                     multiplayers={options.multiplayers}
+                    languages={options.languages}
                     onClose={() => setEditing(null)}
                 />
             )}
@@ -479,15 +497,16 @@ export default function AdminServers({
             >
                 <DialogContent className="glass-strong rounded-3xl border-white/10 p-6 text-white sm:max-w-md">
                     <DialogTitle className="font-display text-lg">
-                        Відхилити «{rejecting?.name}»
+                        {tr('Відхилити «')}
+                        {rejecting?.name}»
                     </DialogTitle>
                     <DialogDescription className="text-sm text-white/50">
-                        Автор пропозиції побачить причину.
+                        {tr('Автор пропозиції побачить причину.')}
                     </DialogDescription>
                     <input
                         value={note}
                         onChange={(e) => setNote(e.target.value)}
-                        placeholder="Напр. сервер уже закрито"
+                        placeholder={tr('Напр. сервер уже закрито')}
                         maxLength={300}
                         className={inputClass}
                         autoFocus
@@ -498,7 +517,7 @@ export default function AdminServers({
                             onClick={() => setRejecting(null)}
                             className="h-10 rounded-xl px-4 text-sm text-white/60 hover:text-white"
                         >
-                            Скасувати
+                            {tr('Скасувати')}
                         </button>
                         <button
                             type="button"
@@ -508,7 +527,7 @@ export default function AdminServers({
                             }
                             className="h-10 rounded-xl bg-rose-500/80 px-5 text-sm font-semibold text-white hover:bg-rose-500"
                         >
-                            Відхилити
+                            {tr('Відхилити')}
                         </button>
                     </div>
                 </DialogContent>
@@ -550,10 +569,12 @@ function IconButton({
 function ServerDialog({
     server,
     multiplayers,
+    languages,
     onClose,
 }: {
     server: AdminServer | null;
     multiplayers: Record<string, string>;
+    languages: Record<string, string>;
     onClose: () => void;
 }) {
     const form = useForm<FormData>(toForm(server ?? undefined));
@@ -576,12 +597,18 @@ function ServerDialog({
         <Dialog open onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="glass-strong max-h-[92dvh] gap-0 overflow-y-auto rounded-3xl border-white/10 p-6 text-white sm:max-w-2xl">
                 <DialogTitle className="font-display text-xl">
-                    {server ? `Редагувати «${server.name}»` : 'Новий сервер'}
+                    {server
+                        ? tr('Редагувати «{name}»', { name: server.name })
+                        : tr('Новий сервер')}
                 </DialogTitle>
                 <DialogDescription className="mt-1 text-sm text-white/50">
                     {server
-                        ? 'Якщо змінити сайт чи Discord, іконку буде підтягнуто заново.'
-                        : 'Сервер одразу з’явиться в каталозі. Іконку завантажте або залиште порожньою — знайдемо автоматично.'}
+                        ? tr(
+                              'Якщо змінити сайт чи Discord, іконку буде підтягнуто заново.',
+                          )
+                        : tr(
+                              'Сервер одразу з’явиться в каталозі. Іконку завантажте або залиште порожньою — знайдемо автоматично.',
+                          )}
                 </DialogDescription>
 
                 <div className="mt-5 flex items-center gap-4 rounded-2xl bg-white/[0.03] p-3 ring-1 ring-white/[0.06]">
@@ -592,10 +619,12 @@ function ServerDialog({
                     />
                     <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-white">
-                            Іконка сервера
+                            {tr('Іконка сервера')}
                         </div>
                         <div className="text-xs text-white/40">
-                            PNG, JPG, WebP або GIF до 4 МБ — збережемо у 256×256
+                            {tr(
+                                'PNG, JPG, WebP або GIF до 4 МБ — збережемо у 256×256',
+                            )}
                         </div>
                         <FieldError message={form.errors.icon} />
                     </div>
@@ -611,7 +640,7 @@ function ServerDialog({
                         onClick={() => fileRef.current?.click()}
                         className="glass inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-sm text-white/80 hover:text-white"
                     >
-                        <ImagePlus className="size-4" /> Завантажити
+                        <ImagePlus className="size-4" /> {tr('Завантажити')}
                     </button>
                 </div>
 
@@ -621,13 +650,14 @@ function ServerDialog({
                         setData={form.setData}
                         errors={form.errors}
                         multiplayers={multiplayers}
+                        languages={languages}
                     />
                 </div>
 
-                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field
-                        label="Позиція в списку"
-                        hint="Менше число — вище"
+                        label={tr('Позиція в списку')}
+                        hint={tr('Менше число — вище')}
                         error={form.errors.position}
                     >
                         <input
@@ -643,22 +673,22 @@ function ServerDialog({
                     </Field>
                     <div className="flex flex-col justify-center gap-3">
                         <label className="flex items-center justify-between gap-3 text-sm text-white/70">
-                            Рекомендований (зірка й закріплення)
+                            {tr('Рекомендований (зірка й закріплення)')}
                             <Toggle
                                 checked={form.data.is_featured}
                                 onChange={(v) => form.setData('is_featured', v)}
-                                label="Рекомендований"
+                                label={tr('Рекомендований')}
                             />
                         </label>
                         {server && (
                             <label className="flex items-center justify-between gap-3 text-sm text-white/70">
-                                Перезавантажити іконку
+                                {tr('Перезавантажити іконку')}
                                 <Toggle
                                     checked={form.data.refetch_icon}
                                     onChange={(v) =>
                                         form.setData('refetch_icon', v)
                                     }
-                                    label="Перезавантажити іконку"
+                                    label={tr('Перезавантажити іконку')}
                                 />
                             </label>
                         )}
@@ -671,7 +701,7 @@ function ServerDialog({
                         onClick={onClose}
                         className="h-11 rounded-xl px-4 text-sm font-medium text-white/60 hover:text-white"
                     >
-                        Скасувати
+                        {tr('Скасувати')}
                     </button>
                     <button
                         type="button"
@@ -680,10 +710,10 @@ function ServerDialog({
                         className="btn-glow h-11 rounded-xl px-6 text-sm font-semibold disabled:opacity-50"
                     >
                         {form.processing
-                            ? 'Зберігаємо…'
+                            ? tr('Зберігаємо…')
                             : server
-                              ? 'Зберегти'
-                              : 'Додати в каталог'}
+                              ? tr('Зберегти')
+                              : tr('Додати в каталог')}
                     </button>
                 </div>
             </DialogContent>

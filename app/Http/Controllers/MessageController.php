@@ -5,15 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\MessageAttachment;
+use App\Models\MessageReport;
 use App\Models\Sticker;
 use App\Models\StickerPack;
 use App\Models\User;
 use App\Services\Messenger;
 use App\Services\MessengerPresenter;
+use App\Services\Moderation\ContentFilter;
+use App\Services\Moderation\MessageReports;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -34,6 +39,7 @@ class MessageController extends Controller
     public function __construct(
         private readonly Messenger $messenger,
         private readonly MessengerPresenter $presenter,
+        private readonly ContentFilter $filter,
     ) {}
 
     public function store(Request $request, Conversation $conversation, SiteSettings $settings): JsonResponse
@@ -67,6 +73,8 @@ class MessageController extends Controller
         ]);
 
         $replyTo = isset($data['reply_to_id']) ? (int) $data['reply_to_id'] : null;
+        // Автомодерація: мут, флуд, повтори, посилання від новачків, мат.
+        $data['body'] = $this->filter->guardMessage($user, $conversation, isset($data['body']) ? (string) $data['body'] : null);
 
         $message = match (true) {
             isset($data['sticker_id']) => $this->messenger->sendSticker(
@@ -82,7 +90,7 @@ class MessageController extends Controller
                 $user,
                 $request->file('voice'),
                 (int) $data['voice_duration'],
-                array_filter((array) json_decode($data['voice_waveform'] ?? '[]', true), 'is_numeric'),
+                $this->waveform($data['voice_waveform'] ?? '[]'),
                 $replyTo,
             ),
             isset($data['contact_id']) => $this->messenger->sendContact(
@@ -97,6 +105,17 @@ class MessageController extends Controller
         };
 
         return response()->json(['message' => $this->presenter->message($this->presenter->load($message))], 201);
+    }
+
+    public function report(Request $request, Conversation $conversation, Message $message, MessageReports $reports): JsonResponse
+    {
+        $data = $request->validate([
+            'reason' => ['required', Rule::in(array_keys(MessageReport::REASONS))],
+            'comment' => ['nullable', 'string', 'max:300'],
+        ]);
+        $reports->report($conversation, $message, $request->user(), (string) $data['reason'], $data['comment'] ?? null);
+
+        return response()->json(['ok' => true, 'message' => 'Дякуємо! Скаргу надіслано модераторам.']);
     }
 
     public function stickers(): JsonResponse
@@ -118,8 +137,8 @@ class MessageController extends Controller
      */
     private function sendText(Conversation $conversation, User $user, array $data, Request $request): Message
     {
-        $images = $request->file('images', []);
-        $files = $request->file('files', []);
+        $images = $this->uploadedList($request->file('images', []));
+        $files = $this->uploadedList($request->file('files', []));
 
         if (count($images) + count($files) > self::MAX_IMAGES) {
             throw ValidationException::withMessages(['files' => 'Не більше '.self::MAX_IMAGES.' вкладень в одному повідомленні.']);
@@ -135,12 +154,48 @@ class MessageController extends Controller
         );
     }
 
+    /**
+     * @return list<UploadedFile>
+     */
+    private function uploadedList(mixed $files): array
+    {
+        $list = [];
+        foreach (is_array($files) ? $files : [$files] as $file) {
+            if ($file instanceof UploadedFile) {
+                $list[] = $file;
+            }
+        }
+
+        return $list;
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function waveform(mixed $raw): array
+    {
+        $decoded = is_string($raw) ? json_decode($raw, true) : $raw;
+        if (! is_array($decoded)) {
+            return [];
+        }
+
+        $peaks = [];
+        foreach ($decoded as $peak) {
+            if (is_numeric($peak)) {
+                $peaks[] = (int) $peak;
+            }
+        }
+
+        return $peaks;
+    }
+
     public function update(Request $request, Conversation $conversation, Message $message): JsonResponse
     {
         abort_unless($message->conversation_id === $conversation->id, 404);
         $data = $request->validate(['body' => ['required', 'string', 'max:'.self::MAX_LENGTH]]);
 
-        $this->messenger->edit($message, $request->user(), $data['body']);
+        $this->filter->ensureCanPost($request->user());
+        $this->messenger->edit($message, $request->user(), (string) $this->filter->clean($data['body']));
 
         return response()->json(['message' => $this->presenter->message($this->presenter->load($message->refresh()))]);
     }

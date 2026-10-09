@@ -20,11 +20,16 @@ class ProfileUpdateRequest extends FormRequest
         return [
             ...$this->profileRules($this->user()->id),
             ...$this->aboutRules($this->user()->id),
+            'email_social' => ['sometimes', 'boolean'],
         ];
     }
 
     protected function prepareForValidation(): void
     {
         $this->merge(['is_private' => $this->boolean('is_private')]);
+        // Застосунок і старі форми поля не надсилають — тоді налаштування лишається як було.
+        if ($this->has('email_social')) {
+            $this->merge(['email_social' => $this->boolean('email_social')]);
+        }
     }
 }

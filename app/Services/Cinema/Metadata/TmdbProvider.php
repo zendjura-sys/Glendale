@@ -72,7 +72,7 @@ class TmdbProvider extends MetadataProvider
             'description' => self::str($d['overview'] ?? null, 5000),
             'poster_url' => isset($d['poster_path']) ? $img.'/w500'.$d['poster_path'] : null,
             'backdrop_url' => isset($d['backdrop_path']) ? $img.'/w1280'.$d['backdrop_path'] : null,
-            'genres' => collect($d['genres'] ?? [])->pluck('name')->filter()->map(fn ($g) => mb_strtolower((string) $g))->values()->all() ?: null,
+            'genres' => ($genres = self::genreNames($d['genres'] ?? null)) !== [] ? $genres : null,
             'duration' => (int) ($d['runtime'] ?? ($d['episode_run_time'][0] ?? 0)) ?: null,
             'year' => self::year($d['release_date'] ?? $d['first_air_date'] ?? null),
             'rating_tmdb' => self::rating($d['vote_average'] ?? null),
@@ -80,7 +80,7 @@ class TmdbProvider extends MetadataProvider
             'episodes_count' => isset($d['number_of_episodes']) ? (int) $d['number_of_episodes'] : null,
             'age_rating' => $this->certification($d, $kind),
             'trailer_url' => $this->trailer($d['videos']['results'] ?? [], $short),
-        ], fn ($v) => $v !== null && $v !== []);
+        ], fn ($v) => $v !== null);
     }
 
     /**
@@ -122,13 +122,21 @@ class TmdbProvider extends MetadataProvider
      */
     private function certification(array $d, string $kind): ?string
     {
-        $rows = $kind === 'tv' ? ($d['content_ratings']['results'] ?? []) : ($d['release_dates']['results'] ?? []);
+        $rawRows = $kind === 'tv' ? ($d['content_ratings']['results'] ?? null) : ($d['release_dates']['results'] ?? null);
+        $rows = [];
+        if (is_array($rawRows)) {
+            foreach ($rawRows as $row) {
+                if (is_array($row)) {
+                    $rows[] = $row;
+                }
+            }
+        }
         foreach (['UA', 'RU', 'DE', 'US'] as $country) {
             foreach ($rows as $row) {
                 if (($row['iso_3166_1'] ?? null) !== $country) {
                     continue;
                 }
-                $value = $kind === 'tv' ? ($row['rating'] ?? null) : collect($row['release_dates'] ?? [])->pluck('certification')->filter()->first();
+                $value = $kind === 'tv' ? ($row['rating'] ?? null) : self::firstCertification($row['release_dates'] ?? null);
                 if ($value = self::str($value, 10)) {
                     return preg_match('/^\d+$/', $value) ? $value.'+' : $value;
                 }
@@ -136,6 +144,48 @@ class TmdbProvider extends MetadataProvider
         }
 
         return null;
+    }
+
+    private static function firstCertification(mixed $dates): mixed
+    {
+        if (! is_array($dates)) {
+            return null;
+        }
+        foreach ($dates as $date) {
+            if (! is_array($date)) {
+                continue;
+            }
+            $certification = $date['certification'] ?? null;
+            if (is_scalar($certification) && trim((string) $certification) !== '') {
+                return $certification;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function genreNames(mixed $genres): array
+    {
+        if (! is_array($genres)) {
+            return [];
+        }
+
+        $names = [];
+        foreach ($genres as $genre) {
+            if (! is_array($genre)) {
+                continue;
+            }
+            $name = $genre['name'] ?? null;
+            if (! is_scalar($name) || trim((string) $name) === '') {
+                continue;
+            }
+            $names[] = mb_strtolower((string) $name);
+        }
+
+        return $names;
     }
 
     /**

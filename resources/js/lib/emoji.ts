@@ -1,3 +1,4 @@
+import { tr } from '@/lib/i18n';
 export type EmojiCategory = {
     key: string;
     label: string;
@@ -10,7 +11,7 @@ const list = (value: string) => value.trim().split(/\s+/u);
 export const EMOJI_CATEGORIES: EmojiCategory[] = [
     {
         key: 'smileys',
-        label: 'Смайлики',
+        label: tr('Смайлики'),
         icon: '😀',
         items: list(`
             😀 😃 😄 😁 😆 😅 🤣 😂 🙂 🙃 🫠 😉 😊 😇 🥰 😍 🤩 😘 😗 ☺️ 😚 😙 🥲 😋 😛 😜 🤪 😝 🤑
@@ -22,7 +23,7 @@ export const EMOJI_CATEGORIES: EmojiCategory[] = [
     },
     {
         key: 'people',
-        label: 'Жести та люди',
+        label: tr('Жести та люди'),
         icon: '👋',
         items: list(`
             👋 🤚 🖐️ ✋ 🖖 🫱 🫲 👌 🤌 🤏 ✌️ 🤞 🫰 🤟 🤘 🤙 👈 👉 👆 🖕 👇 ☝️ 🫵 👍 👎 ✊ 👊 🤛 🤜
@@ -33,7 +34,7 @@ export const EMOJI_CATEGORIES: EmojiCategory[] = [
     },
     {
         key: 'nature',
-        label: 'Тварини та природа',
+        label: tr('Тварини та природа'),
         icon: '🐱',
         items: list(`
             🐶 🐱 🐭 🐹 🐰 🦊 🐻 🐼 🐻‍❄️ 🐨 🐯 🦁 🐮 🐷 🐸 🐵 🐔 🐧 🐦 🐤 🦆 🦅 🦉 🦇 🐺 🐗 🐴 🦄
@@ -46,7 +47,7 @@ export const EMOJI_CATEGORIES: EmojiCategory[] = [
     },
     {
         key: 'food',
-        label: 'Їжа та напої',
+        label: tr('Їжа та напої'),
         icon: '🍕',
         items: list(`
             🍏 🍎 🍐 🍊 🍋 🍌 🍉 🍇 🍓 🫐 🍈 🍒 🍑 🥭 🍍 🥥 🥝 🍅 🍆 🥑 🥦 🥬 🥒 🌶️ 🫑 🌽 🥕 🫒 🧄
@@ -57,7 +58,7 @@ export const EMOJI_CATEGORIES: EmojiCategory[] = [
     },
     {
         key: 'activity',
-        label: 'Ігри та активності',
+        label: tr('Ігри та активності'),
         icon: '🎮',
         items: list(`
             🎮 🕹️ 👾 🎲 ♟️ 🧩 🎯 🎳 🎰 🃏 🀄 🎴 🏆 🥇 🥈 🥉 🏅 🎖️ 🏵️ 🎗️ 🎫 🎟️ 🎪 🎭 🩰 🎨 🎬 🎤 🎧
@@ -67,7 +68,7 @@ export const EMOJI_CATEGORIES: EmojiCategory[] = [
     },
     {
         key: 'travel',
-        label: 'Подорожі',
+        label: tr('Подорожі'),
         icon: '🚀',
         items: list(`
             🚗 🚕 🚙 🚌 🚎 🏎️ 🚓 🚑 🚒 🚐 🛻 🚚 🚛 🚜 🏍️ 🛵 🚲 🛴 🚨 🚔 🚍 🚘 🚖 🚡 🚠 🚟 🚃 🚋 🚞
@@ -78,7 +79,7 @@ export const EMOJI_CATEGORIES: EmojiCategory[] = [
     },
     {
         key: 'objects',
-        label: 'Предмети',
+        label: tr('Предмети'),
         icon: '💡',
         items: list(`
             ⌚ 📱 📲 💻 ⌨️ 🖥️ 🖨️ 🖱️ 🖲️ 💽 💾 💿 📀 📼 📷 📸 📹 🎥 📽️ 🎞️ 📞 ☎️ 📟 📠 📺 📻 🎙️ 🎚️ 🎛️
@@ -92,7 +93,7 @@ export const EMOJI_CATEGORIES: EmojiCategory[] = [
     },
     {
         key: 'symbols',
-        label: 'Символи',
+        label: tr('Символи'),
         icon: '💜',
         items: list(`
             ❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🤎 💔 ❤️‍🔥 ❤️‍🩹 ❣️ 💕 💞 💓 💗 💖 💘 💝 💟 ☮️ ✝️ ☪️ 🕉️ ☸️ ✡️ 🔯
@@ -107,7 +108,7 @@ export const EMOJI_CATEGORIES: EmojiCategory[] = [
     },
     {
         key: 'flags',
-        label: 'Прапори',
+        label: tr('Прапори'),
         icon: '🇺🇦',
         items: list(`
             🇺🇦 🏳️ 🏴 🏁 🚩 🏳️‍🌈 🏳️‍⚧️ 🏴‍☠️ 🇪🇺 🇺🇳 🇵🇱 🇩🇪 🇫🇷 🇬🇧 🇺🇸 🇨🇦 🇮🇹 🇪🇸 🇵🇹 🇳🇱 🇧🇪 🇨🇭 🇦🇹

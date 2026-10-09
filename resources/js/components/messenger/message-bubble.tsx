@@ -1,5 +1,8 @@
 import { Link } from '@inertiajs/react';
+import { useState } from 'react';
 import {
+    Flag,
+    Languages,
     AlertCircle,
     Check,
     CheckCheck,
@@ -20,11 +23,15 @@ import {
     FileAttachment,
     VoicePlayer,
 } from './message-media';
+import { useContentTranslation } from '@/components/gc/translate';
+import { tr } from '@/lib/i18n';
 
 export type BubbleActions = {
     onReply: (message: ChatMessage) => void;
     onEdit: (message: ChatMessage) => void;
     onDelete: (message: ChatMessage) => void;
+    /** Скарга модераторам (лише на чужі повідомлення). */
+    onReport?: (message: ChatMessage) => void;
     onRetry: (message: ChatMessage) => void;
     onCopy: (message: ChatMessage) => void;
     onJump: (id: number) => void;
@@ -143,6 +150,8 @@ export function MessageBubble({
         bare ||
         (hasImages && !message.body && !message.reply_to && !files.length);
     const pending = message.pending;
+    const translation = useContentTranslation('message', message.id);
+    const [toolsOpen, setToolsOpen] = useState(false);
 
     const meta = (
         <span
@@ -155,7 +164,7 @@ export function MessageBubble({
                       : 'text-white/40',
             )}
         >
-            {message.edited_at && <span>ред.</span>}
+            {message.edited_at && <span>{tr('ред.')}</span>}
             {clockTime(message.created_at)}
             {own &&
                 (pending === 'sending' ? (
@@ -171,11 +180,23 @@ export function MessageBubble({
     );
 
     const toolButton =
-        'flex size-7 items-center justify-center rounded-lg text-white/55 transition hover:bg-white/10 hover:text-white';
+        'flex size-7 items-center justify-center rounded-lg text-white/55 transition hover:bg-white/10 hover:text-white [@media(hover:none)]:size-9';
+    // На сенсорних екранах наведення немає — панель дій відкривається дотиком до повідомлення.
+    const toggleTools = (e: React.MouseEvent) => {
+        if (
+            pending ||
+            !window.matchMedia('(hover: none)').matches ||
+            (e.target as HTMLElement).closest('a, button, audio, video, input')
+        ) {
+            return;
+        }
+        setToolsOpen((open) => !open);
+    };
 
     return (
         <div
             id={`message-${message.id}`}
+            onClick={toggleTools}
             className={cn(
                 'group/msg flex items-end gap-2 px-3 sm:px-5',
                 own ? 'flex-row-reverse' : 'flex-row',
@@ -213,7 +234,7 @@ export function MessageBubble({
                               : cn(
                                     'rounded-[20px] px-3.5 py-2',
                                     own
-                                        ? 'bg-gradient-to-br from-[#4f6bff] via-[#6d5dfc] to-[#8b5cf6] text-white shadow-[0_8px_24px_-12px_rgb(109_93_252/0.9)]'
+                                        ? 'bg-gradient-to-br from-[#4f6bff] via-gc-indigo to-[#8b5cf6] text-white shadow-[0_8px_24px_-12px_rgb(109_93_252/0.9)]'
                                         : 'border border-white/[0.07] bg-white/[0.06] text-white/90 backdrop-blur-xl',
                                     own
                                         ? groupEnd
@@ -231,7 +252,7 @@ export function MessageBubble({
                         voice && 'py-2 pr-3 pl-2',
                         pending === 'sending' && 'opacity-80',
                         highlighted &&
-                            'shadow-[0_0_30px_rgb(124_140_255/0.6)] ring-2 ring-[#8fa0ff]',
+                            'shadow-[0_0_30px_rgb(124_140_255/0.6)] ring-2 ring-gc-lilac-400',
                     )}
                 >
                     {showAuthor && message.user && (
@@ -251,7 +272,7 @@ export function MessageBubble({
                                 <RankBadge
                                     rank={message.user.family_rank.rank}
                                     title={message.user.family_rank.title}
-                                    className="px-1.5 py-0 text-[10px]"
+                                    className="px-1.5 py-0 text-xs"
                                 />
                             )}
                         </div>
@@ -268,7 +289,7 @@ export function MessageBubble({
                                 'mb-1.5 block w-full min-w-0 rounded-lg border-l-2 py-1 pr-2 pl-2 text-left text-[13px] transition',
                                 own
                                     ? 'border-white/70 bg-white/15 hover:bg-white/20'
-                                    : 'border-[#7c8cff] bg-[#7c8cff]/10 hover:bg-[#7c8cff]/15',
+                                    : 'border-gc-lilac-500 bg-gc-lilac-500/10 hover:bg-gc-lilac-500/15',
                                 hasImages && 'mx-0.5 mt-0.5 w-[calc(100%-4px)]',
                             )}
                         >
@@ -278,15 +299,15 @@ export function MessageBubble({
                                     own ? 'text-white' : 'text-[#a9b6ff]',
                                 )}
                             >
-                                {message.reply_to.author ?? 'Повідомлення'}
+                                {message.reply_to.author ?? tr('Повідомлення')}
                             </span>
                             <span className="block truncate opacity-75">
                                 {message.reply_to.deleted
-                                    ? 'Повідомлення видалено'
+                                    ? tr('Повідомлення видалено')
                                     : message.reply_to.body ||
                                       message.reply_to.preview ||
                                       (message.reply_to.has_attachments
-                                          ? 'Фотографія'
+                                          ? tr('Фотографія')
                                           : '')}
                             </span>
                         </button>
@@ -296,7 +317,7 @@ export function MessageBubble({
                         <div className="relative">
                             <img
                                 src={message.sticker.url}
-                                alt={message.sticker.emoji ?? 'Стікер'}
+                                alt={message.sticker.emoji ?? tr('Стікер')}
                                 onLoad={actions.onMediaLoad}
                                 className="size-[148px] object-contain drop-shadow-[0_10px_24px_rgb(0_0_0/0.35)] sm:size-[164px]"
                             />
@@ -365,7 +386,7 @@ export function MessageBubble({
                         >
                             {message.body && (
                                 <span className="break-words whitespace-pre-wrap">
-                                    {message.body}
+                                    {translation.text ?? message.body}
                                 </span>
                             )}
                             <span className="float-right mt-1.5 ml-2.5 translate-y-0.5">
@@ -381,7 +402,8 @@ export function MessageBubble({
                         onClick={() => actions.onRetry(message)}
                         className="mt-1 inline-flex items-center gap-1 text-xs text-rose-300 hover:text-rose-200"
                     >
-                        <RotateCw className="size-3" /> Не надіслано. Повторити
+                        <RotateCw className="size-3" />{' '}
+                        {tr('Не надіслано. Повторити')}
                     </button>
                 )}
             </div>
@@ -389,15 +411,16 @@ export function MessageBubble({
             {!pending && (
                 <div
                     className={cn(
-                        'mb-1 flex shrink-0 items-center gap-0.5 rounded-xl border border-white/[0.06] bg-[#0d1222]/90 p-0.5 opacity-0 shadow-lg backdrop-blur transition group-hover/msg:opacity-100 focus-within:opacity-100',
+                        'pointer-events-none mb-1 flex shrink-0 items-center gap-0.5 rounded-xl border border-white/[0.06] bg-[#0d1222]/90 p-0.5 opacity-0 shadow-lg backdrop-blur transition group-hover/msg:pointer-events-auto group-hover/msg:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100',
                         own && 'flex-row-reverse',
+                        toolsOpen && 'pointer-events-auto opacity-100',
                     )}
                 >
                     <button
                         type="button"
                         className={toolButton}
                         onClick={() => actions.onReply(message)}
-                        title="Відповісти"
+                        title={tr('Відповісти')}
                     >
                         <Reply className="size-4" />
                     </button>
@@ -406,7 +429,7 @@ export function MessageBubble({
                             type="button"
                             className={toolButton}
                             onClick={() => actions.onCopy(message)}
-                            title="Копіювати"
+                            title={tr('Копіювати')}
                         >
                             <Copy className="size-3.5" />
                         </button>
@@ -416,7 +439,7 @@ export function MessageBubble({
                             type="button"
                             className={toolButton}
                             onClick={() => actions.onEdit(message)}
-                            title="Редагувати"
+                            title={tr('Редагувати')}
                         >
                             <Pencil className="size-3.5" />
                         </button>
@@ -426,9 +449,36 @@ export function MessageBubble({
                             type="button"
                             className={cn(toolButton, 'hover:text-rose-300')}
                             onClick={() => actions.onDelete(message)}
-                            title="Видалити"
+                            title={tr('Видалити')}
                         >
                             <Trash2 className="size-3.5" />
+                        </button>
+                    )}
+                    {!own && message.body && translation.enabled && (
+                        <button
+                            type="button"
+                            className={cn(
+                                toolButton,
+                                translation.shown && 'text-gc-lilac-200',
+                            )}
+                            onClick={translation.toggle}
+                            title={
+                                translation.shown
+                                    ? tr('Показати оригінал')
+                                    : tr('Перекласти')
+                            }
+                        >
+                            <Languages className="size-3.5" />
+                        </button>
+                    )}
+                    {!own && actions.onReport && (
+                        <button
+                            type="button"
+                            className={cn(toolButton, 'hover:text-amber-300')}
+                            onClick={() => actions.onReport?.(message)}
+                            title={tr('Поскаржитися')}
+                        >
+                            <Flag className="size-3.5" />
                         </button>
                     )}
                 </div>

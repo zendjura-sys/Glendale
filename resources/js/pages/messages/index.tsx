@@ -6,12 +6,14 @@ import { ConversationList } from '@/components/messenger/conversation-list';
 import { GroupInfoDialog } from '@/components/messenger/group-info-dialog';
 import { NewChatDialog } from '@/components/messenger/new-chat-dialog';
 import { inbox } from '@/lib/inbox';
+import { usePlayer } from '@/lib/player';
 import { cn } from '@/lib/utils';
 import type {
     ChatHistory,
     ConversationDetails,
     ConversationSummary,
 } from '@/types';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     conversations: ConversationSummary[];
@@ -21,6 +23,7 @@ type Props = {
 
 export default function Messages({ conversations, active, history }: Props) {
     const userId = usePage().props.auth.user.id;
+    const playing = usePlayer().current !== null;
     const [list, setList] = useState(conversations);
     const [composeOpen, setComposeOpen] = useState(false);
     const [infoOpen, setInfoOpen] = useState(false);
@@ -106,8 +109,13 @@ export default function Messages({ conversations, active, history }: Props) {
 
     return (
         <>
-            <Head title={active ? active.title : 'Повідомлення'} />
-            <div className="glass flex h-[calc(100dvh-172px)] min-h-0 overflow-clip rounded-3xl sm:min-h-[420px] lg:h-[calc(100dvh-100px)]">
+            <Head title={active ? active.title : tr('Повідомлення')} />
+            <div
+                className={cn(
+                    'glass flex min-h-0 overflow-clip rounded-3xl max-lg:h-[calc(100dvh-76px)] max-lg:rounded-b-none md:flex-row lg:h-[calc(100dvh-100px)]',
+                    playing ? 'max-lg:-mb-44' : 'max-lg:-mb-24',
+                )}
+            >
                 <ConversationList
                     conversations={list}
                     activeId={activeId}
@@ -133,17 +141,18 @@ export default function Messages({ conversations, active, history }: Props) {
                 ) : (
                     <div className="hidden flex-1 flex-col items-center justify-center px-8 text-center md:flex">
                         <div className="relative mb-6">
-                            <div className="absolute inset-0 animate-pulse rounded-full bg-[#6d5dfc]/40 blur-3xl" />
+                            <div className="absolute inset-0 animate-pulse rounded-full bg-gc-indigo/40 blur-3xl" />
                             <div className="gradient-border relative flex size-24 items-center justify-center rounded-[28px] bg-[#0b1020]/70">
                                 <MessagesSquare className="size-11 text-[#9fb0ff] drop-shadow-[0_0_14px_rgb(124_140_255/0.9)]" />
                             </div>
                         </div>
                         <h2 className="font-display text-xl font-semibold text-white">
-                            Оберіть бесіду
+                            {tr('Оберіть бесіду')}
                         </h2>
                         <p className="mt-2 max-w-sm text-sm text-white/45">
-                            Спілкуйтеся з друзями в реальному часі: фото,
-                            відповіді, групові чати до 200 учасників.
+                            {tr(
+                                'Спілкуйтеся з друзями в реальному часі: фото, відповіді, групові чати до 200 учасників.',
+                            )}
                         </p>
                         <button
                             type="button"
@@ -151,7 +160,7 @@ export default function Messages({ conversations, active, history }: Props) {
                             className="btn-glow mt-6 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold"
                         >
                             <PenSquare className="size-4" />
-                            Нове повідомлення
+                            {tr('Нове повідомлення')}
                         </button>
                     </div>
                 )}

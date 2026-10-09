@@ -43,12 +43,33 @@ return [
         'api_url' => env('SPOTIFY_API_URL', 'https://api.spotify.com/v1'),
     ],
 
+    'geoip' => [
+        'dbip_url' => env('GEOIP_DBIP_URL', 'https://download.db-ip.com/free/dbip-country-lite-{month}.mmdb.gz'),
+        'maxmind_url' => env('GEOIP_MAXMIND_URL', 'https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz'),
+    ],
+
+    'deepl' => [
+        'key' => env('DEEPL_KEY'),
+        'url' => env('DEEPL_URL'),
+    ],
+
     'discord' => [
         'client_id' => env('DISCORD_CLIENT_ID'),
         'client_secret' => env('DISCORD_CLIENT_SECRET'),
         'redirect' => env('DISCORD_REDIRECT_URI'),
         'api_url' => env('DISCORD_API_URL', 'https://discord.com/api'),
         'authorize_url' => env('DISCORD_AUTHORIZE_URL', 'https://discord.com/oauth2/authorize'),
+        // Бот для статусу «Граю в…» (Rich Presence учасників Discord-сервера GameCon).
+        'bot_token' => env('DISCORD_BOT_TOKEN'),
+        'guild_id' => env('DISCORD_GUILD_ID'),
+        'gateway' => env('DISCORD_GATEWAY_URL', 'wss://gateway.discord.gg/?v=10&encoding=json'),
+    ],
+
+    // Сервер голосових кімнат (LiveKit); можна задати в адмінці → Інтеграції.
+    'livekit' => [
+        'url' => env('LIVEKIT_URL'),
+        'key' => env('LIVEKIT_API_KEY'),
+        'secret' => env('LIVEKIT_API_SECRET'),
     ],
 
     'firebase' => [
@@ -56,6 +77,9 @@ return [
         'auth_domain' => env('FIREBASE_AUTH_DOMAIN'),
         'project_id' => env('FIREBASE_PROJECT_ID'),
         'app_id' => env('FIREBASE_APP_ID'),
+        // Ключ сервісного акаунта для push (JSON або шлях до файлу); можна задати в адмінці.
+        'credentials' => env('FIREBASE_CREDENTIALS'),
+        'fcm_url' => env('FIREBASE_FCM_URL', 'https://fcm.googleapis.com'),
         'certs_url' => env('FIREBASE_CERTS_URL', 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com'),
         'tokeninfo_url' => env('GOOGLE_TOKENINFO_URL', 'https://oauth2.googleapis.com/tokeninfo'),
     ],
@@ -76,6 +100,23 @@ return [
         'token' => env('TMDB_TOKEN'),
         'api_url' => env('TMDB_API_URL', 'https://api.themoviedb.org/3'),
         'image_url' => env('TMDB_IMAGE_URL', 'https://image.tmdb.org/t/p'),
+    ],
+
+    'steam' => [
+        'key' => env('STEAM_API_KEY'),
+        'url' => env('STEAM_API_URL', 'https://api.steampowered.com'),
+    ],
+
+    'igdb' => [
+        'client_id' => env('IGDB_CLIENT_ID'),
+        'client_secret' => env('IGDB_CLIENT_SECRET'),
+        'url' => env('IGDB_API_URL', 'https://api.igdb.com/v4'),
+        'token_url' => env('IGDB_TOKEN_URL', 'https://id.twitch.tv/oauth2/token'),
+    ],
+
+    'rawg' => [
+        'key' => env('RAWG_KEY'),
+        'url' => env('RAWG_API_URL', 'https://api.rawg.io/api'),
     ],
 
     'omdb' => [

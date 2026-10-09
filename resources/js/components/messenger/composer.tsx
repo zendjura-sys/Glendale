@@ -17,11 +17,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useVoiceRecorder } from '@/hooks/use-voice-recorder';
 import { formatBytes, formatDuration } from '@/lib/format';
+import { usePlayer } from '@/lib/player';
 import { fitTextarea } from '@/lib/textarea';
-import { cn } from '@/lib/utils';
+import { cn, dockedAboveNav } from '@/lib/utils';
 import type { ChatMessage, OutgoingMessage } from '@/types';
 import { ContactShareDialog } from './contact-share-dialog';
 import { EmojiPanel } from './emoji-panel';
+import { tr } from '@/lib/i18n';
 
 const MAX_ATTACHMENTS = 10;
 const MAX_LENGTH = 4096;
@@ -84,6 +86,7 @@ export function Composer({
     const voice = useVoiceRecorder((recording) =>
         onSend({ kind: 'voice', ...recording }),
     );
+    const playing = usePlayer().current !== null;
 
     const previews = useMemo(
         () => images.map((file) => URL.createObjectURL(file)),
@@ -129,7 +132,10 @@ export function Composer({
         const tooBig = incoming.filter((file) => file.size > maxFileBytes);
         if (tooBig.length) {
             toast.error(
-                `Файл «${tooBig[0].name}» завеликий. Максимум — ${site.max_message_file_mb || 50} МБ.`,
+                tr('Файл «{name}» завеликий. Максимум — {v} МБ.', {
+                    name: tooBig[0].name,
+                    v: site.max_message_file_mb || 50,
+                }),
             );
         }
         const accepted = incoming.filter((file) => file.size <= maxFileBytes);
@@ -140,7 +146,10 @@ export function Composer({
         const free = maxAttachments - images.length - docs.length;
         if (accepted.length > free) {
             toast(
-                `Не більше ${maxAttachments} вкладень в одному повідомленні.`,
+                tr(
+                    'Не більше {maxAttachments} вкладень в одному повідомленні.',
+                    { maxAttachments },
+                ),
             );
         }
         const taken = accepted.slice(0, Math.max(0, free));
@@ -205,8 +214,10 @@ export function Composer({
                     error.name === 'SecurityError');
             toast.error(
                 denied
-                    ? 'Дозвольте доступ до мікрофона в налаштуваннях браузера.'
-                    : 'Не вдалося увімкнути мікрофон.',
+                    ? tr(
+                          'Дозвольте доступ до мікрофона в налаштуваннях браузера.',
+                      )
+                    : tr('Не вдалося увімкнути мікрофон.'),
             );
         });
     };
@@ -219,11 +230,17 @@ export function Composer({
 
     if (!canWrite) {
         return (
-            <div className="border-t border-white/[0.06] px-4 py-4">
+            <div
+                className={cn(
+                    'border-t border-white/[0.06] px-4 pt-4',
+                    dockedAboveNav(playing),
+                )}
+            >
                 <p className="flex items-center justify-center gap-2 text-center text-sm text-white/45">
                     <Lock className="size-4" />
-                    Користувач обмежив коло осіб, які можуть надсилати йому
-                    повідомлення.
+                    {tr(
+                        'Користувач обмежив коло осіб, які можуть надсилати йому повідомлення.',
+                    )}
                 </p>
             </div>
         );
@@ -235,7 +252,10 @@ export function Composer({
 
     return (
         <div
-            className="relative border-t border-white/[0.06] bg-[#070a16]/40 px-3 pt-2 pb-3 sm:px-4"
+            className={cn(
+                'relative border-t border-white/[0.06] bg-transparent px-3 pt-2 sm:px-4',
+                dockedAboveNav(playing),
+            )}
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => {
                 event.preventDefault();
@@ -245,21 +265,22 @@ export function Composer({
             {context && (
                 <div className="mb-2 flex animate-in items-center gap-3 rounded-xl bg-white/[0.04] px-3 py-2 fade-in slide-in-from-bottom-1">
                     {editing ? (
-                        <Pencil className="size-4 shrink-0 text-[#8fa0ff]" />
+                        <Pencil className="size-4 shrink-0 text-gc-lilac-400" />
                     ) : (
-                        <Reply className="size-4 shrink-0 text-[#8fa0ff]" />
+                        <Reply className="size-4 shrink-0 text-gc-lilac-400" />
                     )}
-                    <span className="min-w-0 flex-1 border-l-2 border-[#7c8cff] pl-2.5 text-[13px]">
+                    <span className="min-w-0 flex-1 border-l-2 border-gc-lilac-500 pl-2.5 text-[13px]">
                         <span className="block font-semibold text-[#a9b6ff]">
                             {editing
-                                ? 'Редагування'
-                                : (context.user?.first_name ?? 'Повідомлення')}
+                                ? tr('Редагування')
+                                : (context.user?.first_name ??
+                                  tr('Повідомлення'))}
                         </span>
                         <span className="block truncate text-white/55">
                             {context.body ||
                                 context.preview ||
                                 (context.attachments.length
-                                    ? 'Фотографія'
+                                    ? tr('Фотографія')
                                     : '')}
                         </span>
                     </span>
@@ -270,7 +291,7 @@ export function Composer({
                             onCancel();
                         }}
                         className="rounded-lg p-1 text-white/50 hover:bg-white/10 hover:text-white"
-                        aria-label="Скасувати"
+                        aria-label={tr('Скасувати')}
                     >
                         <X className="size-4" />
                     </button>
@@ -297,7 +318,7 @@ export function Composer({
                                     )
                                 }
                                 className="absolute top-1 right-1 rounded-full bg-black/60 p-0.5 text-white hover:bg-black/80"
-                                aria-label="Прибрати"
+                                aria-label={tr('Прибрати')}
                             >
                                 <X className="size-3.5" />
                             </button>
@@ -308,14 +329,14 @@ export function Composer({
                             key={`${file.name}-${index}`}
                             className="relative flex h-[72px] w-[188px] shrink-0 animate-in items-center gap-2.5 rounded-xl bg-white/[0.05] pr-7 pl-2.5 ring-1 ring-white/10 zoom-in-90"
                         >
-                            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#4f8bff] to-[#6d5dfc] text-white">
+                            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-gc-blue to-gc-indigo text-white">
                                 <FileUp className="size-5" />
                             </span>
                             <span className="min-w-0">
                                 <span className="block truncate text-[13px] font-medium text-white">
                                     {file.name}
                                 </span>
-                                <span className="block text-[11px] text-white/45">
+                                <span className="block text-xs text-white/45">
                                     {formatBytes(file.size)}
                                 </span>
                             </span>
@@ -327,7 +348,7 @@ export function Composer({
                                     )
                                 }
                                 className="absolute top-1 right-1 rounded-full bg-black/40 p-0.5 text-white hover:bg-black/70"
-                                aria-label="Прибрати"
+                                aria-label={tr('Прибрати')}
                             >
                                 <X className="size-3.5" />
                             </button>
@@ -364,8 +385,8 @@ export function Composer({
                         type="button"
                         onClick={voice.cancel}
                         className={cn(iconButton, 'hover:text-rose-300')}
-                        aria-label="Скасувати запис"
-                        title="Скасувати"
+                        aria-label={tr('Скасувати запис')}
+                        title={tr('Скасувати')}
                     >
                         <Trash2 className="size-5" />
                     </button>
@@ -381,7 +402,7 @@ export function Composer({
                             {voice.live.map((level, index) => (
                                 <span
                                     key={index}
-                                    className="w-[3px] shrink-0 rounded-full bg-gradient-to-t from-[#6d5dfc] to-[#38e1ff] transition-[height] duration-100"
+                                    className="w-[3px] shrink-0 rounded-full bg-gradient-to-t from-gc-indigo to-gc-cyan transition-[height] duration-100"
                                     style={{ height: `${level}%` }}
                                 />
                             ))}
@@ -391,7 +412,7 @@ export function Composer({
                         type="button"
                         onClick={sendRecording}
                         className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-brand text-white shadow-[0_0_24px_-2px_rgb(124_92_255/0.9)] transition hover:brightness-110"
-                        aria-label="Надіслати голосове"
+                        aria-label={tr('Надіслати голосове')}
                     >
                         <SendHorizonal className="size-5" />
                     </button>
@@ -407,8 +428,8 @@ export function Composer({
                                     iconButton,
                                     attachOpen && 'bg-white/[0.07] text-white',
                                 )}
-                                aria-label="Прикріпити"
-                                title="Прикріпити"
+                                aria-label={tr('Прикріпити')}
+                                title={tr('Прикріпити')}
                             >
                                 <Paperclip
                                     className={cn(
@@ -421,25 +442,29 @@ export function Composer({
                                 <div className="glass-strong absolute bottom-12 left-0 z-30 w-52 animate-rise rounded-2xl p-1.5">
                                     {[
                                         {
-                                            label: 'Фото',
+                                            label: tr('Фото'),
                                             hint: 'JPG, PNG, WebP, GIF',
                                             icon: ImagePlus,
-                                            tone: 'from-[#4f8bff] to-[#38e1ff]',
+                                            tone: 'from-gc-blue to-gc-cyan',
                                             run: () =>
                                                 imageRef.current?.click(),
                                         },
                                         {
-                                            label: 'Файл',
-                                            hint: `до ${site.max_message_file_mb || 50} МБ`,
+                                            label: tr('Файл'),
+                                            hint: tr('до {v} МБ', {
+                                                v:
+                                                    site.max_message_file_mb ||
+                                                    50,
+                                            }),
                                             icon: FileUp,
-                                            tone: 'from-[#6d5dfc] to-[#a855f7]',
+                                            tone: 'from-gc-indigo to-gc-purple',
                                             run: () => docRef.current?.click(),
                                         },
                                         {
-                                            label: 'Контакт',
-                                            hint: 'Пошук на GameCon',
+                                            label: tr('Контакт'),
+                                            hint: tr('Пошук на GameCon'),
                                             icon: UserRound,
-                                            tone: 'from-[#22d3a6] to-[#38e1ff]',
+                                            tone: 'from-gc-mint to-gc-cyan',
                                             run: () => setContactOpen(true),
                                         },
                                     ].map((item) => (
@@ -464,7 +489,7 @@ export function Composer({
                                                 <span className="block text-sm font-medium text-white">
                                                     {item.label}
                                                 </span>
-                                                <span className="block text-[11px] text-white/40">
+                                                <span className="block text-xs text-white/40">
                                                     {item.hint}
                                                 </span>
                                             </span>
@@ -514,7 +539,7 @@ export function Composer({
                                     onEditLast();
                                 }
                             }}
-                            placeholder="Напишіть повідомлення…"
+                            placeholder={tr('Напишіть повідомлення…')}
                             className="[field-sizing:content] max-h-[180px] min-h-11 min-w-0 flex-1 resize-none bg-transparent py-[11px] pl-4 text-[14.5px] leading-[1.45] text-white placeholder:text-white/35 focus:outline-none"
                         />
                         <div ref={emojiRef} className="relative mb-1">
@@ -523,10 +548,10 @@ export function Composer({
                                 onClick={() => setEmojiOpen((value) => !value)}
                                 className={cn(
                                     'flex size-9 items-center justify-center rounded-full text-white/50 transition hover:text-white',
-                                    emojiOpen && 'text-[#ffd36b]',
+                                    emojiOpen && 'text-gc-gold',
                                 )}
-                                aria-label="Емодзі та стікери"
-                                title="Емодзі та стікери"
+                                aria-label={tr('Емодзі та стікери')}
+                                title={tr('Емодзі та стікери')}
                             >
                                 <Smile className="size-5" />
                             </button>
@@ -553,8 +578,8 @@ export function Composer({
                             type="button"
                             onClick={startRecording}
                             className="mb-0.5 flex size-11 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-white/70 transition hover:bg-gradient-brand hover:text-white hover:shadow-[0_0_24px_-2px_rgb(124_92_255/0.9)]"
-                            aria-label="Записати голосове"
-                            title="Голосове повідомлення"
+                            aria-label={tr('Записати голосове')}
+                            title={tr('Голосове повідомлення')}
                         >
                             <Mic className="size-5" />
                         </button>
@@ -569,7 +594,9 @@ export function Composer({
                                     ? 'scale-100 bg-gradient-brand shadow-[0_0_24px_-2px_rgb(124_92_255/0.9)] hover:brightness-110'
                                     : 'scale-95 bg-white/[0.06] text-white/35',
                             )}
-                            aria-label={editing ? 'Зберегти' : 'Надіслати'}
+                            aria-label={
+                                editing ? tr('Зберегти') : tr('Надіслати')
+                            }
                         >
                             <SendHorizonal className="size-5" />
                         </button>

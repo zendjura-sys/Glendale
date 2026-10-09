@@ -104,7 +104,7 @@ class FamilyBankController extends FamilyBaseController
     {
         $member = $this->member($request, $family);
         abort_unless($cashout->member_id === $member->id || $this->gate->can($member, $family, 'treasury.manage'), 403);
-        abort_unless($cashout->proof_path, 404);
+        abort_if($cashout->proof_path === null || $cashout->proof_path === '', 404);
 
         return Storage::disk('local')->response($cashout->proof_path);
     }
@@ -151,7 +151,7 @@ class FamilyBankController extends FamilyBaseController
         if ($data['target'] === 'treasury') {
             $bank->treasury($family, $member, $amount, $data['comment']);
         } else {
-            $target = FamilyMember::query()->where('family_id', $family->id)->where('status', FamilyMember::STATUS_ACTIVE)->findOrFail($data['member_id']);
+            $target = FamilyMember::query()->where('family_id', $family->id)->where('status', FamilyMember::STATUS_ACTIVE)->findOrFail($request->integer('member_id'));
             $bank->manual($family, $member, $target, $amount, $data['comment']);
         }
 

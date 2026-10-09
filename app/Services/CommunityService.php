@@ -186,11 +186,10 @@ class CommunityService
      */
     public function joinedIds(User $user): array
     {
-        return CommunityMember::query()
+        return $this->intList(CommunityMember::query()
             ->where('user_id', $user->id)
             ->where('status', CommunityMember::STATUS_ACTIVE)
-            ->pluck('community_id')
-            ->all();
+            ->pluck('community_id'));
     }
 
     /**
@@ -200,12 +199,27 @@ class CommunityService
      */
     public function managedIds(User $user): array
     {
-        return CommunityMember::query()
+        return $this->intList(CommunityMember::query()
             ->where('user_id', $user->id)
             ->where('status', CommunityMember::STATUS_ACTIVE)
             ->whereIn('role', CommunityMember::MANAGER_ROLES)
-            ->pluck('community_id')
-            ->all();
+            ->pluck('community_id'));
+    }
+
+    /**
+     * @param  iterable<mixed>  $ids
+     * @return list<int>
+     */
+    private function intList(iterable $ids): array
+    {
+        $list = [];
+        foreach ($ids as $id) {
+            if (is_numeric($id)) {
+                $list[] = (int) $id;
+            }
+        }
+
+        return $list;
     }
 
     public function recount(Community $community): void

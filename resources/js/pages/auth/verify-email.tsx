@@ -5,15 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { logout } from '@/routes';
 import { send } from '@/routes/verification';
+import { tr } from '@/lib/i18n';
 
 export default function VerifyEmail({ status }: { status?: string }) {
     return (
         <>
-            <Head title="Підтвердження пошти" />
+            <Head title={tr('Підтвердження пошти')} />
 
             {status === 'verification-link-sent' && (
                 <div className="mb-4 text-center text-sm font-medium text-emerald-300">
-                    Нове посилання надіслано на вашу пошту.
+                    {tr('Нове посилання надіслано на вашу пошту.')}
                 </div>
             )}
 
@@ -22,14 +23,14 @@ export default function VerifyEmail({ status }: { status?: string }) {
                     <>
                         <Button disabled={processing} variant="secondary">
                             {processing && <Spinner />}
-                            Надіслати лист ще раз
+                            {tr('Надіслати лист ще раз')}
                         </Button>
 
                         <TextLink
                             href={logout()}
                             className="mx-auto block text-sm"
                         >
-                            Вийти
+                            {tr('Вийти')}
                         </TextLink>
                     </>
                 )}
@@ -39,7 +40,8 @@ export default function VerifyEmail({ status }: { status?: string }) {
 }
 
 VerifyEmail.layout = {
-    title: 'Підтвердіть пошту',
-    description:
+    title: tr('Підтвердіть пошту'),
+    description: tr(
         'Ми надіслали лист із посиланням. Перейдіть за ним, щоб активувати акаунт.',
+    ),
 };

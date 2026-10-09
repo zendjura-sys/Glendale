@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
+import { tr } from '@/lib/i18n';
 
 type Props = {
     passwordRules: string;
@@ -17,7 +18,7 @@ type Props = {
 export default function Register({ passwordRules }: Props) {
     return (
         <>
-            <Head title="Реєстрація" />
+            <Head title={tr('Реєстрація')} />
             <div className="mb-6">
                 <SocialLogin mode="register" />
             </div>
@@ -32,7 +33,9 @@ export default function Register({ passwordRules }: Props) {
                         <div className="grid gap-5">
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="first_name">Ім'я</Label>
+                                    <Label htmlFor="first_name">
+                                        {tr("Ім'я")}
+                                    </Label>
                                     <Input
                                         id="first_name"
                                         name="first_name"
@@ -40,26 +43,30 @@ export default function Register({ passwordRules }: Props) {
                                         autoFocus
                                         tabIndex={1}
                                         autoComplete="given-name"
-                                        placeholder="Олександр"
+                                        placeholder={tr('Олександр')}
                                     />
                                     <InputError message={errors.first_name} />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="last_name">Прізвище</Label>
+                                    <Label htmlFor="last_name">
+                                        {tr('Прізвище')}
+                                    </Label>
                                     <Input
                                         id="last_name"
                                         name="last_name"
                                         required
                                         tabIndex={2}
                                         autoComplete="family-name"
-                                        placeholder="Коваленко"
+                                        placeholder={tr('Коваленко')}
                                     />
                                     <InputError message={errors.last_name} />
                                 </div>
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Електронна пошта</Label>
+                                <Label htmlFor="email">
+                                    {tr('Електронна пошта')}
+                                </Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -73,14 +80,14 @@ export default function Register({ passwordRules }: Props) {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="password">Пароль</Label>
+                                <Label htmlFor="password">{tr('Пароль')}</Label>
                                 <PasswordInput
                                     id="password"
                                     required
                                     tabIndex={4}
                                     autoComplete="new-password"
                                     name="password"
-                                    placeholder="Мінімум 8 символів"
+                                    placeholder={tr('Мінімум 8 символів')}
                                     passwordrules={passwordRules}
                                 />
                                 <InputError message={errors.password} />
@@ -88,7 +95,7 @@ export default function Register({ passwordRules }: Props) {
 
                             <div className="grid gap-2">
                                 <Label htmlFor="password_confirmation">
-                                    Повторіть пароль
+                                    {tr('Повторіть пароль')}
                                 </Label>
                                 <PasswordInput
                                     id="password_confirmation"
@@ -112,14 +119,14 @@ export default function Register({ passwordRules }: Props) {
                                 data-test="register-user-button"
                             >
                                 {processing && <Spinner />}
-                                Створити акаунт
+                                {tr('Створити акаунт')}
                             </Button>
                         </div>
 
                         <div className="text-center text-sm text-white/45">
-                            Вже є акаунт?{' '}
+                            {tr('Вже є акаунт?')}{' '}
                             <TextLink href={login()} tabIndex={7}>
-                                Увійти
+                                {tr('Увійти')}
                             </TextLink>
                         </div>
                     </>
@@ -130,6 +137,8 @@ export default function Register({ passwordRules }: Props) {
 }
 
 Register.layout = {
-    title: 'Приєднуйся до GameCon',
-    description: 'Створи акаунт за хвилину — і знаходь друзів, ігри та кіно',
+    title: tr('Приєднуйся до GameCon'),
+    description: tr(
+        'Створи акаунт за хвилину — і знаходь друзів, ігри та кіно',
+    ),
 };

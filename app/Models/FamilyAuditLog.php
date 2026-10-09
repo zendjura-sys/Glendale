@@ -43,6 +43,7 @@ class FamilyAuditLog extends Model
         'DUTIES_UPDATE' => 'Обов’язки заступника',
         'RANK_TITLES_UPDATE' => 'Назви рангів',
         'PERMISSIONS_UPDATE' => 'Матриця прав',
+        'VOICE_ACCESS_UPDATE' => 'Доступ до голосових кімнат',
         'RATE_CHANGE' => 'Зміна ставок і налаштувань',
         'REPORT_APPROVE' => 'Схвалення звіту',
         'REPORT_REJECT' => 'Відхилення звіту',

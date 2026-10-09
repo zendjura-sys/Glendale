@@ -3,7 +3,9 @@
 # Коли запускається:
 #   - push, що змінює mobile/pubspec.yaml (тобто підняли версію) — у будь-якій гілці;
 #   - вручну: Actions → «App build» → Run workflow (кнопка з'являється, коли файл є в main;
-#     до того — через `gh workflow run app-build.yml --ref <гілка>` не вийде, тож піднімайте версію).
+#     до того — через `gh workflow run app-build.yml --ref <гілка>` не вийде, тож піднімайте версію
+#     або запуште цей файл після оновлення секретів підпису).
+#   Пуш цього файлу без зміни pubspec збирає поточну версію з pubspec.yaml.
 #
 # Секрети репозиторію (Settings → Secrets and variables → Actions):
 #   GAMECON_KEYSTORE_BASE64  — base64 від gamecon-upload.jks (`base64 -w0 gamecon-upload.jks`)
@@ -28,6 +30,8 @@ concurrency:
 
 permissions:
   contents: read
+  # Видалення старих збірок після нової (див. крок «Прибрати старі збірки»).
+  actions: write
 
 jobs:
   android:
@@ -58,6 +62,20 @@ jobs:
           echo "full=$v" >> "$GITHUB_OUTPUT"
           echo "name=$(echo "$v" | cut -d+ -f1 | tr . _)" >> "$GITHUB_OUTPUT"
           echo "Версія: $v"
+
+      # Раннер має 16 ГБ пам’яті: Gradle з 8 ГБ, демон Kotlin і нативна збірка WebRTC його вичерпували,
+      # і GitHub вимикав машину посеред збірки. Обмежуємо пам’ять і звільняємо диск.
+      - name: Ресурси для Gradle
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL || true
+          mkdir -p ~/.gradle
+          cat >> ~/.gradle/gradle.properties <<'PROPS'
+          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:ReservedCodeCacheSize=256m
+          org.gradle.workers.max=2
+          kotlin.daemon.jvmargs=-Xmx2g
+          PROPS
+          df -h / | tail -1
+          free -h | head -2
 
       - run: flutter pub get
 
@@ -95,8 +113,14 @@ jobs:
           n=gamecon_${{ steps.version.outputs.name }}
           cp build/app/outputs/flutter-apk/app-release.apk "$RUNNER_TEMP/out/$n.apk"
           cp build/app/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/out/$n.aab"
+          # keytool -printcert мовчить для підпису v2/v3, тож читаємо сертифікат через apksigner.
           # Має збігатися з 24:E9:3E:4D:A8:AE:34:57:3E:7F:C0:2B:F0:E4:84:B6:FE:41:35:82
-          keytool -printcert -jarfile "$RUNNER_TEMP/out/$n.apk" | grep -E 'SHA1|SHA-1' | tee "$RUNNER_TEMP/out/signature.txt"
+          "$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner" verify --print-certs "$RUNNER_TEMP/out/$n.apk" | grep -E 'SHA-1|SHA-256' | tee "$RUNNER_TEMP/out/signature.txt"
+          if ! test -s "$RUNNER_TEMP/out/signature.txt"; then
+            echo "::error::apksigner не показав відбитки підпису — перевірте збірку."
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/out/signature.txt" >> "$GITHUB_STEP_SUMMARY"
           rm -f "$GAMECON_STORE_FILE"
 
       - uses: actions/upload-artifact@v4
@@ -104,3 +128,14 @@ jobs:
           name: gamecon-${{ steps.version.outputs.full }}
           path: ${{ runner.temp }}/out/
           retention-days: 30
+
+      # Старі версії лише займають сховище Actions: лишаємо дві останні збірки застосунку.
+      - name: Прибрати старі збірки
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${{ github.repository }}/actions/artifacts?per_page=100" \
+            --jq '[.artifacts[] | select(.name | startswith("gamecon-"))] | sort_by(.created_at) | reverse | .[2:] | .[].id' \
+          | while read -r id; do
+              gh api -X DELETE "repos/${{ github.repository }}/actions/artifacts/$id" && echo "Видалено збірку $id"
+            done

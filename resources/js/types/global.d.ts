@@ -12,11 +12,19 @@ declare module '@inertiajs/core' {
     export interface InertiaConfig {
         sharedPageProps: {
             name: string;
+            locale: string;
+            locales: { code: string; native: string }[];
             auth: Auth;
             site: {
                 name: string;
                 tagline: string | null;
+                description: string;
+                play_store: {
+                    url: string;
+                    badge: 'get' | 'preregister';
+                } | null;
                 registration_open: boolean;
+                translate: boolean;
                 max_attachments: number;
                 max_message_file_mb: number;
                 announcement: string | null;
