@@ -22,7 +22,7 @@ import {
 import { selectClass } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
 import { plural } from '@/lib/format';
-import { cn } from '@/lib/utils';
+import { cn, formText } from '@/lib/utils';
 import type {
     MovieCard,
     MovieFeatured,
@@ -514,7 +514,7 @@ export default function CinemaIndex({
                             event.preventDefault();
                             const data = new FormData(event.currentTarget);
                             router.post('/cinema/requests', {
-                                title: String(data.get('title') ?? ''),
+                                title: formText(data, 'title'),
                                 year: data.get('year') || undefined,
                             });
                         }}

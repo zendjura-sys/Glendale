@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { api, ApiError } from '@/lib/api';
 import { compactNumber, plural } from '@/lib/format';
-import { cn } from '@/lib/utils';
+import { cn, formText } from '@/lib/utils';
 import { usePlugin } from '@/lib/plugins';
 import type {
     CommentItem,
@@ -787,12 +787,11 @@ export default function CinemaShow({
                                         router.put(
                                             '/cinema/playback',
                                             {
-                                                player: String(
-                                                    data.get('player') ?? '',
+                                                player: formText(
+                                                    data,
+                                                    'player',
                                                 ),
-                                                subs: String(
-                                                    data.get('subs') ?? '',
-                                                ),
+                                                subs: formText(data, 'subs'),
                                             },
                                             { preserveScroll: true },
                                         );

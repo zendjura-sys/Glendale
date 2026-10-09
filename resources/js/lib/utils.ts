@@ -27,3 +27,10 @@ export function floatingAboveNav(playing: boolean) {
         ? 'bottom-[calc(10.5rem+env(safe-area-inset-bottom))] lg:bottom-28'
         : 'bottom-[calc(5rem+env(safe-area-inset-bottom))] lg:bottom-4';
 }
+
+/** Текст поля форми: FormData.get() може повернути й файл. */
+export function formText(data: FormData, name: string): string {
+    const value = data.get(name);
+
+    return typeof value === 'string' ? value : '';
+}

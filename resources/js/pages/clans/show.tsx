@@ -23,7 +23,7 @@ import { InviteLinkButton } from '@/components/gc/invite-link';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VoiceRooms } from '@/components/gc/voice-rooms';
 import { timeAgo } from '@/lib/format';
-import { cn } from '@/lib/utils';
+import { cn, formText } from '@/lib/utils';
 import type { ClanCard, UserCard } from '@/types';
 import { ClanLogo } from './index';
 import { LOCALE, tr } from '@/lib/i18n';
@@ -423,9 +423,7 @@ export default function ClanShow(props: Props) {
                                                 event.currentTarget,
                                             );
                                             post(`${base}/allies`, {
-                                                tag: String(
-                                                    data.get('tag') ?? '',
-                                                ),
+                                                tag: formText(data, 'tag'),
                                             });
                                             event.currentTarget.reset();
                                         }}
@@ -447,15 +445,12 @@ export default function ClanShow(props: Props) {
                                                 event.currentTarget,
                                             );
                                             post(`${base}/matches`, {
-                                                tag: String(
-                                                    data.get('tag') ?? '',
+                                                tag: formText(data, 'tag'),
+                                                starts_at: formText(
+                                                    data,
+                                                    'starts_at',
                                                 ),
-                                                starts_at: String(
-                                                    data.get('starts_at') ?? '',
-                                                ),
-                                                note: String(
-                                                    data.get('note') ?? '',
-                                                ),
+                                                note: formText(data, 'note'),
                                             });
                                         }}
                                     >

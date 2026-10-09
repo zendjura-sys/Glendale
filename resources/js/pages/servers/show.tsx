@@ -21,7 +21,7 @@ import { FamilyLogo } from '@/components/families/family-logo';
 import { ConnectButton, ServerLinks } from '@/components/servers/server-card';
 import { OnlineMeter, ServerIcon } from '@/components/servers/server-icon';
 import { timeAgo } from '@/lib/format';
-import { cn } from '@/lib/utils';
+import { cn, formText } from '@/lib/utils';
 import type { FamilyCard, GtaServerCard, UserCard } from '@/types';
 import { LOCALE, tr } from '@/lib/i18n';
 import { usePlugin } from '@/lib/plugins';
@@ -360,7 +360,7 @@ export default function ServerShow({
                                 const form = new FormData(event.currentTarget);
                                 router.post(`/servers/${server.slug}/reviews`, {
                                     stars: Number(form.get('stars')),
-                                    body: String(form.get('body') ?? ''),
+                                    body: formText(form, 'body'),
                                 });
                             }}
                         >
@@ -552,12 +552,8 @@ export default function ServerShow({
                                     router.post(
                                         `/servers/${server.slug}/tags`,
                                         {
-                                            mode: String(
-                                                data.get('mode') ?? '',
-                                            ),
-                                            region: String(
-                                                data.get('region') ?? '',
-                                            ),
+                                            mode: formText(data, 'mode'),
+                                            region: formText(data, 'region'),
                                         },
                                     );
                                 }}
@@ -645,9 +641,7 @@ export default function ServerShow({
                                     router.post(
                                         `/servers/${server.slug}/news`,
                                         {
-                                            body: String(
-                                                data.get('body') ?? '',
-                                            ),
+                                            body: formText(data, 'body'),
                                         },
                                     );
                                     event.currentTarget.reset();
@@ -684,8 +678,9 @@ export default function ServerShow({
                                         router.post(
                                             `/servers/${server.slug}/claim`,
                                             {
-                                                message: String(
-                                                    data.get('message') ?? '',
+                                                message: formText(
+                                                    data,
+                                                    'message',
                                                 ),
                                             },
                                         );

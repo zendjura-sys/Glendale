@@ -23,6 +23,7 @@ import { formatLength, plural } from '@/lib/format';
 import { playQueue, shuffled, toggle, usePlayer } from '@/lib/player';
 import type { PlaylistDetails, TrackCard } from '@/types';
 import { tr } from '@/lib/i18n';
+import { formText } from '@/lib/utils';
 
 type Props = {
     playlist: PlaylistDetails;
@@ -178,8 +179,9 @@ export default function PlaylistShow({
                                     router.post(
                                         `/music/playlists/${playlist.id}/share`,
                                         {
-                                            username: String(
-                                                data.get('username') ?? '',
+                                            username: formText(
+                                                data,
+                                                'username',
                                             ),
                                         },
                                     );

@@ -11,7 +11,7 @@ import { UserAvatar } from '@/components/gc/user-avatar';
 import { ServerIcon } from '@/components/servers/server-icon';
 import { Field, inputClass } from '@/components/servers/server-form';
 import { formatDate } from '@/lib/format';
-import { cn } from '@/lib/utils';
+import { cn, formText } from '@/lib/utils';
 import type { FamilyCard, MemberCard } from '@/types';
 import { tr } from '@/lib/i18n';
 
@@ -274,9 +274,7 @@ export default function FamilyPublic({
                                         event.currentTarget,
                                     );
                                     router.post(`/f/${family.slug}/block`, {
-                                        username: String(
-                                            data.get('username') ?? '',
-                                        ),
+                                        username: formText(data, 'username'),
                                     });
                                     event.currentTarget.reset();
                                 }}
