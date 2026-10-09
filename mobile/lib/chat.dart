@@ -1331,8 +1331,8 @@ class _Bubble extends StatelessWidget {
     final reply = message['reply_to'] is Map ? mapOf(message['reply_to']) : null;
     final bodyText = text(message['body']);
     final meta = Row(mainAxisSize: MainAxisSize.min, children: [
-      if (message['edited_at'] != null) Text(tr('ред. '), style: body(10.5, color: own ? Colors.white60 : faint)),
-      Text(clock(message['created_at']), style: body(10.5, color: own ? Colors.white70 : faint)),
+      if (message['edited_at'] != null) Text(tr('ред. '), style: body(11, color: own ? Colors.white60 : faint)),
+      Text(clock(message['created_at']), style: body(11, color: own ? Colors.white70 : faint)),
       if (own) ...[const SizedBox(width: 3), Icon(read ? LucideIcons.checkCheck : LucideIcons.check, size: 14, color: Colors.white70)],
     ]);
 

@@ -115,7 +115,7 @@ class _AchievementsPanelState extends State<AchievementsPanel> {
                       child: Icon(_icons[b['icon']] ?? LucideIcons.award, size: 21, color: b['earned'] == true ? gold : faint),
                     ),
                     const SizedBox(height: 5),
-                    Text(text(b['title']) ?? '', textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(10.5, color: b['earned'] == true ? soft : faint)),
+                    Text(text(b['title']) ?? '', textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(11, color: b['earned'] == true ? soft : faint)),
                   ]),
                 ),
             ],

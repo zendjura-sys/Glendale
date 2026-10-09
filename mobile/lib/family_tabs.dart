@@ -93,7 +93,7 @@ class AuditRow extends StatelessWidget {
               ),
           ]),
         ),
-        if (!compact) Text(text(entry['action']) ?? '', style: body(9.5, color: faint).copyWith(fontFamily: 'monospace')),
+        if (!compact) Text(text(entry['action']) ?? '', style: body(11, color: faint).copyWith(fontFamily: 'monospace')),
       ]),
     );
   }
@@ -269,7 +269,15 @@ class _QueueTabState extends State<QueueTab> {
                 padding: const EdgeInsets.only(top: 10),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   Wrap(spacing: 10, runSpacing: 4, children: [
-                    Text(tr('За 30 днів: ✅ {v} · ❌ {v2}', {'v': mapOf(r['history'])['approved'] ?? 0, 'v2': mapOf(r['history'])['rejected'] ?? 0}), style: body(12, color: muted)),
+                    Text.rich(
+                      TextSpan(style: body(12, color: muted), children: [
+                        TextSpan(text: '${tr('Історія за 30 днів')}: '),
+                        const WidgetSpan(alignment: PlaceholderAlignment.middle, child: Icon(LucideIcons.check, size: 13, color: green)),
+                        TextSpan(text: ' ${mapOf(r['history'])['approved'] ?? 0} · '),
+                        const WidgetSpan(alignment: PlaceholderAlignment.middle, child: Icon(LucideIcons.x, size: 13, color: dangerSoft)),
+                        TextSpan(text: ' ${mapOf(r['history'])['rejected'] ?? 0}'),
+                      ]),
+                    ),
                     if (r['contracts_used'] != null) Text(tr('Контрактів цього рівня за день: {v}/{limit}', {'v': r['contracts_used'], 'limit': limit}), style: body(12, color: intOf(r['contracts_used']) > limit ? dangerSoft : muted)),
                     Text(tr('Дедлайн: {v} {v2}', {'v': shortStamp(r['deadline']), 'v2': clock(r['deadline'])}), style: body(12, color: muted)),
                   ]),
@@ -952,7 +960,7 @@ class _MembersTabState extends State<MembersTab> {
                 member: m,
                 subtitle: [
                   if (m['is_online'] == true) tr('онлайн') else if (text(m['last_seen_at']) != null) tr('був(-ла) {v}', {'v': ago(m['last_seen_at'])}),
-                  if (intOf(m['warns']) > 0) '⚠ ${m['warns']}/$warnLimit',
+                  if (intOf(m['warns']) > 0) '${tr('Попередження')} ${m['warns']}/$warnLimit',
                 ].join(' · '),
                 trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                   if (m['balance'] != null) Text(hryvnia(m['balance']), style: body(12.5, color: green, weight: FontWeight.w700)),
@@ -1359,9 +1367,9 @@ List<Widget> ratingTab(FamilyContext ctx) {
           Row(children: [
             SizedBox(width: 26, child: Text('#', style: body(11, color: faint))),
             Expanded(child: Text(tr('УЧАСНИК'), style: body(11, color: faint, weight: FontWeight.w700))),
-            SizedBox(width: 56, child: Text(tr('БІЗВАРИ'), textAlign: TextAlign.center, style: body(10, color: faint, weight: FontWeight.w700))),
-            SizedBox(width: 44, child: Text(tr('КОНТР.'), textAlign: TextAlign.center, style: body(10, color: faint, weight: FontWeight.w700))),
-            SizedBox(width: 44, child: Text(tr('БАЛИ'), textAlign: TextAlign.right, style: body(10, color: faint, weight: FontWeight.w700))),
+            SizedBox(width: 56, child: Text(tr('БІЗВАРИ'), textAlign: TextAlign.center, style: body(11, color: faint, weight: FontWeight.w700))),
+            SizedBox(width: 44, child: Text(tr('КОНТР.'), textAlign: TextAlign.center, style: body(11, color: faint, weight: FontWeight.w700))),
+            SizedBox(width: 44, child: Text(tr('БАЛИ'), textAlign: TextAlign.right, style: body(11, color: faint, weight: FontWeight.w700))),
           ]),
           const Divider(color: line),
           for (final r in rows)
@@ -1373,7 +1381,7 @@ List<Widget> ratingTab(FamilyContext ctx) {
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(text(r['display']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5).copyWith(fontFamily: 'monospace')),
-                    Text(text(r['rank_title']) ?? '', style: body(10.5, color: muted)),
+                    Text(text(r['rank_title']) ?? '', style: body(11, color: muted)),
                   ]),
                 ),
                 SizedBox(width: 56, child: Text('${r['bizwar_wins']}/${r['bizwar_losses']}', textAlign: TextAlign.center, style: body(12, color: soft))),

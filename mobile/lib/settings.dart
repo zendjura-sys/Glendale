@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'api.dart';
 import 'family_widget.dart';
 import 'nav_items.dart';
+import 'playing.dart';
 import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
@@ -292,6 +293,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       const SizedBox(height: 14),
       PrimaryButton(label: tr('Зберегти зміни'), icon: LucideIcons.check, busy: saving, onPressed: _save),
+      const SizedBox(height: 12),
+      const PlayingSettingsCard(),
     ];
   }
 
@@ -472,7 +475,7 @@ class _NavPreview extends StatelessWidget {
             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
               Icon(item.icon, size: 19, color: muted),
               const SizedBox(height: 3),
-              Text(item.label, maxLines: 1, overflow: TextOverflow.fade, softWrap: false, style: body(10.5, color: muted, weight: FontWeight.w500)),
+              Text(item.label, maxLines: 1, overflow: TextOverflow.fade, softWrap: false, style: body(11, color: muted, weight: FontWeight.w500)),
             ]),
           ),
       ]),

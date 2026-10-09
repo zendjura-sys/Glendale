@@ -393,11 +393,11 @@ class CountBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
+      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
       padding: const EdgeInsets.symmetric(horizontal: 5),
       alignment: Alignment.center,
       decoration: BoxDecoration(color: pink, borderRadius: BorderRadius.circular(10), border: Border.all(color: voidColor, width: 2)),
-      child: Text(count > 99 ? '99+' : '$count', style: body(9.5, color: Colors.white, weight: FontWeight.w700)),
+      child: Text(count > 99 ? '99+' : '$count', style: body(11, color: Colors.white, weight: FontWeight.w700).copyWith(height: 1)),
     );
   }
 }

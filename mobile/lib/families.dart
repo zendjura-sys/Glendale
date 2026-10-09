@@ -815,7 +815,7 @@ class _FamilyHeader extends StatelessWidget {
                       ),
                       Container(width: 1, height: 32, color: line, margin: const EdgeInsets.symmetric(horizontal: 10)),
                       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(tr('БАЛАНС'), style: body(10, color: muted, weight: FontWeight.w700)),
+                        Text(tr('БАЛАНС'), style: body(11, color: muted, weight: FontWeight.w700)),
                         Text(hryvniaShort(me['balance']), maxLines: 1, softWrap: false, style: body(15, color: green, weight: FontWeight.w800)),
                       ]),
                     ]),
