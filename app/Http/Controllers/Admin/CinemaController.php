@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Jobs\SyncCinemaCatalog;
 use App\Models\Movie;
+use App\Models\MovieRequest;
 use App\Models\MovieSource;
 use App\Services\Cinema\CinemaAutoImport;
 use App\Services\Cinema\CinemaException;
@@ -98,6 +99,7 @@ class CinemaController extends Controller
                 'auto' => Movie::query()->where('origin', '!=', 'manual')->count(),
             ],
             'providers' => $this->providers(),
+            'requests' => $this->movieRequests(),
             'auto' => [
                 'config' => $this->autoImport->config(),
                 'last' => $this->autoImport->lastRun(),
@@ -106,6 +108,42 @@ class CinemaController extends Controller
                 'intervals' => CinemaAutoImport::INTERVALS,
             ],
         ]);
+    }
+
+    /**
+     * Запити глядачів на фільми, яких немає в каталозі: однакові назви разом, найчастіші вгорі.
+     *
+     * @return list<array{title: string, year: int|null, count: int, last_at: string, people: list<string>}>
+     */
+    private function movieRequests(): array
+    {
+        $rows = MovieRequest::query()->with('user')->latest('id')->limit(300)->get();
+
+        return array_values($rows->groupBy(fn (MovieRequest $r) => mb_strtolower(trim($r->title)))
+            ->map(fn ($group) => [
+                'title' => $group->first()->title,
+                'year' => $group->pluck('year')->filter()->first(),
+                'count' => $group->count(),
+                'last_at' => $group->first()->created_at->toIso8601String(),
+                'people' => array_values($group->take(3)->map(fn (MovieRequest $r) => $r->user->name)->all()),
+            ])
+            ->sortByDesc('count')
+            ->take(20)
+            ->values()
+            ->all());
+    }
+
+    /** Закрити запит: фільм додали або він не підходить. Прибирає всі запити з цією назвою. */
+    public function closeRequest(Request $request): RedirectResponse
+    {
+        $title = mb_strtolower(trim((string) $request->validate(['title' => ['required', 'string', 'max:160']])['title']));
+        $ids = MovieRequest::query()->get(['id', 'title'])
+            ->filter(fn (MovieRequest $r) => mb_strtolower(trim($r->title)) === $title)
+            ->pluck('id');
+        MovieRequest::query()->whereKey($ids)->delete();
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Запит закрито.']);
+
+        return back();
     }
 
     public function updateAuto(Request $request): RedirectResponse

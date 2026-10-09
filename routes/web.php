@@ -484,6 +484,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('/', [Admin\CinemaController::class, 'store'])->name('store');
             Route::get('import', [Admin\CinemaController::class, 'import'])->name('import');
             Route::put('auto', [Admin\CinemaController::class, 'updateAuto'])->name('auto.update');
+            Route::delete('requests', [Admin\CinemaController::class, 'closeRequest'])->name('requests.close');
             Route::post('auto/run', [Admin\CinemaController::class, 'runAuto'])->middleware('throttle:10,1')->name('auto.run');
             Route::middleware('throttle:60,1')->group(function () {
                 Route::get('remote/{provider}/search', [Admin\CinemaController::class, 'remoteSearch'])->whereIn('provider', ['kodik', 'flixcdn'])->name('remote.search');

@@ -91,6 +91,14 @@ type Filter =
     | 'not_enriched'
     | 'trashed';
 
+type MovieRequestRow = {
+    title: string;
+    year: number | null;
+    count: number;
+    last_at: string;
+    people: string[];
+};
+
 type Props = {
     movies: Paginated<AdminMovie>;
     filters: { q: string; type: MovieType | null; filter: Filter };
@@ -106,6 +114,7 @@ type Props = {
         not_enriched: number;
         auto: number;
     };
+    requests: MovieRequestRow[];
     providers: {
         kodik: boolean;
         flixcdn: boolean;
@@ -565,6 +574,7 @@ export default function AdminCinema({
     stats,
     providers,
     auto,
+    requests,
 }: Props) {
     const [q, setQ] = useState(filters.q);
 
@@ -669,6 +679,8 @@ export default function AdminCinema({
                 providers={providers}
                 notEnriched={stats.not_enriched}
             />
+
+            {requests.length > 0 && <MovieRequests requests={requests} />}
 
             <div className="glass mb-4 flex flex-col gap-3 rounded-2xl p-2.5 lg:flex-row lg:items-center">
                 <div className="scrollbar-none flex gap-1 overflow-x-auto">
@@ -923,5 +935,63 @@ export default function AdminCinema({
 
             <Pagination data={movies} />
         </>
+    );
+}
+
+/** Фільми, яких глядачі не знайшли в каталозі («Немає в каталозі» на сторінці кіно). */
+function MovieRequests({ requests }: { requests: MovieRequestRow[] }) {
+    return (
+        <section className="glass mb-5 rounded-3xl p-5">
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
+                <Film className="size-4 text-gc-lilac-400" />
+                {tr('Запити глядачів')}
+            </h2>
+            <p className="mt-1 text-xs text-white/45">
+                {tr(
+                    'Фільми, яких не знайшли в каталозі. Додайте фільм і закрийте запит.',
+                )}
+            </p>
+            <ul className="mt-3 divide-y divide-white/[0.06]">
+                {requests.map((r) => (
+                    <li
+                        key={r.title}
+                        className="flex flex-wrap items-center gap-3 py-2.5"
+                    >
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-white">
+                                {r.title}
+                                {r.year && (
+                                    <span className="text-white/45">
+                                        {' '}
+                                        ({r.year})
+                                    </span>
+                                )}
+                            </p>
+                            <p className="truncate text-xs text-white/45">
+                                {r.people.join(', ')}
+                                {r.count > r.people.length &&
+                                    ` ${tr('і ще {count}', { count: r.count - r.people.length })}`}
+                                {' · '}
+                                {timeAgo(r.last_at)}
+                            </p>
+                        </div>
+                        <Pill>{tr('{count} запит.', { count: r.count })}</Pill>
+                        <button
+                            type="button"
+                            onClick={() =>
+                                router.delete('/admin/cinema/requests', {
+                                    data: { title: r.title },
+                                    preserveScroll: true,
+                                })
+                            }
+                            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-xs font-medium text-white/75 hover:bg-white/10 hover:text-white"
+                        >
+                            <CheckCircle2 className="size-4" />
+                            {tr('Закрити')}
+                        </button>
+                    </li>
+                ))}
+            </ul>
+        </section>
     );
 }

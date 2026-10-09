@@ -64,4 +64,26 @@ class CinemaRequestPlayerTest extends TestCase
         $this->assertSame(1, MovieRequest::query()->count());
         $this->assertSame(1995, MovieRequest::query()->first()->year);
     }
+
+    public function test_admin_sees_grouped_requests_and_closes_them(): void
+    {
+        $this->withoutVite();
+        $first = User::factory()->create();
+        $second = User::factory()->create();
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($first)->post(route('cinema.requests.store'), ['title' => 'Загублений фільм', 'year' => 1994])->assertRedirect();
+        $this->actingAs($second)->post(route('cinema.requests.store'), ['title' => 'загублений фільм '])->assertRedirect();
+        $this->actingAs($second)->post(route('cinema.requests.store'), ['title' => 'Інший'])->assertRedirect();
+
+        $this->actingAs($admin)->get(route('admin.cinema.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('requests', 2)
+                ->where('requests.0.count', 2)
+                ->where('requests.0.year', 1994));
+
+        $this->actingAs($first)->delete(route('admin.cinema.requests.close'), ['title' => 'Загублений фільм'])->assertForbidden();
+        $this->actingAs($admin)->delete(route('admin.cinema.requests.close'), ['title' => 'ЗАГУБЛЕНИЙ ФІЛЬМ'])->assertRedirect();
+        $this->assertSame(['Інший'], MovieRequest::query()->pluck('title')->all());
+    }
 }
