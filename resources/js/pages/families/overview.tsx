@@ -11,6 +11,7 @@ import {
     Wallet,
 } from 'lucide-react';
 import { FamilyShell } from '@/components/families/family-shell';
+import { InviteLinkButton } from '@/components/gc/invite-link';
 import { VoiceRooms } from '@/components/gc/voice-rooms';
 import {
     Amount,
@@ -91,6 +92,13 @@ export default function FamilyOverview(props: Props) {
                     icon={AlertTriangle}
                 />
             </div>
+
+            {props.can['members.manage'] && (
+                <InviteLinkButton
+                    url={`${base}/invite-link`}
+                    className="glass inline-flex h-10 w-fit items-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white"
+                />
+            )}
 
             {/* Голосові кімнати — одразу під показниками, щоб на телефоні не губились унизу. */}
             <VoiceRooms

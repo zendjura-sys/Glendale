@@ -134,6 +134,10 @@ class ClanController extends Controller
                 'rank_titles' => $clan->rankTitles(),
                 'conversation_id' => $member && $clan->hasFeature('chat') ? $clan->conversation_id : null,
                 'created_at' => $clan->created_at?->toIso8601String(),
+                'questions' => array_values(array_filter(array_map(
+                    fn ($question) => is_string($question) ? trim($question) : '',
+                    (array) $clan->questions,
+                ))),
             ],
             'me' => $me ? [...$me->toCard($clan), 'can' => $can] : null,
             'application' => $application ? ['applied_at' => $application->created_at->toIso8601String()] : null,
@@ -161,6 +165,7 @@ class ClanController extends Controller
             'settings' => $can['settings.manage'] ? [
                 'name' => $clan->name, 'tag' => $clan->tag, 'description' => $clan->description, 'rules' => $clan->rules,
                 'join_mode' => $clan->join_mode, 'is_recruiting' => $clan->is_recruiting, 'currency' => $clan->currency,
+                'questions' => array_values(array_filter((array) $clan->questions, 'is_string')),
             ] : null,
             'logs' => $can['settings.manage']
                 ? ClanLog::query()->with('actor')->where('clan_id', $clan->id)->latest('id')->limit(30)->get()
@@ -171,8 +176,13 @@ class ClanController extends Controller
 
     public function join(Request $request, Clan $clan): RedirectResponse
     {
-        $data = $request->validate(['note' => ['nullable', 'string', 'max:500'], 'nickname' => ['nullable', 'string', 'max:40']]);
-        $member = $this->clans->join($clan, $this->user($request), $data['note'] ?? null, $data['nickname'] ?? null);
+        $data = $request->validate([
+            'note' => ['nullable', 'string', 'max:500'],
+            'nickname' => ['nullable', 'string', 'max:40'],
+            'answers' => ['nullable', 'array', 'max:3'],
+            'answers.*' => ['nullable', 'string', 'max:300'],
+        ]);
+        $member = $this->clans->join($clan, $this->user($request), $data['note'] ?? null, $data['nickname'] ?? null, $data['answers'] ?? null);
 
         return $this->done($member->status === ClanMember::STATUS_ACTIVE ? 'Ви в клані! 🎉' : 'Заявку надіслано — керівництво розгляне її.');
     }
@@ -221,6 +231,8 @@ class ClanController extends Controller
             'join_mode' => ['sometimes', Rule::in(array_keys(Clan::JOIN_MODES))],
             'is_recruiting' => ['sometimes', 'boolean'],
             'currency' => ['sometimes', 'string', 'min:1', 'max:24'],
+            'questions' => ['sometimes', 'array', 'max:3'],
+            'questions.*' => ['nullable', 'string', 'max:80'],
             'features' => ['sometimes', 'array'],
             'features.*' => [Rule::in(array_keys(Clan::FEATURES))],
             'rank_titles' => ['sometimes', 'array'],

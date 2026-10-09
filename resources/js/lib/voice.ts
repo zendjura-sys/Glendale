@@ -9,7 +9,7 @@ import { tr } from '@/lib/i18n';
  * поза React-деревом — розмова не обривається під час переходів між сторінками (як музичний плеєр).
  */
 
-export type VoiceOwner = { type: 'family' | 'community' | 'clan'; id: number };
+export type VoiceOwner = { type: 'family' | 'community' | 'clan' | 'server'; id: number };
 
 export type CallState = {
     id: number;

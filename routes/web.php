@@ -14,6 +14,7 @@ use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\InviteLinkController;
 use App\Http\Controllers\ListenPartyController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\Mail\UnsubscribeController;
@@ -58,6 +59,9 @@ Route::prefix('auth')->name('auth.')->group(function () {
 });
 
 Route::middleware(['auth', 'verified.site'])->group(function () {
+    Route::get('join/{token}', [InviteLinkController::class, 'show'])->name('invites.show');
+    Route::post('join/{token}', [InviteLinkController::class, 'accept'])->middleware('throttle:20,1')->name('invites.accept');
+
     Route::get('feed', [FeedController::class, 'index'])->middleware('module:feed')->name('feed');
     Route::get('start', [StartController::class, 'index'])->name('start');
     Route::post('start', [StartController::class, 'store'])->name('start.store');
@@ -151,6 +155,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::patch('settings', [CommunityController::class, 'update'])->name('update');
             Route::post('images/{field}', [CommunityController::class, 'updateImage'])->whereIn('field', ['avatar', 'cover'])->name('image');
             Route::post('join', [CommunityController::class, 'join'])->middleware('throttle:60,1')->name('join');
+            Route::post('invite-link', [InviteLinkController::class, 'community'])->middleware('throttle:20,1')->name('invite-link');
             Route::delete('join', [CommunityController::class, 'leave'])->name('leave');
 
             Route::get('photos', [PhotoController::class, 'community'])->middleware('module:photos')->name('photos');
@@ -252,6 +257,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::prefix('{clan}')->group(function () {
             Route::get('/', [ClanController::class, 'show'])->name('show');
             Route::post('join', [ClanController::class, 'join'])->middleware('throttle:20,1')->name('join');
+            Route::post('invite-link', [InviteLinkController::class, 'clan'])->middleware('throttle:20,1')->name('invite-link');
             Route::post('leave', [ClanController::class, 'leave'])->name('leave');
             Route::post('members/{member}', [ClanController::class, 'member'])->whereNumber('member')->name('members.update');
             Route::post('settings', [ClanController::class, 'update'])->name('update');
@@ -325,6 +331,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::prefix('f/{family}')->name('families.')->scopeBindings()->group(function () {
             Route::get('/', [Families\FamilyController::class, 'show'])->name('show');
             Route::post('apply', [Families\FamilyController::class, 'apply'])->middleware('throttle:10,10')->name('apply');
+            Route::post('invite-link', [InviteLinkController::class, 'family'])->middleware('throttle:20,1')->name('invite-link');
             Route::delete('apply', [Families\FamilyController::class, 'withdraw'])->name('withdraw');
             Route::post('leave', [Families\FamilyController::class, 'leave'])->name('leave');
             Route::get('chat', [Families\FamilyController::class, 'chat'])->name('chat');

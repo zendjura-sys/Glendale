@@ -17,11 +17,12 @@ use Illuminate\Support\Carbon;
  * @property string $status
  * @property string|null $nickname
  * @property string|null $note
+ * @property list<string>|null $answers
  * @property int $contributed
  * @property Carbon|null $joined_at
  * @property Carbon $created_at
  */
-#[Fillable(['clan_id', 'user_id', 'rank', 'status', 'nickname', 'note', 'joined_at'])]
+#[Fillable(['clan_id', 'user_id', 'rank', 'status', 'nickname', 'note', 'joined_at', 'answers'])]
 class ClanMember extends Model
 {
     public const STATUS_PENDING = 'pending';
@@ -34,7 +35,7 @@ class ClanMember extends Model
 
     protected function casts(): array
     {
-        return ['joined_at' => 'datetime', 'contributed' => 'integer'];
+        return ['joined_at' => 'datetime', 'contributed' => 'integer', 'answers' => 'array'];
     }
 
     /**
@@ -67,6 +68,7 @@ class ClanMember extends Model
             'is_owner' => $this->user_id === $clan->owner_id,
             'contributed' => $this->contributed,
             'note' => $this->note,
+            'answers' => array_values(array_filter((array) $this->answers, 'is_string')),
             'joined_at' => $this->joined_at?->toIso8601String(),
             'applied_at' => $this->created_at->toIso8601String(),
         ];

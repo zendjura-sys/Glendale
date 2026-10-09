@@ -21,6 +21,7 @@ import { membersLabel } from '@/components/communities/community-card';
 import { JoinButton } from '@/components/communities/join-button';
 import { roleLabels } from '@/components/communities/roles';
 import { CommunityAvatar } from '@/components/gc/community-avatar';
+import { InviteLinkButton } from '@/components/gc/invite-link';
 import { PostCard } from '@/components/gc/post-card';
 import { PostComposer } from '@/components/gc/post-composer';
 import { PostSkeleton } from '@/components/gc/post-skeleton';
@@ -211,6 +212,10 @@ export default function CommunityShow({
                             />
                             {can.manage && (
                                 <>
+                                    <InviteLinkButton
+                                        url={`/c/${community.slug}/invite-link`}
+                                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"
+                                    />
                                     <Link
                                         href={`/c/${community.slug}/members${stats.requests ? '?tab=requests' : ''}`}
                                         className="relative inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"

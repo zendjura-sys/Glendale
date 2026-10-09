@@ -116,23 +116,42 @@ class ClanService
         return $clan;
     }
 
-    public function join(Clan $clan, User $user, ?string $note, ?string $nickname): ClanMember
+    /**
+     * @param  list<string>|null  $answers
+     */
+    public function join(Clan $clan, User $user, ?string $note, ?string $nickname, ?array $answers = null, bool $invited = false): ClanMember
     {
         $existing = ClanMember::query()->where('clan_id', $clan->id)->where('user_id', $user->id)->first();
         if ($existing && in_array($existing->status, [ClanMember::STATUS_ACTIVE, ClanMember::STATUS_PENDING], true)) {
             throw ValidationException::withMessages(['clan' => $existing->status === ClanMember::STATUS_ACTIVE ? 'Ви вже в цьому клані.' : 'Заявку вже надіслано.']);
         }
-        if ($clan->join_mode === Clan::JOIN_CLOSED || ! $clan->is_recruiting) {
+        if (! $invited && ($clan->join_mode === Clan::JOIN_CLOSED || ! $clan->is_recruiting)) {
             throw ValidationException::withMessages(['clan' => 'Набір у клан зараз закрито.']);
         }
 
-        $open = $clan->join_mode === Clan::JOIN_OPEN;
+        $open = $invited || $clan->join_mode === Clan::JOIN_OPEN;
+        $questions = array_values(array_filter((array) $clan->questions, fn ($question) => is_string($question) && trim($question) !== ''));
+        $clean = [];
+        if (! $open && $questions !== []) {
+            $given = array_values($answers ?? []);
+            if (count($given) !== count($questions)) {
+                throw ValidationException::withMessages(['answers' => 'Дайте відповідь на кожне питання.']);
+            }
+            foreach ($given as $answer) {
+                $text = trim((string) $answer);
+                if ($text === '' || mb_strlen($text) > 300) {
+                    throw ValidationException::withMessages(['answers' => 'Відповідь має бути короткою і не порожньою.']);
+                }
+                $clean[] = $text;
+            }
+        }
         $member = $existing ?? new ClanMember(['clan_id' => $clan->id, 'user_id' => $user->id]);
         $member->fill([
             'rank' => 1,
             'status' => $open ? ClanMember::STATUS_ACTIVE : ClanMember::STATUS_PENDING,
             'note' => $note,
             'nickname' => $nickname,
+            'answers' => $clean === [] ? null : $clean,
             'joined_at' => $open ? now() : null,
         ])->save();
 
@@ -214,6 +233,12 @@ class ClanService
         $isOwner = $actor->user_id === $clan->owner_id;
 
         $fill = array_intersect_key($data, array_flip(['name', 'tag', 'description', 'rules', 'join_mode', 'is_recruiting', 'currency']));
+        if (isset($data['questions']) && is_array($data['questions'])) {
+            $fill['questions'] = array_values(array_filter(array_map(
+                fn ($question) => Str::limit(trim((string) $question), 80, ''),
+                $data['questions'],
+            ), fn (string $question) => $question !== ''));
+        }
         if (isset($fill['tag'])) {
             $fill['tag'] = Str::upper((string) $fill['tag']);
         }

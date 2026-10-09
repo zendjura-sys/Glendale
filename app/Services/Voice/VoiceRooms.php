@@ -6,6 +6,8 @@ use App\Events\VoiceRoomsChanged;
 use App\Models\Clan;
 use App\Models\Community;
 use App\Models\Family;
+use App\Models\FamilyMember;
+use App\Models\GtaServer;
 use App\Models\User;
 use App\Models\VoiceParticipant;
 use App\Models\VoiceRoom;
@@ -28,22 +30,23 @@ class VoiceRooms
         private readonly ClanService $clans,
     ) {}
 
-    public function owner(string $type, int $id): Family|Community|Clan
+    public function owner(string $type, int $id): Family|Community|Clan|GtaServer
     {
         return match ($type) {
             VoiceRoom::OWNER_FAMILY => Family::query()->findOrFail($id),
             VoiceRoom::OWNER_COMMUNITY => Community::query()->findOrFail($id),
             VoiceRoom::OWNER_CLAN => Clan::query()->findOrFail($id),
+            VoiceRoom::OWNER_SERVER => GtaServer::query()->findOrFail($id),
             default => abort(404),
         };
     }
 
-    public function ownerOf(VoiceRoom $room): Family|Community|Clan
+    public function ownerOf(VoiceRoom $room): Family|Community|Clan|GtaServer
     {
         return $this->owner($room->owner_type, $room->owner_id);
     }
 
-    public function canJoin(?User $user, Family|Community|Clan $owner): bool
+    public function canJoin(?User $user, Family|Community|Clan|GtaServer $owner): bool
     {
         if (! $user || $user->banned_at !== null) {
             return false;
@@ -52,12 +55,13 @@ class VoiceRooms
         return match (true) {
             $owner instanceof Family => $this->gate->member($owner, $user) !== null,
             $owner instanceof Clan => $owner->hasFeature('voice') && $this->clans->member($owner, $user) !== null,
+            $owner instanceof GtaServer => $owner->status === GtaServer::STATUS_PUBLISHED || $user->isAdmin(),
             default => (bool) $owner->membershipFor($user)?->isActive(),
         };
     }
 
     /** Чи може людина зайти саме в цю кімнату: у сім’ї — за рангами кімнати. */
-    public function canEnter(?User $user, VoiceRoom $room, Family|Community|Clan|null $owner = null): bool
+    public function canEnter(?User $user, VoiceRoom $room, Family|Community|Clan|GtaServer|null $owner = null): bool
     {
         $owner ??= $this->ownerOf($room);
         if (! $this->canJoin($user, $owner)) {
@@ -71,7 +75,7 @@ class VoiceRooms
         return $member !== null && ($member->user_id === $owner->owner_id || $room->allowsRank($member->rank));
     }
 
-    public function canManage(?User $user, Family|Community|Clan $owner): bool
+    public function canManage(?User $user, Family|Community|Clan|GtaServer $owner): bool
     {
         if (! $user) {
             return false;
@@ -83,6 +87,7 @@ class VoiceRooms
         return match (true) {
             $owner instanceof Family => $this->gate->can($this->gate->member($owner, $user), $owner, 'voice.manage'),
             $owner instanceof Clan => $this->clans->can($this->clans->member($owner, $user), $owner, 'voice.manage'),
+            $owner instanceof GtaServer => $this->leadsServer($owner, $user),
             default => (bool) $owner->membershipFor($user)?->isManager(),
         };
     }
@@ -93,7 +98,7 @@ class VoiceRooms
      *
      * @return list<array<string, mixed>>
      */
-    public function list(Family|Community|Clan $owner, ?User $viewer = null): array
+    public function list(Family|Community|Clan|GtaServer $owner, ?User $viewer = null): array
     {
         [$type, $id] = $this->key($owner);
         if ($owner instanceof Family) {
@@ -154,7 +159,7 @@ class VoiceRooms
      *
      * @return array<string, mixed>
      */
-    public function state(Family|Community|Clan $owner, ?User $user): array
+    public function state(Family|Community|Clan|GtaServer $owner, ?User $user): array
     {
         [$type, $id] = $this->key($owner);
 
@@ -166,7 +171,7 @@ class VoiceRooms
         ];
     }
 
-    public function create(Family|Community|Clan $owner, User $user, string $name): VoiceRoom
+    public function create(Family|Community|Clan|GtaServer $owner, User $user, string $name): VoiceRoom
     {
         // Спершу стандартні кімнати («Загальна», шаблони адмінки), щоб нова не зайняла їхнє місце.
         $this->list($owner);
@@ -396,7 +401,7 @@ class VoiceRooms
         return preg_match('/^u(\d+)$/', $identity, $m) === 1 ? (int) $m[1] : null;
     }
 
-    private function changed(Family|Community|Clan $owner): void
+    private function changed(Family|Community|Clan|GtaServer $owner): void
     {
         [$type, $id] = $this->key($owner);
         rescue(fn () => broadcast(new VoiceRoomsChanged($type, $id)), report: false);
@@ -405,13 +410,25 @@ class VoiceRooms
     /**
      * @return array{0: string, 1: int}
      */
-    private function key(Family|Community|Clan $owner): array
+    private function key(Family|Community|Clan|GtaServer $owner): array
     {
         return match (true) {
             $owner instanceof Family => [VoiceRoom::OWNER_FAMILY, $owner->id],
             $owner instanceof Clan => [VoiceRoom::OWNER_CLAN, $owner->id],
+            $owner instanceof GtaServer => [VoiceRoom::OWNER_SERVER, $owner->id],
             default => [VoiceRoom::OWNER_COMMUNITY, $owner->id],
         };
+    }
+
+    /** Кімнати сервера веде лідер верифікованої сім’ї цього сервера. */
+    private function leadsServer(GtaServer $server, User $user): bool
+    {
+        return FamilyMember::query()
+            ->where('user_id', $user->id)
+            ->where('status', FamilyMember::STATUS_ACTIVE)
+            ->where('rank', '>=', Family::LEADER_RANK)
+            ->whereHas('family', fn ($query) => $query->where('server_id', $server->id)->where('status', Family::STATUS_VERIFIED))
+            ->exists();
     }
 
     /**

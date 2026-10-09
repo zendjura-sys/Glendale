@@ -4,6 +4,7 @@ use App\Models\ClanMember;
 use App\Models\CommunityMember;
 use App\Models\ConversationParticipant;
 use App\Models\FamilyMember;
+use App\Models\GtaServer;
 use App\Models\ListenPartyMember;
 use App\Models\User;
 use App\Models\WatchPartyMember;
@@ -51,4 +52,14 @@ Broadcast::channel('listen.{partyId}', function (User $user, int $partyId) {
 // Клан: голосові кімнати (хто зайшов і вийшов).
 Broadcast::channel('clan.{clanId}', function (User $user, int $clanId) {
     return ClanMember::query()->where('clan_id', $clanId)->where('user_id', $user->id)->where('status', ClanMember::STATUS_ACTIVE)->exists();
+});
+
+// Голосові кімнати опублікованого сервера: зайти може будь-який учасник сайту.
+Broadcast::channel('server.{serverId}', function (User $user, int $serverId) {
+    if ($user->isBanned()) {
+        return false;
+    }
+    $server = GtaServer::query()->find($serverId);
+
+    return $server !== null && ($server->status === GtaServer::STATUS_PUBLISHED || $user->isAdmin());
 });

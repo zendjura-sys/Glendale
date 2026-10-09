@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { InviteLinkButton } from '@/components/gc/invite-link';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VoiceRooms } from '@/components/gc/voice-rooms';
 import { timeAgo } from '@/lib/format';
@@ -36,6 +37,7 @@ type Member = {
     is_owner: boolean;
     contributed: number;
     note: string | null;
+    answers?: string[];
     joined_at: string | null;
     applied_at: string;
     events?: number;
@@ -52,6 +54,7 @@ type Props = {
         rank_titles: Record<number, string>;
         conversation_id: number | null;
         created_at: string | null;
+        questions: string[];
     };
     me: (Member & { can: Record<string, boolean> }) | null;
     application: { applied_at: string } | null;
@@ -103,6 +106,7 @@ type Props = {
         join_mode: string;
         is_recruiting: boolean;
         currency: string;
+        questions: string[];
     } | null;
     logs: {
         id: number;
@@ -158,6 +162,50 @@ function Card({
 
 const post = (url: string, data: Record<string, unknown> = {}) =>
     router.post(url, data as never, { preserveScroll: true });
+
+function JoinForm({ base, questions }: { base: string; questions: string[] }) {
+    const form = useForm({ note: '', answers: questions.map(() => '') });
+
+    return (
+        <form
+            className="glass w-full basis-full space-y-2 rounded-2xl p-3"
+            onSubmit={(event) => {
+                event.preventDefault();
+                form.post(`${base}/join`, { preserveScroll: true });
+            }}
+        >
+            {questions.map((question, index) => (
+                <label key={`${index}-${question}`} className="block text-xs text-white/55">
+                    {question}
+                    <input
+                        value={form.data.answers[index] ?? ''}
+                        maxLength={300}
+                        onChange={(event) => {
+                            const next = [...form.data.answers];
+                            next[index] = event.target.value;
+                            form.setData('answers', next);
+                        }}
+                        className={cn(input, 'mt-1')}
+                        required
+                    />
+                </label>
+            ))}
+            <input
+                value={form.data.note}
+                maxLength={500}
+                onChange={(event) => form.setData('note', event.target.value)}
+                placeholder={tr('Кілька слів про себе (необов’язково)')}
+                className={input}
+            />
+            {form.errors.answers && (
+                <p className="text-xs text-rose-300">{form.errors.answers}</p>
+            )}
+            <button type="submit" disabled={form.processing} className={btn}>
+                <UserPlus className="size-4" /> {tr('Подати заявку')}
+            </button>
+        </form>
+    );
+}
 
 /** Сторінка клану: огляд, новини, заходи, внески, рейтинг, статут, учасники й налаштування — за увімкненими розділами. */
 export default function ClanShow(props: Props) {
@@ -227,26 +275,24 @@ export default function ClanShow(props: Props) {
                             <MessageCircle className="size-4" /> {tr('Чат')}
                         </a>
                     )}
-                    {!me && !application && clan.is_recruiting && (
-                        <button
-                            type="button"
-                            onClick={() =>
-                                post(`${base}/join`, {
-                                    note:
-                                        prompt(
-                                            tr(
-                                                'Кілька слів про себе (необов’язково)',
-                                            ),
-                                        ) ?? '',
-                                })
-                            }
-                            className={btn}
-                        >
-                            <UserPlus className="size-4" />{' '}
-                            {clan.join_mode === 'open'
-                                ? tr('Вступити')
-                                : tr('Подати заявку')}
-                        </button>
+                    {me?.can['members.manage'] && (
+                        <InviteLinkButton url={`${base}/invite-link`} className={ghost} />
+                    )}
+                    {!me && !application && clan.is_recruiting && clan.questions.length > 0 && clan.join_mode !== 'open' ? (
+                        <JoinForm base={base} questions={clan.questions} />
+                    ) : (
+                        !me && !application && clan.is_recruiting && (
+                            <button
+                                type="button"
+                                onClick={() => post(`${base}/join`, { note: '' })}
+                                className={btn}
+                            >
+                                <UserPlus className="size-4" />{' '}
+                                {clan.join_mode === 'open'
+                                    ? tr('Вступити')
+                                    : tr('Подати заявку')}
+                            </button>
+                        )
                     )}
                     {application && (
                         <button
@@ -922,6 +968,11 @@ function MembersTab({
                                         {m.note}
                                     </span>
                                 )}
+                                {m.answers && m.answers.length > 0 && (
+                                    <span className="block text-xs text-white/45">
+                                        {m.answers.join(' · ')}
+                                    </span>
+                                )}
                             </span>
                             <button
                                 type="button"
@@ -1058,6 +1109,7 @@ function SettingsTab({
         ...settings,
         description: settings.description ?? '',
         rules: settings.rules ?? '',
+        questions: [0, 1, 2].map((index) => settings.questions?.[index] ?? ''),
         features: clan.features,
         rank_titles: [1, 2, 3, 4, 5].map((r) => clan.rank_titles[r] ?? ''),
         permissions: permissions?.matrix ?? {},
@@ -1168,6 +1220,24 @@ function SettingsTab({
                             }
                         />
                     </label>
+                </div>
+                <div className="mt-3 space-y-2">
+                    <p className="text-xs text-white/45">{tr('Питання в заявці')}</p>
+                    {[0, 1, 2].map((index) => (
+                        <input
+                            key={index}
+                            value={form.data.questions[index] ?? ''}
+                            maxLength={80}
+                            onChange={(e) => {
+                                const next = [...form.data.questions];
+                                next[index] = e.target.value;
+                                form.setData('questions', next);
+                            }}
+                            placeholder={tr('Питання {n}', { n: index + 1 })}
+                            className={input}
+                            aria-label={tr('Питання {n}', { n: index + 1 })}
+                        />
+                    ))}
                 </div>
             </Card>
 

@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { EventList, ServerEventForm } from '@/components/events/event-card';
 import type { CalendarEvent } from '@/components/events/event-card';
 import { PlayingNow } from '@/components/gc/playing';
+import { VoiceRooms } from '@/components/gc/voice-rooms';
 import { FollowButton } from '@/components/gc/follow-button';
 import { PinButton } from '@/components/gc/pin-button';
 import { SaveButton } from '@/components/gc/save-button';
@@ -204,6 +205,11 @@ export default function ServerShow({
                     )}
                 </section>
 
+                <VoiceRooms
+                    owner={{ type: 'server', id: server.id }}
+                    label={server.name}
+                    href={`/servers/${server.slug}`}
+                />
                 <PlayingNow users={playing_now} count={playing_count} />
                 <section className="glass rounded-3xl p-5">
                     <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">

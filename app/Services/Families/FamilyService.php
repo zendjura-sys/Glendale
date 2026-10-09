@@ -65,12 +65,12 @@ class FamilyService
     /**
      * @param  array{rp_nickname: string, static_id: string, note?: string|null}  $data
      */
-    public function apply(Family $family, User $user, array $data): FamilyMember
+    public function apply(Family $family, User $user, array $data, bool $invited = false): FamilyMember
     {
         if (! $family->isVerified()) {
             throw ValidationException::withMessages(['family' => 'Сім’я ще не пройшла верифікацію — заявки поки не приймаються.']);
         }
-        if (! $family->is_recruiting) {
+        if (! $family->is_recruiting && ! $invited) {
             throw ValidationException::withMessages(['family' => 'Набір у сім’ю закрито.']);
         }
         $this->ensureFreeOnServer($user, (int) $family->server_id, $family);
