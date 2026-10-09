@@ -282,6 +282,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('/', [GameController::class, 'index'])->name('index');
         Route::get('search', [GameController::class, 'search'])->middleware('throttle:120,1')->name('search');
         Route::get('{game}', [GameController::class, 'show'])->name('show');
+        Route::post('{game}/collections', [GameController::class, 'collections'])->name('collections');
         Route::post('{game}/guides', [GameController::class, 'guide'])->middleware('throttle:20,1')->name('guides.store');
         Route::delete('{game}/guides/{guide}', [GameController::class, 'deleteGuide'])->whereNumber('guide')->name('guides.destroy');
     });
@@ -374,6 +375,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::prefix('f/{family}')->name('families.')->scopeBindings()->group(function () {
             Route::get('/', [Families\FamilyController::class, 'show'])->name('show');
             Route::post('apply', [Families\FamilyController::class, 'apply'])->middleware('throttle:10,10')->name('apply');
+            Route::post('block', [Families\FamilyController::class, 'block'])->middleware('throttle:20,1')->name('block');
+            Route::delete('block/{user}', [Families\FamilyController::class, 'unblock'])->withoutScopedBindings()->name('unblock');
             Route::post('invite-link', [InviteLinkController::class, 'family'])->middleware('throttle:20,1')->name('invite-link');
             Route::delete('apply', [Families\FamilyController::class, 'withdraw'])->name('withdraw');
             Route::post('leave', [Families\FamilyController::class, 'leave'])->name('leave');

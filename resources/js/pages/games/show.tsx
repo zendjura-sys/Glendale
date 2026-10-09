@@ -85,6 +85,7 @@ type Props = {
         released: string | null;
         rating: number | null;
         links: { store: string; label: string; url: string }[];
+        collections: string[];
         details: Details;
     };
     similar: GameCard[];
@@ -98,6 +99,8 @@ type Props = {
     saved: boolean;
     following: boolean;
     pinned: boolean;
+    steam_friends: UserCard[];
+    can_curate: boolean;
     guides: {
         id: number;
         title: string;
@@ -234,6 +237,8 @@ export default function GameShow({
     following,
     pinned,
     guides,
+    steam_friends,
+    can_curate,
 }: Props) {
     const d = game.details ?? {};
     const [video, setVideo] = useState<string | null>(null);
@@ -406,6 +411,42 @@ export default function GameShow({
             <div className="mt-4">
                 <PlayingNow users={playing_now} count={playing_count} />
             </div>
+
+            {(steam_friends.length > 0 || can_curate) && (
+                <section className="glass mt-4 space-y-3 rounded-3xl p-4 sm:p-5">
+                    {steam_friends.length > 0 && (
+                        <div>
+                            <h2 className="font-display text-base font-semibold text-white">{tr('Друзі з цією грою в Steam')}</h2>
+                            <p className="mt-2 text-sm text-white/70">{steam_friends.map((friend) => friend.name).join(', ')}</p>
+                        </div>
+                    )}
+                    {can_curate && (
+                        <form
+                            className="flex flex-wrap gap-3 text-sm text-white/80"
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                const data = new FormData(event.currentTarget);
+                                router.post(`/games/${game.slug}/collections`, {
+                                    duo: data.get('duo') === 'on',
+                                    evening: data.get('evening') === 'on',
+                                });
+                            }}
+                        >
+                            <label className="flex items-center gap-2">
+                                <input type="checkbox" name="duo" defaultChecked={game.collections.includes('duo')} />
+                                {tr('На двох')}
+                            </label>
+                            <label className="flex items-center gap-2">
+                                <input type="checkbox" name="evening" defaultChecked={game.collections.includes('evening')} />
+                                {tr('На вечір')}
+                            </label>
+                            <button type="submit" className="rounded-xl bg-white px-3 py-1.5 text-sm font-semibold text-black">
+                                {tr('Зберегти добірку')}
+                            </button>
+                        </form>
+                    )}
+                </section>
+            )}
 
             {(events.length > 0 || can_add_event) && (
                 <section className="glass mt-4 rounded-3xl p-4 sm:p-5">

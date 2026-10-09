@@ -22,6 +22,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $aliases
  * @property array<string, mixed>|null $details
  * @property list<array{store: string, url: string}>|null $links
+ * @property list<string>|null $collections
  * @property string|null $cover
  * @property Carbon|null $released
  * @property float|null $rating
@@ -132,6 +133,7 @@ class Game extends Model
             'modes' => 'array',
             'details' => 'array',
             'links' => 'array',
+            'collections' => 'array',
             'released' => 'date',
             'rating' => 'float',
             'links_checked_at' => 'datetime',
@@ -186,6 +188,20 @@ class Game extends Model
             'rating' => $this->rating,
             'modes' => array_values(array_intersect(array_keys(self::MODES), $this->modes ?? [])),
         ];
+    }
+
+    /**
+     * @return list<array{store: string, label: string, url: string}>
+     */
+    public function steamAppId(): ?string
+    {
+        foreach ($this->links ?? [] as $link) {
+            if (($link['store'] ?? null) === 'steam' && preg_match('#/app/(\d+)#', (string) ($link['url'] ?? ''), $match) === 1) {
+                return $match[1];
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
 
@@ -137,6 +138,17 @@ class SteamPresence
             }
             $games = array_values(array_filter($games, 'is_array'));
             usort($games, fn (array $a, array $b) => ((int) ($b['playtime_forever'] ?? 0)) <=> ((int) ($a['playtime_forever'] ?? 0)));
+            $owned = [];
+            foreach ($games as $game) {
+                $ownedId = (string) ($game['appid'] ?? '');
+                if ($ownedId !== '') {
+                    $owned[$ownedId] = ['user_id' => $user->id, 'app_id' => $ownedId];
+                }
+            }
+            DB::table('user_steam_apps')->where('user_id', $user->id)->delete();
+            foreach (array_chunk(array_values($owned), 300) as $chunk) {
+                DB::table('user_steam_apps')->insert($chunk);
+            }
             $slice = array_slice($games, 0, $limit);
             $cards = [];
             foreach ($slice as $game) {

@@ -9,6 +9,7 @@ use App\Models\FamilyItem;
 use App\Models\FamilyMember;
 use App\Models\FamilyTransaction;
 use App\Models\GtaServer;
+use App\Models\User;
 use App\Services\Families\FamilyRating;
 use App\Services\Families\FamilyService;
 use App\Services\Families\MemberStats;
@@ -16,6 +17,7 @@ use App\Services\ImageStorage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -151,6 +153,31 @@ class FamilyController extends FamilyBaseController
         return back();
     }
 
+    public function block(Request $request, Family $family): RedirectResponse
+    {
+        $this->ensureLeader($request, $family);
+        $data = $request->validate(['username' => ['required', 'string', 'max:32']]);
+        $person = User::query()->where('username', $data['username'])->first();
+        abort_unless($person instanceof User && $person->id !== $request->user()->id, 422);
+        DB::table('family_blocks')->insertOrIgnore([
+            'family_id' => $family->id,
+            'user_id' => $person->id,
+            'created_at' => now(),
+        ]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Людину додано до чорного списку.']);
+
+        return back();
+    }
+
+    public function unblock(Request $request, Family $family, User $user): RedirectResponse
+    {
+        $this->ensureLeader($request, $family);
+        DB::table('family_blocks')->where('family_id', $family->id)->where('user_id', $user->id)->delete();
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Людину прибрано з чорного списку.']);
+
+        return back();
+    }
+
     public function withdraw(Request $request, Family $family): RedirectResponse
     {
         FamilyMember::query()->where('family_id', $family->id)->where('user_id', $request->user()->id)
@@ -189,15 +216,33 @@ class FamilyController extends FamilyBaseController
             ->where('rank', '>=', 8)->orderByDesc('rank')->limit(6)->get()
             ->map(fn (FamilyMember $m) => $m->toCard($family));
 
+        $viewer = $request->user();
+        $isLeader = FamilyMember::query()->where('family_id', $family->id)->where('user_id', $viewer->id)
+            ->where('status', FamilyMember::STATUS_ACTIVE)->where('rank', '>=', Family::LEADER_RANK)->exists();
+
         return Inertia::render('families/public', [
             'family' => [...$family->toCard(), 'description' => $family->description, 'created_at' => $family->created_at->toIso8601String()],
             'leaders' => $leaders,
+            'can_block' => $isLeader,
+            'blocked' => $isLeader
+                ? User::query()->whereIn('id', DB::table('family_blocks')->where('family_id', $family->id)->pluck('user_id'))->get()->map(fn (User $user) => $user->toCard())->values()
+                : [],
             'application' => $application ? [
                 'status' => $application->status,
                 'display' => $application->displayName(),
                 'left_at' => $application->left_at?->toIso8601String(),
             ] : null,
         ]);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function ensureLeader(Request $request, Family $family): void
+    {
+        $leader = FamilyMember::query()->where('family_id', $family->id)->where('user_id', $request->user()->id)
+            ->where('status', FamilyMember::STATUS_ACTIVE)->where('rank', '>=', Family::LEADER_RANK)->exists();
+        abort_unless($leader, 403);
     }
 
     /**

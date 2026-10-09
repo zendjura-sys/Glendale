@@ -6,6 +6,7 @@ use App\Models\Clan;
 use App\Models\Game;
 use App\Models\GameEvent;
 use App\Models\GameGuide;
+use App\Models\User;
 use App\Services\EventCalendar;
 use App\Services\FollowAlerts;
 use App\Services\FriendshipService;
@@ -18,6 +19,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -60,6 +62,7 @@ class GameController extends Controller
             'letter' => ['nullable', 'string', 'regex:/^([A-Z]|#)$/'],
             'genre' => ['nullable', 'string', 'max:60'],
             'mode' => ['nullable', Rule::in(array_keys(Game::MODES))],
+            'collection' => ['nullable', Rule::in(['duo', 'evening'])],
             'sort' => ['nullable', Rule::in(array_keys(Game::SORTS))],
         ]);
         $on = $this->features();
@@ -96,6 +99,7 @@ class GameController extends Controller
                 'letter' => $filters['letter'] ?? null,
                 'genre' => $filters['genre'] ?? null,
                 'mode' => $filters['mode'] ?? null,
+                'collection' => $filters['collection'] ?? null,
                 'sort' => $sort,
             ],
             'categories' => Game::CATEGORIES,
@@ -141,6 +145,7 @@ class GameController extends Controller
                 'released' => $game->released?->toDateString(),
                 'rating' => $game->rating,
                 'links' => $game->storeLinks(),
+                'collections' => array_values(array_intersect(['duo', 'evening'], $game->collections ?? [])),
                 'details' => (object) $details,
             ],
             'similar' => $similarIds === [] ? [] : Game::query()->published()->whereIn('igdb_id', $similarIds)
@@ -156,6 +161,8 @@ class GameController extends Controller
             'saved' => $request->user() ? app(SavedItems::class)->has($request->user(), 'game', $game->id) : false,
             'following' => $request->user() ? app(FollowAlerts::class)->has($request->user(), 'game', $game->id) : false,
             'pinned' => is_array($pin = $request->user()?->pref('pin')) && ($pin['kind'] ?? null) === 'game' && (int) ($pin['id'] ?? 0) === $game->id,
+            'steam_friends' => $this->steamFriends($game, $request->user(), $friendships),
+            'can_curate' => $request->user()?->isStaff() === true,
             'guides' => GameGuide::query()->with('user')->where('game_id', $game->id)->latest('id')->limit(20)->get()
                 ->map(fn (GameGuide $guide) => [
                     'id' => $guide->id,
@@ -170,6 +177,26 @@ class GameController extends Controller
         return $request->expectsJson() && ! $request->header('X-Inertia')
             ? response()->json($props)
             : Inertia::render('games/show', $props);
+    }
+
+    public function collections(Request $request, Game $game): RedirectResponse
+    {
+        abort_unless($request->user()->isStaff(), 403);
+        $data = $request->validate([
+            'duo' => ['sometimes', 'boolean'],
+            'evening' => ['sometimes', 'boolean'],
+        ]);
+        $items = [];
+        if ($request->boolean('duo')) {
+            $items[] = 'duo';
+        }
+        if ($request->boolean('evening')) {
+            $items[] = 'evening';
+        }
+        $game->forceFill(['collections' => $items])->save();
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Добірку оновлено.']);
+
+        return back();
     }
 
     public function guide(Request $request, Game $game): RedirectResponse
@@ -235,6 +262,21 @@ class GameController extends Controller
     }
 
     /**
+     * @return list<array<string, mixed>>
+     */
+    private function steamFriends(Game $game, ?User $viewer, FriendshipService $friendships): array
+    {
+        $appId = $game->steamAppId();
+        if ($viewer === null || $appId === null) {
+            return [];
+        }
+        $ids = DB::table('user_steam_apps')->where('app_id', $appId)->pluck('user_id');
+
+        return User::query()->whereIn('id', $friendships->friendIds($viewer))->whereIn('id', $ids)->limit(12)->get()
+            ->map(fn (User $friend) => $friend->toCard())->values()->all();
+    }
+
+    /**
      * @param  array<string, mixed>  $filters
      * @return Builder<Game>
      */
@@ -251,6 +293,7 @@ class GameController extends Controller
             ->when($filters['mode'] ?? null, fn (Builder $query, string $m) => $query->whereJsonContains('modes', $m))
             ->when($filters['category'] ?? null, fn (Builder $query, string $c) => $query->where('category', $c))
             ->when($filters['platform'] ?? null, fn (Builder $query, string $p) => $query->whereJsonContains('platforms', $p))
-            ->when($filters['letter'] ?? null, fn (Builder $query, string $l) => $query->where('letter', $l));
+            ->when($filters['letter'] ?? null, fn (Builder $query, string $l) => $query->where('letter', $l))
+            ->when($filters['collection'] ?? null, fn (Builder $query, string $collection) => $query->whereJsonContains('collections', $collection));
     }
 }

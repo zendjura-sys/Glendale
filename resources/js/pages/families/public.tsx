@@ -23,9 +23,11 @@ type Props = {
         display: string;
         left_at: string | null;
     } | null;
+    blocked: { username: string; name: string }[];
+    can_block: boolean;
 };
 
-export default function FamilyPublic({ family, leaders, application }: Props) {
+export default function FamilyPublic({ family, leaders, application, blocked, can_block }: Props) {
     const form = useForm({ rp_nickname: '', static_id: '', note: '' });
     const pending = application?.status === 'pending';
     const canApply =
@@ -253,6 +255,35 @@ export default function FamilyPublic({ family, leaders, application }: Props) {
                             </p>
                         )}
                     </section>
+                    {can_block && (
+                        <section className="glass space-y-3 rounded-3xl p-4">
+                            <h2 className="font-display text-base font-semibold text-white">{tr('Чорний список')}</h2>
+                            <form
+                                className="flex gap-2"
+                                onSubmit={(event) => {
+                                    event.preventDefault();
+                                    const data = new FormData(event.currentTarget);
+                                    router.post(`/f/${family.slug}/block`, { username: String(data.get('username') ?? '') });
+                                    event.currentTarget.reset();
+                                }}
+                            >
+                                <input name="username" placeholder={tr('Нік')} className="input-glass h-10 flex-1 rounded-xl px-3 text-sm text-white" />
+                                <button type="submit" className="h-10 rounded-xl bg-white px-3 text-sm font-semibold text-black">{tr('Заблокувати')}</button>
+                            </form>
+                            {blocked.map((person) => (
+                                <div key={person.username} className="flex items-center justify-between text-sm text-white/75">
+                                    <span>{person.name}</span>
+                                    <button
+                                        type="button"
+                                        className="text-xs text-rose-300"
+                                        onClick={() => router.delete(`/f/${family.slug}/block/${person.username}`)}
+                                    >
+                                        {tr('Прибрати')}
+                                    </button>
+                                </div>
+                            ))}
+                        </section>
+                    )}
                 </div>
             </div>
         </>

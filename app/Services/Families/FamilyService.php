@@ -73,6 +73,9 @@ class FamilyService
         if (! $family->is_recruiting && ! $invited) {
             throw ValidationException::withMessages(['family' => 'Набір у сім’ю закрито.']);
         }
+        if (DB::table('family_blocks')->where('family_id', $family->id)->where('user_id', $user->id)->exists()) {
+            throw ValidationException::withMessages(['family' => 'Вас внесено до чорного списку сім’ї.']);
+        }
         $this->ensureFreeOnServer($user, (int) $family->server_id, $family);
         $this->ensureStaticFree((int) $family->server_id, $data['static_id'], $user);
 
