@@ -433,6 +433,55 @@ export default function CinemaShow({
                                 )}
 
                                 <div className="mt-6 flex flex-wrap items-center gap-2">
+                                    {(movie.episodes_count ?? 0) > 1 && (
+                                        <form
+                                            className="flex flex-wrap items-center gap-2"
+                                            onSubmit={(event) => {
+                                                event.preventDefault();
+                                                const form = new FormData(event.currentTarget);
+                                                const season = Number(form.get('season'));
+                                                const episode = Number(form.get('episode'));
+                                                void api<StateResponse>('PUT', `/cinema/${movie.slug}/progress`, {
+                                                    season: season > 0 ? season : null,
+                                                    episode,
+                                                })
+                                                    .then((response) => {
+                                                        apply(response);
+                                                        toast.success(tr('Серію збережено.'));
+                                                    })
+                                                    .catch((error: unknown) => {
+                                                        toast.error(
+                                                            error instanceof ApiError
+                                                                ? error.message
+                                                                : tr('Не вдалося зберегти серію.'),
+                                                        );
+                                                    });
+                                            }}
+                                        >
+                                            <input
+                                                name="season"
+                                                type="number"
+                                                min={1}
+                                                max={50}
+                                                defaultValue={state.season ?? ''}
+                                                placeholder={tr('Сезон')}
+                                                className="h-11 w-24 rounded-xl bg-white/10 px-3 text-sm text-white placeholder:text-white/40"
+                                            />
+                                            <input
+                                                name="episode"
+                                                type="number"
+                                                min={1}
+                                                max={movie.episodes_count ?? 5000}
+                                                required
+                                                defaultValue={state.episode ?? ''}
+                                                placeholder={tr('Серія')}
+                                                className="h-11 w-24 rounded-xl bg-white/10 px-3 text-sm text-white placeholder:text-white/40"
+                                            />
+                                            <button type="submit" className="h-11 rounded-xl bg-white/10 px-4 text-sm font-semibold text-white">
+                                                {tr('Я тут')}
+                                            </button>
+                                        </form>
+                                    )}
                                     {players.length > 0 && (
                                         <a
                                             href="#player"

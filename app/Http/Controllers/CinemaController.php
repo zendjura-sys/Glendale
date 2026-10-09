@@ -19,6 +19,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -77,7 +78,7 @@ class CinemaController extends Controller
             'total' => $page->total(),
             'featured' => $filtered ? [] : $this->featured(),
             'rows' => $filtered ? [] : [
-                ['key' => 'continue', 'title' => 'Продовжити перегляд', 'movies' => $this->cards($this->listQuery($user, 'watching')->limit(12)->get())],
+                ['key' => 'continue', 'title' => 'Продовжити перегляд', 'movies' => $this->watching($user)],
                 ['key' => 'popular', 'title' => 'Популярне зараз', 'movies' => $this->cards(Movie::query()->published()->orderByDesc('views_count')->orderByDesc('id')->limit(16)->get())],
                 ['key' => 'top', 'title' => 'Найвищий рейтинг', 'movies' => $this->cards(Movie::query()->published()->orderByRaw('coalesce(rating_imdb, rating_tmdb, rating_shikimori, 0) desc')->limit(16)->get())],
             ],
@@ -212,6 +213,22 @@ class CinemaController extends Controller
         return $this->stateResponse($request->user(), $movie);
     }
 
+    public function progress(Request $request, Movie $movie): JsonResponse
+    {
+        abort_unless($movie->is_published || $request->user()->isStaff(), 404);
+        $data = $request->validate([
+            'season' => ['nullable', 'integer', 'min:1', 'max:50'],
+            'episode' => ['required', 'integer', 'min:1', 'max:5000'],
+        ]);
+        $episode = (int) $data['episode'];
+        if ($movie->episodes_count !== null && $episode > $movie->episodes_count) {
+            throw ValidationException::withMessages(['episode' => 'Такої серії в каталозі немає.']);
+        }
+        $this->cinema->progress($request->user(), $movie, isset($data['season']) ? (int) $data['season'] : null, $episode);
+
+        return $this->stateResponse($request->user(), $movie);
+    }
+
     public function comments(Request $request, Movie $movie): JsonResponse
     {
         $viewer = $request->user();
@@ -234,6 +251,7 @@ class CinemaController extends Controller
         $data = $request->validate([
             'body' => ['required', 'string', 'max:2000'],
             'parent_id' => ['nullable', 'integer'],
+            'spoiler' => ['sometimes', 'boolean'],
         ]);
 
         $comment = DB::transaction(function () use ($movie, $user, $data) {
@@ -241,6 +259,7 @@ class CinemaController extends Controller
                 'user_id' => $user->id,
                 'parent_id' => isset($data['parent_id']) ? $movie->comments()->whereKey($data['parent_id'])->value('id') : null,
                 'body' => trim($data['body']),
+                'spoiler' => (bool) ($data['spoiler'] ?? false),
             ]);
             $movie->increment('comments_count');
 
@@ -265,7 +284,7 @@ class CinemaController extends Controller
             ->where('movie_user.user_id', $user->id)
             ->when($status === 'rated', fn (Builder $q) => $q->whereNotNull('movie_user.rating'))
             ->when(! in_array($status, ['all', 'rated'], true), fn (Builder $q) => $q->where('movie_user.status', $status))
-            ->select('movies.*', 'movie_user.status as my_status', 'movie_user.rating as my_rating')
+            ->select('movies.*', 'movie_user.status as my_status', 'movie_user.rating as my_rating', 'movie_user.season as my_season', 'movie_user.episode as my_episode')
             ->orderByDesc('movie_user.updated_at')
             ->orderByDesc('movies.id');
     }
@@ -363,6 +382,25 @@ class CinemaController extends Controller
     private function cards(Collection $movies): array
     {
         return array_values($movies->map(fn (Movie $m) => $m->toCard())->all());
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function watching(User $user): array
+    {
+        return array_values($this->listQuery($user, 'watching')->limit(12)->get()->map(function (Movie $movie) {
+            $episode = $movie->getAttribute('my_episode');
+            $season = $movie->getAttribute('my_season');
+
+            return [
+                ...$movie->toCard(),
+                'progress' => $episode !== null ? [
+                    'season' => $season !== null ? (int) $season : null,
+                    'episode' => (int) $episode,
+                ] : null,
+            ];
+        })->all());
     }
 
     /**

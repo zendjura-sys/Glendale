@@ -110,7 +110,21 @@ export function MovieTile({
                 {movie.title}
             </p>
             <p className="mt-0.5 truncate text-xs text-white/40">
-                {[movie.year, movie.type_label, movie.genres[0]]
+                {[
+                    movie.progress
+                        ? movie.progress.season
+                            ? tr('Сезон {season}, серія {episode}', {
+                                  season: movie.progress.season,
+                                  episode: movie.progress.episode,
+                              })
+                            : tr('Серія {episode}', {
+                                  episode: movie.progress.episode,
+                              })
+                        : null,
+                    movie.year,
+                    movie.type_label,
+                    movie.genres[0],
+                ]
                     .filter(Boolean)
                     .join(' · ')}
             </p>

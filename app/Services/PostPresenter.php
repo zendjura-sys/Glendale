@@ -140,6 +140,7 @@ class PostPresenter
         return [
             'id' => $post->id,
             'body' => $post->body,
+            'spoiler' => $post->spoiler,
             'visibility' => $post->visibility,
             'is_pinned' => $post->is_pinned,
             'comments_enabled' => $post->comments_enabled,
@@ -219,6 +220,7 @@ class PostPresenter
         return [
             'id' => $comment->id,
             'body' => $comment->body,
+            'spoiler' => $comment->spoiler,
             'parent_id' => $comment->parent_id,
             'likes_count' => $comment->likes_count,
             'liked' => $liked,

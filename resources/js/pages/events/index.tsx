@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { CalendarDays } from 'lucide-react';
 import { EventList } from '@/components/events/event-card';
 import type { CalendarEvent } from '@/components/events/event-card';
@@ -30,7 +30,10 @@ export default function EventsIndex({ events, kind, kinds }: Props) {
                 <p className="text-sm text-white/50">
                     {tr(
                         'Події ваших сімей, кланів, серверів та ігор. Події серверів з Discord і ігор з IGDB підтягуються самі. За пів години до початку прийде нагадування.',
-                    )}
+                    )}{' '}
+                    <Link href="/events/releases" className="text-gc-lilac-200 hover:text-white">
+                        {tr('Релізи і сезони')}
+                    </Link>
                 </p>
             </div>
             <div className="-mx-1 mb-4 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1">

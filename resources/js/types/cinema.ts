@@ -11,6 +11,7 @@ export type MovieStatus = 'planned' | 'watching' | 'watched' | 'dropped';
 
 export type MovieCard = {
     id: number;
+    progress?: { season: number | null; episode: number } | null;
     slug: string;
     href: string;
     type: MovieType;
@@ -61,7 +62,12 @@ export type MoviePlayer = {
     link: string;
 };
 
-export type MovieState = { status: MovieStatus | null; rating: number | null };
+export type MovieState = {
+    status: MovieStatus | null;
+    rating: number | null;
+    season: number | null;
+    episode: number | null;
+};
 
 export type MovieOption<K extends string = string> = { key: K; label: string };
 

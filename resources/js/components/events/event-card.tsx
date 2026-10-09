@@ -37,6 +37,8 @@ export type CalendarEvent = {
     image?: string | null;
     source?: string | null;
     games?: { name: string; url: string }[];
+    /** Кнопка «Нагадати» замість «Цікаво» — для виходів і сезонів. */
+    remind?: boolean;
 };
 
 const KIND_ICON = {
@@ -157,7 +159,7 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                     type="button"
                     onClick={() =>
                         rsvp(
-                            event.kind === 'clan'
+                            event.remind || event.kind === 'clan'
                                 ? event.status !== 'going'
                                 : true,
                         )
@@ -170,7 +172,13 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                     )}
                 >
                     <Check className="size-4" />{' '}
-                    {game ? tr('Цікаво') : tr('Піду')}
+                    {event.remind
+                        ? event.status === 'going'
+                            ? tr('Нагадаємо')
+                            : tr('Нагадати')
+                        : game
+                          ? tr('Цікаво')
+                          : tr('Піду')}
                 </button>
                 {event.can_decline && (
                     <button

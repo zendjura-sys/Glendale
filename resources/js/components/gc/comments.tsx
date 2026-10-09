@@ -41,6 +41,7 @@ export function Comments({
     const [comments, setComments] = useState(initial);
     const [loadedAll, setLoadedAll] = useState(initial.length >= total);
     const [body, setBody] = useState('');
+    const [spoiler, setSpoiler] = useState(false);
     const [replyTo, setReplyTo] = useState<CommentItem | null>(null);
     const [sending, setSending] = useState(false);
     const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -65,10 +66,12 @@ export function Comments({
             }>('POST', endpoint, {
                 body,
                 parent_id: replyTo?.id ?? null,
+                spoiler,
             });
             setComments((list) => [...list, response.comment]);
             onCountChange(response.comments_count);
             setBody('');
+            setSpoiler(false);
             setReplyTo(null);
         } catch (error) {
             toast.error(
@@ -171,10 +174,14 @@ export function Comments({
                                             {parent.user.first_name},
                                         </span>
                                     )}
-                                    <CommentText
-                                        id={comment.id}
-                                        body={comment.body}
-                                    />
+                                    {comment.spoiler ? (
+                                        <SpoilerText text={comment.body} />
+                                    ) : (
+                                        <CommentText
+                                            id={comment.id}
+                                            body={comment.body}
+                                        />
+                                    )}
                                 </p>
                             </div>
                             <div className="mt-1 flex items-center gap-3 pl-2 text-xs text-white/40">
@@ -232,6 +239,14 @@ export function Comments({
                                 </button>
                             </div>
                         )}
+                        <label className="flex items-center gap-2 px-3.5 pt-2 text-xs text-white/55">
+                            <input
+                                type="checkbox"
+                                checked={spoiler}
+                                onChange={(event) => setSpoiler(event.target.checked)}
+                            />
+                            {tr('Спойлер')}
+                        </label>
                         <div className="flex items-end">
                             <textarea
                                 ref={inputRef}
@@ -269,6 +284,19 @@ export function Comments({
             )}
         </div>
     );
+}
+
+function SpoilerText({ text }: { text: string }) {
+    const [open, setOpen] = useState(false);
+    if (!open) {
+        return (
+            <button type="button" className="text-white/70 underline" onClick={() => setOpen(true)}>
+                {tr('Спойлер')}
+            </button>
+        );
+    }
+
+    return <MentionText text={text} />;
 }
 
 /** Текст коментаря з кнопкою «Перекласти». */

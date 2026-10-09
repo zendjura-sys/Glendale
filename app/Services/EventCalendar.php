@@ -120,6 +120,22 @@ class EventCalendar
     }
 
     /**
+     * Найближчі виходи ігор і сезони (оновлення). «Нагадати» — це запис «піду».
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function releases(User $user): array
+    {
+        return array_values($this->gameEvents($user)
+            ->whereIn('type', ['release', 'update'])
+            ->whereBetween('starts_at', [now()->subDay(), now()->addDays(120)])
+            ->limit(80)
+            ->get()
+            ->map(fn (GameEvent $event) => [...$this->gameItem($event, $user), 'remind' => true])
+            ->all());
+    }
+
+    /**
      * Події одного сервера (для його сторінки).
      *
      * @return list<array<string, mixed>>
@@ -169,7 +185,10 @@ class EventCalendar
 
     public function rsvpGame(GameEvent $event, User $user, bool $going): void
     {
-        abort_if(($event->ends_at ?? $event->starts_at)->lt(now()->subHours(3)), 422, 'Подія вже минула.');
+        $ended = $event->all_day
+            ? $event->starts_at->timezone('Europe/Kyiv')->toDateString() < now('Europe/Kyiv')->toDateString()
+            : ($event->ends_at ?? $event->starts_at)->lt(now()->subHours(3));
+        abort_if($ended, 422, 'Подія вже минула.');
         GameEventRsvp::query()->updateOrCreate(
             ['game_event_id' => $event->id, 'user_id' => $user->id],
             ['status' => $going ? GameEventRsvp::GOING : GameEventRsvp::DECLINED],
@@ -282,7 +301,21 @@ class EventCalendar
                 $count++;
             });
 
-        // Події ігор «на весь день» (виходи) не нагадуємо — лише шоукейси, трансляції, турніри.
+        // Виходи і сезони — на весь день: нагадуємо в день старту тим, хто натиснув «Нагадати».
+        $today = now('Europe/Kyiv')->toDateString();
+        GameEvent::query()->whereNull('reminded_at')->where('all_day', true)->whereIn('type', ['release', 'update'])
+            ->whereBetween('starts_at', [now()->subHours(36), now()->addHours(36)])->get()
+            ->each(function (GameEvent $e) use (&$count, $today) {
+                if ($e->starts_at->timezone('Europe/Kyiv')->toDateString() !== $today) {
+                    return;
+                }
+                $e->update(['reminded_at' => now()]);
+                $users = User::query()->whereIn('id', $e->rsvps()->where('status', GameEventRsvp::GOING)->select('user_id'))->get();
+                $this->send($users, "Сьогодні: «{$e->title}»", '/events/releases');
+                $count++;
+            });
+
+        // Шоукейси, трансляції й турніри — за пів години тим, хто записався.
         GameEvent::query()->whereNull('reminded_at')->where('all_day', false)->whereBetween('starts_at', $window)->get()
             ->each(function (GameEvent $e) use (&$count) {
                 $e->update(['reminded_at' => now()]);

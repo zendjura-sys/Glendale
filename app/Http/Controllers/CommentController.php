@@ -53,6 +53,7 @@ class CommentController extends Controller
         $data = $request->validate([
             'body' => ['required', 'string', 'max:2000'],
             'parent_id' => ['nullable', 'integer'],
+            'spoiler' => ['sometimes', 'boolean'],
         ]);
 
         $filter = app(ContentFilter::class);
@@ -68,6 +69,7 @@ class CommentController extends Controller
                 'user_id' => $user->id,
                 'parent_id' => $parentId,
                 'body' => trim($data['body']),
+                'spoiler' => (bool) ($data['spoiler'] ?? false),
             ]);
             $post->increment('comments_count');
 
@@ -75,7 +77,8 @@ class CommentController extends Controller
         });
 
         if ($post->author_id !== $user->id) {
-            $post->author->notify(new PostInteraction(PostInteraction::COMMENT, $user, $post, Str::limit($comment->body, 80)));
+            $excerpt = $comment->spoiler ? 'Спойлер' : Str::limit($comment->body, 80);
+            $post->author->notify(new PostInteraction(PostInteraction::COMMENT, $user, $post, $excerpt));
         }
 
         app(Mentions::class)->notify($user, $comment->body, route('posts.show', $post, absolute: false));

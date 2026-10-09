@@ -17,13 +17,19 @@ use Illuminate\Support\Carbon;
  * @property int $user_id
  * @property int|null $parent_id
  * @property string $body
+ * @property bool $spoiler
  * @property int $likes_count
  * @property Carbon $created_at
  */
-#[Fillable(['post_id', 'photo_id', 'movie_id', 'user_id', 'parent_id', 'body'])]
+#[Fillable(['post_id', 'photo_id', 'movie_id', 'user_id', 'parent_id', 'body', 'spoiler'])]
 class Comment extends Model
 {
     use SoftDeletes;
+
+    protected function casts(): array
+    {
+        return ['spoiler' => 'boolean'];
+    }
 
     /**
      * @return BelongsTo<Post, $this>

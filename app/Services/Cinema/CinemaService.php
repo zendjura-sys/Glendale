@@ -239,13 +239,27 @@ class CinemaService
     }
 
     /**
-     * @return array{status: string|null, rating: int|null}
+     * @return array{status: string|null, rating: int|null, season: int|null, episode: int|null}
      */
     public function stateFor(Movie $movie, User $user): array
     {
-        $row = DB::table('movie_user')->where('user_id', $user->id)->where('movie_id', $movie->id)->first(['status', 'rating']);
+        $row = DB::table('movie_user')->where('user_id', $user->id)->where('movie_id', $movie->id)->first(['status', 'rating', 'season', 'episode']);
 
-        return ['status' => $row->status ?? null, 'rating' => isset($row->rating) ? (int) $row->rating : null];
+        return [
+            'status' => $row->status ?? null,
+            'rating' => isset($row->rating) ? (int) $row->rating : null,
+            'season' => isset($row->season) ? (int) $row->season : null,
+            'episode' => isset($row->episode) ? (int) $row->episode : null,
+        ];
+    }
+
+    public function progress(User $user, Movie $movie, ?int $season, int $episode): void
+    {
+        $this->upsert($user, $movie, [
+            'status' => 'watching',
+            'season' => $season,
+            'episode' => $episode,
+        ]);
     }
 
     public function setStatus(User $user, Movie $movie, ?string $status): void

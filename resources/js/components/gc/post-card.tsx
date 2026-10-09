@@ -66,6 +66,7 @@ export function PostCard({
     const [fullText, setFullText] = useState(expanded);
     const [deleted, setDeleted] = useState(false);
     const [poll, setPoll] = useState(post.poll ?? null);
+    const [spoilerOpen, setSpoilerOpen] = useState(false);
 
     const Visibility = visibilityMeta[post.visibility].icon;
     const publisherHref = post.publisher?.href ?? `/${post.author.username}`;
@@ -209,7 +210,15 @@ export function PostCard({
                 </DropdownMenu>
             </header>
 
-            {body && (
+            {body && post.spoiler && !spoilerOpen ? (
+                <button
+                    type="button"
+                    onClick={() => setSpoilerOpen(true)}
+                    className="mt-3.5 rounded-xl bg-white/10 px-3 py-2 text-sm text-white/70"
+                >
+                    {tr('Спойлер')}
+                </button>
+            ) : body && (
                 <div className="mt-3.5 text-[15px] leading-relaxed break-words whitespace-pre-line text-white/90">
                     {isLong && !fullText ? (
                         <MentionText text={`${body.slice(0, LONG_TEXT).trimEnd()}…`} />

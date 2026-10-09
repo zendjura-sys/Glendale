@@ -79,6 +79,7 @@ class PostController extends Controller
             'poll.options' => ['required_with:poll', 'array', 'min:2', 'max:4'],
             'poll.options.*' => ['required', 'string', 'max:80'],
             'visibility' => ['required', Rule::in(Post::VISIBILITIES)],
+            'spoiler' => ['sometimes', 'boolean'],
             'wall' => ['nullable', 'string', 'exists:users,username'],
             'community' => ['nullable', 'string'],
             'as_community' => ['nullable', 'boolean'],
@@ -146,6 +147,7 @@ class PostController extends Controller
                 'link' => app(YoutubePreview::class)->fromText($data['body'] ?? null),
                 'card' => $card,
                 'visibility' => $data['visibility'],
+                'spoiler' => (bool) ($data['spoiler'] ?? false),
             ]);
 
             if (isset($data['poll'])) {
@@ -178,7 +180,8 @@ class PostController extends Controller
         });
 
         if ($wallOwner instanceof User && $wallOwner->isNot($user)) {
-            $wallOwner->notify(new PostInteraction(PostInteraction::WALL, $user, $post, Str::limit((string) $post->body, 80)));
+            $excerpt = $post->spoiler ? 'Спойлер' : Str::limit((string) $post->body, 80);
+            $wallOwner->notify(new PostInteraction(PostInteraction::WALL, $user, $post, $excerpt));
         }
 
         app(Mentions::class)->notify($user, $post->body, route('posts.show', $post, absolute: false));

@@ -40,6 +40,13 @@ class EventController extends Controller
             : Inertia::render('events/index', $props);
     }
 
+    public function releases(Request $request): Response
+    {
+        return Inertia::render('releases/index', [
+            'events' => $this->calendar->releases($this->user($request)),
+        ]);
+    }
+
     public function storeServer(Request $request, GtaServer $server): RedirectResponse
     {
         $data = $request->validate([

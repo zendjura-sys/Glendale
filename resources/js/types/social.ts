@@ -46,6 +46,7 @@ export type Attachment = {
 export type CommentItem = {
     id: number;
     body: string;
+    spoiler?: boolean;
     parent_id: number | null;
     likes_count: number;
     liked: boolean;
@@ -59,6 +60,7 @@ export type Visibility = 'public' | 'friends' | 'private';
 export type PostItem = {
     id: number;
     body: string | null;
+    spoiler?: boolean;
     visibility: Visibility;
     is_pinned: boolean;
     comments_enabled: boolean;

@@ -67,8 +67,10 @@ export function PostComposer({
         as_community: boolean;
         images: File[];
         poll: { question: string; options: string[] } | null;
+        spoiler: boolean;
     }>({
         body: '',
+        spoiler: false,
         visibility: 'public',
         wall: wall?.username ?? null,
         community: community?.slug ?? null,
@@ -139,7 +141,7 @@ export function PostComposer({
             forceFormData: true,
             preserveScroll: true,
             onSuccess: () => {
-                form.reset('body', 'images', 'poll');
+                form.reset('body', 'images', 'poll', 'spoiler');
                 setTrack(null);
                 setCard(null);
                 setPickingCard(false);
@@ -390,6 +392,16 @@ export function PostComposer({
                 >
                     <ImagePlus className="size-[18px] text-[#6fa2ff]" />
                     <span className="hidden sm:inline">{tr('Фото')}</span>
+                </button>
+                <button
+                    type="button"
+                    onClick={() => form.setData('spoiler', !form.data.spoiler)}
+                    className={cn(
+                        'inline-flex h-9 items-center gap-2 rounded-xl px-2.5 text-sm font-medium transition hover:bg-white/[0.06] hover:text-white sm:px-3',
+                        form.data.spoiler ? 'text-white' : 'text-white/65',
+                    )}
+                >
+                    <span className="hidden sm:inline">{tr('Спойлер')}</span>
                 </button>
                 <button
                     type="button"
