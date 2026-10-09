@@ -1,11 +1,19 @@
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { MapPin } from 'lucide-react';
+import { useState } from 'react';
 import { plural } from '@/lib/format';
-import type { PersonCard as Person } from '@/types';
+import type { FriendList, PersonCard as Person } from '@/types';
 import { FriendButton } from './friend-button';
 import { PlayingBadge } from './playing';
 import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
+import { tr } from '@/lib/i18n';
+
+const listLabel: Record<FriendList, string> = {
+    raid: tr('Рейд'),
+    cinema: tr('Кіно'),
+    work: tr('Робота'),
+};
 
 export function PersonCard({ person }: { person: Person }) {
     return (
@@ -18,9 +26,20 @@ export function PersonCard({ person }: { person: Person }) {
                 href={`/${person.username}`}
                 className="relative mt-3 flex max-w-full items-center gap-1 truncate text-[15px] font-semibold text-white hover:underline"
             >
-                <span className="truncate">{person.name}</span>
+                <span className="truncate">{person.alias || person.name}</span>
                 {person.is_verified && <VerifiedBadge />}
             </Link>
+            {person.alias && (
+                <p className="relative mt-0.5 truncate text-xs text-white/40">{person.name}</p>
+            )}
+            {person.list && (
+                <span className="relative mt-1 rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-white/70">
+                    {listLabel[person.list]}
+                </span>
+            )}
+            {person.note && (
+                <p className="relative mt-1 line-clamp-2 text-xs text-white/55">{person.note}</p>
+            )}
             {person.playing && (
                 <PlayingBadge
                     playing={person.playing}
@@ -46,16 +65,78 @@ export function PersonCard({ person }: { person: Person }) {
                 )}
             </div>
             {person.relation && (
-                <div className="relative mt-4 w-full">
+                <div className="relative mt-4 w-full space-y-2">
                     <FriendButton
                         username={person.username}
                         relation={person.relation}
                         size="sm"
                         className="w-full"
                     />
+                    {person.markable && <FriendMarkForm person={person} />}
                 </div>
             )}
         </div>
+    );
+}
+
+function FriendMarkForm({ person }: { person: Person }) {
+    const [open, setOpen] = useState(false);
+    const [nickname, setNickname] = useState(person.alias ?? '');
+    const [note, setNote] = useState(person.note ?? '');
+    const [list, setList] = useState<FriendList | ''>(person.list ?? '');
+
+    if (!open) {
+        return (
+            <button
+                type="button"
+                onClick={() => setOpen(true)}
+                className="text-xs text-white/45 hover:text-white"
+            >
+                {tr('Позначка')}
+            </button>
+        );
+    }
+
+    return (
+        <form
+            className="space-y-1.5 text-left"
+            onSubmit={(event) => {
+                event.preventDefault();
+                router.put(
+                    `/friends/${person.username}/mark`,
+                    { nickname, note, list: list || null },
+                    { preserveScroll: true, onSuccess: () => setOpen(false) },
+                );
+            }}
+        >
+            <input
+                value={nickname}
+                onChange={(event) => setNickname(event.target.value)}
+                maxLength={40}
+                placeholder={tr('Своє ім’я')}
+                className="input-glass h-8 w-full rounded-lg px-2 text-xs text-white placeholder:text-white/30 focus:outline-none"
+            />
+            <input
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                maxLength={280}
+                placeholder={tr('Нотатка лише для вас')}
+                className="input-glass h-8 w-full rounded-lg px-2 text-xs text-white placeholder:text-white/30 focus:outline-none"
+            />
+            <select
+                value={list}
+                onChange={(event) => setList(event.target.value as FriendList | '')}
+                className="input-glass h-8 w-full rounded-lg px-2 text-xs text-white focus:outline-none"
+            >
+                <option value="">{tr('Без списку')}</option>
+                <option value="raid">{tr('Рейд')}</option>
+                <option value="cinema">{tr('Кіно')}</option>
+                <option value="work">{tr('Робота')}</option>
+            </select>
+            <button type="submit" className="h-8 w-full rounded-lg bg-white text-xs font-medium text-black">
+                {tr('Зберегти')}
+            </button>
+        </form>
     );
 }
 

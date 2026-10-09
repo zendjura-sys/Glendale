@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FriendMark;
 use App\Models\Photo;
 use App\Models\PhotoAlbum;
 use App\Models\Post;
@@ -85,6 +86,10 @@ class ProfileController extends Controller
             ])->all() : [];
         }
 
+        $mark = $viewer && $relation === FriendshipService::FRIENDS
+            ? FriendMark::query()->where('user_id', $viewer->id)->where('friend_id', $user->id)->first()
+            : null;
+
         return Inertia::render('profile/show', [
             'profile' => [
                 ...$user->toCard(),
@@ -103,6 +108,9 @@ class ProfileController extends Controller
                 'looking_for_group' => (bool) $user->pref('looking_for_group'),
                 'languages' => array_values(array_filter((array) $user->pref('languages', []), 'is_string')),
                 'platforms' => $canSeeContent ? $this->platforms($user) : null,
+                'alias' => $mark?->nickname,
+                'note' => $mark?->note,
+                'list' => $mark?->list,
             ],
             'steamLibrary' => $canSeeContent ? app(SteamPresence::class)->library($user) : [],
             'together' => $canSeeContent ? app(PlayedTogether::class)->cards($user) : [],

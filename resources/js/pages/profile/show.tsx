@@ -58,6 +58,9 @@ type Profile = UserCard & {
     looking_for_group?: boolean;
     languages?: string[];
     pin?: { title: string; hint: string; href: string } | null;
+    alias?: string | null;
+    note?: string | null;
+    list?: 'raid' | 'cinema' | 'work' | null;
     platforms?: {
         steam: string | null;
         xbox: string | null;
@@ -240,7 +243,7 @@ export default function ProfileShow({
                         <div className="min-w-0 flex-1 pb-1">
                             <div className="flex flex-wrap items-center gap-2">
                                 <h1 className="font-display text-2xl font-bold tracking-tight text-white sm:text-[30px]">
-                                    {profile.name}
+                                    {profile.alias || profile.name}
                                 </h1>
                                 {profile.is_verified && (
                                     <VerifiedBadge className="size-6" />
@@ -252,6 +255,12 @@ export default function ProfileShow({
                                     </span>
                                 )}
                             </div>
+                            {profile.alias && (
+                                <p className="mt-1 text-sm text-white/45">{profile.name}</p>
+                            )}
+                            {profile.note && (
+                                <p className="mt-1 text-sm text-white/60">{profile.note}</p>
+                            )}
                             {profile.status && (
                                 <p className="mt-1.5 text-[15px] text-white/75">
                                     {profile.status}

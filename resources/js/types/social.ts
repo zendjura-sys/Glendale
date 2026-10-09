@@ -29,10 +29,16 @@ export type UserCard = {
 
 export type Relation = 'none' | 'friends' | 'outgoing' | 'incoming' | 'self';
 
+export type FriendList = 'raid' | 'cinema' | 'work';
+
 export type PersonCard = UserCard & {
     city?: string | null;
     relation?: Relation;
     mutual?: number;
+    alias?: string | null;
+    note?: string | null;
+    list?: FriendList | null;
+    markable?: boolean;
 };
 
 export type Attachment = {

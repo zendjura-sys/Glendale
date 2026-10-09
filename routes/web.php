@@ -96,6 +96,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('friends', [FriendController::class, 'index'])->name('friends.index');
         Route::post('friends/{user}', [FriendController::class, 'store'])->middleware('throttle:60,1')->name('friends.store');
         Route::post('friends/{user}/accept', [FriendController::class, 'accept'])->name('friends.accept');
+        Route::put('friends/{user}/mark', [FriendController::class, 'mark'])->name('friends.mark');
         Route::delete('friends/{user}', [FriendController::class, 'destroy'])->name('friends.destroy');
     });
 
