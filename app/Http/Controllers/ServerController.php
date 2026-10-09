@@ -29,6 +29,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -48,6 +49,7 @@ class ServerController extends Controller
             'q' => ['nullable', 'string', 'max:60'],
             'sort' => ['nullable', Rule::in(['online', 'name', 'new', 'families'])],
             'lang' => ['nullable', 'string', Rule::in(['all', ...array_keys(GtaServer::LANGUAGES)])],
+            'tag' => ['nullable', Rule::in(['rp', 'pvp', 'mixed'])],
         ]);
         $sort = $filters['sort'] ?? 'online';
         $savedOnly = $request->boolean('saved');
@@ -64,6 +66,7 @@ class ServerController extends Controller
             ->when($filters['platform'] ?? null, fn (Builder $q, string $p) => $q->where('platform', $p))
             ->when($filters['q'] ?? null, fn (Builder $q, string $term) => $q->where('name', 'like', '%'.str_replace(['%', '_'], ['\%', '\_'], $term).'%'))
             ->when($savedOnly, fn (Builder $q) => $q->whereIn('id', $favoriteIds))
+            ->when($filters['tag'] ?? null, fn (Builder $q, string $tag) => $q->where('tags->mode', $tag))
             ->get();
 
         $servers = match ($sort) {
@@ -77,7 +80,7 @@ class ServerController extends Controller
 
         return Inertia::render('servers/index', [
             'servers' => $servers->values()->map(fn (GtaServer $s) => $s->toCard()),
-            'filters' => ['platform' => $filters['platform'] ?? null, 'q' => $filters['q'] ?? '', 'sort' => $sort, 'lang' => $lang, 'saved' => $savedOnly],
+            'filters' => ['platform' => $filters['platform'] ?? null, 'q' => $filters['q'] ?? '', 'sort' => $sort, 'lang' => $lang, 'saved' => $savedOnly, 'tag' => $filters['tag'] ?? null],
             'favorites' => GtaServer::query()->published()->whereIn('id', $favoriteIds)->get()
                 ->sortBy(fn (GtaServer $server) => $favoriteIds->search($server->id))
                 ->values()
@@ -161,7 +164,26 @@ class ServerController extends Controller
             'invites' => $this->inviteTargets($request->user(), $server),
             'reviews' => $this->reviews($server, $request->user()),
             'ownership' => $this->ownership($server, $request->user()),
+            'online' => $this->onlineSeries($server),
+            'similar' => $this->similarServers($server),
         ]);
+    }
+
+    public function tags(Request $request, GtaServer $server): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($server->owner_id === $user->id || $user->isStaff(), 403);
+        $data = $request->validate([
+            'mode' => ['required', Rule::in(['rp', 'pvp', 'mixed'])],
+            'region' => ['nullable', 'string', 'max:40'],
+        ]);
+        $server->forceFill(['tags' => [
+            'mode' => $data['mode'],
+            'region' => trim((string) ($data['region'] ?? '')) ?: null,
+        ]])->save();
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Теги збережено.']);
+
+        return back();
     }
 
     public function claim(Request $request, GtaServer $server): RedirectResponse
@@ -410,6 +432,7 @@ class ServerController extends Controller
         return [
             'owner' => $server->owner?->toCard(),
             'is_owner' => $server->owner_id === $viewer->id,
+            'can_tag' => $server->owner_id === $viewer->id || $viewer->isStaff(),
             'claim' => $mine?->status,
             'news' => ServerNews::query()->with('user')->where('gta_server_id', $server->id)->latest('id')->limit(5)->get()
                 ->map(fn (ServerNews $item) => [
@@ -425,6 +448,40 @@ class ServerController extends Controller
                 'message' => $claim->message,
             ])->values(),
         ];
+    }
+
+    /**
+     * @return list<array{day: string, players: int}>
+     */
+    private function onlineSeries(GtaServer $server): array
+    {
+        return DB::table('server_online_samples')
+            ->where('gta_server_id', $server->id)
+            ->orderByDesc('sampled_on')
+            ->limit(14)
+            ->get(['sampled_on', 'players_online'])
+            ->reverse()
+            ->map(fn ($row) => ['day' => (string) $row->sampled_on, 'players' => (int) $row->players_online])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function similarServers(GtaServer $server): array
+    {
+        return GtaServer::query()->published()
+            ->whereKeyNot($server->id)
+            ->where(function (Builder $query) use ($server) {
+                $query->where('multiplayer', $server->multiplayer)->orWhere('language', $server->language);
+            })
+            ->orderByRaw('case when multiplayer = ? then 0 else 1 end', [$server->multiplayer])
+            ->orderByDesc('players_online')
+            ->limit(4)
+            ->get()
+            ->map(fn (GtaServer $item) => $item->toCard())
+            ->all();
     }
 
     private function publishedBySlug(?string $slug): ?GtaServer

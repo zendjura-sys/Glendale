@@ -37,6 +37,7 @@ type Props = {
         sort: string;
         lang: string;
         saved: boolean;
+        tag: string | null;
     };
     favorites: GtaServerCard[];
     heading: string | null;
@@ -96,6 +97,7 @@ export default function Servers({
                 sort: next.sort === 'online' ? undefined : next.sort,
                 lang: next.lang,
                 saved: next.saved || undefined,
+                tag: next.tag || undefined,
             },
             { preserveState: true, preserveScroll: true, replace: true },
         );
@@ -238,6 +240,17 @@ export default function Servers({
                                 ))}
                             </select>
                         )}
+                        <select
+                            value={filters.tag ?? ''}
+                            onChange={(e) => visit({ tag: e.target.value || null })}
+                            className={cn(selectClass, 'h-11')}
+                            aria-label={tr('Тег сервера')}
+                        >
+                            <option value="">{tr('Усі теги')}</option>
+                            <option value="rp">{tr('RP')}</option>
+                            <option value="pvp">{tr('PvP')}</option>
+                            <option value="mixed">{tr('RP і PvP')}</option>
+                        </select>
                         <select
                             value={filters.sort}
                             onChange={(e) => visit({ sort: e.target.value })}

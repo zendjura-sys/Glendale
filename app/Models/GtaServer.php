@@ -44,6 +44,7 @@ use Illuminate\Support\Facades\Storage;
  * @property int|null $families_count
  * @property string|null $discord_guild_id
  * @property string $language
+ * @property array{mode?: string, region?: string|null}|null $tags
  * @property Carbon|null $discord_events_at
  * @property Carbon $created_at
  * @property-read string|null $icon
@@ -136,6 +137,7 @@ class GtaServer extends Model
             'icon_fetched_at' => 'datetime',
             'stats_updated_at' => 'datetime',
             'discord_events_at' => 'datetime',
+            'tags' => 'array',
         ];
     }
 
@@ -217,6 +219,10 @@ class GtaServer extends Model
             'stats_updated_at' => $this->stats_updated_at?->toIso8601String(),
             'is_featured' => $this->is_featured,
             'families_count' => (int) ($this->families_count ?? 0),
+            'tags' => [
+                'mode' => is_array($this->tags) ? ($this->tags['mode'] ?? null) : null,
+                'region' => is_array($this->tags) ? ($this->tags['region'] ?? null) : null,
+            ],
         ];
     }
 }

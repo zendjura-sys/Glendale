@@ -51,10 +51,13 @@ type Props = {
     ownership: {
         owner: UserCard | null;
         is_owner: boolean;
+        can_tag: boolean;
         claim: string | null;
         news: { id: number; body: string; name: string }[];
         pending: { id: number; name: string; username: string; message: string | null }[];
     };
+    online: { day: string; players: number }[];
+    similar: GtaServerCard[];
 };
 
 export default function ServerShow({
@@ -72,6 +75,8 @@ export default function ServerShow({
     invites,
     reviews,
     ownership,
+    online,
+    similar,
 }: Props) {
     const [inviteUsername, setInviteUsername] = useState('');
     const [inviteTarget, setInviteTarget] = useState(invites[0] ? `${invites[0].kind}:${invites[0].id}` : '');
@@ -403,6 +408,68 @@ export default function ServerShow({
                                             {tr('балів')}
                                         </span>
                                     </span>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
+                </section>
+
+                <section className="glass space-y-4 rounded-3xl p-5">
+                    <h2 className="font-display text-xl font-bold text-white">{tr('Онлайн за два тижні')}</h2>
+                    {online.length === 0 ? (
+                        <p className="text-sm text-white/45">{tr('Ще немає зрізів онлайну.')}</p>
+                    ) : (
+                        <div className="flex h-24 items-end gap-1">
+                            {online.map((point) => {
+                                const peak = Math.max(...online.map((row) => row.players), 1);
+
+                                return (
+                                    <div key={point.day} className="flex flex-1 flex-col items-center gap-1">
+                                        <div
+                                            className="w-full rounded-t bg-emerald-300/80"
+                                            style={{ height: `${Math.max(8, (point.players / peak) * 72)}px` }}
+                                            title={`${point.day}: ${point.players}`}
+                                        />
+                                        <span className="text-[10px] text-white/35">{point.players}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-white/70">
+                        {server.tags?.mode && (
+                            <span className="rounded-full bg-white/10 px-2 py-0.5">{server.tags.mode.toUpperCase()}</span>
+                        )}
+                        {server.tags?.region && (
+                            <span className="rounded-full bg-white/10 px-2 py-0.5">{server.tags.region}</span>
+                        )}
+                    </div>
+                    {ownership.can_tag && (
+                        <form
+                            className="flex flex-wrap gap-2"
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                const data = new FormData(event.currentTarget);
+                                router.post(`/servers/${server.slug}/tags`, {
+                                    mode: String(data.get('mode') ?? ''),
+                                    region: String(data.get('region') ?? ''),
+                                });
+                            }}
+                        >
+                            <select name="mode" defaultValue={server.tags?.mode ?? 'rp'} className="h-10 rounded-xl bg-white/10 px-3 text-sm text-white">
+                                <option value="rp">RP</option>
+                                <option value="pvp">PvP</option>
+                                <option value="mixed">{tr('RP і PvP')}</option>
+                            </select>
+                            <input name="region" defaultValue={server.tags?.region ?? ''} placeholder={tr('Регіон')} className="input-glass h-10 rounded-xl px-3 text-sm text-white" />
+                            <button type="submit" className="h-10 rounded-xl bg-white px-3 text-sm font-semibold text-black">{tr('Зберегти теги')}</button>
+                        </form>
+                    )}
+                    {similar.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                            {similar.map((item) => (
+                                <Link key={item.id} href={`/servers/${item.slug}`} className="rounded-full bg-white/10 px-3 py-1 text-sm text-white/80 hover:text-white">
+                                    {item.name}
                                 </Link>
                             ))}
                         </div>

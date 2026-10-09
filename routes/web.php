@@ -362,6 +362,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('{server}/claim', [ServerController::class, 'claim'])->middleware('throttle:10,1')->name('claim');
         Route::post('{server}/claims/{claim}', [ServerController::class, 'decideClaim'])->name('claims.decide');
         Route::post('{server}/news', [ServerController::class, 'news'])->middleware('throttle:20,1')->name('news.store');
+        Route::post('{server}/tags', [ServerController::class, 'tags'])->name('tags');
         Route::post('{server}/reviews', [ServerController::class, 'review'])->middleware('throttle:20,1')->name('reviews.store');
     });
 
