@@ -243,17 +243,21 @@ export default function Servers({
                                 ))}
                             </select>
                         )}
-                        {tagsOn && <select
-                            value={filters.tag ?? ''}
-                            onChange={(e) => visit({ tag: e.target.value || null })}
-                            className={cn(selectClass, 'h-11')}
-                            aria-label={tr('Тег сервера')}
-                        >
-                            <option value="">{tr('Усі теги')}</option>
-                            <option value="rp">{tr('RP')}</option>
-                            <option value="pvp">{tr('PvP')}</option>
-                            <option value="mixed">{tr('RP і PvP')}</option>
-                        </select>}
+                        {tagsOn && (
+                            <select
+                                value={filters.tag ?? ''}
+                                onChange={(e) =>
+                                    visit({ tag: e.target.value || null })
+                                }
+                                className={cn(selectClass, 'h-11')}
+                                aria-label={tr('Тег сервера')}
+                            >
+                                <option value="">{tr('Усі теги')}</option>
+                                <option value="rp">{tr('RP')}</option>
+                                <option value="pvp">{tr('PvP')}</option>
+                                <option value="mixed">{tr('RP і PvP')}</option>
+                            </select>
+                        )}
                         <select
                             value={filters.sort}
                             onChange={(e) => visit({ sort: e.target.value })}
@@ -265,16 +269,20 @@ export default function Servers({
                                 </option>
                             ))}
                         </select>
-                        {favoritesOn && <button
-                            type="button"
-                            onClick={() => visit({ saved: !filters.saved })}
-                            className={cn(
-                                'inline-flex h-11 shrink-0 items-center rounded-xl px-4 text-sm font-semibold',
-                                filters.saved ? 'bg-white text-black' : 'bg-white/10 text-white',
-                            )}
-                        >
-                            {tr('Обрані')}
-                        </button>}
+                        {favoritesOn && (
+                            <button
+                                type="button"
+                                onClick={() => visit({ saved: !filters.saved })}
+                                className={cn(
+                                    'inline-flex h-11 shrink-0 items-center rounded-xl px-4 text-sm font-semibold',
+                                    filters.saved
+                                        ? 'bg-white text-black'
+                                        : 'bg-white/10 text-white',
+                                )}
+                            >
+                                {tr('Обрані')}
+                            </button>
+                        )}
                         <button
                             type="button"
                             onClick={() => setSuggesting(true)}
@@ -321,10 +329,16 @@ export default function Servers({
 
                 {favoritesOn && favorites.length > 0 && !filters.saved && (
                     <section className="space-y-3">
-                        <h2 className="font-display text-xl font-bold text-white">{tr('Обрані')}</h2>
+                        <h2 className="font-display text-xl font-bold text-white">
+                            {tr('Обрані')}
+                        </h2>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                             {favorites.map((server, index) => (
-                                <ServerCard key={server.id} server={server} index={index} />
+                                <ServerCard
+                                    key={server.id}
+                                    server={server}
+                                    index={index}
+                                />
                             ))}
                         </div>
                     </section>

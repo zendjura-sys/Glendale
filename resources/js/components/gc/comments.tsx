@@ -165,7 +165,7 @@ export function Comments({
             {!loadedAll && total > comments.length && (
                 <button
                     type="button"
-                    onClick={loadAll}
+                    onClick={() => void loadAll()}
                     className="text-[13px] font-medium text-gc-lilac-300 hover:text-white"
                 >
                     {tr('Показати всі')} {total}{' '}
@@ -210,108 +210,109 @@ export function Comments({
                     return a.id - b.id;
                 })
                 .map((comment) => {
-                const parent = comment.parent_id
-                    ? byId.get(comment.parent_id)
-                    : null;
+                    const parent = comment.parent_id
+                        ? byId.get(comment.parent_id)
+                        : null;
 
-                return (
-                    <div
-                        key={comment.id}
-                        className={cn(
-                            'group flex animate-rise gap-2.5',
-                            comment.parent_id && 'pl-10',
-                        )}
-                    >
-                        <Link href={`/${comment.user.username}`}>
-                            <UserAvatar user={comment.user} size="sm" />
-                        </Link>
-                        <div className="min-w-0 flex-1">
-                            <div className="inline-block max-w-full rounded-2xl rounded-tl-md bg-white/[0.045] px-3.5 py-2">
-                                {comment.is_pinned && (
-                                    <span className="mb-1 flex items-center gap-1 text-[11px] font-semibold text-gc-lilac-200">
-                                        <Pin className="size-3" /> {tr('Закріплено')}
+                    return (
+                        <div
+                            key={comment.id}
+                            className={cn(
+                                'group flex animate-rise gap-2.5',
+                                comment.parent_id && 'pl-10',
+                            )}
+                        >
+                            <Link href={`/${comment.user.username}`}>
+                                <UserAvatar user={comment.user} size="sm" />
+                            </Link>
+                            <div className="min-w-0 flex-1">
+                                <div className="inline-block max-w-full rounded-2xl rounded-tl-md bg-white/[0.045] px-3.5 py-2">
+                                    {comment.is_pinned && (
+                                        <span className="mb-1 flex items-center gap-1 text-[11px] font-semibold text-gc-lilac-200">
+                                            <Pin className="size-3" />{' '}
+                                            {tr('Закріплено')}
+                                        </span>
+                                    )}
+                                    <Link
+                                        href={`/${comment.user.username}`}
+                                        className="flex items-center gap-1 text-[13px] font-semibold text-white hover:underline"
+                                    >
+                                        {comment.user.name}
+                                        {comment.user.is_verified && (
+                                            <VerifiedBadge className="size-3" />
+                                        )}
+                                    </Link>
+                                    <p className="text-[14px] leading-snug break-words whitespace-pre-line text-white/85">
+                                        {parent && (
+                                            <span className="mr-1 text-gc-lilac-300">
+                                                {parent.user.first_name},
+                                            </span>
+                                        )}
+                                        {comment.sticker && (
+                                            <span className="mr-1 text-2xl leading-none">
+                                                {comment.sticker}
+                                            </span>
+                                        )}
+                                        {comment.spoiler ? (
+                                            <SpoilerText text={comment.body} />
+                                        ) : (
+                                            comment.body && (
+                                                <CommentText
+                                                    id={comment.id}
+                                                    body={comment.body}
+                                                />
+                                            )
+                                        )}
+                                    </p>
+                                </div>
+                                <div className="mt-1 flex items-center gap-3 pl-2 text-xs text-white/40">
+                                    <span>{timeAgo(comment.created_at)}</span>
+                                    {canComment && (
+                                        <button
+                                            type="button"
+                                            className="font-medium hover:text-white"
+                                            onClick={() => {
+                                                setReplyTo(comment);
+                                                inputRef.current?.focus();
+                                            }}
+                                        >
+                                            {tr('Відповісти')}
+                                        </button>
+                                    )}
+                                    {comment.can_pin && (
+                                        <button
+                                            type="button"
+                                            className="font-medium hover:text-white"
+                                            onClick={() => void pin(comment)}
+                                        >
+                                            {comment.is_pinned
+                                                ? tr('Відкріпити')
+                                                : tr('Закріпити')}
+                                        </button>
+                                    )}
+                                    {comment.can_delete && (
+                                        <button
+                                            type="button"
+                                            className="opacity-0 transition group-hover:opacity-100 hover:text-rose-300 [@media(hover:none)]:opacity-100"
+                                            onClick={() => remove(comment)}
+                                            aria-label={tr('Видалити коментар')}
+                                        >
+                                            <Trash2 className="size-3.5" />
+                                        </button>
+                                    )}
+                                    <span className="ml-auto">
+                                        <LikeButton
+                                            size="sm"
+                                            liked={comment.liked}
+                                            count={comment.likes_count}
+                                            onToggle={() => toggleLike(comment)}
+                                        />
                                     </span>
-                                )}
-                                <Link
-                                    href={`/${comment.user.username}`}
-                                    className="flex items-center gap-1 text-[13px] font-semibold text-white hover:underline"
-                                >
-                                    {comment.user.name}
-                                    {comment.user.is_verified && (
-                                        <VerifiedBadge className="size-3" />
-                                    )}
-                                </Link>
-                                <p className="text-[14px] leading-snug break-words whitespace-pre-line text-white/85">
-                                    {parent && (
-                                        <span className="mr-1 text-gc-lilac-300">
-                                            {parent.user.first_name},
-                                        </span>
-                                    )}
-                                    {comment.sticker && (
-                                        <span className="mr-1 text-2xl leading-none">
-                                            {comment.sticker}
-                                        </span>
-                                    )}
-                                    {comment.spoiler ? (
-                                        <SpoilerText text={comment.body} />
-                                    ) : (
-                                        comment.body && (
-                                            <CommentText
-                                                id={comment.id}
-                                                body={comment.body}
-                                            />
-                                        )
-                                    )}
-                                </p>
-                            </div>
-                            <div className="mt-1 flex items-center gap-3 pl-2 text-xs text-white/40">
-                                <span>{timeAgo(comment.created_at)}</span>
-                                {canComment && (
-                                    <button
-                                        type="button"
-                                        className="font-medium hover:text-white"
-                                        onClick={() => {
-                                            setReplyTo(comment);
-                                            inputRef.current?.focus();
-                                        }}
-                                    >
-                                        {tr('Відповісти')}
-                                    </button>
-                                )}
-                                {comment.can_pin && (
-                                    <button
-                                        type="button"
-                                        className="font-medium hover:text-white"
-                                        onClick={() => void pin(comment)}
-                                    >
-                                        {comment.is_pinned
-                                            ? tr('Відкріпити')
-                                            : tr('Закріпити')}
-                                    </button>
-                                )}
-                                {comment.can_delete && (
-                                    <button
-                                        type="button"
-                                        className="opacity-0 transition group-hover:opacity-100 hover:text-rose-300 [@media(hover:none)]:opacity-100"
-                                        onClick={() => remove(comment)}
-                                        aria-label={tr('Видалити коментар')}
-                                    >
-                                        <Trash2 className="size-3.5" />
-                                    </button>
-                                )}
-                                <span className="ml-auto">
-                                    <LikeButton
-                                        size="sm"
-                                        liked={comment.liked}
-                                        count={comment.likes_count}
-                                        onToggle={() => toggleLike(comment)}
-                                    />
-                                </span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                );
-            })}
+                    );
+                })}
 
             {canComment && (
                 <div className="flex items-end gap-2.5 pt-1">
@@ -334,20 +335,27 @@ export function Comments({
                             <input
                                 type="checkbox"
                                 checked={spoiler}
-                                onChange={(event) => setSpoiler(event.target.checked)}
+                                onChange={(event) =>
+                                    setSpoiler(event.target.checked)
+                                }
                             />
                             {tr('Спойлер')}
                             <button
                                 type="button"
                                 className="ml-auto text-white/70 hover:text-white"
-                                onClick={() => setPickingSticker((open) => !open)}
+                                onClick={() =>
+                                    setPickingSticker((open) => !open)
+                                }
                             >
                                 {tr('Стікер')}
                             </button>
                         </label>
                         {pickingSticker && (
                             <div className="px-3 pt-1">
-                                <StickerPicker value={sticker} onChange={setSticker} />
+                                <StickerPicker
+                                    value={sticker}
+                                    onChange={setSticker}
+                                />
                             </div>
                         )}
                         <div className="flex items-end">
@@ -403,7 +411,9 @@ function SpoilerText({ text }: { text: string }) {
                     }
                 }}
             >
-                {hideSpoilers ? tr('Спойлери приховано в налаштуваннях') : tr('Спойлер')}
+                {hideSpoilers
+                    ? tr('Спойлери приховано в налаштуваннях')
+                    : tr('Спойлер')}
             </button>
         );
     }

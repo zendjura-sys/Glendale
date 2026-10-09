@@ -23,7 +23,10 @@ export default function ReleasesIndex({ events }: Props) {
                     {tr(
                         'Найближчі виходи ігор і оновлення. Нагадування прийде в день старту.',
                     )}{' '}
-                    <Link href="/events" className="text-gc-lilac-200 hover:text-white">
+                    <Link
+                        href="/events"
+                        className="text-gc-lilac-200 hover:text-white"
+                    >
                         {tr('Усі події')}
                     </Link>
                 </p>

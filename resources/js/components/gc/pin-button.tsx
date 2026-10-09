@@ -19,7 +19,10 @@ export function PinButton({
         const previous = on;
         setOn(!previous);
         try {
-            const response = await api<{ pinned: boolean }>('POST', '/me/pin', { kind, id });
+            const response = await api<{ pinned: boolean }>('POST', '/me/pin', {
+                kind,
+                id,
+            });
             setOn(response.pinned);
         } catch {
             setOn(previous);

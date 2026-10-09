@@ -49,20 +49,27 @@ export default function AdminPlugins({ plugins }: { plugins: PluginItem[] }) {
                                         key={plugin.key}
                                         className={cn(
                                             'glass relative overflow-hidden rounded-3xl p-5',
-                                            plugin.enabled && 'border-gc-indigo/25',
+                                            plugin.enabled &&
+                                                'border-gc-indigo/25',
                                         )}
                                     >
                                         <div className="flex items-start gap-3">
                                             <div className="min-w-0 flex-1">
-                                                <h3 className="font-semibold text-white">{tr(plugin.name)}</h3>
+                                                <h3 className="font-semibold text-white">
+                                                    {tr(plugin.name)}
+                                                </h3>
                                                 <p className="mt-1 text-[13px] leading-relaxed text-white/50">
                                                     {tr(plugin.description)}
                                                 </p>
                                             </div>
                                             <Toggle
                                                 checked={plugin.enabled}
-                                                disabled={pending === plugin.key}
-                                                onChange={(value) => toggle(plugin, value)}
+                                                disabled={
+                                                    pending === plugin.key
+                                                }
+                                                onChange={(value) =>
+                                                    toggle(plugin, value)
+                                                }
                                                 label={plugin.name}
                                             />
                                         </div>
@@ -70,10 +77,14 @@ export default function AdminPlugins({ plugins }: { plugins: PluginItem[] }) {
                                             <span
                                                 className={cn(
                                                     'size-1.5 rounded-full',
-                                                    plugin.enabled ? 'bg-emerald-400' : 'bg-white/25',
+                                                    plugin.enabled
+                                                        ? 'bg-emerald-400'
+                                                        : 'bg-white/25',
                                                 )}
                                             />
-                                            {plugin.enabled ? tr('Увімкнено') : tr('Вимкнено')}
+                                            {plugin.enabled
+                                                ? tr('Увімкнено')
+                                                : tr('Вимкнено')}
                                             <code className="ml-auto rounded bg-white/[0.04] px-1.5 py-0.5 text-white/30">
                                                 {plugin.key}
                                             </code>

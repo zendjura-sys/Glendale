@@ -45,7 +45,10 @@ export default function JoinShow({ token, invite }: Props) {
                             <input
                                 value={form.data.rp_nickname}
                                 onChange={(event) =>
-                                    form.setData('rp_nickname', event.target.value)
+                                    form.setData(
+                                        'rp_nickname',
+                                        event.target.value,
+                                    )
                                 }
                                 placeholder={tr('Ім’я_Прізвище')}
                                 className="input-glass h-11 w-full rounded-xl px-3 text-sm text-white placeholder:text-white/35"
@@ -59,7 +62,10 @@ export default function JoinShow({ token, invite }: Props) {
                             <input
                                 value={form.data.static_id}
                                 onChange={(event) =>
-                                    form.setData('static_id', event.target.value)
+                                    form.setData(
+                                        'static_id',
+                                        event.target.value,
+                                    )
                                 }
                                 placeholder={tr('Static ID')}
                                 className="input-glass h-11 w-full rounded-xl px-3 text-sm text-white placeholder:text-white/35"

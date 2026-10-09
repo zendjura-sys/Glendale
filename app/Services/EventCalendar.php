@@ -222,7 +222,7 @@ class EventCalendar
     }
 
     /**
-     * @param  array{title: string, type: string, description: string|null, starts_at: CarbonInterface, family_id: int|null}  $data
+     * @param  array{title: string, type: string, description: string|null, starts_at: CarbonInterface, family_id: int|null, repeat?: string|null}  $data
      */
     public function createServerEvent(GtaServer $server, User $user, array $data): ServerEvent
     {

@@ -29,10 +29,13 @@ export function StickerPicker({
                 <button
                     key={item.key}
                     type="button"
-                    onClick={() => onChange(value === item.key ? null : item.key)}
+                    onClick={() =>
+                        onChange(value === item.key ? null : item.key)
+                    }
                     className={cn(
                         'flex size-9 items-center justify-center rounded-xl text-xl transition hover:bg-white/10',
-                        value === item.key && 'bg-white/10 ring-1 ring-white/20',
+                        value === item.key &&
+                            'bg-white/10 ring-1 ring-white/20',
                     )}
                     aria-pressed={value === item.key}
                 >

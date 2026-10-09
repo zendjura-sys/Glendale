@@ -31,7 +31,10 @@ export default function EventsIndex({ events, kind, kinds }: Props) {
                     {tr(
                         'Події ваших сімей, кланів, серверів та ігор. Події серверів з Discord і ігор з IGDB підтягуються самі. За пів години до початку прийде нагадування.',
                     )}{' '}
-                    <Link href="/events/releases" className="text-gc-lilac-200 hover:text-white">
+                    <Link
+                        href="/events/releases"
+                        className="text-gc-lilac-200 hover:text-white"
+                    >
                         {tr('Релізи і сезони')}
                     </Link>
                 </p>

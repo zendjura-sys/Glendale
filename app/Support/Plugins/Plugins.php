@@ -66,8 +66,14 @@ class Plugins
     private function items(): array
     {
         $items = config('plugins');
+        $out = [];
+        foreach (is_array($items) ? $items : [] as $item) {
+            if (is_array($item) && is_string($item['key'] ?? null) && is_string($item['group'] ?? null) && is_string($item['name'] ?? null) && is_string($item['description'] ?? null)) {
+                $out[] = ['key' => $item['key'], 'group' => $item['group'], 'name' => $item['name'], 'description' => $item['description']];
+            }
+        }
 
-        return is_array($items) ? array_values(array_filter($items, 'is_array')) : [];
+        return $out;
     }
 
     /**
@@ -76,7 +82,7 @@ class Plugins
     private function find(string $key): ?array
     {
         foreach ($this->items() as $item) {
-            if (($item['key'] ?? null) === $key) {
+            if ($item['key'] === $key) {
                 return $item;
             }
         }

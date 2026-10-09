@@ -60,6 +60,7 @@ class FollowAlerts
             ->groupBy('user_id')
             ->orderByDesc('shared')
             ->limit($limit)
+            ->toBase()
             ->get();
         $users = User::query()->whereIn('id', $rows->pluck('user_id'))->whereNull('banned_at')->get()->keyBy('id');
         $games = Game::query()->whereIn('id', $rows->pluck('game_id'))->get()->keyBy('id');

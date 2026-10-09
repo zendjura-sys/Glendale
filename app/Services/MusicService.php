@@ -234,7 +234,7 @@ class MusicService
      */
     public function similarTracks(Track $track): array
     {
-        return Track::query()
+        return array_values(Track::query()
             ->whereKeyNot($track->id)
             ->where(function (Builder $query) use ($track) {
                 $query->where('artist', $track->artist);
@@ -246,7 +246,7 @@ class MusicService
             ->orderByDesc('plays_count')
             ->limit(8)
             ->get()
-            ->all();
+            ->all());
     }
 
     /**

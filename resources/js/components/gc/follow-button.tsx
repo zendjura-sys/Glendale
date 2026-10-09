@@ -19,7 +19,11 @@ export function FollowButton({
         const previous = on;
         setOn(!previous);
         try {
-            const response = await api<{ following: boolean }>('POST', '/follows', { kind, id });
+            const response = await api<{ following: boolean }>(
+                'POST',
+                '/follows',
+                { kind, id },
+            );
             setOn(response.following);
         } catch {
             setOn(previous);

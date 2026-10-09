@@ -18,7 +18,10 @@ export default function Drafts({ drafts }: { drafts: Draft[] }) {
                     <h1 className="font-display text-2xl font-bold text-white">
                         {tr('Чернетки')}
                     </h1>
-                    <Link href="/feed" className="text-sm text-white/50 hover:text-white">
+                    <Link
+                        href="/feed"
+                        className="text-sm text-white/50 hover:text-white"
+                    >
                         {tr('До стрічки')}
                     </Link>
                 </div>
@@ -28,7 +31,10 @@ export default function Drafts({ drafts }: { drafts: Draft[] }) {
                     </p>
                 )}
                 {drafts.map((draft) => (
-                    <article key={draft.id} className="glass space-y-3 rounded-3xl p-5">
+                    <article
+                        key={draft.id}
+                        className="glass space-y-3 rounded-3xl p-5"
+                    >
                         <p className="text-sm whitespace-pre-line text-white/80">
                             {draft.body || tr('Без тексту')}
                         </p>
@@ -41,14 +47,18 @@ export default function Drafts({ drafts }: { drafts: Draft[] }) {
                             <button
                                 type="button"
                                 className="btn-glow ml-auto h-9 rounded-xl px-3 text-sm font-semibold"
-                                onClick={() => router.post(`/posts/${draft.id}/publish`)}
+                                onClick={() =>
+                                    router.post(`/posts/${draft.id}/publish`)
+                                }
                             >
                                 {tr('Опублікувати')}
                             </button>
                             <button
                                 type="button"
                                 className="h-9 rounded-xl px-3 text-sm text-rose-200 hover:text-rose-100"
-                                onClick={() => router.delete(`/posts/${draft.id}`)}
+                                onClick={() =>
+                                    router.delete(`/posts/${draft.id}`)
+                                }
                             >
                                 {tr('Видалити')}
                             </button>

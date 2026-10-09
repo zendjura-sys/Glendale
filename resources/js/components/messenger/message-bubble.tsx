@@ -286,19 +286,40 @@ export function MessageBubble({
                     )}
 
                     {(message.publish_at || message.expires_at) && (
-                        <p className={cn('mb-1 text-[11px]', own ? 'text-white/70' : 'text-white/45', hasImages && 'px-2 pt-1')}>
-                            {message.publish_at ? tr('Заплановано') : tr('Зникне за добу')}
+                        <p
+                            className={cn(
+                                'mb-1 text-[11px]',
+                                own ? 'text-white/70' : 'text-white/45',
+                                hasImages && 'px-2 pt-1',
+                            )}
+                        >
+                            {message.publish_at
+                                ? tr('Заплановано')
+                                : tr('Зникне за добу')}
                         </p>
                     )}
 
                     {message.forward && (
-                        <p className={cn('mb-1 text-xs', own ? 'text-white/75' : 'text-white/50', hasImages && 'px-2 pt-1')}>
+                        <p
+                            className={cn(
+                                'mb-1 text-xs',
+                                own ? 'text-white/75' : 'text-white/50',
+                                hasImages && 'px-2 pt-1',
+                            )}
+                        >
                             {message.forward.username ? (
-                                <Link href={`/${message.forward.username}`} className="hover:underline">
-                                    {tr('Переслано від {name}', { name: message.forward.name })}
+                                <Link
+                                    href={`/${message.forward.username}`}
+                                    className="hover:underline"
+                                >
+                                    {tr('Переслано від {name}', {
+                                        name: message.forward.name,
+                                    })}
                                 </Link>
                             ) : (
-                                tr('Переслано від {name}', { name: message.forward.name })
+                                tr('Переслано від {name}', {
+                                    name: message.forward.name,
+                                })
                             )}
                         </p>
                     )}
@@ -411,11 +432,19 @@ export function MessageBubble({
                             )}
                         >
                             {message.card.image && (
-                                <img src={message.card.image} alt="" className="size-10 rounded-lg object-cover" />
+                                <img
+                                    src={message.card.image}
+                                    alt=""
+                                    className="size-10 rounded-lg object-cover"
+                                />
                             )}
                             <span className="min-w-0">
-                                <span className="block text-[11px] opacity-60">{tr(message.card.hint)}</span>
-                                <span className="block truncate text-sm font-medium">{message.card.title}</span>
+                                <span className="block text-[11px] opacity-60">
+                                    {tr(message.card.hint)}
+                                </span>
+                                <span className="block truncate text-sm font-medium">
+                                    {message.card.title}
+                                </span>
                             </span>
                         </Link>
                     )}
@@ -497,14 +526,28 @@ export function MessageBubble({
                             <Forward className="size-3.5" />
                         </button>
                     )}
-                    {favoriteOn && <button
-                        type="button"
-                        className={cn(toolButton, message.starred && 'text-amber-300')}
-                        onClick={() => actions.onStar(message)}
-                        title={message.starred ? tr('Прибрати з обраних') : tr('В обране')}
-                    >
-                        <Star className={cn('size-3.5', message.starred && 'fill-current')} />
-                    </button>}
+                    {favoriteOn && (
+                        <button
+                            type="button"
+                            className={cn(
+                                toolButton,
+                                message.starred && 'text-amber-300',
+                            )}
+                            onClick={() => actions.onStar(message)}
+                            title={
+                                message.starred
+                                    ? tr('Прибрати з обраних')
+                                    : tr('В обране')
+                            }
+                        >
+                            <Star
+                                className={cn(
+                                    'size-3.5',
+                                    message.starred && 'fill-current',
+                                )}
+                            />
+                        </button>
+                    )}
                     {canDelete && (
                         <button
                             type="button"

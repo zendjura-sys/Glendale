@@ -163,8 +163,6 @@ class MessageController extends Controller
 
     /**
      * @param  array<string, mixed>  $data
-     */
-    /**
      * @param  array{kind: string, id: int, title: string, hint: string, href: string, image: string|null}|null  $card
      */
     private function sendText(Conversation $conversation, User $user, array $data, Request $request, ?CarbonInterface $publishAt = null, ?CarbonInterface $expiresAt = null, ?array $card = null): Message
@@ -289,7 +287,7 @@ class MessageController extends Controller
         abort_if($message->type === Message::TYPE_SYSTEM, 422);
 
         $data = $request->validate(['conversation_id' => ['required', 'integer']]);
-        $target = Conversation::query()->findOrFail($data['conversation_id']);
+        $target = Conversation::query()->findOrFail((int) $data['conversation_id']);
         abort_if($target->participantFor($user) === null, 404);
 
         if (! $target->isGroup()) {

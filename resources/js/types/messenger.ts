@@ -42,7 +42,14 @@ export type OutgoingMessage =
           files: File[];
           publishAt?: string | null;
           vanish?: boolean;
-          card?: { kind: string; id: number; title: string; hint: string; href: string; image: string | null } | null;
+          card?: {
+              kind: string;
+              id: number;
+              title: string;
+              hint: string;
+              href: string;
+              image: string | null;
+          } | null;
       }
     | { kind: 'sticker'; sticker: StickerItem }
     | { kind: 'voice'; blob: Blob; duration: number; waveform: number[] }
@@ -72,7 +79,14 @@ export type ChatMessage = {
     created_at: string;
     starred?: boolean;
     forward?: { name: string; username: string | null } | null;
-    card?: { kind: string; id: number; title: string; hint: string; href: string; image: string | null } | null;
+    card?: {
+        kind: string;
+        id: number;
+        title: string;
+        hint: string;
+        href: string;
+        image: string | null;
+    } | null;
     /** Локальний стан оптимістичної відправки. */
     pending?: 'sending' | 'failed';
     local_id?: string;

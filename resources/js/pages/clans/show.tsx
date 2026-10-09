@@ -116,7 +116,13 @@ type Props = {
     }[];
     allies: { name: string; slug: string }[];
     alliance_requests: { id: number; name: string; slug: string }[];
-    matches: { id: number; home: string; away: string; starts_at: string; note: string | null }[];
+    matches: {
+        id: number;
+        home: string;
+        away: string;
+        starts_at: string;
+        note: string | null;
+    }[];
 };
 
 const input =
@@ -178,7 +184,10 @@ function JoinForm({ base, questions }: { base: string; questions: string[] }) {
             }}
         >
             {questions.map((question, index) => (
-                <label key={`${index}-${question}`} className="block text-xs text-white/55">
+                <label
+                    key={`${index}-${question}`}
+                    className="block text-xs text-white/55"
+                >
                     {question}
                     <input
                         value={form.data.answers[index] ?? ''}
@@ -279,15 +288,26 @@ export default function ClanShow(props: Props) {
                         </a>
                     )}
                     {me?.can['members.manage'] && (
-                        <InviteLinkButton url={`${base}/invite-link`} className={ghost} />
+                        <InviteLinkButton
+                            url={`${base}/invite-link`}
+                            className={ghost}
+                        />
                     )}
-                    {!me && !application && clan.is_recruiting && clan.questions.length > 0 && clan.join_mode !== 'open' ? (
+                    {!me &&
+                    !application &&
+                    clan.is_recruiting &&
+                    clan.questions.length > 0 &&
+                    clan.join_mode !== 'open' ? (
                         <JoinForm base={base} questions={clan.questions} />
                     ) : (
-                        !me && !application && clan.is_recruiting && (
+                        !me &&
+                        !application &&
+                        clan.is_recruiting && (
                             <button
                                 type="button"
-                                onClick={() => post(`${base}/join`, { note: '' })}
+                                onClick={() =>
+                                    post(`${base}/join`, { note: '' })
+                                }
                                 className={btn}
                             >
                                 <UserPlus className="size-4" />{' '}
@@ -364,11 +384,17 @@ export default function ClanShow(props: Props) {
                         </Card>
                         <Card title={tr('Союз і матчі')} icon={Swords}>
                             {props.allies.length === 0 ? (
-                                <p className="text-sm text-white/45">{tr('Союзників ще немає.')}</p>
+                                <p className="text-sm text-white/45">
+                                    {tr('Союзників ще немає.')}
+                                </p>
                             ) : (
                                 <div className="flex flex-wrap gap-2">
                                     {props.allies.map((ally) => (
-                                        <Link key={ally.slug} href={`/clans/${ally.slug}`} className="rounded-full bg-white/10 px-3 py-1 text-sm text-white">
+                                        <Link
+                                            key={ally.slug}
+                                            href={`/clans/${ally.slug}`}
+                                            className="rounded-full bg-white/10 px-3 py-1 text-sm text-white"
+                                        >
                                             {ally.name}
                                         </Link>
                                     ))}
@@ -378,8 +404,11 @@ export default function ClanShow(props: Props) {
                                 <ul className="mt-3 space-y-1 text-sm text-white/75">
                                     {props.matches.map((match) => (
                                         <li key={match.id}>
-                                            {match.home} vs {match.away} · {kyiv(match.starts_at)}
-                                            {match.note ? ` · ${match.note}` : ''}
+                                            {match.home} vs {match.away} ·{' '}
+                                            {kyiv(match.starts_at)}
+                                            {match.note
+                                                ? ` · ${match.note}`
+                                                : ''}
                                         </li>
                                     ))}
                                 </ul>
@@ -390,30 +419,65 @@ export default function ClanShow(props: Props) {
                                         className="flex gap-2"
                                         onSubmit={(event) => {
                                             event.preventDefault();
-                                            const data = new FormData(event.currentTarget);
-                                            post(`${base}/allies`, { tag: String(data.get('tag') ?? '') });
+                                            const data = new FormData(
+                                                event.currentTarget,
+                                            );
+                                            post(`${base}/allies`, {
+                                                tag: String(
+                                                    data.get('tag') ?? '',
+                                                ),
+                                            });
                                             event.currentTarget.reset();
                                         }}
                                     >
-                                        <input name="tag" placeholder={tr('Тег союзу')} className={cn(input, 'w-28')} />
-                                        <button type="submit" className={ghost}>{tr('Союз')}</button>
+                                        <input
+                                            name="tag"
+                                            placeholder={tr('Тег союзу')}
+                                            className={cn(input, 'w-28')}
+                                        />
+                                        <button type="submit" className={ghost}>
+                                            {tr('Союз')}
+                                        </button>
                                     </form>
                                     <form
                                         className="flex flex-wrap gap-2"
                                         onSubmit={(event) => {
                                             event.preventDefault();
-                                            const data = new FormData(event.currentTarget);
+                                            const data = new FormData(
+                                                event.currentTarget,
+                                            );
                                             post(`${base}/matches`, {
-                                                tag: String(data.get('tag') ?? ''),
-                                                starts_at: String(data.get('starts_at') ?? ''),
-                                                note: String(data.get('note') ?? ''),
+                                                tag: String(
+                                                    data.get('tag') ?? '',
+                                                ),
+                                                starts_at: String(
+                                                    data.get('starts_at') ?? '',
+                                                ),
+                                                note: String(
+                                                    data.get('note') ?? '',
+                                                ),
                                             });
                                         }}
                                     >
-                                        <input name="tag" placeholder={tr('Тег суперника')} className={cn(input, 'w-28')} />
-                                        <input name="starts_at" type="datetime-local" required className={cn(input, 'w-48')} />
-                                        <input name="note" placeholder={tr('Нотатка')} className={cn(input, 'w-36')} />
-                                        <button type="submit" className={ghost}>{tr('Матч')}</button>
+                                        <input
+                                            name="tag"
+                                            placeholder={tr('Тег суперника')}
+                                            className={cn(input, 'w-28')}
+                                        />
+                                        <input
+                                            name="starts_at"
+                                            type="datetime-local"
+                                            required
+                                            className={cn(input, 'w-48')}
+                                        />
+                                        <input
+                                            name="note"
+                                            placeholder={tr('Нотатка')}
+                                            className={cn(input, 'w-36')}
+                                        />
+                                        <button type="submit" className={ghost}>
+                                            {tr('Матч')}
+                                        </button>
                                     </form>
                                 </div>
                             )}
@@ -421,10 +485,16 @@ export default function ClanShow(props: Props) {
                                 <button
                                     key={request.id}
                                     type="button"
-                                    onClick={() => post(`${base}/allies/${request.id}/accept`)}
+                                    onClick={() =>
+                                        post(
+                                            `${base}/allies/${request.id}/accept`,
+                                        )
+                                    }
                                     className={cn(ghost, 'mt-2')}
                                 >
-                                    {tr('Прийняти союз від {name}', { name: request.name })}
+                                    {tr('Прийняти союз від {name}', {
+                                        name: request.name,
+                                    })}
                                 </button>
                             ))}
                         </Card>
@@ -686,7 +756,12 @@ function EventsTab({
     events: Props['events'];
     canManage: boolean;
 }) {
-    const form = useForm({ title: '', description: '', starts_at: '', weekly: false });
+    const form = useForm({
+        title: '',
+        description: '',
+        starts_at: '',
+        weekly: false,
+    });
 
     return (
         <>
@@ -738,7 +813,9 @@ function EventsTab({
                             <input
                                 type="checkbox"
                                 checked={form.data.weekly}
-                                onChange={(e) => form.setData('weekly', e.target.checked)}
+                                onChange={(e) =>
+                                    form.setData('weekly', e.target.checked)
+                                }
                             />
                             {tr('Щотижня')}
                         </label>
@@ -1291,7 +1368,9 @@ function SettingsTab({
                     </label>
                 </div>
                 <div className="mt-3 space-y-2">
-                    <p className="text-xs text-white/45">{tr('Питання в заявці')}</p>
+                    <p className="text-xs text-white/45">
+                        {tr('Питання в заявці')}
+                    </p>
                     {[0, 1, 2].map((index) => (
                         <input
                             key={index}
@@ -1496,14 +1575,17 @@ function BracketForm({
         ],
         final: event.bracket?.final ?? [null, null],
     });
-    const field = 'input-glass h-9 w-full rounded-lg px-2 text-xs text-white placeholder:text-white/30 focus:outline-none';
+    const field =
+        'input-glass h-9 w-full rounded-lg px-2 text-xs text-white placeholder:text-white/30 focus:outline-none';
 
     return (
         <form
             className="mt-3 grid gap-2"
             onSubmit={(e) => {
                 e.preventDefault();
-                form.post(`${base}/events/${event.id}/bracket`, { preserveScroll: true });
+                form.post(`${base}/events/${event.id}/bracket`, {
+                    preserveScroll: true,
+                });
             }}
         >
             <p className="text-xs text-white/45">{tr('Сітка на 4')}</p>
@@ -1533,11 +1615,20 @@ function BracketForm({
                                 max={99}
                                 value={score ?? ''}
                                 onChange={(e) => {
-                                    const semi = form.data.semi.map((row) => [...row]) as [number | null, number | null][];
-                                    semi[index][side] = e.target.value === '' ? null : Number(e.target.value);
+                                    const semi = form.data.semi.map((row) => [
+                                        ...row,
+                                    ]) as [number | null, number | null][];
+                                    semi[index][side] =
+                                        e.target.value === ''
+                                            ? null
+                                            : Number(e.target.value);
                                     form.setData('semi', semi);
                                 }}
-                                placeholder={index === 0 ? tr('Півфінал') : tr('Півфінал')}
+                                placeholder={
+                                    index === 0
+                                        ? tr('Півфінал')
+                                        : tr('Півфінал')
+                                }
                                 className={field}
                             />
                         ))}
@@ -1553,8 +1644,14 @@ function BracketForm({
                         max={99}
                         value={score ?? ''}
                         onChange={(e) => {
-                            const final = [...form.data.final] as [number | null, number | null];
-                            final[side] = e.target.value === '' ? null : Number(e.target.value);
+                            const final = [...form.data.final] as [
+                                number | null,
+                                number | null,
+                            ];
+                            final[side] =
+                                e.target.value === ''
+                                    ? null
+                                    : Number(e.target.value);
                             form.setData('final', final);
                         }}
                         placeholder={tr('Фінал')}
@@ -1562,7 +1659,10 @@ function BracketForm({
                     />
                 ))}
             </div>
-            <button type="submit" className="h-9 rounded-lg bg-white/10 text-xs font-semibold text-white">
+            <button
+                type="submit"
+                className="h-9 rounded-lg bg-white/10 text-xs font-semibold text-white"
+            >
                 {tr('Зберегти сітку')}
             </button>
         </form>

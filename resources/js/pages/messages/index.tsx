@@ -22,7 +22,12 @@ type Props = {
     draft?: string | null;
 };
 
-export default function Messages({ conversations, active, history, draft = null }: Props) {
+export default function Messages({
+    conversations,
+    active,
+    history,
+    draft = null,
+}: Props) {
     const userId = usePage().props.auth.user.id;
     const playing = usePlayer().current !== null;
     const [list, setList] = useState(conversations);

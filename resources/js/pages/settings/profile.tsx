@@ -152,7 +152,9 @@ export default function Profile({
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="status">{tr('Короткий статус')}</Label>
+                            <Label htmlFor="status">
+                                {tr('Короткий статус')}
+                            </Label>
                             <Input
                                 id="status"
                                 value={data.status}
@@ -216,7 +218,9 @@ export default function Profile({
                             <select
                                 id="country"
                                 value={data.country}
-                                onChange={(e) => setData('country', e.target.value)}
+                                onChange={(e) =>
+                                    setData('country', e.target.value)
+                                }
                                 className={cn(fieldClass, 'h-11')}
                             >
                                 <option value="">{tr('Не вказано')}</option>

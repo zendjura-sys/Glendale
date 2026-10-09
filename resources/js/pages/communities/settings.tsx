@@ -318,8 +318,12 @@ export default function CommunitySettings({
                         title={tr('Віджет для сайту')}
                         description={
                             widget
-                                ? tr('Вставте код на сайт сервера — там з’являться назва, кількість учасників і останні записи.')
-                                : tr('Віджет доступний для відкритої спільноти.')
+                                ? tr(
+                                      'Вставте код на сайт сервера — там з’являться назва, кількість учасників і останні записи.',
+                                  )
+                                : tr(
+                                      'Віджет доступний для відкритої спільноти.',
+                                  )
                         }
                     >
                         {widget && (
@@ -327,13 +331,18 @@ export default function CommunitySettings({
                                 <input
                                     readOnly
                                     value={`<script src="${widget}" async></script>`}
-                                    className={cn(field, 'h-11 font-mono text-xs')}
+                                    className={cn(
+                                        field,
+                                        'h-11 font-mono text-xs',
+                                    )}
                                 />
                                 <button
                                     type="button"
                                     className="h-11 shrink-0 rounded-xl bg-white/10 px-4 text-sm font-semibold text-white"
                                     onClick={() => {
-                                        void navigator.clipboard.writeText(`<script src="${widget}" async></script>`);
+                                        void navigator.clipboard.writeText(
+                                            `<script src="${widget}" async></script>`,
+                                        );
                                         toast(tr('Код скопійовано'));
                                     }}
                                 >

@@ -37,7 +37,11 @@ export function ReactionBar({
                     {item.glyph}
                 </button>
             ))}
-            {count > 0 && <span className="px-1.5 text-xs text-white/45 tabular-nums">{count}</span>}
+            {count > 0 && (
+                <span className="px-1.5 text-xs text-white/45 tabular-nums">
+                    {count}
+                </span>
+            )}
         </div>
     );
 }

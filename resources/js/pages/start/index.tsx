@@ -15,15 +15,29 @@ export default function Start({
     const [pickedServers, setPickedServers] = useState<number[]>([]);
     const [sending, setSending] = useState(false);
 
-    const toggle = (list: number[], id: number, set: (value: number[]) => void) => {
-        set(list.includes(id) ? list.filter((item) => item !== id) : list.length >= 8 ? list : [...list, id]);
+    const toggle = (
+        list: number[],
+        id: number,
+        set: (value: number[]) => void,
+    ) => {
+        set(
+            list.includes(id)
+                ? list.filter((item) => item !== id)
+                : list.length >= 8
+                  ? list
+                  : [...list, id],
+        );
     };
 
     const save = () => {
         setSending(true);
-        router.post('/start', { games: pickedGames, servers: pickedServers }, {
-            onFinish: () => setSending(false),
-        });
+        router.post(
+            '/start',
+            { games: pickedGames, servers: pickedServers },
+            {
+                onFinish: () => setSending(false),
+            },
+        );
     };
 
     return (
@@ -35,17 +49,23 @@ export default function Start({
                         {tr('Обери, у що граєш')}
                     </h1>
                     <p className="mt-2 text-sm text-white/55">
-                        {tr('Ми скажемо, коли друг зайде в цю гру чи на цей сервер.')}
+                        {tr(
+                            'Ми скажемо, коли друг зайде в цю гру чи на цей сервер.',
+                        )}
                     </p>
                 </div>
                 <section className="space-y-3">
-                    <h2 className="text-sm font-medium text-white/70">{tr('Ігри')}</h2>
+                    <h2 className="text-sm font-medium text-white/70">
+                        {tr('Ігри')}
+                    </h2>
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                         {games.map((game) => (
                             <button
                                 key={game.id}
                                 type="button"
-                                onClick={() => toggle(pickedGames, game.id, setPickedGames)}
+                                onClick={() =>
+                                    toggle(pickedGames, game.id, setPickedGames)
+                                }
                                 className={cn(
                                     'rounded-2xl border px-3 py-3 text-left text-sm font-medium text-white transition',
                                     pickedGames.includes(game.id)
@@ -60,13 +80,21 @@ export default function Start({
                 </section>
                 {servers.length > 0 && (
                     <section className="space-y-3">
-                        <h2 className="text-sm font-medium text-white/70">{tr('Сервери')}</h2>
+                        <h2 className="text-sm font-medium text-white/70">
+                            {tr('Сервери')}
+                        </h2>
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                             {servers.map((server) => (
                                 <button
                                     key={server.id}
                                     type="button"
-                                    onClick={() => toggle(pickedServers, server.id, setPickedServers)}
+                                    onClick={() =>
+                                        toggle(
+                                            pickedServers,
+                                            server.id,
+                                            setPickedServers,
+                                        )
+                                    }
                                     className={cn(
                                         'rounded-2xl border px-3 py-3 text-left text-sm font-medium text-white transition',
                                         pickedServers.includes(server.id)

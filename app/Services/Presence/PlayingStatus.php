@@ -118,11 +118,7 @@ class PlayingStatus
         return ['kind' => 'game', 'id' => null, 'label' => Str::limit(trim($name), 80, ''), 'icon' => null, 'url' => null, 'note' => null];
     }
 
-    /**
-     * Гра Steam за appid (з посилань каталогу на store.steampowered.com/app/{id}).
-     *
-     * @return array{kind: string, id: int|null, label: string, icon: string|null, url: string|null, note: string|null}
-     */
+    /** Посилання на сторінку гри в каталозі за Steam appid. */
     public function steamGameHref(string $appId): ?string
     {
         $id = $this->steamApps()[$appId] ?? null;
@@ -131,6 +127,11 @@ class PlayingStatus
         return is_string($slug) && $slug !== '' ? '/games/'.$slug : null;
     }
 
+    /**
+     * Гра Steam за appid (з посилань каталогу на store.steampowered.com/app/{id}).
+     *
+     * @return array{kind: string, id: int|null, label: string, icon: string|null, url: string|null, note: string|null}
+     */
     public function fromSteam(string $appId, string $name): array
     {
         $gameId = $this->steamApps()[$appId] ?? null;

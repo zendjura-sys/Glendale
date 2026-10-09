@@ -308,7 +308,9 @@ export function PlayingDialog({
                                 />
                                 <input
                                     value={playstation}
-                                    onChange={(e) => setPlaystation(e.target.value)}
+                                    onChange={(e) =>
+                                        setPlaystation(e.target.value)
+                                    }
                                     placeholder={tr('PlayStation ID')}
                                     className="input-glass h-9 rounded-lg px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
                                 />

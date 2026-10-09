@@ -216,7 +216,11 @@ function GuideForm({ slug }: { slug: string }) {
                 placeholder={tr('Коротко: як почати, що зібрати, чого уникати')}
                 className="input-glass w-full rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30"
             />
-            <button type="submit" disabled={form.processing} className="btn-glow h-10 rounded-xl px-4 text-sm font-semibold disabled:opacity-50">
+            <button
+                type="submit"
+                disabled={form.processing}
+                className="btn-glow h-10 rounded-xl px-4 text-sm font-semibold disabled:opacity-50"
+            >
                 {tr('Опублікувати гід')}
             </button>
         </form>
@@ -324,9 +328,21 @@ export default function GameShow({
                                 {game.name}
                             </h1>
                             <span className="flex shrink-0 gap-2">
-                                <FollowButton kind="game" id={game.id} following={following} />
-                                <PinButton kind="game" id={game.id} pinned={pinned} />
-                                <SaveButton kind="game" id={game.id} saved={saved} />
+                                <FollowButton
+                                    kind="game"
+                                    id={game.id}
+                                    following={following}
+                                />
+                                <PinButton
+                                    kind="game"
+                                    id={game.id}
+                                    pinned={pinned}
+                                />
+                                <SaveButton
+                                    kind="game"
+                                    id={game.id}
+                                    saved={saved}
+                                />
                             </span>
                         </div>
                         <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/70">
@@ -418,8 +434,14 @@ export default function GameShow({
                 <section className="glass mt-4 space-y-3 rounded-3xl p-4 sm:p-5">
                     {steam_friends.length > 0 && (
                         <div>
-                            <h2 className="font-display text-base font-semibold text-white">{tr('Друзі з цією грою в Steam')}</h2>
-                            <p className="mt-2 text-sm text-white/70">{steam_friends.map((friend) => friend.name).join(', ')}</p>
+                            <h2 className="font-display text-base font-semibold text-white">
+                                {tr('Друзі з цією грою в Steam')}
+                            </h2>
+                            <p className="mt-2 text-sm text-white/70">
+                                {steam_friends
+                                    .map((friend) => friend.name)
+                                    .join(', ')}
+                            </p>
                         </div>
                     )}
                     {can_curate && (
@@ -435,14 +457,29 @@ export default function GameShow({
                             }}
                         >
                             <label className="flex items-center gap-2">
-                                <input type="checkbox" name="duo" defaultChecked={game.collections.includes('duo')} />
+                                <input
+                                    type="checkbox"
+                                    name="duo"
+                                    defaultChecked={game.collections.includes(
+                                        'duo',
+                                    )}
+                                />
                                 {tr('На двох')}
                             </label>
                             <label className="flex items-center gap-2">
-                                <input type="checkbox" name="evening" defaultChecked={game.collections.includes('evening')} />
+                                <input
+                                    type="checkbox"
+                                    name="evening"
+                                    defaultChecked={game.collections.includes(
+                                        'evening',
+                                    )}
+                                />
                                 {tr('На вечір')}
                             </label>
-                            <button type="submit" className="rounded-xl bg-white px-3 py-1.5 text-sm font-semibold text-black">
+                            <button
+                                type="submit"
+                                className="rounded-xl bg-white px-3 py-1.5 text-sm font-semibold text-black"
+                            >
                                 {tr('Зберегти добірку')}
                             </button>
                         </form>
@@ -756,39 +793,57 @@ export default function GameShow({
                 </Section>
             )}
 
-            {guidesOn && <Section title={tr('Гіди')} icon={BookOpen}>
-                <GuideForm slug={game.slug} />
-                {guides.length === 0 ? (
-                    <p className="text-sm text-white/45">{tr('Гідів ще немає. Напишіть перший.')}</p>
-                ) : (
-                    <div className="space-y-3">
-                        {guides.map((guide) => (
-                            <article key={guide.id} className="rounded-2xl bg-white/[0.04] p-4">
-                                <div className="flex items-start gap-3">
-                                    <div className="min-w-0 flex-1">
-                                        <h3 className="font-semibold text-white">{guide.title}</h3>
-                                        {guide.user && (
-                                            <Link href={`/${guide.user.username}`} className="text-xs text-white/45 hover:text-white">
-                                                {guide.user.name}
-                                            </Link>
+            {guidesOn && (
+                <Section title={tr('Гіди')} icon={BookOpen}>
+                    <GuideForm slug={game.slug} />
+                    {guides.length === 0 ? (
+                        <p className="text-sm text-white/45">
+                            {tr('Гідів ще немає. Напишіть перший.')}
+                        </p>
+                    ) : (
+                        <div className="space-y-3">
+                            {guides.map((guide) => (
+                                <article
+                                    key={guide.id}
+                                    className="rounded-2xl bg-white/[0.04] p-4"
+                                >
+                                    <div className="flex items-start gap-3">
+                                        <div className="min-w-0 flex-1">
+                                            <h3 className="font-semibold text-white">
+                                                {guide.title}
+                                            </h3>
+                                            {guide.user && (
+                                                <Link
+                                                    href={`/${guide.user.username}`}
+                                                    className="text-xs text-white/45 hover:text-white"
+                                                >
+                                                    {guide.user.name}
+                                                </Link>
+                                            )}
+                                            <p className="mt-2 text-sm whitespace-pre-line text-white/75">
+                                                {guide.body}
+                                            </p>
+                                        </div>
+                                        {guide.mine && (
+                                            <button
+                                                type="button"
+                                                className="text-xs text-rose-200 hover:text-rose-100"
+                                                onClick={() =>
+                                                    router.delete(
+                                                        `/games/${game.slug}/guides/${guide.id}`,
+                                                    )
+                                                }
+                                            >
+                                                {tr('Видалити')}
+                                            </button>
                                         )}
-                                        <p className="mt-2 text-sm whitespace-pre-line text-white/75">{guide.body}</p>
                                     </div>
-                                    {guide.mine && (
-                                        <button
-                                            type="button"
-                                            className="text-xs text-rose-200 hover:text-rose-100"
-                                            onClick={() => router.delete(`/games/${game.slug}/guides/${guide.id}`)}
-                                        >
-                                            {tr('Видалити')}
-                                        </button>
-                                    )}
-                                </div>
-                            </article>
-                        ))}
-                    </div>
-                )}
-            </Section>}
+                                </article>
+                            ))}
+                        </div>
+                    )}
+                </Section>
+            )}
 
             {(d.websites?.length || d.igdb_url) && (
                 <Section title={tr('Спільнота й посилання')} icon={Globe}>

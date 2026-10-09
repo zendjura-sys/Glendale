@@ -1,5 +1,16 @@
 import { Deferred, Head, InfiniteScroll, Link, router } from '@inertiajs/react';
-import { Briefcase, Clapperboard, Inbox, MessageCircleOff, Radio, Search, Send, Sparkles, Swords, UsersRound } from 'lucide-react';
+import {
+    Briefcase,
+    Clapperboard,
+    Inbox,
+    MessageCircleOff,
+    Radio,
+    Search,
+    Send,
+    Sparkles,
+    Swords,
+    UsersRound,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { PersonCard } from '@/components/gc/person-card';
 import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
@@ -7,7 +18,15 @@ import { cn } from '@/lib/utils';
 import type { PersonCard as Person, ScrollData } from '@/types';
 import { tr } from '@/lib/i18n';
 
-type Tab = 'all' | 'online' | 'requests' | 'outgoing' | 'raid' | 'cinema' | 'work' | 'stale';
+type Tab =
+    | 'all'
+    | 'online'
+    | 'requests'
+    | 'outgoing'
+    | 'raid'
+    | 'cinema'
+    | 'work'
+    | 'stale';
 
 type Props = {
     tab: Tab;

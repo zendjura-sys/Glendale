@@ -186,22 +186,38 @@ export default function GamesIndex({
                     })}
                 </div>
 
-                {collectionsOn && <div className="-mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1">
-                    <Chip
-                        small
-                        active={filters.collection === 'duo'}
-                        onClick={() => visit({ collection: filters.collection === 'duo' ? null : 'duo' })}
-                    >
-                        {tr('На двох')}
-                    </Chip>
-                    <Chip
-                        small
-                        active={filters.collection === 'evening'}
-                        onClick={() => visit({ collection: filters.collection === 'evening' ? null : 'evening' })}
-                    >
-                        {tr('На вечір')}
-                    </Chip>
-                </div>}
+                {collectionsOn && (
+                    <div className="-mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1">
+                        <Chip
+                            small
+                            active={filters.collection === 'duo'}
+                            onClick={() =>
+                                visit({
+                                    collection:
+                                        filters.collection === 'duo'
+                                            ? null
+                                            : 'duo',
+                                })
+                            }
+                        >
+                            {tr('На двох')}
+                        </Chip>
+                        <Chip
+                            small
+                            active={filters.collection === 'evening'}
+                            onClick={() =>
+                                visit({
+                                    collection:
+                                        filters.collection === 'evening'
+                                            ? null
+                                            : 'evening',
+                                })
+                            }
+                        >
+                            {tr('На вечір')}
+                        </Chip>
+                    </div>
+                )}
 
                 {Object.keys(modes).length > 0 && (
                     <div className="-mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1">

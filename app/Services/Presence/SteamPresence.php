@@ -152,7 +152,7 @@ class SteamPresence
             $slice = array_slice($games, 0, $limit);
             $cards = [];
             foreach ($slice as $game) {
-                if (! is_array($game) || ! is_string($game['name'] ?? null)) {
+                if (! is_string($game['name'] ?? null)) {
                     continue;
                 }
                 $appId = (string) ($game['appid'] ?? '');

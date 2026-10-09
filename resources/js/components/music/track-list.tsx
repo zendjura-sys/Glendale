@@ -354,14 +354,17 @@ export function TrackList({
                                             <Headphones /> {tr('Схожі треки')}
                                         </DropdownMenuItem>
                                     )}
-                                    {track.source === 'local' && track.has_lyrics && (
-                                        <DropdownMenuItem
-                                            className={itemClass}
-                                            onSelect={() => setLyricsFor(track)}
-                                        >
-                                            <FileText /> {tr('Текст пісні')}
-                                        </DropdownMenuItem>
-                                    )}
+                                    {track.source === 'local' &&
+                                        track.has_lyrics && (
+                                            <DropdownMenuItem
+                                                className={itemClass}
+                                                onSelect={() =>
+                                                    setLyricsFor(track)
+                                                }
+                                            >
+                                                <FileText /> {tr('Текст пісні')}
+                                            </DropdownMenuItem>
+                                        )}
                                     {track.source === 'local' ? (
                                         <DropdownMenuItem
                                             className={itemClass}
@@ -434,7 +437,10 @@ export function TrackList({
                 track={sharing}
                 onOpenChange={(open) => !open && setSharing(null)}
             />
-            <LyricsDialog track={lyricsFor} onOpenChange={(open) => !open && setLyricsFor(null)} />
+            <LyricsDialog
+                track={lyricsFor}
+                onOpenChange={(open) => !open && setLyricsFor(null)}
+            />
             <EditTrackDialog
                 track={editing}
                 onOpenChange={(open) => !open && setEditing(null)}

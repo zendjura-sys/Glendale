@@ -30,7 +30,9 @@ export function PersonCard({ person }: { person: Person }) {
                 {person.is_verified && <VerifiedBadge />}
             </Link>
             {person.alias && (
-                <p className="relative mt-0.5 truncate text-xs text-white/40">{person.name}</p>
+                <p className="relative mt-0.5 truncate text-xs text-white/40">
+                    {person.name}
+                </p>
             )}
             {person.list && (
                 <span className="relative mt-1 rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-white/70">
@@ -38,7 +40,9 @@ export function PersonCard({ person }: { person: Person }) {
                 </span>
             )}
             {person.note && (
-                <p className="relative mt-1 line-clamp-2 text-xs text-white/55">{person.note}</p>
+                <p className="relative mt-1 line-clamp-2 text-xs text-white/55">
+                    {person.note}
+                </p>
             )}
             {person.playing && (
                 <PlayingBadge
@@ -125,7 +129,9 @@ function FriendMarkForm({ person }: { person: Person }) {
             />
             <select
                 value={list}
-                onChange={(event) => setList(event.target.value as FriendList | '')}
+                onChange={(event) =>
+                    setList(event.target.value as FriendList | '')
+                }
                 className="input-glass h-8 w-full rounded-lg px-2 text-xs text-white focus:outline-none"
             >
                 <option value="">{tr('Без списку')}</option>
@@ -133,7 +139,10 @@ function FriendMarkForm({ person }: { person: Person }) {
                 <option value="cinema">{tr('Кіно')}</option>
                 <option value="work">{tr('Робота')}</option>
             </select>
-            <button type="submit" className="h-8 w-full rounded-lg bg-white text-xs font-medium text-black">
+            <button
+                type="submit"
+                className="h-8 w-full rounded-lg bg-white text-xs font-medium text-black"
+            >
                 {tr('Зберегти')}
             </button>
         </form>

@@ -32,7 +32,7 @@ class PlayedTogether
                 $rows[$mate->user_id] = [
                     ...$mate->user->toCard(),
                     'kind' => 'cinema',
-                    'together' => $mate->party?->movie?->title ?? 'Кіно',
+                    'together' => $mate->party->movie->title ?? 'Кіно',
                 ];
             }
         }

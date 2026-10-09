@@ -458,24 +458,40 @@ export function PhotoViewer({
                                         )
                                     )}
 
-                                    {(photo.tags.length > 0 || photo.can.edit) && (
+                                    {(photo.tags.length > 0 ||
+                                        photo.can.edit) && (
                                         <div className="mb-4">
-                                            <p className="mb-2 text-xs text-white/45">{tr('На фото')}</p>
+                                            <p className="mb-2 text-xs text-white/45">
+                                                {tr('На фото')}
+                                            </p>
                                             <div className="flex flex-wrap gap-2">
                                                 {photo.tags.map((person) => (
                                                     <span
                                                         key={person.username}
                                                         className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2.5 py-1 text-sm text-white"
                                                     >
-                                                        <Link href={`/${person.username}`}>{person.name}</Link>
+                                                        <Link
+                                                            href={`/${person.username}`}
+                                                        >
+                                                            {person.name}
+                                                        </Link>
                                                         {photo.can.edit && (
                                                             <button
                                                                 type="button"
                                                                 className="text-white/40 hover:text-white"
                                                                 onClick={async () => {
-                                                                    await api('DELETE', `/photos/${photo.id}/tags/${person.username}`);
+                                                                    await api(
+                                                                        'DELETE',
+                                                                        `/photos/${photo.id}/tags/${person.username}`,
+                                                                    );
                                                                     patch({
-                                                                        tags: photo.tags.filter((item) => item.username !== person.username),
+                                                                        tags: photo.tags.filter(
+                                                                            (
+                                                                                item,
+                                                                            ) =>
+                                                                                item.username !==
+                                                                                person.username,
+                                                                        ),
                                                                     });
                                                                 }}
                                                             >
@@ -490,20 +506,39 @@ export function PhotoViewer({
                                                     className="mt-2 flex gap-2"
                                                     onSubmit={async (event) => {
                                                         event.preventDefault();
-                                                        if (!tagName.trim()) return;
-                                                        const response = await api<{ user: PhotoDetails['tags'][number] }>(
-                                                            'POST',
-                                                            `/photos/${photo.id}/tags`,
-                                                            { username: tagName.trim() },
-                                                        );
-                                                        patch({ tags: [...photo.tags, response.user] });
+                                                        if (!tagName.trim())
+                                                            return;
+                                                        const response =
+                                                            await api<{
+                                                                user: PhotoDetails['tags'][number];
+                                                            }>(
+                                                                'POST',
+                                                                `/photos/${photo.id}/tags`,
+                                                                {
+                                                                    username:
+                                                                        tagName.trim(),
+                                                                },
+                                                            );
+                                                        patch({
+                                                            tags: [
+                                                                ...photo.tags,
+                                                                response.user,
+                                                            ],
+                                                        });
                                                         setTagName('');
                                                     }}
                                                 >
                                                     <input
                                                         value={tagName}
-                                                        onChange={(event) => setTagName(event.target.value)}
-                                                        placeholder={tr('Позначити друга')}
+                                                        onChange={(event) =>
+                                                            setTagName(
+                                                                event.target
+                                                                    .value,
+                                                            )
+                                                        }
+                                                        placeholder={tr(
+                                                            'Позначити друга',
+                                                        )}
                                                         className="input-glass h-9 min-w-0 flex-1 rounded-xl px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
                                                     />
                                                 </form>

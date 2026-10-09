@@ -248,10 +248,18 @@ export function GroupInfoDialog({
                                         }
                                         className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-sm text-white"
                                     >
-                                        <option value={0}>{tr('Вимкнено')}</option>
-                                        <option value={10}>{tr('10 секунд')}</option>
-                                        <option value={30}>{tr('30 секунд')}</option>
-                                        <option value={60}>{tr('60 секунд')}</option>
+                                        <option value={0}>
+                                            {tr('Вимкнено')}
+                                        </option>
+                                        <option value={10}>
+                                            {tr('10 секунд')}
+                                        </option>
+                                        <option value={30}>
+                                            {tr('30 секунд')}
+                                        </option>
+                                        <option value={60}>
+                                            {tr('60 секунд')}
+                                        </option>
                                     </select>
                                 </label>
                             )}
@@ -309,7 +317,8 @@ export function GroupInfoDialog({
                                                 {tr('Адмін')}
                                             </span>
                                         ) : null}
-                                        {rolesOn && conversation.my_role === 'owner' &&
+                                        {rolesOn &&
+                                            conversation.my_role === 'owner' &&
                                             member.role !== 'owner' &&
                                             member.id !== auth.user.id && (
                                                 <button
@@ -319,7 +328,8 @@ export function GroupInfoDialog({
                                                             `/messages/${conversation.id}/members/${member.username}/role`,
                                                             {
                                                                 role:
-                                                                    member.role === 'admin'
+                                                                    member.role ===
+                                                                    'admin'
                                                                         ? 'member'
                                                                         : 'admin',
                                                             },

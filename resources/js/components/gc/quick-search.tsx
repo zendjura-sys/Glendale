@@ -180,45 +180,47 @@ export function QuickSearch({ className }: { className?: string }) {
                 )}
             </label>
 
-            {open && query.trim().length < 2 && (recent.length > 0 || popular.length > 0) && (
-                <div className="glass-strong absolute top-12 right-0 left-0 z-50 animate-rise overflow-hidden rounded-2xl p-1.5">
-                    {recent.length > 0 && (
-                        <p className="px-2.5 py-1.5 text-xs text-white/40">
-                            {tr('Недавні запити')}
-                        </p>
-                    )}
-                    {recent.map((item) => (
-                        <button
-                            key={item}
-                            type="button"
-                            onClick={() => {
-                                setQuery(item);
-                                setOpen(true);
-                            }}
-                            className="flex w-full rounded-xl px-2.5 py-2 text-left text-sm text-white/80 hover:bg-white/5"
-                        >
-                            {item}
-                        </button>
-                    ))}
-                    {popular.length > 0 && (
-                        <p className="px-2.5 py-1.5 text-xs text-white/40">
-                            {tr('Зараз популярне')}
-                        </p>
-                    )}
-                    {popular.map((item) => (
-                        <Link
-                            key={`${item.kind}-${item.href}`}
-                            href={item.href}
-                            className="flex w-full items-center justify-between gap-3 rounded-xl px-2.5 py-2 text-left text-sm text-white/80 hover:bg-white/5"
-                        >
-                            <span className="truncate">{item.title}</span>
-                            <span className="shrink-0 text-xs text-white/40">
-                                {tr(item.hint)}
-                            </span>
-                        </Link>
-                    ))}
-                </div>
-            )}
+            {open &&
+                query.trim().length < 2 &&
+                (recent.length > 0 || popular.length > 0) && (
+                    <div className="glass-strong absolute top-12 right-0 left-0 z-50 animate-rise overflow-hidden rounded-2xl p-1.5">
+                        {recent.length > 0 && (
+                            <p className="px-2.5 py-1.5 text-xs text-white/40">
+                                {tr('Недавні запити')}
+                            </p>
+                        )}
+                        {recent.map((item) => (
+                            <button
+                                key={item}
+                                type="button"
+                                onClick={() => {
+                                    setQuery(item);
+                                    setOpen(true);
+                                }}
+                                className="flex w-full rounded-xl px-2.5 py-2 text-left text-sm text-white/80 hover:bg-white/5"
+                            >
+                                {item}
+                            </button>
+                        ))}
+                        {popular.length > 0 && (
+                            <p className="px-2.5 py-1.5 text-xs text-white/40">
+                                {tr('Зараз популярне')}
+                            </p>
+                        )}
+                        {popular.map((item) => (
+                            <Link
+                                key={`${item.kind}-${item.href}`}
+                                href={item.href}
+                                className="flex w-full items-center justify-between gap-3 rounded-xl px-2.5 py-2 text-left text-sm text-white/80 hover:bg-white/5"
+                            >
+                                <span className="truncate">{item.title}</span>
+                                <span className="shrink-0 text-xs text-white/40">
+                                    {tr(item.hint)}
+                                </span>
+                            </Link>
+                        ))}
+                    </div>
+                )}
 
             {open && query.trim().length >= 2 && (
                 <div className="glass-strong absolute top-12 right-0 left-0 z-50 animate-rise overflow-hidden rounded-2xl p-1.5">
@@ -274,8 +276,7 @@ export function QuickSearch({ className }: { className?: string }) {
                                                     '{v} · {members_count} учасн.',
                                                     {
                                                         v:
-                                                            result.item
-                                                                .type ===
+                                                            result.item.type ===
                                                             'public'
                                                                 ? tr(
                                                                       'Публічна сторінка',
@@ -296,9 +297,9 @@ export function QuickSearch({ className }: { className?: string }) {
                     <Link
                         href={`/people?q=${encodeURIComponent(query.trim())}`}
                         onClick={() => {
-                                    remember(query);
-                                    setOpen(false);
-                                }}
+                            remember(query);
+                            setOpen(false);
+                        }}
                         className="mt-1 block rounded-xl border-t border-white/5 px-3 py-2.5 text-center text-xs font-medium text-gc-lilac-300 hover:bg-white/5"
                     >
                         {tr('Показати всі результати')}

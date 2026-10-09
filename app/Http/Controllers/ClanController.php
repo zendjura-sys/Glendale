@@ -137,8 +137,8 @@ class ClanController extends Controller
                 'conversation_id' => $member && $clan->hasFeature('chat') ? $clan->conversation_id : null,
                 'created_at' => $clan->created_at?->toIso8601String(),
                 'questions' => array_values(array_filter(array_map(
-                    fn ($question) => is_string($question) ? trim($question) : '',
-                    (array) $clan->questions,
+                    fn (string $question) => trim($question),
+                    $clan->questions ?? [],
                 ))),
             ],
             'me' => $me ? [...$me->toCard($clan), 'can' => $can] : null,
@@ -323,7 +323,7 @@ class ClanController extends Controller
             return $value === null || $value === '' ? null : (int) $value;
         };
         $this->clans->saveBracket($clan, $this->me($request, $clan), $event, [
-            'teams' => array_map(fn ($name) => trim((string) $name), $data['teams']),
+            'teams' => array_values(array_map(fn ($name) => trim((string) $name), $data['teams'])),
             'semi' => [
                 [$score($data['semi'][0][0] ?? null), $score($data['semi'][0][1] ?? null)],
                 [$score($data['semi'][1][0] ?? null), $score($data['semi'][1][1] ?? null)],
@@ -420,14 +420,14 @@ class ClanController extends Controller
      */
     private function allies(Clan $clan): array
     {
-        return ClanAlliance::query()->with(['clan', 'ally'])->where('status', ClanAlliance::ACCEPTED)
+        return array_values(ClanAlliance::query()->with(['clan', 'ally'])->where('status', ClanAlliance::ACCEPTED)
             ->where(fn ($q) => $q->where('clan_id', $clan->id)->orWhere('ally_id', $clan->id))
             ->latest('id')->get()
             ->map(function (ClanAlliance $row) use ($clan) {
                 $other = $row->clan_id === $clan->id ? $row->ally : $row->clan;
 
                 return ['name' => $other->display_name, 'slug' => $other->slug];
-            })->values()->all();
+            })->all());
     }
 
     /**
@@ -435,7 +435,7 @@ class ClanController extends Controller
      */
     private function matches(Clan $clan): array
     {
-        return ClanMatch::query()->with(['clan', 'opponent'])
+        return array_values(ClanMatch::query()->with(['clan', 'opponent'])
             ->where(fn ($q) => $q->where('clan_id', $clan->id)->orWhere('opponent_id', $clan->id))
             ->orderBy('starts_at')->limit(12)->get()
             ->map(fn (ClanMatch $row) => [
@@ -444,7 +444,7 @@ class ClanController extends Controller
                 'away' => $row->opponent->tag,
                 'starts_at' => $row->starts_at->toIso8601String(),
                 'note' => $row->note,
-            ])->values()->all();
+            ])->all());
     }
 
     private function feature(Clan $clan, string $feature): void

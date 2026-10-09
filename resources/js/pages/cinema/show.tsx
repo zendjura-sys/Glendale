@@ -457,22 +457,42 @@ export default function CinemaShow({
                                             className="flex flex-wrap items-center gap-2"
                                             onSubmit={(event) => {
                                                 event.preventDefault();
-                                                const form = new FormData(event.currentTarget);
-                                                const season = Number(form.get('season'));
-                                                const episode = Number(form.get('episode'));
-                                                void api<StateResponse>('PUT', `/cinema/${movie.slug}/progress`, {
-                                                    season: season > 0 ? season : null,
-                                                    episode,
-                                                })
+                                                const form = new FormData(
+                                                    event.currentTarget,
+                                                );
+                                                const season = Number(
+                                                    form.get('season'),
+                                                );
+                                                const episode = Number(
+                                                    form.get('episode'),
+                                                );
+                                                void api<StateResponse>(
+                                                    'PUT',
+                                                    `/cinema/${movie.slug}/progress`,
+                                                    {
+                                                        season:
+                                                            season > 0
+                                                                ? season
+                                                                : null,
+                                                        episode,
+                                                    },
+                                                )
                                                     .then((response) => {
                                                         apply(response);
-                                                        toast.success(tr('Серію збережено.'));
+                                                        toast.success(
+                                                            tr(
+                                                                'Серію збережено.',
+                                                            ),
+                                                        );
                                                     })
                                                     .catch((error: unknown) => {
                                                         toast.error(
-                                                            error instanceof ApiError
+                                                            error instanceof
+                                                                ApiError
                                                                 ? error.message
-                                                                : tr('Не вдалося зберегти серію.'),
+                                                                : tr(
+                                                                      'Не вдалося зберегти серію.',
+                                                                  ),
                                                         );
                                                     });
                                             }}
@@ -482,7 +502,9 @@ export default function CinemaShow({
                                                 type="number"
                                                 min={1}
                                                 max={50}
-                                                defaultValue={state.season ?? ''}
+                                                defaultValue={
+                                                    state.season ?? ''
+                                                }
                                                 placeholder={tr('Сезон')}
                                                 className="h-11 w-24 rounded-xl bg-white/10 px-3 text-sm text-white placeholder:text-white/40"
                                             />
@@ -490,82 +512,105 @@ export default function CinemaShow({
                                                 name="episode"
                                                 type="number"
                                                 min={1}
-                                                max={movie.episodes_count ?? 5000}
+                                                max={
+                                                    movie.episodes_count ?? 5000
+                                                }
                                                 required
-                                                defaultValue={state.episode ?? ''}
+                                                defaultValue={
+                                                    state.episode ?? ''
+                                                }
                                                 placeholder={tr('Серія')}
                                                 className="h-11 w-24 rounded-xl bg-white/10 px-3 text-sm text-white placeholder:text-white/40"
                                             />
-                                            <button type="submit" className="h-11 rounded-xl bg-white/10 px-4 text-sm font-semibold text-white">
+                                            <button
+                                                type="submit"
+                                                className="h-11 rounded-xl bg-white/10 px-4 text-sm font-semibold text-white"
+                                            >
                                                 {tr('Я тут')}
                                             </button>
                                         </form>
                                     )}
-                                    {marksOn && (movie.episodes_count ?? 0) > 1 && (
-                                        <div className="mt-3 w-full">
-                                            <div className="mb-2 flex items-center gap-2">
-                                                <span className="text-xs text-white/45">
-                                                    {tr('Відмітки серій')}
-                                                </span>
-                                                {[1, 2, 3].map((season) => (
-                                                    <button
-                                                        key={season}
-                                                        type="button"
-                                                        onClick={() => setMarkSeason(season)}
-                                                        className={cn(
-                                                            'rounded-lg px-2 py-1 text-xs',
-                                                            markSeason === season
-                                                                ? 'bg-white text-gc-ink'
-                                                                : 'bg-white/10 text-white/70',
-                                                        )}
-                                                    >
-                                                        {tr('Сезон')} {season}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {Array.from(
-                                                    {
-                                                        length: Math.min(
-                                                            movie.episodes_count ?? 1,
-                                                            12,
-                                                        ),
-                                                    },
-                                                    (_, index) => index + 1,
-                                                ).map((episode) => {
-                                                    const key = `${markSeason}:${episode}`;
-                                                    const on = marks.includes(key);
-
-                                                    return (
+                                    {marksOn &&
+                                        (movie.episodes_count ?? 0) > 1 && (
+                                            <div className="mt-3 w-full">
+                                                <div className="mb-2 flex items-center gap-2">
+                                                    <span className="text-xs text-white/45">
+                                                        {tr('Відмітки серій')}
+                                                    </span>
+                                                    {[1, 2, 3].map((season) => (
                                                         <button
-                                                            key={key}
+                                                            key={season}
                                                             type="button"
                                                             onClick={() =>
-                                                                api<{ marks: string[] }>(
-                                                                    'POST',
-                                                                    `/cinema/${movie.slug}/episodes`,
-                                                                    {
-                                                                        season: markSeason,
-                                                                        episode,
-                                                                    },
-                                                                ).then((response) =>
-                                                                    setMarks(response.marks),
+                                                                setMarkSeason(
+                                                                    season,
                                                                 )
                                                             }
                                                             className={cn(
-                                                                'size-9 rounded-lg text-xs font-semibold',
-                                                                on
-                                                                    ? 'bg-gc-mint text-gc-ink'
+                                                                'rounded-lg px-2 py-1 text-xs',
+                                                                markSeason ===
+                                                                    season
+                                                                    ? 'bg-white text-gc-ink'
                                                                     : 'bg-white/10 text-white/70',
                                                             )}
                                                         >
-                                                            {episode}
+                                                            {tr('Сезон')}{' '}
+                                                            {season}
                                                         </button>
-                                                    );
-                                                })}
+                                                    ))}
+                                                </div>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {Array.from(
+                                                        {
+                                                            length: Math.min(
+                                                                movie.episodes_count ??
+                                                                    1,
+                                                                12,
+                                                            ),
+                                                        },
+                                                        (_, index) => index + 1,
+                                                    ).map((episode) => {
+                                                        const key = `${markSeason}:${episode}`;
+                                                        const on =
+                                                            marks.includes(key);
+
+                                                        return (
+                                                            <button
+                                                                key={key}
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    api<{
+                                                                        marks: string[];
+                                                                    }>(
+                                                                        'POST',
+                                                                        `/cinema/${movie.slug}/episodes`,
+                                                                        {
+                                                                            season: markSeason,
+                                                                            episode,
+                                                                        },
+                                                                    ).then(
+                                                                        (
+                                                                            response,
+                                                                        ) =>
+                                                                            setMarks(
+                                                                                response.marks,
+                                                                            ),
+                                                                    )
+                                                                }
+                                                                className={cn(
+                                                                    'size-9 rounded-lg text-xs font-semibold',
+                                                                    on
+                                                                        ? 'bg-gc-mint text-gc-ink'
+                                                                        : 'bg-white/10 text-white/70',
+                                                                )}
+                                                            >
+                                                                {episode}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
                                     {players.length > 0 && (
                                         <a
                                             href="#player"
@@ -595,21 +640,31 @@ export default function CinemaShow({
                                             {tr('Дивитися разом')}
                                         </button>
                                     )}
-                                    <SaveButton kind="movie" id={movie.id} saved={saved} />
+                                    <SaveButton
+                                        kind="movie"
+                                        id={movie.id}
+                                        saved={saved}
+                                    />
                                     {tenOn && (
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            router.post('/cinema/ten', {
-                                                movie_id: movie.id,
-                                            })
-                                        }
-                                        className="inline-flex h-11 items-center rounded-xl border border-white/15 px-3 text-sm text-white"
-                                    >
-                                        {inTopTen ? tr('У десятці') : tr('У десятку')}
-                                    </button>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                router.post('/cinema/ten', {
+                                                    movie_id: movie.id,
+                                                })
+                                            }
+                                            className="inline-flex h-11 items-center rounded-xl border border-white/15 px-3 text-sm text-white"
+                                        >
+                                            {inTopTen
+                                                ? tr('У десятці')
+                                                : tr('У десятку')}
+                                        </button>
                                     )}
-                                    <PinButton kind="movie" id={movie.id} pinned={pinned} />
+                                    <PinButton
+                                        kind="movie"
+                                        id={movie.id}
+                                        pinned={pinned}
+                                    />
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <button
@@ -726,44 +781,68 @@ export default function CinemaShow({
                                     className="flex flex-wrap items-center gap-2"
                                     onSubmit={(event) => {
                                         event.preventDefault();
-                                        const data = new FormData(event.currentTarget);
+                                        const data = new FormData(
+                                            event.currentTarget,
+                                        );
                                         router.put(
                                             '/cinema/playback',
                                             {
-                                                player: String(data.get('player') ?? ''),
-                                                subs: String(data.get('subs') ?? ''),
+                                                player: String(
+                                                    data.get('player') ?? '',
+                                                ),
+                                                subs: String(
+                                                    data.get('subs') ?? '',
+                                                ),
                                             },
                                             { preserveScroll: true },
                                         );
                                     }}
                                 >
-                                    {playerOn && <select
-                                        name="player"
-                                        defaultValue={playback.player}
-                                        className="h-9 rounded-lg bg-white/10 px-2 text-xs text-white"
-                                    >
-                                        <option value="">{tr('Плеєр')}</option>
-                                        <option value="kodik">Kodik</option>
-                                        <option value="flixcdn">FlixCDN</option>
-                                        <option value="youtube">YouTube</option>
-                                    </select>}
-                                    {subsOn && <select
-                                        name="subs"
-                                        defaultValue={playback.subs}
-                                        className="h-9 rounded-lg bg-white/10 px-2 text-xs text-white"
-                                    >
-                                        <option value="">{tr('Субтитри')}</option>
-                                        <option value="uk">{tr('Українська')}</option>
-                                        <option value="en">{tr('Англійська')}</option>
-                                        <option value="ru">{tr('Російська')}</option>
-                                    </select>}
+                                    {playerOn && (
+                                        <select
+                                            name="player"
+                                            defaultValue={playback.player}
+                                            className="h-9 rounded-lg bg-white/10 px-2 text-xs text-white"
+                                        >
+                                            <option value="">
+                                                {tr('Плеєр')}
+                                            </option>
+                                            <option value="kodik">Kodik</option>
+                                            <option value="flixcdn">
+                                                FlixCDN
+                                            </option>
+                                            <option value="youtube">
+                                                YouTube
+                                            </option>
+                                        </select>
+                                    )}
+                                    {subsOn && (
+                                        <select
+                                            name="subs"
+                                            defaultValue={playback.subs}
+                                            className="h-9 rounded-lg bg-white/10 px-2 text-xs text-white"
+                                        >
+                                            <option value="">
+                                                {tr('Субтитри')}
+                                            </option>
+                                            <option value="uk">
+                                                {tr('Українська')}
+                                            </option>
+                                            <option value="en">
+                                                {tr('Англійська')}
+                                            </option>
+                                            <option value="ru">
+                                                {tr('Російська')}
+                                            </option>
+                                        </select>
+                                    )}
                                     {(playerOn || subsOn) && (
-                                    <button
-                                        type="submit"
-                                        className="h-9 rounded-lg bg-white/10 px-3 text-xs text-white"
-                                    >
-                                        {tr('Зберегти')}
-                                    </button>
+                                        <button
+                                            type="submit"
+                                            className="h-9 rounded-lg bg-white/10 px-3 text-xs text-white"
+                                        >
+                                            {tr('Зберегти')}
+                                        </button>
                                     )}
                                 </form>
                                 <div className="flex gap-1">
@@ -862,12 +941,12 @@ export default function CinemaShow({
                                     </a>
                                 ))}
                                 {soundtrack.length === 0 && (
-                                    <p className="text-sm text-white/45">{tr('Треків ще немає.')}</p>
+                                    <p className="text-sm text-white/45">
+                                        {tr('Треків ще немає.')}
+                                    </p>
                                 )}
                             </div>
-                            {can.manage && (
-                                <SoundtrackForm slug={movie.slug} />
-                            )}
+                            {can.manage && <SoundtrackForm slug={movie.slug} />}
                         </section>
                         <section className="glass rounded-3xl p-5">
                             <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
@@ -907,8 +986,13 @@ export default function CinemaShow({
                                                 href={`/${friend.username}`}
                                                 className="flex items-center gap-2 text-sm text-white"
                                             >
-                                                <UserAvatar user={friend} size="sm" />
-                                                <span className="truncate">{friend.name}</span>
+                                                <UserAvatar
+                                                    user={friend}
+                                                    size="sm"
+                                                />
+                                                <span className="truncate">
+                                                    {friend.name}
+                                                </span>
                                             </Link>
                                         </li>
                                     ))}
@@ -928,8 +1012,13 @@ export default function CinemaShow({
                                                 className="flex items-center justify-between gap-2 text-sm text-white"
                                             >
                                                 <span className="flex min-w-0 items-center gap-2">
-                                                    <UserAvatar user={friend} size="sm" />
-                                                    <span className="truncate">{friend.name}</span>
+                                                    <UserAvatar
+                                                        user={friend}
+                                                        size="sm"
+                                                    />
+                                                    <span className="truncate">
+                                                        {friend.name}
+                                                    </span>
                                                 </span>
                                                 <span className="shrink-0 text-xs text-white/45">
                                                     {friend.shared}
@@ -1015,14 +1104,18 @@ export default function CinemaShow({
 
 function SoundtrackForm({ slug }: { slug: string }) {
     const [query, setQuery] = useState('');
-    const [hits, setHits] = useState<{ id: number; title: string; artist: string }[]>([]);
+    const [hits, setHits] = useState<
+        { id: number; title: string; artist: string }[]
+    >([]);
 
     return (
         <form
             className="mt-3 space-y-2"
             onSubmit={(event) => {
                 event.preventDefault();
-                void api<{ tracks: { id: number; title: string; artist: string }[] }>(
+                void api<{
+                    tracks: { id: number; title: string; artist: string }[];
+                }>(
                     'GET',
                     `/music/search?q=${encodeURIComponent(query)}&scope=all`,
                 ).then((response) => setHits(response.tracks));
@@ -1035,7 +1128,10 @@ function SoundtrackForm({ slug }: { slug: string }) {
                     placeholder={tr('Знайти трек')}
                     className="h-11 min-w-0 flex-1 rounded-xl bg-white/10 px-3 text-sm text-white placeholder:text-white/40"
                 />
-                <button type="submit" className="h-11 rounded-xl bg-white/10 px-4 text-sm font-semibold text-white">
+                <button
+                    type="submit"
+                    className="h-11 rounded-xl bg-white/10 px-4 text-sm font-semibold text-white"
+                >
                     {tr('Шукати')}
                 </button>
             </div>
@@ -1044,7 +1140,11 @@ function SoundtrackForm({ slug }: { slug: string }) {
                     key={track.id}
                     type="button"
                     className="block w-full rounded-xl bg-white/[0.04] px-3 py-2 text-left text-sm text-white hover:bg-white/10"
-                    onClick={() => router.post(`/cinema/${slug}/soundtrack`, { track_id: track.id })}
+                    onClick={() =>
+                        router.post(`/cinema/${slug}/soundtrack`, {
+                            track_id: track.id,
+                        })
+                    }
                 >
                     {track.artist} — {track.title}
                 </button>

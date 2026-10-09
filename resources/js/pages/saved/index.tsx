@@ -26,12 +26,17 @@ export default function Saved({ items }: { items: Item[] }) {
                 {items.length === 0 ? (
                     <EmptyState
                         icon={Bookmark}
-                        title={tr('Тут з’являться пости, фільми, ігри й сервери')}
+                        title={tr(
+                            'Тут з’являться пости, фільми, ігри й сервери',
+                        )}
                     />
                 ) : (
                     items.map((item, index) =>
                         item.kind === 'post' ? (
-                            <PostCard key={`post-${item.post.id}`} post={item.post} />
+                            <PostCard
+                                key={`post-${item.post.id}`}
+                                post={item.post}
+                            />
                         ) : (
                             <Link
                                 key={`${item.kind}-${item.href}-${index}`}

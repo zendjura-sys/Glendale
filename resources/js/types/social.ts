@@ -92,7 +92,13 @@ export type PostItem = {
     attachments: Attachment[];
     music: TrackCard | null;
     movie: PostMovie | null;
-    link?: { url: string; title: string; thumbnail: string | null; author: string | null; site?: string } | null;
+    link?: {
+        url: string;
+        title: string;
+        thumbnail: string | null;
+        author: string | null;
+        site?: string;
+    } | null;
     card?: {
         kind: string;
         id: number;
@@ -111,8 +117,19 @@ export type PostItem = {
     } | null;
     reaction?: string | null;
     liked: boolean;
-    shared?: { name: string; username: string; href: string; body: string } | null;
-    quoted?: { id: number; name: string; username: string; href: string; body: string } | null;
+    shared?: {
+        name: string;
+        username: string;
+        href: string;
+        body: string;
+    } | null;
+    quoted?: {
+        id: number;
+        name: string;
+        username: string;
+        href: string;
+        body: string;
+    } | null;
     muted?: boolean;
     comments: CommentItem[];
     can: {

@@ -282,8 +282,8 @@ class GameController extends Controller
         }
         $ids = DB::table('user_steam_apps')->where('app_id', $appId)->pluck('user_id');
 
-        return User::query()->whereIn('id', $friendships->friendIds($viewer))->whereIn('id', $ids)->limit(12)->get()
-            ->map(fn (User $friend) => $friend->toCard())->values()->all();
+        return array_values(User::query()->whereIn('id', $friendships->friendIds($viewer))->whereIn('id', $ids)->limit(12)->get()
+            ->map(fn (User $friend) => $friend->toCard())->all());
     }
 
     /**

@@ -310,7 +310,9 @@ export default function FamilyEvents(props: Props) {
                         <input
                             type="checkbox"
                             checked={form.data.weekly}
-                            onChange={(e) => form.setData('weekly', e.target.checked)}
+                            onChange={(e) =>
+                                form.setData('weekly', e.target.checked)
+                            }
                         />
                         {tr('Щотижня')}
                     </label>

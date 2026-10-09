@@ -190,13 +190,11 @@ class Game extends Model
         ];
     }
 
-    /**
-     * @return list<array{store: string, label: string, url: string}>
-     */
+    /** Steam appid із посилання каталогу на store.steampowered.com/app/{id}. */
     public function steamAppId(): ?string
     {
         foreach ($this->links ?? [] as $link) {
-            if (($link['store'] ?? null) === 'steam' && preg_match('#/app/(\d+)#', (string) ($link['url'] ?? ''), $match) === 1) {
+            if ($link['store'] === 'steam' && preg_match('#/app/(\d+)#', $link['url'], $match) === 1) {
                 return $match[1];
             }
         }

@@ -37,7 +37,12 @@ type Props = {
     suggestions?: (UserCard & { mutual: number })[];
     onlineFriends?: UserCard[];
     playingNow?: UserCard[];
-    picks?: { kind: string; title: string; href: string; image: string | null }[];
+    picks?: {
+        kind: string;
+        title: string;
+        href: string;
+        image: string | null;
+    }[];
     sameGame?: (UserCard & { shared_game: string })[];
     birthdays?: (UserCard & { birthday: string })[];
 };
@@ -144,8 +149,12 @@ export default function Feed({
                                     href={`/${person.username}`}
                                     className="min-w-[140px] rounded-xl bg-white/[0.04] px-3 py-2"
                                 >
-                                    <span className="block truncate text-sm font-medium text-white">{person.first_name}</span>
-                                    <span className="block truncate text-[11px] text-white/45">{person.shared_game}</span>
+                                    <span className="block truncate text-sm font-medium text-white">
+                                        {person.first_name}
+                                    </span>
+                                    <span className="block truncate text-[11px] text-white/45">
+                                        {person.shared_game}
+                                    </span>
                                 </Link>
                             ))}
                         </div>
@@ -155,7 +164,10 @@ export default function Feed({
                             {playingNow?.map((person) => (
                                 <Link
                                     key={person.id}
-                                    href={person.playing?.url || `/${person.username}`}
+                                    href={
+                                        person.playing?.url ||
+                                        `/${person.username}`
+                                    }
                                     className="flex min-w-[140px] items-center gap-2 rounded-xl bg-white/[0.04] px-2.5 py-2"
                                 >
                                     <UserAvatar user={person} size="sm" />
@@ -195,7 +207,13 @@ export default function Feed({
 
                     {posts.data.length === 0 ? (
                         <EmptyState
-                            icon={tab === 'country' ? Globe : tab === 'friends' ? Newspaper : Compass}
+                            icon={
+                                tab === 'country'
+                                    ? Globe
+                                    : tab === 'friends'
+                                      ? Newspaper
+                                      : Compass
+                            }
                             title={
                                 tab === 'country'
                                     ? tr('Стрічка країни порожня')
@@ -205,8 +223,12 @@ export default function Feed({
                             }
                             text={
                                 tab === 'country' && !country
-                                    ? tr('Вкажіть країну в налаштуваннях профілю — і тут з’являться записи людей звідти.')
-                                    : tr('Напишіть перший запис або знайдіть друзів — і стрічка оживе.')
+                                    ? tr(
+                                          'Вкажіть країну в налаштуваннях профілю — і тут з’являться записи людей звідти.',
+                                      )
+                                    : tr(
+                                          'Напишіть перший запис або знайдіть друзів — і стрічка оживе.',
+                                      )
                             }
                             action={
                                 <Link

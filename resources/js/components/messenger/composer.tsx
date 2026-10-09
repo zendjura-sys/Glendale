@@ -306,10 +306,18 @@ export function Composer({
             {!editing && card && (
                 <div className="mb-2 flex items-center justify-between gap-2 rounded-xl bg-white/[0.04] px-3 py-2">
                     <span className="min-w-0">
-                        <span className="block text-[11px] text-white/40">{tr(card.hint)}</span>
-                        <span className="block truncate text-sm text-white">{card.title}</span>
+                        <span className="block text-[11px] text-white/40">
+                            {tr(card.hint)}
+                        </span>
+                        <span className="block truncate text-sm text-white">
+                            {card.title}
+                        </span>
                     </span>
-                    <button type="button" onClick={() => setCard(null)} className="text-xs text-white/50">
+                    <button
+                        type="button"
+                        onClick={() => setCard(null)}
+                        className="text-xs text-white/50"
+                    >
                         {tr('Прибрати')}
                     </button>
                 </div>
@@ -359,24 +367,32 @@ export function Composer({
                     >
                         {tr('Картка')}
                     </button>
-                    {vanishOn && <label className="inline-flex min-h-8 items-center gap-2">
-                        <input
-                            type="checkbox"
-                            checked={vanish}
-                            onChange={(event) => setVanish(event.target.checked)}
-                            className="size-3.5 accent-gc-lilac-400"
-                        />
-                        {tr('Зникне за добу')}
-                    </label>}
-                    {scheduleOn && <label className="inline-flex min-h-8 items-center gap-2">
-                        {tr('Відкласти')}
-                        <input
-                            type="datetime-local"
-                            value={publishAt}
-                            onChange={(event) => setPublishAt(event.target.value)}
-                            className="input-glass h-8 rounded-lg px-2 text-xs text-white"
-                        />
-                    </label>}
+                    {vanishOn && (
+                        <label className="inline-flex min-h-8 items-center gap-2">
+                            <input
+                                type="checkbox"
+                                checked={vanish}
+                                onChange={(event) =>
+                                    setVanish(event.target.checked)
+                                }
+                                className="size-3.5 accent-gc-lilac-400"
+                            />
+                            {tr('Зникне за добу')}
+                        </label>
+                    )}
+                    {scheduleOn && (
+                        <label className="inline-flex min-h-8 items-center gap-2">
+                            {tr('Відкласти')}
+                            <input
+                                type="datetime-local"
+                                value={publishAt}
+                                onChange={(event) =>
+                                    setPublishAt(event.target.value)
+                                }
+                                className="input-glass h-8 rounded-lg px-2 text-xs text-white"
+                            />
+                        </label>
+                    )}
                 </div>
             )}
             {context && (

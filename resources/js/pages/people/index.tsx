@@ -144,7 +144,10 @@ export default function People({ filters, saved, total, users }: Props) {
                         <input
                             value={form.country}
                             onChange={(event) =>
-                                setForm({ ...form, country: event.target.value })
+                                setForm({
+                                    ...form,
+                                    country: event.target.value,
+                                })
                             }
                             placeholder={tr('Країна')}
                             className="input-glass h-11 rounded-xl px-3.5 text-sm text-white placeholder:text-white/35"

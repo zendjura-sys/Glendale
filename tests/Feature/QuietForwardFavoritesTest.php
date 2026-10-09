@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\MessageFavorite;
 use App\Models\User;

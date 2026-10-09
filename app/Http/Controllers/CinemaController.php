@@ -374,7 +374,6 @@ class CinemaController extends Controller
     public function soundtrack(Request $request, Movie $movie): RedirectResponse
     {
         abort_unless($request->user()->isStaff(), 403);
-        abort_unless($movie->is_published || $request->user()->isStaff(), 404);
         $data = $request->validate(['track_id' => ['required', 'integer', 'exists:tracks,id']]);
         $trackId = (int) $data['track_id'];
         if (! $movie->tracks()->whereKey($trackId)->exists()) {

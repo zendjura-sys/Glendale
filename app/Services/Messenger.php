@@ -201,6 +201,7 @@ class Messenger
     /**
      * @param  list<UploadedFile>  $images
      * @param  list<UploadedFile>  $documents
+     * @param  array{kind: string, id: int, title: string, hint: string, href: string, image: string|null}|null  $card
      */
     public function send(Conversation $conversation, User $sender, ?string $body, array $images = [], ?int $replyToId = null, array $documents = [], ?CarbonInterface $publishAt = null, ?CarbonInterface $expiresAt = null, ?array $card = null): Message
     {
@@ -294,7 +295,7 @@ class Messenger
         $source->loadMissing(['user', 'attachments']);
         $meta = $source->meta ?? [];
         $meta['forward'] = [
-            'name' => $source->user?->name ?? 'GameCon',
+            'name' => $source->user->name ?? 'GameCon',
             'username' => $source->user?->username,
         ];
 

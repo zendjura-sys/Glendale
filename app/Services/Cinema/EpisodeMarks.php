@@ -16,14 +16,14 @@ class EpisodeMarks
      */
     public function keys(User $user, Movie $movie): array
     {
-        return DB::table('movie_episode_marks')
+        return array_values(DB::table('movie_episode_marks')
             ->where('user_id', $user->id)
             ->where('movie_id', $movie->id)
             ->orderBy('season')
             ->orderBy('episode')
             ->get(['season', 'episode'])
             ->map(fn ($row) => $row->season.':'.$row->episode)
-            ->all();
+            ->all());
     }
 
     /**

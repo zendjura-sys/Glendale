@@ -238,9 +238,6 @@ class FamilyController extends FamilyBaseController
         ]);
     }
 
-    /**
-     * @return list<array<string, mixed>>
-     */
     private function ensureLeader(Request $request, Family $family): void
     {
         $leader = FamilyMember::query()->where('family_id', $family->id)->where('user_id', $request->user()->id)

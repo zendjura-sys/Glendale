@@ -36,7 +36,7 @@ class LinkPreview
         }
 
         $site = $this->site($host);
-        $type = strtolower($response->header('Content-Type') ?? '');
+        $type = strtolower($response->header('Content-Type'));
         if (! str_contains($type, 'html') && ! str_contains($type, 'xml')) {
             return ['url' => $url, 'title' => $site, 'thumbnail' => null, 'author' => null, 'site' => $site];
         }
@@ -77,7 +77,7 @@ class LinkPreview
                 return $response;
             }
             $location = $response->header('Location');
-            if (! is_string($location) || $location === '') {
+            if ($location === '') {
                 return null;
             }
             $next = $this->absolute($current, $location);

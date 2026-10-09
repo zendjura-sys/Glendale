@@ -1,5 +1,12 @@
 import { Link } from '@inertiajs/react';
-import { BellOff, MessagesSquare, PenSquare, Pin, Search, Star } from 'lucide-react';
+import {
+    BellOff,
+    MessagesSquare,
+    PenSquare,
+    Pin,
+    Search,
+    Star,
+} from 'lucide-react';
 import { useState } from 'react';
 import { messagePreview } from '@/components/gc/inbox-listener';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
@@ -167,7 +174,9 @@ export function ConversationList({
                                     <span className="mt-0.5 flex items-center gap-2">
                                         <span className="min-w-0 flex-1 truncate text-[13px] text-white/50">
                                             {conversation.folder && (
-                                                <span className="text-white/35">{conversation.folder} · </span>
+                                                <span className="text-white/35">
+                                                    {conversation.folder} ·{' '}
+                                                </span>
                                             )}
                                             {typingName ? (
                                                 <span className="text-[#8fd8ff]">

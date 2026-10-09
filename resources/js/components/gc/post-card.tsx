@@ -62,7 +62,9 @@ export function PostCard({
     post: PostItem;
     expanded?: boolean;
 }) {
-    const [reaction, setReaction] = useState<string | null>(post.reaction ?? (post.liked ? 'like' : null));
+    const [reaction, setReaction] = useState<string | null>(
+        post.reaction ?? (post.liked ? 'like' : null),
+    );
     const [likes, setLikes] = useState(post.likes_count);
     const [commentsCount, setCommentsCount] = useState(post.comments_count);
     const [showComments, setShowComments] = useState(
@@ -89,14 +91,15 @@ export function PostCard({
         const previous = reaction;
         const removing = previous === next;
         setReaction(removing ? null : next);
-        setLikes((value) => value + (previous === null ? 1 : removing ? -1 : 0));
+        setLikes(
+            (value) => value + (previous === null ? 1 : removing ? -1 : 0),
+        );
 
         try {
-            const response = await api<{ reaction: string | null; likes_count: number }>(
-                'POST',
-                `/posts/${post.id}/like`,
-                { reaction: next },
-            );
+            const response = await api<{
+                reaction: string | null;
+                likes_count: number;
+            }>('POST', `/posts/${post.id}/like`, { reaction: next });
             setReaction(response.reaction);
             setLikes(response.likes_count);
         } catch {
@@ -155,9 +158,7 @@ export function PostCard({
                             className="hover:text-white/80"
                         >
                             {timeAgo(post.created_at)}
-                            {post.edited_at && (
-                                <span> · {tr('змінено')}</span>
-                            )}
+                            {post.edited_at && <span> · {tr('змінено')}</span>}
                         </Link>
                         <span>·</span>
                         <Visibility
@@ -242,7 +243,9 @@ export function PostCard({
                                 }
                             >
                                 {post.muted ? <Volume2 /> : <VolumeX />}{' '}
-                                {post.muted ? tr('Зняти заглушку') : tr('Заглушити')}
+                                {post.muted
+                                    ? tr('Зняти заглушку')
+                                    : tr('Заглушити')}
                             </DropdownMenuItem>
                         )}
                         {post.can.pin && (
@@ -352,7 +355,10 @@ export function PostCard({
                         className="input-glass w-full rounded-xl px-3 py-2 text-sm text-white"
                     />
                     <div className="flex gap-2">
-                        <button type="submit" className="btn-glow h-9 rounded-xl px-3 text-sm font-semibold">
+                        <button
+                            type="submit"
+                            className="btn-glow h-9 rounded-xl px-3 text-sm font-semibold"
+                        >
                             {tr('Зберегти')}
                         </button>
                         <button
@@ -381,29 +387,33 @@ export function PostCard({
                         ? tr('Спойлери приховано в налаштуваннях')
                         : tr('Спойлер')}
                 </button>
-            ) : body && (
-                <div className="mt-3.5 text-[15px] leading-relaxed break-words whitespace-pre-line text-white/90">
-                    {isLong && !fullText ? (
-                        <MentionText text={`${body.slice(0, LONG_TEXT).trimEnd()}…`} />
-                    ) : (
-                        <MentionText text={body} />
-                    )}
-                    {isLong && !fullText && (
-                        <button
-                            type="button"
-                            onClick={() => setFullText(true)}
-                            className="ml-1 font-medium text-gc-lilac-300 hover:text-white"
-                        >
-                            {tr('Показати повністю')}
-                        </button>
-                    )}
-                    <div>
-                        <TranslateToggle
-                            state={translation}
-                            className="mt-1.5"
-                        />
+            ) : (
+                body && (
+                    <div className="mt-3.5 text-[15px] leading-relaxed break-words whitespace-pre-line text-white/90">
+                        {isLong && !fullText ? (
+                            <MentionText
+                                text={`${body.slice(0, LONG_TEXT).trimEnd()}…`}
+                            />
+                        ) : (
+                            <MentionText text={body} />
+                        )}
+                        {isLong && !fullText && (
+                            <button
+                                type="button"
+                                onClick={() => setFullText(true)}
+                                className="ml-1 font-medium text-gc-lilac-300 hover:text-white"
+                            >
+                                {tr('Показати повністю')}
+                            </button>
+                        )}
+                        <div>
+                            <TranslateToggle
+                                state={translation}
+                                className="mt-1.5"
+                            />
+                        </div>
                     </div>
-                </div>
+                )
             )}
 
             {post.sticker && (
@@ -417,12 +427,14 @@ export function PostCard({
                     href={`/posts/${post.quoted.id}`}
                     className="mt-3.5 block rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2.5"
                 >
-                    <span className="text-xs text-white/40">{tr('Цитата')}</span>
+                    <span className="text-xs text-white/40">
+                        {tr('Цитата')}
+                    </span>
                     <span className="mt-0.5 block text-sm font-medium text-white">
                         {post.quoted.name}
                     </span>
                     {post.quoted.body && (
-                        <span className="mt-1 block line-clamp-3 text-sm text-white/70">
+                        <span className="mt-1 line-clamp-3 block text-sm text-white/70">
                             {post.quoted.body}
                         </span>
                     )}
@@ -438,11 +450,12 @@ export function PostCard({
                     <span className="mt-0.5 block text-sm font-medium text-white">
                         {post.shared.name}
                     </span>
-                    {post.shared.body && post.shared.body !== (post.body ?? '') && (
-                        <span className="mt-1 block line-clamp-3 text-sm text-white/70">
-                            {post.shared.body}
-                        </span>
-                    )}
+                    {post.shared.body &&
+                        post.shared.body !== (post.body ?? '') && (
+                            <span className="mt-1 line-clamp-3 block text-sm text-white/70">
+                                {post.shared.body}
+                            </span>
+                        )}
                 </Link>
             )}
 
@@ -464,20 +477,33 @@ export function PostCard({
                     className="mt-3.5 flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-3"
                 >
                     {post.card.image && (
-                        <img src={post.card.image} alt="" className="size-14 rounded-xl object-cover" />
+                        <img
+                            src={post.card.image}
+                            alt=""
+                            className="size-14 rounded-xl object-cover"
+                        />
                     )}
                     <span className="min-w-0">
-                        <span className="block text-xs text-white/40">{tr(post.card.hint)}</span>
-                        <span className="block truncate text-sm font-medium text-white">{post.card.title}</span>
+                        <span className="block text-xs text-white/40">
+                            {tr(post.card.hint)}
+                        </span>
+                        <span className="block truncate text-sm font-medium text-white">
+                            {post.card.title}
+                        </span>
                     </span>
                 </Link>
             )}
 
             {poll && (
                 <div className="mt-3.5 space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-                    <p className="text-sm font-medium text-white">{poll.question}</p>
+                    <p className="text-sm font-medium text-white">
+                        {poll.question}
+                    </p>
                     {poll.options.map((option) => {
-                        const share = poll.total > 0 ? Math.round((option.votes / poll.total) * 100) : 0;
+                        const share =
+                            poll.total > 0
+                                ? Math.round((option.votes / poll.total) * 100)
+                                : 0;
                         const chosen = poll.voted === option.id;
 
                         return (
@@ -485,26 +511,32 @@ export function PostCard({
                                 key={option.id}
                                 type="button"
                                 onClick={async () => {
-                                    const next = await api<NonNullable<PostItem['poll']>>(
-                                        'POST',
-                                        `/posts/${post.id}/poll`,
-                                        { option_id: option.id },
-                                    );
+                                    const next = await api<
+                                        NonNullable<PostItem['poll']>
+                                    >('POST', `/posts/${post.id}/poll`, {
+                                        option_id: option.id,
+                                    });
                                     setPoll(next);
                                 }}
                                 className={cn(
                                     'relative w-full overflow-hidden rounded-xl border px-3 py-2 text-left text-sm',
-                                    chosen ? 'border-gc-lilac-400/50 text-white' : 'border-white/10 text-white/80 hover:border-white/20',
+                                    chosen
+                                        ? 'border-gc-lilac-400/50 text-white'
+                                        : 'border-white/10 text-white/80 hover:border-white/20',
                                 )}
                             >
                                 <span
                                     className="absolute inset-y-0 left-0 bg-gc-indigo/25"
-                                    style={{ width: `${poll.voted ? share : 0}%` }}
+                                    style={{
+                                        width: `${poll.voted ? share : 0}%`,
+                                    }}
                                 />
                                 <span className="relative flex items-center justify-between gap-3">
                                     <span>{option.label}</span>
                                     {poll.voted !== null && (
-                                        <span className="text-xs text-white/50 tabular-nums">{share}%</span>
+                                        <span className="text-xs text-white/50 tabular-nums">
+                                            {share}%
+                                        </span>
                                     )}
                                 </span>
                             </button>
@@ -538,7 +570,7 @@ export function PostCard({
                                     : '')}
                             {post.link.author ? ` · ${post.link.author}` : ''}
                         </span>
-                        <span className="mt-1 block line-clamp-2 text-sm font-medium text-white">
+                        <span className="mt-1 line-clamp-2 block text-sm font-medium text-white">
                             {post.link.title}
                         </span>
                     </span>
@@ -546,7 +578,11 @@ export function PostCard({
             )}
 
             <footer className="mt-4 flex items-center gap-2">
-                <ReactionBar reaction={reaction} count={likes} onPick={pickReaction} />
+                <ReactionBar
+                    reaction={reaction}
+                    count={likes}
+                    onPick={pickReaction}
+                />
                 <button
                     type="button"
                     onClick={() => {
@@ -567,7 +603,12 @@ export function PostCard({
                         </span>
                     )}
                 </button>
-                <SaveButton kind="post" id={post.id} saved={post.saved ?? false} compact />
+                <SaveButton
+                    kind="post"
+                    id={post.id}
+                    saved={post.saved ?? false}
+                    compact
+                />
                 <button
                     type="button"
                     onClick={copyLink}

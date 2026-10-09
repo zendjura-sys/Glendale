@@ -81,7 +81,9 @@ function Composer({
     const [preview, setPreview] = useState<string | null>(null);
     const [duration, setDuration] = useState<number | null>(null);
     const [caption, setCaption] = useState('');
-    const [privacy, setPrivacy] = useState<'friends' | 'close' | 'everyone'>('friends');
+    const [privacy, setPrivacy] = useState<'friends' | 'close' | 'everyone'>(
+        'friends',
+    );
     const [busy, setBusy] = useState(false);
     const input = useRef<HTMLInputElement>(null);
 

@@ -31,7 +31,12 @@ type Props = {
     collaborators: { username: string; name: string }[];
 };
 
-export default function PlaylistShow({ playlist, tracks, can, collaborators }: Props) {
+export default function PlaylistShow({
+    playlist,
+    tracks,
+    can,
+    collaborators,
+}: Props) {
     const shareOn = usePlugin('shared_playlist');
     const spotifyOn = usePlugin('spotify_import');
     const { auth } = usePage().props;
@@ -167,10 +172,17 @@ export default function PlaylistShow({ playlist, tracks, can, collaborators }: P
                                 onSubmit={(event) => {
                                     event.preventDefault();
                                     if (!shareOn) return;
-                                    const data = new FormData(event.currentTarget);
-                                    router.post(`/music/playlists/${playlist.id}/share`, {
-                                        username: String(data.get('username') ?? ''),
-                                    });
+                                    const data = new FormData(
+                                        event.currentTarget,
+                                    );
+                                    router.post(
+                                        `/music/playlists/${playlist.id}/share`,
+                                        {
+                                            username: String(
+                                                data.get('username') ?? '',
+                                            ),
+                                        },
+                                    );
                                 }}
                             >
                                 {shareOn && (
@@ -180,7 +192,10 @@ export default function PlaylistShow({ playlist, tracks, can, collaborators }: P
                                             placeholder={tr('Нік друга')}
                                             className="input-glass h-11 rounded-xl px-3 text-sm text-white"
                                         />
-                                        <button type="submit" className="h-11 rounded-xl bg-white/10 px-3 text-sm text-white">
+                                        <button
+                                            type="submit"
+                                            className="h-11 rounded-xl bg-white/10 px-3 text-sm text-white"
+                                        >
                                             {tr('Спільний доступ')}
                                         </button>
                                     </>
@@ -194,7 +209,10 @@ export default function PlaylistShow({ playlist, tracks, can, collaborators }: P
                                             if (event.key !== 'Enter') return;
                                             event.preventDefault();
                                             const input = event.currentTarget;
-                                            router.post(`/music/playlists/${playlist.id}/spotify`, { playlist: input.value });
+                                            router.post(
+                                                `/music/playlists/${playlist.id}/spotify`,
+                                                { playlist: input.value },
+                                            );
                                         }}
                                     />
                                 )}
@@ -202,7 +220,9 @@ export default function PlaylistShow({ playlist, tracks, can, collaborators }: P
                         )}
                         {shareOn && collaborators.length > 0 && (
                             <p className="text-xs text-white/45">
-                                {collaborators.map((person) => person.name).join(', ')}
+                                {collaborators
+                                    .map((person) => person.name)
+                                    .join(', ')}
                             </p>
                         )}
                         {can.own && (

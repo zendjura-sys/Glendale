@@ -18,7 +18,9 @@ export default function SavedMessages({ items }: { items: Item[] }) {
         <>
             <Head title={tr('Обрані')} />
             <div className="mx-auto w-full max-w-xl space-y-4">
-                <h1 className="font-display text-2xl font-bold text-white">{tr('Обрані повідомлення')}</h1>
+                <h1 className="font-display text-2xl font-bold text-white">
+                    {tr('Обрані повідомлення')}
+                </h1>
                 {items.length === 0 ? (
                     <EmptyState
                         icon={Star}
@@ -34,9 +36,12 @@ export default function SavedMessages({ items }: { items: Item[] }) {
                                 className="glass block rounded-3xl p-4 transition hover:border-white/15"
                             >
                                 <span className="block text-xs text-white/40">
-                                    {item.author ?? tr('Повідомлення')} · {formatDate(item.created_at, false)}
+                                    {item.author ?? tr('Повідомлення')} ·{' '}
+                                    {formatDate(item.created_at, false)}
                                 </span>
-                                <span className="mt-1 block text-sm text-white">{item.body || item.preview}</span>
+                                <span className="mt-1 block text-sm text-white">
+                                    {item.body || item.preview}
+                                </span>
                             </Link>
                         ))}
                     </div>

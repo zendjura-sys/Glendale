@@ -275,12 +275,12 @@ class ServerController extends Controller
             'average' => $rows->isEmpty() ? null : round((float) ServerReview::query()->where('gta_server_id', $server->id)->avg('stars'), 1),
             'count' => ServerReview::query()->where('gta_server_id', $server->id)->count(),
             'can_review' => PlayedPlace::query()->where('user_id', $viewer->id)->where('kind', PlayedPlace::SERVER)->where('subject_id', $server->id)->exists(),
-            'items' => $rows->map(fn (ServerReview $review) => [
+            'items' => array_values($rows->map(fn (ServerReview $review) => [
                 'name' => $review->user->name,
                 'username' => $review->user->username,
                 'stars' => $review->stars,
                 'body' => $review->body,
-            ])->all(),
+            ])->all()),
         ];
     }
 
@@ -429,10 +429,7 @@ class ServerController extends Controller
     }
 
     /**
-     * @param  array<string, mixed>  $data
-     */
-    /**
-     * @return array{owner: array<string, mixed>|null, is_owner: bool, claim: string|null, news: list<array{id: int, body: string, name: string, created_at: string}>, pending: mixed}
+     * @return array{owner: array<string, mixed>|null, is_owner: bool, can_tag: bool, claim: string|null, news: list<array{id: int, body: string, name: string, created_at: string}>, pending: list<array{id: int, name: string, username: string, message: string|null}>}
      */
     private function ownership(GtaServer $server, User $viewer): array
     {
@@ -451,20 +448,20 @@ class ServerController extends Controller
             'can_tag' => $plugins->on('server_tags') && ($server->owner_id === $viewer->id || $viewer->isStaff()),
             'claim' => $mine?->status,
             'news' => $plugins->on('server_news')
-                ? ServerNews::query()->with('user')->where('gta_server_id', $server->id)->latest('id')->limit(5)->get()
+                ? array_values(ServerNews::query()->with('user')->where('gta_server_id', $server->id)->latest('id')->limit(5)->get()
                     ->map(fn (ServerNews $item) => [
                         'id' => $item->id,
                         'body' => $item->body,
                         'name' => $item->user->name,
                         'created_at' => $item->created_at->toIso8601String(),
-                    ])->values()
+                    ])->all())
                 : [],
-            'pending' => $pending->map(fn (ServerClaim $claim) => [
+            'pending' => array_values($pending->map(fn (ServerClaim $claim) => [
                 'id' => $claim->id,
                 'name' => $claim->user->name,
                 'username' => $claim->user->username,
                 'message' => $claim->message,
-            ])->values(),
+            ])->all()),
         ];
     }
 
@@ -477,7 +474,7 @@ class ServerController extends Controller
             return [];
         }
 
-        return DB::table('server_online_samples')
+        return array_values(DB::table('server_online_samples')
             ->where('gta_server_id', $server->id)
             ->orderByDesc('sampled_on')
             ->limit(14)
@@ -485,7 +482,7 @@ class ServerController extends Controller
             ->reverse()
             ->map(fn ($row) => ['day' => (string) $row->sampled_on, 'players' => (int) $row->players_online])
             ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -497,7 +494,7 @@ class ServerController extends Controller
             return [];
         }
 
-        return GtaServer::query()->published()
+        return array_values(GtaServer::query()->published()
             ->whereKeyNot($server->id)
             ->where(function (Builder $query) use ($server) {
                 $query->where('multiplayer', $server->multiplayer)->orWhere('language', $server->language);
@@ -507,7 +504,7 @@ class ServerController extends Controller
             ->limit(4)
             ->get()
             ->map(fn (GtaServer $item) => $item->toCard())
-            ->all();
+            ->all());
     }
 
     private function publishedBySlug(?string $slug): ?GtaServer
@@ -534,6 +531,9 @@ class ServerController extends Controller
         ];
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     private function duplicate(array $data): ?GtaServer
     {
         $host = isset($data['website']) ? preg_replace('/^www\./', '', (string) parse_url((string) $data['website'], PHP_URL_HOST)) : null;

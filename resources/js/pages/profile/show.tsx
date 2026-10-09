@@ -46,12 +46,21 @@ import type {
 } from '@/types';
 import { tr } from '@/lib/i18n';
 
-const PROFILE_BLOCKS = ['platforms', 'steam', 'about', 'achievements', 'audio', 'friends', 'photos'];
+const PROFILE_BLOCKS = [
+    'platforms',
+    'steam',
+    'about',
+    'achievements',
+    'audio',
+    'friends',
+    'photos',
+];
 
 function blockSequence(order: string[]): string[] {
     const picked: string[] = [];
     for (const key of order) {
-        if (PROFILE_BLOCKS.includes(key) && !picked.includes(key)) picked.push(key);
+        if (PROFILE_BLOCKS.includes(key) && !picked.includes(key))
+            picked.push(key);
     }
     for (const key of PROFILE_BLOCKS) {
         if (!picked.includes(key)) picked.push(key);
@@ -291,10 +300,14 @@ export default function ProfileShow({
                                 )}
                             </div>
                             {profile.alias && (
-                                <p className="mt-1 text-sm text-white/45">{profile.name}</p>
+                                <p className="mt-1 text-sm text-white/45">
+                                    {profile.name}
+                                </p>
                             )}
                             {profile.note && (
-                                <p className="mt-1 text-sm text-white/60">{profile.note}</p>
+                                <p className="mt-1 text-sm text-white/60">
+                                    {profile.note}
+                                </p>
                             )}
                             {profile.status && (
                                 <p className="mt-1.5 text-[15px] text-white/75">
@@ -325,7 +338,9 @@ export default function ProfileShow({
                                     href={profile.pin.href}
                                     className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-3 py-1 text-xs text-white/80"
                                 >
-                                    <span className="text-white/40">{tr(profile.pin.hint)}</span>
+                                    <span className="text-white/40">
+                                        {tr(profile.pin.hint)}
+                                    </span>
                                     {profile.pin.title}
                                 </Link>
                             )}
@@ -442,7 +457,10 @@ export default function ProfileShow({
                                               years: anniversaryYears,
                                           })
                                         : tr('Друзі з {date}', {
-                                              date: formatDate(friendsSince, false),
+                                              date: formatDate(
+                                                  friendsSince,
+                                                  false,
+                                              ),
                                           })}
                                 </span>
                             )}
@@ -540,7 +558,9 @@ export default function ProfileShow({
                         {showVisitors && (
                             <Widget title={tr('Хто заходив')} icon={Eye}>
                                 {visitors.length === 0 ? (
-                                    <p className="px-1 text-sm text-white/45">{tr('Поки ніхто не заходив.')}</p>
+                                    <p className="px-1 text-sm text-white/45">
+                                        {tr('Поки ніхто не заходив.')}
+                                    </p>
                                 ) : (
                                     <div className="space-y-2">
                                         {visitors.map((visitor) => (
@@ -549,10 +569,20 @@ export default function ProfileShow({
                                                 href={`/${visitor.username}`}
                                                 className="flex items-center gap-2 rounded-2xl px-1 py-1 transition hover:bg-white/[0.04]"
                                             >
-                                                <UserAvatar user={visitor} size="sm" />
+                                                <UserAvatar
+                                                    user={visitor}
+                                                    size="sm"
+                                                />
                                                 <span className="min-w-0 flex-1">
-                                                    <span className="block truncate text-sm text-white">{visitor.first_name}</span>
-                                                    <span className="block text-xs text-white/40">{formatDate(visitor.visited_at, false)}</span>
+                                                    <span className="block truncate text-sm text-white">
+                                                        {visitor.first_name}
+                                                    </span>
+                                                    <span className="block text-xs text-white/40">
+                                                        {formatDate(
+                                                            visitor.visited_at,
+                                                            false,
+                                                        )}
+                                                    </span>
                                                 </span>
                                             </Link>
                                         ))}
@@ -563,22 +593,57 @@ export default function ProfileShow({
                         {blockSequence(blockOrder).map((key) => {
                             const widgets: Record<string, ReactNode> = {
                                 platforms: profile.platforms &&
-                                    (profile.platforms.steam || profile.platforms.xbox || profile.platforms.playstation) && (
+                                    (profile.platforms.steam ||
+                                        profile.platforms.xbox ||
+                                        profile.platforms.playstation) && (
                                         <Widget title={tr('Платформи')}>
                                             <div className="flex flex-wrap gap-2 px-1">
                                                 {profile.platforms.steam && (
-                                                    <a href={profile.platforms.steam} className="rounded-full bg-white/10 px-3 py-1 text-xs text-white" target="_blank" rel="noreferrer">
+                                                    <a
+                                                        href={
+                                                            profile.platforms
+                                                                .steam
+                                                        }
+                                                        className="rounded-full bg-white/10 px-3 py-1 text-xs text-white"
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                    >
                                                         Steam
                                                     </a>
                                                 )}
                                                 {profile.platforms.xbox && (
-                                                    <a href={profile.platforms.xbox} className="rounded-full bg-white/10 px-3 py-1 text-xs text-white" target="_blank" rel="noreferrer">
-                                                        Xbox · {profile.platforms.xbox_name}
+                                                    <a
+                                                        href={
+                                                            profile.platforms
+                                                                .xbox
+                                                        }
+                                                        className="rounded-full bg-white/10 px-3 py-1 text-xs text-white"
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                    >
+                                                        Xbox ·{' '}
+                                                        {
+                                                            profile.platforms
+                                                                .xbox_name
+                                                        }
                                                     </a>
                                                 )}
-                                                {profile.platforms.playstation && (
-                                                    <a href={profile.platforms.playstation} className="rounded-full bg-white/10 px-3 py-1 text-xs text-white" target="_blank" rel="noreferrer">
-                                                        PlayStation · {profile.platforms.playstation_name}
+                                                {profile.platforms
+                                                    .playstation && (
+                                                    <a
+                                                        href={
+                                                            profile.platforms
+                                                                .playstation
+                                                        }
+                                                        className="rounded-full bg-white/10 px-3 py-1 text-xs text-white"
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                    >
+                                                        PlayStation ·{' '}
+                                                        {
+                                                            profile.platforms
+                                                                .playstation_name
+                                                        }
                                                     </a>
                                                 )}
                                             </div>
@@ -589,14 +654,29 @@ export default function ProfileShow({
                                         <div className="space-y-1 px-1">
                                             {steamLibrary?.map((game) =>
                                                 game.href ? (
-                                                    <Link key={game.name} href={game.href} className="flex justify-between gap-3 text-sm text-white">
-                                                        <span className="truncate">{game.name}</span>
-                                                        <span className="text-xs text-white/40">{game.hours}г</span>
+                                                    <Link
+                                                        key={game.name}
+                                                        href={game.href}
+                                                        className="flex justify-between gap-3 text-sm text-white"
+                                                    >
+                                                        <span className="truncate">
+                                                            {game.name}
+                                                        </span>
+                                                        <span className="text-xs text-white/40">
+                                                            {game.hours}г
+                                                        </span>
                                                     </Link>
                                                 ) : (
-                                                    <div key={game.name} className="flex justify-between gap-3 text-sm text-white/80">
-                                                        <span className="truncate">{game.name}</span>
-                                                        <span className="text-xs text-white/40">{game.hours}г</span>
+                                                    <div
+                                                        key={game.name}
+                                                        className="flex justify-between gap-3 text-sm text-white/80"
+                                                    >
+                                                        <span className="truncate">
+                                                            {game.name}
+                                                        </span>
+                                                        <span className="text-xs text-white/40">
+                                                            {game.hours}г
+                                                        </span>
                                                     </div>
                                                 ),
                                             )}
@@ -611,12 +691,22 @@ export default function ProfileShow({
                                     </Widget>
                                 ),
                                 achievements: achievements && (
-                                    <AchievementsCard data={achievements} isSelf={isSelf} />
+                                    <AchievementsCard
+                                        data={achievements}
+                                        isSelf={isSelf}
+                                    />
                                 ),
                                 audio: audio && (
                                     <>
-                                        <Deferred data="nowPlaying" fallback={<span hidden />}>
-                                            {nowPlaying ? <NowPlayingCard track={nowPlaying} /> : null}
+                                        <Deferred
+                                            data="nowPlaying"
+                                            fallback={<span hidden />}
+                                        >
+                                            {nowPlaying ? (
+                                                <NowPlayingCard
+                                                    track={nowPlaying}
+                                                />
+                                            ) : null}
                                         </Deferred>
                                         {audio.tracks > 0 && (
                                             <Link
@@ -627,13 +717,21 @@ export default function ProfileShow({
                                                     <Music2 className="size-5 text-white" />
                                                 </span>
                                                 <span className="min-w-0 flex-1">
-                                                    <span className="block text-sm font-semibold text-white">{tr('Аудіозаписи')}</span>
+                                                    <span className="block text-sm font-semibold text-white">
+                                                        {tr('Аудіозаписи')}
+                                                    </span>
                                                     <span className="block text-xs text-white/45">
                                                         {audio.tracks}{' '}
-                                                        {plural(audio.tracks, ['трек', 'треки', 'треків'])}
+                                                        {plural(audio.tracks, [
+                                                            'трек',
+                                                            'треки',
+                                                            'треків',
+                                                        ])}
                                                     </span>
                                                 </span>
-                                                <span className="text-xs text-white/40 transition group-hover:text-white">{tr('Слухати →')}</span>
+                                                <span className="text-xs text-white/40 transition group-hover:text-white">
+                                                    {tr('Слухати →')}
+                                                </span>
                                             </Link>
                                         )}
                                     </>
@@ -646,13 +744,19 @@ export default function ProfileShow({
                                             stats.mutual > 0 ? (
                                                 <span className="text-xs text-white/45">
                                                     {stats.mutual}{' '}
-                                                    {plural(stats.mutual, ['спільний', 'спільні', 'спільних'])}
+                                                    {plural(stats.mutual, [
+                                                        'спільний',
+                                                        'спільні',
+                                                        'спільних',
+                                                    ])}
                                                 </span>
                                             ) : undefined
                                         }
                                     >
                                         {friends.length === 0 ? (
-                                            <p className="px-1 text-sm text-white/45">{tr('Поки немає друзів.')}</p>
+                                            <p className="px-1 text-sm text-white/45">
+                                                {tr('Поки немає друзів.')}
+                                            </p>
                                         ) : (
                                             <div className="grid grid-cols-3 gap-2">
                                                 {friends.map((friend) => (
@@ -661,8 +765,13 @@ export default function ProfileShow({
                                                         href={`/${friend.username}`}
                                                         className="flex flex-col items-center gap-1.5 rounded-2xl p-2 text-center transition hover:bg-white/[0.04]"
                                                     >
-                                                        <UserAvatar user={friend} size="lg" />
-                                                        <span className="w-full truncate text-xs text-white/75">{friend.first_name}</span>
+                                                        <UserAvatar
+                                                            user={friend}
+                                                            size="lg"
+                                                        />
+                                                        <span className="w-full truncate text-xs text-white/75">
+                                                            {friend.first_name}
+                                                        </span>
                                                     </Link>
                                                 ))}
                                             </div>
@@ -675,7 +784,10 @@ export default function ProfileShow({
                                         icon={ImageIcon}
                                         action={
                                             photosHref ? (
-                                                <Link href={photosHref} className="text-xs text-cyan-300/80 transition hover:text-cyan-200">
+                                                <Link
+                                                    href={photosHref}
+                                                    className="text-xs text-cyan-300/80 transition hover:text-cyan-200"
+                                                >
                                                     {tr('Усі')} {stats.photos}
                                                 </Link>
                                             ) : undefined
@@ -683,14 +795,20 @@ export default function ProfileShow({
                                     >
                                         <div className="grid grid-cols-3 gap-1.5 overflow-hidden rounded-2xl">
                                             {photos.map((photo) => (
-                                                <Link key={photo.id} href={photo.href} className="group aspect-square overflow-hidden bg-white/5">
+                                                <Link
+                                                    key={photo.id}
+                                                    href={photo.href}
+                                                    className="group aspect-square overflow-hidden bg-white/5"
+                                                >
                                                     <img
                                                         src={photo.url}
                                                         alt={photo.alt ?? ''}
                                                         loading="lazy"
                                                         className={cn(
                                                             'size-full object-cover transition duration-500',
-                                                            photo.is_sensitive ? 'scale-110 blur-2xl' : 'group-hover:scale-110',
+                                                            photo.is_sensitive
+                                                                ? 'scale-110 blur-2xl'
+                                                                : 'group-hover:scale-110',
                                                         )}
                                                     />
                                                 </Link>

@@ -117,7 +117,7 @@ class ClanService
     }
 
     /**
-     * @param  list<string>|null  $answers
+     * @param  array<int, string>|null  $answers
      */
     public function join(Clan $clan, User $user, ?string $note, ?string $nickname, ?array $answers = null, bool $invited = false): ClanMember
     {
@@ -130,7 +130,7 @@ class ClanService
         }
 
         $open = $invited || $clan->join_mode === Clan::JOIN_OPEN;
-        $questions = array_values(array_filter((array) $clan->questions, fn ($question) => is_string($question) && trim($question) !== ''));
+        $questions = array_values(array_filter($clan->questions ?? [], fn (string $question) => trim($question) !== ''));
         $clean = [];
         if (! $open && $questions !== []) {
             $given = array_values($answers ?? []);

@@ -58,9 +58,13 @@ export function PostComposer({
     const [focused, setFocused] = useState(false);
     const [picking, setPicking] = useState(false);
     const [track, setTrack] = useState<TrackCard | null>(null);
-    const [card, setCard] = useState<NonNullable<PostItem['card']> | null>(null);
+    const [card, setCard] = useState<NonNullable<PostItem['card']> | null>(
+        null,
+    );
     const [cardQuery, setCardQuery] = useState('');
-    const [cardHits, setCardHits] = useState<NonNullable<PostItem['card']>[]>([]);
+    const [cardHits, setCardHits] = useState<NonNullable<PostItem['card']>[]>(
+        [],
+    );
     const [pickingCard, setPickingCard] = useState(false);
     const [publishAt, setPublishAt] = useState('');
     const [pickingSticker, setPickingSticker] = useState(false);
@@ -157,14 +161,19 @@ export function PostComposer({
         if (!canSubmit) return;
 
         form.transform((data) => {
-            const options = data.poll?.options.map((option) => option.trim()).filter(Boolean) ?? [];
+            const options =
+                data.poll?.options
+                    .map((option) => option.trim())
+                    .filter(Boolean) ?? [];
 
             return {
                 ...data,
                 draft: asDraft ? 1 : 0,
                 ...(!asDraft && publishAt ? { publish_at: publishAt } : {}),
                 poll:
-                    data.poll && data.poll.question.trim() && options.length >= 2
+                    data.poll &&
+                    data.poll.question.trim() &&
+                    options.length >= 2
                         ? { question: data.poll.question.trim(), options }
                         : undefined,
                 ...(track ? { music: musicPayload(track) } : {}),
@@ -311,10 +320,18 @@ export function PostComposer({
             {card && (
                 <div className="relative mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
                     <span className="min-w-0 flex-1">
-                        <span className="block text-xs text-white/40">{tr(card.hint)}</span>
-                        <span className="block truncate text-sm font-medium text-white">{card.title}</span>
+                        <span className="block text-xs text-white/40">
+                            {tr(card.hint)}
+                        </span>
+                        <span className="block truncate text-sm font-medium text-white">
+                            {card.title}
+                        </span>
                     </span>
-                    <button type="button" onClick={() => setCard(null)} aria-label={tr('Прибрати картку')}>
+                    <button
+                        type="button"
+                        onClick={() => setCard(null)}
+                        aria-label={tr('Прибрати картку')}
+                    >
                         <X className="size-4 text-white/50" />
                     </button>
                 </div>
@@ -331,10 +348,14 @@ export function PostComposer({
                                 return;
                             }
                             window.setTimeout(() => {
-                                void api<{ cards: NonNullable<PostItem['card']>[] }>(
+                                void api<{
+                                    cards: NonNullable<PostItem['card']>[];
+                                }>(
                                     'GET',
                                     `/cards/search?q=${encodeURIComponent(value.trim())}`,
-                                ).then((response) => setCardHits(response.cards));
+                                ).then((response) =>
+                                    setCardHits(response.cards),
+                                );
                             }, 200);
                         }}
                         placeholder={tr('Гра, сервер або подія')}
@@ -350,7 +371,9 @@ export function PostComposer({
                             }}
                             className="block w-full rounded-xl px-2 py-1.5 text-left text-sm text-white hover:bg-white/[0.06]"
                         >
-                            <span className="text-xs text-white/40">{tr(hit.hint)}</span>
+                            <span className="text-xs text-white/40">
+                                {tr(hit.hint)}
+                            </span>
                             <span className="block truncate">{hit.title}</span>
                         </button>
                     ))}
@@ -377,7 +400,10 @@ export function PostComposer({
                             onChange={(event) => {
                                 const options = [...form.data.poll!.options];
                                 options[index] = event.target.value;
-                                form.setData('poll', { ...form.data.poll!, options });
+                                form.setData('poll', {
+                                    ...form.data.poll!,
+                                    options,
+                                });
                             }}
                             placeholder={tr('Варіант {n}', { n: index + 1 })}
                             className="w-full rounded-xl bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:outline-none"
@@ -409,7 +435,9 @@ export function PostComposer({
                 </div>
             )}
             {form.data.sticker && (
-                <div className="mt-3 text-5xl leading-none">{stickerEmoji(form.data.sticker)}</div>
+                <div className="mt-3 text-5xl leading-none">
+                    {stickerEmoji(form.data.sticker)}
+                </div>
             )}
 
             {form.progress && (
@@ -557,13 +585,15 @@ export function PostComposer({
                     </div>
                 )}
 
-                {scheduleOn && <input
-                    type="datetime-local"
-                    value={publishAt}
-                    onChange={(event) => setPublishAt(event.target.value)}
-                    aria-label={tr('Час публікації')}
-                    className="h-10 rounded-xl bg-transparent px-2 text-xs text-white/70"
-                />}
+                {scheduleOn && (
+                    <input
+                        type="datetime-local"
+                        value={publishAt}
+                        onChange={(event) => setPublishAt(event.target.value)}
+                        aria-label={tr('Час публікації')}
+                        className="h-10 rounded-xl bg-transparent px-2 text-xs text-white/70"
+                    />
+                )}
                 <a
                     href="/posts/drafts"
                     className="inline-flex h-10 items-center rounded-xl px-2 text-xs font-medium text-white/45 hover:text-white"

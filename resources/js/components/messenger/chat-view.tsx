@@ -363,7 +363,8 @@ export function ChatView({
         switch (outgoing.kind) {
             case 'text':
                 if (outgoing.body) form.append('body', outgoing.body);
-                if (outgoing.publishAt) form.append('publish_at', outgoing.publishAt);
+                if (outgoing.publishAt)
+                    form.append('publish_at', outgoing.publishAt);
                 if (outgoing.vanish) form.append('disappear', '1');
                 if (outgoing.card) {
                     form.append('card[kind]', outgoing.card.kind);
@@ -593,7 +594,9 @@ export function ChatView({
                 .then(({ starred }) =>
                     setMessages((current) =>
                         current.map((item) =>
-                            item.id === message.id ? { ...item, starred } : item,
+                            item.id === message.id
+                                ? { ...item, starred }
+                                : item,
                         ),
                     ),
                 )
@@ -680,47 +683,53 @@ export function ChatView({
                         </span>
                     </span>
                 </button>
-                {unreadOn && <button
-                    type="button"
-                    onClick={() => router.post(`/messages/${active.id}/unread`)}
-                    className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
-                    aria-label={tr('Непрочитане')}
-                    title={tr('Позначити непрочитаним')}
-                >
-                    <Mail className="size-[18px]" />
-                </button>}
-                {receiptsOn && <button
-                    type="button"
-                    onClick={() =>
-                        router.post(
-                            `/messages/${active.id}/receipts`,
-                            {},
-                            {
-                                preserveScroll: true,
-                                preserveState: true,
-                                only: ['active'],
-                            },
-                        )
-                    }
-                    className={cn(
-                        'flex size-9 items-center justify-center rounded-xl transition',
-                        active.share_receipts === false
-                            ? 'bg-white/10 text-white'
-                            : 'text-white/60 hover:bg-white/[0.07] hover:text-white',
-                    )}
-                    aria-label={tr('Звіти про прочитання')}
-                    title={
-                        active.share_receipts === false
-                            ? tr('Звіти вимкнено')
-                            : tr('Звіти про прочитання')
-                    }
-                >
-                    {active.share_receipts === false ? (
-                        <EyeOff className="size-[18px]" />
-                    ) : (
-                        <Eye className="size-[18px]" />
-                    )}
-                </button>}
+                {unreadOn && (
+                    <button
+                        type="button"
+                        onClick={() =>
+                            router.post(`/messages/${active.id}/unread`)
+                        }
+                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
+                        aria-label={tr('Непрочитане')}
+                        title={tr('Позначити непрочитаним')}
+                    >
+                        <Mail className="size-[18px]" />
+                    </button>
+                )}
+                {receiptsOn && (
+                    <button
+                        type="button"
+                        onClick={() =>
+                            router.post(
+                                `/messages/${active.id}/receipts`,
+                                {},
+                                {
+                                    preserveScroll: true,
+                                    preserveState: true,
+                                    only: ['active'],
+                                },
+                            )
+                        }
+                        className={cn(
+                            'flex size-9 items-center justify-center rounded-xl transition',
+                            active.share_receipts === false
+                                ? 'bg-white/10 text-white'
+                                : 'text-white/60 hover:bg-white/[0.07] hover:text-white',
+                        )}
+                        aria-label={tr('Звіти про прочитання')}
+                        title={
+                            active.share_receipts === false
+                                ? tr('Звіти вимкнено')
+                                : tr('Звіти про прочитання')
+                        }
+                    >
+                        {active.share_receipts === false ? (
+                            <EyeOff className="size-[18px]" />
+                        ) : (
+                            <Eye className="size-[18px]" />
+                        )}
+                    </button>
+                )}
                 <button
                     type="button"
                     onClick={() =>
@@ -740,20 +749,29 @@ export function ChatView({
                             ? 'bg-white/10 text-white'
                             : 'text-white/60 hover:bg-white/[0.07] hover:text-white',
                     )}
-                    aria-label={active.pinned ? tr('Відкріпити') : tr('Закріпити')}
+                    aria-label={
+                        active.pinned ? tr('Відкріпити') : tr('Закріпити')
+                    }
                     title={active.pinned ? tr('Відкріпити') : tr('Закріпити')}
                 >
-                    <Pin className={cn('size-[18px]', active.pinned && 'fill-current')} />
+                    <Pin
+                        className={cn(
+                            'size-[18px]',
+                            active.pinned && 'fill-current',
+                        )}
+                    />
                 </button>
-                {foldersOn && <button
-                    type="button"
-                    onClick={() => setFolderOpen((open) => !open)}
-                    className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
-                    aria-label={tr('Папка')}
-                    title={active.folder ? active.folder : tr('Папка')}
-                >
-                    <Folder className="size-[18px]" />
-                </button>}
+                {foldersOn && (
+                    <button
+                        type="button"
+                        onClick={() => setFolderOpen((open) => !open)}
+                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
+                        aria-label={tr('Папка')}
+                        title={active.folder ? active.folder : tr('Папка')}
+                    >
+                        <Folder className="size-[18px]" />
+                    </button>
+                )}
                 <button
                     type="button"
                     onClick={() =>
@@ -1069,7 +1087,10 @@ export function ChatView({
                         placeholder={tr('Назва папки')}
                         className="input-glass h-10 min-w-0 flex-1 rounded-xl px-3 text-sm text-white"
                     />
-                    <button type="submit" className="h-10 rounded-xl bg-white px-3 text-sm font-semibold text-gc-ink">
+                    <button
+                        type="submit"
+                        className="h-10 rounded-xl bg-white px-3 text-sm font-semibold text-gc-ink"
+                    >
                         {tr('Зберегти')}
                     </button>
                 </form>
@@ -1077,7 +1098,9 @@ export function ChatView({
             {forwarding && (
                 <div className="border-t border-white/[0.06] bg-[#0b1020]/80 px-4 py-3">
                     <div className="mb-2 flex items-center justify-between gap-3">
-                        <p className="text-sm font-semibold text-white">{tr('Переслати')}</p>
+                        <p className="text-sm font-semibold text-white">
+                            {tr('Переслати')}
+                        </p>
                         <button
                             type="button"
                             onClick={() => setForwarding(null)}
@@ -1087,8 +1110,11 @@ export function ChatView({
                         </button>
                     </div>
                     <div className="max-h-40 space-y-1 overflow-y-auto">
-                        {conversations.filter((item) => item.id !== active.id).length === 0 && (
-                            <p className="text-sm text-white/45">{tr('Немає інших чатів.')}</p>
+                        {conversations.filter((item) => item.id !== active.id)
+                            .length === 0 && (
+                            <p className="text-sm text-white/45">
+                                {tr('Немає інших чатів.')}
+                            </p>
                         )}
                         {conversations
                             .filter((item) => item.id !== active.id)
@@ -1104,8 +1130,14 @@ export function ChatView({
                                             `/messages/${active.id}/messages/${source.id}/forward`,
                                             { conversation_id: item.id },
                                         )
-                                            .then(() => toast.success(tr('Переслано.')))
-                                            .catch(() => toast.error(tr('Не вдалося переслати.')));
+                                            .then(() =>
+                                                toast.success(tr('Переслано.')),
+                                            )
+                                            .catch(() =>
+                                                toast.error(
+                                                    tr('Не вдалося переслати.'),
+                                                ),
+                                            );
                                     }}
                                     className="flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm text-white hover:bg-white/[0.06]"
                                 >
