@@ -37,7 +37,12 @@ class FeedController extends Controller
         $friendIds = $this->friendships->friendIds($user);
         $communityIds = $this->communities->joinedIds($user);
         $hasSources = $friendIds !== [] || $communityIds !== [];
-        $tab = $request->query('tab') === 'discover' || ! $hasSources ? 'discover' : 'friends';
+        $requested = $request->query('tab');
+        $tab = match (true) {
+            $requested === 'country' => 'country',
+            $requested === 'discover' || ! $hasSources => 'discover',
+            default => 'friends',
+        };
 
         $query = Post::query()
             ->visibleTo($user, $friendIds)
@@ -47,6 +52,11 @@ class FeedController extends Controller
             $query->where(fn (Builder $q) => $q
                 ->where(fn (Builder $w) => $w->where('wall_type', '!=', 'community')->whereIn('author_id', [...$friendIds, $user->id]))
                 ->orWhere(fn (Builder $w) => $w->where('wall_type', 'community')->whereIn('wall_id', $communityIds ?: [0])));
+        } elseif ($tab === 'country' && is_string($user->country) && $user->country !== '') {
+            $query->where('visibility', Post::VISIBILITY_PUBLIC)
+                ->whereHas('author', fn (Builder $q) => $q->where('country', $user->country));
+        } elseif ($tab === 'country') {
+            $query->whereRaw('1 = 0');
         } else {
             $query->where('visibility', Post::VISIBILITY_PUBLIC)
                 ->where('created_at', '>=', now()->subDays(30))
@@ -58,6 +68,7 @@ class FeedController extends Controller
 
         return Inertia::render('feed/index', [
             'tab' => $tab,
+            'country' => $user->country,
             'hasFriends' => $hasSources,
             'posts' => Inertia::scroll(fn () => $posts->setCollection(collect($items))),
             'suggestions' => Inertia::defer(fn () => collect($this->friendships->suggestions($user, 5))

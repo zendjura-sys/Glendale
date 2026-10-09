@@ -87,6 +87,7 @@ type Props = {
     nowPlaying?: NowPlaying | null;
     posts: ScrollData<PostItem>;
     steamLibrary?: { name: string; hours: number; href: string | null }[];
+    together?: (UserCard & { kind: 'cinema' | 'music'; together: string })[];
 };
 
 function Counter({
@@ -175,6 +176,7 @@ export default function ProfileShow({
     nowPlaying,
     posts,
     steamLibrary,
+    together = [],
 }: Props) {
     const { modules } = usePage().props;
     const isSelf = relation === 'self';
@@ -280,6 +282,25 @@ export default function ProfileShow({
                             {profile.playing && (
                                 <div className="mt-2">
                                     <PlayingBadge playing={profile.playing} />
+                                </div>
+                            )}
+                            {together.length > 0 && (
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                    <span className="text-xs text-white/40">
+                                        {tr('Грали разом')}
+                                    </span>
+                                    {together.map((person) => (
+                                        <Link
+                                            key={person.id}
+                                            href={`/${person.username}`}
+                                            className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.06] px-2.5 py-1 text-xs text-white/80 hover:text-white"
+                                        >
+                                            {person.name}
+                                            <span className="text-white/40">
+                                                {person.together}
+                                            </span>
+                                        </Link>
+                                    ))}
                                 </div>
                             )}
                             <p className="mt-1.5 flex items-center gap-1.5 text-xs text-white/45">

@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     ArrowLeft,
     BookOpen,
@@ -98,6 +98,14 @@ type Props = {
     saved: boolean;
     following: boolean;
     pinned: boolean;
+    guides: {
+        id: number;
+        title: string;
+        body: string;
+        created_at: string;
+        user: UserCard | null;
+        mine: boolean;
+    }[];
 };
 
 const STORE_STYLE: Record<string, string> = {
@@ -175,6 +183,42 @@ function Score({
     );
 }
 
+function GuideForm({ slug }: { slug: string }) {
+    const form = useForm({ title: '', body: '' });
+
+    return (
+        <form
+            className="mb-4 space-y-2"
+            onSubmit={(event) => {
+                event.preventDefault();
+                form.post(`/games/${slug}/guides`, {
+                    preserveScroll: true,
+                    onSuccess: () => form.reset(),
+                });
+            }}
+        >
+            <input
+                value={form.data.title}
+                maxLength={80}
+                onChange={(event) => form.setData('title', event.target.value)}
+                placeholder={tr('Назва гіда')}
+                className="input-glass h-10 w-full rounded-xl px-3 text-sm text-white placeholder:text-white/30"
+            />
+            <textarea
+                value={form.data.body}
+                maxLength={5000}
+                rows={4}
+                onChange={(event) => form.setData('body', event.target.value)}
+                placeholder={tr('Коротко: як почати, що зібрати, чого уникати')}
+                className="input-glass w-full rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30"
+            />
+            <button type="submit" disabled={form.processing} className="btn-glow h-10 rounded-xl px-4 text-sm font-semibold disabled:opacity-50">
+                {tr('Опублікувати гід')}
+            </button>
+        </form>
+    );
+}
+
 /** Сторінка гри: опис, медіа, мультиплеєр, рейтинги, компанії, мови, магазини, спільнота й клани. */
 export default function GameShow({
     game,
@@ -189,6 +233,7 @@ export default function GameShow({
     saved,
     following,
     pinned,
+    guides,
 }: Props) {
     const d = game.details ?? {};
     const [video, setVideo] = useState<string | null>(null);
@@ -667,6 +712,40 @@ export default function GameShow({
                     </div>
                 </Section>
             )}
+
+            <Section title={tr('Гіди')} icon={BookOpen}>
+                <GuideForm slug={game.slug} />
+                {guides.length === 0 ? (
+                    <p className="text-sm text-white/45">{tr('Гідів ще немає. Напишіть перший.')}</p>
+                ) : (
+                    <div className="space-y-3">
+                        {guides.map((guide) => (
+                            <article key={guide.id} className="rounded-2xl bg-white/[0.04] p-4">
+                                <div className="flex items-start gap-3">
+                                    <div className="min-w-0 flex-1">
+                                        <h3 className="font-semibold text-white">{guide.title}</h3>
+                                        {guide.user && (
+                                            <Link href={`/${guide.user.username}`} className="text-xs text-white/45 hover:text-white">
+                                                {guide.user.name}
+                                            </Link>
+                                        )}
+                                        <p className="mt-2 text-sm whitespace-pre-line text-white/75">{guide.body}</p>
+                                    </div>
+                                    {guide.mine && (
+                                        <button
+                                            type="button"
+                                            className="text-xs text-rose-200 hover:text-rose-100"
+                                            onClick={() => router.delete(`/games/${game.slug}/guides/${guide.id}`)}
+                                        >
+                                            {tr('Видалити')}
+                                        </button>
+                                    )}
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                )}
+            </Section>
 
             {(d.websites?.length || d.igdb_url) && (
                 <Section title={tr('Спільнота й посилання')} icon={Globe}>

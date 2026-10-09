@@ -8,6 +8,7 @@ use App\Http\Requests\Settings\ProfileUpdateRequest;
 use App\Services\Auth\DiscordOAuth;
 use App\Services\Auth\FirebaseAuth;
 use App\Services\Auth\SocialLogin;
+use App\Support\Countries;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,6 +36,7 @@ class ProfileController extends Controller
                 'status' => $user->status,
                 'about' => $user->about,
                 'city' => $user->city,
+                'country' => $user->country,
                 'birthday' => $user->birthday?->toDateString(),
                 'gender' => $user->gender,
                 'website' => $user->website,
@@ -42,6 +44,7 @@ class ProfileController extends Controller
                 'message_privacy' => $user->message_privacy,
                 'email_social' => $user->email_social,
             ],
+            'countries' => Countries::options(),
             'connections' => $social->connections($user, [
                 'discord' => $discord->configured(),
                 'google' => $firebase->configured(),

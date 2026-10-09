@@ -13,6 +13,7 @@ use App\Services\ImageStorage;
 use App\Services\Messenger;
 use App\Services\MusicService;
 use App\Services\PhotoService;
+use App\Services\PlayedTogether;
 use App\Services\PostCards;
 use App\Services\PostPresenter;
 use App\Services\Presence\SteamPresence;
@@ -102,6 +103,7 @@ class ProfileController extends Controller
                 'platforms' => $canSeeContent ? $this->platforms($user) : null,
             ],
             'steamLibrary' => $canSeeContent ? app(SteamPresence::class)->library($user) : [],
+            'together' => $canSeeContent ? app(PlayedTogether::class)->cards($user) : [],
             'relation' => $relation,
             'canSeeContent' => $canSeeContent,
             'canMessage' => $viewer !== null && $messenger->canMessage($viewer, $user),

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Clan;
 use App\Models\Game;
 use App\Models\GameEvent;
+use App\Models\GameGuide;
 use App\Services\EventCalendar;
 use App\Services\FollowAlerts;
 use App\Services\FriendshipService;
@@ -14,6 +15,7 @@ use App\Support\Modules\ModuleManager;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
@@ -154,11 +156,47 @@ class GameController extends Controller
             'saved' => $request->user() ? app(SavedItems::class)->has($request->user(), 'game', $game->id) : false,
             'following' => $request->user() ? app(FollowAlerts::class)->has($request->user(), 'game', $game->id) : false,
             'pinned' => is_array($pin = $request->user()?->pref('pin')) && ($pin['kind'] ?? null) === 'game' && (int) ($pin['id'] ?? 0) === $game->id,
+            'guides' => GameGuide::query()->with('user')->where('game_id', $game->id)->latest('id')->limit(20)->get()
+                ->map(fn (GameGuide $guide) => [
+                    'id' => $guide->id,
+                    'title' => $guide->title,
+                    'body' => $guide->body,
+                    'created_at' => $guide->created_at->toIso8601String(),
+                    'user' => $guide->user?->toCard(),
+                    'mine' => $request->user()?->id === $guide->user_id || $request->user()?->isStaff() === true,
+                ])->values(),
         ];
 
         return $request->expectsJson() && ! $request->header('X-Inertia')
             ? response()->json($props)
             : Inertia::render('games/show', $props);
+    }
+
+    public function guide(Request $request, Game $game): RedirectResponse
+    {
+        abort_unless($game->is_published || $request->user()->isStaff(), 404);
+        $data = $request->validate([
+            'title' => ['required', 'string', 'min:3', 'max:80'],
+            'body' => ['required', 'string', 'min:10', 'max:5000'],
+        ]);
+        $game->guides()->create([
+            'user_id' => $request->user()->id,
+            'title' => trim($data['title']),
+            'body' => trim($data['body']),
+        ]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Гід опубліковано.']);
+
+        return back();
+    }
+
+    public function deleteGuide(Request $request, Game $game, GameGuide $guide): RedirectResponse
+    {
+        abort_unless($guide->game_id === $game->id, 404);
+        abort_unless($guide->user_id === $request->user()->id || $request->user()->isStaff(), 403);
+        $guide->delete();
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Гід видалено.']);
+
+        return back();
     }
 
     /** Швидкий пошук для вибору гри (створення клану тощо). */

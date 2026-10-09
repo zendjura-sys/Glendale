@@ -41,6 +41,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $status
  * @property string|null $about
  * @property string|null $city
+ * @property string|null $country
  * @property Carbon|null $birthday
  * @property string|null $gender
  * @property string|null $website
@@ -74,7 +75,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  */
 #[Fillable([
     'username', 'first_name', 'last_name', 'email', 'password',
-    'status', 'about', 'city', 'birthday', 'gender', 'website', 'is_private', 'message_privacy', 'email_social',
+    'status', 'about', 'city', 'country', 'birthday', 'gender', 'website', 'is_private', 'message_privacy', 'email_social',
 ])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'email', 'ban_reason', 'google_email'])]
 class User extends Authenticatable implements HasLocalePreference, MustVerifyEmail, PasskeyUser

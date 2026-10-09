@@ -7,6 +7,7 @@ import {
 } from '@inertiajs/react';
 import {
     Cake,
+    Globe,
     Compass,
     Flame,
     Newspaper,
@@ -29,7 +30,8 @@ import type { PersonCard, PostItem, ScrollData, UserCard } from '@/types';
 import { tr } from '@/lib/i18n';
 
 type Props = {
-    tab: 'friends' | 'discover';
+    tab: 'friends' | 'discover' | 'country';
+    country: string | null;
     hasFriends: boolean;
     posts: ScrollData<PostItem>;
     suggestions?: (UserCard & { mutual: number })[];
@@ -60,6 +62,13 @@ function FeedTabs({
             label: tr('Рекомендації'),
             icon: Flame,
             href: '/feed?tab=discover',
+            disabled: false,
+        },
+        {
+            key: 'country',
+            label: tr('Країна'),
+            icon: Globe,
+            href: '/feed?tab=country',
             disabled: false,
         },
     ];
@@ -97,6 +106,7 @@ function FeedTabs({
 export default function Feed({
     tab,
     hasFriends,
+    country,
     posts,
     suggestions,
     onlineFriends,
@@ -185,15 +195,19 @@ export default function Feed({
 
                     {posts.data.length === 0 ? (
                         <EmptyState
-                            icon={tab === 'friends' ? Newspaper : Compass}
+                            icon={tab === 'country' ? Globe : tab === 'friends' ? Newspaper : Compass}
                             title={
-                                tab === 'friends'
-                                    ? tr('Стрічка поки порожня')
-                                    : tr('Тут ще нічого немає')
+                                tab === 'country'
+                                    ? tr('Стрічка країни порожня')
+                                    : tab === 'friends'
+                                      ? tr('Стрічка поки порожня')
+                                      : tr('Тут ще нічого немає')
                             }
-                            text={tr(
-                                'Напишіть перший запис або знайдіть друзів — і стрічка оживе.',
-                            )}
+                            text={
+                                tab === 'country' && !country
+                                    ? tr('Вкажіть країну в налаштуваннях профілю — і тут з’являться записи людей звідти.')
+                                    : tr('Напишіть перший запис або знайдіть друзів — і стрічка оживе.')
+                            }
                             action={
                                 <Link
                                     href="/people"

@@ -30,6 +30,7 @@ class FeedApiController extends ApiController
         $hasSources = $friendIds !== [] || $communityIds !== [];
         $requested = $request->query('tab');
         $tab = match (true) {
+            $requested === 'country' => 'country',
             $requested === 'discover' => 'discover',
             $requested === 'friends' && $hasSources => 'friends',
             $hasSources => 'friends',
@@ -44,6 +45,11 @@ class FeedApiController extends ApiController
             $query->where(fn (Builder $q) => $q
                 ->where(fn (Builder $w) => $w->where('wall_type', '!=', 'community')->whereIn('author_id', [...$friendIds, $user->id]))
                 ->orWhere(fn (Builder $w) => $w->where('wall_type', 'community')->whereIn('wall_id', $communityIds ?: [0])));
+        } elseif ($tab === 'country' && is_string($user->country) && $user->country !== '') {
+            $query->where('visibility', Post::VISIBILITY_PUBLIC)
+                ->whereHas('author', fn (Builder $q) => $q->where('country', $user->country));
+        } elseif ($tab === 'country') {
+            $query->whereRaw('1 = 0');
         } else {
             $query->where('visibility', Post::VISIBILITY_PUBLIC)
                 ->where('created_at', '>=', now()->subDays(30))

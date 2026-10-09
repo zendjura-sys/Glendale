@@ -25,6 +25,7 @@ type ProfileForm = {
     status: string;
     about: string;
     city: string;
+    country: string;
     birthday: string;
     gender: string;
     website: string;
@@ -38,6 +39,7 @@ type Props = {
     status?: string;
     profile: { [K in keyof ProfileForm]: ProfileForm[K] | null };
     connections: SocialConnection[];
+    countries: { code: string; name: string }[];
 };
 
 const fieldClass =
@@ -48,6 +50,7 @@ export default function Profile({
     status,
     profile,
     connections,
+    countries,
 }: Props) {
     const { auth } = usePage().props;
     const playing = usePlayer().current !== null;
@@ -59,6 +62,7 @@ export default function Profile({
         status: profile.status ?? '',
         about: profile.about ?? '',
         city: profile.city ?? '',
+        country: profile.country ?? '',
         birthday: profile.birthday ?? '',
         gender: profile.gender ?? '',
         website: profile.website ?? '',
@@ -206,6 +210,23 @@ export default function Profile({
                                 />
                             </div>
                             <InputError message={errors.city} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="country">{tr('Країна')}</Label>
+                            <select
+                                id="country"
+                                value={data.country}
+                                onChange={(e) => setData('country', e.target.value)}
+                                className={cn(fieldClass, 'h-11')}
+                            >
+                                <option value="">{tr('Не вказано')}</option>
+                                {countries.map((item) => (
+                                    <option key={item.code} value={item.code}>
+                                        {item.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <InputError message={errors.country} />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="birthday">

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -152,6 +153,14 @@ class Game extends Model
     }
 
     /** Літера для покажчика A–Z: латинська велика або «#» для цифр та інших символів. */
+    /**
+     * @return HasMany<GameGuide, $this>
+     */
+    public function guides(): HasMany
+    {
+        return $this->hasMany(GameGuide::class);
+    }
+
     public static function letterOf(string $name): string
     {
         $first = strtoupper(mb_substr(ltrim($name), 0, 1));
