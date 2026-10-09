@@ -114,6 +114,9 @@ type Props = {
         actor: string | null;
         created_at: string;
     }[];
+    allies: { name: string; slug: string }[];
+    alliance_requests: { id: number; name: string; slug: string }[];
+    matches: { id: number; home: string; away: string; starts_at: string; note: string | null }[];
 };
 
 const input =
@@ -358,6 +361,72 @@ export default function ClanShow(props: Props) {
                                         ).toLocaleDateString(LOCALE),
                                     })}
                             </p>
+                        </Card>
+                        <Card title={tr('Союз і матчі')} icon={Swords}>
+                            {props.allies.length === 0 ? (
+                                <p className="text-sm text-white/45">{tr('Союзників ще немає.')}</p>
+                            ) : (
+                                <div className="flex flex-wrap gap-2">
+                                    {props.allies.map((ally) => (
+                                        <Link key={ally.slug} href={`/clans/${ally.slug}`} className="rounded-full bg-white/10 px-3 py-1 text-sm text-white">
+                                            {ally.name}
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+                            {props.matches.length > 0 && (
+                                <ul className="mt-3 space-y-1 text-sm text-white/75">
+                                    {props.matches.map((match) => (
+                                        <li key={match.id}>
+                                            {match.home} vs {match.away} · {kyiv(match.starts_at)}
+                                            {match.note ? ` · ${match.note}` : ''}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                            {me?.is_owner && (
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                    <form
+                                        className="flex gap-2"
+                                        onSubmit={(event) => {
+                                            event.preventDefault();
+                                            const data = new FormData(event.currentTarget);
+                                            post(`${base}/allies`, { tag: String(data.get('tag') ?? '') });
+                                            event.currentTarget.reset();
+                                        }}
+                                    >
+                                        <input name="tag" placeholder={tr('Тег союзу')} className={cn(input, 'w-28')} />
+                                        <button type="submit" className={ghost}>{tr('Союз')}</button>
+                                    </form>
+                                    <form
+                                        className="flex flex-wrap gap-2"
+                                        onSubmit={(event) => {
+                                            event.preventDefault();
+                                            const data = new FormData(event.currentTarget);
+                                            post(`${base}/matches`, {
+                                                tag: String(data.get('tag') ?? ''),
+                                                starts_at: String(data.get('starts_at') ?? ''),
+                                                note: String(data.get('note') ?? ''),
+                                            });
+                                        }}
+                                    >
+                                        <input name="tag" placeholder={tr('Тег суперника')} className={cn(input, 'w-28')} />
+                                        <input name="starts_at" type="datetime-local" required className={cn(input, 'w-48')} />
+                                        <input name="note" placeholder={tr('Нотатка')} className={cn(input, 'w-36')} />
+                                        <button type="submit" className={ghost}>{tr('Матч')}</button>
+                                    </form>
+                                </div>
+                            )}
+                            {props.alliance_requests.map((request) => (
+                                <button
+                                    key={request.id}
+                                    type="button"
+                                    onClick={() => post(`${base}/allies/${request.id}/accept`)}
+                                    className={cn(ghost, 'mt-2')}
+                                >
+                                    {tr('Прийняти союз від {name}', { name: request.name })}
+                                </button>
+                            ))}
                         </Card>
                         {me && has('voice') && (
                             <VoiceRooms

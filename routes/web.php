@@ -299,6 +299,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('leave', [ClanController::class, 'leave'])->name('leave');
             Route::post('members/{member}', [ClanController::class, 'member'])->whereNumber('member')->name('members.update');
             Route::post('settings', [ClanController::class, 'update'])->name('update');
+            Route::post('allies', [ClanController::class, 'ally'])->name('allies.store');
+            Route::post('allies/{alliance}/accept', [ClanController::class, 'acceptAlly'])->whereNumber('alliance')->name('allies.accept');
+            Route::post('matches', [ClanController::class, 'match'])->name('matches.store');
             Route::post('news', [ClanController::class, 'news'])->middleware('throttle:20,1')->name('news.store');
             Route::delete('news/{news}', [ClanController::class, 'deleteNews'])->whereNumber('news')->name('news.destroy');
             Route::post('events', [ClanController::class, 'event'])->middleware('throttle:20,1')->name('events.store');
