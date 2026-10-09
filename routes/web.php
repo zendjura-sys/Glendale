@@ -299,6 +299,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('invite-link', [InviteLinkController::class, 'clan'])->middleware('throttle:20,1')->name('invite-link');
             Route::post('leave', [ClanController::class, 'leave'])->name('leave');
             Route::post('members/{member}', [ClanController::class, 'member'])->whereNumber('member')->name('members.update');
+            Route::post('members/{member}/nudge', [ClanController::class, 'nudge'])->whereNumber('member')->middleware('throttle:20,1')->name('members.nudge');
             Route::post('settings', [ClanController::class, 'update'])->name('update');
             Route::post('allies', [ClanController::class, 'ally'])->name('allies.store');
             Route::post('allies/{alliance}/accept', [ClanController::class, 'acceptAlly'])->whereNumber('alliance')->name('allies.accept');
@@ -335,6 +336,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::prefix('events')->name('events.')->middleware('module:events')->group(function () {
         Route::get('/', [EventController::class, 'index'])->name('index');
         Route::get('releases', [EventController::class, 'releases'])->name('releases');
+        Route::put('reminder', [EventController::class, 'reminder'])->name('reminder');
+        Route::get('{kind}/{id}.ics', [EventController::class, 'calendarFile'])->whereIn('kind', ['family', 'clan', 'server', 'game'])->whereNumber('id')->name('ics');
         Route::post('server/{server}', [EventController::class, 'storeServer'])->middleware('throttle:20,1')->name('server.store');
         Route::post('server/{event}/rsvp', [EventController::class, 'rsvpServer'])->whereNumber('event')->name('server.rsvp');
         Route::delete('server/{event}', [EventController::class, 'destroyServer'])->whereNumber('event')->name('server.destroy');
@@ -416,6 +419,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
                 Route::patch('members/{member}', [Families\FamilyMemberController::class, 'update'])->name('members.update');
                 Route::post('members/{member}/kick', [Families\FamilyMemberController::class, 'kick'])->name('members.kick');
                 Route::post('members/{member}/transfer', [Families\FamilyMemberController::class, 'transfer'])->name('members.transfer');
+                Route::post('members/{member}/nudge', [Families\FamilyMemberController::class, 'nudge'])->middleware('throttle:20,1')->name('members.nudge');
             });
 
             Route::get('discipline', [Families\FamilyDisciplineController::class, 'index'])->name('discipline');
@@ -426,7 +430,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('events', [Families\FamilyEventController::class, 'store'])->middleware('throttle:20,1')->name('events.store');
             Route::post('events/{event}/rsvp', [Families\FamilyEventController::class, 'rsvp'])->whereNumber('event')->name('events.rsvp');
             Route::post('events/{event}/close', [Families\FamilyEventController::class, 'close'])->whereNumber('event')->name('events.close');
+            Route::post('events/{event}/checkin', [Families\FamilyEventController::class, 'checkIn'])->whereNumber('event')->middleware('throttle:10,1')->name('events.checkin');
+            Route::post('events/{event}/album', [Families\FamilyEventController::class, 'album'])->whereNumber('event')->middleware('throttle:10,1')->name('events.album');
             Route::get('rating', [Families\FamilyEventController::class, 'rating'])->name('rating');
+            Route::post('rating/season', [Families\FamilyEventController::class, 'endSeason'])->middleware('throttle:5,1')->name('rating.season');
 
             Route::get('audit', [Families\FamilyAuditController::class, 'index'])->name('audit');
 

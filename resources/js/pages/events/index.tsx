@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { CalendarDays } from 'lucide-react';
+import { Bell, CalendarDays } from 'lucide-react';
 import { EventList } from '@/components/events/event-card';
 import type { CalendarEvent } from '@/components/events/event-card';
 import { EmptyState } from '@/components/gc/widget';
@@ -10,10 +10,25 @@ type Props = {
     events: CalendarEvent[];
     kind: string | null;
     kinds: Record<string, string>;
+    reminder_lead: number;
+    reminder_leads: number[];
 };
 
-/** Календар: найближчі події моїх сімей, кланів, серверів та ігор, з нагадуванням за пів години. */
-export default function EventsIndex({ events, kind, kinds }: Props) {
+const leadLabel = (minutes: number) =>
+    minutes >= 1440
+        ? tr('за добу')
+        : minutes >= 60
+          ? tr('за годину')
+          : tr('за {minutes} хв', { minutes });
+
+/** Календар: найближчі події моїх сімей, кланів, серверів та ігор, з нагадуванням у вибраний час. */
+export default function EventsIndex({
+    events,
+    kind,
+    kinds,
+    reminder_lead,
+    reminder_leads,
+}: Props) {
     const tabs: [string | null, string][] = [
         [null, tr('Усі')],
         ...Object.entries(kinds),
@@ -29,7 +44,7 @@ export default function EventsIndex({ events, kind, kinds }: Props) {
                 </h1>
                 <p className="text-sm text-white/50">
                     {tr(
-                        'Події ваших сімей, кланів, серверів та ігор. Події серверів з Discord і ігор з IGDB підтягуються самі. За пів години до початку прийде нагадування.',
+                        'Події ваших сімей, кланів, серверів та ігор. Події серверів з Discord і ігор з IGDB підтягуються самі. Час показано у вашому часовому поясі.',
                     )}{' '}
                     <Link
                         href="/events/releases"
@@ -39,6 +54,28 @@ export default function EventsIndex({ events, kind, kinds }: Props) {
                     </Link>
                 </p>
             </div>
+            <label className="mb-3 flex flex-wrap items-center gap-2 text-sm text-white/60">
+                <Bell className="size-4 text-gc-lilac-200" />
+                {tr('Нагадувати')}
+                <select
+                    value={reminder_lead}
+                    onChange={(e) =>
+                        router.put(
+                            '/events/reminder',
+                            { lead: Number(e.target.value) },
+                            { preserveScroll: true, preserveState: true },
+                        )
+                    }
+                    className="input-glass h-9 rounded-lg px-2 text-sm text-white"
+                >
+                    {reminder_leads.map((m) => (
+                        <option key={m} value={m}>
+                            {leadLabel(m)}
+                        </option>
+                    ))}
+                </select>
+                {tr('до початку')}
+            </label>
             <div className="-mx-1 mb-4 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1">
                 {tabs.map(([key, label]) => (
                     <button

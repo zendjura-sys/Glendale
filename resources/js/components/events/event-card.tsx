@@ -3,6 +3,7 @@ import {
     CalendarDays,
     Check,
     Crown,
+    Download,
     ExternalLink,
     Gamepad2,
     Server,
@@ -11,7 +12,8 @@ import {
     UsersRound,
     X,
 } from 'lucide-react';
-import { LOCALE, tr } from '@/lib/i18n';
+import { kyivHint, localDay, localTime } from '@/lib/event-time';
+import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 export type CalendarEvent = {
@@ -23,7 +25,9 @@ export type CalendarEvent = {
     description: string | null;
     starts_at: string;
     where: { name: string; url: string };
-    status: 'going' | 'declined' | null;
+    status: 'going' | 'declined' | 'waitlist' | null;
+    ics_url?: string;
+    capacity?: number | null;
     going_count: number;
     can_decline: boolean;
     rsvp_url: string;
@@ -56,21 +60,6 @@ const linkLabel = (url: string) =>
           ? tr('Дивитися трансляцію')
           : tr('Детальніше');
 
-export const kyivTime = (iso: string) =>
-    new Date(iso).toLocaleTimeString(LOCALE, {
-        timeZone: 'Europe/Kyiv',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
-
-export const kyivDay = (iso: string) =>
-    new Date(iso).toLocaleDateString(LOCALE, {
-        timeZone: 'Europe/Kyiv',
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-    });
-
 /** Подія з календаря: де, коли, хто йде, «піду / не піду». Дії йдуть у розділи сім’ї, клану чи сервера. */
 export function EventCard({ event }: { event: CalendarEvent }) {
     const Icon = KIND_ICON[event.kind];
@@ -91,7 +80,15 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                     </span>
                 ) : (
                     <span className="text-base font-semibold text-white">
-                        {kyivTime(event.starts_at)}
+                        {localTime(event.starts_at)}
+                    </span>
+                )}
+                {!event.all_day && kyivHint(event.starts_at) && (
+                    <span
+                        className="text-[11px] text-white/40"
+                        title={tr('За Києвом')}
+                    >
+                        {tr('Київ')} {kyivHint(event.starts_at)}
                     </span>
                 )}
                 <Icon className="mt-1 size-4 text-gc-lilac-200" />
@@ -166,19 +163,21 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                     }
                     className={cn(
                         'inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl px-3 text-sm font-semibold transition sm:flex-none',
-                        event.status === 'going'
+                        event.status === 'going' || event.status === 'waitlist'
                             ? 'bg-emerald-500/20 text-emerald-200'
                             : 'bg-white/[0.06] text-white/75 hover:bg-white/10',
                     )}
                 >
                     <Check className="size-4" />{' '}
-                    {event.remind
-                        ? event.status === 'going'
-                            ? tr('Нагадаємо')
-                            : tr('Нагадати')
-                        : game
-                          ? tr('Цікаво')
-                          : tr('Піду')}
+                    {event.status === 'waitlist'
+                        ? tr('У черзі')
+                        : event.remind
+                          ? event.status === 'going'
+                              ? tr('Нагадаємо')
+                              : tr('Нагадати')
+                          : game
+                            ? tr('Цікаво')
+                            : tr('Піду')}
                 </button>
                 {event.can_decline && (
                     <button
@@ -194,6 +193,16 @@ export function EventCard({ event }: { event: CalendarEvent }) {
                         <X className="size-4" />{' '}
                         {game ? tr('Не цікаво') : tr('Не піду')}
                     </button>
+                )}
+                {event.ics_url && (
+                    <a
+                        href={event.ics_url}
+                        className="rounded-lg p-2 text-white/40 hover:text-white"
+                        title={tr('Додати в календар телефона')}
+                    >
+                        <Download className="size-4" />
+                        <span className="sr-only">{tr('У календар')}</span>
+                    </a>
                 )}
                 {event.can_delete && (
                     <button
@@ -217,11 +226,11 @@ export function EventCard({ event }: { event: CalendarEvent }) {
     );
 }
 
-/** Стрічка подій, згрупована за днями (київський час). */
+/** Стрічка подій, згрупована за днями (у часовому поясі глядача). */
 export function EventList({ events }: { events: CalendarEvent[] }) {
     const days = new Map<string, CalendarEvent[]>();
     for (const e of events) {
-        const day = kyivDay(e.starts_at);
+        const day = localDay(e.starts_at);
         days.set(day, [...(days.get(day) ?? []), e]);
     }
 

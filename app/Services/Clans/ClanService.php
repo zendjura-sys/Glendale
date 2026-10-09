@@ -295,7 +295,7 @@ class ClanService
         $news->delete();
     }
 
-    public function createEvent(Clan $clan, ClanMember $actor, string $title, ?string $description, Carbon $startsAt, ?string $repeat = null): ClanEvent
+    public function createEvent(Clan $clan, ClanMember $actor, string $title, ?string $description, Carbon $startsAt, ?string $repeat = null, ?UploadedFile $cover = null): ClanEvent
     {
         $this->authorize($actor, $clan, 'events.manage');
         $event = ClanEvent::query()->create([
@@ -305,6 +305,7 @@ class ClanService
             'description' => $description,
             'starts_at' => $startsAt,
             'repeat' => $repeat,
+            'cover_path' => $cover?->store('event-covers', 'public'),
         ]);
         $this->announce($clan, "📅 Новий захід: {$title} — ".$startsAt->timezone('Europe/Kyiv')->format('d.m H:i'));
 

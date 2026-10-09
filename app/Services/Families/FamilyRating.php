@@ -7,15 +7,17 @@ use App\Models\FamilyEvent;
 use App\Models\FamilyEventAttendance;
 use App\Models\FamilyMember;
 use App\Models\FamilyReport;
+use App\Models\FamilySeason;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Модульний рейтинг: що дає бали, вирішують перемикачі в налаштуваннях сім’ї.
  */
 class FamilyRating
 {
-    public const PERIODS = ['week' => 'Тиждень', 'month' => 'Місяць', 'all' => 'За весь час'];
+    public const PERIODS = ['week' => 'Тиждень', 'month' => 'Місяць', 'season' => 'Сезон', 'all' => 'За весь час'];
 
     public static function since(string $period): ?CarbonImmutable
     {
@@ -33,17 +35,23 @@ class FamilyRating
      */
     public function leaderboard(Family $family, string $period = 'week'): array
     {
-        $since = self::since($period);
+        $since = $period === 'season'
+            ? ($family->season_started_at !== null ? CarbonImmutable::instance($family->season_started_at) : null)
+            : self::since($period);
         $version = Cache::get('family.rating.v.'.$family->id, 0);
 
-        return Cache::remember("family.rating.{$family->id}.{$period}.{$version}", now()->addMinutes(5), function () use ($family, $since) {
+        // Сезон рахується з моменту завершення попереднього: звіти — за часом схвалення, а не за датою події.
+        $bySeason = $period === 'season' && $since !== null;
+
+        return Cache::remember("family.rating.{$family->id}.{$period}.{$version}", now()->addMinutes(5), function () use ($family, $since, $bySeason) {
             $rating = $family->resolvedSettings()['rating'];
             $rows = $this->emptyScores();
 
             FamilyReport::query()
                 ->where('family_id', $family->id)
                 ->where('status', FamilyReport::STATUS_APPROVED)
-                ->when($since, fn ($q, CarbonImmutable $s) => $q->where('event_date', '>=', $s->toDateString()))
+                ->when($since && ! $bySeason, fn ($q) => $q->where('event_date', '>=', $since?->toDateString()))
+                ->when($bySeason, fn ($q) => $q->where('reviewed_at', '>=', $since?->utc()))
                 ->select(['id', 'type', 'beneficiary_id', 'data', 'reward'])
                 ->lazyById(1000)
                 ->each(function (FamilyReport $report) use (&$rows, $rating) {
@@ -113,6 +121,36 @@ class FamilyRating
 
             return array_values($ranked);
         });
+    }
+
+    /**
+     * Підсумок сезону: десятка найкращих зберігається, рахунок сезону починається з нуля.
+     */
+    public function endSeason(Family $family, FamilyMember $actor): FamilySeason
+    {
+        $top = array_map(
+            fn (array $row) => ['place' => (int) $row['place'], 'name' => (string) $row['display'], 'points' => (int) $row['points']],
+            array_slice(array_values(array_filter($this->leaderboard($family, 'season'), fn (array $row) => (int) $row['points'] > 0)), 0, 10),
+        );
+        $season = DB::transaction(function () use ($family, $top) {
+            $number = (int) FamilySeason::query()->where('family_id', $family->id)->lockForUpdate()->max('number') + 1;
+            $season = FamilySeason::query()->create([
+                'family_id' => $family->id,
+                'number' => $number,
+                'started_at' => $family->season_started_at,
+                'ended_at' => now(),
+                'top' => $top,
+            ]);
+            $family->update(['season_started_at' => now()]);
+
+            return $season;
+        });
+        Cache::forever('family.rating.v.'.$family->id, (int) Cache::get('family.rating.v.'.$family->id, 0) + 1);
+        app(FamilyAudit::class)->log($family, 'SEASON_END', $actor, null, ['season' => $season->number]);
+        $podium = implode(', ', array_map(fn (array $r) => "{$r['place']}. {$r['name']} ({$r['points']})", array_slice($top, 0, 3)));
+        app(FamilyChat::class)->announce($family, "🏆 Сезон {$season->number} завершено".($podium !== '' ? ": {$podium}" : '').'. Новий сезон уже почався!');
+
+        return $season;
     }
 
     /**

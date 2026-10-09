@@ -12,12 +12,16 @@ use App\Models\ClanMember;
 use App\Models\ClanNews;
 use App\Models\Game;
 use App\Models\User;
+use App\Notifications\ComeBackNudge;
 use App\Services\Clans\ClanService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -121,6 +125,8 @@ class ClanController extends Controller
                     'going' => $e->going->isNotEmpty(),
                     'repeat' => $e->repeat,
                     'bracket' => $e->bracket,
+                    'cover_url' => $e->cover_path !== null ? Storage::disk('public')->url($e->cover_path) : null,
+                    'ics_url' => '/events/clan/'.$e->id.'.ics',
                 ])
             : [];
 
@@ -146,7 +152,10 @@ class ClanController extends Controller
             'features' => Clan::FEATURES,
             'join_modes' => Clan::JOIN_MODES,
             'members' => $member
-                ? $clan->activeMembers()->with('user')->orderByDesc('rank')->orderBy('joined_at')->get()->map(fn (ClanMember $m) => $m->toCard($clan))->values()
+                ? $clan->activeMembers()->with('user')->orderByDesc('rank')->orderBy('joined_at')->get()->map(fn (ClanMember $m) => [
+                    ...$m->toCard($clan),
+                    'away' => $m->user !== null && ($m->user->last_seen_at === null || $m->user->last_seen_at->lt(now()->subDays(ComeBackNudge::DAYS))),
+                ])->values()
                 : [],
             'applications' => $can['members.manage']
                 ? ClanMember::query()->with('user')->where('clan_id', $clan->id)->where('status', ClanMember::STATUS_PENDING)->oldest()->get()->map(fn (ClanMember $m) => $m->toCard($clan))->values()
@@ -280,7 +289,9 @@ class ClanController extends Controller
             'description' => ['nullable', 'string', 'max:1000'],
             'starts_at' => ['required', 'date', 'after:now'],
             'weekly' => ['sometimes', 'boolean'],
+            'cover' => ['nullable', 'image', 'max:5120'],
         ]);
+        $cover = $request->file('cover');
         $this->clans->createEvent(
             $clan,
             $this->me($request, $clan),
@@ -288,6 +299,7 @@ class ClanController extends Controller
             $data['description'] ?? null,
             Carbon::parse($data['starts_at'], 'Europe/Kyiv')->utc(),
             ($data['weekly'] ?? false) ? 'weekly' : null,
+            $cover instanceof UploadedFile ? $cover : null,
         );
 
         return $this->done('Захід створено.');
@@ -445,6 +457,20 @@ class ClanController extends Controller
                 'starts_at' => $row->starts_at->toIso8601String(),
                 'note' => $row->note,
             ])->all());
+    }
+
+    /** Нагадати учасникові, що давно не заходив. */
+    public function nudge(Request $request, Clan $clan, ClanMember $member): RedirectResponse
+    {
+        abort_unless($member->clan_id === $clan->id && $member->status === ClanMember::STATUS_ACTIVE, 404);
+        $actor = $this->clans->authorize($this->me($request, $clan), $clan, 'members.manage');
+        $target = User::query()->findOrFail($member->user_id);
+        if (! ComeBackNudge::allowed($target, 'clan.'.$clan->id)) {
+            throw ValidationException::withMessages(['member' => 'Нагадати можна тому, хто не заходив 2 тижні, і не частіше разу на 3 дні.']);
+        }
+        $target->notify(new ComeBackNudge(User::query()->findOrFail($actor->user_id), $clan->display_name, '/clans/'.$clan->slug));
+
+        return $this->done('Нагадування надіслано.');
     }
 
     private function feature(Clan $clan, string $feature): void

@@ -1,5 +1,6 @@
 import { router, useForm } from '@inertiajs/react';
 import {
+    BellRing,
     Check,
     Crown,
     KeyRound,
@@ -297,6 +298,30 @@ export default function FamilyMembers(props: Props) {
                                                 })}
                                         </div>
                                     </div>
+                                    {can['members.manage'] &&
+                                        m.id !== me.id &&
+                                        !m.is_online &&
+                                        away(m.last_seen_at) && (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    router.post(
+                                                        `${base}/members/${m.id}/nudge`,
+                                                        {},
+                                                        {
+                                                            preserveScroll: true,
+                                                        },
+                                                    )
+                                                }
+                                                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-amber-300/10 px-3 text-xs font-medium text-amber-100 hover:bg-amber-300/20"
+                                                title={tr(
+                                                    'Давно не заходив — надіслати нагадування',
+                                                )}
+                                            >
+                                                <BellRing className="size-3.5" />
+                                                {tr('Нагадати')}
+                                            </button>
+                                        )}
                                     {m.balance !== null && (
                                         <span
                                             className={cn(
@@ -587,6 +612,7 @@ function RanksDialog({
         matrix,
     });
     const ranks = Array.from({ length: 9 }, (_, i) => i + 1);
+    const templates = RANK_TEMPLATES();
 
     const row = (perm: string, label: string) => (
         <tr key={perm}>
@@ -662,6 +688,28 @@ function RanksDialog({
                 </>
             }
         >
+            <label className="mb-3 flex flex-wrap items-center gap-2 text-sm text-white/60">
+                {tr('Шаблон назв:')}
+                <select
+                    defaultValue=""
+                    onChange={(e) => {
+                        const picked = templates.find(
+                            (t) => t.key === e.target.value,
+                        );
+                        if (picked) {
+                            form.setData('titles', [...picked.titles]);
+                        }
+                    }}
+                    className={cn(selectClass, 'h-9')}
+                >
+                    <option value="">{tr('Обрати…')}</option>
+                    {templates.map((t) => (
+                        <option key={t.key} value={t.key}>
+                            {t.label}
+                        </option>
+                    ))}
+                </select>
+            </label>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                 {form.data.titles.map((t, i) => (
                     <label key={i} className="block">
@@ -720,5 +768,99 @@ function RanksDialog({
                 </table>
             </div>
         </Modal>
+    );
+}
+
+/** Готові назви десяти рангів: обираєте шаблон, далі можна підправити окремі назви. */
+function RANK_TEMPLATES(): { key: string; label: string; titles: string[] }[] {
+    return [
+        {
+            key: 'family',
+            label: tr('Сім’я (типовий)'),
+            titles: [
+                tr('Новачок'),
+                tr('Учасник'),
+                tr('Боєць'),
+                tr('Досвідчений'),
+                tr('Ветеран'),
+                tr('Старший'),
+                tr('Офіцер'),
+                tr('Капітан'),
+                tr('Заступник'),
+                tr('Лідер'),
+            ],
+        },
+        {
+            key: 'mafia',
+            label: tr('Мафія'),
+            titles: [
+                tr('Аутсайдер'),
+                tr('Партнер'),
+                tr('Солдат'),
+                tr('Бригадир'),
+                tr('Капо'),
+                tr('Старший капо'),
+                tr('Радник'),
+                tr('Консильєрі'),
+                tr('Андербос'),
+                tr('Дон'),
+            ],
+        },
+        {
+            key: 'army',
+            label: tr('Армія'),
+            titles: [
+                tr('Рекрут'),
+                tr('Рядовий'),
+                tr('Єфрейтор'),
+                tr('Сержант'),
+                tr('Старшина'),
+                tr('Лейтенант'),
+                tr('Капітан'),
+                tr('Майор'),
+                tr('Полковник'),
+                tr('Генерал'),
+            ],
+        },
+        {
+            key: 'gang',
+            label: tr('Банда'),
+            titles: [
+                tr('Новенький'),
+                tr('Свій'),
+                tr('Боєць'),
+                tr('Бувалий'),
+                tr('Ветеран'),
+                tr('Правиця'),
+                tr('Смотрящий'),
+                tr('Авторитет'),
+                tr('Права рука'),
+                tr('Бос'),
+            ],
+        },
+        {
+            key: 'business',
+            label: tr('Бізнес'),
+            titles: [
+                tr('Стажер'),
+                tr('Співробітник'),
+                tr('Спеціаліст'),
+                tr('Старший спеціаліст'),
+                tr('Тімлід'),
+                tr('Менеджер'),
+                tr('Керівник відділу'),
+                tr('Директор'),
+                tr('Віцепрезидент'),
+                tr('Президент'),
+            ],
+        },
+    ];
+}
+
+/** Не заходив два тижні — керівник може нагадати. */
+function away(lastSeen: string | null): boolean {
+    return (
+        lastSeen === null ||
+        Date.now() - new Date(lastSeen).getTime() > 14 * 24 * 3600 * 1000
     );
 }

@@ -1,15 +1,26 @@
 import { router } from '@inertiajs/react';
-import { BarChart3, Trophy } from 'lucide-react';
+import { BarChart3, Flag, Trophy } from 'lucide-react';
 import { FamilyShell } from '@/components/families/family-shell';
 import { Empty, Panel, RankBadge, Segmented } from '@/components/families/ui';
 import { uah } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type { FamilyShellProps, LeaderboardRow } from '@/types';
-import { tr } from '@/lib/i18n';
+import { LOCALE, tr } from '@/lib/i18n';
+
+type Period = 'week' | 'month' | 'season' | 'all';
+
+type Season = {
+    number: number;
+    started_at: string | null;
+    ended_at: string;
+    top: { place: number; name: string; points: number }[];
+};
 
 type Props = FamilyShellProps & {
-    period: 'week' | 'month' | 'all';
-    periods: Record<'week' | 'month' | 'all', string>;
+    period: Period;
+    periods: Record<Period, string>;
+    season: { number: number; started_at: string | null; can_end: boolean };
+    seasons: Season[];
     leaderboard: LeaderboardRow[];
     config: {
         bizwar: boolean;
@@ -26,7 +37,37 @@ const podium = [
 ];
 
 export default function FamilyRating(props: Props) {
-    const { family, me, period, periods, leaderboard, config } = props;
+    const {
+        family,
+        me,
+        period,
+        periods,
+        leaderboard,
+        config,
+        season,
+        seasons,
+    } = props;
+    const day = (iso: string) =>
+        new Date(iso).toLocaleDateString(LOCALE, {
+            day: 'numeric',
+            month: 'short',
+        });
+    const endSeason = () => {
+        if (
+            confirm(
+                tr(
+                    'Завершити сезон {number}? Десятка найкращих збережеться, бали сезону почнуться з нуля.',
+                    { number: season.number },
+                ),
+            )
+        ) {
+            router.post(
+                `/f/${family.slug}/rating/season`,
+                {},
+                { preserveScroll: true },
+            );
+        }
+    };
     const top = leaderboard.slice(0, 3);
 
     return (
@@ -45,12 +86,10 @@ export default function FamilyRating(props: Props) {
                             },
                         )
                     }
-                    options={(Object.keys(periods) as Props['period'][]).map(
-                        (k) => ({
-                            value: k,
-                            label: periods[k],
-                        }),
-                    )}
+                    options={(Object.keys(periods) as Period[]).map((k) => ({
+                        value: k,
+                        label: periods[k],
+                    }))}
                 />
                 <span className="ml-auto text-xs text-white/40">
                     {tr('Враховується:')}{' '}
@@ -64,6 +103,84 @@ export default function FamilyRating(props: Props) {
                         .join(', ')}
                 </span>
             </div>
+
+            {period === 'season' && (
+                <Panel>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <Flag className="size-5 text-amber-200" />
+                        <div className="mr-auto">
+                            <p className="font-semibold text-white">
+                                {tr('Сезон {number}', {
+                                    number: season.number,
+                                })}
+                            </p>
+                            <p className="text-xs text-white/45">
+                                {season.started_at
+                                    ? tr('З {date}', {
+                                          date: day(season.started_at),
+                                      })
+                                    : tr('Перший сезон — рахуються всі бали')}
+                            </p>
+                        </div>
+                        {season.can_end && (
+                            <button
+                                type="button"
+                                onClick={endSeason}
+                                className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-4 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white"
+                            >
+                                <Trophy className="size-4" />
+                                {tr('Завершити сезон')}
+                            </button>
+                        )}
+                    </div>
+                    {seasons.length > 0 && (
+                        <ul className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            {seasons.map((s) => (
+                                <li
+                                    key={s.number}
+                                    className="rounded-2xl bg-white/[0.03] p-3"
+                                >
+                                    <p className="text-sm font-semibold text-white">
+                                        {tr('Сезон {number}', {
+                                            number: s.number,
+                                        })}
+                                        <span className="ml-2 text-xs font-normal text-white/40">
+                                            {s.started_at
+                                                ? `${day(s.started_at)} – `
+                                                : ''}
+                                            {day(s.ended_at)}
+                                        </span>
+                                    </p>
+                                    {s.top.length === 0 ? (
+                                        <p className="mt-1 text-xs text-white/40">
+                                            {tr('Без балів')}
+                                        </p>
+                                    ) : (
+                                        <ol className="mt-1.5 space-y-0.5 text-xs text-white/70">
+                                            {s.top.slice(0, 3).map((r) => (
+                                                <li
+                                                    key={r.place}
+                                                    className="flex gap-2"
+                                                >
+                                                    <span className="w-4 text-white/40">
+                                                        {r.place}.
+                                                    </span>
+                                                    <span className="min-w-0 flex-1 truncate font-mono">
+                                                        {r.name}
+                                                    </span>
+                                                    <span className="text-amber-200">
+                                                        {r.points}
+                                                    </span>
+                                                </li>
+                                            ))}
+                                        </ol>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </Panel>
+            )}
 
             {leaderboard.length === 0 ? (
                 <Panel>

@@ -20,9 +20,13 @@ use Illuminate\Support\Carbon;
  * @property int $reward
  * @property string $status
  * @property Carbon|null $reminded_at
+ * @property int|null $capacity
+ * @property string|null $cover_path
+ * @property string|null $checkin_code
+ * @property int|null $album_id
  * @property-read FamilyMember|null $creator
  */
-#[Fillable(['family_id', 'created_by', 'title', 'type', 'description', 'starts_at', 'points', 'reward', 'status', 'reminded_at', 'repeat', 'spawned_at'])]
+#[Fillable(['family_id', 'created_by', 'title', 'type', 'description', 'starts_at', 'points', 'reward', 'status', 'reminded_at', 'repeat', 'spawned_at', 'capacity', 'cover_path', 'checkin_code', 'album_id'])]
 class FamilyEvent extends Model
 {
     public const TYPES = [
@@ -41,7 +45,7 @@ class FamilyEvent extends Model
 
     protected function casts(): array
     {
-        return ['starts_at' => 'datetime', 'reminded_at' => 'datetime', 'spawned_at' => 'datetime', 'points' => 'integer', 'reward' => 'integer'];
+        return ['starts_at' => 'datetime', 'reminded_at' => 'datetime', 'spawned_at' => 'datetime', 'points' => 'integer', 'reward' => 'integer', 'capacity' => 'integer'];
     }
 
     /**

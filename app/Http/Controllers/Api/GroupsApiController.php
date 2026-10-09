@@ -448,7 +448,7 @@ class GroupsApiController extends ApiController
     public function rating(Request $request, Family $family, FamilyRating $rating): JsonResponse
     {
         $this->active($request, $family);
-        $period = in_array($request->query('period'), ['week', 'month', 'all'], true) ? (string) $request->query('period') : 'week';
+        $period = in_array($request->query('period'), ['week', 'month', 'season', 'all'], true) ? (string) $request->query('period') : 'week';
 
         return response()->json(['period' => $period, 'rows' => $rating->leaderboard($family, $period)]);
     }

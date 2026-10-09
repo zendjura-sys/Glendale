@@ -1,9 +1,11 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
+    BellRing,
     CalendarDays,
     Check,
     Coins,
     Crown,
+    Download,
     LogOut,
     MessageCircle,
     Newspaper,
@@ -26,6 +28,7 @@ import { timeAgo } from '@/lib/format';
 import { cn, formText } from '@/lib/utils';
 import type { ClanCard, UserCard } from '@/types';
 import { ClanLogo } from './index';
+import { eventTime } from '@/lib/event-time';
 import { LOCALE, tr } from '@/lib/i18n';
 
 type Member = {
@@ -41,6 +44,7 @@ type Member = {
     joined_at: string | null;
     applied_at: string;
     events?: number;
+    away?: boolean;
 };
 
 type Props = {
@@ -79,6 +83,8 @@ type Props = {
         going_count: number;
         going: boolean;
         repeat: string | null;
+        cover_url: string | null;
+        ics_url: string;
         bracket: {
             teams: string[];
             semi: [number | null, number | null][];
@@ -135,14 +141,6 @@ const ghost =
     'glass inline-flex h-10 items-center justify-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white';
 
 const num = (n: number) => new Intl.NumberFormat(LOCALE).format(n);
-const kyiv = (iso: string) =>
-    new Date(iso).toLocaleString(LOCALE, {
-        timeZone: 'Europe/Kyiv',
-        day: '2-digit',
-        month: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
 
 function Card({
     title,
@@ -405,7 +403,7 @@ export default function ClanShow(props: Props) {
                                     {props.matches.map((match) => (
                                         <li key={match.id}>
                                             {match.home} vs {match.away} ·{' '}
-                                            {kyiv(match.starts_at)}
+                                            {eventTime(match.starts_at)}
                                             {match.note
                                                 ? ` · ${match.note}`
                                                 : ''}
@@ -528,7 +526,7 @@ export default function ClanShow(props: Props) {
                                         className="py-1 text-sm text-white/75"
                                     >
                                         <span className="text-gc-lilac-200">
-                                            {kyiv(e.starts_at)}
+                                            {eventTime(e.starts_at)}
                                         </span>{' '}
                                         — {e.title} · {e.going_count}{' '}
                                         {tr('іде')}
@@ -756,6 +754,7 @@ function EventsTab({
         description: '',
         starts_at: '',
         weekly: false,
+        cover: null as File | null,
     });
 
     return (
@@ -804,6 +803,25 @@ function EventsTab({
                                 {form.errors.starts_at}
                             </p>
                         )}
+                        <label className="flex flex-col gap-1 text-xs text-white/50 sm:col-span-2">
+                            {tr('Обкладинка (необов’язково)')}
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) =>
+                                    form.setData(
+                                        'cover',
+                                        e.target.files?.[0] ?? null,
+                                    )
+                                }
+                                className={cn(input, 'py-2')}
+                            />
+                            {form.errors.cover && (
+                                <span className="text-rose-300">
+                                    {form.errors.cover}
+                                </span>
+                            )}
+                        </label>
                         <label className="flex items-center gap-2 text-sm text-white/70 sm:col-span-2">
                             <input
                                 type="checkbox"
@@ -834,9 +852,16 @@ function EventsTab({
                     key={e.id}
                     className="glass flex flex-wrap items-center gap-3 rounded-3xl p-4"
                 >
+                    {e.cover_url && (
+                        <img
+                            src={e.cover_url}
+                            alt=""
+                            className="aspect-[3/1] w-full rounded-2xl object-cover"
+                        />
+                    )}
                     <div className="min-w-0 flex-1">
                         <p className="text-xs text-gc-lilac-200">
-                            {kyiv(e.starts_at)}
+                            {eventTime(e.starts_at)}
                         </p>
                         <h3 className="font-semibold text-white">{e.title}</h3>
                         {e.description && (
@@ -863,6 +888,14 @@ function EventsTab({
                             tr('Піду')
                         )}
                     </button>
+                    <a
+                        href={e.ics_url}
+                        className={ghost}
+                        title={tr('Додати в календар телефона')}
+                    >
+                        <Download className="size-4" />
+                        <span className="sr-only">{tr('У календар')}</span>
+                    </a>
                     {canManage && (
                         <button
                             type="button"
@@ -1160,8 +1193,25 @@ function MembersTab({
                                 </span>
                                 <span className="block text-xs text-white/50">
                                     {m.rank_title}
+                                    {m.away && ` · ${tr('давно не заходив')}`}
                                 </span>
                             </span>
+                            {manage && m.away && me && m.id !== me.id && (
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        router.post(
+                                            `${base}/members/${m.id}/nudge`,
+                                            {},
+                                            { preserveScroll: true },
+                                        )
+                                    }
+                                    className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-amber-300/10 px-3 text-xs font-medium text-amber-100 hover:bg-amber-300/20"
+                                >
+                                    <BellRing className="size-3.5" />
+                                    {tr('Нагадати')}
+                                </button>
+                            )}
                             {canTouch && (
                                 <>
                                     <select

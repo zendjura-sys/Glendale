@@ -4,6 +4,10 @@ import {
     CalendarPlus,
     Check,
     Coins,
+    Download,
+    Hourglass,
+    Images,
+    KeyRound,
     Star,
     Users,
 } from 'lucide-react';
@@ -16,7 +20,6 @@ import {
     btnGhost,
     btnPrimary,
     btnSuccess,
-    kyivDateTime,
     textareaClass,
 } from '@/components/families/ui';
 import { selectClass } from '@/components/gc/admin';
@@ -24,7 +27,8 @@ import { Field, inputClass } from '@/components/servers/server-form';
 import { uah } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type { FamilyShellProps, RosterEntry } from '@/types';
-import { LOCALE, tr } from '@/lib/i18n';
+import { eventDay, eventTime } from '@/lib/event-time';
+import { tr } from '@/lib/i18n';
 
 type FamilyEvent = {
     id: number;
@@ -38,6 +42,15 @@ type FamilyEvent = {
     status: 'planned' | 'done' | 'cancelled';
     creator: string | null;
     going: boolean;
+    capacity: number | null;
+    seats: number;
+    waitlist_count: number;
+    my_status: 'going' | 'attended' | 'absent' | 'declined' | 'waitlist' | null;
+    cover_url: string | null;
+    checkin_code: string | null;
+    checkin_open: boolean;
+    album_url: string | null;
+    can_album: boolean;
     attendance: {
         member_id: number;
         display: string;
@@ -79,7 +92,10 @@ export default function FamilyEvents(props: Props) {
         points: default_points,
         reward: '',
         weekly: false,
+        capacity: '',
+        cover: null as File | null,
     });
+    const [code, setCode] = useState<Record<number, string>>({});
 
     const planned = events.filter((e) => e.status === 'planned');
     const past = events.filter((e) => e.status !== 'planned');
@@ -112,23 +128,20 @@ export default function FamilyEvents(props: Props) {
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     {planned.map((e) => (
                         <Panel key={e.id}>
+                            {e.cover_url && (
+                                <img
+                                    src={e.cover_url}
+                                    alt=""
+                                    className="-mx-1 -mt-1 mb-3 aspect-[3/1] w-[calc(100%+0.5rem)] rounded-2xl object-cover"
+                                />
+                            )}
                             <div className="flex items-start gap-3">
                                 <div className="flex size-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300/20 to-rose-500/20 ring-1 ring-amber-300/25">
                                     <span className="font-display text-lg leading-none font-bold text-white">
-                                        {new Date(
-                                            e.starts_at,
-                                        ).toLocaleDateString(LOCALE, {
-                                            timeZone: 'Europe/Kyiv',
-                                            day: 'numeric',
-                                        })}
+                                        {eventDay(e.starts_at, 'day')}
                                     </span>
                                     <span className="text-xs text-white/55 uppercase">
-                                        {new Date(
-                                            e.starts_at,
-                                        ).toLocaleDateString(LOCALE, {
-                                            timeZone: 'Europe/Kyiv',
-                                            month: 'short',
-                                        })}
+                                        {eventDay(e.starts_at, 'month')}
                                     </span>
                                 </div>
                                 <div className="min-w-0 flex-1">
@@ -137,7 +150,7 @@ export default function FamilyEvents(props: Props) {
                                     </div>
                                     <div className="text-xs text-white/45">
                                         {e.type_label} ·{' '}
-                                        {kyivDateTime(e.starts_at)}
+                                        {eventTime(e.starts_at)}
                                     </div>
                                     {e.description && (
                                         <p className="mt-1.5 text-sm text-white/60">
@@ -147,8 +160,24 @@ export default function FamilyEvents(props: Props) {
                                     <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-white/50">
                                         <span className="flex items-center gap-1">
                                             <Users className="size-3.5" />
-                                            {e.attendance.length} {tr('йдуть')}
+                                            {e.capacity
+                                                ? tr(
+                                                      '{seats} з {capacity} місць',
+                                                      {
+                                                          seats: e.seats,
+                                                          capacity: e.capacity,
+                                                      },
+                                                  )
+                                                : `${e.attendance.length} ${tr('йдуть')}`}
                                         </span>
+                                        {e.waitlist_count > 0 && (
+                                            <span className="flex items-center gap-1">
+                                                <Hourglass className="size-3.5" />
+                                                {tr('у черзі: {count}', {
+                                                    count: e.waitlist_count,
+                                                })}
+                                            </span>
+                                        )}
                                         {e.points > 0 && (
                                             <span className="flex items-center gap-1 text-amber-200">
                                                 <Star className="size-3.5" /> +
@@ -175,19 +204,44 @@ export default function FamilyEvents(props: Props) {
                                         )
                                     }
                                     className={cn(
-                                        e.going ? btnSuccess : btnGhost,
+                                        e.going || e.my_status === 'waitlist'
+                                            ? btnSuccess
+                                            : btnGhost,
                                         'flex-1',
                                     )}
                                 >
-                                    {e.going ? (
+                                    {e.my_status === 'attended' ? (
+                                        <>
+                                            <Check className="size-4" />{' '}
+                                            {tr('Відмітився')}
+                                        </>
+                                    ) : e.going ? (
                                         <>
                                             <Check className="size-4" />{' '}
                                             {tr('Я буду')}
                                         </>
+                                    ) : e.my_status === 'waitlist' ? (
+                                        <>
+                                            <Hourglass className="size-4" />{' '}
+                                            {tr('У черзі · вийти')}
+                                        </>
+                                    ) : e.capacity !== null &&
+                                      e.seats >= e.capacity ? (
+                                        tr('Стати в чергу')
                                     ) : (
                                         tr('Піду')
                                     )}
                                 </button>
+                                <a
+                                    href={`/events/family/${e.id}.ics`}
+                                    className={btnGhost}
+                                    title={tr('Додати в календар телефона')}
+                                >
+                                    <Download className="size-4" />
+                                    <span className="sr-only">
+                                        {tr('У календар')}
+                                    </span>
+                                </a>
                                 {can['events.manage'] && (
                                     <button
                                         type="button"
@@ -198,6 +252,57 @@ export default function FamilyEvents(props: Props) {
                                     </button>
                                 )}
                             </div>
+                            {e.checkin_code && (
+                                <p className="mt-3 flex items-center gap-2 rounded-xl bg-amber-300/10 px-3 py-2 text-sm text-amber-100">
+                                    <KeyRound className="size-4 shrink-0" />
+                                    {tr('Код відмітки:')}{' '}
+                                    <span className="font-mono text-base font-bold tracking-[0.3em]">
+                                        {e.checkin_code}
+                                    </span>
+                                    <span className="text-xs text-amber-100/60">
+                                        {tr('назвіть його на початку')}
+                                    </span>
+                                </p>
+                            )}
+                            {e.checkin_open &&
+                                !e.checkin_code &&
+                                e.my_status !== 'attended' && (
+                                    <form
+                                        className="mt-3 flex gap-2"
+                                        onSubmit={(ev) => {
+                                            ev.preventDefault();
+                                            router.post(
+                                                `${base}/events/${e.id}/checkin`,
+                                                { code: code[e.id] ?? '' },
+                                                { preserveScroll: true },
+                                            );
+                                        }}
+                                    >
+                                        <input
+                                            value={code[e.id] ?? ''}
+                                            onChange={(ev) =>
+                                                setCode((c) => ({
+                                                    ...c,
+                                                    [e.id]: ev.target.value,
+                                                }))
+                                            }
+                                            inputMode="numeric"
+                                            maxLength={6}
+                                            placeholder={tr(
+                                                'Код від організатора',
+                                            )}
+                                            aria-label={tr('Код відмітки')}
+                                            className={cn(inputClass, 'flex-1')}
+                                        />
+                                        <button
+                                            type="submit"
+                                            className={btnPrimary}
+                                        >
+                                            <KeyRound className="size-4" />{' '}
+                                            {tr('Відмітитися')}
+                                        </button>
+                                    </form>
+                                )}
                         </Panel>
                     ))}
                 </div>
@@ -217,9 +322,33 @@ export default function FamilyEvents(props: Props) {
                                     </div>
                                     <div className="text-xs text-white/40">
                                         {e.type_label} ·{' '}
-                                        {kyivDateTime(e.starts_at)}
+                                        {eventTime(e.starts_at)}
                                     </div>
                                 </div>
+                                {e.album_url ? (
+                                    <a
+                                        href={e.album_url}
+                                        className="flex items-center gap-1 text-xs text-gc-lilac-300 hover:text-white"
+                                    >
+                                        <Images className="size-3.5" />
+                                        {tr('Альбом')}
+                                    </a>
+                                ) : (
+                                    e.can_album && (
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                router.post(
+                                                    `${base}/events/${e.id}/album`,
+                                                )
+                                            }
+                                            className="flex items-center gap-1 text-xs text-gc-lilac-300 hover:text-white"
+                                        >
+                                            <Images className="size-3.5" />
+                                            {tr('Створити альбом')}
+                                        </button>
+                                    )
+                                )}
                                 {e.status === 'cancelled' ? (
                                     <span className="text-xs text-white/40">
                                         {tr('скасовано')}
@@ -357,6 +486,34 @@ export default function FamilyEvents(props: Props) {
                             className={inputClass}
                         />
                     </Field>
+                    <Field
+                        label={tr('Місць (порожньо — без обмежень)')}
+                        error={form.errors.capacity}
+                    >
+                        <input
+                            type="number"
+                            min={2}
+                            value={form.data.capacity}
+                            onChange={(e) =>
+                                form.setData('capacity', e.target.value)
+                            }
+                            placeholder="—"
+                            className={inputClass}
+                        />
+                    </Field>
+                    <Field label={tr('Обкладинка')} error={form.errors.cover}>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) =>
+                                form.setData(
+                                    'cover',
+                                    e.target.files?.[0] ?? null,
+                                )
+                            }
+                            className={cn(inputClass, 'py-2 text-sm')}
+                        />
+                    </Field>
                     <Field label={tr('Опис')} className="sm:col-span-2">
                         <textarea
                             value={form.data.description}
@@ -394,8 +551,14 @@ function CloseDialog({
     roster: RosterEntry[];
     onClose: () => void;
 }) {
+    // Хто відмітився кодом — уже присутній; якщо ніхто, пропонуємо тих, хто записався.
+    const checkedIn = event.attendance
+        .filter((a) => a.status === 'attended')
+        .map((a) => a.member_id);
     const [attended, setAttended] = useState<number[]>(
-        event.attendance.map((a) => a.member_id),
+        checkedIn.length > 0
+            ? checkedIn
+            : event.attendance.map((a) => a.member_id),
     );
     const going = new Set(event.attendance.map((a) => a.member_id));
     const send = (cancelled: boolean) =>

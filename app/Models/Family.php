@@ -34,12 +34,13 @@ use Illuminate\Support\Facades\Storage;
  * @property bool $is_recruiting
  * @property int $members_count
  * @property Carbon $created_at
+ * @property Carbon|null $season_started_at
  * @property-read string|null $logo_url
  * @property-read string|null $cover_url
  */
 #[Fillable([
     'server_id', 'owner_id', 'slug', 'name', 'tag', 'description', 'status', 'status_reason', 'verified_at',
-    'settings', 'rank_titles', 'permissions', 'webhooks', 'is_recruiting',
+    'settings', 'rank_titles', 'permissions', 'webhooks', 'is_recruiting', 'season_started_at',
 ])]
 class Family extends Model
 {
@@ -161,6 +162,7 @@ class Family extends Model
             'webhooks' => 'encrypted:array',
             'verified_at' => 'datetime',
             'is_recruiting' => 'boolean',
+            'season_started_at' => 'datetime',
         ];
     }
 
