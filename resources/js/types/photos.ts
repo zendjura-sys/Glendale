@@ -55,6 +55,7 @@ export type PhotoDetails = PhotoThumb & {
     prev_id: number | null;
     next_id: number | null;
     can: { edit: boolean; delete: boolean; cover: boolean; comment: boolean };
+    tags: { id: number; username: string; name: string }[];
 };
 
 export type PhotoShowResponse = {

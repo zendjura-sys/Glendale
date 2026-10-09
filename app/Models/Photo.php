@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -73,6 +74,16 @@ class Photo extends Model
     public function likes(): MorphMany
     {
         return $this->morphMany(Like::class, 'likeable');
+    }
+
+    /**
+     * Друзі, позначені на цьому фото.
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'photo_tags', 'photo_id', 'user_id')->withTimestamps();
     }
 
     /**

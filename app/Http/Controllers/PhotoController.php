@@ -86,6 +86,7 @@ class PhotoController extends Controller
                 ],
                 'prev_id' => $album->photos()->where('id', '>', $photo->id)->orderBy('id')->value('id'),
                 'next_id' => $album->photos()->where('id', '<', $photo->id)->orderByDesc('id')->value('id'),
+                'tags' => $photo->tags()->get()->map->toCard()->values(),
                 'can' => [
                     'edit' => $this->photos->canManage($album, $viewer) || $photo->user_id === $viewer->id,
                     'delete' => $this->photos->canDeletePhoto($photo, $viewer),
@@ -143,6 +144,28 @@ class PhotoController extends Controller
         $this->photos->delete($photo);
 
         return response()->json(['deleted' => true]);
+    }
+
+    public function tag(Request $request, Photo $photo): JsonResponse
+    {
+        $actor = $request->user();
+        $data = $request->validate(['username' => ['required', 'string']]);
+        $friend = User::query()->where('username', $data['username'])->first();
+        abort_unless($friend instanceof User, 422, 'Людину не знайдено.');
+        $already = $photo->tags()->whereKey($friend->id)->exists();
+        $this->photos->tag($photo, $actor, $friend);
+        if (! $already && $friend->isNot($actor)) {
+            $friend->notify(new PhotoInteraction(PhotoInteraction::TAG, $actor, $photo));
+        }
+
+        return response()->json(['user' => $friend->toCard()]);
+    }
+
+    public function untag(Request $request, Photo $photo, User $user): JsonResponse
+    {
+        $this->photos->untag($photo, $request->user(), $user);
+
+        return response()->json(['ok' => true]);
     }
 
     public function like(Request $request, Photo $photo): JsonResponse

@@ -13,6 +13,8 @@ class PhotoInteraction extends Notification
 
     public const COMMENT = 'photo_comment';
 
+    public const TAG = 'photo_tag';
+
     public function __construct(
         public readonly string $kind,
         public readonly User $actor,
@@ -37,7 +39,11 @@ class PhotoInteraction extends Notification
             'kind' => $this->kind,
             'actor_id' => $this->actor->id,
             'photo_id' => $this->photo->id,
-            'text' => $this->kind === self::LIKE ? 'оцінив(-ла) ваше фото' : 'прокоментував(-ла) ваше фото',
+            'text' => match ($this->kind) {
+                self::LIKE => 'оцінив(-ла) ваше фото',
+                self::TAG => 'позначив(-ла) вас на фото',
+                default => 'прокоментував(-ла) ваше фото',
+            },
             'excerpt' => $this->excerpt,
             'url' => route('albums.show', ['album' => $this->photo->album_id, 'photo' => $this->photo->id], absolute: false),
         ];

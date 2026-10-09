@@ -186,8 +186,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::patch('albums/{album}', [PhotoAlbumController::class, 'update'])->name('albums.update');
             Route::delete('albums/{album}', [PhotoAlbumController::class, 'destroy'])->name('albums.destroy');
             Route::post('albums/{album}/photos', [PhotoAlbumController::class, 'upload'])->middleware('throttle:30,1')->name('albums.upload');
+            Route::post('albums/{album}/contributors', [PhotoAlbumController::class, 'storeContributor'])->middleware('throttle:30,1')->name('albums.contributors.store');
+            Route::delete('albums/{album}/contributors/{user}', [PhotoAlbumController::class, 'destroyContributor'])->name('albums.contributors.destroy');
 
             Route::get('photos/{photo}', [PhotoController::class, 'show'])->name('photos.show');
+            Route::post('photos/{photo}/tags', [PhotoController::class, 'tag'])->middleware('throttle:30,1')->name('photos.tags.store');
+            Route::delete('photos/{photo}/tags/{user}', [PhotoController::class, 'untag'])->name('photos.tags.destroy');
             Route::patch('photos/{photo}', [PhotoController::class, 'update'])->name('photos.update');
             Route::delete('photos/{photo}', [PhotoController::class, 'destroy'])->name('photos.destroy');
             Route::post('photos/{photo}/cover', [PhotoController::class, 'cover'])->name('photos.cover');

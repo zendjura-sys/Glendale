@@ -6,6 +6,7 @@ use App\Models\Community;
 use App\Models\Like;
 use App\Models\Photo;
 use App\Models\PhotoAlbum;
+use App\Models\User;
 use App\Services\PhotoService;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\RedirectResponse;
@@ -61,6 +62,7 @@ class PhotoAlbumController extends Controller
             ],
             'photos' => Inertia::scroll(fn () => $photos),
             'openPhoto' => $request->integer('photo') ?: null,
+            'contributors' => $album->contributors()->get()->map->toCard()->values(),
             'can' => [
                 'manage' => $this->photos->canManage($album, $viewer),
                 'upload' => $this->photos->canUpload($album, $viewer),
@@ -100,6 +102,24 @@ class PhotoAlbumController extends Controller
         return $owner instanceof Community
             ? to_route('communities.photos', $owner)
             : to_route('photos.user', $owner);
+    }
+
+    public function storeContributor(Request $request, PhotoAlbum $album): RedirectResponse
+    {
+        $data = $request->validate(['username' => ['required', 'string']]);
+        $friend = User::query()->where('username', $data['username'])->first();
+        abort_unless($friend instanceof User, 422, 'Людину не знайдено.');
+        $this->photos->addContributor($album, $request->user(), $friend);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Людину додано до альбому.']);
+
+        return back();
+    }
+
+    public function destroyContributor(Request $request, PhotoAlbum $album, User $user): RedirectResponse
+    {
+        $this->photos->removeContributor($album, $request->user(), $user);
+
+        return back();
     }
 
     public function upload(Request $request, PhotoAlbum $album, SiteSettings $settings): RedirectResponse

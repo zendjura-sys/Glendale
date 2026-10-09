@@ -63,6 +63,8 @@ export function PostComposer({
     const [publishAt, setPublishAt] = useState('');
     const [pickingSticker, setPickingSticker] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
+    const storageKey = `gc-composer:${community?.slug ?? wall?.username ?? 'feed'}`;
+    const restored = useRef(false);
     const form = useForm<{
         body: string;
         visibility: Visibility;
@@ -96,6 +98,26 @@ export function PostComposer({
         () => () => previews.forEach((url) => URL.revokeObjectURL(url)),
         [previews],
     );
+    useEffect(() => {
+        if (restored.current) return;
+        restored.current = true;
+        const saved = window.localStorage.getItem(storageKey);
+        if (saved) {
+            form.setData('body', saved);
+            setFocused(true);
+        }
+    }, [form, storageKey]);
+    useEffect(() => {
+        const timer = window.setTimeout(() => {
+            if (form.data.body.trim()) {
+                window.localStorage.setItem(storageKey, form.data.body);
+            } else {
+                window.localStorage.removeItem(storageKey);
+            }
+        }, 300);
+
+        return () => window.clearTimeout(timer);
+    }, [form.data.body, storageKey]);
 
     const expanded =
         focused ||
@@ -159,6 +181,7 @@ export function PostComposer({
                 setPickingCard(false);
                 setFocused(false);
                 setPublishAt('');
+                window.localStorage.removeItem(storageKey);
             },
         });
     };

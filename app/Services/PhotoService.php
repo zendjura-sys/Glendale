@@ -31,7 +31,10 @@ class PhotoService
     {
         return PhotoAlbum::query()
             ->whereMorphedTo('owner', $owner)
-            ->whereIn('privacy', $this->allowedPrivacies($owner, $viewer));
+            ->where(function (Builder $query) use ($owner, $viewer) {
+                $query->whereIn('privacy', $this->allowedPrivacies($owner, $viewer))
+                    ->orWhereIn('id', fn ($inner) => $inner->select('album_id')->from('album_contributors')->where('user_id', $viewer->id));
+            });
     }
 
     /**
@@ -60,13 +63,21 @@ class PhotoService
 
     public function canView(PhotoAlbum $album, User $viewer): bool
     {
+        $album->loadMissing('owner');
         $owner = $album->owner;
+        if ($owner === null) {
+            return false;
+        }
+        if ($this->contributes($album, $viewer)) {
+            return true;
+        }
 
-        return $owner !== null && in_array($album->privacy, $this->allowedPrivacies($owner, $viewer), true);
+        return in_array($album->privacy, $this->allowedPrivacies($owner, $viewer), true);
     }
 
     public function canManage(PhotoAlbum $album, User $user): bool
     {
+        $album->loadMissing('owner');
         $owner = $album->owner;
 
         return match (true) {
@@ -81,7 +92,7 @@ class PhotoService
      */
     public function canUpload(PhotoAlbum $album, User $user): bool
     {
-        if ($this->canManage($album, $user)) {
+        if ($this->canManage($album, $user) || $this->contributes($album, $user)) {
             return true;
         }
 
@@ -98,6 +109,50 @@ class PhotoService
         return $owner instanceof Community
             ? $this->managesCommunity($owner, $user)
             : $owner->is($user);
+    }
+
+    public function contributes(PhotoAlbum $album, User $user): bool
+    {
+        return $album->contributors()->whereKey($user->id)->exists();
+    }
+
+    public function addContributor(PhotoAlbum $album, User $actor, User $friend): void
+    {
+        $album->loadMissing('owner');
+        abort_unless($this->canManage($album, $actor), 403);
+        abort_if($album->ownedByCommunity(), 422, 'Спільним може бути лише особистий альбом.');
+        abort_if($album->owner instanceof User && $album->owner->is($friend), 422);
+        abort_unless($this->friendships->status($actor, $friend) === FriendshipService::FRIENDS, 422, 'Додати можна лише друга.');
+        abort_if($album->contributors()->count() >= 20, 422, 'В альбомі вже 20 людей.');
+
+        $album->contributors()->syncWithoutDetaching([$friend->id]);
+    }
+
+    public function removeContributor(PhotoAlbum $album, User $actor, User $friend): void
+    {
+        abort_unless($this->canManage($album, $actor) || $actor->is($friend), 403);
+        $album->contributors()->detach($friend->id);
+    }
+
+    public function tag(Photo $photo, User $actor, User $friend): void
+    {
+        $photo->loadMissing('album');
+        abort_unless($photo->user_id === $actor->id || $this->canManage($photo->album, $actor), 403);
+        abort_unless($this->friendships->status($actor, $friend) === FriendshipService::FRIENDS, 422, 'Позначити можна лише друга.');
+        abort_unless($this->canView($photo->album, $friend), 422, 'Ця людина не бачить альбом.');
+        abort_if($photo->tags()->count() >= 12, 422, 'На фото вже 12 позначок.');
+
+        $photo->tags()->syncWithoutDetaching([$friend->id]);
+    }
+
+    public function untag(Photo $photo, User $actor, User $friend): void
+    {
+        $photo->loadMissing('album');
+        abort_unless(
+            $actor->is($friend) || $photo->user_id === $actor->id || $this->canManage($photo->album, $actor),
+            403,
+        );
+        $photo->tags()->detach($friend->id);
     }
 
     public function canDeletePhoto(Photo $photo, User $user): bool

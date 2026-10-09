@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
@@ -66,6 +67,16 @@ class PhotoAlbum extends Model
     public function cover(): BelongsTo
     {
         return $this->belongsTo(Photo::class, 'cover_photo_id');
+    }
+
+    /**
+     * Друзі, які можуть додавати фото в цей альбом.
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function contributors(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'album_contributors', 'album_id', 'user_id')->withTimestamps();
     }
 
     public function ownedByCommunity(): bool
