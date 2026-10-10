@@ -90,7 +90,7 @@ class _ServersScreenState extends State<ServersScreen> {
               const SizedBox(width: 8),
               Expanded(child: MetricTile(label: tr('Серверів'), value: '${stats['servers'] ?? 0}')),
               const SizedBox(width: 8),
-              Expanded(child: MetricTile(label: tr('Сімей'), value: '${stats['families'] ?? 0}')),
+              Expanded(child: MetricTile(label: tr('Сімей'), value: compact(stats['families']))),
             ]),
             const SizedBox(height: 14),
             Segmented(

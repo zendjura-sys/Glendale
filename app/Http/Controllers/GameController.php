@@ -199,9 +199,14 @@ class GameController extends Controller
                 : [],
         ];
 
-        return $request->expectsJson() && ! $request->header('X-Inertia')
-            ? response()->json($props)
-            : Inertia::render('games/show', $props);
+        if ($request->expectsJson() && ! $request->header('X-Inertia')) {
+            // Застосунку — ті самі кольори постера одразу (рахуються за маленькою копією, далі з кешу).
+            $props['palette'] = is_string($poster) && $poster !== '' ? app(PosterPalette::class)->resolve($poster) : null;
+
+            return response()->json($props);
+        }
+
+        return Inertia::render('games/show', $props);
     }
 
     public function collections(Request $request, Game $game): RedirectResponse

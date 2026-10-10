@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'achievements.dart';
 import 'playing.dart';
+import 'account.dart';
 import 'api.dart';
 import 'feed.dart';
 import 'posts.dart';
@@ -646,6 +647,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Wrap(spacing: 10, runSpacing: 10, children: [
                         FriendAction(username: name, relation: relation, compact: true, onChanged: (_) => _load()),
                         if (data['canMessage'] == true) GhostButton(label: tr('Написати'), icon: LucideIcons.messageCircle, compact: true, expand: false, onPressed: _message),
+                        GhostButton(label: tr('Поскаржитися'), icon: LucideIcons.flag, compact: true, expand: false, color: muted, onPressed: () => showReportSheet(context, name, text(profile['name']) ?? name)),
                       ]),
                     const SizedBox(height: 16),
                     Divider(color: line, height: 1),

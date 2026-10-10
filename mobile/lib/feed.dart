@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'api.dart';
 import 'people.dart';
 import 'posts.dart';
+import 'shell.dart';
 import 'state.dart';
 import 'stories.dart';
 import 'theme.dart';
@@ -79,7 +80,8 @@ class FeedScreen extends StatefulWidget {
 
 class _FeedScreenState extends State<FeedScreen> {
   String tab = 'friends';
-  late final pager = PostPager((page) => AppScope.read(context).session.api.get('/api/v1/feed?page=$page&tab=$tab'));
+  String? lang;
+  late final pager = PostPager((page) => AppScope.read(context).session.api.get('/api/v1/feed?page=$page&tab=$tab${lang == null ? '' : '&lang=$lang'}'));
   bool ready = false;
   Object? error;
 
@@ -113,10 +115,13 @@ class _FeedScreenState extends State<FeedScreen> {
   Widget build(BuildContext context) {
     final online = maps(pager.first['online_friends']);
     final suggestions = maps(pager.first['suggestions']);
+    final tomorrow = maps(pager.first['tomorrow']);
+    final languages = (pager.first['languages'] is List ? pager.first['languages'] as List : const []).map((l) => '$l').toList();
     return ScreenScroll(
       onRefresh: _reload,
       children: [
         StoriesStrip(key: stories),
+        if (tomorrow.isNotEmpty) ...[_TomorrowCard(events: tomorrow), const SizedBox(height: 12)],
         Composer(onPosted: _reload),
         SizedBox(height: 12),
         Segmented(
@@ -130,6 +135,29 @@ class _FeedScreenState extends State<FeedScreen> {
             _reload();
           },
         ),
+        if (languages.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Row(children: [
+            const Icon(LucideIcons.languages, size: 16, color: muted),
+            const SizedBox(width: 8),
+            Text(tr('Мова записів'), style: body(12.5, color: muted)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: GcSelect<String>(
+                value: lang ?? '',
+                expand: true,
+                items: [('', tr('Усі мови')), for (final l in languages) (l, languageName(l))],
+                onChanged: (value) {
+                  setState(() {
+                    lang = (value == null || value.isEmpty) ? null : value;
+                    ready = false;
+                  });
+                  _reload();
+                },
+              ),
+            ),
+          ]),
+        ],
         const SizedBox(height: 12),
         if (online.isNotEmpty) ...[
           Glass(
@@ -377,6 +405,48 @@ class _SearchScreenState extends State<SearchScreen> {
           GhostButton(label: tr('Розширений пошук людей'), icon: LucideIcons.slidersHorizontal, onPressed: () => context.push('/people?q=${Uri.encodeQueryComponent(q)}')),
         ],
       ],
+    );
+  }
+}
+
+
+/// Картка в стрічці: завтра подія клану чи сім’ї.
+class _TomorrowCard extends StatelessWidget {
+  const _TomorrowCard({required this.events});
+  final List<Map<String, dynamic>> events;
+
+  @override
+  Widget build(BuildContext context) {
+    return Glass(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        CardTitle(tr('Завтра'), icon: LucideIcons.calendarClock),
+        const SizedBox(height: 8),
+        for (final e in events)
+          InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () => context.push(appPathFor(text(mapOf(e['where'])['url']) ?? '/events')),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(children: [
+                Container(
+                  width: 52,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(color: primary.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+                  child: Text(clock(e['starts_at']), style: body(13.5, color: const Color(0xFFB4BFFF), weight: FontWeight.w700)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(text(e['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600)),
+                    Text(text(mapOf(e['where'])['name']) ?? text(e['type_label']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
+                  ]),
+                ),
+              ]),
+            ),
+          ),
+      ]),
     );
   }
 }

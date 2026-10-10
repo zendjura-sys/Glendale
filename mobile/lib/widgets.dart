@@ -1475,17 +1475,57 @@ String duration(dynamic seconds) {
   return h > 0 ? '$h:${m.toString().padLeft(2, '0')}:$s' : '$m:$s';
 }
 
+/// Коротке число, як на сайті: 999 → 999, 1 000 → 1K, 15 300 → 15,3K, 1 000 000 → 1M.
 String compact(dynamic value) {
   final n = value is num ? value.toInt() : int.tryParse('$value') ?? 0;
-  final digits = n.abs().toString();
-  final out = StringBuffer();
-  for (var i = 0; i < digits.length; i++) {
-    if (i > 0 && (digits.length - i) % 3 == 0) out.write(' ');
-    out.write(digits[i]);
+  final abs = n.abs();
+  final sign = n < 0 ? '−' : '';
+  for (final (at, suffix) in const [(1000000000, 'B'), (1000000, 'M'), (1000, 'K')]) {
+    if (abs >= at) {
+      final scaled = abs / at;
+      final factor = scaled < 100 ? 10 : 1;
+      final cut = (scaled * factor).floor() / factor;
+      final text = cut == cut.truncateToDouble() ? cut.toInt().toString() : cut.toStringAsFixed(1).replaceAll('.', ',');
+      return '$sign$text$suffix';
+    }
   }
-  return '${n < 0 ? '−' : ''}$out';
+  return '$sign$abs';
 }
 
 int intOf(dynamic value, [int fallback = 0]) => value is int ? value : (value is num ? value.toInt() : int.tryParse('$value') ?? fallback);
 
 Map<String, dynamic> mapOf(dynamic value) => value is Map ? Map<String, dynamic>.from(value) : <String, dynamic>{};
+
+
+final _maskCache = <String, RegExp?>{};
+
+/// Мат зірочками, якщо людина ввімкнула «Приховувати образливі слова» (шаблон приходить із сервера).
+String maskProfanity(String value, String? pattern) {
+  if (pattern == null || pattern.isEmpty || value.isEmpty) return value;
+  final re = _maskCache.putIfAbsent(pattern, () {
+    try {
+      return RegExp(pattern, unicode: true, caseSensitive: false);
+    } catch (_) {
+      return null;
+    }
+  });
+  if (re == null) return value;
+  return value.replaceAllMapped(re, (m) {
+    final word = m[0]!;
+    return word.substring(0, 1) + '*' * (word.length - 1 < 1 ? 1 : word.length - 1);
+  });
+}
+
+/// Назва мови для підпису «Оригінал: …».
+String languageName(String code) => switch (code) {
+      'uk' => tr('Українська'),
+      'en' => 'English',
+      'de' => 'Deutsch',
+      'fr' => 'Français',
+      'es' => 'Español',
+      'ru' => tr('Російська'),
+      'kk' => 'Қазақ тілі',
+      'zh' => '中文',
+      'ja' => '日本語',
+      _ => code,
+    };

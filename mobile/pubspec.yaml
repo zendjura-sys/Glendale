@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.1.29+40
+version: 1.1.30+41
 
 environment:
   sdk: ^3.13.5
@@ -56,7 +56,6 @@ dependencies:
   flutter_background: ^1.3.1
   video_player: ^2.14.1
   home_widget: ^0.10.0
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -79,12 +78,17 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   fonts:
-    - family: Onest
+    - family: Montserrat
       fonts:
-        - asset: fonts/onest.ttf
-    - family: Unbounded
-      fonts:
-        - asset: fonts/unbounded.ttf
+        - asset: fonts/Montserrat-Regular.ttf
+        - asset: fonts/Montserrat-Medium.ttf
+          weight: 500
+        - asset: fonts/Montserrat-SemiBold.ttf
+          weight: 600
+        - asset: fonts/Montserrat-Bold.ttf
+          weight: 700
+        - asset: fonts/Montserrat-ExtraBold.ttf
+          weight: 800
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -63,14 +63,14 @@ String hryvnia(dynamic minor) {
   return '${negative ? '−' : ''}$grouped$tail ₴';
 }
 
-/// Коротка сума для вузьких плиток: 99 999 ₴, 100к ₴, 1,5М ₴, 10М ₴, 2,3млрд ₴.
+/// Коротка сума для плиток, як на сайті: 999 ₴, 1K ₴, 15,3K ₴, 1M ₴, 2,3B ₴.
 String hryvniaShort(dynamic minor) {
   final value = minor is int ? minor : int.tryParse('$minor') ?? 0;
   final whole = value.abs() ~/ 100;
-  if (whole < 100000) return hryvnia(value - value % 100);
-  final (unit, suffix) = whole >= 1000000000 ? (1000000000, tr('млрд')) : (whole >= 1000000 ? (1000000, tr('М')) : (1000, tr('к')));
+  if (whole < 1000) return hryvnia(value - value % 100);
+  final (unit, suffix) = whole >= 1000000000 ? (1000000000, 'B') : (whole >= 1000000 ? (1000000, 'M') : (1000, 'K'));
   final scaled = whole / unit;
-  final digits = scaled < 10 ? ((scaled * 10).floor() / 10).toString().replaceFirst(RegExp(r'\.0$'), '').replaceAll('.', ',') : '${scaled.floor()}';
+  final digits = scaled < 100 ? ((scaled * 10).floor() / 10).toString().replaceFirst(RegExp(r'\.0$'), '').replaceAll('.', ',') : '${scaled.floor()}';
   return '${value < 0 ? '−' : ''}$digits$suffix ₴';
 }
 

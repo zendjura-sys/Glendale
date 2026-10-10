@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Game;
 use App\Models\User;
+use App\Services\Auth\ApiTokens;
 use App\Services\Games\GameCatalog;
 use App\Services\Games\PosterPalette;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -82,5 +83,9 @@ class PosterPaletteTest extends TestCase
 
         $this->actingAs($user)->get('/games/'.$game->slug)
             ->assertInertia(fn (Assert $page) => $page->has('palette.accent'));
+
+        // Застосунок отримує кольори одразу в JSON.
+        $token = app(ApiTokens::class)->issue($user);
+        $this->withToken($token)->getJson('/api/v1/games/'.$game->slug)->assertOk()->assertJsonPath('palette.accent', fn ($hex) => is_string($hex) && str_starts_with($hex, '#'));
     }
 }

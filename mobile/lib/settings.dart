@@ -10,6 +10,7 @@ import 'nav_items.dart';
 import 'playing.dart';
 import 'shell.dart';
 import 'state.dart';
+import 'account.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
@@ -187,6 +188,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           options: [
             SegmentOption('profile', tr('Профіль'), icon: LucideIcons.userRound),
             SegmentOption('security', tr('Безпека'), icon: LucideIcons.shield),
+            SegmentOption('account', tr('Акаунт'), icon: LucideIcons.monitorSmartphone),
             SegmentOption('app', tr('Застосунок'), icon: LucideIcons.smartphone),
           ],
           selected: tab,
@@ -197,6 +199,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           id: tab,
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: switch (tab) {
             'security' => _security(),
+            'account' => const [AccountSettings()],
             'app' => const [NavEditor(), SizedBox(height: 12), FamilyWidgetSettings()],
             _ => _profile(),
           }),

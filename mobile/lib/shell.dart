@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'account.dart';
 import 'api.dart';
 import 'family_widget.dart';
 import 'nav_items.dart';
@@ -90,7 +91,10 @@ class _AppShellState extends State<AppShell> {
   void initState() {
     super.initState();
     widget.session.addListener(_onSession);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _onSession());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _onSession();
+      if (mounted && widget.session.me != null) showWhatsNew(context, widget.session.prefs);
+    });
   }
 
   @override
@@ -294,6 +298,10 @@ class _AppShellState extends State<AppShell> {
                       _MenuLink(icon: LucideIcons.settings, label: tr('Налаштування'), onTap: () {
                         Navigator.pop(sheet);
                         context.go('/settings');
+                      }),
+                      _MenuLink(icon: LucideIcons.messageSquareHeart, label: tr('Відгук адмінам'), onTap: () {
+                        Navigator.pop(sheet);
+                        showFeedbackSheet(context);
                       }),
                       if (widget.session.isAdmin)
                         _MenuLink(
