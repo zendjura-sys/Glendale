@@ -58,7 +58,7 @@ class VoiceRooms
             $owner instanceof Family => $this->gate->member($owner, $user) !== null,
             $owner instanceof Clan => $owner->hasFeature('voice') && $this->clans->member($owner, $user) !== null,
             $owner instanceof GtaServer => $owner->status === GtaServer::STATUS_PUBLISHED || $user->isAdmin(),
-            // Кімната пати — для автора й тих, хто приєднався, поки оголошення відкрите.
+            // Кімната паті — для автора й тих, хто приєднався, поки оголошення відкрите.
             $owner instanceof PartyPost => $owner->isOpen() && $owner->hasMember($user),
             default => (bool) $owner->membershipFor($user)?->isActive(),
         };

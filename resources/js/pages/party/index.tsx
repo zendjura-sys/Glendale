@@ -97,18 +97,18 @@ export default function PartyBoard({ parties, filters, options }: Props) {
 
     return (
         <>
-            <Head title={tr('Пошук пати')} />
+            <Head title={tr('Пошук паті')} />
             <div className="space-y-5">
                 <section className="glass rounded-3xl p-5 sm:p-6">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                         <div className="min-w-0 flex-1">
                             <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-white">
                                 <UserRoundSearch className="size-6 text-gc-lilac-300" />
-                                {tr('Пошук пати')}
+                                {tr('Пошук паті')}
                             </h1>
                             <p className="mt-1 text-sm text-white/50">
                                 {tr(
-                                    'Знайдіть, з ким зіграти: гра, сервер, час і ролі. У кожної пати — своя голосова кімната.',
+                                    'Знайдіть, з ким зіграти: гра, сервер, час і ролі. У кожної паті — своя голосова кімната.',
                                 )}
                             </p>
                         </div>
@@ -118,7 +118,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                             className="btn-glow inline-flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold sm:w-auto"
                         >
                             <Plus className="size-4" />
-                            {tr('Шукаю пату')}
+                            {tr('Шукаю паті')}
                         </button>
                     </div>
                     <div className="mt-5 grid gap-2 sm:grid-cols-3">
@@ -185,7 +185,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                                 onClick={() => setCreating(true)}
                                 className="btn-glow rounded-xl px-5 py-2.5 text-sm font-semibold"
                             >
-                                {tr('Шукаю пату')}
+                                {tr('Шукаю паті')}
                             </button>
                         }
                     />
@@ -201,7 +201,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
             <Dialog open={creating} onOpenChange={setCreating}>
                 <DialogContent className="glass-strong max-h-[92dvh] overflow-y-auto rounded-3xl border-white/10 p-6 text-white sm:max-w-lg">
                     <DialogTitle className="font-display text-xl">
-                        {tr('Шукаю пату')}
+                        {tr('Шукаю паті')}
                     </DialogTitle>
                     <DialogDescription className="text-sm text-white/50">
                         {tr('Оголошення зникне через 3 години після старту.')}

@@ -33,7 +33,7 @@ export default function PartyShow({ party }: { party: PartyCardData }) {
                     className="inline-flex items-center gap-2 text-sm text-white/55 transition hover:text-white"
                 >
                     <ArrowLeft className="size-4" />
-                    {tr('Пошук пати')}
+                    {tr('Пошук паті')}
                 </Link>
 
                 <section className="glass space-y-4 rounded-3xl p-5 sm:p-6">
@@ -156,7 +156,7 @@ export default function PartyShow({ party }: { party: PartyCardData }) {
                                 className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.05] px-4 text-sm font-medium text-white/75 transition hover:bg-white/10"
                             >
                                 <LogOut className="size-4" />
-                                {tr('Вийти з пати')}
+                                {tr('Вийти з паті')}
                             </button>
                         )}
                         {party.mine && party.open && (

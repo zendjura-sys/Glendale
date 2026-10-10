@@ -65,7 +65,7 @@ Broadcast::channel('server.{serverId}', function (User $user, int $serverId) {
     return $server !== null && ($server->status === GtaServer::STATUS_PUBLISHED || $user->isAdmin());
 });
 
-// Голосова кімната пати: автор і ті, хто приєднався.
+// Голосова кімната паті: автор і ті, хто приєднався.
 Broadcast::channel('party.{partyId}', function (User $user, int $partyId) {
     $party = PartyPost::query()->with('members')->find($partyId);
 

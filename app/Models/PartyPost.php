@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
- * Оголошення «Шукаю пату»: гра або сервер, час, ролі й місця; у кожної пати — своя голосова кімната.
+ * Оголошення «Шукаю паті»: гра або сервер, час, ролі й місця; у кожної паті — своя голосова кімната.
  *
  * @property int $id
  * @property int $user_id
@@ -86,7 +86,7 @@ class PartyPost extends Model
         return $this->hasMany(PartyMember::class);
     }
 
-    /** Учасник пати — автор або той, хто приєднався. */
+    /** Учасник паті — автор або той, хто приєднався. */
     public function hasMember(User $user): bool
     {
         return $this->user_id === $user->id || $this->members->contains('user_id', $user->id);

@@ -134,12 +134,12 @@ return [
         'nav' => ['label' => 'Події', 'route' => 'events.index', 'position' => 107],
     ],
     'party' => [
-        'name' => 'Пошук пати',
-        'description' => 'Оголошення «шукаю пату»: гра, сервер, час і ролі, кнопка в голосову кімнату пати.',
+        'name' => 'Пошук паті',
+        'description' => 'Оголошення «шукаю паті»: гра, сервер, час і ролі, кнопка в голосову кімнату паті.',
         'icon' => 'user-round-search',
         'core' => false,
         'available' => true,
         'default' => true,
-        'nav' => ['label' => 'Пошук пати', 'route' => 'party.index', 'position' => 108],
+        'nav' => ['label' => 'Пошук паті', 'route' => 'party.index', 'position' => 108],
     ],
 ];

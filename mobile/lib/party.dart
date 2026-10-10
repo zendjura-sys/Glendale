@@ -56,7 +56,7 @@ class _PartyBoardScreenState extends State<PartyBoardScreen> {
     final options = mapOf(page?['options']);
     final id = await showGcSheet<int>(
       context,
-      title: tr('Шукаю пату'),
+      title: tr('Шукаю паті'),
       subtitle: tr('Оголошення зникне через 3 години після старту.'),
       builder: (sheet) => _PartyForm(options: options, onDone: (id) => Navigator.pop(sheet, id)),
     );
@@ -75,9 +75,9 @@ class _PartyBoardScreenState extends State<PartyBoardScreen> {
       children: [
         Glass(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text(tr('Пошук пати'), style: display(22)),
+            Text(tr('Пошук паті'), style: display(22)),
             const SizedBox(height: 4),
-            Text(tr('Знайдіть, з ким зіграти: гра, сервер, час і ролі. У кожної пати — своя голосова кімната.'), style: body(13, color: muted)),
+            Text(tr('Знайдіть, з ким зіграти: гра, сервер, час і ролі. У кожної паті — своя голосова кімната.'), style: body(13, color: muted)),
             const SizedBox(height: 12),
             GcSelect<String>(
               value: game,
@@ -109,7 +109,7 @@ class _PartyBoardScreenState extends State<PartyBoardScreen> {
               },
             ),
             const SizedBox(height: 12),
-            PrimaryButton(label: tr('Шукаю пату'), icon: LucideIcons.plus, onPressed: _create),
+            PrimaryButton(label: tr('Шукаю паті'), icon: LucideIcons.plus, onPressed: _create),
           ]),
         ),
         const SizedBox(height: 12),
@@ -347,7 +347,7 @@ class PartyScreen extends StatelessWidget {
             Row(children: [
               RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.canPop() ? context.pop() : context.go('/party')),
               const SizedBox(width: 8),
-              Text(tr('Пошук пати'), style: body(14, color: muted)),
+              Text(tr('Пошук паті'), style: body(14, color: muted)),
             ]),
             const SizedBox(height: 10),
             PartyCard(party: party),
@@ -360,7 +360,7 @@ class PartyScreen extends StatelessWidget {
               Text(tr('Місць більше немає.'), style: body(13, color: muted)),
             if (joined && !mine) ...[
               const SizedBox(height: 8),
-              GhostButton(label: tr('Вийти з пати'), icon: LucideIcons.logOut, onPressed: () async {
+              GhostButton(label: tr('Вийти з паті'), icon: LucideIcons.logOut, onPressed: () async {
                 if (await attempt(context, () => api.delete(Api.site('/party/$id/join')))) await reload();
               }),
             ],
