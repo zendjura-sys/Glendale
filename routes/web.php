@@ -26,6 +26,7 @@ use App\Http\Controllers\MessengerController;
 use App\Http\Controllers\MusicController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NowPlayingController;
+use App\Http\Controllers\PartyController;
 use App\Http\Controllers\PeopleController;
 use App\Http\Controllers\PhotoAlbumController;
 use App\Http\Controllers\PhotoController;
@@ -383,6 +384,15 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('{server}/tags', [ServerController::class, 'tags'])->name('tags');
         Route::post('{server}/reviews', [ServerController::class, 'review'])->middleware('throttle:20,1')->name('reviews.store');
         Route::post('{server}/vote', [ServerController::class, 'vote'])->middleware('throttle:10,1')->name('vote');
+    });
+
+    Route::prefix('party')->name('party.')->middleware('module:party')->whereNumber('party')->group(function () {
+        Route::get('/', [PartyController::class, 'index'])->name('index');
+        Route::post('/', [PartyController::class, 'store'])->middleware('throttle:10,10')->name('store');
+        Route::get('{party}', [PartyController::class, 'show'])->name('show');
+        Route::post('{party}/join', [PartyController::class, 'join'])->middleware('throttle:20,1')->name('join');
+        Route::delete('{party}/join', [PartyController::class, 'leave'])->name('leave');
+        Route::delete('{party}', [PartyController::class, 'close'])->name('close');
     });
 
     Route::prefix('characters')->name('characters.')->middleware('module:servers')->whereNumber('character')->group(function () {

@@ -31,6 +31,7 @@ final navCatalog = [
   NavItem('/games', tr('Ігри'), tr('Каталог ігор'), LucideIcons.gamepad2, LucideIcons.gamepad2500),
   NavItem('/clans', tr('Клани'), tr('Клани й гільдії'), LucideIcons.swords, LucideIcons.swords500),
   NavItem('/events', tr('Події'), tr('Календар подій'), LucideIcons.calendarDays, LucideIcons.calendarDays500),
+  NavItem('/party', tr('Пати'), tr('Пошук пати'), LucideIcons.userRoundSearch, LucideIcons.userRoundSearch500),
 ];
 
 final navMenu = NavItem('/menu', tr('Меню'), tr('Меню'), LucideIcons.layoutGrid, LucideIcons.layoutGrid500);

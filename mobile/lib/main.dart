@@ -22,6 +22,7 @@ import 'characters.dart';
 import 'games.dart';
 import 'listen_together.dart';
 import 'music.dart';
+import 'party.dart';
 import 'people.dart';
 import 'photos.dart';
 import 'playing.dart';
@@ -159,6 +160,8 @@ Future<void> main() async {
               GoRoute(path: ':slug', builder: (_, state) => ServerScreen(slug: state.pathParameters['slug']!)),
             ],
           ),
+          GoRoute(path: '/party', builder: (_, _) => const PartyBoardScreen()),
+          GoRoute(path: '/party/:id', builder: (_, state) => PartyScreen(key: ValueKey(state.pathParameters['id']), id: state.pathParameters['id']!)),
           GoRoute(path: '/characters/create', builder: (_, state) => CharacterEditScreen(server: state.uri.queryParameters['server'])),
           GoRoute(path: '/characters/:id', builder: (_, state) => CharacterScreen(key: ValueKey(state.pathParameters['id']), id: state.pathParameters['id']!)),
           GoRoute(path: '/characters/:id/edit', builder: (_, state) => CharacterEditScreen(id: state.pathParameters['id'])),

@@ -6,6 +6,7 @@ use App\Models\ConversationParticipant;
 use App\Models\FamilyMember;
 use App\Models\GtaServer;
 use App\Models\ListenPartyMember;
+use App\Models\PartyPost;
 use App\Models\User;
 use App\Models\WatchPartyMember;
 use Illuminate\Support\Facades\Broadcast;
@@ -62,4 +63,11 @@ Broadcast::channel('server.{serverId}', function (User $user, int $serverId) {
     $server = GtaServer::query()->find($serverId);
 
     return $server !== null && ($server->status === GtaServer::STATUS_PUBLISHED || $user->isAdmin());
+});
+
+// Голосова кімната пати: автор і ті, хто приєднався.
+Broadcast::channel('party.{partyId}', function (User $user, int $partyId) {
+    $party = PartyPost::query()->with('members')->find($partyId);
+
+    return $party !== null && $party->hasMember($user);
 });

@@ -10,7 +10,7 @@ import { tr } from '@/lib/i18n';
  */
 
 export type VoiceOwner = {
-    type: 'family' | 'community' | 'clan' | 'server';
+    type: 'family' | 'community' | 'clan' | 'server' | 'party';
     id: number;
 };
 

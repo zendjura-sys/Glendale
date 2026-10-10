@@ -60,6 +60,9 @@ String appPathFor(String? sitePath) {
     case 'games':
     case 'clans':
       return parts.length > 2 && rest(1) != 'create' ? '/$head/${rest(1)}' : '$path$query';
+    case 'party':
+    case 'characters':
+      return path;
     case 'servers':
     case 'communities':
     case 'friends':

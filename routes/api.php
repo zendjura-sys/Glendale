@@ -24,6 +24,7 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
 use App\Http\Controllers\MusicController;
 use App\Http\Controllers\NowPlayingController;
+use App\Http\Controllers\PartyController;
 use App\Http\Controllers\PhotoAlbumController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PlayingController;
@@ -416,6 +417,15 @@ Route::prefix('v1')->group(function () {
                 Route::get('/', [ServerController::class, 'index']);
                 Route::post('suggest', [ServerController::class, 'suggest'])->middleware('throttle:5,10');
                 Route::get('{server}', [ServerController::class, 'show']);
+            });
+
+            Route::prefix('party')->middleware('module:party')->whereNumber('party')->group(function () {
+                Route::get('/', [PartyController::class, 'index']);
+                Route::post('/', [PartyController::class, 'store'])->middleware('throttle:10,10');
+                Route::get('{party}', [PartyController::class, 'show']);
+                Route::post('{party}/join', [PartyController::class, 'join'])->middleware('throttle:20,1');
+                Route::delete('{party}/join', [PartyController::class, 'leave']);
+                Route::delete('{party}', [PartyController::class, 'close']);
             });
 
             Route::prefix('characters')->middleware('module:servers')->whereNumber('character')->group(function () {
