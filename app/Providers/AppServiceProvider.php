@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Jobs\CheckImage;
 use App\Jobs\RelayToBots;
 use App\Models\ClanEvent;
 use App\Models\Comment;
@@ -15,11 +16,13 @@ use App\Models\FamilyReport;
 use App\Models\Movie;
 use App\Models\Photo;
 use App\Models\Post;
+use App\Models\PostAttachment;
 use App\Models\User;
 use App\Services\Auth\AccountSecurity;
 use App\Services\CommunityService;
 use App\Services\Families\FamilyGate;
 use App\Services\FriendshipService;
+use App\Services\Moderation\NsfwCheck;
 use App\Services\Push\PushNotifier;
 use App\Services\Referrals;
 use App\Support\I18n\CatalogLoader;
@@ -100,6 +103,18 @@ class AppServiceProvider extends ServiceProvider
         User::created(function (User $user) {
             $code = request()->cookie(Referrals::COOKIE);
             app(Referrals::class)->attach($user, is_string($code) ? $code : null);
+        });
+
+        // Автоперевірка фото на відвертий вміст (лише коли в адмінці є ключі Sightengine).
+        Photo::created(function (Photo $photo) {
+            if (app(NsfwCheck::class)->configured()) {
+                CheckImage::dispatch('photo', $photo->id);
+            }
+        });
+        PostAttachment::created(function (PostAttachment $attachment) {
+            if ($attachment->type === PostAttachment::TYPE_IMAGE && app(NsfwCheck::class)->configured()) {
+                CheckImage::dispatch('post_image', $attachment->id);
+            }
         });
 
         // Нова подія сім’ї чи клану — картка з кнопками в підключені чати Telegram / Discord.

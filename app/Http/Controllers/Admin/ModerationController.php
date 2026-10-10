@@ -5,16 +5,21 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Appeal;
 use App\Models\Feedback;
+use App\Models\ImageFlag;
 use App\Models\Message;
 use App\Models\MessageReport;
+use App\Models\Photo;
+use App\Models\PostAttachment;
 use App\Models\User;
 use App\Models\UserReport;
 use App\Services\Moderation\ContentFilter;
 use App\Services\Moderation\MessageReports;
 use App\Services\Moderation\PeopleModeration;
+use App\Services\PhotoService;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -103,7 +108,19 @@ class ModerationController extends Controller
                 'created_at' => $f->created_at->toIso8601String(),
             ])->values();
 
+        $images = ImageFlag::query()->where('status', ImageFlag::PENDING)->with('user')->latest('id')->limit(60)->get()
+            ->map(fn (ImageFlag $flag) => [
+                'id' => $flag->id,
+                'kind' => $flag->kind,
+                'url' => Storage::disk('public')->url($flag->path),
+                'score' => $flag->score,
+                'user' => $flag->user?->toCard(),
+                'href' => $flag->kind === 'post_image' ? (($postId = PostAttachment::query()->whereKey($flag->subject_id)->value('post_id')) ? '/posts/'.$postId : null) : null,
+                'created_at' => $flag->created_at->toIso8601String(),
+            ])->values();
+
         return Inertia::render('admin/moderation', [
+            'images' => $images,
             'reports' => $pending,
             'feedback' => $feedback,
             'people' => $people,
@@ -171,6 +188,23 @@ class ModerationController extends Controller
         abort_if($appeal->status !== Appeal::PENDING, 422, 'Оскарження вже розглянуто.');
         $moderation->answer($appeal, $moderator, (bool) $data['accept'], $data['reply'] ?? null);
         Inertia::flash('toast', ['type' => 'success', 'message' => $data['accept'] ? 'Оскарження прийнято.' : 'Оскарження відхилено.']);
+
+        return back();
+    }
+
+    public function resolveImage(Request $request, ImageFlag $flag): RedirectResponse
+    {
+        $data = $request->validate(['action' => ['required', Rule::in(['keep', 'remove'])]]);
+        if ($data['action'] === 'remove') {
+            if ($flag->kind === 'photo' && ($photo = Photo::query()->find($flag->subject_id))) {
+                app(PhotoService::class)->delete($photo);
+            } elseif ($flag->kind === 'post_image' && ($attachment = PostAttachment::query()->find($flag->subject_id))) {
+                $attachment->delete();
+            }
+            Storage::disk('public')->delete($flag->path);
+        }
+        $flag->update(['status' => $data['action'] === 'remove' ? ImageFlag::REMOVED : ImageFlag::KEPT]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => $data['action'] === 'remove' ? 'Фото видалено.' : 'Фото залишено з розмиттям.']);
 
         return back();
     }

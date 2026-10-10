@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\BotLink;
 use App\Models\Game;
+use App\Models\ImageFlag;
 use App\Models\MovieSource;
 use App\Models\PushDevice;
 use App\Models\SpotifyAccount;
@@ -26,6 +27,7 @@ use App\Services\Cinema\Metadata\TmdbProvider;
 use App\Services\Games\GameCatalog;
 use App\Services\Games\Igdb;
 use App\Services\I18n\DeepL;
+use App\Services\Moderation\NsfwCheck;
 use App\Services\Presence\SteamPresence;
 use App\Services\Push\FcmClient;
 use App\Services\Spotify\SpotifyClient;
@@ -389,6 +391,25 @@ class IntegrationController extends Controller
                         'rules' => ['nullable', 'string', 'regex:/^[a-z0-9]{20,40}$/'], 'message' => 'Client ID Twitch — 20–40 малих літер і цифр.'],
                     ['name' => 'client_secret', 'setting' => 'twitch_client_secret', 'type' => 'secret', 'label' => 'Client Secret',
                         'rules' => ['nullable', 'string', 'regex:/^[a-z0-9]{20,40}$/'], 'message' => 'Client Secret Twitch — 20–40 малих літер і цифр.'],
+                ],
+            ],
+            'sightengine' => [
+                'label' => 'Автоперевірка фото (Sightengine)',
+                'group' => 'bots',
+                'description' => 'Кожне фото в альбомах і записах перевіряється на відвертий вміст: сумнівні розмиваються, відверті йдуть у Модерація → «Фото на перевірці».',
+                'docs' => 'https://sightengine.com/docs/nudity-detection-model-2.1',
+                'steps' => [
+                    'Зареєструйтеся на sightengine.com (є безкоштовний тариф).',
+                    'Dashboard → API keys: скопіюйте API user і API secret сюди й натисніть «Перевірити».',
+                ],
+                'configured' => app(NsfwCheck::class)->configured(),
+                'stat' => ImageFlag::query()->where('status', ImageFlag::PENDING)->count().' фото чекають рішення',
+                'test' => fn () => app(NsfwCheck::class)->test(),
+                'fields' => [
+                    ['name' => 'user', 'setting' => 'sightengine_user', 'type' => 'text', 'label' => 'API user', 'placeholder' => '123456789',
+                        'rules' => ['nullable', 'string', 'regex:/^\d{5,15}$/'], 'message' => 'API user — це число.'],
+                    ['name' => 'secret', 'setting' => 'sightengine_secret', 'type' => 'secret', 'label' => 'API secret',
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{16,64}$/'], 'message' => 'API secret — латинські літери й цифри.'],
                 ],
             ],
             'voice' => [

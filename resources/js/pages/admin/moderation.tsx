@@ -20,6 +20,8 @@ import type {
     FeedbackItem,
     PersonReport,
 } from '@/components/admin/people-moderation';
+import { ImageFlags } from '@/components/admin/image-flags';
+import type { ImageFlagItem } from '@/components/admin/image-flags';
 import { PageHeader, StatCard } from '@/components/gc/admin';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { timeAgo } from '@/lib/format';
@@ -68,6 +70,7 @@ type Props = {
     people: PersonReport[];
     appeals: AppealItem[];
     feedback: FeedbackItem[];
+    images?: ImageFlagItem[];
 };
 
 const PROFANITY = {
@@ -102,6 +105,7 @@ export default function AdminModeration({
     people,
     appeals,
     feedback,
+    images = [],
 }: Props) {
     const form = useForm({
         ...settings,
@@ -291,6 +295,8 @@ export default function AdminModeration({
                 muteHours={mute_hours}
                 hoursLabel={hoursLabel}
             />
+
+            <ImageFlags flags={images} />
 
             <Appeals appeals={appeals} />
 

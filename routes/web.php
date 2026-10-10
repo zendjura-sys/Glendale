@@ -650,6 +650,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('people/{user:id}', [Admin\ModerationController::class, 'resolvePerson'])->whereNumber('user')->name('people.resolve');
             Route::post('appeals/{appeal}', [Admin\ModerationController::class, 'answerAppeal'])->whereNumber('appeal')->name('appeals.answer');
             Route::post('feedback/{feedback}', [Admin\ModerationController::class, 'readFeedback'])->whereNumber('feedback')->name('feedback.read');
+            Route::post('images/{flag}', [Admin\ModerationController::class, 'resolveImage'])->whereNumber('flag')->name('images.resolve');
         });
         Route::get('families', [Admin\FamilyController::class, 'index'])->name('families.index');
         Route::patch('families/{family:id}', [Admin\FamilyController::class, 'update'])->whereNumber('family')->name('families.update');

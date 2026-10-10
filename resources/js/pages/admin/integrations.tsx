@@ -321,9 +321,9 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                     ],
                     [
                         'bots',
-                        tr('Боти й стріми'),
+                        tr('Боти, стріми й автоперевірка'),
                         tr(
-                            'Офіційні боти GameCon для груп у Telegram і Discord і позначка LIVE для стрімерів Twitch.',
+                            'Офіційні боти GameCon для груп у Telegram і Discord, позначка LIVE для стрімерів Twitch і автоперевірка фото.',
                         ),
                     ],
                     [
