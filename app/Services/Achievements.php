@@ -31,6 +31,7 @@ class Achievements
         'photos' => 3, 'tracks' => 8, 'stories' => 4, 'events' => 15, 'parties' => 10,
         'votes' => ServerVotes::XP,
         'quest_xp' => 1,
+        'referrals' => Referrals::XP,
     ];
 
     /** Назви рівнів: з якого рівня яка. */
@@ -63,6 +64,9 @@ class Achievements
         ['key' => 'verified', 'stat' => 'verified', 'target' => 1, 'title' => 'Верифікований', 'text' => 'Мати підтверджений профіль.', 'icon' => 'badge-check'],
         ['key' => 'voter', 'stat' => 'votes', 'target' => 30, 'title' => 'Голос спільноти', 'text' => 'Проголосувати за сервери 30 разів.', 'icon' => 'vote'],
         ['key' => 'quests_30', 'stat' => 'quests', 'target' => 30, 'title' => 'Сезонний гравець', 'text' => 'Виконати 30 щоденних завдань.', 'icon' => 'target'],
+        ['key' => 'invite_1', 'stat' => 'referrals', 'target' => 1, 'title' => 'Запросив друга', 'text' => 'Запросити друга, який підтвердив пошту.', 'icon' => 'user-plus'],
+        ['key' => 'invite_5', 'stat' => 'referrals', 'target' => 5, 'title' => 'Збирач команди', 'text' => 'Запросити 5 друзів.', 'icon' => 'users-round'],
+        ['key' => 'invite_25', 'stat' => 'referrals', 'target' => 25, 'title' => 'Амбасадор GameCon', 'text' => 'Запросити 25 друзів.', 'icon' => 'megaphone'],
         ['key' => 'pioneer', 'stat' => 'pioneer', 'target' => 1, 'title' => 'Перші 100', 'text' => 'Бути серед перших ста користувачів.', 'icon' => 'rocket'],
     ];
 
@@ -160,6 +164,7 @@ class Achievements
             'votes' => app(ServerVotes::class)->countFor($user),
             'quest_xp' => app(DailyQuests::class)->totalXp($user),
             'quests' => app(DailyQuests::class)->completed($user),
+            'referrals' => app(Referrals::class)->active($user),
         ];
     }
 }

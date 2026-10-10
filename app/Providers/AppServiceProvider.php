@@ -21,6 +21,7 @@ use App\Services\CommunityService;
 use App\Services\Families\FamilyGate;
 use App\Services\FriendshipService;
 use App\Services\Push\PushNotifier;
+use App\Services\Referrals;
 use App\Support\I18n\CatalogLoader;
 use App\Support\I18n\Locales;
 use App\Support\I18n\Translations;
@@ -93,6 +94,12 @@ class AppServiceProvider extends ServiceProvider
             $page = app(Translations::class)->tree($page);
             $view->with('page', $page);
             app(SsrState::class)->setPage($page);
+        });
+
+        // Новий акаунт за посиланням /r/{код}: друзі з запрошувачем, бонуси йому.
+        User::created(function (User $user) {
+            $code = request()->cookie(Referrals::COOKIE);
+            app(Referrals::class)->attach($user, is_string($code) ? $code : null);
         });
 
         // Нова подія сім’ї чи клану — картка з кнопками в підключені чати Telegram / Discord.

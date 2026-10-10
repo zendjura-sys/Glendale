@@ -27,6 +27,8 @@ const _icons = <String, IconData>{
   'rocket': LucideIcons.rocket,
   'vote': LucideIcons.vote,
   'target': LucideIcons.target,
+  'user-plus': LucideIcons.userPlus,
+  'megaphone': LucideIcons.megaphone,
 };
 
 /// Рівень (досвід до наступного) і бейджі за активність — у профілі.

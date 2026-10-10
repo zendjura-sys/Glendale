@@ -38,6 +38,7 @@ use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuestController;
+use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\SavedController;
 use App\Http\Controllers\ServerAppController;
 use App\Http\Controllers\ServerController;
@@ -63,6 +64,9 @@ Route::get('/', WelcomeController::class)->name('home');
 
 Route::redirect('dashboard', '/feed')->name('dashboard');
 
+// Особисте посилання-запрошення: запам’ятовуємо запрошувача й ведемо на реєстрацію.
+Route::get('r/{code}', [ReferralController::class, 'visit'])->where('code', '[a-z0-9]{8}')->middleware('throttle:60,1')->name('referrals.visit');
+
 Route::prefix('auth')->name('auth.')->group(function () {
     Route::get('discord', [SocialAuthController::class, 'discordRedirect'])->middleware('throttle:20,1')->name('discord');
     Route::get('discord/callback', [SocialAuthController::class, 'discordCallback'])->middleware('throttle:20,1')->name('discord.callback');
@@ -75,6 +79,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('join/{token}', [InviteLinkController::class, 'accept'])->middleware('throttle:20,1')->name('invites.accept');
 
     Route::get('feed', [FeedController::class, 'index'])->middleware('module:feed')->name('feed');
+    Route::get('invite', [ReferralController::class, 'index'])->name('referrals.index');
     Route::get('start', [StartController::class, 'index'])->name('start');
     Route::post('start', [StartController::class, 'store'])->name('start.store');
     Route::post('start/skip', [StartController::class, 'skip'])->name('start.skip');

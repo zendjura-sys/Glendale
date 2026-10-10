@@ -1,6 +1,7 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     Bookmark,
+    UserPlus,
     ChevronDown,
     Keyboard,
     LayoutDashboard,
@@ -462,6 +463,11 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
     }, [onClose]);
 
     const extra = [
+        {
+            href: '/invite',
+            label: tr('Запросити друзів'),
+            icon: UserPlus,
+        },
         {
             href: '/saved',
             label: tr('Збережене'),
