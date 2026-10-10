@@ -61,7 +61,7 @@ class HandleInertiaRequests extends Middleware
             'name' => $this->settings->get('site_name'),
             'locale' => app()->getLocale(),
             'locales' => app(Locales::class)->options(),
-            // Футер на всіх сторінках: документи, копірайт мовою інтерфейсу (lang/{locale}/ui.php) і рядок Paddle.
+            // Футер на всіх сторінках: документи, копірайт мовою інтерфейсу (lang/{locale}/ui.php).
             'footer' => [
                 'year' => (int) date('Y'),
                 'terms' => __('ui.terms'),
@@ -69,7 +69,6 @@ class HandleInertiaRequests extends Middleware
                 'refund' => __('ui.refund'),
                 'pricing' => __('ui.pricing'),
                 'rights' => __('ui.all_rights_reserved'),
-                'paddle' => __('ui.paddle_mor'),
             ],
             'site' => [
                 'name' => $this->settings->get('site_name'),
@@ -100,6 +99,9 @@ class HandleInertiaRequests extends Middleware
                     'palette' => $user->palette(),
                     'hide_spoilers' => app(Plugins::class)->on('spoiler_switch') && (bool) $user->pref('hide_spoilers'),
                     'profanity_mask' => $user->pref('hide_profanity') ? app(ContentFilter::class)->clientPattern() : null,
+                    // Білінг (лише сайт): баланс рахунку в копійках і до коли діє GameCon+.
+                    'balance' => (int) $user->balance,
+                    'plus_until' => $user->plus_until?->toIso8601String(),
                     'created_at' => $user->created_at,
                     'updated_at' => $user->updated_at,
                 ] : null,

@@ -7,7 +7,7 @@
     <li><strong>콘텐츠 및 활동:</strong> 게시물, 댓글, 반응, 메시지, 음성 메시지, 사진, 클립, RP 캐릭터, 패밀리·클랜·커뮤니티 활동, 투표, 퀘스트, 초대, 영화 목록 및 평점.</li>
     <li><strong>연결된 계정</strong>(연결한 경우에만): Google, Discord, Telegram, Steam, Spotify, Twitch, YouTube의 식별자 및 기능에 필요한 공개 프로필 정보.</li>
     <li><strong>기술 정보:</strong> IP 주소, 대략적인 국가(지역 제한용), 기기·브라우저 정보, 로그, 세션 및 보안 이벤트, 푸시 알림 토큰.</li>
-    <li><strong>결제 정보:</strong> 결제는 판매자(Merchant of Record)인 Paddle이 처리합니다. 당사는 Paddle 고객 ID, 구독 상태, 상품, 금액, 통화, 날짜를 받습니다. <strong>전체 카드 정보는 받거나 저장하지 않습니다.</strong></li>
+    <li><strong>결제 정보:</strong> 충전 시 당사는 후원·결제 서비스로부터 반영에 필요한 정보(입력한 이름 또는 닉네임, 메시지(충전 코드 포함), 금액, 통화, 시간, 거래 ID)를 받습니다. 계정 거래 기록(충전, 구매, 갱신, 환불)을 보관합니다. <strong>카드 정보는 받거나 저장하지 않습니다.</strong></li>
     <li><strong>음성:</strong> 음성 채팅방과 통화는 당사 미디어 서버를 통해 실시간으로 전송되며 <strong>녹음되지 않습니다</strong>.</li>
 </ul>
 
@@ -23,7 +23,7 @@
 <h2>3. 제3자 제공</h2>
 <p>당사는 개인정보를 판매하지 않습니다. 적절한 계약에 따라 서비스 운영을 지원하는 수탁자 및 파트너에게만 제공합니다.</p>
 <ul>
-    <li><strong>Paddle</strong>(결제, Merchant of Record) — Paddle 개인정보 고지를 참조하십시오;</li>
+    <li>귀하가 선택한 후원·결제 서비스(예: Donatello, Diaka, Donatik, Buy Me a Coffee, Patreon) 및 앱 내 구매를 위한 Google Play — 각자의 개인정보 고지에 따름;</li>
     <li>호스팅, 저장소, 이메일 발송, 백업 제공업체;</li>
     <li>Google Firebase(앱 푸시 알림), 브라우저 푸시 서비스;</li>
     <li>Sightengine(업로드 이미지 자동 검사);</li>

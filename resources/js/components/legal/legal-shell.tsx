@@ -16,7 +16,6 @@ export type LegalLabels = {
     last_updated: string;
     language: string;
     rights: string;
-    paddle_mor: string;
 };
 
 /**
@@ -79,7 +78,6 @@ export function LegalShell({
                         refund: labels.refund,
                         pricing: labels.pricing,
                         rights: labels.rights,
-                        paddle: labels.paddle_mor,
                     }}
                 />
             </div>

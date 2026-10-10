@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use App\Services\Plus\Paddle;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -52,34 +51,26 @@ class LegalPagesTest extends TestCase
         );
     }
 
-    public function test_refund_policy_names_paddle_and_the_14_day_window(): void
+    public function test_refund_policy_describes_wallet_auto_renewal_and_the_14_day_window(): void
     {
         $this->get('/refund-policy?lang=en')->assertInertia(fn (Assert $page) => $page
-            ->where('html', fn (string $html) => str_contains($html, 'Merchant of Record') && str_contains($html, '14 days'))
+            ->where('html', fn (string $html) => str_contains($html, 'Personal account') && str_contains($html, 'Auto-renewal') && str_contains($html, '14 days') && ! str_contains($html, 'Paddle'))
         );
     }
 
-    public function test_pricing_lists_only_products_with_paddle_prices(): void
+    public function test_pricing_lists_only_products_on_sale(): void
     {
+        $all = count((array) config('plus.products'));
         $this->get('/pricing')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('legal/pricing')
-            ->has('products', count((array) config('plus.products')))
+            ->has('products', $all)
         );
 
-        $settings = app(SiteSettings::class);
-        $settings->putSecret('paddle_api_key', 'pdl_sdbx_apikey_0123456789abcdef');
-        $settings->put([
-            'paddle_seller_id' => '12345',
-            'paddle_client_token' => 'test_0123456789abcdef',
-            'paddle_price_plus_month' => 'pri_plusmonth0001',
-            'paddle_price_family_year' => 'pri_familyyear001',
-        ]);
-        app(Paddle::class)->applyConfig();
+        app(SiteSettings::class)->put(['plus_disabled' => ['gift_year', 'promo_banner_30']]);
 
         $this->get('/pricing')->assertInertia(fn (Assert $page) => $page
-            ->has('products', 2)
-            ->where('products.0.key', 'plus_month')
-            ->where('products.1.key', 'family_year')
+            ->has('products', $all - 2)
+            ->where('products', fn ($products) => ! collect($products)->pluck('key')->contains('gift_year'))
         );
     }
 
@@ -88,7 +79,7 @@ class LegalPagesTest extends TestCase
         $user = User::factory()->create();
         $this->actingAs($user)->get('/feed')->assertInertia(fn (Assert $page) => $page
             ->where('footer.year', (int) now()->year)
-            ->where('footer.paddle', fn (string $text) => str_contains($text, 'Paddle'))
+            ->missing('footer.paddle')
             ->has('footer.terms')
             ->has('footer.refund')
         );

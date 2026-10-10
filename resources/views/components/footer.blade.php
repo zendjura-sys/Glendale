@@ -10,5 +10,4 @@
         <a href="{{ url('/refund-policy') }}" style="color:inherit">{{ __('ui.refund') }}</a>
     </nav>
     <p style="margin:8px 0 0">&copy; {{ date('Y') }} {{ config('app.name') }}. {{ __('ui.all_rights_reserved') }}</p>
-    <p style="margin:4px 0 0">{{ __('ui.paddle_mor') }}</p>
 </footer>

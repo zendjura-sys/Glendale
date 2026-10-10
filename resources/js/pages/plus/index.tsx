@@ -1,7 +1,6 @@
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import {
     Check,
-    CreditCard,
     Gift,
     Image as ImageIcon,
     Layers,
@@ -10,16 +9,19 @@ import {
     Sparkles,
     Ticket,
     Users,
+    Wallet,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { PlusTabs } from '@/components/billing/plus-tabs';
 import { FamilyLogo } from '@/components/families/family-logo';
 import { PlusBadge, plusNameStyle } from '@/components/gc/plus';
 import { UserAvatar } from '@/components/gc/user-avatar';
+import { money, openTopup } from '@/lib/billing';
 import { formatDate } from '@/lib/format';
 import { tr } from '@/lib/i18n';
-import { PLUS_PRICES, PRODUCT_LABELS, startCheckout } from '@/lib/plus';
+import { buyProduct, PLUS_PRICES, PRODUCT_LABELS } from '@/lib/plus';
 import type { PlusProduct } from '@/lib/plus';
 import { cn } from '@/lib/utils';
 import type { FamilyCard } from '@/types';
@@ -27,13 +29,12 @@ import type { FamilyCard } from '@/types';
 type State = {
     active: boolean;
     until: string | null;
-    subscription: {
+    /** Автопродовження з рахунку (Білінг). */
+    renewal: {
         id: number;
-        product: string | null;
-        status: string;
-        /** Скасування заплановане — доступ до кінця оплаченого періоду. */
-        cancelled: boolean;
-        ends_at: string | null;
+        product: string;
+        payer_id: number;
+        failed: boolean;
     } | null;
 };
 
@@ -58,7 +59,8 @@ type Props = {
         receipt_url: string | null;
         created_at: string;
     }[];
-    paid: boolean;
+    /** Баланс рахунку, копійки. */
+    balance: number;
 };
 
 const PERKS = (): { icon: LucideIcon; title: string; text: string }[] => [
@@ -99,15 +101,6 @@ const PERKS = (): { icon: LucideIcon; title: string; text: string }[] => [
     },
 ];
 
-const STATUS = (): Record<string, string> => ({
-    active: tr('Активна'),
-    trialing: tr('Пробний період'),
-    past_due: tr('Банк ще проводить оплату'),
-    canceled: tr('Скасована'),
-    paused: tr('Призупинена'),
-    unpaid: tr('Не оплачена'),
-});
-
 const btn =
     'inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition disabled:opacity-40';
 const primary = cn(
@@ -123,26 +116,21 @@ export default function PlusPage({
     products,
     families,
     payments,
-    paid,
+    balance,
 }: Props) {
     const user = usePage().props.auth.user;
-    const [busy, setBusy] = useState<string | null>(null);
+    const busy: string | null = null;
     const buy = (
         product: PlusProduct,
         extra: Record<string, string | number> = {},
-    ) => {
-        setBusy(product);
-        void startCheckout(product, extra).finally(() => setBusy(null));
-    };
+    ) => buyProduct(product, extra);
     const can = (product: PlusProduct) => products[product]?.available === true;
-    const subscribed =
-        state.subscription !== null &&
-        ['active', 'trialing', 'past_due'].includes(state.subscription.status);
 
     return (
         <>
             <Head title="GameCon+" />
             <div className="mx-auto max-w-4xl space-y-5">
+                <PlusTabs current="plus" balance={balance} />
                 <section className="glass rounded-3xl p-5 sm:p-7">
                     <h1 className="flex items-center gap-2.5 font-display text-2xl font-bold text-white sm:text-3xl">
                         <PlusBadge className="size-7 rounded-lg [&_svg]:size-5" />
@@ -153,15 +141,30 @@ export default function PlusPage({
                             'Підтримайте GameCon і отримайте оформлення, більше місця й зручності. Усе, що вже безкоштовне, лишається безкоштовним.',
                         )}
                     </p>
-                    {paid && !state.active && (
-                        <p className="mt-4 rounded-2xl bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200">
-                            {tr(
-                                'Дякуємо! Оплата обробляється — статус з’явиться за хвилину. Оновіть сторінку.',
-                            )}
-                        </p>
-                    )}
+                    <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3">
+                        <Wallet className="size-5 text-indigo-300" />
+                        <span className="text-sm text-white">
+                            {tr('На рахунку')}{' '}
+                            <b className="tabular-nums">{money(balance)}</b>
+                        </span>
+                        <span className="ml-auto flex gap-2">
+                            <button
+                                type="button"
+                                className={cn(primary, 'h-9')}
+                                onClick={() => openTopup()}
+                            >
+                                {tr('Поповнити')}
+                            </button>
+                            <Link
+                                href="/plus/billing"
+                                className={cn(secondary, 'h-9')}
+                            >
+                                {tr('Рахунок')}
+                            </Link>
+                        </span>
+                    </div>
                     {state.active && (
-                        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3">
+                        <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3">
                             <Check className="size-5 text-emerald-300" />
                             <span className="text-sm text-white">
                                 {state.until
@@ -169,21 +172,23 @@ export default function PlusPage({
                                           date: formatDate(state.until),
                                       })
                                     : tr('GameCon+ активний')}
-                                {state.subscription && (
-                                    <span className="text-white/50">
-                                        {' · '}
-                                        {STATUS()[state.subscription.status] ??
-                                            state.subscription.status}
-                                    </span>
-                                )}
+                                <span
+                                    className={cn(
+                                        state.renewal?.failed
+                                            ? 'text-amber-200'
+                                            : 'text-white/50',
+                                    )}
+                                >
+                                    {' · '}
+                                    {state.renewal
+                                        ? state.renewal.failed
+                                            ? tr(
+                                                  'для автопродовження бракує коштів',
+                                              )
+                                            : tr('автопродовження з рахунку')
+                                        : tr('без автопродовження')}
+                                </span>
                             </span>
-                            {state.subscription && (
-                                <SubscriptionActions
-                                    type="default"
-                                    cancelled={state.subscription.cancelled}
-                                    endsAt={state.subscription.ends_at}
-                                />
-                            )}
                         </div>
                     )}
 
@@ -227,31 +232,22 @@ export default function PlusPage({
                                     <button
                                         type="button"
                                         className={primary}
-                                        disabled={
-                                            !can(product) ||
-                                            subscribed ||
-                                            busy !== null
-                                        }
+                                        disabled={!can(product)}
                                         onClick={() => buy(product)}
                                     >
-                                        {subscribed
-                                            ? tr('Підписка вже активна')
-                                            : tr('Оформити')}
+                                        {!can(product)
+                                            ? tr('Зараз не продається')
+                                            : state.active
+                                              ? tr('Продовжити')
+                                              : tr('Оформити')}
                                     </button>
                                 </div>
                             ),
                         )}
                     </div>
-                    {!can('plus_month') && (
-                        <p className="mt-3 text-xs text-white/40">
-                            {tr(
-                                'Оплата скоро запрацює — адміністрація підключає платіжну систему.',
-                            )}
-                        </p>
-                    )}
                     <p className="mt-3 text-xs text-white/40">
                         {tr(
-                            'Оплата через Paddle (Merchant of Record): карта, Apple Pay, Google Pay або PayPal. Підписка продовжується сама; скасувати можна в один клик тут — доступ лишиться до кінця оплаченого періоду. Повернення протягом 14 днів — див. «Повернення коштів».',
+                            'Оплата — з рахунку GameCon, його поповнюють донатом. Жодних автосписань з картки: автопродовження списує ціну лише з рахунку й вимикається будь-коли. Дні нової покупки додаються після чинного періоду. Повернення протягом 14 днів — див. «Повернення коштів».',
                         )}
                     </p>
                 </section>
@@ -317,16 +313,6 @@ export default function PlusPage({
                                         <span className="text-xs text-amber-200">
                                             {tr('Повернено')}
                                         </span>
-                                    )}
-                                    {p.receipt_url && (
-                                        <a
-                                            href={p.receipt_url}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="text-xs text-indigo-200 hover:underline"
-                                        >
-                                            {tr('Чек')}
-                                        </a>
                                     )}
                                 </li>
                             ))}
@@ -685,11 +671,6 @@ function FamilyRow({
     busy: string | null;
 }) {
     const [accent, setAccent] = useState(family.style.accent ?? '');
-    const subscribed =
-        family.state.subscription !== null &&
-        ['active', 'trialing', 'past_due'].includes(
-            family.state.subscription.status,
-        );
 
     return (
         <li className="space-y-3 rounded-2xl bg-white/[0.04] p-4">
@@ -706,33 +687,21 @@ function FamilyRow({
                                   date: formatDate(family.state.until),
                               })
                             : tr('Без GameCon+')}
+                        {family.state.renewal &&
+                            ` · ${tr('автопродовження з рахунку')}`}
                     </span>
                 </span>
-                {family.state.subscription && (
-                    <SubscriptionActions
-                        type={`family:${family.id}`}
-                        cancelled={family.state.subscription.cancelled}
-                        endsAt={family.state.subscription.ends_at}
-                    />
-                )}
-                {!subscribed &&
-                    (['family_month', 'family_year'] as const).map(
-                        (product) => (
-                            <button
-                                key={product}
-                                type="button"
-                                className={cn(primary, 'h-9')}
-                                disabled={!can(product) || busy !== null}
-                                onClick={() =>
-                                    buy(product, { family_id: family.id })
-                                }
-                            >
-                                {product === 'family_month'
-                                    ? tr('Місяць')
-                                    : tr('Рік')}
-                            </button>
-                        ),
-                    )}
+                {(['family_month', 'family_year'] as const).map((product) => (
+                    <button
+                        key={product}
+                        type="button"
+                        className={cn(primary, 'h-9')}
+                        disabled={!can(product) || busy !== null}
+                        onClick={() => buy(product, { family_id: family.id })}
+                    >
+                        {product === 'family_month' ? tr('Місяць') : tr('Рік')}
+                    </button>
+                ))}
             </div>
             {family.state.active && (
                 <div className="space-y-3">
@@ -758,73 +727,5 @@ function FamilyRow({
                 </div>
             )}
         </li>
-    );
-}
-
-/** Скасування в один клик, відновлення і портал Paddle (картки, чеки). */
-function SubscriptionActions({
-    type,
-    cancelled,
-    endsAt,
-}: {
-    type: string;
-    cancelled: boolean;
-    endsAt: string | null;
-}) {
-    const [busy, setBusy] = useState(false);
-    const post = (url: string) => {
-        setBusy(true);
-        router.post(
-            url,
-            { type },
-            { preserveScroll: true, onFinish: () => setBusy(false) },
-        );
-    };
-
-    return (
-        <span className="ml-auto flex flex-wrap items-center gap-2">
-            {cancelled ? (
-                <>
-                    {endsAt && (
-                        <span className="text-xs text-amber-200/80">
-                            {tr('Скасовано, діє до {date}', {
-                                date: formatDate(endsAt),
-                            })}
-                        </span>
-                    )}
-                    <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => post('/plus/resume')}
-                        className={cn(primary, 'h-9')}
-                    >
-                        {tr('Відновити')}
-                    </button>
-                </>
-            ) : (
-                <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => {
-                        if (
-                            window.confirm(
-                                tr(
-                                    'Скасувати підписку? GameCon+ діятиме до кінця оплаченого періоду, нових списань не буде.',
-                                ),
-                            )
-                        ) {
-                            post('/plus/cancel');
-                        }
-                    }}
-                    className={cn(secondary, 'h-9')}
-                >
-                    {tr('Скасувати')}
-                </button>
-            )}
-            <a href="/plus/portal" className={cn(secondary, 'h-9')}>
-                <CreditCard className="size-4" />
-                {tr('Чеки й картка')}
-            </a>
-        </span>
     );
 }

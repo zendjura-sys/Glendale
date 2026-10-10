@@ -7,7 +7,7 @@
     <li><strong>Inhalte und Aktivität:</strong> Beiträge, Kommentare, Reaktionen, Nachrichten, Sprachnachrichten, Fotos, Clips, RP-Charaktere, Aktivitäten in Familien, Clans und Communitys, Stimmen, Aufgaben, Einladungen, Filmlisten und Bewertungen.</li>
     <li><strong>Verbundene Konten</strong> (nur wenn Sie sie verbinden): Kennungen und öffentliche Profildaten von Google, Discord, Telegram, Steam, Spotify, Twitch oder YouTube.</li>
     <li><strong>Technische Daten:</strong> IP-Adresse, ungefähres Land (für regionale Beschränkungen), Geräte- und Browserdaten, Protokolle, Sitzungs- und Sicherheitsereignisse, Push-Tokens.</li>
-    <li><strong>Zahlungsdaten:</strong> Zahlungen verarbeitet Paddle als Merchant of Record. Wir erhalten Paddle-Kunden-ID, Abostatus, Produkt, Betrag, Währung und Daten. <strong>Vollständige Kartendaten erhalten oder speichern wir nie.</strong></li>
+    <li><strong>Zahlungsdaten:</strong> Wenn Sie Ihr Konto aufladen, erhalten wir vom Spenden- oder Zahlungsdienst die zur Gutschrift nötigen Angaben: den eingegebenen Namen oder Spitznamen, Ihre Nachricht (mit dem Aufladecode), Betrag, Währung, Zeitpunkt und Transaktions-ID. Wir führen ein Protokoll Ihrer Kontobewegungen (Aufladungen, Käufe, Verlängerungen, Erstattungen). <strong>Ihre Kartendaten erhalten oder speichern wir nie.</strong></li>
     <li><strong>Sprache:</strong> Sprachräume und Anrufe werden in Echtzeit über unseren Medienserver übertragen und <strong>nicht aufgezeichnet</strong>.</li>
 </ul>
 
@@ -23,7 +23,7 @@
 <h2>3. Empfänger</h2>
 <p>Wir verkaufen keine personenbezogenen Daten. Wir geben sie nur an Auftragsverarbeiter und Partner weiter, die uns beim Betrieb helfen, auf Grundlage geeigneter Verträge:</p>
 <ul>
-    <li><strong>Paddle</strong> (Zahlungen, Merchant of Record) — siehe Datenschutzhinweise von Paddle;</li>
+    <li>die von Ihnen gewählten Spenden- und Zahlungsdienste (z. B. Donatello, Diaka, Donatik, Buy Me a Coffee, Patreon) und für In-App-Käufe Google Play — jeweils nach eigenen Datenschutzhinweisen;</li>
     <li>Hosting-, Speicher-, E-Mail- und Backup-Anbieter;</li>
     <li>Google Firebase (Push in der App), Push-Dienste der Browser;</li>
     <li>Sightengine (automatische Prüfung hochgeladener Bilder auf explizite Inhalte);</li>

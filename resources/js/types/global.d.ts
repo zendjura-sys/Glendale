@@ -22,7 +22,6 @@ declare module '@inertiajs/core' {
                 refund: string;
                 pricing: string;
                 rights: string;
-                paddle: string;
             };
             auth: Auth;
             site: {

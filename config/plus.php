@@ -1,23 +1,25 @@
 <?php
 
 /*
-| GameCon+: товари, ціни (для показу на сайті, ₴) і різниця в лімітах.
+| GameCon+: товари, ціни (₴) і різниця в лімітах.
 |
-| Справжню ціну списує Lemon Squeezy — товар із тим самим ID варіанта
-| (Адмінка → Інтеграції → «Оплата»). Тримайте ціни там і тут однаковими.
+| На сайті оплата — передплата періоду через донат-сервіси (Адмінка → GameCon+ → «Способи оплати»):
+| людина отримує код замовлення, вказує його в повідомленні до донату, і замовлення
+| зараховується автоматично (Donatello) або після перевірки адміністратором. Автопродовження немає.
+| У застосунку — Google Play Billing (там підписка продовжується, доки її не скасують у Google Play).
 |
-| kind:  plus — підписка людини, family — підписка сім'ї,
-|        gift — разовий подарунок GameCon+ іншій людині, promo — просування сервера.
+| kind:  plus — GameCon+ людини, family — GameCon+ сім'ї,
+|        gift — подарунок GameCon+ іншій людині, promo — просування сервера.
 */
 
 return [
     'products' => [
-        'plus_month' => ['kind' => 'plus', 'name' => 'GameCon+ · місяць', 'price' => 149, 'days' => 30, 'recurring' => true],
-        'plus_year' => ['kind' => 'plus', 'name' => 'GameCon+ · рік', 'price' => 1290, 'days' => 365, 'recurring' => true],
+        'plus_month' => ['kind' => 'plus', 'name' => 'GameCon+ · місяць', 'price' => 149, 'days' => 30, 'recurring' => false],
+        'plus_year' => ['kind' => 'plus', 'name' => 'GameCon+ · рік', 'price' => 1290, 'days' => 365, 'recurring' => false],
         'gift_month' => ['kind' => 'gift', 'name' => 'Подарунок GameCon+ · місяць', 'price' => 149, 'days' => 30, 'recurring' => false],
         'gift_year' => ['kind' => 'gift', 'name' => 'Подарунок GameCon+ · рік', 'price' => 1290, 'days' => 365, 'recurring' => false],
-        'family_month' => ['kind' => 'family', 'name' => 'GameCon+ для сім’ї · місяць', 'price' => 399, 'days' => 30, 'recurring' => true],
-        'family_year' => ['kind' => 'family', 'name' => 'GameCon+ для сім’ї · рік', 'price' => 3490, 'days' => 365, 'recurring' => true],
+        'family_month' => ['kind' => 'family', 'name' => 'GameCon+ для сім’ї · місяць', 'price' => 399, 'days' => 30, 'recurring' => false],
+        'family_year' => ['kind' => 'family', 'name' => 'GameCon+ для сім’ї · рік', 'price' => 3490, 'days' => 365, 'recurring' => false],
         'promo_top_7' => ['kind' => 'promo', 'promo' => 'top', 'name' => 'Місце в топі каталогу · 7 днів', 'price' => 499, 'days' => 7, 'recurring' => false],
         'promo_top_30' => ['kind' => 'promo', 'promo' => 'top', 'name' => 'Місце в топі каталогу · 30 днів', 'price' => 1490, 'days' => 30, 'recurring' => false],
         'promo_highlight_7' => ['kind' => 'promo', 'promo' => 'highlight', 'name' => 'Виділена картка · 7 днів', 'price' => 199, 'days' => 7, 'recurring' => false],
@@ -28,8 +30,22 @@ return [
     // Скільки серверів одночасно може займати платне місце.
     'promo_slots' => ['top' => 3, 'highlight' => 50, 'banner' => 1],
 
-    // Запас після дати продовження, поки банк проводить платіж.
+    // Запас після дати продовження підписки Google Play, поки банк проводить платіж.
     'grace_days' => 3,
+
+    // Скільки годин чекає неоплачене замовлення.
+    'order_hours' => 72,
+
+    // Способи оплати. auto — сервер сам знаходить донат за кодом у повідомленні (через API сервісу);
+    // інші підтверджує адміністратор. Посилання й увімкнення — в адмінці (setting plus_methods).
+    'methods' => [
+        'donatello' => ['label' => 'Donatello', 'auto' => true, 'currency' => 'UAH', 'placeholder' => 'https://donatello.to/…'],
+        'diaka' => ['label' => 'Diaka', 'auto' => false, 'currency' => 'UAH', 'placeholder' => 'https://diaka.ua/…'],
+        'donatik' => ['label' => 'Donatik', 'auto' => false, 'currency' => 'UAH', 'placeholder' => 'https://donatik.ua/…'],
+        'bmc' => ['label' => 'Buy Me a Coffee', 'auto' => false, 'currency' => 'USD', 'placeholder' => 'https://buymeacoffee.com/…'],
+        'patreon' => ['label' => 'Patreon', 'auto' => false, 'currency' => 'USD', 'placeholder' => 'https://patreon.com/…'],
+        'other' => ['label' => 'Інший спосіб', 'auto' => false, 'currency' => 'UAH', 'placeholder' => 'https://…'],
+    ],
 
     // [без GameCon+, з GameCon+]
     'limits' => [

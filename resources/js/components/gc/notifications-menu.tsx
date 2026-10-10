@@ -19,6 +19,7 @@ import {
     UserCheck,
     UserPlus,
     Gift,
+    RefreshCw,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
@@ -54,6 +55,9 @@ const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
     stream_live: { icon: Radio, className: 'bg-rose-500' },
     referral_joined: { icon: UserPlus, className: 'bg-emerald-500' },
     plus_gifted: { icon: Gift, className: 'bg-indigo-500' },
+    wallet_topup: { icon: Wallet, className: 'bg-emerald-500' },
+    plus_renewed: { icon: RefreshCw, className: 'bg-indigo-500' },
+    plus_renewal_failed: { icon: Wallet, className: 'bg-amber-500' },
 };
 
 const familyIcon = { icon: Crown, className: 'bg-amber-500' };

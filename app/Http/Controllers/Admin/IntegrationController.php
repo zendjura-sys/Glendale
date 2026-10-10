@@ -17,6 +17,7 @@ use App\Models\VoiceParticipant;
 use App\Models\VoiceRoom;
 use App\Services\Auth\DiscordOAuth;
 use App\Services\Auth\FirebaseAuth;
+use App\Services\Billing\Donatello;
 use App\Services\Bots\DiscordApi;
 use App\Services\Bots\TelegramApi;
 use App\Services\Cinema\CinemaException;
@@ -31,7 +32,6 @@ use App\Services\Games\GameCatalog;
 use App\Services\Games\Igdb;
 use App\Services\I18n\DeepL;
 use App\Services\Moderation\NsfwCheck;
-use App\Services\Plus\Paddle;
 use App\Services\Presence\SteamPresence;
 use App\Services\Push\FcmClient;
 use App\Services\Spotify\SpotifyClient;
@@ -159,9 +159,6 @@ class IntegrationController extends Controller
             };
         }
         Cache::forget('cinema.meta.down.'.$provider);
-        if ($provider === 'paddle') {
-            app(Paddle::class)->applyConfig();
-        }
         if ($provider === 'push') {
             $this->fcm->forgetAccessToken();
         }
@@ -622,54 +619,23 @@ class IntegrationController extends Controller
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{6,40}$/'], 'message' => 'Ключ OMDb — латинські літери та цифри.'],
                 ],
             ],
-            'paddle' => [
-                'label' => 'Оплата GameCon+ (Paddle)',
+            'donatello' => [
+                'label' => 'Donatello (поповнення рахунку)',
                 'group' => 'payments',
-                'description' => 'Підписка GameCon+, подарунки, GameCon+ для сімей і платне просування серверів. Paddle — продавець від свого імені (Merchant of Record): приймає оплату, сплачує податки й видає чеки.',
-                'docs' => 'https://developer.paddle.com/build/onboarding/overview',
+                'description' => 'Автоматичне поповнення рахунку: людина донатить на вашу сторінку Donatello з кодом заявки в повідомленні, і сума зараховується сама протягом хвилини.',
+                'docs' => 'https://donatello.to',
                 'steps' => [
-                    'Зареєструйтеся на paddle.com (для перевірки — sandbox-vendors.paddle.com) і пройдіть перевірку сайту: Paddle дивиться на /terms, /privacy і /refund-policy — вони вже є.',
-                    'Developer Tools → Authentication: скопіюйте Seller ID, створіть API key і Client-side token.',
-                    'Catalog → Products: створіть товари з цінами, як на сторінці GameCon+ (підписки — з інтервалом місяць або рік, решта — разові). Скопіюйте Price ID (pri_…) у поля нижче.',
-                    'Developer Tools → Notifications → New destination: URL '.url('/paddle/webhook').', позначте subscription.*, transaction.*, customer.*, adjustment.*; скопіюйте Secret key сюди.',
-                    'Checkout → Checkout settings: Default payment link — '.url('/plus').'; Branding: колір кнопок #6366F1, логотип GameCon, тема — за системною.',
-                    'Для перевірки ввімкніть «Пісочниця» і заплатіть тестовою карткою 4242 4242 4242 4242.',
+                    'Увійдіть у donatello.to → Налаштування → API: увімкніть API й скопіюйте токен сюди.',
+                    'Натисніть «Перевірити».',
+                    'В Адмінка → Білінг → «Способи поповнення» ввімкніть Donatello й вставте посилання на свою сторінку донатів.',
+                    'Донати без коду в повідомленні з’являться в Адмінка → Білінг → «Донати без заявки» — їх можна прив’язати вручну.',
                 ],
-                'configured' => app(Paddle::class)->configured(),
-                'stat' => PlusGrant::query()->where('ends_at', '>', now())->distinct()->count('owner_id').' з GameCon+ · '.PlusPayment::query()->where('status', PlusPayment::PAID)->count().' оплат',
-                'test' => fn () => app(Paddle::class)->test(),
+                'configured' => app(Donatello::class)->configured(),
+                'stat' => PlusGrant::query()->where('ends_at', '>', now())->distinct()->count('owner_id').' з GameCon+ · '.PlusPayment::query()->where('status', PlusPayment::PAID)->count().' покупок',
+                'test' => fn () => app(Donatello::class)->test(),
                 'fields' => [
-                    ['name' => 'seller_id', 'setting' => 'paddle_seller_id', 'type' => 'text', 'label' => 'Seller ID', 'placeholder' => '123456', 'env' => config('cashier.seller_id'),
-                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'Seller ID — це число.'],
-                    ['name' => 'client_token', 'setting' => 'paddle_client_token', 'type' => 'text', 'label' => 'Client-side token', 'placeholder' => 'live_… / test_…', 'env' => config('cashier.client_side_token'),
-                        'rules' => ['nullable', 'string', 'regex:/^(live|test)_[A-Za-z0-9]{10,64}$/'], 'message' => 'Client-side token починається з live_ або test_.'],
-                    ['name' => 'api_key', 'setting' => 'paddle_api_key', 'type' => 'secret', 'label' => 'API key', 'env' => config('cashier.api_key'),
-                        'rules' => ['nullable', 'string', 'min:20', 'max:200', 'regex:/^[A-Za-z0-9_\-]+$/'], 'message' => 'Ключ API — латинські літери, цифри, _ і -.'],
-                    ['name' => 'webhook_secret', 'setting' => 'paddle_webhook_secret', 'type' => 'secret', 'label' => 'Секрет вебхука (Notifications)', 'env' => config('cashier.webhook_secret'),
-                        'rules' => ['nullable', 'string', 'min:10', 'max:200'], 'message' => 'Секрет — від 10 символів.'],
-                    ['name' => 'sandbox', 'setting' => 'paddle_sandbox', 'type' => 'bool', 'label' => 'Пісочниця (sandbox)', 'rules' => ['nullable', 'boolean']],
-                    ['name' => 'price_plus_month', 'setting' => 'paddle_price_plus_month', 'type' => 'text', 'label' => 'GameCon+ · місяць (підписка)', 'placeholder' => 'pri_01h…',
-                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
-                    ['name' => 'price_plus_year', 'setting' => 'paddle_price_plus_year', 'type' => 'text', 'label' => 'GameCon+ · рік (підписка)', 'placeholder' => 'pri_01h…',
-                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
-                    ['name' => 'price_gift_month', 'setting' => 'paddle_price_gift_month', 'type' => 'text', 'label' => 'Подарунок · місяць (разово)', 'placeholder' => 'pri_01h…',
-                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
-                    ['name' => 'price_gift_year', 'setting' => 'paddle_price_gift_year', 'type' => 'text', 'label' => 'Подарунок · рік (разово)', 'placeholder' => 'pri_01h…',
-                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
-                    ['name' => 'price_family_month', 'setting' => 'paddle_price_family_month', 'type' => 'text', 'label' => 'Сім’я · місяць (підписка)', 'placeholder' => 'pri_01h…',
-                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
-                    ['name' => 'price_family_year', 'setting' => 'paddle_price_family_year', 'type' => 'text', 'label' => 'Сім’я · рік (підписка)', 'placeholder' => 'pri_01h…',
-                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
-                    ['name' => 'price_promo_top_7', 'setting' => 'paddle_price_promo_top_7', 'type' => 'text', 'label' => 'Топ каталогу · 7 днів', 'placeholder' => 'pri_01h…',
-                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
-                    ['name' => 'price_promo_top_30', 'setting' => 'paddle_price_promo_top_30', 'type' => 'text', 'label' => 'Топ каталогу · 30 днів', 'placeholder' => 'pri_01h…',
-                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
-                    ['name' => 'price_promo_highlight_7', 'setting' => 'paddle_price_promo_highlight_7', 'type' => 'text', 'label' => 'Виділена картка · 7 днів', 'placeholder' => 'pri_01h…',
-                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
-                    ['name' => 'price_promo_highlight_30', 'setting' => 'paddle_price_promo_highlight_30', 'type' => 'text', 'label' => 'Виділена картка · 30 днів', 'placeholder' => 'pri_01h…',
-                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
-                    ['name' => 'price_promo_banner_30', 'setting' => 'paddle_price_promo_banner_30', 'type' => 'text', 'label' => 'Банер · 30 днів', 'placeholder' => 'pri_01h…',
-                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
+                    ['name' => 'token', 'setting' => 'donatello_token', 'type' => 'secret', 'label' => 'API-токен', 'env' => config('services.donatello.token'),
+                        'rules' => ['nullable', 'string', 'min:10', 'max:200', 'regex:/^[A-Za-z0-9_\-.]+$/'], 'message' => 'Токен — латинські літери, цифри, _, - і крапка.'],
                 ],
             ],
         ];

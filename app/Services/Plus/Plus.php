@@ -5,16 +5,16 @@ namespace App\Services\Plus;
 use App\Models\Family;
 use App\Models\PlusCode;
 use App\Models\PlusGrant;
+use App\Models\PlusRenewal;
 use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
-use Laravel\Paddle\Subscription;
 
 /**
  * GameCon+: періоди доступу (plus_grants) і кешований статус plus_until у власника.
  *
- * Подарунки, промокоди й видача адміністратором складаються в чергу одне за одним;
- * підписка Paddle — окремий період, який рухається разом із кінцем оплаченого періоду.
+ * Покупки з рахунку, автопродовження, подарунки, промокоди й видача адміністратором складаються
+ * в чергу одне за одним; підписка Google Play — окремий період, що рухається разом з оплаченим.
  */
 class Plus
 {
@@ -71,7 +71,7 @@ class Plus
     }
 
     /**
-     * Період підписки Paddle: рухається разом із кінцем оплаченого періоду; після скасування — до його кінця.
+     * Період зовнішньої підписки (Google Play): рухається разом із кінцем оплаченого періоду; після скасування — до його кінця.
      */
     public function syncSubscription(User|Family $owner, int $subscriptionId, ?User $payer, ?CarbonInterface $startedAt, CarbonInterface $end): void
     {
@@ -129,37 +129,22 @@ class Plus
     }
 
     /**
-     * Підписка Cashier, що оплачує GameCon+ цього власника: особиста («default») або сімейна («family:{id}»).
-     */
-    public function subscriptionFor(User|Family $owner): ?Subscription
-    {
-        $query = Subscription::query()->where('status', '!=', Subscription::STATUS_CANCELED)->latest('id');
-
-        return $owner instanceof Family
-            ? $query->where('type', 'family:'.$owner->id)->first()
-            : $query->where('billable_type', $owner->getMorphClass())->where('billable_id', $owner->id)->where('type', Paddle::PERSONAL)->first();
-    }
-
-    /**
-     * Стан для сторінки GameCon+.
+     * Стан для сторінки GameCon+ і рахунку: до коли діє й чи ввімкнене автопродовження.
      *
      * @return array<string, mixed>
      */
     public function state(User|Family $owner): array
     {
-        $subscription = $this->subscriptionFor($owner);
-        $price = $subscription?->items()->value('price_id');
+        $renewal = PlusRenewal::query()->where('owner_type', $this->type($owner))->where('owner_id', $owner->id)->where('active', true)->first();
 
         return [
             'active' => $owner->isPlus(),
             'until' => $owner->plus_until?->toIso8601String(),
-            'subscription' => $subscription ? [
-                'id' => $subscription->id,
-                'product' => app(Paddle::class)->productForPrice(is_string($price) ? $price : null),
-                'status' => $subscription->status,
-                // Скасування заплановане: доступ до кінця оплаченого, можна відновити.
-                'cancelled' => $subscription->ends_at !== null,
-                'ends_at' => $subscription->ends_at?->toIso8601String(),
+            'renewal' => $renewal ? [
+                'id' => $renewal->id,
+                'product' => $renewal->product,
+                'payer_id' => $renewal->user_id,
+                'failed' => $renewal->failed_at !== null,
             ] : null,
         ];
     }

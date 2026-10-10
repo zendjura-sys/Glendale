@@ -18,12 +18,12 @@ use App\Models\ServerPromotion;
 use App\Models\ServerReview;
 use App\Models\User;
 use App\Notifications\GroupInvite;
+use App\Services\Billing\Shop;
 use App\Services\EventCalendar;
 use App\Services\Events\DiscordEventSync;
 use App\Services\Families\FamilyRating;
 use App\Services\FollowAlerts;
 use App\Services\FriendshipService;
-use App\Services\Plus\Paddle;
 use App\Services\Plus\ServerPromotions;
 use App\Services\Presence\PlayingStatus;
 use App\Services\SavedItems;
@@ -213,7 +213,8 @@ class ServerController extends Controller
             'promotion' => $server->owner_id === $request->user()->id ? [
                 'active' => app(ServerPromotions::class)->forServer($server),
                 'free_at' => collect(ServerPromotion::KINDS)->mapWithKeys(fn (string $kind) => [$kind => app(ServerPromotions::class)->freeAt($kind)->toIso8601String()]),
-                'available' => app(Paddle::class)->configured(),
+                'available' => collect(Shop::catalog())->filter(fn (array $p) => $p['kind'] === 'promo' && $p['available'])->keys()->values(),
+                'balance' => (int) $request->user()->balance,
             ] : null,
             'verified' => [
                 'players' => ServerPlayer::query()->where('gta_server_id', $server->id)->count(),

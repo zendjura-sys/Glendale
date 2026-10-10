@@ -13,14 +13,14 @@ import InputError from '@/components/input-error';
 import { Input } from '@/components/ui/input';
 import { formatDate } from '@/lib/format';
 import { tr } from '@/lib/i18n';
+import { money } from '@/lib/billing';
 import { PRODUCT_LABELS } from '@/lib/plus';
 
 type Props = {
-    configured: boolean;
     stats: {
         users: number;
         families: number;
-        subscriptions: number;
+        renewals: number;
         payments_month: number;
     };
     grants: {
@@ -53,7 +53,9 @@ type Props = {
 };
 
 const SOURCES = (): Record<string, string> => ({
-    subscription: tr('Підписка'),
+    purchase: tr('Покупка'),
+    renewal: tr('Автопродовження'),
+    subscription: tr('Google Play'),
     gift: tr('Подарунок'),
     code: tr('Промокод'),
     admin: tr('Видано вручну'),
@@ -62,13 +64,7 @@ const SOURCES = (): Record<string, string> => ({
 const button =
     'inline-flex h-10 items-center justify-center rounded-xl bg-[var(--btn-primary,#6366f1)] px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40';
 
-export default function AdminPlus({
-    configured,
-    stats,
-    grants,
-    payments,
-    codes,
-}: Props) {
+export default function AdminPlus({ stats, grants, payments, codes }: Props) {
     const grant = useForm({ username: '', days: '30', note: '' });
     const code = useForm({
         code: '',
@@ -98,14 +94,12 @@ export default function AdminPlus({
             <PageHeader
                 title="GameCon+"
                 description={tr(
-                    'Підписники, оплати, ручна видача й промокоди. Ціни й товари — у кабінеті Paddle, ключі й Price ID — в Інтеграції → «Оплата (Paddle)».',
+                    'Хто з GameCon+, ручна видача й промокоди. Рахунки, поповнення й товари в продажу — у розділі «Білінг».',
                 )}
                 actions={
-                    !configured && (
-                        <Link href="/admin/integrations" className={button}>
-                            {tr('Підключити оплату')}
-                        </Link>
-                    )
+                    <Link href="/admin/billing" className={button}>
+                        {tr('Білінг')}
+                    </Link>
                 }
             />
 
@@ -123,8 +117,8 @@ export default function AdminPlus({
                     delay={60}
                 />
                 <StatCard
-                    label={tr('Активних підписок')}
-                    value={stats.subscriptions}
+                    label={tr('Автопродовжень')}
+                    value={stats.renewals}
                     icon={UsersRound}
                     tone="from-gc-mint to-gc-cyan"
                     delay={120}
@@ -398,7 +392,7 @@ export default function AdminPlus({
                                     )}
                                 </span>
                                 <span className="text-white/80 tabular-nums">
-                                    {(p.amount / 100).toFixed(2)} {p.currency}
+                                    {money(p.amount)}
                                 </span>
                                 {p.status === 'refunded' && (
                                     <Pill tone="red">{tr('Повернено')}</Pill>

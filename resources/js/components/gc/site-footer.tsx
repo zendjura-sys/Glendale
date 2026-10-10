@@ -2,7 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { cn } from '@/lib/utils';
 
 /**
- * Наскрізний футер: документи, копірайт і рядок про Paddle (Merchant of Record).
+ * Наскрізний футер: документи й копірайт.
  * Підписи приходять із сервера (lang/{locale}/ui.php), тож підтримують будь-яку мову.
  */
 export function SiteFooter({
@@ -13,10 +13,7 @@ export function SiteFooter({
     className?: string;
     /** На юридичних сторінках — підписи мовою документа. */
     labels?: Partial<
-        Record<
-            'terms' | 'privacy' | 'refund' | 'pricing' | 'rights' | 'paddle',
-            string
-        >
+        Record<'terms' | 'privacy' | 'refund' | 'pricing' | 'rights', string>
     >;
     /** Мова документа: посилання ведуть на ту саму мову. */
     lang?: string;
@@ -54,7 +51,6 @@ export function SiteFooter({
             <p className="mt-2">
                 © {footer.year} {name || 'GameCon'}. {t.rights}
             </p>
-            <p className="mt-1">{t.paddle}</p>
         </footer>
     );
 }

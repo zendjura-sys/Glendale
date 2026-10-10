@@ -48,6 +48,12 @@ return [
         'maxmind_url' => env('GEOIP_MAXMIND_URL', 'https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz'),
     ],
 
+    // Donatello: донати для поповнення рахунку. Токен зазвичай задають в адмінці (Інтеграції → Donatello).
+    'donatello' => [
+        'token' => env('DONATELLO_TOKEN'),
+        'url' => env('DONATELLO_URL', 'https://donatello.to/api/v1'),
+    ],
+
     'deepl' => [
         'key' => env('DEEPL_KEY'),
         'url' => env('DEEPL_URL'),

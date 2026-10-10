@@ -13,7 +13,6 @@
         "chillerlan/php-qrcode": "^5.0",
         "inertiajs/inertia-laravel": "^3.0",
         "intervention/image": "^3",
-        "laravel/cashier-paddle": "^2.8",
         "laravel/chisel": "^0.1.0",
         "laravel/fortify": "^1.37.2",
         "laravel/framework": "^13.17",

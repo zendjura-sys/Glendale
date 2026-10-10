@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Auth\SocialAuthController;
+use App\Http\Controllers\BillingController;
 use App\Http\Controllers\Bots;
 use App\Http\Controllers\CallController;
 use App\Http\Controllers\CharacterController;
@@ -47,7 +48,6 @@ use App\Http\Controllers\ServerController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StartController;
 use App\Http\Controllers\StoryController;
-use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\TranslateController;
 use App\Http\Controllers\VoiceController;
@@ -65,7 +65,7 @@ Route::get('i18n/{locale}.js', [LocaleController::class, 'script'])->where('loca
 
 Route::get('/', WelcomeController::class)->name('home');
 
-// Юридичні документи й тарифи — відкриті без входу (їх перевіряє Paddle). Мова: ?lang=en|uk|de|…
+// Юридичні документи й тарифи — відкриті без входу (їх читають гості й платіжні сервіси). Мова: ?lang=en|uk|de|…
 Route::get('terms', [LegalController::class, 'terms'])->name('legal.terms');
 Route::get('privacy', [LegalController::class, 'privacy'])->name('legal.privacy');
 Route::get('refund-policy', [LegalController::class, 'refund'])->name('legal.refund');
@@ -89,14 +89,18 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
 
     Route::get('feed', [FeedController::class, 'index'])->middleware('module:feed')->name('feed');
     Route::get('invite', [ReferralController::class, 'index'])->name('referrals.index');
+    // Білінг (лише сайт, усередині GameCon+): рахунок, поповнення донатом, покупки з рахунку, автопродовження.
+    Route::prefix('plus/billing')->name('billing.')->controller(BillingController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('topups', 'storeTopup')->middleware('throttle:10,1')->name('topups.store');
+        Route::get('topups/{topup}', 'showTopup')->name('topups.show');
+        Route::post('topups/{topup}/claim', 'claimTopup')->middleware('throttle:10,1')->name('topups.claim');
+        Route::delete('topups/{topup}', 'cancelTopup')->middleware('throttle:20,1')->name('topups.cancel');
+        Route::post('purchase', 'purchase')->middleware('throttle:20,1')->name('purchase');
+        Route::post('renewals', 'renewal')->middleware('throttle:20,1')->name('renewals');
+    });
     Route::prefix('plus')->name('plus.')->group(function () {
         Route::get('/', [PlusController::class, 'index'])->name('index');
-        // Paddle: транзакція для чекауту, стан, скасування в один клик, відновлення, портал покупця.
-        Route::post('checkout', [SubscriptionController::class, 'checkout'])->middleware('throttle:20,1')->name('checkout');
-        Route::get('status', [SubscriptionController::class, 'status'])->name('status');
-        Route::post('cancel', [SubscriptionController::class, 'cancel'])->middleware('throttle:10,1')->name('cancel');
-        Route::post('resume', [SubscriptionController::class, 'resume'])->middleware('throttle:10,1')->name('resume');
-        Route::get('portal', [SubscriptionController::class, 'portal'])->middleware('throttle:10,1')->name('portal');
         Route::post('redeem', [PlusController::class, 'redeem'])->middleware('throttle:10,1')->name('redeem');
         Route::put('style', [PlusController::class, 'style'])->name('style');
         Route::put('families/{family:id}/style', [PlusController::class, 'familyStyle'])->whereNumber('family')->name('families.style');
@@ -626,6 +630,17 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::delete('grants/{grant}', [Admin\PlusController::class, 'revoke'])->whereNumber('grant')->name('revoke');
             Route::post('codes', [Admin\PlusController::class, 'storeCode'])->name('codes.store');
             Route::delete('codes/{code}', [Admin\PlusController::class, 'destroyCode'])->whereNumber('code')->name('codes.destroy');
+        });
+        Route::prefix('billing')->name('billing.')->controller(Admin\BillingController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('topups/{topup}/confirm', 'confirm')->whereNumber('topup')->name('topups.confirm');
+            Route::post('topups/{topup}/cancel', 'cancel')->whereNumber('topup')->name('topups.cancel');
+            Route::post('donations/{donation}/attach', 'attach')->whereNumber('donation')->name('donations.attach');
+            Route::post('donations/sync', 'sync')->middleware('throttle:10,1')->name('donations.sync');
+            Route::post('adjust', 'adjust')->name('adjust');
+            Route::post('payments/{payment}/refund', 'refund')->whereNumber('payment')->name('payments.refund');
+            Route::put('methods', 'methods')->name('methods');
+            Route::put('products', 'products')->name('products');
         });
         Route::get('stickers', [Admin\StickerController::class, 'index'])->name('stickers.index');
         Route::post('stickers', [Admin\StickerController::class, 'store'])->name('stickers.store');

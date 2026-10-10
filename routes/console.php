@@ -20,6 +20,10 @@ Schedule::command('families:bank-digest')->weeklyOn(0, '20:00')->timezone('Europ
 Schedule::command('site:weekly')->weeklyOn(1, '09:00')->timezone('Europe/Kyiv')->withoutOverlapping(60);
 
 Schedule::command('calls:expire')->everyMinute()->withoutOverlapping(5);
+
+// Білінг: донати Donatello → поповнення; автопродовження GameCon+ з рахунку.
+Schedule::command('billing:donations')->everyMinute()->withoutOverlapping(5)->runInBackground();
+Schedule::command('billing:tick')->hourly()->withoutOverlapping(30);
 Schedule::command('posts:publish')->everyMinute()->withoutOverlapping(5);
 Schedule::command('messages:tick')->everyMinute()->withoutOverlapping(5);
 Schedule::command('events:remind')->everyFiveMinutes()->withoutOverlapping(10);

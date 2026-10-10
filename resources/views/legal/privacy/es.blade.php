@@ -7,7 +7,7 @@
     <li><strong>Contenido y actividad:</strong> publicaciones, comentarios, reacciones, mensajes, notas de voz, fotos, clips, personajes de rol, actividad en familias, clanes y comunidades, votos, misiones, invitaciones, listas y valoraciones de cine.</li>
     <li><strong>Cuentas vinculadas</strong> (solo si las vinculas): identificadores y datos públicos de Google, Discord, Telegram, Steam, Spotify, Twitch o YouTube.</li>
     <li><strong>Datos técnicos:</strong> dirección IP, país aproximado (para restricciones regionales), datos de dispositivo y navegador, registros, sesiones y eventos de seguridad, tokens de notificaciones push.</li>
-    <li><strong>Datos de pago:</strong> los pagos los procesa Paddle como Merchant of Record. Recibimos el ID de cliente de Paddle, el estado de la suscripción, producto, importe, moneda y fechas. <strong>Nunca recibimos ni guardamos los datos completos de la tarjeta.</strong></li>
+    <li><strong>Datos de pago:</strong> cuando recargas tu cuenta, recibimos del servicio de donaciones o pagos los datos necesarios para acreditarla: el nombre o apodo que indicaste, tu mensaje (con el código de recarga), importe, moneda, hora e ID de la transacción. Llevamos un registro de los movimientos de tu cuenta (recargas, compras, renovaciones, reembolsos). <strong>Nunca recibimos ni guardamos los datos de tu tarjeta.</strong></li>
     <li><strong>Voz:</strong> las salas de voz y llamadas se transmiten en tiempo real por nuestro servidor de medios y <strong>no se graban</strong>.</li>
 </ul>
 
@@ -23,7 +23,7 @@
 <h2>3. Destinatarios</h2>
 <p>No vendemos datos personales. Solo los compartimos con encargados y socios que nos ayudan a operar el Servicio, con acuerdos adecuados:</p>
 <ul>
-    <li><strong>Paddle</strong> (pagos, Merchant of Record) — consulta su aviso de privacidad;</li>
+    <li>los servicios de donaciones y pagos que elijas (por ejemplo Donatello, Diaka, Donatik, Buy Me a Coffee, Patreon) y, para compras en la app, Google Play — cada uno según su propio aviso de privacidad;</li>
     <li>proveedores de alojamiento, almacenamiento, correo y copias de seguridad;</li>
     <li>Google Firebase (push en la app), servicios push de los navegadores;</li>
     <li>Sightengine (revisión automática de imágenes subidas);</li>

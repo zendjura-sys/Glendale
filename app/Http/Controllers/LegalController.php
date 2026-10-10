@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\Plus\Paddle;
+use App\Services\Billing\Shop;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
@@ -15,7 +15,7 @@ use Inertia\Response;
  *
  * Мова документа: ?lang= → мова сесії / інтерфейсу (App::getLocale()) → англійська.
  * Шаблон: resources/views/legal/{document}/{locale}.blade.php, якщо перекладу немає — en.blade.php.
- * Сторінки відкриті без входу: їх перевіряє Paddle і читають гості.
+ * Сторінки відкриті без входу: їх читають гості й платіжні сервіси під час перевірки сайту.
  */
 class LegalController extends Controller
 {
@@ -34,24 +34,16 @@ class LegalController extends Controller
         return $this->document($request, 'refund');
     }
 
-    /** Публічні тарифи GameCon+ (для перевірки Paddle і гостей). */
-    public function pricing(Request $request, Paddle $paddle): Response
+    /** Публічні тарифи GameCon+ (для гостей і перевірки платіжними сервісами). */
+    public function pricing(Request $request): Response
     {
         $locale = $this->locale($request, null);
 
         return Inertia::render('legal/pricing', [
             ...$this->chrome($locale),
-            // Динамічно: лише товари з каталогу (config/plus.php), а коли Paddle підключено — лише ті,
-            // для яких в адмінці вказано Price ID. Прибрали товар — він зник і зі сторінки цін.
-            'products' => collect((array) config('plus.products'))
-                ->filter(fn ($p, $key) => ! $paddle->configured() || $paddle->price((string) $key) !== null)
-                ->map(fn ($p, $key) => [
-                    'key' => $key,
-                    'kind' => $p['kind'],
-                    'price' => $p['price'],
-                    'days' => $p['days'],
-                    'recurring' => $p['recurring'],
-                ])->values(),
+            // Динамічно: лише товари в продажу (каталог config/plus.php мінус зняті в Адмінка → Білінг).
+            'products' => collect(Shop::catalog())->filter(fn (array $p) => $p['available'])
+                ->map(fn (array $p, string $key) => ['key' => $key, ...$p])->values(),
             'reactions' => count((array) config('plus.reactions')),
             'limits' => config('plus.limits'),
         ]);
@@ -132,7 +124,6 @@ class LegalController extends Controller
                 'last_updated' => $t('last_updated'),
                 'language' => $t('language'),
                 'rights' => $t('all_rights_reserved'),
-                'paddle_mor' => $t('paddle_mor'),
             ],
         ];
     }

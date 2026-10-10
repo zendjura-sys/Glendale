@@ -88,33 +88,21 @@ class SiteSettings
         'sightengine_user' => null,
         'sightengine_secret' => null,
         'vapid_private' => null,
-        // GameCon+ через Paddle Billing: продавець, токени, секрет вебхука, пісочниця й Price ID товарів.
         // Реквізити продавця на /terms, /privacy, /refund-policy (порожнє — значення з config/legal.php / .env).
         'legal_operator' => null,
         'legal_email' => null,
         'legal_address' => null,
         'legal_country' => null,
         'legal_updated' => null,
-        'paddle_seller_id' => null,
-        'paddle_client_token' => null,
-        'paddle_api_key' => null,
-        'paddle_webhook_secret' => null,
-        'paddle_sandbox' => null,
-        'paddle_price_plus_month' => null,
-        'paddle_price_plus_year' => null,
-        'paddle_price_gift_month' => null,
-        'paddle_price_gift_year' => null,
-        'paddle_price_family_month' => null,
-        'paddle_price_family_year' => null,
-        'paddle_price_promo_top_7' => null,
-        'paddle_price_promo_top_30' => null,
-        'paddle_price_promo_highlight_7' => null,
-        'paddle_price_promo_highlight_30' => null,
-        'paddle_price_promo_banner_30' => null,
+        // Білінг: способи поповнення рахунку (посилання, увімкнення) і токен Donatello.
+        'plus_methods' => [],
+        // Товари, зняті з продажу (ключі config('plus.products')): зникають зі сторінок цін і GameCon+.
+        'plus_disabled' => [],
+        'donatello_token' => null,
     ];
 
     /** Ключі, які не можна віддавати у фронтенд. */
-    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'videoseed_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key', 'deepl_key', 'maxmind_license_key', 'vapid_private', 'telegram_bot_token', 'telegram_webhook_secret', 'twitch_client_secret', 'sightengine_secret', 'paddle_api_key', 'paddle_webhook_secret'];
+    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'videoseed_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key', 'deepl_key', 'maxmind_license_key', 'vapid_private', 'telegram_bot_token', 'telegram_webhook_secret', 'twitch_client_secret', 'sightengine_secret', 'donatello_token'];
 
     /** @var array<string, mixed>|null */
     private ?array $values = null;

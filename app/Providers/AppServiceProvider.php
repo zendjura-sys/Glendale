@@ -4,7 +4,6 @@ namespace App\Providers;
 
 use App\Jobs\CheckImage;
 use App\Jobs\RelayToBots;
-use App\Listeners\PaddleEvents;
 use App\Models\ClanEvent;
 use App\Models\Comment;
 use App\Models\Community;
@@ -24,7 +23,6 @@ use App\Services\CommunityService;
 use App\Services\Families\FamilyGate;
 use App\Services\FriendshipService;
 use App\Services\Moderation\NsfwCheck;
-use App\Services\Plus\Paddle;
 use App\Services\Push\PushNotifier;
 use App\Services\Referrals;
 use App\Support\I18n\CatalogLoader;
@@ -139,13 +137,6 @@ class AppServiceProvider extends ServiceProvider
         ]);
 
         Model::preventLazyLoading(! app()->isProduction());
-
-        // Оплата GameCon+: ключі Paddle з адмінки → config('cashier.*'); події вебхуків → GameCon+.
-        // У консолі (міграції, package:discover під час деплою) не чіпаємо базу — лише для HTTP і тестів.
-        if (! $this->app->runningInConsole() || $this->app->runningUnitTests()) {
-            app(Paddle::class)->applyConfig();
-        }
-        Event::subscribe(PaddleEvents::class);
 
         AccountMail::register();
 

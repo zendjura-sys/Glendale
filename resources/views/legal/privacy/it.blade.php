@@ -7,7 +7,7 @@
     <li><strong>Contenuti e attività:</strong> post, commenti, reazioni, messaggi, messaggi vocali, foto, clip, personaggi RP, attività in famiglie, clan e community, voti, missioni, inviti, liste e voti cinema.</li>
     <li><strong>Account collegati</strong> (solo se li colleghi): identificativi e dati pubblici di Google, Discord, Telegram, Steam, Spotify, Twitch o YouTube.</li>
     <li><strong>Dati tecnici:</strong> indirizzo IP, paese approssimativo (per restrizioni regionali), dati di dispositivo e browser, log, sessioni ed eventi di sicurezza, token per notifiche push.</li>
-    <li><strong>Dati di pagamento:</strong> i pagamenti sono trattati da Paddle come Merchant of Record. Riceviamo ID cliente Paddle, stato dell’abbonamento, prodotto, importo, valuta e date. <strong>Non riceviamo né conserviamo mai i dati completi della carta.</strong></li>
+    <li><strong>Dati di pagamento:</strong> quando ricarichi il conto, riceviamo dal servizio di donazione o pagamento i dati necessari all’accredito: il nome o nickname inserito, il tuo messaggio (con il codice di ricarica), importo, valuta, ora e ID della transazione. Teniamo un registro dei movimenti del tuo conto (ricariche, acquisti, rinnovi, rimborsi). <strong>Non riceviamo né conserviamo mai i dati della tua carta.</strong></li>
     <li><strong>Voce:</strong> stanze vocali e chiamate sono trasmesse in tempo reale tramite il nostro media server e <strong>non vengono registrate</strong>.</li>
 </ul>
 
@@ -23,7 +23,7 @@
 <h2>3. Destinatari</h2>
 <p>Non vendiamo dati personali. Li condividiamo solo con responsabili e partner che ci aiutano a gestire il Servizio, con accordi adeguati:</p>
 <ul>
-    <li><strong>Paddle</strong> (pagamenti, Merchant of Record) — vedi l’informativa di Paddle;</li>
+    <li>i servizi di donazione e pagamento che scegli (ad es. Donatello, Diaka, Donatik, Buy Me a Coffee, Patreon) e, per gli acquisti in app, Google Play — ciascuno secondo la propria informativa privacy;</li>
     <li>fornitori di hosting, archiviazione, e-mail e backup;</li>
     <li>Google Firebase (push nell’app), servizi push dei browser;</li>
     <li>Sightengine (controllo automatico delle immagini caricate);</li>

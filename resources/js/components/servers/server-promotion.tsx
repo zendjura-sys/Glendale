@@ -1,15 +1,18 @@
 import { LayoutTemplate, Megaphone, Sparkle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useState } from 'react';
+import { money } from '@/lib/billing';
 import { formatDate } from '@/lib/format';
 import { tr } from '@/lib/i18n';
-import { PLUS_PRICES, startCheckout } from '@/lib/plus';
+import { buyProduct, PLUS_PRICES } from '@/lib/plus';
 import type { PlusProduct } from '@/lib/plus';
 
 export type ServerPromotionData = {
     active: { kind: string; starts_at: string; ends_at: string }[];
     free_at: Record<string, string>;
-    available: boolean;
+    /** Товари просування, які зараз продаються. */
+    available: string[];
+    /** Баланс рахунку власника, копійки. */
+    balance: number;
 };
 
 const KINDS = (): {
@@ -54,13 +57,8 @@ export function ServerPromotion({
     serverId: number;
     data: ServerPromotionData;
 }) {
-    const [busy, setBusy] = useState<string | null>(null);
-    const buy = (product: PlusProduct) => {
-        setBusy(product);
-        void startCheckout(product, { server_id: serverId }).finally(() =>
-            setBusy(null),
-        );
-    };
+    const buy = (product: PlusProduct) =>
+        buyProduct(product, { server_id: serverId });
 
     return (
         <section className="glass rounded-3xl p-5">
@@ -69,7 +67,8 @@ export function ServerPromotion({
             </h2>
             <p className="mt-1 text-sm text-white/50">
                 {tr(
-                    'Платні місця позначаються «Реклама» і не впливають на голоси та рейтинг.',
+                    'Платні місця позначаються «Реклама» і не впливають на голоси та рейтинг. Оплата — з рахунку ({balance}).',
+                    { balance: money(data.balance) },
                 )}
             </p>
             <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -120,7 +119,7 @@ export function ServerPromotion({
                                         key={product}
                                         type="button"
                                         disabled={
-                                            !data.available || busy !== null
+                                            !data.available.includes(product)
                                         }
                                         onClick={() => buy(product)}
                                         className="inline-flex h-9 items-center rounded-xl bg-[var(--btn-primary,#6366f1)] px-3 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
@@ -139,11 +138,9 @@ export function ServerPromotion({
                     );
                 })}
             </div>
-            {!data.available && (
+            {data.available.length === 0 && (
                 <p className="mt-3 text-xs text-white/40">
-                    {tr(
-                        'Оплату ще не підключено — зверніться до адміністрації.',
-                    )}
+                    {tr('Просування зараз не продається.')}
                 </p>
             )}
         </section>

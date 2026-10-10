@@ -7,7 +7,7 @@
     <li><strong>Content and activity:</strong> posts, comments, reactions, messages, voice messages, photos, clips, RP characters, family, clan and community activity, votes, quests, referrals, cinema lists and ratings.</li>
     <li><strong>Connected accounts</strong> (only if you connect them): Google, Discord, Telegram, Steam, Spotify, Twitch or YouTube identifiers and public profile data needed for the feature.</li>
     <li><strong>Technical data:</strong> IP address, approximate country (for regional restrictions), device and browser information, log data, session and security events, push-notification tokens.</li>
-    <li><strong>Payment data:</strong> payments are processed by Paddle as Merchant of Record. We receive the Paddle customer ID, subscription status, product, amount, currency and dates. <strong>We never receive or store your full card details.</strong></li>
+    <li><strong>Payment data:</strong> when you top up your account, we receive from the donation or payment service the details needed to credit it: the name or nickname you entered, your message (with the top-up code), amount, currency, time and transaction ID. We keep a record of your account operations (top-ups, purchases, renewals, refunds). <strong>We never receive or store your card details.</strong></li>
     <li><strong>Voice:</strong> voice rooms and calls are transmitted in real time through our media server and are <strong>not recorded</strong> by us.</li>
 </ul>
 
@@ -23,7 +23,7 @@
 <h2>3. Who we share data with</h2>
 <p>We do not sell personal data. We share it only with processors and partners that help us run the Service, under appropriate agreements:</p>
 <ul>
-    <li><strong>Paddle</strong> (payments, Merchant of Record) — see Paddle’s privacy notice;</li>
+    <li>the donation and payment services you choose (for example Donatello, Diaka, Donatik, Buy Me a Coffee, Patreon) and, for in-app purchases, Google Play — each under its own privacy notice;</li>
     <li>hosting, storage, e-mail delivery and backup providers;</li>
     <li>Google Firebase (push notifications in the app), browser push services (web push);</li>
     <li>Sightengine (automated checks of uploaded images for explicit content);</li>
@@ -38,7 +38,7 @@
 <p>Some providers process data outside your country, including outside the EEA/UK. In those cases we rely on adequacy decisions or Standard Contractual Clauses and other safeguards required by law.</p>
 
 <h2>5. Retention</h2>
-<p>We keep data while your account is active. After you delete your account, we delete or anonymise personal data within 30 days, except data we must keep by law (for example billing records, kept by Paddle and us as required for tax purposes), security logs for a limited time and backups that are overwritten on a rolling basis. Messages you sent may remain visible to their recipients.</p>
+<p>We keep data while your account is active. After you delete your account, we delete or anonymise personal data within 30 days, except data we must keep by law (for example records of payments and account operations, kept as required for accounting and tax purposes), security logs for a limited time and backups that are overwritten on a rolling basis. Messages you sent may remain visible to their recipients.</p>
 
 <h2>6. Your rights</h2>
 <p>Depending on your location you have the right to access, rectify, delete, restrict or object to processing, to data portability, and to withdraw consent. You can export or delete much of your data directly in the settings, or write to <a href="mailto:{{ $legal['email'] }}">{{ $legal['email'] }}</a>. You also have the right to lodge a complaint with your data protection authority. California residents: we do not sell or share personal information for cross-context behavioural advertising.</p>

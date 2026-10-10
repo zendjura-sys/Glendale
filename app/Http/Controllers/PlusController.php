@@ -6,7 +6,7 @@ use App\Models\Family;
 use App\Models\FamilyMember;
 use App\Models\PlusPayment;
 use App\Models\User;
-use App\Services\Plus\Paddle;
+use App\Services\Billing\Shop;
 use App\Services\Plus\Plus;
 use App\Support\PlusStyle;
 use Illuminate\Http\RedirectResponse;
@@ -15,12 +15,11 @@ use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
-/** GameCon+: сторінка тарифів, промокоди й оформлення. Оплата — SubscriptionController (Paddle). */
+/** GameCon+: сторінка тарифів, промокоди й оформлення. Оплата — з рахунку (BillingController). */
 class PlusController extends Controller
 {
     public function __construct(
         private readonly Plus $plus,
-        private readonly Paddle $paddle,
     ) {}
 
     public function index(Request $request): Response
@@ -31,7 +30,7 @@ class PlusController extends Controller
             'state' => $this->plus->state($user),
             'style' => $user->plus_style ?? (object) [],
             'options' => PlusStyle::options(),
-            'products' => $this->products(),
+            'products' => Shop::catalog(),
             'families' => self::ledFamilies($user)->map(fn (Family $f) => [
                 ...$f->toCard(),
                 'state' => $this->plus->state($f),
@@ -47,7 +46,7 @@ class PlusController extends Controller
                     'receipt_url' => $p->receipt_url,
                     'created_at' => $p->created_at->toIso8601String(),
                 ]),
-            'paid' => $request->boolean('paid'),
+            'balance' => (int) $user->balance,
         ]);
     }
 
@@ -87,28 +86,6 @@ class PlusController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Оформлення сім’ї збережено.']);
 
         return back();
-    }
-
-    /**
-     * Ціни для показу й чи можна вже купити.
-     *
-     * @return array<string, array{kind: string, price: int, days: int, recurring: bool, available: bool}>
-     */
-    private function products(): array
-    {
-        $out = [];
-        foreach ((array) config('plus.products') as $key => $product) {
-            $product = (array) $product;
-            $out[(string) $key] = [
-                'kind' => (string) $product['kind'],
-                'price' => (int) $product['price'],
-                'days' => (int) $product['days'],
-                'recurring' => (bool) $product['recurring'],
-                'available' => $this->paddle->available((string) $key),
-            ];
-        }
-
-        return $out;
     }
 
     /**

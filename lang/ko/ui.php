@@ -11,6 +11,5 @@ return [
     'view_original' => '원문 보기 (영어)',
     'prevail' => '영문본과 번역본 사이에 충돌, 불일치 또는 모순이 있는 경우 영문본이 우선합니다.',
     'last_updated' => '최종 업데이트',
-    'paddle_mor' => '결제는 판매 대행사(Merchant of Record)인 Paddle이 안전하게 처리합니다.',
     'language' => '언어',
 ];

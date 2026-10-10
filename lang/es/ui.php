@@ -11,6 +11,5 @@ return [
     'view_original' => 'Ver original (inglés)',
     'prevail' => 'En caso de conflicto, discrepancia o incoherencia entre la versión en inglés y cualquier versión traducida, prevalecerá la versión en inglés.',
     'last_updated' => 'Última actualización',
-    'paddle_mor' => 'Los pagos son procesados de forma segura por Paddle como Merchant of Record.',
     'language' => 'Idioma',
 ];

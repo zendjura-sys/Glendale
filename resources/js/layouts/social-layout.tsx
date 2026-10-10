@@ -13,7 +13,6 @@ import {
     MessageSquareHeart,
     Settings,
     ShieldCheck,
-    Sparkles,
     UserRound,
     UsersRound,
     X,
@@ -30,7 +29,8 @@ import { QuickSearch } from '@/components/gc/quick-search';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VoiceBar } from '@/components/gc/voice-bar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
-import { PaddleCheckoutHost } from '@/components/gc/paddle-checkout';
+import { BillingHost } from '@/components/billing/billing-host';
+import { PlusMenuCard } from '@/components/gc/plus-card';
 import { PlusBadge, plusNameStyle } from '@/components/gc/plus';
 import { PlayerBar } from '@/components/music/player-bar';
 import {
@@ -471,11 +471,6 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
 
     const extra = [
         {
-            href: '/plus',
-            label: 'GameCon+',
-            icon: Sparkles,
-        },
-        {
             href: '/invite',
             label: tr('Запросити друзів'),
             icon: UserPlus,
@@ -543,6 +538,12 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                         <X className="size-5" />
                     </button>
                 </div>
+
+                <PlusMenuCard
+                    until={user.plus_until}
+                    balance={user.balance ?? 0}
+                    className="mb-4"
+                />
 
                 <div className="grid grid-cols-3 gap-2 min-[420px]:grid-cols-4">
                     {items.map((item) => {
@@ -673,7 +674,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
             </div>
             <VoiceBar />
             {modules.includes('music') && <PlayerBar />}
-            <PaddleCheckoutHost />
+            <BillingHost />
             <MobileNav />
             <FeedbackDialog />
             <KeyboardShortcuts username={auth.user.username} />

@@ -39,8 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->encryptCookies(except: ['locale']);
 
         // «Відписатися одним натисканням» з Gmail надсилає POST без CSRF-токена; посилання підписане.
-        // Вебхуки Paddle (Cashier) підписані секретом — CSRF-токена в них немає.
-        $middleware->validateCsrfTokens(except: ['mail/unsubscribe/*', 'paddle/*']);
+        $middleware->validateCsrfTokens(except: ['mail/unsubscribe/*']);
 
         $middleware->alias([
             'module' => EnsureModuleEnabled::class,

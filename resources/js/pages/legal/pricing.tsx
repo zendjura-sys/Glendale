@@ -73,8 +73,8 @@ const GROUPS = (): Record<Product['kind'], string> => ({
 });
 
 /**
- * Публічна сторінка цін (для гостей і перевірки Paddle). Ціни — з config/plus.php;
- * остаточна сума з податками показується в чекауті Paddle.
+ * Публічна сторінка цін (для гостей). Ціни — з config/plus.php, лише товари в продажу;
+ * оплата — з рахунку GameCon, який поповнюють донатом.
  */
 export default function Pricing({
     locale,
@@ -137,11 +137,14 @@ export default function Pricing({
                                                 ₴
                                             </span>
                                             <span className="w-full text-xs text-white/40 sm:w-auto">
-                                                {p.recurring
+                                                {p.kind === 'plus' ||
+                                                p.kind === 'family'
                                                     ? tr(
-                                                          'автопродовження, скасування в один клик',
+                                                          'з рахунку · автопродовження за бажанням',
                                                       )
-                                                    : tr('разова оплата')}
+                                                    : tr(
+                                                          'разова оплата з рахунку',
+                                                      )}
                                             </span>
                                         </li>
                                     ))}
@@ -152,7 +155,7 @@ export default function Pricing({
 
                 <p className="mt-6 text-xs text-white/45">
                     {tr(
-                        'Ціни вказано в гривнях; у чекауті Paddle сума показується вашою валютою разом із податками. Повернення протягом 14 днів — див.',
+                        'Ціни в гривнях. Покупки оплачуються з особистого рахунку GameCon, який поповнюють донатом (Donatello та інші сервіси). Автопродовження — лише з рахунку й вимикається будь-коли. Повернення протягом 14 днів — див.',
                     )}{' '}
                     <Link
                         href={`/refund-policy?lang=${locale}`}

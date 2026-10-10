@@ -7,7 +7,7 @@
     <li><strong>内容与活动：</strong>动态、评论、表情回应、消息、语音消息、照片、片段、RP 角色、家族/战队/社区活动、投票、任务、邀请、影视清单与评分。</li>
     <li><strong>关联账号</strong>（仅在您关联时）：Google、Discord、Telegram、Steam、Spotify、Twitch 或 YouTube 的标识符及功能所需的公开资料。</li>
     <li><strong>技术数据：</strong>IP 地址、大致国家（用于地区限制）、设备与浏览器信息、日志、会话与安全事件、推送通知令牌。</li>
-    <li><strong>支付数据：</strong>付款由记录商家 Paddle 处理。我们获得 Paddle 客户 ID、订阅状态、产品、金额、币种和日期。<strong>我们从不接收或存储完整的银行卡信息。</strong></li>
+    <li><strong>支付数据：</strong>您充值时，我们会从打赏或支付服务获得入账所需的信息：您填写的姓名或昵称、留言（含充值代码）、金额、币种、时间和交易 ID。我们会记录您的账户操作（充值、购买、续订、退款）。<strong>我们从不接收或存储您的银行卡信息。</strong></li>
     <li><strong>语音：</strong>语音房间和通话通过我们的媒体服务器实时传输，<strong>不会被录制</strong>。</li>
 </ul>
 
@@ -23,7 +23,7 @@
 <h2>3. 数据共享</h2>
 <p>我们不出售个人数据，仅在适当协议下与协助运营服务的处理者和合作方共享：</p>
 <ul>
-    <li><strong>Paddle</strong>（支付，记录商家）—— 详见 Paddle 隐私声明；</li>
+    <li>您选择的打赏与支付服务（例如 Donatello、Diaka、Donatik、Buy Me a Coffee、Patreon），以及应用内购买所用的 Google Play —— 均适用其各自的隐私声明；</li>
     <li>托管、存储、邮件发送及备份服务商；</li>
     <li>Google Firebase（应用推送）、浏览器推送服务；</li>
     <li>Sightengine（上传图片的自动审核）；</li>

@@ -11,6 +11,5 @@ return [
     'view_original' => '原文を表示（英語）',
     'prevail' => '英語版と翻訳版との間に矛盾、相違または不一致がある場合は、英語版が優先されます。',
     'last_updated' => '最終更新日',
-    'paddle_mor' => 'お支払いは、販売者（Merchant of Record）である Paddle によって安全に処理されます。',
     'language' => '言語',
 ];

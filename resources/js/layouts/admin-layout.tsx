@@ -21,6 +21,7 @@ import {
     Sparkles,
     Sticker,
     UsersRound,
+    Wallet,
 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import type { PropsWithChildren } from 'react';
@@ -50,6 +51,7 @@ const items = [
     { label: tr('Ігри'), href: '/admin/games', icon: Gamepad2 },
     { label: tr('Сім’ї'), href: '/admin/families', icon: Crown },
     { label: 'GameCon+', href: '/admin/plus', icon: Sparkles },
+    { label: tr('Білінг'), href: '/admin/billing', icon: Wallet },
     { label: tr('Стікери'), href: '/admin/stickers', icon: Sticker },
     { label: tr('Модулі'), href: '/admin/modules', icon: Blocks },
     { label: tr('Плагіни'), href: '/admin/plugins', icon: Puzzle },
