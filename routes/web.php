@@ -24,6 +24,7 @@ use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\Mail\UnsubscribeController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
+use App\Http\Controllers\MomentController;
 use App\Http\Controllers\MusicController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NowPlayingController;
@@ -412,6 +413,13 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::patch('{server}/apps/{app}', [ServerAppController::class, 'update'])->name('apps.update');
         Route::post('{server}/apps/{app}/secret', [ServerAppController::class, 'secret'])->middleware('throttle:10,1')->name('apps.secret');
         Route::delete('{server}/apps/{app}', [ServerAppController::class, 'destroy'])->name('apps.destroy');
+    });
+
+    Route::prefix('moments')->name('moments.')->middleware('module:moments')->whereNumber('moment')->group(function () {
+        Route::get('/', [MomentController::class, 'index'])->name('index');
+        Route::post('/', [MomentController::class, 'store'])->middleware('throttle:10,60')->name('store');
+        Route::post('{moment}/like', [MomentController::class, 'like'])->middleware('throttle:120,1')->name('like');
+        Route::delete('{moment}', [MomentController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('party')->name('party.')->middleware('module:party')->whereNumber('party')->group(function () {

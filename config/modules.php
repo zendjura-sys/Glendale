@@ -133,6 +133,15 @@ return [
         'default' => true,
         'nav' => ['label' => 'Події', 'route' => 'events.index', 'position' => 107],
     ],
+    'moments' => [
+        'name' => 'Моменти',
+        'description' => 'Кліпи гравців із YouTube, Twitch і Medal: стрічка, найкраще за тиждень, кліпи друзів і моменти на сторінці гри.',
+        'icon' => 'clapperboard',
+        'core' => false,
+        'available' => true,
+        'default' => true,
+        'nav' => ['label' => 'Моменти', 'route' => 'moments.index', 'position' => 109],
+    ],
     'party' => [
         'name' => 'Пошук паті',
         'description' => 'Оголошення «шукаю паті»: гра, сервер, час і ролі, кнопка в голосову кімнату паті.',

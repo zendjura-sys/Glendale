@@ -199,6 +199,10 @@ class GameController extends Controller
                 : [],
         ];
 
+        $props['moments'] = $request->user() && app(ModuleManager::class)->enabled('moments')
+            ? MomentController::forGame($game, $request->user(), $request)
+            : [];
+
         if ($request->expectsJson() && ! $request->header('X-Inertia')) {
             // Застосунку — ті самі кольори постера одразу (рахуються за маленькою копією, далі з кешу).
             $props['palette'] = is_string($poster) && $poster !== '' ? app(PosterPalette::class)->resolve($poster) : null;

@@ -23,6 +23,7 @@ use App\Http\Controllers\ListenPartyController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
+use App\Http\Controllers\MomentController;
 use App\Http\Controllers\MusicController;
 use App\Http\Controllers\NowPlayingController;
 use App\Http\Controllers\OAuth\TokenController as OAuthTokenController;
@@ -430,6 +431,13 @@ Route::prefix('v1')->group(function () {
                 Route::get('/', [ServerController::class, 'index']);
                 Route::post('suggest', [ServerController::class, 'suggest'])->middleware('throttle:5,10');
                 Route::get('{server}', [ServerController::class, 'show']);
+            });
+
+            Route::prefix('moments')->middleware('module:moments')->whereNumber('moment')->group(function () {
+                Route::get('/', [MomentController::class, 'index']);
+                Route::post('/', [MomentController::class, 'store'])->middleware('throttle:10,60');
+                Route::post('{moment}/like', [MomentController::class, 'like'])->middleware('throttle:120,1');
+                Route::delete('{moment}', [MomentController::class, 'destroy']);
             });
 
             Route::prefix('party')->middleware('module:party')->whereNumber('party')->group(function () {

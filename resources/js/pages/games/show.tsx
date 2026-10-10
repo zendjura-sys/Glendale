@@ -2,6 +2,7 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     ArrowLeft,
     BookOpen,
+    Clapperboard,
     Building2,
     CalendarDays,
     Check,
@@ -31,6 +32,8 @@ import { cn } from '@/lib/utils';
 import type { ClanCard, GameCard, UserCard } from '@/types';
 import { GameCover } from './index';
 import { LOCALE, tr } from '@/lib/i18n';
+import { MomentCard } from '@/components/moments/moment-card';
+import type { MomentCardData } from '@/components/moments/moment-card';
 import { usePlugin } from '@/lib/plugins';
 
 type Details = {
@@ -118,6 +121,7 @@ type Props = {
         user: UserCard | null;
         mine: boolean;
     }[];
+    moments?: MomentCardData[];
 };
 
 const STORE_STYLE: Record<string, string> = {
@@ -279,6 +283,7 @@ export default function GameShow({
     guides,
     steam_friends,
     can_curate,
+    moments = [],
 }: Props) {
     const d = game.details ?? {};
     const guidesOn = usePlugin('game_guides');
@@ -857,6 +862,22 @@ export default function GameShow({
                             </tbody>
                         </table>
                     </div>
+                </Section>
+            )}
+
+            {moments.length > 0 && (
+                <Section title={tr('Моменти')} icon={Clapperboard}>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        {moments.map((moment) => (
+                            <MomentCard key={moment.id} moment={moment} />
+                        ))}
+                    </div>
+                    <Link
+                        href={`/moments?game=${game.slug}`}
+                        className="mt-4 inline-flex text-sm font-medium text-gc-lilac-300 hover:text-white"
+                    >
+                        {tr('Усі моменти гри →')}
+                    </Link>
                 </Section>
             )}
 
