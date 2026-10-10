@@ -9,6 +9,6 @@ return [
         'two-factor-challenge', 'up', 'user', 'users', 'verify-email', 'videos', 'events', 'me',
         'servers', 'families', 'f', 's', 'family', 'server', 'discord',
         'clans', 'clan', 'guild', 'guilds', 'g', 'watch', 'listen', 'stories', 'calls', 'voice', 'play',
-        'party', 'characters', 'oauth', 'developers', 'bots', 'moments', 'quests', 'invite', 'r',
+        'party', 'characters', 'oauth', 'developers', 'bots', 'moments', 'quests', 'invite', 'r', 'plus',
     ],
 ];

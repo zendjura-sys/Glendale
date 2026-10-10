@@ -31,6 +31,7 @@ import { PostSkeleton } from '@/components/gc/post-skeleton';
 import { ReportPersonButton } from '@/components/gc/report-person';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
+import { PlusBadge, plusNameStyle } from '@/components/gc/plus';
 import { EmptyState, Widget } from '@/components/gc/widget';
 import { NowPlayingCard } from '@/components/music/now-playing';
 import { AchievementsCard } from '@/components/gc/achievements';
@@ -79,6 +80,8 @@ function blockSequence(order: string[]): string[] {
 type Profile = UserCard & {
     last_name: string;
     cover_url: string | null;
+    /** GameCon+: кольори сторінки. */
+    accent?: string[] | null;
     about: string | null;
     city: string | null;
     birthday: string | null;
@@ -264,8 +267,23 @@ export default function ProfileShow({
                             alt=""
                             className="size-full object-cover"
                         />
+                    ) : profile.accent ? (
+                        <div
+                            className="size-full opacity-80"
+                            style={{
+                                backgroundImage: `radial-gradient(circle at 20% 20%, ${profile.accent[0]} 0%, transparent 45%), radial-gradient(circle at 80% 30%, ${profile.accent[1]} 0%, transparent 45%), radial-gradient(circle at 50% 100%, ${profile.accent[2]} 0%, transparent 50%)`,
+                            }}
+                        />
                     ) : (
                         <div className="size-full bg-[radial-gradient(circle_at_20%_20%,#4f8bff_0%,transparent_45%),radial-gradient(circle_at_80%_30%,#a855f7_0%,transparent_45%),radial-gradient(circle_at_50%_100%,#f04fd8_0%,transparent_50%)] opacity-80" />
+                    )}
+                    {profile.accent && (
+                        <div
+                            className="absolute inset-x-0 bottom-0 z-10 h-[3px]"
+                            style={{
+                                backgroundImage: `linear-gradient(90deg, ${profile.accent.join(', ')})`,
+                            }}
+                        />
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#070a16] via-[#070a16]/30 to-transparent" />
                     <div className="grid-lines absolute inset-0 opacity-40" />
@@ -284,7 +302,11 @@ export default function ProfileShow({
                 <div className="relative px-5 pb-5 sm:px-8">
                     <div className="-mt-20 flex flex-col gap-5 sm:-mt-24 sm:flex-row sm:items-end">
                         <div className="group relative w-fit">
-                            <UserAvatar user={profile} size="hero" ring />
+                            <UserAvatar
+                                user={profile}
+                                size="hero"
+                                ring={!profile.plus?.frame}
+                            />
                             {isSelf && (
                                 <Uploader
                                     field="avatar"
@@ -298,12 +320,20 @@ export default function ProfileShow({
 
                         <div className="min-w-0 flex-1 pb-1">
                             <div className="flex flex-wrap items-center gap-2">
-                                <h1 className="font-display text-2xl font-bold tracking-tight text-white sm:text-[30px]">
+                                <h1
+                                    className="font-display text-2xl font-bold tracking-tight text-white sm:text-[30px]"
+                                    style={plusNameStyle(profile.plus)}
+                                >
                                     {profile.alias || profile.name}
                                 </h1>
                                 {stream?.live && <LiveBadge />}
                                 {profile.is_verified && (
                                     <VerifiedBadge className="size-6" />
+                                )}
+                                {profile.plus && (
+                                    <Link href="/plus" title="GameCon+">
+                                        <PlusBadge className="size-6 rounded-lg [&_svg]:size-4" />
+                                    </Link>
                                 )}
                                 {roleBadge && (
                                     <span className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-xs font-semibold text-gold">

@@ -38,6 +38,20 @@ class Palette
         ];
     }
 
+    /**
+     * @return list<string>|null
+     */
+    public static function colors(string $id): ?array
+    {
+        foreach (self::all() as $palette) {
+            if ($palette['id'] === $id) {
+                return $palette['colors'];
+            }
+        }
+
+        return null;
+    }
+
     public static function exists(string $id): bool
     {
         return in_array($id, array_column(self::all(), 'id'), true);

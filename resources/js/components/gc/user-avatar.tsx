@@ -1,6 +1,8 @@
 import { initials } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { tr } from '@/lib/i18n';
+import type { PlusMark } from '@/types';
+import { plusFrameStyle } from './plus';
 
 const sizes = {
     xs: 'size-7 text-xs',
@@ -35,6 +37,7 @@ type Props = {
         avatar_url: string | null;
         is_online?: boolean;
         id?: number;
+        plus?: PlusMark | null;
     };
     size?: keyof typeof sizes;
     ring?: boolean;
@@ -77,7 +80,18 @@ export function UserAvatar({
                 className,
             )}
         >
-            {ring ? (
+            {!ring && user.plus?.frame ? (
+                <span
+                    className="flex size-full rounded-full p-[2px]"
+                    style={plusFrameStyle(user.plus)}
+                >
+                    <span className="flex size-full overflow-hidden rounded-full bg-void p-[1.5px]">
+                        <span className="flex size-full overflow-hidden rounded-full">
+                            {inner}
+                        </span>
+                    </span>
+                </span>
+            ) : ring ? (
                 <span className="ring-gradient flex size-full rounded-full p-[3px] shadow-[0_0_40px_-6px_rgb(124_92_255/0.8)]">
                     <span className="flex size-full rounded-full bg-void p-[3px]">
                         {inner}

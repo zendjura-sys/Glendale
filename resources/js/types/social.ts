@@ -23,6 +23,8 @@ export type UserCard = {
     status: string | null;
     /** «Граю в…»: сервер GTA або гра (автоматично чи вручну). */
     playing?: PlayingInfo | null;
+    /** GameCon+: null — без підписки. */
+    plus?: PlusMark | null;
     /** Лише в чаті сім’ї. */
     family_rank?: { rank: number; title: string | null; tag: string };
 };
@@ -208,4 +210,10 @@ export type ClanCard = {
     join_mode: 'open' | 'request' | 'closed';
     game: GameCard | null;
     pending?: boolean;
+};
+
+/** Оформлення GameCon+ у картці: готові кольори ніку й рамки (null — стандартні). */
+export type PlusMark = {
+    name: string[] | null;
+    frame: string[] | null;
 };

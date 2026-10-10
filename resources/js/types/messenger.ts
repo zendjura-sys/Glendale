@@ -29,6 +29,10 @@ export type StickerPackItem = {
     id: number;
     slug: string;
     name: string;
+    /** Набір GameCon+ */
+    is_plus?: boolean;
+    /** Без підписки — видно, але надіслати не можна */
+    locked?: boolean;
     stickers: StickerItem[];
 };
 

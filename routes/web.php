@@ -35,6 +35,7 @@ use App\Http\Controllers\PhotoAlbumController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PlayingController;
 use App\Http\Controllers\PlaylistController;
+use App\Http\Controllers\PlusController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuestController;
@@ -80,6 +81,13 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
 
     Route::get('feed', [FeedController::class, 'index'])->middleware('module:feed')->name('feed');
     Route::get('invite', [ReferralController::class, 'index'])->name('referrals.index');
+    Route::prefix('plus')->name('plus.')->group(function () {
+        Route::get('/', [PlusController::class, 'index'])->name('index');
+        Route::post('checkout', [PlusController::class, 'checkout'])->middleware('throttle:20,1')->name('checkout');
+        Route::post('redeem', [PlusController::class, 'redeem'])->middleware('throttle:10,1')->name('redeem');
+        Route::put('style', [PlusController::class, 'style'])->name('style');
+        Route::put('families/{family:id}/style', [PlusController::class, 'familyStyle'])->whereNumber('family')->name('families.style');
+    });
     Route::get('start', [StartController::class, 'index'])->name('start');
     Route::post('start', [StartController::class, 'store'])->name('start.store');
     Route::post('start/skip', [StartController::class, 'skip'])->name('start.skip');
@@ -440,6 +448,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('{party}', [PartyController::class, 'show'])->name('show');
         Route::post('{party}/join', [PartyController::class, 'join'])->middleware('throttle:20,1')->name('join');
         Route::delete('{party}/join', [PartyController::class, 'leave'])->name('leave');
+        Route::post('{party}/bump', [PartyController::class, 'bump'])->middleware('throttle:10,1')->name('bump');
         Route::delete('{party}', [PartyController::class, 'close'])->name('close');
     });
 
@@ -595,6 +604,13 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('integrations/cinema/{provider}/test', [Admin\IntegrationController::class, 'testCinema'])->middleware('throttle:20,1')->name('integrations.cinema.test');
         Route::put('integrations/spotify', [Admin\IntegrationController::class, 'updateSpotify'])->name('integrations.spotify');
         Route::post('integrations/spotify/test', [Admin\IntegrationController::class, 'testSpotify'])->middleware('throttle:10,1')->name('integrations.spotify.test');
+        Route::prefix('plus')->name('plus.')->group(function () {
+            Route::get('/', [Admin\PlusController::class, 'index'])->name('index');
+            Route::post('grants', [Admin\PlusController::class, 'grant'])->name('grant');
+            Route::delete('grants/{grant}', [Admin\PlusController::class, 'revoke'])->whereNumber('grant')->name('revoke');
+            Route::post('codes', [Admin\PlusController::class, 'storeCode'])->name('codes.store');
+            Route::delete('codes/{code}', [Admin\PlusController::class, 'destroyCode'])->whereNumber('code')->name('codes.destroy');
+        });
         Route::get('stickers', [Admin\StickerController::class, 'index'])->name('stickers.index');
         Route::post('stickers', [Admin\StickerController::class, 'store'])->name('stickers.store');
         Route::patch('stickers/{pack}', [Admin\StickerController::class, 'update'])->name('stickers.update');

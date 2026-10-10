@@ -27,6 +27,7 @@ import {
 import { toast } from 'sonner';
 import { Lightbox } from '@/components/gc/media-grid';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
+import { PlusBadge } from '@/components/gc/plus';
 import { useRealtime } from '@/hooks/use-realtime';
 import { api, ApiError } from '@/lib/api';
 import { dayLabel, lastSeen, plural } from '@/lib/format';
@@ -676,6 +677,9 @@ export function ChatView({
                             <span className="truncate">{active.title}</span>
                             {active.peer?.is_verified && (
                                 <VerifiedBadge className="size-3.5 shrink-0" />
+                            )}
+                            {active.peer?.plus && (
+                                <PlusBadge className="size-3.5" />
                             )}
                         </span>
                         <span className="block truncate text-xs text-white/45">

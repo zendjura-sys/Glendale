@@ -1,3 +1,5 @@
+import type { PlusMark } from './social';
+
 export type User = {
     id: number;
     username: string;
@@ -9,6 +11,7 @@ export type User = {
     cover_url: string | null;
     is_online: boolean;
     is_verified: boolean;
+    plus?: PlusMark | null;
     status: string | null;
     role: 'user' | 'moderator' | 'admin';
     is_admin: boolean;

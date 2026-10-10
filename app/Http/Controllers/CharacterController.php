@@ -8,6 +8,7 @@ use App\Models\RpCharacter;
 use App\Models\User;
 use App\Models\UserBlock;
 use App\Services\ImageStorage;
+use App\Services\Plus\Plus;
 use App\Support\Plugins\Plugins;
 use Closure;
 use Illuminate\Http\RedirectResponse;
@@ -50,7 +51,7 @@ class CharacterController extends Controller implements HasMiddleware
                 ->orderByDesc('is_main')->latest('updated_at')->limit(8)->get()
                 ->map(fn (RpCharacter $other) => $other->toCard())->all()),
             'can_edit' => $character->user_id === $viewer->id,
-            'photo_limit' => RpCharacter::PHOTOS,
+            'photo_limit' => (int) app(Plus::class)->limit($character->user, 'character_photos'),
         ]);
     }
 
@@ -91,7 +92,11 @@ class CharacterController extends Controller implements HasMiddleware
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
-        abort_if(RpCharacter::query()->where('user_id', $user->id)->count() >= RpCharacter::LIMIT, 422, 'Можна мати до 10 персонажів.');
+        abort_if(
+            RpCharacter::query()->where('user_id', $user->id)->count() >= (int) app(Plus::class)->limit($user, 'characters'),
+            422,
+            $user->isPlus() ? 'Можна мати до 25 персонажів.' : 'Можна мати до 10 персонажів. З GameCon+ — до 25.',
+        );
         $data = $this->validated($request, $user);
         $character = RpCharacter::query()->create(['user_id' => $user->id, ...$data]);
         $this->portrait($request, $character);
@@ -129,7 +134,11 @@ class CharacterController extends Controller implements HasMiddleware
     {
         $this->own($request, $character);
         $photos = $character->photos ?? [];
-        abort_if(count($photos) >= RpCharacter::PHOTOS, 422, 'У галереї персонажа до 6 фото.');
+        abort_if(
+            count($photos) >= (int) app(Plus::class)->limit($request->user(), 'character_photos'),
+            422,
+            $request->user()->isPlus() ? 'У галереї персонажа до 20 фото.' : 'У галереї персонажа до 6 фото. З GameCon+ — до 20.',
+        );
         $request->validate(['photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360']]);
         $stored = $this->images->store($request->file('photo'), 'characters/photos', 1920);
         $character->update(['photos' => [...$photos, $stored['path']]]);

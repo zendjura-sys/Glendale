@@ -327,6 +327,13 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                         ),
                     ],
                     [
+                        'payments',
+                        tr('Оплата'),
+                        tr(
+                            'GameCon+, подарунки, GameCon+ для сімей і платне просування серверів через Lemon Squeezy.',
+                        ),
+                    ],
+                    [
                         'voice',
                         tr('Голосові кімнати'),
                         tr(

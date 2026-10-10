@@ -1,4 +1,5 @@
-import { Clock3, Smile, Sticker as StickerIcon } from 'lucide-react';
+import { Link } from '@inertiajs/react';
+import { Clock3, Lock, Smile, Sticker as StickerIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { EMOJI_CATEGORIES, recentEmoji, rememberEmoji } from '@/lib/emoji';
@@ -204,10 +205,12 @@ function StickerGrid({ onPick }: { onPick: (sticker: StickerItem) => void }) {
         };
     }, []);
 
-    const current =
+    const currentPack =
         active === 'recent'
-            ? recent
-            : (packs?.find((p) => p.slug === active) ?? packs?.[0])?.stickers;
+            ? null
+            : (packs?.find((p) => p.slug === active) ?? packs?.[0]);
+    const current = active === 'recent' ? recent : currentPack?.stickers;
+    const locked = currentPack?.locked === true;
     const activeKey =
         active === 'recent' ? 'recent' : ((active || packs?.[0]?.slug) ?? '');
 
@@ -272,16 +275,28 @@ function StickerGrid({ onPick }: { onPick: (sticker: StickerItem) => void }) {
                     </p>
                 ) : (
                     <div className="grid grid-cols-4 gap-1.5">
+                        {locked && (
+                            <Link
+                                href="/plus"
+                                className="col-span-4 mb-1 flex items-center justify-center gap-1.5 rounded-xl bg-indigo-500/15 px-3 py-2 text-xs font-medium text-indigo-200 transition hover:bg-indigo-500/25"
+                            >
+                                <Lock className="size-3.5" />
+                                {tr(
+                                    'Набір GameCon+ — надсилати можна з підпискою',
+                                )}
+                            </Link>
+                        )}
                         {current.map((sticker) => (
                             <button
                                 key={sticker.id}
                                 type="button"
+                                disabled={locked}
                                 onClick={() => {
                                     rememberSticker(sticker);
                                     onPick(sticker);
                                 }}
                                 title={sticker.emoji ?? undefined}
-                                className="aspect-square rounded-xl p-1 transition hover:scale-105 hover:bg-white/[0.07]"
+                                className="aspect-square rounded-xl p-1 transition hover:scale-105 hover:bg-white/[0.07] disabled:opacity-40 disabled:hover:scale-100 disabled:hover:bg-transparent"
                             >
                                 <img
                                     src={sticker.url}

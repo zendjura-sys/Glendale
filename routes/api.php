@@ -32,6 +32,7 @@ use App\Http\Controllers\PhotoAlbumController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PlayingController;
 use App\Http\Controllers\PlaylistController;
+use App\Http\Controllers\PlusController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuestController;
@@ -52,6 +53,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('livekit/webhook', [VoiceController::class, 'webhook'])->middleware('throttle:600,1');
 
 // Боти GameCon: оновлення Telegram (секрет у заголовку) і кнопки Discord (підпис Ed25519).
+Route::post('payments/lemonsqueezy', [PlusController::class, 'webhook'])->middleware('throttle:600,1')->name('payments.lemonsqueezy');
 Route::post('bots/telegram', Bots\TelegramWebhookController::class)->middleware('throttle:600,1')->name('bots.telegram.webhook');
 Route::post('bots/discord/interactions', Bots\DiscordInteractionsController::class)->middleware('throttle:600,1')->name('bots.discord.interactions');
 

@@ -15,6 +15,7 @@ use App\Models\VoiceRoom;
 use App\Models\VoiceRoomTemplate;
 use App\Services\Clans\ClanService;
 use App\Services\Families\FamilyGate;
+use App\Services\Plus\Plus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -182,8 +183,10 @@ class VoiceRooms
         $this->list($owner);
         [$type, $id] = $this->key($owner);
         $count = VoiceRoom::query()->where('owner_type', $type)->where('owner_id', $id)->count();
-        if ($count >= VoiceRoom::MAX_ROOMS) {
-            throw ValidationException::withMessages(['name' => 'Не більше '.VoiceRoom::MAX_ROOMS.' голосових кімнат.']);
+        // Сім'ї з GameCon+ можуть мати вдвічі більше кімнат.
+        $max = $owner instanceof Family ? (int) app(Plus::class)->familyLimit($owner, 'family_voice_rooms') : VoiceRoom::MAX_ROOMS;
+        if ($count >= $max) {
+            throw ValidationException::withMessages(['name' => 'Не більше '.$max.' голосових кімнат.']);
         }
 
         $room = VoiceRoom::query()->create([

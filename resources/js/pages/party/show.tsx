@@ -1,6 +1,7 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
+    ArrowUp,
     Clock3,
     Crown,
     Gamepad2,
@@ -17,6 +18,7 @@ import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 export default function PartyShow({ party }: { party: PartyCardData }) {
+    const plus = Boolean(usePage().props.auth.user?.plus);
     const free = party.roles.filter(
         (role) => !party.taken_roles.includes(role),
     );
@@ -157,6 +159,22 @@ export default function PartyShow({ party }: { party: PartyCardData }) {
                             >
                                 <LogOut className="size-4" />
                                 {tr('Вийти з паті')}
+                            </button>
+                        )}
+                        {party.mine && party.open && plus && !party.bumped && (
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    router.post(
+                                        `/party/${party.id}/bump`,
+                                        {},
+                                        { preserveScroll: true },
+                                    )
+                                }
+                                className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.05] px-4 text-sm font-medium text-indigo-200 transition hover:bg-indigo-400/10"
+                            >
+                                <ArrowUp className="size-4" />
+                                {tr('Підняти нагору на годину')}
                             </button>
                         )}
                         {party.mine && party.open && (

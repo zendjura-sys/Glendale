@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\PlusStyle;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
@@ -35,6 +36,8 @@ use Illuminate\Support\Facades\Storage;
  * @property int $members_count
  * @property Carbon $created_at
  * @property Carbon|null $season_started_at
+ * @property Carbon|null $plus_until GameCon+ для сім'ї активний до
+ * @property array<string, string>|null $plus_style
  * @property-read string|null $logo_url
  * @property-read string|null $cover_url
  */
@@ -163,6 +166,8 @@ class Family extends Model
             'verified_at' => 'datetime',
             'is_recruiting' => 'boolean',
             'season_started_at' => 'datetime',
+            'plus_until' => 'datetime',
+            'plus_style' => 'array',
         ];
     }
 
@@ -381,6 +386,11 @@ class Family extends Model
         return Attribute::get(fn () => $this->cover_path ? Storage::disk('public')->url($this->cover_path) : null);
     }
 
+    public function isPlus(): bool
+    {
+        return $this->plus_until !== null && $this->plus_until->isFuture();
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -397,6 +407,7 @@ class Family extends Model
             'status_label' => self::STATUSES[$this->status] ?? $this->status,
             'members_count' => $this->members_count,
             'is_recruiting' => $this->is_recruiting,
+            'plus' => $this->isPlus() ? PlusStyle::familyCard($this->plus_style) : null,
             'server' => $this->relationLoaded('server') && $this->server ? [
                 'slug' => $this->server->slug,
                 'name' => $this->server->name,

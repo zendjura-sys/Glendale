@@ -5,6 +5,7 @@ import { Pagination, selectClass } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
 import { FamilyLogo } from '@/components/families/family-logo';
 import { RankBadge } from '@/components/families/ui';
+import { PlusBadge } from '@/components/gc/plus';
 import { ServerIcon } from '@/components/servers/server-icon';
 import { uah } from '@/lib/money';
 import { cn } from '@/lib/utils';
@@ -178,15 +179,31 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                 <Link
                                     key={f.id}
                                     href={`/f/${f.slug}`}
-                                    className="glass group relative animate-rise overflow-hidden rounded-3xl transition hover:-translate-y-0.5"
+                                    className={cn(
+                                        'glass group relative animate-rise overflow-hidden rounded-3xl transition hover:-translate-y-0.5',
+                                        f.plus && 'border-indigo-400/40',
+                                    )}
                                     style={{ animationDelay: `${i * 30}ms` }}
                                 >
+                                    {f.plus && (
+                                        <span className="absolute top-2 right-2 z-10 inline-flex items-center gap-1 rounded-full bg-black/45 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur">
+                                            <PlusBadge className="size-3.5 [&_svg]:size-2.5" />
+                                            GameCon+
+                                        </span>
+                                    )}
                                     <div className="h-20 overflow-hidden">
                                         {f.cover_url ? (
                                             <img
                                                 src={f.cover_url}
                                                 alt=""
                                                 className="size-full object-cover opacity-80 transition group-hover:scale-105"
+                                            />
+                                        ) : f.plus?.accent ? (
+                                            <div
+                                                className="size-full opacity-60"
+                                                style={{
+                                                    backgroundImage: `linear-gradient(135deg, ${f.plus.accent.join(', ')})`,
+                                                }}
                                             />
                                         ) : (
                                             <div className="size-full bg-[linear-gradient(135deg,#f59e0b33,#6d5dfc44)]" />

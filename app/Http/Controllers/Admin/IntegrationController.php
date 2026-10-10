@@ -7,6 +7,8 @@ use App\Models\BotLink;
 use App\Models\Game;
 use App\Models\ImageFlag;
 use App\Models\MovieSource;
+use App\Models\PlusGrant;
+use App\Models\PlusPayment;
 use App\Models\PushDevice;
 use App\Models\SpotifyAccount;
 use App\Models\User;
@@ -28,6 +30,7 @@ use App\Services\Games\GameCatalog;
 use App\Services\Games\Igdb;
 use App\Services\I18n\DeepL;
 use App\Services\Moderation\NsfwCheck;
+use App\Services\Plus\LemonSqueezy;
 use App\Services\Presence\SteamPresence;
 use App\Services\Push\FcmClient;
 use App\Services\Spotify\SpotifyClient;
@@ -595,6 +598,53 @@ class IntegrationController extends Controller
                 'fields' => [
                     ['name' => 'key', 'setting' => 'omdb_key', 'type' => 'secret', 'label' => 'API Key', 'env' => config('services.omdb.key'),
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{6,40}$/'], 'message' => 'Ключ OMDb — латинські літери та цифри.'],
+                ],
+            ],
+            'lemonsqueezy' => [
+                'label' => 'Оплата GameCon+ (Lemon Squeezy)',
+                'group' => 'payments',
+                'description' => 'Підписка GameCon+, подарунки, GameCon+ для сімей і платне просування серверів. Lemon Squeezy продає від свого імені й сам сплачує податки — ФОП не потрібен; виплати — на картку або PayPal.',
+                'docs' => 'https://docs.lemonsqueezy.com/help/getting-started/create-a-store',
+                'steps' => [
+                    'Зареєструйтеся на lemonsqueezy.com і створіть магазин (Store). Settings → Stores: скопіюйте Store ID (число).',
+                    'Products → New product для кожного рядка нижче: підписки — Subscription (місяць або рік), решта — Single payment. Ціни — як на сторінці GameCon+. Відкрийте товар → варіант і скопіюйте Variant ID.',
+                    'Settings → API → створіть ключ і вставте його сюди.',
+                    'Settings → Webhooks → «+»: URL '.url('/api/payments/lemonsqueezy').', придумайте Signing secret (вставте його й сюди), позначте order_created, order_refunded і всі subscription_*.',
+                    'Для перевірки ввімкніть «Тестовий режим» і заплатіть тестовою карткою 4242 4242 4242 4242.',
+                ],
+                'configured' => app(LemonSqueezy::class)->configured(),
+                'stat' => PlusGrant::query()->where('ends_at', '>', now())->distinct()->count('owner_id').' з GameCon+ · '.PlusPayment::query()->where('status', PlusPayment::PAID)->count().' оплат',
+                'test' => fn () => app(LemonSqueezy::class)->test(),
+                'fields' => [
+                    ['name' => 'api_key', 'setting' => 'lemonsqueezy_api_key', 'type' => 'secret', 'label' => 'API key',
+                        'rules' => ['nullable', 'string', 'min:20', 'max:2000', 'regex:/^[A-Za-z0-9._\-]+$/'], 'message' => 'Ключ API — довгий рядок з латинських літер, цифр і крапок.'],
+                    ['name' => 'store_id', 'setting' => 'lemonsqueezy_store_id', 'type' => 'text', 'label' => 'Store ID', 'placeholder' => '12345',
+                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'Store ID — це число.'],
+                    ['name' => 'webhook_secret', 'setting' => 'lemonsqueezy_webhook_secret', 'type' => 'secret', 'label' => 'Signing secret вебхука',
+                        'rules' => ['nullable', 'string', 'min:6', 'max:64'], 'message' => 'Секрет — від 6 до 64 символів.'],
+                    ['name' => 'test_mode', 'setting' => 'lemonsqueezy_test_mode', 'type' => 'bool', 'label' => 'Тестовий режим', 'rules' => ['nullable', 'boolean']],
+                    ['name' => 'variant_plus_month', 'setting' => 'ls_variant_plus_month', 'type' => 'text', 'label' => 'GameCon+ · місяць (підписка)', 'placeholder' => '123456',
+                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
+                    ['name' => 'variant_plus_year', 'setting' => 'ls_variant_plus_year', 'type' => 'text', 'label' => 'GameCon+ · рік (підписка)', 'placeholder' => '123456',
+                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
+                    ['name' => 'variant_gift_month', 'setting' => 'ls_variant_gift_month', 'type' => 'text', 'label' => 'Подарунок · місяць (разово)', 'placeholder' => '123456',
+                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
+                    ['name' => 'variant_gift_year', 'setting' => 'ls_variant_gift_year', 'type' => 'text', 'label' => 'Подарунок · рік (разово)', 'placeholder' => '123456',
+                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
+                    ['name' => 'variant_family_month', 'setting' => 'ls_variant_family_month', 'type' => 'text', 'label' => 'Сім’я · місяць (підписка)', 'placeholder' => '123456',
+                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
+                    ['name' => 'variant_family_year', 'setting' => 'ls_variant_family_year', 'type' => 'text', 'label' => 'Сім’я · рік (підписка)', 'placeholder' => '123456',
+                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
+                    ['name' => 'variant_promo_top_7', 'setting' => 'ls_variant_promo_top_7', 'type' => 'text', 'label' => 'Топ каталогу · 7 днів', 'placeholder' => '123456',
+                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
+                    ['name' => 'variant_promo_top_30', 'setting' => 'ls_variant_promo_top_30', 'type' => 'text', 'label' => 'Топ каталогу · 30 днів', 'placeholder' => '123456',
+                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
+                    ['name' => 'variant_promo_highlight_7', 'setting' => 'ls_variant_promo_highlight_7', 'type' => 'text', 'label' => 'Виділена картка · 7 днів', 'placeholder' => '123456',
+                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
+                    ['name' => 'variant_promo_highlight_30', 'setting' => 'ls_variant_promo_highlight_30', 'type' => 'text', 'label' => 'Виділена картка · 30 днів', 'placeholder' => '123456',
+                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
+                    ['name' => 'variant_promo_banner_30', 'setting' => 'ls_variant_promo_banner_30', 'type' => 'text', 'label' => 'Банер · 30 днів', 'placeholder' => '123456',
+                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
                 ],
             ],
         ];

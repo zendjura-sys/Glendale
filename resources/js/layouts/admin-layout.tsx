@@ -18,6 +18,7 @@ import {
     Languages,
     Globe2,
     ShieldCheck,
+    Sparkles,
     Sticker,
     UsersRound,
 } from 'lucide-react';
@@ -48,6 +49,7 @@ const items = [
     { label: tr('Сервери GTA'), href: '/admin/servers', icon: Server },
     { label: tr('Ігри'), href: '/admin/games', icon: Gamepad2 },
     { label: tr('Сім’ї'), href: '/admin/families', icon: Crown },
+    { label: 'GameCon+', href: '/admin/plus', icon: Sparkles },
     { label: tr('Стікери'), href: '/admin/stickers', icon: Sticker },
     { label: tr('Модулі'), href: '/admin/modules', icon: Blocks },
     { label: tr('Плагіни'), href: '/admin/plugins', icon: Puzzle },

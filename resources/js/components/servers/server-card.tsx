@@ -126,6 +126,8 @@ export function ServerCard({
                 'glass group relative flex animate-rise flex-col gap-4 overflow-hidden rounded-3xl p-5 transition hover:-translate-y-0.5 hover:border-white/15',
                 server.is_featured &&
                     'shadow-[0_20px_60px_-30px_rgb(124_92_255/0.9)] ring-1 ring-gc-lilac-500/30',
+                server.promo?.includes('highlight') &&
+                    'border-indigo-400/50 ring-1 ring-indigo-400/40',
             )}
             style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}
         >
@@ -143,6 +145,15 @@ export function ServerCard({
                         </h3>
                         {server.is_featured && (
                             <Sparkles className="size-4 shrink-0 text-amber-300" />
+                        )}
+                        {(server.promo?.includes('top') ||
+                            server.promo?.includes('highlight')) && (
+                            <span
+                                title={tr('Платне просування')}
+                                className="ml-auto shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-white/55 uppercase"
+                            >
+                                {tr('Реклама')}
+                            </span>
                         )}
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium">

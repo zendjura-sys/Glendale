@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Clock3, Gamepad2, Server, Users } from 'lucide-react';
+import { ArrowUp, Clock3, Gamepad2, Server, Users } from 'lucide-react';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { clockTime, dayLabel } from '@/lib/format';
 import { tr } from '@/lib/i18n';
@@ -20,6 +20,8 @@ export type PartyCardData = {
     starts_at: string | null;
     expires_at: string;
     open: boolean;
+    /** GameCon+: підняте нагору на годину. */
+    bumped?: boolean;
     mine: boolean;
     joined: boolean;
     host: UserCard;
@@ -60,8 +62,14 @@ export function PartyCard({ party }: { party: PartyCardData }) {
                     <h3 className="line-clamp-2 font-display text-[16px] font-bold break-words text-white">
                         {party.title}
                     </h3>
-                    <p className="truncate text-xs text-white/45">
+                    <p className="flex items-center gap-1 truncate text-xs text-white/45">
                         {party.host.name}
+                        {party.bumped && (
+                            <span className="inline-flex items-center gap-1 text-indigo-200">
+                                · <ArrowUp className="size-3" />
+                                {tr('Піднято')}
+                            </span>
+                        )}
                     </p>
                 </div>
                 <span

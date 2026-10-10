@@ -22,6 +22,7 @@ use App\Services\ImageStorage;
 use App\Services\Media\LinkPreview;
 use App\Services\Media\YoutubePreview;
 use App\Services\Moderation\ContentFilter;
+use App\Services\Plus\Plus;
 use App\Services\PostCards;
 use App\Services\PostPresenter;
 use App\Services\ReactionDigest;
@@ -462,14 +463,26 @@ class PostController extends Controller
         $user = $request->user();
         abort_unless(($post->wall_type === $user->getMorphClass() && $post->wall_id === $user->id) || $this->managesWall($user, $post), 403);
 
-        DB::transaction(function () use ($post) {
-            $pin = ! $post->is_pinned;
-            Post::query()
+        // На своїй стіні з GameCon+ можна закріпити до трьох записів; інакше — один (новий замінює старий).
+        $limit = $post->wall_type === $user->getMorphClass() && $post->wall_id === $user->id
+            ? (int) app(Plus::class)->limit($user, 'pinned_posts')
+            : 1;
+        DB::transaction(function () use ($post, $limit) {
+            if ($post->is_pinned) {
+                $post->update(['is_pinned' => false]);
+
+                return;
+            }
+            $pinned = Post::query()
                 ->where('wall_type', $post->wall_type)
                 ->where('wall_id', $post->wall_id)
                 ->where('is_pinned', true)
-                ->update(['is_pinned' => false]);
-            $post->update(['is_pinned' => $pin]);
+                ->orderBy('updated_at')
+                ->pluck('id');
+            if ($pinned->count() >= $limit) {
+                Post::query()->whereIn('id', $pinned->take($pinned->count() - $limit + 1))->update(['is_pinned' => false]);
+            }
+            $post->update(['is_pinned' => true]);
         });
 
         return back();
@@ -513,7 +526,8 @@ class PostController extends Controller
         $this->authorizeView($user, $post);
 
         $reaction = $request->validate([
-            'reaction' => ['nullable', Rule::in(['like', 'fire', 'laugh', 'gg', 'sad'])],
+            // GameCon+ відкриває ще п’ять емоцій.
+            'reaction' => ['nullable', Rule::in(['like', 'fire', 'laugh', 'gg', 'sad', ...($user->isPlus() ? (array) config('plus.reactions') : [])])],
         ])['reaction'] ?? 'like';
 
         $created = false;

@@ -10,6 +10,7 @@ import type { CommentItem } from '@/types';
 import { LikeButton } from './like-button';
 import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
+import { PlusBadge, plusNameStyle } from './plus';
 import {
     TranslateToggle,
     useContentTranslation,
@@ -237,9 +238,18 @@ export function Comments({
                                         href={`/${comment.user.username}`}
                                         className="flex items-center gap-1 text-[13px] font-semibold text-white hover:underline"
                                     >
-                                        {comment.user.name}
+                                        <span
+                                            style={plusNameStyle(
+                                                comment.user.plus,
+                                            )}
+                                        >
+                                            {comment.user.name}
+                                        </span>
                                         {comment.user.is_verified && (
                                             <VerifiedBadge className="size-3" />
+                                        )}
+                                        {comment.user.plus && (
+                                            <PlusBadge className="size-3.5" />
                                         )}
                                     </Link>
                                     <p className="text-[14px] leading-snug break-words whitespace-pre-line text-white/85">

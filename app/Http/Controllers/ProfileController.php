@@ -25,6 +25,7 @@ use App\Services\PostPresenter;
 use App\Services\Presence\SteamPresence;
 use App\Services\Streams\LiveStreams;
 use App\Support\Modules\ModuleManager;
+use App\Support\Palette;
 use App\Support\ProfileBlocks;
 use chillerlan\QRCode\Output\QROutputInterface;
 use chillerlan\QRCode\QRCode;
@@ -122,6 +123,8 @@ class ProfileController extends Controller
                 ...$user->toCard(),
                 'last_name' => $user->last_name,
                 'cover_url' => $user->cover_url,
+                // GameCon+: власні кольори сторінки (з палітр сайту).
+                'accent' => $user->isPlus() ? Palette::colors((string) ($user->plus_style['accent'] ?? '')) : null,
                 'about' => $canSeeContent ? $user->about : null,
                 'city' => $user->city,
                 'birthday' => $canSeeContent ? $user->birthday?->toDateString() : null,
@@ -252,10 +255,13 @@ class ProfileController extends Controller
 
     public function updateAvatar(Request $request): RedirectResponse
     {
-        $request->validate(['avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240']]);
         $user = $request->user();
+        // GameCon+: анімований GIF лишається як є (без обрізання, щоб не втратити кадри).
+        $request->validate(['avatar' => ['required', 'image', 'mimes:'.($user->isPlus() ? 'jpg,jpeg,png,webp,gif' : 'jpg,jpeg,png,webp'), 'max:10240']]);
+        $file = $request->file('avatar');
+        $animated = $user->isPlus() && $file->getMimeType() === 'image/gif';
 
-        $stored = $this->images->store($request->file('avatar'), 'avatars', cover: [512, 512]);
+        $stored = $this->images->store($file, 'avatars', cover: $animated ? null : [512, 512]);
         $this->images->delete($user->avatar_path);
         $user->forceFill(['avatar_path' => $stored['path']])->save();
 
@@ -266,10 +272,12 @@ class ProfileController extends Controller
 
     public function updateCover(Request $request): RedirectResponse
     {
-        $request->validate(['cover' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360']]);
         $user = $request->user();
+        $request->validate(['cover' => ['required', 'image', 'mimes:'.($user->isPlus() ? 'jpg,jpeg,png,webp,gif' : 'jpg,jpeg,png,webp'), 'max:15360']]);
+        $file = $request->file('cover');
+        $animated = $user->isPlus() && $file->getMimeType() === 'image/gif';
 
-        $stored = $this->images->store($request->file('cover'), 'covers', cover: [1920, 560]);
+        $stored = $this->images->store($file, 'covers', cover: $animated ? null : [1920, 560]);
         $this->images->delete($user->cover_path);
         $user->forceFill(['cover_path' => $stored['path']])->save();
 

@@ -14,6 +14,7 @@ use App\Models\ServerClaim;
 use App\Models\ServerEvent;
 use App\Models\ServerNews;
 use App\Models\ServerPlayer;
+use App\Models\ServerPromotion;
 use App\Models\ServerReview;
 use App\Models\User;
 use App\Notifications\GroupInvite;
@@ -22,6 +23,8 @@ use App\Services\Events\DiscordEventSync;
 use App\Services\Families\FamilyRating;
 use App\Services\FollowAlerts;
 use App\Services\FriendshipService;
+use App\Services\Plus\LemonSqueezy;
+use App\Services\Plus\ServerPromotions;
 use App\Services\Presence\PlayingStatus;
 use App\Services\SavedItems;
 use App\Services\Servers\DiscordInvites;
@@ -90,6 +93,9 @@ class ServerController extends Controller
             $sort = 'online';
         }
 
+        // Платне просування: до трьох серверів нагорі (з позначкою «Реклама»), виділені картки й банер.
+        $promoted = app(ServerPromotions::class)->live();
+
         $servers = match ($sort) {
             'votes' => $servers->sortByDesc(fn (GtaServer $s) => [$monthVotes[$s->id] ?? 0, $s->players_online ?? -1]),
             'name' => $servers->sortBy(fn (GtaServer $s) => Str::lower($s->name)),
@@ -98,10 +104,14 @@ class ServerController extends Controller
             default => $servers->sortBy(fn (GtaServer $s) => [$s->is_featured ? 0 : 1, -1 * ($s->players_online ?? -1), -1 * ($s->discord_online ?? 0), $s->position]),
         };
 
+        $servers = $servers->sortBy(fn (GtaServer $s) => in_array('top', $promoted[$s->id] ?? [], true) ? 0 : 1);
         $all = GtaServer::query()->published()->tap($byLanguage);
+        $bannerId = collect($promoted)->filter(fn (array $kinds) => in_array('banner', $kinds, true))->keys()->first();
+        $banner = $bannerId !== null ? GtaServer::query()->published()->find($bannerId) : null;
 
         return Inertia::render('servers/index', [
-            'servers' => $servers->values()->map(fn (GtaServer $s) => [...$s->toCard(), 'votes_month' => $monthVotes[$s->id] ?? 0]),
+            'servers' => $servers->values()->map(fn (GtaServer $s) => [...$s->toCard(), 'votes_month' => $monthVotes[$s->id] ?? 0, 'promo' => $promoted[$s->id] ?? []]),
+            'banner' => $banner?->toCard(),
             'votes' => $votesOn ? [
                 'voted_today' => $votes->votedToday($request->user()),
                 'day' => $votes->top('day'),
@@ -200,6 +210,11 @@ class ServerController extends Controller
             'characters' => CharacterController::cards(server: $server),
             'apps' => $server->owner_id === $request->user()->id || $request->user()->isAdmin() ? $this->apps($server) : null,
             'analytics' => $server->owner_id === $request->user()->id || $request->user()->isStaff() ? Inertia::defer(fn () => app(ServerAnalytics::class)->summary($server)) : null,
+            'promotion' => $server->owner_id === $request->user()->id ? [
+                'active' => app(ServerPromotions::class)->forServer($server),
+                'free_at' => collect(ServerPromotion::KINDS)->mapWithKeys(fn (string $kind) => [$kind => app(ServerPromotions::class)->freeAt($kind)->toIso8601String()]),
+                'available' => app(LemonSqueezy::class)->configured(),
+            ] : null,
             'verified' => [
                 'players' => ServerPlayer::query()->where('gta_server_id', $server->id)->count(),
                 'online' => ServerPlayer::query()->where('gta_server_id', $server->id)->where('online', true)->count(),

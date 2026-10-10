@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Support\Palette;
 use App\Support\Plugins\Plugins;
+use App\Support\PlusStyle;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Translation\HasLocalePreference;
@@ -76,6 +77,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $locale
  * @property Carbon|null $frozen_at Заморожено власником: сторінку не видно, вхід розморожує
  * @property array<string, mixed>|null $preferences
+ * @property Carbon|null $plus_until GameCon+ активний до (кеш plus_grants)
+ * @property array<string, string>|null $plus_style Колір ніку, рамка, акцент профілю
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -136,6 +139,8 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'email_social' => 'boolean',
             'nav_tabs' => 'array',
             'preferences' => 'array',
+            'plus_until' => 'datetime',
+            'plus_style' => 'array',
         ];
     }
 
@@ -293,7 +298,23 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'is_verified' => $this->is_verified,
             'status' => $this->status,
             'playing' => $this->playing(),
+            'plus' => $this->plusCard(),
         ];
+    }
+
+    public function isPlus(): bool
+    {
+        return $this->plus_until !== null && $this->plus_until->isFuture();
+    }
+
+    /**
+     * Позначка й оформлення GameCon+ для карток (null — без підписки).
+     *
+     * @return array{name: list<string>|null, frame: list<string>|null}|null
+     */
+    public function plusCard(): ?array
+    {
+        return $this->isPlus() ? PlusStyle::card($this->plus_style) : null;
     }
 
     /** Мова листів і сповіщень (Laravel бере її автоматично). */

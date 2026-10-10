@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/react';
 import { Heart } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { compactNumber } from '@/lib/format';
@@ -11,6 +12,17 @@ const reactions = [
     { id: 'gg', glyph: '🎮', label: 'Добре зіграно' },
     { id: 'sad', glyph: '😢', label: 'Шкода' },
 ] as const;
+
+/** Додаткові емоції GameCon+ (лише ставити; бачать їх усі). */
+const plusReactions = [
+    { id: 'love', glyph: '😍', label: 'Обожнюю' },
+    { id: 'wow', glyph: '😮', label: 'Вау' },
+    { id: 'clap', glyph: '👏', label: 'Браво' },
+    { id: 'skull', glyph: '💀', label: 'Я помер' },
+    { id: 'crown', glyph: '👑', label: 'Король' },
+] as const;
+
+const allReactions = [...reactions, ...plusReactions];
 
 const HOLD_MS = 420;
 
@@ -31,7 +43,9 @@ export function ReactionBar({
     const timer = useRef<number | null>(null);
     const held = useRef(false);
     const box = useRef<HTMLDivElement>(null);
-    const current = reactions.find((item) => item.id === reaction) ?? null;
+    const plus = Boolean(usePage().props.auth.user?.plus);
+    const current = allReactions.find((item) => item.id === reaction) ?? null;
+    const available = plus ? allReactions : reactions;
 
     useEffect(() => {
         if (!open) return;
@@ -79,9 +93,9 @@ export function ReactionBar({
                 <div
                     role="menu"
                     aria-label={tr('Реакції')}
-                    className="glass-strong absolute bottom-full left-0 z-20 mb-2 flex animate-in items-center gap-1 rounded-full border border-white/10 p-1.5 shadow-xl duration-150 fade-in-0 slide-in-from-bottom-1"
+                    className="glass-strong absolute bottom-full left-0 z-20 mb-2 flex max-w-[calc(100vw-32px)] animate-in items-center gap-1 overflow-x-auto rounded-full border border-white/10 p-1.5 shadow-xl duration-150 fade-in-0 slide-in-from-bottom-1"
                 >
-                    {reactions.map((item) => (
+                    {available.map((item) => (
                         <button
                             key={item.id}
                             type="button"

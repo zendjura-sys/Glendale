@@ -1,4 +1,4 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     Clock3,
     Crown,
@@ -14,6 +14,7 @@ import {
 import { useEffect, useState } from 'react';
 import { selectClass } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
+import { ServerIcon } from '@/components/servers/server-icon';
 import { ServerCard } from '@/components/servers/server-card';
 import { VoteTops } from '@/components/servers/server-votes';
 import type { VoteTopRow } from '@/components/servers/server-votes';
@@ -35,6 +36,8 @@ import { usePlugin } from '@/lib/plugins';
 
 type Props = {
     servers: GtaServerCard[];
+    /** Платний банер над каталогом. */
+    banner?: GtaServerCard | null;
     votes: {
         voted_today: number | null;
         day: VoteTopRow[];
@@ -82,6 +85,7 @@ const SORTS = (votes: boolean) =>
 
 export default function Servers({
     servers,
+    banner,
     votes,
     filters,
     heading,
@@ -349,6 +353,32 @@ export default function Servers({
                             </span>
                         ))}
                     </div>
+                )}
+
+                {banner && (
+                    <Link
+                        href={`/servers/${banner.slug}`}
+                        className="glass flex items-center gap-4 rounded-3xl border-indigo-400/40 p-4 transition hover:border-indigo-300/60 sm:p-5"
+                    >
+                        <ServerIcon
+                            name={banner.name}
+                            icon={banner.icon}
+                            className="size-14 shrink-0"
+                        />
+                        <span className="min-w-0 flex-1">
+                            <span className="block truncate font-display text-lg font-bold text-white">
+                                {banner.name}
+                            </span>
+                            {banner.tagline && (
+                                <span className="line-clamp-2 text-sm text-white/60">
+                                    {banner.tagline}
+                                </span>
+                            )}
+                        </span>
+                        <span className="shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-white/55 uppercase">
+                            {tr('Реклама')}
+                        </span>
+                    </Link>
                 )}
 
                 {votes && (

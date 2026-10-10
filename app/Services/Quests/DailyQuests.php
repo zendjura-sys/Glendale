@@ -22,12 +22,15 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Щоденні завдання: щодня три завдання з пулу (для кожного — свої), прогрес — за реальною
+ * Щоденні завдання: щодня три завдання з пулу (з GameCon+ — ще одне бонусне) (для кожного — свої), прогрес — за реальною
  * активністю за сьогодні, нагорода — досвід у рівень і очки сезону. Сезон — календарний місяць.
  */
 class DailyQuests
 {
     public const PER_DAY = 3;
+
+    /** Бонусні завдання GameCon+ не потрапляють у таблицю сезону. */
+    public const BONUS_SEASON = 'bonus';
 
     private const TZ = 'Europe/Kyiv';
 
@@ -70,19 +73,20 @@ class DailyQuests
         $pool = array_keys(array_filter(self::POOL, fn (array $q) => $q['module'] === null || $this->modules->enabled($q['module'])));
         usort($pool, fn (string $a, string $b) => crc32($user->id.'|'.$this->today()->toDateString().'|'.$a) <=> crc32($user->id.'|'.$this->today()->toDateString().'|'.$b));
 
-        return array_slice($pool, 0, self::PER_DAY);
+        // GameCon+: четверте, бонусне завдання — досвід у рівень, але без очок сезону.
+        return array_slice($pool, 0, self::PER_DAY + ($user->isPlus() ? 1 : 0));
     }
 
     /**
      * Завдання дня з прогресом.
      *
-     * @return list<array{key: string, title: string, icon: string, target: int, progress: int, xp: int, done: bool, claimed: bool}>
+     * @return list<array{key: string, title: string, icon: string, target: int, progress: int, xp: int, done: bool, claimed: bool, bonus: bool}>
      */
     public function board(User $user): array
     {
         $claimed = QuestClaim::query()->where('user_id', $user->id)->where('day', $this->today()->toDateString())->pluck('quest')->all();
         $rows = [];
-        foreach ($this->picks($user) as $key) {
+        foreach ($this->picks($user) as $i => $key) {
             $quest = self::POOL[$key];
             $progress = min($quest['target'], $this->progress($user, $key));
             $rows[] = [
@@ -94,6 +98,7 @@ class DailyQuests
                 'xp' => $quest['xp'],
                 'done' => $progress >= $quest['target'],
                 'claimed' => in_array($key, $claimed, true),
+                'bonus' => $i >= self::PER_DAY,
             ];
         }
 
@@ -102,7 +107,8 @@ class DailyQuests
 
     public function claim(User $user, string $key): int
     {
-        if (! in_array($key, $this->picks($user), true)) {
+        $picks = $this->picks($user);
+        if (! in_array($key, $picks, true)) {
             throw ValidationException::withMessages(['quest' => 'Сьогодні такого завдання немає.']);
         }
         $quest = self::POOL[$key];
@@ -111,7 +117,7 @@ class DailyQuests
         }
         $created = QuestClaim::query()->firstOrCreate(
             ['user_id' => $user->id, 'quest' => $key, 'day' => $this->today()->toDateString()],
-            ['season' => $this->season(), 'xp' => $quest['xp']],
+            ['season' => array_search($key, $picks, true) >= self::PER_DAY ? self::BONUS_SEASON : $this->season(), 'xp' => $quest['xp']],
         );
         if (! $created->wasRecentlyCreated) {
             throw ValidationException::withMessages(['quest' => 'Нагороду вже отримано.']);

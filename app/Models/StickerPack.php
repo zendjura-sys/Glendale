@@ -14,9 +14,10 @@ use Illuminate\Support\Facades\Cache;
  * @property string $name
  * @property string|null $author
  * @property bool $is_active
+ * @property bool $is_plus Лише для GameCon+
  * @property int $position
  */
-#[Fillable(['slug', 'name', 'author', 'is_active', 'position'])]
+#[Fillable(['slug', 'name', 'author', 'is_active', 'is_plus', 'position'])]
 class StickerPack extends Model
 {
     public const CACHE_KEY = 'messenger.sticker_packs';
@@ -25,6 +26,7 @@ class StickerPack extends Model
     {
         return [
             'is_active' => 'boolean',
+            'is_plus' => 'boolean',
         ];
     }
 
@@ -68,6 +70,7 @@ class StickerPack extends Model
                 'id' => $pack->id,
                 'slug' => $pack->slug,
                 'name' => $pack->name,
+                'is_plus' => $pack->is_plus,
                 'stickers' => array_values($pack->stickers->map->toCard()->all()),
             ])
             ->all()));

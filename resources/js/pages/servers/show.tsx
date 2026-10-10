@@ -24,6 +24,8 @@ import { VotePanel } from '@/components/servers/server-votes';
 import { ServerApps, VerifiedPlayers } from '@/components/servers/server-apps';
 import { ServerAnalytics } from '@/components/servers/server-analytics';
 import type { ServerAnalyticsData } from '@/components/servers/server-analytics';
+import { ServerPromotion } from '@/components/servers/server-promotion';
+import type { ServerPromotionData } from '@/components/servers/server-promotion';
 import type { ServerApp, VerifiedInfo } from '@/components/servers/server-apps';
 import { CharacterRow } from '@/components/characters/character-card';
 import type { CharacterCardData } from '@/components/characters/character-card';
@@ -86,6 +88,7 @@ type Props = {
     characters: CharacterCardData[];
     apps: ServerApp[] | null;
     analytics?: ServerAnalyticsData | null;
+    promotion?: ServerPromotionData | null;
     verified: VerifiedInfo;
 };
 
@@ -111,6 +114,7 @@ export default function ServerShow({
     apps,
     verified,
     analytics,
+    promotion,
 }: Props) {
     const [inviteUsername, setInviteUsername] = useState('');
     const compareOn = usePlugin('server_compare');
@@ -363,6 +367,9 @@ export default function ServerShow({
                 <VerifiedPlayers verified={verified} />
                 {votes && <VotePanel slug={server.slug} votes={votes} />}
                 {analytics && <ServerAnalytics data={analytics} />}
+                {promotion && (
+                    <ServerPromotion serverId={server.id} data={promotion} />
+                )}
                 {apps && <ServerApps slug={server.slug} apps={apps} />}
                 {charactersOn && (
                     <section className="glass rounded-3xl p-5">

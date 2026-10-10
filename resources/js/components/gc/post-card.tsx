@@ -43,6 +43,7 @@ import { CommunityAvatar } from './community-avatar';
 import { ReactionBar } from './reaction-bar';
 import { MediaGrid } from './media-grid';
 import { UserAvatar } from './user-avatar';
+import { PlusBadge, plusNameStyle } from './plus';
 import { VerifiedBadge } from './verified-badge';
 import {
     TranslateToggle,
@@ -139,9 +140,18 @@ export function PostCard({
                             href={publisherHref}
                             className="flex items-center gap-1 font-semibold text-white hover:underline"
                         >
-                            {post.publisher?.name ?? post.author.name}
+                            {post.publisher ? (
+                                post.publisher.name
+                            ) : (
+                                <span style={plusNameStyle(post.author.plus)}>
+                                    {post.author.name}
+                                </span>
+                            )}
                             {(post.publisher ?? post.author).is_verified && (
                                 <VerifiedBadge />
+                            )}
+                            {!post.publisher && post.author.plus && (
+                                <PlusBadge />
                             )}
                         </Link>
                         {post.badge && (

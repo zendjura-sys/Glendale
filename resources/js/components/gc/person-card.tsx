@@ -7,6 +7,7 @@ import { FriendButton } from './friend-button';
 import { PlayingBadge } from './playing';
 import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
+import { PlusBadge, plusNameStyle } from './plus';
 import { tr } from '@/lib/i18n';
 
 const listLabel: Record<FriendList, string> = {
@@ -26,8 +27,11 @@ export function PersonCard({ person }: { person: Person }) {
                 href={`/${person.username}`}
                 className="relative mt-3 flex max-w-full items-center gap-1 truncate text-[15px] font-semibold text-white hover:underline"
             >
-                <span className="truncate">{person.alias || person.name}</span>
+                <span className="truncate" style={plusNameStyle(person.plus)}>
+                    {person.alias || person.name}
+                </span>
                 {person.is_verified && <VerifiedBadge />}
+                {person.plus && <PlusBadge />}
             </Link>
             {person.alias && (
                 <p className="relative mt-0.5 truncate text-xs text-white/40">
@@ -166,10 +170,16 @@ export function PersonRow({
                     href={`/${person.username}`}
                     className="flex items-center gap-1 truncate text-sm font-semibold text-white hover:underline"
                 >
-                    <span className="truncate">{person.name}</span>
+                    <span
+                        className="truncate"
+                        style={plusNameStyle(person.plus)}
+                    >
+                        {person.name}
+                    </span>
                     {person.is_verified && (
                         <VerifiedBadge className="size-3.5" />
                     )}
+                    {person.plus && <PlusBadge className="size-3.5" />}
                 </Link>
                 {person.playing ? (
                     <PlayingBadge

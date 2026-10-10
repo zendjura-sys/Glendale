@@ -13,6 +13,7 @@ import {
     MessageSquareHeart,
     Settings,
     ShieldCheck,
+    Sparkles,
     UserRound,
     UsersRound,
     X,
@@ -29,6 +30,7 @@ import { QuickSearch } from '@/components/gc/quick-search';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VoiceBar } from '@/components/gc/voice-bar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
+import { PlusBadge, plusNameStyle } from '@/components/gc/plus';
 import { PlayerBar } from '@/components/music/player-bar';
 import {
     DropdownMenu,
@@ -91,10 +93,13 @@ function Sidebar() {
                 <UserAvatar user={user} size="md" ring />
                 <span className="min-w-0">
                     <span className="flex items-center gap-1 truncate text-sm font-semibold text-white">
-                        {user.first_name}
+                        <span style={plusNameStyle(user.plus)}>
+                            {user.first_name}
+                        </span>
                         {user.is_verified && (
                             <VerifiedBadge className="size-3.5" />
                         )}
+                        {user.plus && <PlusBadge className="size-3.5" />}
                     </span>
                     <span className="block truncate text-xs text-white/45">
                         @{user.username}
@@ -464,6 +469,11 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
 
     const extra = [
         {
+            href: '/plus',
+            label: 'GameCon+',
+            icon: Sparkles,
+        },
+        {
             href: '/invite',
             label: tr('Запросити друзів'),
             icon: UserPlus,
@@ -507,9 +517,14 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                         <UserAvatar user={user} size="md" ring />
                         <span className="min-w-0">
                             <span className="flex items-center gap-1 truncate text-sm font-semibold text-white">
-                                {user.name}
+                                <span style={plusNameStyle(user.plus)}>
+                                    {user.name}
+                                </span>
                                 {user.is_verified && (
                                     <VerifiedBadge className="size-3.5" />
+                                )}
+                                {user.plus && (
+                                    <PlusBadge className="size-3.5" />
                                 )}
                             </span>
                             <span className="block truncate text-xs text-white/45">

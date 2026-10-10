@@ -25,20 +25,21 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $starts_at
  * @property Carbon $expires_at
  * @property Carbon|null $closed_at
+ * @property Carbon|null $bumped_until GameCon+: оголошення підняте нагору до цього часу
  * @property Carbon $created_at
  * @property-read User $user
  * @property-read Game|null $game
  * @property-read GtaServer|null $server
  * @property-read Collection<int, PartyMember> $members
  */
-#[Fillable(['user_id', 'game_id', 'gta_server_id', 'title', 'note', 'platform', 'roles', 'slots', 'starts_at', 'expires_at', 'closed_at'])]
+#[Fillable(['user_id', 'game_id', 'gta_server_id', 'title', 'note', 'platform', 'roles', 'slots', 'starts_at', 'expires_at', 'closed_at', 'bumped_until'])]
 class PartyPost extends Model
 {
     public const PLATFORMS = ['pc' => 'ПК', 'playstation' => 'PlayStation', 'xbox' => 'Xbox', 'switch' => 'Switch', 'mobile' => 'Мобільні'];
 
     protected function casts(): array
     {
-        return ['roles' => 'array', 'starts_at' => 'datetime', 'expires_at' => 'datetime', 'closed_at' => 'datetime', 'slots' => 'integer'];
+        return ['roles' => 'array', 'starts_at' => 'datetime', 'expires_at' => 'datetime', 'closed_at' => 'datetime', 'bumped_until' => 'datetime', 'slots' => 'integer'];
     }
 
     /**

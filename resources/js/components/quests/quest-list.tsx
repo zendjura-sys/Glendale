@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useState } from 'react';
+import { PlusBadge } from '@/components/gc/plus';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
@@ -26,6 +27,8 @@ export type Quest = {
     xp: number;
     done: boolean;
     claimed: boolean;
+    /** GameCon+: досвід без очок сезону. */
+    bonus?: boolean;
 };
 
 const ICONS: Record<string, LucideIcon> = {
@@ -104,6 +107,12 @@ export function QuestList({ quests }: { quests: Quest[] }) {
                             >
                                 {TITLES()[quest.key] ?? quest.title}
                             </Link>
+                            {quest.bonus && (
+                                <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-indigo-200/80">
+                                    <PlusBadge className="size-3 rounded-[4px] [&_svg]:size-2.5" />
+                                    {tr('Бонус GameCon+ · без очок сезону')}
+                                </span>
+                            )}
                             <div className="mt-1.5 flex items-center gap-2">
                                 <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-white/10">
                                     <span

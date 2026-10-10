@@ -6,7 +6,9 @@ use App\Models\PartyMember;
 use App\Models\PartyPost;
 use App\Models\User;
 use App\Notifications\PartyJoined;
+use App\Services\Plus\Plus;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Дошка «Пошук паті»: оголошення живе до старту + 3 години (або 3 години, якщо «зараз»),
@@ -14,9 +16,6 @@ use Illuminate\Support\Carbon;
  */
 class PartyBoard
 {
-    /** Скільки відкритих оголошень може мати одна людина. */
-    public const OPEN_LIMIT = 3;
-
     public const HOURS = 3;
 
     /**
@@ -24,7 +23,11 @@ class PartyBoard
      */
     public function create(User $user, array $data): PartyPost
     {
-        abort_if(PartyPost::query()->open()->where('user_id', $user->id)->count() >= self::OPEN_LIMIT, 422, 'Можна мати до трьох відкритих оголошень.');
+        abort_if(
+            PartyPost::query()->open()->where('user_id', $user->id)->count() >= (int) app(Plus::class)->limit($user, 'party_open'),
+            422,
+            $user->isPlus() ? 'Можна мати до п’яти відкритих оголошень.' : 'Можна мати до трьох відкритих оголошень. З GameCon+ — до п’яти.',
+        );
         $start = $data['starts_at'] ?? null;
 
         return PartyPost::query()->create([
@@ -49,6 +52,19 @@ class PartyBoard
 
         PartyMember::query()->create(['party_post_id' => $party->id, 'user_id' => $user->id, 'role' => $role]);
         $party->user->notify(new PartyJoined($user, $party, $role));
+    }
+
+    /** GameCon+: раз на добу підняти своє оголошення нагору на годину. */
+    public function bump(PartyPost $party, User $user): void
+    {
+        abort_unless($party->user_id === $user->id, 403);
+        abort_unless($user->isPlus(), 403, 'Піднімати оголошення можна з GameCon+.');
+        abort_unless($party->isOpen(), 422, 'Оголошення вже закрите.');
+        $key = 'party.bump.'.$user->id;
+        abort_if(Cache::has($key), 429, 'Піднімати оголошення можна раз на добу.');
+
+        $party->update(['bumped_until' => now()->addHour()]);
+        Cache::put($key, true, now()->addDay());
     }
 
     public function leave(PartyPost $party, User $user): void
@@ -88,6 +104,7 @@ class PartyBoard
             'starts_at' => $party->starts_at?->toIso8601String(),
             'expires_at' => $party->expires_at->toIso8601String(),
             'open' => $party->isOpen(),
+            'bumped' => $party->bumped_until !== null && $party->bumped_until->isFuture(),
             'mine' => $party->user_id === $viewer->id,
             'joined' => $party->hasMember($viewer),
             'host' => $party->user->toCard(),

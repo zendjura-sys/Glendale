@@ -31,6 +31,7 @@ class PartyController extends Controller
             ->when($filters['game'] ?? null, fn (Builder $q, string $slug) => $q->whereHas('game', fn (Builder $g) => $g->where('slug', $slug)))
             ->when($filters['server'] ?? null, fn (Builder $q, string $slug) => $q->whereHas('server', fn (Builder $s) => $s->where('slug', $slug)))
             ->when($filters['platform'] ?? null, fn (Builder $q, string $platform) => $q->where('platform', $platform))
+            ->orderByRaw('case when bumped_until > ? then 0 else 1 end', [now()])
             ->orderByRaw('coalesce(starts_at, created_at)')
             ->limit(60)
             ->get();
@@ -101,6 +102,14 @@ class PartyController extends Controller
     public function leave(Request $request, PartyPost $party): RedirectResponse
     {
         $this->board->leave($party, $request->user());
+
+        return back();
+    }
+
+    public function bump(Request $request, PartyPost $party): RedirectResponse
+    {
+        $this->board->bump($party, $request->user());
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Оголошення піднято нагору на годину.']);
 
         return back();
     }

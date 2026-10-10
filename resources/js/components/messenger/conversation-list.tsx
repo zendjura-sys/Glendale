@@ -10,6 +10,7 @@ import {
 import { useState } from 'react';
 import { messagePreview } from '@/components/gc/inbox-listener';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
+import { PlusBadge } from '@/components/gc/plus';
 import { shortTime } from '@/lib/format';
 import { usePlayer } from '@/lib/player';
 import { cn, dockedAboveNav } from '@/lib/utils';
@@ -155,6 +156,9 @@ export function ConversationList({
                                         </span>
                                         {conversation.peer?.is_verified && (
                                             <VerifiedBadge className="size-3.5 shrink-0" />
+                                        )}
+                                        {conversation.peer?.plus && (
+                                            <PlusBadge className="size-3.5" />
                                         )}
                                         {conversation.pinned && (
                                             <Pin className="size-3.5 shrink-0 fill-current text-white/70" />
