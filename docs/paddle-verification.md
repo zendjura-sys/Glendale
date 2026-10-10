@@ -7,27 +7,27 @@
 ## 0. Перед заявкой — что должно быть на сайте
 
 1. **Задеплоить ветку** с Paddle и юридическими страницами:
-   ```bash
-   composer install --no-dev --optimize-autoloader   # добавился laravel/cashier-paddle
-   php artisan migrate --force                       # миграции 000079–000085
-   npm ci && npm run build
-   php artisan optimize
-   ```
+    ```bash
+    composer install --no-dev --optimize-autoloader   # добавился laravel/cashier-paddle
+    php artisan migrate --force                       # миграции 000079–000085
+    npm ci && npm run build
+    php artisan optimize
+    ```
 2. **Заполнить реквизиты в `.env`** (их видит проверяющий Paddle — имя должно совпадать с тем, что в аккаунте Paddle):
-   ```dotenv
-   LEGAL_OPERATOR="Иван Иванов"        # ФИО физлица или название ФОП/компании — КАК В АККАУНТЕ PADDLE
-   LEGAL_EMAIL=support@gamecon.online   # рабочий ящик, на него будут писать покупатели
-   LEGAL_ADDRESS="г. Киев, Украина"     # можно город/страну; полный адрес — по желанию
-   LEGAL_COUNTRY=Ukraine                # право этой страны применяется в Terms
-   LEGAL_UPDATED=2026-10-12             # меняйте при правке документов
-   ```
-   Затем `php artisan config:cache`.
+    ```dotenv
+    LEGAL_OPERATOR="Иван Иванов"        # ФИО физлица или название ФОП/компании — КАК В АККАУНТЕ PADDLE
+    LEGAL_EMAIL=support@gamecon.online   # рабочий ящик, на него будут писать покупатели
+    LEGAL_ADDRESS="г. Киев, Украина"     # можно город/страну; полный адрес — по желанию
+    LEGAL_COUNTRY=Ukraine                # право этой страны применяется в Terms
+    LEGAL_UPDATED=2026-10-12             # меняйте при правке документов
+    ```
+    Затем `php artisan config:cache`.
 3. **Проверить, что открывается без входа** (в окне инкогнито):
-   - https://gamecon.online/pricing
-   - https://gamecon.online/terms
-   - https://gamecon.online/privacy
-   - https://gamecon.online/refund-policy
-   - футер с этими ссылками и строкой «Payments securely processed by Paddle as Merchant of Record» внизу любой страницы, включая главную и вход.
+    - https://gamecon.online/pricing
+    - https://gamecon.online/terms
+    - https://gamecon.online/privacy
+    - https://gamecon.online/refund-policy
+    - футер с этими ссылками и строкой «Payments securely processed by Paddle as Merchant of Record» внизу любой страницы, включая главную и вход.
 4. **Почта `LEGAL_EMAIL` должна принимать письма** — Paddle иногда пишет туда для проверки.
 
 > ⚠️ **Риск: раздел «Кино».** Paddle запрещает продажу товаров, связанных с нарушением авторских прав, и проверяющий может открыть сайт целиком. Сторонние плееры (Kodik, Videoseed) с фильмами — это то, что может вызвать отказ, даже если подписка за кино не берёт денег. На время проверки рекомендую выключить модуль «Кино» для гостей (Админка → Модули) или целиком, а в описании бизнеса не упоминать фильмы. В Terms уже прописано, что видео не хранятся на наших серверах и встраиваются сторонние плееры, но это не гарантия одобрения.
@@ -48,18 +48,18 @@
 
 **Где:** Paddle Dashboard → **Checkout → Website approval** (или в онбординге «Verify your website») → **Add domain**.
 
-| Поле в форме | Что вписать |
-|---|---|
-| **Web domain** | `gamecon.online` (без `https://` и без `www`, если сайт на голом домене) |
-| **Pricing page** | `https://gamecon.online/pricing` |
-| **Terms of service** | `https://gamecon.online/terms` |
-| **Privacy policy** | `https://gamecon.online/privacy` |
-| **Refund policy** | `https://gamecon.online/refund-policy` |
+| Поле в форме         | Что вписать                                                              |
+| -------------------- | ------------------------------------------------------------------------ |
+| **Web domain**       | `gamecon.online` (без `https://` и без `www`, если сайт на голом домене) |
+| **Pricing page**     | `https://gamecon.online/pricing`                                         |
+| **Terms of service** | `https://gamecon.online/terms`                                           |
+| **Privacy policy**   | `https://gamecon.online/privacy`                                         |
+| **Refund policy**    | `https://gamecon.online/refund-policy`                                   |
 
 Если форма спрашивает дополнительно:
 
 - **What do you sell / Product description** (на английском):
-  > GameCon is a social network for gamers. GameCon+ is an optional SaaS subscription (monthly/yearly, personal or family) that unlocks cosmetic and convenience features: a profile badge and name color, animated avatar and cover, avatar frames, higher limits for RP characters, pinned posts, party listings and chat file size, extra stickers and reactions. Users can gift GameCon+ to friends. Game server owners can buy time-limited promotion of their server listing (top placement, highlighted card, banner, always labeled as an ad). All core features of the network stay free.
+    > GameCon is a social network for gamers. GameCon+ is an optional SaaS subscription (monthly/yearly, personal or family) that unlocks cosmetic and convenience features: a profile badge and name color, animated avatar and cover, avatar frames, higher limits for RP characters, pinned posts, party listings and chat file size, extra stickers and reactions. Users can gift GameCon+ to friends. Game server owners can buy time-limited promotion of their server listing (top placement, highlighted card, banner, always labeled as an ad). All core features of the network stay free.
 - **How is the product delivered?** — `Instantly, online, in the user's account after payment (digital SaaS).`
 - **Pricing model** — `Recurring subscriptions (monthly/yearly) and one-time purchases (gifts, server promotion).`
 - **Do you sell physical goods / content you don't own?** — `No physical goods. No third-party content is sold.`
@@ -68,15 +68,15 @@
 
 ### Что именно проверяет Paddle (и где это у нас)
 
-| Требование Paddle | Где выполнено |
-|---|---|
-| Цены видны без регистрации | `/pricing` — строится из каталога и показывает только товары с Price ID |
-| Описание продукта | `/pricing`, раздел 7 Terms |
-| Юр. имя продавца в Terms | `LEGAL_OPERATOR` в шапке Terms/Privacy |
-| Paddle как Merchant of Record | Terms §7, Refund §1, футер на всех страницах |
-| Политика возврата с понятным сроком | Refund: 14 дней, двойные списания, отмена в 1 клик |
-| Политика конфиденциальности | `/privacy` (GDPR, Paddle как получатель данных) |
-| Контакт для покупателей | `LEGAL_EMAIL` во всех документах |
+| Требование Paddle                   | Где выполнено                                                           |
+| ----------------------------------- | ----------------------------------------------------------------------- |
+| Цены видны без регистрации          | `/pricing` — строится из каталога и показывает только товары с Price ID |
+| Описание продукта                   | `/pricing`, раздел 7 Terms                                              |
+| Юр. имя продавца в Terms            | `LEGAL_OPERATOR` в шапке Terms/Privacy                                  |
+| Paddle как Merchant of Record       | Terms §7, Refund §1, футер на всех страницах                            |
+| Политика возврата с понятным сроком | Refund: 14 дней, двойные списания, отмена в 1 клик                      |
+| Политика конфиденциальности         | `/privacy` (GDPR, Paddle как получатель данных)                         |
+| Контакт для покупателей             | `LEGAL_EMAIL` во всех документах                                        |
 
 ---
 
@@ -86,28 +86,28 @@
 
 1. **Товары и цены:** Catalog → Products → New product. Создайте товары и цены (валюта UAH; если Paddle не даёт UAH — USD/EUR, тогда обновите цены на `/pricing` в `config/plus.php`):
 
-   | Ключ в админке | Товар | Цена | Тип |
-   |---|---|---|---|
-   | `plus_month` | GameCon+ Monthly | 149 ₴ | recurring, 1 month |
-   | `plus_year` | GameCon+ Yearly | 1290 ₴ | recurring, 1 year |
-   | `family_month` | GameCon+ Family Monthly | 399 ₴ | recurring, 1 month |
-   | `family_year` | GameCon+ Family Yearly | 3490 ₴ | recurring, 1 year |
-   | `gift_month` | GameCon+ Gift (1 month) | 149 ₴ | one-time |
-   | `gift_year` | GameCon+ Gift (1 year) | 1290 ₴ | one-time |
-   | `promo_top_7` / `promo_top_30` | Server Top 7/30 days | 499 / 1490 ₴ | one-time |
-   | `promo_highlight_7` / `promo_highlight_30` | Highlighted card 7/30 days | 199 / 590 ₴ | one-time |
-   | `promo_banner_30` | Catalog banner 30 days | 2490 ₴ | one-time |
+    | Ключ в админке                             | Товар                      | Цена         | Тип                |
+    | ------------------------------------------ | -------------------------- | ------------ | ------------------ |
+    | `plus_month`                               | GameCon+ Monthly           | 149 ₴        | recurring, 1 month |
+    | `plus_year`                                | GameCon+ Yearly            | 1290 ₴       | recurring, 1 year  |
+    | `family_month`                             | GameCon+ Family Monthly    | 399 ₴        | recurring, 1 month |
+    | `family_year`                              | GameCon+ Family Yearly     | 3490 ₴       | recurring, 1 year  |
+    | `gift_month`                               | GameCon+ Gift (1 month)    | 149 ₴        | one-time           |
+    | `gift_year`                                | GameCon+ Gift (1 year)     | 1290 ₴       | one-time           |
+    | `promo_top_7` / `promo_top_30`             | Server Top 7/30 days       | 499 / 1490 ₴ | one-time           |
+    | `promo_highlight_7` / `promo_highlight_30` | Highlighted card 7/30 days | 199 / 590 ₴  | one-time           |
+    | `promo_banner_30`                          | Catalog banner 30 days     | 2490 ₴       | one-time           |
 
-   Товары, которые не хотите продавать, просто не создавайте и не вписывайте Price ID — они исчезнут и с `/pricing`, и с сайта.
+    Товары, которые не хотите продавать, просто не создавайте и не вписывайте Price ID — они исчезнут и с `/pricing`, и с сайта.
 
 2. **Ключи:** Developer Tools → Authentication:
-   - **API key** (`pdl_...`) — права на transactions, customers, subscriptions, adjustments (read/write);
-   - **Client-side token** (`test_...` в sandbox, `live_...` в live);
-   - **Seller ID** — в шапке Developer Tools.
+    - **API key** (`pdl_...`) — права на transactions, customers, subscriptions, adjustments (read/write);
+    - **Client-side token** (`test_...` в sandbox, `live_...` в live);
+    - **Seller ID** — в шапке Developer Tools.
 3. **Вебхук:** Developer Tools → Notifications → **New destination**:
-   - URL: `https://gamecon.online/paddle/webhook`
-   - события: `subscription.*`, `transaction.*`, `customer.*`, `adjustment.*`
-   - скопировать **Secret key**.
+    - URL: `https://gamecon.online/paddle/webhook`
+    - события: `subscription.*`, `transaction.*`, `customer.*`, `adjustment.*`
+    - скопировать **Secret key**.
 4. **Checkout settings:** Checkout → Checkout settings → **Default payment link**: `https://gamecon.online/plus`.
 5. **Брендинг:** Checkout → Branding — цвет кнопок `#6366F1`, логотип GameCon. (Тему light/dark и язык сайт передаёт сам.)
 
