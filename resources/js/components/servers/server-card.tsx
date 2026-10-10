@@ -12,13 +12,26 @@ import {
     Vote,
 } from 'lucide-react';
 import { useState } from 'react';
+import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import type { GtaServerCard } from '@/types';
 import { OnlineMeter, ServerIcon } from './server-icon';
 import { shortNumber } from '@/lib/format';
 import { LOCALE, tr } from '@/lib/i18n';
 
-export function ConnectButton({ value }: { value: string }) {
+/** Перехід для аналітики власника (без очікування відповіді). */
+export function trackServerClick(slug: string | undefined, kind: string) {
+    if (!slug) return;
+    void api('POST', `/servers/${slug}/click`, { kind }).catch(() => undefined);
+}
+
+export function ConnectButton({
+    value,
+    slug,
+}: {
+    value: string;
+    slug?: string;
+}) {
     const [copied, setCopied] = useState(false);
 
     return (
@@ -26,6 +39,7 @@ export function ConnectButton({ value }: { value: string }) {
             type="button"
             onClick={(event) => {
                 event.preventDefault();
+                trackServerClick(slug, 'connect');
                 void navigator.clipboard?.writeText(value).then(() => {
                     setCopied(true);
                     setTimeout(() => setCopied(false), 1500);
@@ -48,24 +62,44 @@ export function ServerLinks({
     server,
     className,
 }: {
-    server: Pick<GtaServerCard, 'website' | 'discord' | 'telegram'>;
+    server: Pick<GtaServerCard, 'website' | 'discord' | 'telegram'> & {
+        slug?: string;
+    };
     className?: string;
 }) {
     const links = [
-        { href: server.website, icon: Globe, label: tr('Сайт') },
-        { href: server.discord, icon: MessageCircle, label: 'Discord' },
-        { href: server.telegram, icon: Send, label: 'Telegram' },
+        {
+            href: server.website,
+            icon: Globe,
+            label: tr('Сайт'),
+            kind: 'website',
+        },
+        {
+            href: server.discord,
+            icon: MessageCircle,
+            label: 'Discord',
+            kind: 'discord',
+        },
+        {
+            href: server.telegram,
+            icon: Send,
+            label: 'Telegram',
+            kind: 'telegram',
+        },
     ].filter((link) => link.href);
 
     return (
         <div className={cn('flex gap-1.5', className)}>
-            {links.map(({ href, icon: Icon, label }) => (
+            {links.map(({ href, icon: Icon, label, kind }) => (
                 <a
                     key={label}
                     href={href!}
                     target="_blank"
                     rel="noreferrer noopener"
-                    onClick={(event) => event.stopPropagation()}
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        trackServerClick(server.slug, kind);
+                    }}
                     title={label}
                     className="flex size-8 items-center justify-center rounded-lg bg-white/[0.04] text-white/50 ring-1 ring-white/[0.06] transition hover:bg-white/10 hover:text-white"
                 >
@@ -167,7 +201,10 @@ export function ServerCard({
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2">
                         {server.connect ? (
-                            <ConnectButton value={server.connect} />
+                            <ConnectButton
+                                value={server.connect}
+                                slug={server.slug}
+                            />
                         ) : (
                             <span className="inline-flex items-center gap-1 text-xs text-white/40">
                                 <Crown className="size-3.5" />

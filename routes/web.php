@@ -415,6 +415,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('{server}/tags', [ServerController::class, 'tags'])->name('tags');
         Route::post('{server}/reviews', [ServerController::class, 'review'])->middleware('throttle:20,1')->name('reviews.store');
         Route::post('{server}/vote', [ServerController::class, 'vote'])->middleware('throttle:10,1')->name('vote');
+        Route::post('{server}/click', [ServerController::class, 'click'])->middleware('throttle:60,1')->name('click');
         Route::post('{server}/apps', [ServerAppController::class, 'store'])->middleware('throttle:10,1')->name('apps.store');
         Route::patch('{server}/apps/{app}', [ServerAppController::class, 'update'])->name('apps.update');
         Route::post('{server}/apps/{app}/secret', [ServerAppController::class, 'secret'])->middleware('throttle:10,1')->name('apps.secret');

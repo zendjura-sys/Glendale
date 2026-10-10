@@ -22,6 +22,8 @@ import { ConnectButton, ServerLinks } from '@/components/servers/server-card';
 import { OnlineMeter, ServerIcon } from '@/components/servers/server-icon';
 import { VotePanel } from '@/components/servers/server-votes';
 import { ServerApps, VerifiedPlayers } from '@/components/servers/server-apps';
+import { ServerAnalytics } from '@/components/servers/server-analytics';
+import type { ServerAnalyticsData } from '@/components/servers/server-analytics';
 import type { ServerApp, VerifiedInfo } from '@/components/servers/server-apps';
 import { CharacterRow } from '@/components/characters/character-card';
 import type { CharacterCardData } from '@/components/characters/character-card';
@@ -83,6 +85,7 @@ type Props = {
     votes: ServerVotesInfo | null;
     characters: CharacterCardData[];
     apps: ServerApp[] | null;
+    analytics?: ServerAnalyticsData | null;
     verified: VerifiedInfo;
 };
 
@@ -107,6 +110,7 @@ export default function ServerShow({
     characters,
     apps,
     verified,
+    analytics,
 }: Props) {
     const [inviteUsername, setInviteUsername] = useState('');
     const compareOn = usePlugin('server_compare');
@@ -178,7 +182,10 @@ export default function ServerShow({
                             )}
                             <div className="mt-4 flex flex-wrap items-center gap-3">
                                 {server.connect && (
-                                    <ConnectButton value={server.connect} />
+                                    <ConnectButton
+                                        value={server.connect}
+                                        slug={server.slug}
+                                    />
                                 )}
                                 <SaveButton
                                     kind="server"
@@ -355,6 +362,7 @@ export default function ServerShow({
                 </section>
                 <VerifiedPlayers verified={verified} />
                 {votes && <VotePanel slug={server.slug} votes={votes} />}
+                {analytics && <ServerAnalytics data={analytics} />}
                 {apps && <ServerApps slug={server.slug} apps={apps} />}
                 {charactersOn && (
                     <section className="glass rounded-3xl p-5">

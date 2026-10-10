@@ -25,12 +25,14 @@ use App\Services\FriendshipService;
 use App\Services\Presence\PlayingStatus;
 use App\Services\SavedItems;
 use App\Services\Servers\DiscordInvites;
+use App\Services\Servers\ServerAnalytics;
 use App\Services\Servers\ServerDirectory;
 use App\Services\Servers\ServerIconFetcher;
 use App\Services\Servers\ServerVotes;
 use App\Support\I18n\Locales;
 use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -166,6 +168,8 @@ class ServerController extends Controller
             ->sortByDesc('score')
             ->values();
 
+        app(ServerAnalytics::class)->view($server, $request->user());
+
         return Inertia::render('servers/show', [
             'server' => [
                 ...$server->toCard(),
@@ -195,6 +199,7 @@ class ServerController extends Controller
             'votes' => app(Plugins::class)->on('server_votes') ? app(ServerVotes::class)->forServer($server, $request->user()) : null,
             'characters' => CharacterController::cards(server: $server),
             'apps' => $server->owner_id === $request->user()->id || $request->user()->isAdmin() ? $this->apps($server) : null,
+            'analytics' => $server->owner_id === $request->user()->id || $request->user()->isStaff() ? Inertia::defer(fn () => app(ServerAnalytics::class)->summary($server)) : null,
             'verified' => [
                 'players' => ServerPlayer::query()->where('gta_server_id', $server->id)->count(),
                 'online' => ServerPlayer::query()->where('gta_server_id', $server->id)->where('online', true)->count(),
@@ -239,6 +244,14 @@ class ServerController extends Controller
                 'users' => OAuthToken::query()->where('oauth_client_id', $app->id)->distinct()->count('user_id'),
                 'secret' => is_array($fresh) && ($fresh['id'] ?? null) === $app->id ? $fresh['secret'] : null,
             ])->all());
+    }
+
+    public function click(Request $request, GtaServer $server, ServerAnalytics $analytics): JsonResponse
+    {
+        $data = $request->validate(['kind' => ['required', Rule::in(ServerAnalytics::CLICKS)]]);
+        $analytics->click($server, $request->user(), $data['kind']);
+
+        return response()->json(['ok' => true]);
     }
 
     public function vote(Request $request, GtaServer $server, ServerVotes $votes): RedirectResponse
