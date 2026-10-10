@@ -32,6 +32,8 @@ use Illuminate\Support\Carbon;
  * @property bool $spoiler
  * @property Carbon|null $edited_at
  * @property Carbon|null $publish_at
+ * @property bool $is_pending
+ * @property string|null $tag
  * @property int|null $shared_post_id
  * @property int|null $quoted_post_id
  * @property string|null $sticker
@@ -42,7 +44,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
-#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'card', 'visibility', 'is_pinned', 'is_draft', 'comments_enabled', 'spoiler', 'edited_at', 'publish_at', 'shared_post_id', 'quoted_post_id', 'sticker'])]
+#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'card', 'visibility', 'is_pinned', 'is_draft', 'comments_enabled', 'spoiler', 'edited_at', 'publish_at', 'shared_post_id', 'quoted_post_id', 'sticker', 'is_pending', 'tag'])]
 class Post extends Model
 {
     /** @use HasFactory<PostFactory> */
@@ -64,6 +66,7 @@ class Post extends Model
         return [
             'is_pinned' => 'boolean',
             'is_draft' => 'boolean',
+            'is_pending' => 'boolean',
             'comments_enabled' => 'boolean',
             'spoiler' => 'boolean',
             'as_community' => 'boolean',
@@ -159,7 +162,7 @@ class Post extends Model
      */
     public function scopeVisibleTo(Builder $query, ?User $viewer, array $friendIds = []): void
     {
-        $query->where('is_draft', false);
+        $query->where('is_draft', false)->where('is_pending', false);
         $query->where(fn (Builder $query) => $query->whereNull('publish_at')->orWhere('publish_at', '<=', now()));
         if ($viewer && ! $viewer->isStaff()) {
             $query->whereNotIn('author_id', UserBlock::query()->where('blocked_id', $viewer->id)->select('user_id'));

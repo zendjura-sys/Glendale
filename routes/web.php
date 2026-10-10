@@ -175,6 +175,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::delete('/', [CommunityController::class, 'destroy'])->name('destroy');
             Route::get('settings', [CommunityController::class, 'edit'])->name('edit');
             Route::patch('settings', [CommunityController::class, 'update'])->name('update');
+            Route::patch('settings/rules', [CommunityController::class, 'updateRules'])->name('rules.update');
+            Route::get('rules', [CommunityController::class, 'page'])->defaults('page', 'rules')->name('rules');
+            Route::get('handbook', [CommunityController::class, 'page'])->defaults('page', 'handbook')->name('handbook');
+            Route::post('queue/{post}', [CommunityController::class, 'approvePost'])->whereNumber('post')->name('queue.approve');
+            Route::delete('queue/{post}', [CommunityController::class, 'rejectPost'])->whereNumber('post')->name('queue.reject');
+            Route::patch('members/{user}/title', [CommunityMemberController::class, 'title'])->name('members.title');
             Route::post('images/{field}', [CommunityController::class, 'updateImage'])->whereIn('field', ['avatar', 'cover'])->name('image');
             Route::post('join', [CommunityController::class, 'join'])->middleware('throttle:60,1')->name('join');
             Route::post('invite-link', [InviteLinkController::class, 'community'])->middleware('throttle:20,1')->name('invite-link');

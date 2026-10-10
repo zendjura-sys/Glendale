@@ -44,6 +44,7 @@ type Props = {
         avatar_url: string | null;
         type: 'group' | 'public';
         canPostAsCommunity: boolean;
+        tags?: string[];
     } | null;
     className?: string;
 };
@@ -81,7 +82,9 @@ export function PostComposer({
         poll: { question: string; options: string[] } | null;
         spoiler: boolean;
         sticker: string | null;
+        tag: string;
     }>({
+        tag: '',
         body: '',
         spoiler: false,
         sticker: null,
@@ -185,7 +188,14 @@ export function PostComposer({
             forceFormData: true,
             preserveScroll: true,
             onSuccess: () => {
-                form.reset('body', 'images', 'poll', 'spoiler', 'sticker');
+                form.reset(
+                    'body',
+                    'images',
+                    'poll',
+                    'spoiler',
+                    'sticker',
+                    'tag',
+                );
                 setPickingSticker(false);
                 setTrack(null);
                 setCard(null);
@@ -551,6 +561,24 @@ export function PostComposer({
                             {tr('Від імені спільноти')}
                         </button>
                     )}
+
+                {community && (community.tags?.length ?? 0) > 0 && (
+                    <select
+                        value={form.data.tag}
+                        onChange={(event) =>
+                            form.setData('tag', event.target.value)
+                        }
+                        aria-label={tr('Мітка запису')}
+                        className="h-9 max-w-36 rounded-xl bg-white/[0.04] px-2 text-xs text-white/70"
+                    >
+                        <option value="">{tr('Без мітки')}</option>
+                        {(community.tags ?? []).map((tag) => (
+                            <option key={tag} value={tag}>
+                                #{tag}
+                            </option>
+                        ))}
+                    </select>
+                )}
 
                 {!wall && !community && (
                     <div className="flex rounded-xl bg-white/[0.04] p-0.5">

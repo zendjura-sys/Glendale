@@ -73,6 +73,7 @@ class CommunityService
             if ($invited && $existing->status === CommunityMember::STATUS_PENDING) {
                 $existing->update(['status' => CommunityMember::STATUS_ACTIVE]);
                 $this->recount($community);
+                app(CommunityWall::class)->welcome($community, $user);
             }
 
             return $existing->fresh()->status;
@@ -88,6 +89,8 @@ class CommunityService
 
         if ($status === CommunityMember::STATUS_PENDING) {
             Notification::send($this->admins($community), new CommunityActivity(CommunityActivity::REQUEST, $user, $community));
+        } else {
+            app(CommunityWall::class)->welcome($community, $user);
         }
 
         $this->recount($community);
@@ -121,6 +124,7 @@ class CommunityService
         if ($updated) {
             $user->notify(new CommunityActivity(CommunityActivity::APPROVED, null, $community));
             $this->recount($community);
+            app(CommunityWall::class)->welcome($community, $user);
         }
     }
 

@@ -1,20 +1,27 @@
 import { Head, InfiniteScroll, Link, router } from '@inertiajs/react';
 import {
+    BookOpen,
     CalendarDays,
     Camera,
+    Check,
+    ClipboardCheck,
     Crown,
     Globe,
+    Hash,
     ImageIcon,
     Info,
     Lock,
     MapPin,
     Megaphone,
     PenLine,
+    ScrollText,
     Settings,
     ShieldCheck,
     Tag,
+    Timer,
     UserPlus,
     UsersRound,
+    X,
 } from 'lucide-react';
 import { useRef } from 'react';
 import { membersLabel } from '@/components/communities/community-card';
@@ -49,6 +56,17 @@ type Props = {
         post: boolean;
         post_as_community: boolean;
         manage: boolean;
+        moderate: boolean;
+    };
+    tags: string[];
+    tag: string | null;
+    queue: PostItem[];
+    my_pending: number;
+    rules: {
+        rules: boolean;
+        handbook: boolean;
+        premoderation: boolean;
+        slow_mode: number;
     };
     stats: {
         members: number;
@@ -124,8 +142,22 @@ export default function CommunityShow({
     managers,
     photos,
     posts,
+    tags,
+    tag,
+    queue,
+    my_pending,
+    rules,
 }: Props) {
     const isPublic = community.type === 'public';
+    const moderate = (postId: number, approve: boolean) => {
+        const url = `/c/${community.slug}/queue/${postId}`;
+        const options = { preserveScroll: true };
+        if (approve) {
+            router.post(url, {}, options);
+        } else {
+            router.delete(url, options);
+        }
+    };
 
     return (
         <>
@@ -348,11 +380,42 @@ export default function CommunityShow({
                                 href={`/c/${community.slug}`}
                             />
                         )}
-                        {community.description && (
+                        {(community.description ||
+                            rules.rules ||
+                            rules.handbook) && (
                             <Widget title={tr('Інформація')} icon={Info}>
-                                <p className="px-1 text-sm leading-relaxed whitespace-pre-line text-white/75">
-                                    {community.description}
-                                </p>
+                                {community.description && (
+                                    <p className="px-1 text-sm leading-relaxed whitespace-pre-line text-white/75">
+                                        {community.description}
+                                    </p>
+                                )}
+                                {(rules.rules || rules.handbook) && (
+                                    <div
+                                        className={cn(
+                                            'flex flex-wrap gap-2 px-1',
+                                            community.description && 'mt-3',
+                                        )}
+                                    >
+                                        {rules.rules && (
+                                            <Link
+                                                href={`/c/${community.slug}/rules`}
+                                                className="inline-flex h-9 items-center gap-2 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white transition hover:bg-white/[0.1]"
+                                            >
+                                                <ScrollText className="size-4" />
+                                                {tr('Правила')}
+                                            </Link>
+                                        )}
+                                        {rules.handbook && (
+                                            <Link
+                                                href={`/c/${community.slug}/handbook`}
+                                                className="inline-flex h-9 items-center gap-2 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white transition hover:bg-white/[0.1]"
+                                            >
+                                                <BookOpen className="size-4" />
+                                                {tr('Довідник')}
+                                            </Link>
+                                        )}
+                                    </div>
+                                )}
                             </Widget>
                         )}
 
@@ -475,6 +538,48 @@ export default function CommunityShow({
                     </aside>
 
                     <div className="min-w-0 flex-1 space-y-4">
+                        {can.moderate && queue.length > 0 && (
+                            <section
+                                id="queue"
+                                className="glass space-y-3 rounded-3xl p-4 sm:p-5"
+                            >
+                                <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
+                                    <ClipboardCheck className="size-4 text-gc-amber" />
+                                    {tr('Черга на перевірку')}
+                                    <span className="rounded-full bg-gc-amber/15 px-2 text-xs leading-5 text-gc-amber">
+                                        {queue.length}
+                                    </span>
+                                </h2>
+                                {queue.map((post) => (
+                                    <div key={post.id} className="space-y-2">
+                                        <PostCard post={post} />
+                                        <div className="flex flex-wrap justify-end gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    moderate(post.id, false)
+                                                }
+                                                className="inline-flex h-9 items-center gap-2 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white/80 transition hover:bg-white/[0.1] hover:text-white"
+                                            >
+                                                <X className="size-4" />
+                                                {tr('Відхилити')}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    moderate(post.id, true)
+                                                }
+                                                className="inline-flex h-9 items-center gap-2 rounded-xl bg-gc-indigo px-3 text-sm font-semibold text-white transition hover:bg-gc-indigo/85"
+                                            >
+                                                <Check className="size-4" />
+                                                {tr('Опублікувати')}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </section>
+                        )}
+
                         {can.post && (
                             <PostComposer
                                 community={{
@@ -484,8 +589,79 @@ export default function CommunityShow({
                                     avatar_url: community.avatar_url,
                                     type: community.type,
                                     canPostAsCommunity: can.post_as_community,
+                                    tags,
                                 }}
                             />
+                        )}
+
+                        {can.post &&
+                            !can.moderate &&
+                            (rules.premoderation ||
+                                rules.slow_mode > 0 ||
+                                my_pending > 0) && (
+                                <p className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-xs text-white/50">
+                                    {rules.premoderation && (
+                                        <span className="inline-flex items-center gap-1">
+                                            <ClipboardCheck className="size-3.5" />
+                                            {tr(
+                                                'Записи з’являються після перевірки керівниками',
+                                            )}
+                                        </span>
+                                    )}
+                                    {rules.slow_mode > 0 && (
+                                        <span className="inline-flex items-center gap-1">
+                                            <Timer className="size-3.5" />
+                                            {tr(
+                                                'Повільний режим: один запис на {minutes} хв',
+                                                {
+                                                    minutes: Math.round(
+                                                        rules.slow_mode / 60,
+                                                    ),
+                                                },
+                                            )}
+                                        </span>
+                                    )}
+                                    {my_pending > 0 && (
+                                        <span className="text-gc-amber">
+                                            {tr(
+                                                'Ваших записів на перевірці: {count}',
+                                                {
+                                                    count: my_pending,
+                                                },
+                                            )}
+                                        </span>
+                                    )}
+                                </p>
+                            )}
+
+                        {tags.length > 0 && (
+                            <nav
+                                aria-label={tr('Мітки')}
+                                className="flex gap-2 overflow-x-auto pb-1"
+                            >
+                                {[null, ...tags].map((item) => (
+                                    <Link
+                                        key={item ?? '*'}
+                                        href={`/c/${community.slug}${item ? `?tag=${encodeURIComponent(item)}` : ''}`}
+                                        preserveScroll
+                                        className={cn(
+                                            'inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-3 text-xs font-medium transition',
+                                            tag === item
+                                                ? 'bg-gc-indigo text-white'
+                                                : 'bg-white/[0.05] text-white/65 hover:text-white',
+                                        )}
+                                    >
+                                        {item ? (
+                                            <>
+                                                <Hash className="size-3" />
+                                                {item}
+                                            </>
+                                        ) : (
+                                            tr('Усі записи')
+                                        )}
+                                    </Link>
+                                ))}
+                            </nav>
                         )}
 
                         {posts.data.length === 0 ? (

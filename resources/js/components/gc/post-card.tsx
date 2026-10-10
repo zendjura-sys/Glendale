@@ -1,9 +1,11 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     ChevronRight,
+    Clock,
     Earth,
     Eye,
     EyeOff,
+    Hash,
     Link2,
     Lock,
     MessageCircle,
@@ -36,6 +38,7 @@ import type { PostItem } from '@/types';
 import { MentionText } from './mention-text';
 import { SaveButton } from './save-button';
 import { Comments } from './comments';
+import { RoleBadge } from '@/components/communities/role-badge';
 import { CommunityAvatar } from './community-avatar';
 import { ReactionBar } from './reaction-bar';
 import { MediaGrid } from './media-grid';
@@ -140,6 +143,12 @@ export function PostCard({
                                 <VerifiedBadge />
                             )}
                         </Link>
+                        {post.badge && (
+                            <RoleBadge
+                                title={post.badge.title}
+                                color={post.badge.color}
+                            />
+                        )}
                         {post.wall && (
                             <>
                                 <ChevronRight className="size-3.5 text-white/30" />
@@ -165,6 +174,21 @@ export function PostCard({
                             className="size-3.5"
                             aria-label={visibilityMeta[post.visibility].label}
                         />
+                        {post.tag && (
+                            <Link
+                                href={post.tag.href}
+                                className="ml-1 inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2 py-0.5 text-xs font-medium text-white/70 hover:text-white"
+                            >
+                                <Hash className="size-3" />
+                                {post.tag.name}
+                            </Link>
+                        )}
+                        {post.pending && (
+                            <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-gc-amber/15 px-2 py-0.5 text-xs font-medium text-gc-amber">
+                                <Clock className="size-3" />{' '}
+                                {tr('На перевірці')}
+                            </span>
+                        )}
                         {post.is_pinned && (
                             <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-gc-blue/15 px-2 py-0.5 text-xs font-medium text-[#9fb6ff]">
                                 <Pin className="size-3" /> {tr('Закріплено')}

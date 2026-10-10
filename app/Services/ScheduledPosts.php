@@ -15,6 +15,7 @@ class ScheduledPosts
     {
         $due = Post::query()
             ->where('is_draft', false)
+            ->where('is_pending', false)
             ->whereNotNull('publish_at')
             ->where('publish_at', '<=', now())
             ->orderBy('id')
@@ -26,7 +27,7 @@ class ScheduledPosts
             $published = false;
             DB::transaction(function () use ($post, &$published) {
                 $fresh = Post::query()->whereKey($post->id)->lockForUpdate()->first();
-                if (! $fresh instanceof Post || $fresh->is_draft || $fresh->publish_at === null || $fresh->publish_at->isFuture()) {
+                if (! $fresh instanceof Post || $fresh->is_draft || $fresh->is_pending || $fresh->publish_at === null || $fresh->publish_at->isFuture()) {
                     return;
                 }
                 $at = $fresh->publish_at;

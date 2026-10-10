@@ -8,6 +8,7 @@ use App\Models\Movie;
 use App\Models\Photo;
 use App\Models\Post;
 use App\Notifications\PostInteraction;
+use App\Services\CommunityWall;
 use App\Services\FriendshipService;
 use App\Services\Mentions;
 use App\Services\Moderation\ContentFilter;
@@ -67,6 +68,7 @@ class CommentController extends Controller
         $filter = app(ContentFilter::class);
         $filter->ensureCanPost($user);
         $data['body'] = trim((string) ($data['body'] ?? ''));
+        app(CommunityWall::class)->guardComment($post, $user, $data['body']);
         if ($data['body'] !== '') {
             $data['body'] = (string) $filter->clean($data['body']);
         }

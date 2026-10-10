@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Comment;
 use App\Models\Community;
+use App\Models\CommunityMember;
 use App\Models\Like;
 use App\Models\Movie;
 use App\Models\PollOption;
@@ -35,6 +36,9 @@ class PostPresenter
 
     /** @var array<int, bool> */
     private array $muted = [];
+
+    /** @var array<string, array{title: string, color: string|null}> підписи ролей у спільнотах: "спільнота:автор" */
+    private array $badges = [];
 
     /**
      * Готує записи до показу: автор, стіна, вкладення, останні коментарі, лайки глядача.
@@ -109,6 +113,19 @@ class PostPresenter
             ? array_flip(app(CommunityService::class)->managedIds($viewer))
             : [];
 
+        $this->badges = [];
+        $communityPosts = $posts->filter(fn (Post $post) => $post->wall instanceof Community);
+        if ($communityPosts->isNotEmpty()) {
+            $badges = CommunityMember::query()
+                ->whereIn('community_id', $communityPosts->pluck('wall_id')->unique())
+                ->whereIn('user_id', $communityPosts->pluck('author_id')->unique())
+                ->whereNotNull('title')
+                ->get();
+            foreach ($badges as $member) {
+                $this->badges[$member->community_id.':'.$member->user_id] = ['title' => (string) $member->title, 'color' => $member->color];
+            }
+        }
+
         $commentIds = $previewComments->flatten()->pluck('id')->all();
         $likedCommentIds = $viewer && $commentIds ? Like::query()
             ->where('user_id', $viewer->id)
@@ -174,6 +191,9 @@ class PostPresenter
             'created_at' => $post->created_at->toIso8601String(),
             'edited_at' => $post->edited_at?->toIso8601String(),
             'author' => $post->author->toCard(),
+            'badge' => $community && ! $publisher ? $this->badges[$community->id.':'.$post->author_id] ?? null : null,
+            'tag' => $post->tag !== null && $community ? ['name' => $post->tag, 'href' => '/c/'.$community->slug.'?tag='.rawurlencode($post->tag)] : null,
+            'pending' => $post->is_pending,
             'publisher' => $publisher ? [...$publisher->toCard(), 'href' => '/c/'.$publisher->slug] : null,
             'wall' => $wallCard,
             'attachments' => $post->attachments->map(fn (PostAttachment $a) => [

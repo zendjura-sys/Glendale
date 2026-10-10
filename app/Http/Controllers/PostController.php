@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Models\UserMute;
 use App\Notifications\PostInteraction;
 use App\Services\CommunityService;
+use App\Services\CommunityWall;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
 use App\Services\Media\LinkPreview;
@@ -65,6 +66,11 @@ class PostController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $post = $this->publish($request);
+        if ($post->is_pending && ! $post->is_draft) {
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Запис надіслано на перевірку керівникам спільноти.']);
+
+            return back();
+        }
         if ($post->is_draft || $post->publish_at?->isFuture()) {
             Inertia::flash('toast', ['type' => 'success', 'message' => $post->is_draft ? 'Чернетку збережено.' : 'Запис заплановано.']);
 
@@ -100,6 +106,13 @@ class PostController extends Controller
         $waiting = $post->publish_at?->isFuture() === true;
         abort_unless($post->author_id === $request->user()->id && ($post->is_draft || $waiting), 403);
         $post->forceFill(['is_draft' => false, 'publish_at' => null, 'created_at' => now()])->save();
+        $wall = $post->wall;
+        if ($post->is_pending && $wall instanceof Community) {
+            app(CommunityWall::class)->announcePending($post, $wall);
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Запис надіслано на перевірку керівникам спільноти.']);
+
+            return to_route('communities.show', $wall);
+        }
         $this->scheduled->announce($post);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Запис опубліковано.']);
@@ -131,6 +144,7 @@ class PostController extends Controller
             'wall' => ['nullable', 'string', 'exists:users,username'],
             'community' => ['nullable', 'string'],
             'as_community' => ['nullable', 'boolean'],
+            'tag' => ['nullable', 'string', 'max:24'],
             'images' => ['nullable', 'array', 'max:'.$maxFiles],
             'images.*' => ['image', 'mimes:jpg,jpeg,png,webp,gif', 'max:'.$maxKb],
             'music' => ['nullable', 'array'],
@@ -156,6 +170,8 @@ class PostController extends Controller
 
         $music = isset($data['music']) ? $this->music($data['music']) : null;
         $asCommunity = false;
+        $pending = false;
+        $tag = null;
 
         if (isset($data['community'])) {
             $wallOwner = Community::query()->where('slug', $data['community'])->firstOrFail();
@@ -163,6 +179,10 @@ class PostController extends Controller
             abort_unless($this->communities->canPost($wallOwner, $membership), 403, 'Публікувати в цій спільноті можуть лише її керівники.');
             $asCommunity = $wallOwner->isPublic() ? true : (bool) ($data['as_community'] ?? false) && $membership->isManager();
             $data['visibility'] = Post::VISIBILITY_PUBLIC;
+            $rules = app(CommunityWall::class);
+            $rules->guard($wallOwner, $user, $membership, $data['body'] ?? null);
+            $tag = $rules->tag($wallOwner, $data['tag'] ?? null);
+            $pending = $rules->needsReview($wallOwner, $membership);
         } else {
             $wallOwner = isset($data['wall']) ? User::query()->where('username', $data['wall'])->firstOrFail() : $user;
         }
@@ -185,7 +205,7 @@ class PostController extends Controller
 
         $publishAt = $this->schedule($request, $data);
 
-        $post = DB::transaction(function () use ($request, $user, $wallOwner, $data, $asCommunity, $music, $movieId, $card, $publishAt) {
+        $post = DB::transaction(function () use ($request, $user, $wallOwner, $data, $asCommunity, $music, $movieId, $card, $publishAt, $pending, $tag) {
             $post = Post::query()->create([
                 'author_id' => $user->id,
                 'wall_type' => $wallOwner->getMorphClass(),
@@ -201,6 +221,8 @@ class PostController extends Controller
                 'spoiler' => (bool) ($data['spoiler'] ?? false),
                 'is_draft' => $request->boolean('draft'),
                 'publish_at' => $publishAt,
+                'is_pending' => $pending,
+                'tag' => $tag,
             ]);
 
             if (isset($data['poll'])) {
@@ -232,7 +254,9 @@ class PostController extends Controller
             return $post;
         });
 
-        if (! $post->is_draft && $publishAt === null) {
+        if ($pending && ! $post->is_draft && $wallOwner instanceof Community) {
+            app(CommunityWall::class)->announcePending($post, $wallOwner);
+        } elseif (! $pending && ! $post->is_draft && $publishAt === null) {
             $this->scheduled->announce($post);
         }
 
@@ -549,7 +573,7 @@ class PostController extends Controller
 
     private function authorizeView(?User $viewer, Post $post): void
     {
-        if ($post->is_draft || $post->publish_at?->isFuture()) {
+        if ($post->is_draft || $post->publish_at?->isFuture() || $post->is_pending) {
             abort_unless($viewer && ($viewer->id === $post->author_id || $viewer->isStaff()), 404);
 
             return;

@@ -30,11 +30,18 @@ use Illuminate\Support\Facades\Storage;
  * @property int|null $owner_id
  * @property int $members_count
  * @property bool $is_verified
+ * @property string|null $rules
+ * @property string|null $handbook
+ * @property string|null $welcome
+ * @property list<string>|null $banned_words
+ * @property list<string>|null $post_tags
+ * @property int $slow_mode
+ * @property bool $premoderation
  * @property Carbon $created_at
  * @property-read string|null $avatar_url
  * @property-read string|null $cover_url
  */
-#[Fillable(['slug', 'name', 'type', 'privacy', 'wall', 'category', 'status', 'description', 'website', 'city', 'avatar_path', 'cover_path', 'owner_id', 'is_verified'])]
+#[Fillable(['slug', 'name', 'type', 'privacy', 'wall', 'category', 'status', 'description', 'website', 'city', 'avatar_path', 'cover_path', 'owner_id', 'is_verified', 'rules', 'handbook', 'welcome', 'banned_words', 'post_tags', 'slow_mode', 'premoderation'])]
 class Community extends Model
 {
     use SoftDeletes;
@@ -80,6 +87,10 @@ class Community extends Model
     {
         return [
             'is_verified' => 'boolean',
+            'banned_words' => 'array',
+            'post_tags' => 'array',
+            'slow_mode' => 'integer',
+            'premoderation' => 'boolean',
         ];
     }
 

@@ -80,6 +80,9 @@ export type PostItem = {
     created_at: string;
     edited_at?: string | null;
     author: UserCard;
+    badge?: { title: string; color: string | null } | null;
+    tag?: { name: string; href: string } | null;
+    pending?: boolean;
     publisher: {
         id: number;
         name: string;

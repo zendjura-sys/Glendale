@@ -3,6 +3,14 @@ import { toast } from 'sonner';
 import { ArrowLeft, Globe2, Lock, Megaphone, UsersRound } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { selectClass } from '@/components/gc/admin';
+import {
+    RulesForm,
+    StatsCard,
+} from '@/components/communities/community-extras';
+import type {
+    CommunityExtras,
+    CommunityStats,
+} from '@/components/communities/community-extras';
 import { CommunityAvatar } from '@/components/gc/community-avatar';
 import { SettingsCard } from '@/layouts/settings/layout';
 import { cn } from '@/lib/utils';
@@ -14,6 +22,9 @@ type Props = {
     categories: Record<string, string>;
     isOwner: boolean;
     widget: string | null;
+    extras: CommunityExtras;
+    slowModes: number[];
+    stats?: CommunityStats;
 };
 
 const field =
@@ -75,6 +86,9 @@ export default function CommunitySettings({
     categories,
     isOwner,
     widget,
+    extras,
+    slowModes,
+    stats,
 }: Props) {
     const form = useForm({
         name: community.name,
@@ -362,6 +376,14 @@ export default function CommunitySettings({
                         </button>
                     </div>
                 </form>
+
+                <RulesForm
+                    slug={community.slug}
+                    extras={extras}
+                    slowModes={slowModes}
+                />
+
+                <StatsCard stats={stats} />
 
                 {isOwner && (
                     <SettingsCard

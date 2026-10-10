@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -12,8 +13,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $user_id
  * @property string $role
  * @property string $status
+ * @property string|null $title
+ * @property string|null $color
+ * @property Carbon|null $created_at
  */
-#[Fillable(['community_id', 'user_id', 'role', 'status'])]
+#[Fillable(['community_id', 'user_id', 'role', 'status', 'title', 'color'])]
 class CommunityMember extends Model
 {
     public const ROLE_OWNER = 'owner';
@@ -29,6 +33,9 @@ class CommunityMember extends Model
     public const STATUS_ACTIVE = 'active';
 
     public const STATUS_PENDING = 'pending';
+
+    /** Кольори підпису ролі (ключі палітри, не hex). */
+    public const COLORS = ['indigo', 'sky', 'emerald', 'amber', 'rose', 'violet'];
 
     /**
      * @return BelongsTo<Community, $this>
