@@ -184,6 +184,10 @@ class Api {
           if (first is String) return first;
         }
         final message = text(json['message']);
+        // Застосунок новіший за сайт: маршруту ще немає на сервері.
+        if (message != null && RegExp(r'^The route .+ could not be found\.?$').hasMatch(message)) {
+          return tr('Цей розділ запрацює після оновлення сайту. Спробуйте пізніше.');
+        }
         if (message != null) return message;
       }
     } catch (_) {}
