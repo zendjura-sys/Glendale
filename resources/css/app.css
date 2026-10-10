@@ -947,3 +947,47 @@ label:has(
     outline: 2px solid var(--ring);
     outline-offset: 2px;
 }
+
+/* Юридичні документи (resources/views/legal/*): HTML з Blade у скляній картці. */
+.legal-doc {
+    color: rgb(255 255 255 / 0.78);
+    font-size: 15px;
+    line-height: 1.7;
+}
+.legal-doc h2 {
+    margin: 2rem 0 0.6rem;
+    font-family: var(--font-display, inherit);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #fff;
+}
+.legal-doc h3 {
+    margin: 1.25rem 0 0.4rem;
+    font-weight: 600;
+    color: #fff;
+}
+.legal-doc p {
+    margin: 0.6rem 0;
+}
+.legal-doc ul,
+.legal-doc ol {
+    margin: 0.6rem 0;
+    padding-left: 1.3rem;
+}
+.legal-doc ul {
+    list-style: disc;
+}
+.legal-doc ol {
+    list-style: decimal;
+}
+.legal-doc li {
+    margin: 0.3rem 0;
+}
+.legal-doc a {
+    color: #a5b4fc;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.legal-doc strong {
+    color: #fff;
+}

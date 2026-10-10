@@ -21,6 +21,7 @@ import { compactNumber, plural } from '@/lib/format';
 import { login, register } from '@/routes';
 import type { UserCard } from '@/types';
 import { tr } from '@/lib/i18n';
+import { SiteFooter } from '@/components/gc/site-footer';
 
 type Props = {
     stats: { users: number; online: number; posts: number };
@@ -393,10 +394,7 @@ export default function Welcome({
                 </section>
             </main>
 
-            <footer className="border-t border-white/[0.05] py-8 text-center text-xs text-white/30">
-                © {new Date().getFullYear()}{' '}
-                {tr('GameCon · Соціальна мережа нового покоління')}
-            </footer>
+            <SiteFooter className="py-8" />
         </>
     );
 }

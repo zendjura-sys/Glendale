@@ -61,6 +61,16 @@ class HandleInertiaRequests extends Middleware
             'name' => $this->settings->get('site_name'),
             'locale' => app()->getLocale(),
             'locales' => app(Locales::class)->options(),
+            // Футер на всіх сторінках: документи, копірайт мовою інтерфейсу (lang/{locale}/ui.php) і рядок Paddle.
+            'footer' => [
+                'year' => (int) date('Y'),
+                'terms' => __('ui.terms'),
+                'privacy' => __('ui.privacy'),
+                'refund' => __('ui.refund'),
+                'pricing' => __('ui.pricing'),
+                'rights' => __('ui.all_rights_reserved'),
+                'paddle' => __('ui.paddle_mor'),
+            ],
             'site' => [
                 'name' => $this->settings->get('site_name'),
                 'tagline' => $this->settings->get('tagline'),

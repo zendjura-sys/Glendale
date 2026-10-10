@@ -19,6 +19,7 @@ use App\Http\Controllers\FollowController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\InviteLinkController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\ListenPartyController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\Mail\UnsubscribeController;
@@ -63,6 +64,12 @@ Route::post('locale', [LocaleController::class, 'update'])->middleware('throttle
 Route::get('i18n/{locale}.js', [LocaleController::class, 'script'])->where('locale', '[A-Za-z]{2,3}(-[A-Za-z0-9]{2,4}){0,2}')->name('locale.script');
 
 Route::get('/', WelcomeController::class)->name('home');
+
+// Юридичні документи й тарифи — відкриті без входу (їх перевіряє Paddle). Мова: ?lang=en|uk|de|…
+Route::get('terms', [LegalController::class, 'terms'])->name('legal.terms');
+Route::get('privacy', [LegalController::class, 'privacy'])->name('legal.privacy');
+Route::get('refund-policy', [LegalController::class, 'refund'])->name('legal.refund');
+Route::get('pricing', [LegalController::class, 'pricing'])->name('legal.pricing');
 
 Route::redirect('dashboard', '/feed')->name('dashboard');
 

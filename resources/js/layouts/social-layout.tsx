@@ -61,6 +61,7 @@ import {
     openFeedback,
     openShortcuts,
 } from '@/components/gc/site-extras';
+import { SiteFooter } from '@/components/gc/site-footer';
 
 function useIsActive() {
     const { currentUrl } = useCurrentUrl();
@@ -667,6 +668,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 >
                     <Announcement />
                     <PageTransition>{children}</PageTransition>
+                    <SiteFooter />
                 </main>
             </div>
             <VoiceBar />

@@ -1,4 +1,4 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import {
     Clapperboard,
     Gamepad2,
@@ -12,6 +12,7 @@ import { Logo } from '@/components/gc/logo';
 import { LanguageSelect } from '@/components/gc/language-switcher';
 import { tr } from '@/lib/i18n';
 import { PaletteSync } from '@/components/gc/palette-sync';
+import { SiteFooter } from '@/components/gc/site-footer';
 
 const FEATURES = [
     {
@@ -110,8 +111,6 @@ export default function AuthLayout({
     description?: string;
     children: ReactNode;
 }) {
-    const { site } = usePage().props;
-
     return (
         <div className="relative flex min-h-dvh">
             <PaletteSync />
@@ -147,9 +146,7 @@ export default function AuthLayout({
                         <LanguageSelect />
                     </div>
 
-                    <p className="mt-6 text-center text-xs text-white/30">
-                        © {new Date().getFullYear()} {site?.name ?? 'GameCon'}
-                    </p>
+                    <SiteFooter className="mt-6 border-t-0 px-0" />
                 </div>
             </main>
         </div>

@@ -14,6 +14,16 @@ declare module '@inertiajs/core' {
             name: string;
             locale: string;
             locales: { code: string; native: string }[];
+            /** Підписи футера мовою інтерфейсу (lang/{locale}/ui.php). */
+            footer: {
+                year: number;
+                terms: string;
+                privacy: string;
+                refund: string;
+                pricing: string;
+                rights: string;
+                paddle: string;
+            };
             auth: Auth;
             site: {
                 name: string;
