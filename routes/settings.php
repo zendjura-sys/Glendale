@@ -6,6 +6,7 @@ use App\Http\Controllers\Settings\AppearanceController;
 use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
+use App\Http\Controllers\Settings\StreamController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 
@@ -25,6 +26,9 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('settings/account/sessions/{session}', [AccountController::class, 'revokeSession'])->whereNumber('session')->name('account.sessions.destroy');
     Route::delete('settings/account/tokens/{token}', [AccountController::class, 'revokeToken'])->whereNumber('token')->name('account.tokens.destroy');
     Route::delete('settings/account/sessions', [AccountController::class, 'revokeOthers'])->name('account.sessions.others');
+    Route::put('settings/stream', [StreamController::class, 'update'])->middleware('throttle:10,1')->name('stream.update');
+    Route::delete('settings/stream', [StreamController::class, 'destroy'])->name('stream.destroy');
+    Route::post('settings/stream/live', [StreamController::class, 'live'])->middleware('throttle:20,1')->name('stream.live');
     Route::delete('settings/account/connections/{client}', [AccountController::class, 'disconnect'])->whereNumber('client')->name('account.connections.destroy');
     Route::put('settings/account/profanity', [AccountController::class, 'profanity'])->name('account.profanity');
     Route::get('settings/account/export', [AccountController::class, 'export'])->middleware('throttle:3,60')->name('account.export');

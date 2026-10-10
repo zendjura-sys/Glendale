@@ -9,6 +9,7 @@ use App\Models\MovieSource;
 use App\Models\PushDevice;
 use App\Models\SpotifyAccount;
 use App\Models\User;
+use App\Models\UserStream;
 use App\Models\VoiceParticipant;
 use App\Models\VoiceRoom;
 use App\Services\Auth\DiscordOAuth;
@@ -28,6 +29,7 @@ use App\Services\I18n\DeepL;
 use App\Services\Presence\SteamPresence;
 use App\Services\Push\FcmClient;
 use App\Services\Spotify\SpotifyClient;
+use App\Services\Streams\LiveStreams;
 use App\Services\Voice\LiveKit;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\RedirectResponse;
@@ -367,6 +369,26 @@ class IntegrationController extends Controller
                     ['name' => 'public_key', 'setting' => 'discord_public_key', 'type' => 'text', 'label' => 'Public Key', 'placeholder' => '64 символи hex',
                         'env' => config('services.discord.public_key'),
                         'rules' => ['nullable', 'string', 'regex:/^[0-9a-fA-F]{64}$/'], 'message' => 'Public Key — 64 символи 0–9, a–f.'],
+                ],
+            ],
+            'twitch' => [
+                'label' => 'Twitch',
+                'group' => 'bots',
+                'description' => '«Зараз у стрімі»: сайт сам бачить, коли гравці з каналом Twitch виходять в ефір, і показує LIVE. YouTube працює без ключа.',
+                'docs' => 'https://dev.twitch.tv/console/apps',
+                'steps' => [
+                    'dev.twitch.tv → Your Console → Applications → Register Your Application.',
+                    'OAuth Redirect URL: '.url('/').' (не використовується, але поле обов’язкове), Category: Website Integration.',
+                    'Скопіюйте Client ID, натисніть New Secret і скопіюйте Client Secret сюди.',
+                ],
+                'configured' => filled($this->settings->get('twitch_client_id')) && $this->settings->secret('twitch_client_secret') !== null,
+                'stat' => UserStream::query()->count().' каналів · '.UserStream::query()->where('is_live', true)->count().' зараз в ефірі',
+                'test' => fn () => app(LiveStreams::class)->testTwitch(),
+                'fields' => [
+                    ['name' => 'client_id', 'setting' => 'twitch_client_id', 'type' => 'text', 'label' => 'Client ID', 'placeholder' => 'abcd1234…',
+                        'rules' => ['nullable', 'string', 'regex:/^[a-z0-9]{20,40}$/'], 'message' => 'Client ID Twitch — 20–40 малих літер і цифр.'],
+                    ['name' => 'client_secret', 'setting' => 'twitch_client_secret', 'type' => 'secret', 'label' => 'Client Secret',
+                        'rules' => ['nullable', 'string', 'regex:/^[a-z0-9]{20,40}$/'], 'message' => 'Client Secret Twitch — 20–40 малих літер і цифр.'],
                 ],
             ],
             'voice' => [

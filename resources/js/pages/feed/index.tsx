@@ -29,6 +29,8 @@ import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
 import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { PersonCard, PostItem, ScrollData, UserCard } from '@/types';
+import { FriendsLive } from '@/components/streams/stream';
+import type { StreamInfo } from '@/components/streams/stream';
 import { tr } from '@/lib/i18n';
 
 type Props = {
@@ -36,6 +38,7 @@ type Props = {
     lang: string | null;
     languages: string[];
     tomorrow?: TomorrowEvent[];
+    streaming?: StreamInfo[];
     country: string | null;
     hasFriends: boolean;
     posts: ScrollData<PostItem>;
@@ -118,6 +121,7 @@ export default function Feed({
     lang,
     languages,
     tomorrow,
+    streaming,
     hasFriends,
     country,
     posts,
@@ -136,6 +140,7 @@ export default function Feed({
             <div className="flex gap-5">
                 <div className="min-w-0 flex-1 space-y-4 xl:max-w-[640px]">
                     <StoriesBar />
+                    <FriendsLive streams={streaming ?? []} />
                     <TomorrowCard events={tomorrow ?? []} />
                     {(picks?.length ?? 0) > 0 && (
                         <div className="flex gap-2 overflow-x-auto">

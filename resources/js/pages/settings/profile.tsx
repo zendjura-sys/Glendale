@@ -15,6 +15,8 @@ import { usePlayer } from '@/lib/player';
 import { cn, floatingAboveNav } from '@/lib/utils';
 import { send } from '@/routes/verification';
 import type { SocialConnection } from '@/types/auth';
+import { StreamSettings } from '@/components/streams/stream';
+import type { StreamInfo } from '@/components/streams/stream';
 import { tr } from '@/lib/i18n';
 
 type ProfileForm = {
@@ -40,6 +42,7 @@ type Props = {
     profile: { [K in keyof ProfileForm]: ProfileForm[K] | null };
     connections: SocialConnection[];
     countries: { code: string; name: string }[];
+    stream: StreamInfo | null;
 };
 
 const fieldClass =
@@ -51,6 +54,7 @@ export default function Profile({
     profile,
     connections,
     countries,
+    stream,
 }: Props) {
     const { auth } = usePage().props;
     const playing = usePlayer().current !== null;
@@ -193,6 +197,15 @@ export default function Profile({
                             <InputError message={errors.about} />
                         </div>
                     </div>
+                </SettingsCard>
+
+                <SettingsCard
+                    title={tr('Стрім')}
+                    description={tr(
+                        'Канал Twitch або YouTube: коли ви в ефірі, у профілі з’явиться LIVE і плеєр.',
+                    )}
+                >
+                    <StreamSettings stream={stream} />
                 </SettingsCard>
 
                 <SettingsCard title={tr('Особиста інформація')}>

@@ -11,6 +11,7 @@ use App\Models\ProfileVisit;
 use App\Models\User;
 use App\Models\UserBlock;
 use App\Models\UserReport;
+use App\Models\UserStream;
 use App\Services\Achievements;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
@@ -22,6 +23,7 @@ use App\Services\PlayedTogether;
 use App\Services\PostCards;
 use App\Services\PostPresenter;
 use App\Services\Presence\SteamPresence;
+use App\Services\Streams\LiveStreams;
 use App\Support\Modules\ModuleManager;
 use App\Support\ProfileBlocks;
 use chillerlan\QRCode\Output\QROutputInterface;
@@ -190,6 +192,7 @@ class ProfileController extends Controller
                 ->all() : [],
             'photos' => $photoItems,
             'achievements' => app(Achievements::class)->for($user),
+            'stream' => ($stream = UserStream::query()->where('user_id', $user->id)->first()) ? app(LiveStreams::class)->card($stream, $request->getHost()) : null,
             'characters' => $canSeeContent && $modules->enabled('servers') ? CharacterController::cards(player: $user) : [],
             'photosHref' => $modules->enabled('photos') ? '/photos/u/'.$user->username : null,
             'audio' => $modules->enabled('music') && $canSeeContent ? [

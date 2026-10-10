@@ -38,3 +38,6 @@ Schedule::command('games:sync')->dailyAt('04:40')->timezone('Europe/Kyiv')->with
 
 // Ролі Discord за складом груп, де підключено бота GameCon.
 Schedule::command('bots:roles')->hourly()->withoutOverlapping(30)->runInBackground();
+
+// «Зараз у стрімі»: Twitch пакетами, YouTube по черзі.
+Schedule::command('streams:check')->everyThreeMinutes()->withoutOverlapping(10)->runInBackground();

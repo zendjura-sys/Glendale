@@ -347,15 +347,16 @@ class CinemaTest extends TestCase
         $this->assertStringNotContainsString('КіноПошук', $response->getContent());
         $response->assertInertia(fn (Assert $page) => $page
             ->component('admin/integrations')
-            ->has('cinema', 15)
+            ->has('cinema', 16)
             ->where('cinema.2.key', 'push')
             ->where('cinema.3.key', 'telegram_bot')
             ->where('cinema.4.key', 'discord_bot')
-            ->where('cinema.5.key', 'voice')
-            ->where('cinema.6.key', 'igdb')
-            ->where('cinema.7.key', 'rawg')
-            ->where('cinema.8.key', 'kodik')
-            ->where('cinema.8.configured', true));
+            ->where('cinema.5.key', 'twitch')
+            ->where('cinema.6.key', 'voice')
+            ->where('cinema.7.key', 'igdb')
+            ->where('cinema.8.key', 'rawg')
+            ->where('cinema.9.key', 'kodik')
+            ->where('cinema.9.configured', true));
 
         Http::fake(['kodik-api.com/*' => Http::response(['results' => []])]);
         $this->actingAs($admin)->post('/admin/integrations/cinema/kodik/test')->assertRedirect();

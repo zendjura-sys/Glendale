@@ -48,6 +48,8 @@ import type {
     UserCard,
 } from '@/types';
 import { tr } from '@/lib/i18n';
+import { LiveBadge, ProfileStream } from '@/components/streams/stream';
+import type { StreamInfo } from '@/components/streams/stream';
 import { usePlugin } from '@/lib/plugins';
 
 const PROFILE_BLOCKS = [
@@ -137,6 +139,7 @@ type Props = {
     posts: ScrollData<PostItem>;
     steamLibrary?: { name: string; hours: number; href: string | null }[];
     characters?: CharacterCardData[];
+    stream?: StreamInfo | null;
     together?: (UserCard & { kind: 'cinema' | 'music'; together: string })[];
 };
 
@@ -237,6 +240,7 @@ export default function ProfileShow({
     steamLibrary,
     together = [],
     characters = [],
+    stream = null,
 }: Props) {
     const { modules } = usePage().props;
     const isSelf = relation === 'self';
@@ -297,6 +301,7 @@ export default function ProfileShow({
                                 <h1 className="font-display text-2xl font-bold tracking-tight text-white sm:text-[30px]">
                                     {profile.alias || profile.name}
                                 </h1>
+                                {stream?.live && <LiveBadge />}
                                 {profile.is_verified && (
                                     <VerifiedBadge className="size-6" />
                                 )}
@@ -603,6 +608,7 @@ export default function ProfileShow({
                                 )}
                             </Widget>
                         )}
+                        {stream && <ProfileStream stream={stream} />}
                         {blockSequence(blockOrder).map((key) => {
                             const widgets: Record<string, ReactNode> = {
                                 platforms: profile.platforms &&

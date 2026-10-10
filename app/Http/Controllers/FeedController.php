@@ -14,6 +14,7 @@ use App\Services\FeedSignals;
 use App\Services\FollowAlerts;
 use App\Services\FriendshipService;
 use App\Services\PostPresenter;
+use App\Services\Streams\LiveStreams;
 use App\Support\I18n\LanguageGuess;
 use App\Support\MutedWords;
 use Illuminate\Database\Eloquent\Builder;
@@ -88,6 +89,7 @@ class FeedController extends Controller
             'languages' => LanguageGuess::LANGS,
             'country' => $user->country,
             'tomorrow' => Inertia::defer(fn () => $this->tomorrow($user), 'events'),
+            'streaming' => Inertia::defer(fn () => app(LiveStreams::class)->friendsLive($user, $request->getHost()), 'events'),
             'hasFriends' => $hasSources,
             'posts' => Inertia::scroll(fn () => $posts->setCollection(collect($items))),
             'suggestions' => Inertia::defer(fn () => collect($this->friendships->suggestions($user, 5))
