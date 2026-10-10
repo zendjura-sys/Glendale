@@ -54,7 +54,6 @@
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
         <link rel="manifest" href="/site.webmanifest">
 
-        @fonts
 
         @php($locale = app()->getLocale())
         @if ($locale === 'uk')

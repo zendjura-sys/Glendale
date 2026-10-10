@@ -13,6 +13,7 @@
         "i18n:check": "node scripts/i18n/extract.mjs --check"
     },
     "dependencies": {
+        "@fontsource-variable/montserrat": "^5.3.0",
         "@inertiajs/react": "^3.0.0",
         "@inertiajs/vite": "^3.0.0",
         "@laravel/echo-react": "^2.5.0",

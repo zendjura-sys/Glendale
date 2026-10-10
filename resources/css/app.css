@@ -2,6 +2,9 @@
 
 @import 'tw-animate-css';
 
+/* Montserrat з пакета — без запитів до сторонніх серверів шрифтів (латиниця й кирилиця). */
+@import '@fontsource-variable/montserrat';
+
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
@@ -9,9 +12,9 @@
 
 @theme {
     --font-sans:
-        var(--font-onest), 'Onest', ui-sans-serif, system-ui, sans-serif,
-        'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji';
-    --font-display: var(--font-unbounded), 'Unbounded', var(--font-sans);
+        'Montserrat Variable', 'Montserrat', ui-sans-serif, system-ui,
+        sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji';
+    --font-display: var(--font-sans);
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
