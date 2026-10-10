@@ -8,10 +8,12 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
-php artisan down --retry=15 2>/dev/null || true
-trap 'php artisan up 2>/dev/null || true' EXIT
-
-composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-progress
+# Залежності ставимо до першого artisan: новий код може посилатися на щойно додані пакети.
+# Скрипти composer (package:discover) запускаємо вже після режиму обслуговування.
+composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-progress --no-scripts
+php artisan down --retry=15 >/dev/null 2>&1 || true
+trap 'php artisan up >/dev/null 2>&1 || true' EXIT
+composer run-script post-autoload-dump --no-interaction
 # Кеш маршрутів від попереднього релізу: без очищення Wayfinder під час збірки не бачить нових маршрутів.
 php artisan optimize:clear
 npm ci --no-audit --no-fund --loglevel=error

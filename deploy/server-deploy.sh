@@ -28,7 +28,10 @@ if [ "$(stat -c %s "$BACKUP")" -lt 1000 ]; then
 fi
 echo "✓ Бекап: $BACKUP ($(du -h "$BACKUP" | cut -f1))"
 
-# 2. Код поверх (.env, завантаження й залежності лишаються).
+# 2. Режим обслуговування ще на старому коді: новий код може потребувати пакетів, яких у vendor поки немає
+#    (artisan після rsync, але до composer install, падає — і сайт не закривався б на час оновлення).
+(cd "$APP" && php artisan down --retry=15 >/dev/null 2>&1) || true
+# 3. Код поверх (.env, завантаження й залежності лишаються).
 git -C "$SRC" log -1 --format='%h %s' > "$SRC/REVISION"
 rsync -a --delete \
     --exclude='/.git' --exclude='/.env' --exclude='/storage/' --exclude='/vendor/' \
@@ -37,7 +40,7 @@ rsync -a --delete \
     "$SRC/" "$APP/"
 chown -R "$OWNER":www-data "$APP"
 
-# 3. Залежності, збірка, міграції, перезапуск сервісів.
+# 4. Залежності, збірка, міграції, перезапуск сервісів (remote.sh наприкінці знімає режим обслуговування).
 cd "$APP"
 if [ "$OWNER" != root ] && sudo -n -u "$OWNER" sudo -n true 2>/dev/null; then
     sudo -u "$OWNER" bash deploy/remote.sh
