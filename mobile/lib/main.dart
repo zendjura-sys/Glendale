@@ -18,6 +18,7 @@ import 'i18n.dart';
 import 'events.dart';
 import 'family_widget.dart';
 import 'feed.dart';
+import 'characters.dart';
 import 'games.dart';
 import 'listen_together.dart';
 import 'music.dart';
@@ -158,6 +159,9 @@ Future<void> main() async {
               GoRoute(path: ':slug', builder: (_, state) => ServerScreen(slug: state.pathParameters['slug']!)),
             ],
           ),
+          GoRoute(path: '/characters/create', builder: (_, state) => CharacterEditScreen(server: state.uri.queryParameters['server'])),
+          GoRoute(path: '/characters/:id', builder: (_, state) => CharacterScreen(key: ValueKey(state.pathParameters['id']), id: state.pathParameters['id']!)),
+          GoRoute(path: '/characters/:id/edit', builder: (_, state) => CharacterEditScreen(id: state.pathParameters['id'])),
           GoRoute(
             path: '/games',
             builder: (_, _) => const GamesScreen(),

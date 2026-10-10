@@ -190,6 +190,7 @@ class ServerController extends Controller
             'online' => $this->onlineSeries($server),
             'similar' => $this->similarServers($server),
             'votes' => app(Plugins::class)->on('server_votes') ? app(ServerVotes::class)->forServer($server, $request->user()) : null,
+            'characters' => CharacterController::cards(server: $server),
         ]);
     }
 

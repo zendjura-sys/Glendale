@@ -21,6 +21,8 @@ import { FamilyLogo } from '@/components/families/family-logo';
 import { ConnectButton, ServerLinks } from '@/components/servers/server-card';
 import { OnlineMeter, ServerIcon } from '@/components/servers/server-icon';
 import { VotePanel } from '@/components/servers/server-votes';
+import { CharacterRow } from '@/components/characters/character-card';
+import type { CharacterCardData } from '@/components/characters/character-card';
 import type { ServerVotesInfo } from '@/components/servers/server-votes';
 import { timeAgo, shortNumber } from '@/lib/format';
 import { cn, formText } from '@/lib/utils';
@@ -77,6 +79,7 @@ type Props = {
     online: { day: string; players: number }[];
     similar: GtaServerCard[];
     votes: ServerVotesInfo | null;
+    characters: CharacterCardData[];
 };
 
 export default function ServerShow({
@@ -97,12 +100,14 @@ export default function ServerShow({
     online,
     similar,
     votes,
+    characters,
 }: Props) {
     const [inviteUsername, setInviteUsername] = useState('');
     const compareOn = usePlugin('server_compare');
     const chartOn = usePlugin('server_online');
     const tagsOn = usePlugin('server_tags');
     const similarOn = usePlugin('similar_servers');
+    const charactersOn = usePlugin('rp_characters');
     const newsOn = usePlugin('server_news');
     const claimOn = usePlugin('server_claim');
     const [inviteTarget, setInviteTarget] = useState(
@@ -343,6 +348,39 @@ export default function ServerShow({
                     )}
                 </section>
                 {votes && <VotePanel slug={server.slug} votes={votes} />}
+                {charactersOn && (
+                    <section className="glass rounded-3xl p-5">
+                        <div className="flex items-center justify-between gap-3">
+                            <h2 className="font-display text-lg font-semibold text-white">
+                                {tr('Персонажі гравців')}
+                            </h2>
+                            <Link
+                                href={`/characters/create?server=${server.slug}`}
+                                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white transition hover:bg-white/10"
+                            >
+                                <Plus className="size-4" />
+                                {tr('Мій персонаж')}
+                            </Link>
+                        </div>
+                        {characters.length === 0 ? (
+                            <p className="mt-3 text-sm text-white/45">
+                                {tr(
+                                    'Тут з’являться персонажі гравців цього сервера: біографії, сім’ї й історії.',
+                                )}
+                            </p>
+                        ) : (
+                            <div className="mt-3 grid gap-1 sm:grid-cols-2">
+                                {characters.map((character) => (
+                                    <CharacterRow
+                                        key={character.id}
+                                        character={character}
+                                        showPlayer
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </section>
+                )}
                 <section className="glass rounded-3xl p-5">
                     <h2 className="font-display text-lg font-semibold text-white">
                         {tr('Відгуки')}

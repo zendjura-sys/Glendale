@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\MediaApiController;
 use App\Http\Controllers\Api\PushApiController;
 use App\Http\Controllers\Api\SocialApiController;
 use App\Http\Controllers\CallController;
+use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\CinemaController;
 use App\Http\Controllers\ClanController;
 use App\Http\Controllers\CommentController;
@@ -415,6 +416,17 @@ Route::prefix('v1')->group(function () {
                 Route::get('/', [ServerController::class, 'index']);
                 Route::post('suggest', [ServerController::class, 'suggest'])->middleware('throttle:5,10');
                 Route::get('{server}', [ServerController::class, 'show']);
+            });
+
+            Route::prefix('characters')->middleware('module:servers')->whereNumber('character')->group(function () {
+                Route::get('create', [CharacterController::class, 'create']);
+                Route::post('/', [CharacterController::class, 'store'])->middleware('throttle:10,1');
+                Route::get('{character}', [CharacterController::class, 'show']);
+                Route::get('{character}/edit', [CharacterController::class, 'edit']);
+                Route::post('{character}', [CharacterController::class, 'update'])->middleware('throttle:20,1');
+                Route::delete('{character}', [CharacterController::class, 'destroy']);
+                Route::post('{character}/photos', [CharacterController::class, 'addPhoto'])->middleware('throttle:20,1');
+                Route::delete('{character}/photos/{index}', [CharacterController::class, 'removePhoto'])->whereNumber('index');
             });
 
             Route::middleware('module:families')->group(function () {

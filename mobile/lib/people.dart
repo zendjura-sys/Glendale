@@ -11,6 +11,7 @@ import 'achievements.dart';
 import 'playing.dart';
 import 'account.dart';
 import 'api.dart';
+import 'characters.dart';
 import 'feed.dart';
 import 'posts.dart';
 import 'state.dart';
@@ -699,6 +700,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (data['achievements'] is Map) ...[
           const SizedBox(height: 12),
           AchievementsPanel(data: mapOf(data['achievements']), isSelf: data['relation'] == 'self'),
+        ],
+        if (maps(data['characters']).isNotEmpty || data['relation'] == 'self') ...[
+          const SizedBox(height: 12),
+          CharactersPanel(characters: maps(data['characters']), createPath: data['relation'] == 'self' ? '/characters/create' : null),
         ],
         if (open && photos.isNotEmpty) ...[
           const SizedBox(height: 12),

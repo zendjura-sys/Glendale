@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\CallController;
+use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\CinemaController;
 use App\Http\Controllers\ClanController;
 use App\Http\Controllers\CommentController;
@@ -382,6 +383,17 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('{server}/tags', [ServerController::class, 'tags'])->name('tags');
         Route::post('{server}/reviews', [ServerController::class, 'review'])->middleware('throttle:20,1')->name('reviews.store');
         Route::post('{server}/vote', [ServerController::class, 'vote'])->middleware('throttle:10,1')->name('vote');
+    });
+
+    Route::prefix('characters')->name('characters.')->middleware('module:servers')->whereNumber('character')->group(function () {
+        Route::get('create', [CharacterController::class, 'create'])->name('create');
+        Route::post('/', [CharacterController::class, 'store'])->middleware('throttle:10,1')->name('store');
+        Route::get('{character}', [CharacterController::class, 'show'])->name('show');
+        Route::get('{character}/edit', [CharacterController::class, 'edit'])->name('edit');
+        Route::post('{character}', [CharacterController::class, 'update'])->middleware('throttle:20,1')->name('update');
+        Route::delete('{character}', [CharacterController::class, 'destroy'])->name('destroy');
+        Route::post('{character}/photos', [CharacterController::class, 'addPhoto'])->middleware('throttle:20,1')->name('photos.store');
+        Route::delete('{character}/photos/{index}', [CharacterController::class, 'removePhoto'])->whereNumber('index')->name('photos.destroy');
     });
 
     Route::middleware('module:families')->group(function () {

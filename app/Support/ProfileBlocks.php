@@ -5,7 +5,7 @@ namespace App\Support;
 class ProfileBlocks
 {
     /** @var list<string> */
-    public const ORDER = ['platforms', 'steam', 'about', 'achievements', 'audio', 'friends', 'photos'];
+    public const ORDER = ['platforms', 'steam', 'about', 'achievements', 'audio', 'friends', 'photos', 'characters'];
 
     /**
      * @return list<string>

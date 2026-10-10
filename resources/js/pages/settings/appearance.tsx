@@ -25,6 +25,7 @@ const BLOCK_LABELS: Record<string, string> = {
     steam: 'Бібліотека Steam',
     about: 'Про себе',
     achievements: 'Досягнення',
+    characters: 'Персонажі RP',
     audio: 'Аудіозаписи',
     friends: 'Друзі',
     photos: 'Фото',

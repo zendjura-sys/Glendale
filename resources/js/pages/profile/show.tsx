@@ -36,6 +36,8 @@ import { NowPlayingCard } from '@/components/music/now-playing';
 import { AchievementsCard } from '@/components/gc/achievements';
 import { PlayingBadge } from '@/components/gc/playing';
 import type { AchievementsData } from '@/components/gc/achievements';
+import { CharactersWidget } from '@/components/characters/character-card';
+import type { CharacterCardData } from '@/components/characters/character-card';
 import { compactNumber, formatDate, lastSeen, plural } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type {
@@ -46,6 +48,7 @@ import type {
     UserCard,
 } from '@/types';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 const PROFILE_BLOCKS = [
     'platforms',
@@ -55,6 +58,7 @@ const PROFILE_BLOCKS = [
     'audio',
     'friends',
     'photos',
+    'characters',
 ];
 
 function blockSequence(order: string[]): string[] {
@@ -132,6 +136,7 @@ type Props = {
     nowPlaying?: NowPlaying | null;
     posts: ScrollData<PostItem>;
     steamLibrary?: { name: string; hours: number; href: string | null }[];
+    characters?: CharacterCardData[];
     together?: (UserCard & { kind: 'cinema' | 'music'; together: string })[];
 };
 
@@ -231,9 +236,11 @@ export default function ProfileShow({
     posts,
     steamLibrary,
     together = [],
+    characters = [],
 }: Props) {
     const { modules } = usePage().props;
     const isSelf = relation === 'self';
+    const charactersOn = usePlugin('rp_characters');
     const roleBadge =
         profile.role === 'admin'
             ? tr('Адміністратор')
@@ -695,6 +702,13 @@ export default function ProfileShow({
                                             {profile.about}
                                         </p>
                                     </Widget>
+                                ),
+                                characters: (characters.length > 0 ||
+                                    (isSelf && charactersOn)) && (
+                                    <CharactersWidget
+                                        characters={characters}
+                                        isSelf={isSelf}
+                                    />
                                 ),
                                 achievements: achievements && (
                                     <AchievementsCard

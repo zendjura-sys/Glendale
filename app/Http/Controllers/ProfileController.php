@@ -190,6 +190,7 @@ class ProfileController extends Controller
                 ->all() : [],
             'photos' => $photoItems,
             'achievements' => app(Achievements::class)->for($user),
+            'characters' => $canSeeContent && $modules->enabled('servers') ? CharacterController::cards(player: $user) : [],
             'photosHref' => $modules->enabled('photos') ? '/photos/u/'.$user->username : null,
             'audio' => $modules->enabled('music') && $canSeeContent ? [
                 'href' => '/music/u/'.$user->username,

@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
+import 'characters.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -427,6 +428,16 @@ class ServerScreen extends StatelessWidget {
             if (data['votes'] is Map) ...[
               const SizedBox(height: 12),
               VotePanel(slug: slug, votes: mapOf(data['votes'])),
+            ],
+            if (data['characters'] is List) ...[
+              const SizedBox(height: 12),
+              CharactersPanel(
+                characters: maps(data['characters']),
+                title: tr('Персонажі гравців'),
+                createPath: '/characters/create?server=$slug',
+                showPlayer: true,
+                empty: tr('Тут з’являться персонажі гравців цього сервера: біографії, сім’ї й історії.'),
+              ),
             ],
             if (text(server['description']) != null) ...[
               const SizedBox(height: 12),
