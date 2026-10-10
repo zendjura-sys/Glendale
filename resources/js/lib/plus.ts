@@ -1,8 +1,10 @@
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { CHECKOUT_EVENT } from '@/components/gc/paddle-checkout';
+import type { CheckoutRequest } from '@/components/gc/paddle-checkout';
 import { tr } from '@/lib/i18n';
 
-/** Ціни GameCon+ у гривнях (для показу; списує Lemon Squeezy). */
+/** Ціни GameCon+ у гривнях (для показу; списує Paddle за цінами з кабінету). */
 export const PLUS_PRICES = {
     plus_month: 149,
     plus_year: 1290,
@@ -33,17 +35,30 @@ export const PRODUCT_LABELS = (): Record<string, string> => ({
     promo_banner_30: tr('Банер над каталогом · 30 днів'),
 });
 
-/** Створює посилання на оплату й переходить на сторінку Lemon Squeezy. */
+/**
+ * Відкриває оплату Paddle: сервер створює транзакцію (з user_id і цілями в custom_data),
+ * а вікно PaddleCheckoutHost показує inline-чекаут у стилі GameCon.
+ */
 export async function startCheckout(
     product: PlusProduct,
     extra: Record<string, string | number> = {},
 ): Promise<void> {
     try {
-        const { url } = await api<{ url: string }>('POST', '/plus/checkout', {
-            product,
-            ...extra,
-        });
-        window.location.href = url;
+        const response = await api<{
+            transaction_id: string;
+            client_token: string;
+            sandbox: boolean;
+        }>('POST', '/plus/checkout', { product, ...extra });
+        window.dispatchEvent(
+            new CustomEvent<CheckoutRequest>(CHECKOUT_EVENT, {
+                detail: {
+                    transactionId: response.transaction_id,
+                    token: response.client_token,
+                    sandbox: response.sandbox,
+                    title: PRODUCT_LABELS()[product] ?? 'GameCon+',
+                },
+            }),
+        );
     } catch (error) {
         toast.error(
             (error as Error).message || tr('Оплата тимчасово недоступна.'),

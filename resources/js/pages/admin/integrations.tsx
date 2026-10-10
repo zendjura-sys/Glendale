@@ -330,7 +330,7 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                         'payments',
                         tr('Оплата'),
                         tr(
-                            'GameCon+, подарунки, GameCon+ для сімей і платне просування серверів через Lemon Squeezy.',
+                            'GameCon+, подарунки, GameCon+ для сімей і платне просування серверів через Paddle (Merchant of Record).',
                         ),
                     ],
                     [

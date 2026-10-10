@@ -28,11 +28,12 @@ type State = {
     active: boolean;
     until: string | null;
     subscription: {
-        product: string;
+        id: number;
+        product: string | null;
         status: string;
-        renews_at: string | null;
+        /** Скасування заплановане — доступ до кінця оплаченого періоду. */
+        cancelled: boolean;
         ends_at: string | null;
-        portal_url: string | null;
     } | null;
 };
 
@@ -100,9 +101,9 @@ const PERKS = (): { icon: LucideIcon; title: string; text: string }[] => [
 
 const STATUS = (): Record<string, string> => ({
     active: tr('Активна'),
-    on_trial: tr('Пробний період'),
+    trialing: tr('Пробний період'),
     past_due: tr('Банк ще проводить оплату'),
-    cancelled: tr('Скасована — діє до кінця оплаченого'),
+    canceled: tr('Скасована'),
     paused: tr('Призупинена'),
     unpaid: tr('Не оплачена'),
 });
@@ -136,7 +137,7 @@ export default function PlusPage({
     const can = (product: PlusProduct) => products[product]?.available === true;
     const subscribed =
         state.subscription !== null &&
-        ['active', 'on_trial', 'past_due'].includes(state.subscription.status);
+        ['active', 'trialing', 'past_due'].includes(state.subscription.status);
 
     return (
         <>
@@ -176,16 +177,12 @@ export default function PlusPage({
                                     </span>
                                 )}
                             </span>
-                            {state.subscription?.portal_url && (
-                                <a
-                                    href={state.subscription.portal_url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className={cn(secondary, 'ml-auto h-9')}
-                                >
-                                    <CreditCard className="size-4" />
-                                    {tr('Керувати оплатою')}
-                                </a>
+                            {state.subscription && (
+                                <SubscriptionActions
+                                    type="default"
+                                    cancelled={state.subscription.cancelled}
+                                    endsAt={state.subscription.ends_at}
+                                />
                             )}
                         </div>
                     )}
@@ -254,7 +251,7 @@ export default function PlusPage({
                     )}
                     <p className="mt-3 text-xs text-white/40">
                         {tr(
-                            'Оплата через Lemon Squeezy: карта, Apple Pay, Google Pay або PayPal. Підписка продовжується сама, скасувати можна будь-коли в «Керувати оплатою».',
+                            'Оплата через Paddle (Merchant of Record): карта, Apple Pay, Google Pay або PayPal. Підписка продовжується сама; скасувати можна в один клик тут — доступ лишиться до кінця оплаченого періоду. Повернення протягом 14 днів — див. «Повернення коштів».',
                         )}
                     </p>
                 </section>
@@ -690,7 +687,7 @@ function FamilyRow({
     const [accent, setAccent] = useState(family.style.accent ?? '');
     const subscribed =
         family.state.subscription !== null &&
-        ['active', 'on_trial', 'past_due'].includes(
+        ['active', 'trialing', 'past_due'].includes(
             family.state.subscription.status,
         );
 
@@ -711,17 +708,13 @@ function FamilyRow({
                             : tr('Без GameCon+')}
                     </span>
                 </span>
-                {family.state.subscription?.portal_url ? (
-                    <a
-                        href={family.state.subscription.portal_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={cn(secondary, 'h-9')}
-                    >
-                        <CreditCard className="size-4" />
-                        {tr('Керувати оплатою')}
-                    </a>
-                ) : null}
+                {family.state.subscription && (
+                    <SubscriptionActions
+                        type={`family:${family.id}`}
+                        cancelled={family.state.subscription.cancelled}
+                        endsAt={family.state.subscription.ends_at}
+                    />
+                )}
                 {!subscribed &&
                     (['family_month', 'family_year'] as const).map(
                         (product) => (
@@ -765,5 +758,73 @@ function FamilyRow({
                 </div>
             )}
         </li>
+    );
+}
+
+/** Скасування в один клик, відновлення і портал Paddle (картки, чеки). */
+function SubscriptionActions({
+    type,
+    cancelled,
+    endsAt,
+}: {
+    type: string;
+    cancelled: boolean;
+    endsAt: string | null;
+}) {
+    const [busy, setBusy] = useState(false);
+    const post = (url: string) => {
+        setBusy(true);
+        router.post(
+            url,
+            { type },
+            { preserveScroll: true, onFinish: () => setBusy(false) },
+        );
+    };
+
+    return (
+        <span className="ml-auto flex flex-wrap items-center gap-2">
+            {cancelled ? (
+                <>
+                    {endsAt && (
+                        <span className="text-xs text-amber-200/80">
+                            {tr('Скасовано, діє до {date}', {
+                                date: formatDate(endsAt),
+                            })}
+                        </span>
+                    )}
+                    <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => post('/plus/resume')}
+                        className={cn(primary, 'h-9')}
+                    >
+                        {tr('Відновити')}
+                    </button>
+                </>
+            ) : (
+                <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                        if (
+                            window.confirm(
+                                tr(
+                                    'Скасувати підписку? GameCon+ діятиме до кінця оплаченого періоду, нових списань не буде.',
+                                ),
+                            )
+                        ) {
+                            post('/plus/cancel');
+                        }
+                    }}
+                    className={cn(secondary, 'h-9')}
+                >
+                    {tr('Скасувати')}
+                </button>
+            )}
+            <a href="/plus/portal" className={cn(secondary, 'h-9')}>
+                <CreditCard className="size-4" />
+                {tr('Чеки й картка')}
+            </a>
+        </span>
     );
 }

@@ -6,99 +6,69 @@ use App\Models\Family;
 use App\Models\GtaServer;
 use App\Models\PlusGrant;
 use App\Models\PlusPayment;
-use App\Models\PlusSubscription;
 use App\Models\ServerPromotion;
 use App\Models\User;
 use App\Notifications\PlusGifted;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Laravel\Paddle\Subscription;
+use Laravel\Paddle\Transaction;
 
 /**
- * Події Lemon Squeezy → підписки, платежі, подарунки й просування.
- * Кожна подія безпечна для повтору: платежі унікальні за ID замовлення, підписки — за ID підписки.
+ * Події Paddle (через Cashier) → GameCon+, подарунки, просування серверів, повернення коштів.
+ *
+ * Cashier сам перевіряє підпис вебхука й веде таблиці customers/subscriptions/transactions;
+ * тут — лише наша бізнес-логіка. Кожен обробник безпечний для повтору.
  */
 class Billing
 {
     public function __construct(
         private readonly Plus $plus,
-        private readonly LemonSqueezy $lemon,
+        private readonly Paddle $paddle,
         private readonly ServerPromotions $promotions,
     ) {}
 
     /**
+     * Підписка створена / оновлена / призупинена / скасована → період GameCon+ власника.
+     *
+     * Тип підписки: «default» — особистий GameCon+ платника, «family:{id}» — сім’я, яку оплачує лідер.
+     *
      * @param  array<string, mixed>  $payload
      */
-    public function handle(array $payload): void
+    public function subscription(Subscription $subscription, array $payload): void
     {
-        $event = (string) data_get($payload, 'meta.event_name', '');
-        $custom = (array) data_get($payload, 'meta.custom_data', []);
-        $id = (string) data_get($payload, 'data.id', '');
-        $attributes = (array) data_get($payload, 'data.attributes', []);
-        if ($id === '') {
+        $owner = $this->subscriptionOwner($subscription);
+        if ($owner === null) {
             return;
         }
 
-        match (true) {
-            str_starts_with($event, 'subscription_') && ! str_starts_with($event, 'subscription_payment') => $this->subscription($id, $attributes, $custom),
-            $event === 'order_created' => $this->order($id, $attributes, $custom),
-            $event === 'order_refunded' => $this->refund($id),
-            default => null,
-        };
+        $this->plus->syncSubscription($owner, $subscription->id, self::user($subscription->billable), $subscription->created_at, $this->accessEnd($subscription, $payload));
     }
 
     /**
-     * @param  array<string, mixed>  $a
-     * @param  array<mixed>  $custom
+     * Оплачена транзакція: запис в історії, а для разових товарів — подарунок або просування.
+     * Продовження підписок теж приходять сюди — вони лише потрапляють в історію оплат.
+     *
+     * @param  array<string, mixed>  $payload
      */
-    private function subscription(string $id, array $a, array $custom): void
+    public function transaction(Transaction $transaction, array $payload): void
     {
-        $existing = PlusSubscription::query()->where('provider', LemonSqueezy::PROVIDER)->where('provider_id', $id)->first();
-        $product = $this->product($a['variant_id'] ?? null, $custom) ?? $existing?->product;
-        $meta = $product !== null ? (array) config("plus.products.{$product}") : [];
-        if ($existing === null && ! in_array($meta['kind'] ?? null, ['plus', 'family'], true)) {
-            return;
-        }
-
-        $owner = $existing === null ? $this->subscriptionOwner((string) $meta['kind'], $custom) : null;
-        if ($existing === null && $owner === null) {
-            return;
-        }
-
-        $subscription = PlusSubscription::query()->updateOrCreate(
-            ['provider' => LemonSqueezy::PROVIDER, 'provider_id' => $id],
-            [
-                ...($owner !== null ? ['owner_type' => $this->plus->type($owner), 'owner_id' => $owner->id, 'user_id' => $this->payer($custom)?->id] : []),
-                'product' => $product,
-                'status' => (string) ($a['status'] ?? 'active'),
-                'renews_at' => $this->date($a['renews_at'] ?? null),
-                'ends_at' => $this->date($a['ends_at'] ?? null),
-                'portal_url' => is_string(data_get($a, 'urls.customer_portal')) ? data_get($a, 'urls.customer_portal') : null,
-            ],
-        );
-        $this->plus->syncSubscription($subscription);
-    }
-
-    /**
-     * @param  array<string, mixed>  $a
-     * @param  array<mixed>  $custom
-     */
-    private function order(string $id, array $a, array $custom): void
-    {
-        if (($a['status'] ?? null) !== 'paid') {
-            return;
-        }
-        $product = $this->product(data_get($a, 'first_order_item.variant_id'), $custom);
+        $data = (array) ($payload['data'] ?? []);
+        $custom = (array) ($data['custom_data'] ?? []);
+        $price = data_get($data, 'items.0.price.id');
+        $product = $this->paddle->productForPrice(is_string($price) ? $price : null)
+            ?? (is_string($custom['product'] ?? null) && array_key_exists($custom['product'], (array) config('plus.products')) ? $custom['product'] : null);
         if ($product === null) {
             return;
         }
         $meta = (array) config("plus.products.{$product}");
+        $payer = self::user($transaction->billable);
 
-        DB::transaction(function () use ($id, $a, $custom, $product, $meta) {
-            $payer = $this->payer($custom);
+        DB::transaction(function () use ($transaction, $custom, $product, $meta, $payer) {
             $target = $this->target((string) ($meta['kind'] ?? ''), $custom, $payer);
             $payment = PlusPayment::query()->firstOrCreate(
-                ['provider' => LemonSqueezy::PROVIDER, 'provider_id' => $id],
+                ['provider' => Paddle::PROVIDER, 'provider_id' => $transaction->paddle_id],
                 [
                     'user_id' => $payer?->id,
                     'product' => $product,
@@ -109,10 +79,10 @@ class Billing
                         default => null,
                     },
                     'target_id' => $target?->id,
-                    'amount' => (int) ($a['total'] ?? 0),
-                    'currency' => (string) ($a['currency'] ?? 'USD'),
+                    'amount' => (int) $transaction->total,
+                    'currency' => (string) $transaction->currency,
                     'status' => PlusPayment::PAID,
-                    'receipt_url' => is_string(data_get($a, 'urls.receipt')) ? data_get($a, 'urls.receipt') : null,
+                    'receipt_url' => null,
                 ],
             );
             if (! $payment->wasRecentlyCreated) {
@@ -132,12 +102,23 @@ class Billing
         });
     }
 
-    private function refund(string $id): void
+    /**
+     * Повернення коштів (Paddle adjustment з action=refund, статус approved):
+     * платіж позначається поверненим, подарунок і просування знімаються.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    public function adjustment(array $payload): void
     {
-        $payment = PlusPayment::query()->where('provider', LemonSqueezy::PROVIDER)->where('provider_id', $id)->first();
+        $data = (array) ($payload['data'] ?? []);
+        if (($data['action'] ?? null) !== 'refund' || ($data['status'] ?? null) !== 'approved') {
+            return;
+        }
+        $payment = PlusPayment::query()->where('provider', Paddle::PROVIDER)->where('provider_id', (string) ($data['transaction_id'] ?? ''))->first();
         if ($payment === null || $payment->status === PlusPayment::REFUNDED) {
             return;
         }
+
         $payment->update(['status' => PlusPayment::REFUNDED]);
         foreach (PlusGrant::query()->where('payment_id', $payment->id)->get() as $grant) {
             $this->plus->revoke($grant);
@@ -146,32 +127,36 @@ class Billing
     }
 
     /**
-     * @param  array<mixed>  $custom
+     * До коли діє доступ за підпискою:
+     *  — активна / пробна / борг за оплату — кінець поточного оплаченого періоду + запас;
+     *  — заплановане скасування — дата скасування (доступ до кінця оплаченого);
+     *  — скасована чи призупинена — уже ні.
+     *
+     * @param  array<string, mixed>  $payload
      */
-    private function product(mixed $variant, array $custom): ?string
+    private function accessEnd(Subscription $subscription, array $payload): CarbonInterface
     {
-        $byVariant = is_scalar($variant) ? $this->lemon->productForVariant((string) $variant) : null;
-        $fallback = is_string($custom['product'] ?? null) && array_key_exists($custom['product'], (array) config('plus.products')) ? $custom['product'] : null;
+        $data = (array) ($payload['data'] ?? []);
+        if (in_array($subscription->status, [Subscription::STATUS_CANCELED, Subscription::STATUS_PAUSED], true)) {
+            return now();
+        }
+        if ($subscription->ends_at !== null) {
+            return $subscription->ends_at;
+        }
+        $periodEnd = data_get($data, 'current_billing_period.ends_at') ?? ($data['next_billed_at'] ?? null);
 
-        return $byVariant ?? $fallback;
+        return is_string($periodEnd)
+            ? Date::parse($periodEnd)->addDays((int) config('plus.grace_days'))
+            : now()->addDays((int) config('plus.grace_days'));
     }
 
-    /**
-     * @param  array<mixed>  $custom
-     */
-    private function payer(array $custom): ?User
+    private function subscriptionOwner(Subscription $subscription): User|Family|null
     {
-        return is_numeric($custom['user_id'] ?? null) ? User::query()->find((int) $custom['user_id']) : null;
-    }
+        if (preg_match('/^family:(\d+)$/', $subscription->type, $m)) {
+            return Family::query()->find((int) $m[1]);
+        }
 
-    /**
-     * @param  array<mixed>  $custom
-     */
-    private function subscriptionOwner(string $kind, array $custom): User|Family|null
-    {
-        return $kind === 'family'
-            ? (is_numeric($custom['family_id'] ?? null) ? Family::query()->find((int) $custom['family_id']) : null)
-            : $this->payer($custom);
+        return self::user($subscription->billable);
     }
 
     /**
@@ -187,8 +172,9 @@ class Billing
         };
     }
 
-    private function date(mixed $value): ?CarbonInterface
+    /** Cashier типізує billable як трейт — звужуємо до нашої моделі. */
+    private static function user(mixed $billable): ?User
     {
-        return is_string($value) && $value !== '' ? Date::parse($value) : null;
+        return $billable instanceof User ? $billable : null;
     }
 }

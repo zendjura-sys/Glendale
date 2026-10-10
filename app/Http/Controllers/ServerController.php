@@ -23,7 +23,7 @@ use App\Services\Events\DiscordEventSync;
 use App\Services\Families\FamilyRating;
 use App\Services\FollowAlerts;
 use App\Services\FriendshipService;
-use App\Services\Plus\LemonSqueezy;
+use App\Services\Plus\Paddle;
 use App\Services\Plus\ServerPromotions;
 use App\Services\Presence\PlayingStatus;
 use App\Services\SavedItems;
@@ -213,7 +213,7 @@ class ServerController extends Controller
             'promotion' => $server->owner_id === $request->user()->id ? [
                 'active' => app(ServerPromotions::class)->forServer($server),
                 'free_at' => collect(ServerPromotion::KINDS)->mapWithKeys(fn (string $kind) => [$kind => app(ServerPromotions::class)->freeAt($kind)->toIso8601String()]),
-                'available' => app(LemonSqueezy::class)->configured(),
+                'available' => app(Paddle::class)->configured(),
             ] : null,
             'verified' => [
                 'players' => ServerPlayer::query()->where('gta_server_id', $server->id)->count(),

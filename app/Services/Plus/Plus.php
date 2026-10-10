@@ -5,15 +5,16 @@ namespace App\Services\Plus;
 use App\Models\Family;
 use App\Models\PlusCode;
 use App\Models\PlusGrant;
-use App\Models\PlusSubscription;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
+use Laravel\Paddle\Subscription;
 
 /**
  * GameCon+: періоди доступу (plus_grants) і кешований статус plus_until у власника.
  *
  * Подарунки, промокоди й видача адміністратором складаються в чергу одне за одним;
- * підписка — окремий період, який рухається разом із датою продовження.
+ * підписка Paddle — окремий період, який рухається разом із кінцем оплаченого періоду.
  */
 class Plus
 {
@@ -70,29 +71,18 @@ class Plus
     }
 
     /**
-     * Період підписки: триває до дати продовження (+ запас), після скасування — до кінця оплаченого.
+     * Період підписки Paddle: рухається разом із кінцем оплаченого періоду; після скасування — до його кінця.
      */
-    public function syncSubscription(PlusSubscription $subscription): void
+    public function syncSubscription(User|Family $owner, int $subscriptionId, ?User $payer, ?CarbonInterface $startedAt, CarbonInterface $end): void
     {
-        $owner = $this->owner($subscription->owner_type, $subscription->owner_id);
-        if ($owner === null) {
-            return;
-        }
-
-        $end = match (true) {
-            in_array($subscription->status, PlusSubscription::RUNNING, true) && $subscription->renews_at !== null => $subscription->renews_at->copy()->addDays((int) config('plus.grace_days')),
-            $subscription->status === 'cancelled' && $subscription->ends_at !== null => $subscription->ends_at,
-            default => now(),
-        };
-
         PlusGrant::query()->updateOrCreate(
-            ['subscription_id' => $subscription->id],
+            ['subscription_id' => $subscriptionId],
             [
-                'owner_type' => $subscription->owner_type,
-                'owner_id' => $subscription->owner_id,
+                'owner_type' => $this->type($owner),
+                'owner_id' => $owner->id,
                 'source' => 'subscription',
-                'by_user_id' => $subscription->user_id,
-                'starts_at' => $subscription->created_at,
+                'by_user_id' => $payer?->id,
+                'starts_at' => $startedAt ?? now(),
                 'ends_at' => $end,
             ],
         );
@@ -139,26 +129,37 @@ class Plus
     }
 
     /**
+     * Підписка Cashier, що оплачує GameCon+ цього власника: особиста («default») або сімейна («family:{id}»).
+     */
+    public function subscriptionFor(User|Family $owner): ?Subscription
+    {
+        $query = Subscription::query()->where('status', '!=', Subscription::STATUS_CANCELED)->latest('id');
+
+        return $owner instanceof Family
+            ? $query->where('type', 'family:'.$owner->id)->first()
+            : $query->where('billable_type', $owner->getMorphClass())->where('billable_id', $owner->id)->where('type', Paddle::PERSONAL)->first();
+    }
+
+    /**
      * Стан для сторінки GameCon+.
      *
      * @return array<string, mixed>
      */
     public function state(User|Family $owner): array
     {
-        $subscription = PlusSubscription::query()
-            ->where('owner_type', $this->type($owner))->where('owner_id', $owner->id)
-            ->whereNotIn('status', ['expired'])
-            ->latest('id')->first();
+        $subscription = $this->subscriptionFor($owner);
+        $price = $subscription?->items()->value('price_id');
 
         return [
             'active' => $owner->isPlus(),
             'until' => $owner->plus_until?->toIso8601String(),
             'subscription' => $subscription ? [
-                'product' => $subscription->product,
+                'id' => $subscription->id,
+                'product' => app(Paddle::class)->productForPrice(is_string($price) ? $price : null),
                 'status' => $subscription->status,
-                'renews_at' => $subscription->renews_at?->toIso8601String(),
+                // Скасування заплановане: доступ до кінця оплаченого, можна відновити.
+                'cancelled' => $subscription->ends_at !== null,
                 'ends_at' => $subscription->ends_at?->toIso8601String(),
-                'portal_url' => $subscription->portal_url,
             ] : null,
         ];
     }

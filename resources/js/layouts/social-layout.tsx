@@ -30,6 +30,7 @@ import { QuickSearch } from '@/components/gc/quick-search';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VoiceBar } from '@/components/gc/voice-bar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
+import { PaddleCheckoutHost } from '@/components/gc/paddle-checkout';
 import { PlusBadge, plusNameStyle } from '@/components/gc/plus';
 import { PlayerBar } from '@/components/music/player-bar';
 import {
@@ -670,6 +671,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
             </div>
             <VoiceBar />
             {modules.includes('music') && <PlayerBar />}
+            <PaddleCheckoutHost />
             <MobileNav />
             <FeedbackDialog />
             <KeyboardShortcuts username={auth.user.username} />

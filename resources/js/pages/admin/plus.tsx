@@ -98,7 +98,7 @@ export default function AdminPlus({
             <PageHeader
                 title="GameCon+"
                 description={tr(
-                    'Підписники, оплати, ручна видача й промокоди. Ціни й товари — у Lemon Squeezy, ключі — в Інтеграції → «Оплата».',
+                    'Підписники, оплати, ручна видача й промокоди. Ціни й товари — у кабінеті Paddle, ключі й Price ID — в Інтеграції → «Оплата (Paddle)».',
                 )}
                 actions={
                     !configured && (

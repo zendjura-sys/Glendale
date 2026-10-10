@@ -7,9 +7,8 @@ use App\Models\Family;
 use App\Models\PlusCode;
 use App\Models\PlusGrant;
 use App\Models\PlusPayment;
-use App\Models\PlusSubscription;
 use App\Models\User;
-use App\Services\Plus\LemonSqueezy;
+use App\Services\Plus\Paddle;
 use App\Services\Plus\Plus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,13 +16,14 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Laravel\Paddle\Subscription;
 
 /** Адмінка GameCon+: хто з підпискою, оплати, ручна видача й промокоди. */
 class PlusController extends Controller
 {
     public function __construct(private readonly Plus $plus) {}
 
-    public function index(Request $request, LemonSqueezy $lemon): Response
+    public function index(Request $request, Paddle $paddle): Response
     {
         $this->admin($request);
         $grants = PlusGrant::query()->with('by')->where('ends_at', '>', now())->latest('id')->limit(100)->get();
@@ -31,11 +31,11 @@ class PlusController extends Controller
         $families = Family::query()->whereIn('id', $grants->where('owner_type', 'family')->pluck('owner_id'))->get()->keyBy('id');
 
         return Inertia::render('admin/plus', [
-            'configured' => $lemon->configured(),
+            'configured' => $paddle->configured(),
             'stats' => [
                 'users' => User::query()->where('plus_until', '>', now())->count(),
                 'families' => Family::query()->where('plus_until', '>', now())->count(),
-                'subscriptions' => PlusSubscription::query()->whereIn('status', PlusSubscription::RUNNING)->count(),
+                'subscriptions' => Subscription::query()->whereIn('status', [Subscription::STATUS_ACTIVE, Subscription::STATUS_TRIALING, Subscription::STATUS_PAST_DUE])->count(),
                 'payments_month' => PlusPayment::query()->where('status', PlusPayment::PAID)->where('created_at', '>=', now()->startOfMonth())->count(),
             ],
             'grants' => $grants->map(fn (PlusGrant $g) => [
@@ -90,7 +90,7 @@ class PlusController extends Controller
     public function revoke(Request $request, PlusGrant $grant): RedirectResponse
     {
         $this->admin($request);
-        abort_if($grant->source === 'subscription', 422, 'Підписку скасовують у Lemon Squeezy — статус оновиться сам.');
+        abort_if($grant->source === 'subscription', 422, 'Підписку скасовує сам підписник (GameCon+ → «Скасувати») або підтримка Paddle — статус оновиться сам.');
         $this->plus->revoke($grant);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Період GameCon+ знято.']);

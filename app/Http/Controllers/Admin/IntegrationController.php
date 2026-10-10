@@ -31,7 +31,7 @@ use App\Services\Games\GameCatalog;
 use App\Services\Games\Igdb;
 use App\Services\I18n\DeepL;
 use App\Services\Moderation\NsfwCheck;
-use App\Services\Plus\LemonSqueezy;
+use App\Services\Plus\Paddle;
 use App\Services\Presence\SteamPresence;
 use App\Services\Push\FcmClient;
 use App\Services\Spotify\SpotifyClient;
@@ -159,6 +159,9 @@ class IntegrationController extends Controller
             };
         }
         Cache::forget('cinema.meta.down.'.$provider);
+        if ($provider === 'paddle') {
+            app(Paddle::class)->applyConfig();
+        }
         if ($provider === 'push') {
             $this->fcm->forgetAccessToken();
         }
@@ -619,51 +622,54 @@ class IntegrationController extends Controller
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{6,40}$/'], 'message' => 'Ключ OMDb — латинські літери та цифри.'],
                 ],
             ],
-            'lemonsqueezy' => [
-                'label' => 'Оплата GameCon+ (Lemon Squeezy)',
+            'paddle' => [
+                'label' => 'Оплата GameCon+ (Paddle)',
                 'group' => 'payments',
-                'description' => 'Підписка GameCon+, подарунки, GameCon+ для сімей і платне просування серверів. Lemon Squeezy продає від свого імені й сам сплачує податки — ФОП не потрібен; виплати — на картку або PayPal.',
-                'docs' => 'https://docs.lemonsqueezy.com/help/getting-started/create-a-store',
+                'description' => 'Підписка GameCon+, подарунки, GameCon+ для сімей і платне просування серверів. Paddle — продавець від свого імені (Merchant of Record): приймає оплату, сплачує податки й видає чеки.',
+                'docs' => 'https://developer.paddle.com/build/onboarding/overview',
                 'steps' => [
-                    'Зареєструйтеся на lemonsqueezy.com і створіть магазин (Store). Settings → Stores: скопіюйте Store ID (число).',
-                    'Products → New product для кожного рядка нижче: підписки — Subscription (місяць або рік), решта — Single payment. Ціни — як на сторінці GameCon+. Відкрийте товар → варіант і скопіюйте Variant ID.',
-                    'Settings → API → створіть ключ і вставте його сюди.',
-                    'Settings → Webhooks → «+»: URL '.url('/api/payments/lemonsqueezy').', придумайте Signing secret (вставте його й сюди), позначте order_created, order_refunded і всі subscription_*.',
-                    'Для перевірки ввімкніть «Тестовий режим» і заплатіть тестовою карткою 4242 4242 4242 4242.',
+                    'Зареєструйтеся на paddle.com (для перевірки — sandbox-vendors.paddle.com) і пройдіть перевірку сайту: Paddle дивиться на /terms, /privacy і /refund-policy — вони вже є.',
+                    'Developer Tools → Authentication: скопіюйте Seller ID, створіть API key і Client-side token.',
+                    'Catalog → Products: створіть товари з цінами, як на сторінці GameCon+ (підписки — з інтервалом місяць або рік, решта — разові). Скопіюйте Price ID (pri_…) у поля нижче.',
+                    'Developer Tools → Notifications → New destination: URL '.url('/paddle/webhook').', позначте subscription.*, transaction.*, customer.*, adjustment.*; скопіюйте Secret key сюди.',
+                    'Checkout → Checkout settings: Default payment link — '.url('/plus').'; Branding: колір кнопок #6366F1, логотип GameCon, тема — за системною.',
+                    'Для перевірки ввімкніть «Пісочниця» і заплатіть тестовою карткою 4242 4242 4242 4242.',
                 ],
-                'configured' => app(LemonSqueezy::class)->configured(),
+                'configured' => app(Paddle::class)->configured(),
                 'stat' => PlusGrant::query()->where('ends_at', '>', now())->distinct()->count('owner_id').' з GameCon+ · '.PlusPayment::query()->where('status', PlusPayment::PAID)->count().' оплат',
-                'test' => fn () => app(LemonSqueezy::class)->test(),
+                'test' => fn () => app(Paddle::class)->test(),
                 'fields' => [
-                    ['name' => 'api_key', 'setting' => 'lemonsqueezy_api_key', 'type' => 'secret', 'label' => 'API key',
-                        'rules' => ['nullable', 'string', 'min:20', 'max:2000', 'regex:/^[A-Za-z0-9._\-]+$/'], 'message' => 'Ключ API — довгий рядок з латинських літер, цифр і крапок.'],
-                    ['name' => 'store_id', 'setting' => 'lemonsqueezy_store_id', 'type' => 'text', 'label' => 'Store ID', 'placeholder' => '12345',
-                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'Store ID — це число.'],
-                    ['name' => 'webhook_secret', 'setting' => 'lemonsqueezy_webhook_secret', 'type' => 'secret', 'label' => 'Signing secret вебхука',
-                        'rules' => ['nullable', 'string', 'min:6', 'max:64'], 'message' => 'Секрет — від 6 до 64 символів.'],
-                    ['name' => 'test_mode', 'setting' => 'lemonsqueezy_test_mode', 'type' => 'bool', 'label' => 'Тестовий режим', 'rules' => ['nullable', 'boolean']],
-                    ['name' => 'variant_plus_month', 'setting' => 'ls_variant_plus_month', 'type' => 'text', 'label' => 'GameCon+ · місяць (підписка)', 'placeholder' => '123456',
-                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
-                    ['name' => 'variant_plus_year', 'setting' => 'ls_variant_plus_year', 'type' => 'text', 'label' => 'GameCon+ · рік (підписка)', 'placeholder' => '123456',
-                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
-                    ['name' => 'variant_gift_month', 'setting' => 'ls_variant_gift_month', 'type' => 'text', 'label' => 'Подарунок · місяць (разово)', 'placeholder' => '123456',
-                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
-                    ['name' => 'variant_gift_year', 'setting' => 'ls_variant_gift_year', 'type' => 'text', 'label' => 'Подарунок · рік (разово)', 'placeholder' => '123456',
-                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
-                    ['name' => 'variant_family_month', 'setting' => 'ls_variant_family_month', 'type' => 'text', 'label' => 'Сім’я · місяць (підписка)', 'placeholder' => '123456',
-                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
-                    ['name' => 'variant_family_year', 'setting' => 'ls_variant_family_year', 'type' => 'text', 'label' => 'Сім’я · рік (підписка)', 'placeholder' => '123456',
-                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
-                    ['name' => 'variant_promo_top_7', 'setting' => 'ls_variant_promo_top_7', 'type' => 'text', 'label' => 'Топ каталогу · 7 днів', 'placeholder' => '123456',
-                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
-                    ['name' => 'variant_promo_top_30', 'setting' => 'ls_variant_promo_top_30', 'type' => 'text', 'label' => 'Топ каталогу · 30 днів', 'placeholder' => '123456',
-                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
-                    ['name' => 'variant_promo_highlight_7', 'setting' => 'ls_variant_promo_highlight_7', 'type' => 'text', 'label' => 'Виділена картка · 7 днів', 'placeholder' => '123456',
-                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
-                    ['name' => 'variant_promo_highlight_30', 'setting' => 'ls_variant_promo_highlight_30', 'type' => 'text', 'label' => 'Виділена картка · 30 днів', 'placeholder' => '123456',
-                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
-                    ['name' => 'variant_promo_banner_30', 'setting' => 'ls_variant_promo_banner_30', 'type' => 'text', 'label' => 'Банер · 30 днів', 'placeholder' => '123456',
-                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'ID варіанта — це число.'],
+                    ['name' => 'seller_id', 'setting' => 'paddle_seller_id', 'type' => 'text', 'label' => 'Seller ID', 'placeholder' => '123456', 'env' => config('cashier.seller_id'),
+                        'rules' => ['nullable', 'string', 'regex:/^\d{1,12}$/'], 'message' => 'Seller ID — це число.'],
+                    ['name' => 'client_token', 'setting' => 'paddle_client_token', 'type' => 'text', 'label' => 'Client-side token', 'placeholder' => 'live_… / test_…', 'env' => config('cashier.client_side_token'),
+                        'rules' => ['nullable', 'string', 'regex:/^(live|test)_[A-Za-z0-9]{10,64}$/'], 'message' => 'Client-side token починається з live_ або test_.'],
+                    ['name' => 'api_key', 'setting' => 'paddle_api_key', 'type' => 'secret', 'label' => 'API key', 'env' => config('cashier.api_key'),
+                        'rules' => ['nullable', 'string', 'min:20', 'max:200', 'regex:/^[A-Za-z0-9_\-]+$/'], 'message' => 'Ключ API — латинські літери, цифри, _ і -.'],
+                    ['name' => 'webhook_secret', 'setting' => 'paddle_webhook_secret', 'type' => 'secret', 'label' => 'Секрет вебхука (Notifications)', 'env' => config('cashier.webhook_secret'),
+                        'rules' => ['nullable', 'string', 'min:10', 'max:200'], 'message' => 'Секрет — від 10 символів.'],
+                    ['name' => 'sandbox', 'setting' => 'paddle_sandbox', 'type' => 'bool', 'label' => 'Пісочниця (sandbox)', 'rules' => ['nullable', 'boolean']],
+                    ['name' => 'price_plus_month', 'setting' => 'paddle_price_plus_month', 'type' => 'text', 'label' => 'GameCon+ · місяць (підписка)', 'placeholder' => 'pri_01h…',
+                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
+                    ['name' => 'price_plus_year', 'setting' => 'paddle_price_plus_year', 'type' => 'text', 'label' => 'GameCon+ · рік (підписка)', 'placeholder' => 'pri_01h…',
+                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
+                    ['name' => 'price_gift_month', 'setting' => 'paddle_price_gift_month', 'type' => 'text', 'label' => 'Подарунок · місяць (разово)', 'placeholder' => 'pri_01h…',
+                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
+                    ['name' => 'price_gift_year', 'setting' => 'paddle_price_gift_year', 'type' => 'text', 'label' => 'Подарунок · рік (разово)', 'placeholder' => 'pri_01h…',
+                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
+                    ['name' => 'price_family_month', 'setting' => 'paddle_price_family_month', 'type' => 'text', 'label' => 'Сім’я · місяць (підписка)', 'placeholder' => 'pri_01h…',
+                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
+                    ['name' => 'price_family_year', 'setting' => 'paddle_price_family_year', 'type' => 'text', 'label' => 'Сім’я · рік (підписка)', 'placeholder' => 'pri_01h…',
+                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
+                    ['name' => 'price_promo_top_7', 'setting' => 'paddle_price_promo_top_7', 'type' => 'text', 'label' => 'Топ каталогу · 7 днів', 'placeholder' => 'pri_01h…',
+                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
+                    ['name' => 'price_promo_top_30', 'setting' => 'paddle_price_promo_top_30', 'type' => 'text', 'label' => 'Топ каталогу · 30 днів', 'placeholder' => 'pri_01h…',
+                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
+                    ['name' => 'price_promo_highlight_7', 'setting' => 'paddle_price_promo_highlight_7', 'type' => 'text', 'label' => 'Виділена картка · 7 днів', 'placeholder' => 'pri_01h…',
+                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
+                    ['name' => 'price_promo_highlight_30', 'setting' => 'paddle_price_promo_highlight_30', 'type' => 'text', 'label' => 'Виділена картка · 30 днів', 'placeholder' => 'pri_01h…',
+                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
+                    ['name' => 'price_promo_banner_30', 'setting' => 'paddle_price_promo_banner_30', 'type' => 'text', 'label' => 'Банер · 30 днів', 'placeholder' => 'pri_01h…',
+                        'rules' => ['nullable', 'string', 'regex:/^pri_[a-z0-9]{10,40}$/'], 'message' => 'Price ID Paddle починається з pri_.'],
                 ],
             ],
         ];

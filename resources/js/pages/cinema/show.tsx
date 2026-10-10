@@ -188,7 +188,6 @@ export default function CinemaShow({
     inTopTen,
 }: Props) {
     const [state, setState] = useState(initialState);
-    const marksOn = usePlugin('episode_marks');
     const tenOn = usePlugin('top_ten');
     const [stats, setStats] = useState({
         user_rating: movie.user_rating,
@@ -196,8 +195,7 @@ export default function CinemaShow({
         watchers_count: movie.watchers_count,
     });
     const [commentsCount, setCommentsCount] = useState(movie.comments_count);
-    const [marks, setMarks] = useState(episodeMarks);
-    const [markSeason, setMarkSeason] = useState(1);
+    const marks = episodeMarks;
     const [sharing, setSharing] = useState(false);
     const providers = useMemo(
         () => [...new Set(players.map((p) => p.provider))],
@@ -463,165 +461,6 @@ export default function CinemaShow({
                                 )}
 
                                 <div className="mt-6 flex flex-wrap items-center gap-2">
-                                    {(movie.episodes_count ?? 0) > 1 && (
-                                        <form
-                                            className="flex flex-wrap items-center gap-2"
-                                            onSubmit={(event) => {
-                                                event.preventDefault();
-                                                const form = new FormData(
-                                                    event.currentTarget,
-                                                );
-                                                const season = Number(
-                                                    form.get('season'),
-                                                );
-                                                const episode = Number(
-                                                    form.get('episode'),
-                                                );
-                                                void api<StateResponse>(
-                                                    'PUT',
-                                                    `/cinema/${movie.slug}/progress`,
-                                                    {
-                                                        season:
-                                                            season > 0
-                                                                ? season
-                                                                : null,
-                                                        episode,
-                                                    },
-                                                )
-                                                    .then((response) => {
-                                                        apply(response);
-                                                        toast.success(
-                                                            tr(
-                                                                'Серію збережено.',
-                                                            ),
-                                                        );
-                                                    })
-                                                    .catch((error: unknown) => {
-                                                        toast.error(
-                                                            error instanceof
-                                                                ApiError
-                                                                ? error.message
-                                                                : tr(
-                                                                      'Не вдалося зберегти серію.',
-                                                                  ),
-                                                        );
-                                                    });
-                                            }}
-                                        >
-                                            <input
-                                                name="season"
-                                                type="number"
-                                                min={1}
-                                                max={50}
-                                                defaultValue={
-                                                    state.season ?? ''
-                                                }
-                                                placeholder={tr('Сезон')}
-                                                className="h-11 w-24 rounded-xl bg-white/10 px-3 text-sm text-white placeholder:text-white/40"
-                                            />
-                                            <input
-                                                name="episode"
-                                                type="number"
-                                                min={1}
-                                                max={
-                                                    movie.episodes_count ?? 5000
-                                                }
-                                                required
-                                                defaultValue={
-                                                    state.episode ?? ''
-                                                }
-                                                placeholder={tr('Серія')}
-                                                className="h-11 w-24 rounded-xl bg-white/10 px-3 text-sm text-white placeholder:text-white/40"
-                                            />
-                                            <button
-                                                type="submit"
-                                                className="h-11 rounded-xl bg-white/10 px-4 text-sm font-semibold text-white"
-                                            >
-                                                {tr('Я тут')}
-                                            </button>
-                                        </form>
-                                    )}
-                                    {marksOn &&
-                                        (movie.episodes_count ?? 0) > 1 && (
-                                            <div className="mt-3 w-full">
-                                                <div className="mb-2 flex items-center gap-2">
-                                                    <span className="text-xs text-white/45">
-                                                        {tr('Відмітки серій')}
-                                                    </span>
-                                                    {[1, 2, 3].map((season) => (
-                                                        <button
-                                                            key={season}
-                                                            type="button"
-                                                            onClick={() =>
-                                                                setMarkSeason(
-                                                                    season,
-                                                                )
-                                                            }
-                                                            className={cn(
-                                                                'rounded-lg px-2 py-1 text-xs',
-                                                                markSeason ===
-                                                                    season
-                                                                    ? 'bg-white text-gc-ink'
-                                                                    : 'bg-white/10 text-white/70',
-                                                            )}
-                                                        >
-                                                            {tr('Сезон')}{' '}
-                                                            {season}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                                <div className="flex flex-wrap gap-1.5">
-                                                    {Array.from(
-                                                        {
-                                                            length: Math.min(
-                                                                movie.episodes_count ??
-                                                                    1,
-                                                                12,
-                                                            ),
-                                                        },
-                                                        (_, index) => index + 1,
-                                                    ).map((episode) => {
-                                                        const key = `${markSeason}:${episode}`;
-                                                        const on =
-                                                            marks.includes(key);
-
-                                                        return (
-                                                            <button
-                                                                key={key}
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    api<{
-                                                                        marks: string[];
-                                                                    }>(
-                                                                        'POST',
-                                                                        `/cinema/${movie.slug}/episodes`,
-                                                                        {
-                                                                            season: markSeason,
-                                                                            episode,
-                                                                        },
-                                                                    ).then(
-                                                                        (
-                                                                            response,
-                                                                        ) =>
-                                                                            setMarks(
-                                                                                response.marks,
-                                                                            ),
-                                                                    )
-                                                                }
-                                                                className={cn(
-                                                                    'size-9 rounded-lg text-xs font-semibold',
-                                                                    on
-                                                                        ? 'bg-gc-mint text-gc-ink'
-                                                                        : 'bg-white/10 text-white/70',
-                                                                )}
-                                                            >
-                                                                {episode}
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        )}
                                     {players.length > 0 && (
                                         <a
                                             href="#player"
@@ -825,14 +664,6 @@ export default function CinemaShow({
                                         ))}
                                     </select>
                                 )}
-                                {providerPlayers.length === 1 &&
-                                    player?.translation && (
-                                        <span className="ml-auto text-xs text-white/45">
-                                            {player.translation}
-                                            {player.quality &&
-                                                ` · ${player.quality}`}
-                                        </span>
-                                    )}
                             </div>
                             <div className="relative aspect-video bg-black">
                                 <iframe

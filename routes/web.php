@@ -46,6 +46,7 @@ use App\Http\Controllers\ServerController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StartController;
 use App\Http\Controllers\StoryController;
+use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\TranslateController;
 use App\Http\Controllers\VoiceController;
@@ -83,7 +84,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::get('invite', [ReferralController::class, 'index'])->name('referrals.index');
     Route::prefix('plus')->name('plus.')->group(function () {
         Route::get('/', [PlusController::class, 'index'])->name('index');
-        Route::post('checkout', [PlusController::class, 'checkout'])->middleware('throttle:20,1')->name('checkout');
+        // Paddle: транзакція для чекауту, стан, скасування в один клик, відновлення, портал покупця.
+        Route::post('checkout', [SubscriptionController::class, 'checkout'])->middleware('throttle:20,1')->name('checkout');
+        Route::get('status', [SubscriptionController::class, 'status'])->name('status');
+        Route::post('cancel', [SubscriptionController::class, 'cancel'])->middleware('throttle:10,1')->name('cancel');
+        Route::post('resume', [SubscriptionController::class, 'resume'])->middleware('throttle:10,1')->name('resume');
+        Route::get('portal', [SubscriptionController::class, 'portal'])->middleware('throttle:10,1')->name('portal');
         Route::post('redeem', [PlusController::class, 'redeem'])->middleware('throttle:10,1')->name('redeem');
         Route::put('style', [PlusController::class, 'style'])->name('style');
         Route::put('families/{family:id}/style', [PlusController::class, 'familyStyle'])->whereNumber('family')->name('families.style');

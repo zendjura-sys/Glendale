@@ -88,26 +88,27 @@ class SiteSettings
         'sightengine_user' => null,
         'sightengine_secret' => null,
         'vapid_private' => null,
-        // GameCon+ через Lemon Squeezy: ключ, магазин, секрет вебхука й ID варіантів товарів.
-        'lemonsqueezy_api_key' => null,
-        'lemonsqueezy_store_id' => null,
-        'lemonsqueezy_webhook_secret' => null,
-        'lemonsqueezy_test_mode' => false,
-        'ls_variant_plus_month' => null,
-        'ls_variant_plus_year' => null,
-        'ls_variant_gift_month' => null,
-        'ls_variant_gift_year' => null,
-        'ls_variant_family_month' => null,
-        'ls_variant_family_year' => null,
-        'ls_variant_promo_top_7' => null,
-        'ls_variant_promo_top_30' => null,
-        'ls_variant_promo_highlight_7' => null,
-        'ls_variant_promo_highlight_30' => null,
-        'ls_variant_promo_banner_30' => null,
+        // GameCon+ через Paddle Billing: продавець, токени, секрет вебхука, пісочниця й Price ID товарів.
+        'paddle_seller_id' => null,
+        'paddle_client_token' => null,
+        'paddle_api_key' => null,
+        'paddle_webhook_secret' => null,
+        'paddle_sandbox' => null,
+        'paddle_price_plus_month' => null,
+        'paddle_price_plus_year' => null,
+        'paddle_price_gift_month' => null,
+        'paddle_price_gift_year' => null,
+        'paddle_price_family_month' => null,
+        'paddle_price_family_year' => null,
+        'paddle_price_promo_top_7' => null,
+        'paddle_price_promo_top_30' => null,
+        'paddle_price_promo_highlight_7' => null,
+        'paddle_price_promo_highlight_30' => null,
+        'paddle_price_promo_banner_30' => null,
     ];
 
     /** Ключі, які не можна віддавати у фронтенд. */
-    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'videoseed_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key', 'deepl_key', 'maxmind_license_key', 'vapid_private', 'telegram_bot_token', 'telegram_webhook_secret', 'twitch_client_secret', 'sightengine_secret', 'lemonsqueezy_api_key', 'lemonsqueezy_webhook_secret'];
+    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'videoseed_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key', 'deepl_key', 'maxmind_license_key', 'vapid_private', 'telegram_bot_token', 'telegram_webhook_secret', 'twitch_client_secret', 'sightengine_secret', 'paddle_api_key', 'paddle_webhook_secret'];
 
     /** @var array<string, mixed>|null */
     private ?array $values = null;

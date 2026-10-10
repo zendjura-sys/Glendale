@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Storage;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Laravel\Paddle\Billable;
 
 /**
  * @property int $id
@@ -90,7 +91,9 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 class User extends Authenticatable implements HasLocalePreference, MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+    // Billable (Cashier Paddle): $user->subscribed('default'), $user->subscription('default')->onGracePeriod(),
+    // checkout, транзакції. Сімейний GameCon+ — підписка лідера з типом «family:{id}».
+    use Billable, HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
     public const ROLE_USER = 'user';
 
@@ -305,6 +308,25 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     public function isPlus(): bool
     {
         return $this->plus_until !== null && $this->plus_until->isFuture();
+    }
+
+    /**
+     * is_premium / premium_until — синоніми GameCon+ (джерело — plus_until, яке ведуть вебхуки Paddle,
+     * подарунки, промокоди й видача адміністратором).
+     *
+     * @return Attribute<bool, never>
+     */
+    protected function isPremium(): Attribute
+    {
+        return Attribute::get(fn () => $this->isPlus());
+    }
+
+    /**
+     * @return Attribute<Carbon|null, never>
+     */
+    protected function premiumUntil(): Attribute
+    {
+        return Attribute::get(fn () => $this->plus_until);
     }
 
     /**
