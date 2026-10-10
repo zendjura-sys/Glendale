@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import type { GtaServerCard } from '@/types';
+import { shortNumber } from '@/lib/format';
 import { LOCALE, tr } from '@/lib/i18n';
 import { usePlugin } from '@/lib/plugins';
 
@@ -167,11 +168,19 @@ export default function Servers({
                             {[
                                 [
                                     tr('Гравців онлайн'),
-                                    stats.online.toLocaleString(LOCALE),
+                                    shortNumber(stats.online),
                                     'text-emerald-300',
                                 ],
-                                [tr('Серверів'), stats.servers, 'text-white'],
-                                [tr('Сімей'), stats.families, 'text-[#c4b5fd]'],
+                                [
+                                    tr('Серверів'),
+                                    shortNumber(stats.servers),
+                                    'text-white',
+                                ],
+                                [
+                                    tr('Сімей'),
+                                    shortNumber(stats.families),
+                                    'text-[#c4b5fd]',
+                                ],
                             ].map(([label, value, tone]) => (
                                 <div
                                     key={label}
@@ -373,11 +382,11 @@ export default function Servers({
                     </div>
                 )}
 
-                <div className="glass flex flex-wrap items-center gap-4 rounded-3xl p-5">
-                    <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-brand">
+                <div className="glass flex flex-col gap-4 rounded-3xl p-5 sm:flex-row sm:items-center">
+                    <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-brand">
                         <Crown className="size-6 text-white" />
                     </span>
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0 sm:flex-1">
                         <div className="font-display text-lg font-semibold text-white">
                             {tr('Керуєте сім’єю на сервері?')}
                         </div>
@@ -389,7 +398,7 @@ export default function Servers({
                     </div>
                     <a
                         href="/families/create"
-                        className="glass inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold text-white hover:bg-white/10"
+                        className="glass inline-flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white hover:bg-white/10 sm:w-auto"
                     >
                         <UsersRound className="size-4" /> {tr('Створити сім’ю')}
                     </a>

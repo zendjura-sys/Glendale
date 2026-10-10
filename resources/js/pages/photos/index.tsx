@@ -64,7 +64,7 @@ export default function PhotosIndex({
                                 <UserAvatar user={owner.user} size="lg" />
                             ) : null}
                         </Link>
-                        <div className="min-w-0 flex-1">
+                        <div className="min-w-0 flex-1 basis-48">
                             <Link
                                 href={owner.href}
                                 className="inline-flex items-center gap-1.5 text-xs text-white/45 hover:text-white"
@@ -74,7 +74,7 @@ export default function PhotosIndex({
                                     ? tr('До спільноти')
                                     : tr('До профілю')}
                             </Link>
-                            <h1 className="mt-0.5 truncate font-display text-2xl font-bold text-white">
+                            <h1 className="mt-0.5 font-display text-xl leading-tight font-bold break-words text-white sm:text-2xl">
                                 <span className="text-gradient">
                                     {tr('Фотографії')}
                                 </span>{' '}
@@ -99,7 +99,7 @@ export default function PhotosIndex({
                             <button
                                 type="button"
                                 onClick={() => setCreating(true)}
-                                className="btn-glow inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold"
+                                className="btn-glow inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold sm:w-auto"
                             >
                                 <FolderPlus className="size-4" />{' '}
                                 {tr('Створити альбом')}

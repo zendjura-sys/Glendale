@@ -122,6 +122,20 @@ class GameController extends Controller
             : Inertia::render('games/index', $props);
     }
 
+    /**
+     * Кольори з постера: з кешу одразу, інакше — відкладеним пропом після першого показу сторінки.
+     */
+    private function palette(?string $poster): mixed
+    {
+        $palettes = app(PosterPalette::class);
+        $cached = $palettes->cached($poster);
+        if ($cached !== null || $poster === null) {
+            return $cached ?: null;
+        }
+
+        return Inertia::defer(fn () => $palettes->resolve($poster), 'palette');
+    }
+
     public function show(Request $request, Game $game, PlayingStatus $playing, FriendshipService $friendships): Response|JsonResponse
     {
         abort_unless($game->is_published || $request->user()?->isStaff(), 404);
@@ -146,7 +160,7 @@ class GameController extends Controller
         $poster = is_array($details['artworks'] ?? null) && isset($details['artworks'][0]) ? (string) $details['artworks'][0] : $game->toCard()['cover'];
 
         $props = [
-            'palette' => app(PosterPalette::class)->for(is_string($poster) ? $poster : null),
+            'palette' => $this->palette(is_string($poster) ? $poster : null),
             'game' => [
                 ...$game->toCard(),
                 'genres' => $game->genres ?? [],

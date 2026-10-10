@@ -20,10 +20,10 @@ import { EmptyState } from '@/components/gc/widget';
 import { FamilyLogo } from '@/components/families/family-logo';
 import { ConnectButton, ServerLinks } from '@/components/servers/server-card';
 import { OnlineMeter, ServerIcon } from '@/components/servers/server-icon';
-import { timeAgo } from '@/lib/format';
+import { timeAgo, shortNumber } from '@/lib/format';
 import { cn, formText } from '@/lib/utils';
 import type { FamilyCard, GtaServerCard, UserCard } from '@/types';
-import { LOCALE, tr } from '@/lib/i18n';
+import { tr } from '@/lib/i18n';
 import { usePlugin } from '@/lib/plugins';
 
 type Props = {
@@ -245,25 +245,20 @@ export default function ServerShow({
                                 <div className="text-xs text-white/45">
                                     {tr('Пік:')}{' '}
                                     <span className="font-semibold text-white/80">
-                                        {server.players_peak.toLocaleString(
-                                            LOCALE,
-                                        )}
+                                        {shortNumber(server.players_peak)}
                                     </span>
                                 </div>
                             )}
                             {server.discord_members !== null && (
                                 <div className="flex items-center gap-2 text-xs text-white/55">
                                     <MessageCircle className="size-3.5 text-gc-lilac-400" />
-                                    {server.discord_members.toLocaleString(
-                                        LOCALE,
-                                    )}{' '}
+                                    {shortNumber(server.discord_members)}{' '}
                                     {tr('у Discord')}
                                     {server.discord_online !== null &&
                                         tr(' · {toLocaleString} в мережі', {
-                                            toLocaleString:
-                                                server.discord_online.toLocaleString(
-                                                    LOCALE,
-                                                ),
+                                            toLocaleString: shortNumber(
+                                                server.discord_online,
+                                            ),
                                         })}
                                 </div>
                             )}
@@ -520,7 +515,7 @@ export default function ServerShow({
                                                     title={`${point.day}: ${point.players}`}
                                                 />
                                                 <span className="text-[10px] text-white/35">
-                                                    {point.players}
+                                                    {shortNumber(point.players)}
                                                 </span>
                                             </div>
                                         );

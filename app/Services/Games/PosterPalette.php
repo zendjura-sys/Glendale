@@ -9,7 +9,7 @@ use Throwable;
 /**
  * Кольори сторінки гри з її постера: темна основа для фону й яскравий акцент для кнопок і посилань.
  * Ключ — адреса постера: новий постер одразу дає нову палітру; той самий файл перераховується раз на тиждень.
- * Перший перегляд рахує після відповіді (картинку треба завантажити), далі — з кешу.
+ * Якщо палітри ще немає, сторінка приходить без неї, а кольори довантажуються відкладеним пропом.
  */
 class PosterPalette
 {
@@ -26,27 +26,51 @@ class PosterPalette
     ];
 
     /**
-     * @return array{base: string, accent: string, soft: string, swatches: array<string, string>}|null
+     * Готова палітра з кешу; false — постер уже пробували й не вийшло, null — ще не рахували.
+     *
+     * @return array{base: string, accent: string, soft: string, swatches: array<string, string>}|false|null
      */
-    public function for(?string $url): ?array
+    public function cached(?string $url): array|false|null
     {
         if ($url === null || $url === '') {
-            return null;
+            return false;
         }
-        $key = 'poster.palette.'.md5($url);
-        $cached = Cache::get($key);
+        $cached = Cache::get(self::key($url));
         if (is_array($cached)) {
             /** @var array{base: string, accent: string, soft: string, swatches: array<string, string>} $cached */
             return $cached;
         }
-        if ($cached === null && Cache::add($key.'.pending', true, 600)) {
-            dispatch(function () use ($url, $key) {
-                $palette = $this->compute($url);
-                Cache::put($key, $palette ?? false, $palette ? now()->addDays(7) : now()->addHours(6));
-            })->afterResponse();
-        }
 
-        return null;
+        return $cached === false ? false : null;
+    }
+
+    /**
+     * Рахує й запам’ятовує (для відкладеного пропа сторінки — сторінка вже показана).
+     *
+     * @return array{base: string, accent: string, soft: string, swatches: array<string, string>}|null
+     */
+    public function resolve(string $url): ?array
+    {
+        $cached = $this->cached($url);
+        if ($cached !== null) {
+            return $cached ?: null;
+        }
+        $palette = $this->compute(self::small($url));
+        Cache::put(self::key($url), $palette ?? false, $palette ? now()->addDays(7) : now()->addHours(6));
+
+        return $palette;
+    }
+
+    /** Ключ — адреса постера: інший постер — інша палітра. */
+    private static function key(string $url): string
+    {
+        return 'poster.palette.'.md5($url);
+    }
+
+    /** Для кольорів вистачає маленької копії: IGDB віддає її за іншим розміром у шляху. */
+    public static function small(string $url): string
+    {
+        return (string) preg_replace('#/t_(1080p|720p|screenshot_huge|cover_big)/#', '/t_screenshot_med/', $url);
     }
 
     /**
