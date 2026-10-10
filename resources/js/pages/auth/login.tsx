@@ -67,6 +67,14 @@ export default function Login({ status, canResetPassword }: Props) {
                                     placeholder="you@gamecon.online"
                                 />
                                 <InputError message={errors.email} />
+                                {errors.email && (
+                                    <TextLink
+                                        href="/appeal"
+                                        className="text-xs"
+                                    >
+                                        {tr('Акаунт заблоковано? Оскаржити')}
+                                    </TextLink>
+                                )}
                             </div>
 
                             <div className="grid gap-2">

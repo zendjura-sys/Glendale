@@ -18,6 +18,7 @@ export type User = {
     nav_tabs: string[];
     palette?: string;
     hide_spoilers?: boolean;
+    profanity_mask?: string | null;
     created_at: string;
     updated_at: string;
     /** Сумісність зі стартовими компонентами Laravel. */

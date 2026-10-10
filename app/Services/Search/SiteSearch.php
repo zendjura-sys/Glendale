@@ -29,7 +29,7 @@ class SiteSearch
         $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $q).'%';
         $hits = [];
 
-        User::query()->whereNull('banned_at')->where(fn (Builder $w) => $w
+        User::query()->whereNull('banned_at')->whereNull('frozen_at')->where(fn (Builder $w) => $w
             ->where('username', 'like', $like)
             ->orWhere('first_name', 'like', $like)
             ->orWhere('last_name', 'like', $like)

@@ -52,7 +52,7 @@ class Stories
         $friendIds = $this->friendships->friendIds($viewer);
         $stories = Story::query()->active()
             ->with('user')
-            ->whereHas('user', fn ($q) => $q->whereNull('banned_at'))
+            ->whereHas('user', fn ($q) => $q->whereNull('banned_at')->whereNull('frozen_at'))
             ->where(fn ($q) => $q->where('user_id', $viewer->id)
                 ->orWhere(fn ($q) => $q->whereIn('user_id', $friendIds ?: [0])))
             ->orderBy('created_at')

@@ -117,7 +117,7 @@ class MessageController extends Controller
             isset($data['contact_id']) => $this->messenger->sendContact(
                 $conversation,
                 $user,
-                User::query()->whereNull('banned_at')->whereKey($data['contact_id'])->firstOr(
+                User::query()->whereNull('banned_at')->whereNull('frozen_at')->whereKey($data['contact_id'])->firstOr(
                     fn () => throw ValidationException::withMessages(['contact_id' => 'Користувача не знайдено.'])
                 ),
                 $replyTo,

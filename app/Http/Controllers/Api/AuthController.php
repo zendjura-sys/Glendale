@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Models\User;
+use App\Services\Auth\AccountSecurity;
 use App\Services\Auth\ApiTokens;
 use App\Services\Auth\DiscordOAuth;
 use App\Services\Auth\FirebaseAuth;
@@ -38,6 +39,9 @@ class AuthController extends ApiController
         $user = User::query()->where('email', mb_strtolower($data['email']))->first();
 
         if (! $user || ! Hash::check($data['password'], $user->password)) {
+            if ($user) {
+                app(AccountSecurity::class)->logLogin($user, 'app', false, $request);
+            }
             throw ValidationException::withMessages([
                 'email' => 'Невірна пошта або пароль.',
             ]);
@@ -158,6 +162,7 @@ class AuthController extends ApiController
         }
 
         $name = Str::limit((string) $request->input('device', 'android'), 40, '');
+        app(AccountSecurity::class)->logLogin($user, 'app', true, $request);
 
         return response()->json([
             'token' => $this->tokens->issue($user, $name !== '' ? $name : 'android'),

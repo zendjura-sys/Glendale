@@ -1,5 +1,11 @@
 import { Link } from '@inertiajs/react';
-import { Palette, PanelBottom, ShieldCheck, UserRound } from 'lucide-react';
+import {
+    MonitorSmartphone,
+    Palette,
+    PanelBottom,
+    ShieldCheck,
+    UserRound,
+} from 'lucide-react';
 import type { PropsWithChildren } from 'react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
@@ -28,6 +34,12 @@ const items = [
         description: tr('Пароль, 2FA, ключі доступу'),
         href: editSecurity(),
         icon: ShieldCheck,
+    },
+    {
+        title: tr('Акаунт'),
+        description: tr('Пристрої, входи, свої дані'),
+        href: '/settings/account',
+        icon: MonitorSmartphone,
     },
     {
         title: tr('Панель'),

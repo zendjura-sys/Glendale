@@ -28,6 +28,7 @@ import { FriendButton } from '@/components/gc/friend-button';
 import { PostCard } from '@/components/gc/post-card';
 import { PostComposer } from '@/components/gc/post-composer';
 import { PostSkeleton } from '@/components/gc/post-skeleton';
+import { ReportPersonButton } from '@/components/gc/report-person';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { EmptyState, Widget } from '@/components/gc/widget';
@@ -442,6 +443,11 @@ export default function ProfileShow({
                                             ? tr('Зняти обмеження')
                                             : tr('Обмежити')}
                                     </button>
+                                    <ReportPersonButton
+                                        username={profile.username}
+                                        name={profile.name}
+                                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white/80 transition hover:bg-white/[0.11]"
+                                    />
                                 </>
                             )}
                         </div>

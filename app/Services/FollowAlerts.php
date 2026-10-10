@@ -62,7 +62,7 @@ class FollowAlerts
             ->limit($limit)
             ->toBase()
             ->get();
-        $users = User::query()->whereIn('id', $rows->pluck('user_id'))->whereNull('banned_at')->get()->keyBy('id');
+        $users = User::query()->whereIn('id', $rows->pluck('user_id'))->whereNull('banned_at')->whereNull('frozen_at')->get()->keyBy('id');
         $games = Game::query()->whereIn('id', $rows->pluck('game_id'))->get()->keyBy('id');
         $people = [];
         foreach ($rows as $row) {

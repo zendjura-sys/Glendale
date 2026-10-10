@@ -23,7 +23,7 @@ class Mentions
         $names = array_values(array_unique(array_map(strtolower(...), $match[1])));
 
         return User::query()
-            ->whereNull('banned_at')
+            ->whereNull('banned_at')->whereNull('frozen_at')
             ->whereKeyNot($actor->id)
             ->where(function ($query) use ($names) {
                 foreach ($names as $name) {

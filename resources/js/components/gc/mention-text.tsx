@@ -1,9 +1,13 @@
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
+import { useProfanityMask } from '@/lib/profanity';
 
 /** Робить @ім’я посиланням на сторінку людини. */
 export function MentionText({ text }: { text: string }) {
-    const parts = text.split(/(@[A-Za-z][A-Za-z0-9_.]{1,30}[A-Za-z0-9])/g);
+    const mask = useProfanityMask();
+    const parts = mask(text).split(
+        /(@[A-Za-z][A-Za-z0-9_.]{1,30}[A-Za-z0-9])/g,
+    );
 
     return parts.map((part, index) =>
         part.startsWith('@') ? (

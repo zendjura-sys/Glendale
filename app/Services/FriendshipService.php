@@ -226,7 +226,7 @@ class FriendshipService
         arsort($scores);
         $ids = array_slice(array_keys($scores), 0, $limit);
 
-        $users = User::query()->whereIn('id', $ids)->whereNull('banned_at')->get()->keyBy('id');
+        $users = User::query()->whereIn('id', $ids)->whereNull('banned_at')->whereNull('frozen_at')->get()->keyBy('id');
         $result = [];
         foreach ($ids as $id) {
             if ($users->has($id)) {
@@ -237,7 +237,7 @@ class FriendshipService
         if (count($result) < $limit) {
             User::query()
                 ->whereNotIn('id', array_merge($excluded, $ids))
-                ->whereNull('banned_at')
+                ->whereNull('banned_at')->whereNull('frozen_at')
                 ->latest()
                 ->limit($limit - count($result))
                 ->get()

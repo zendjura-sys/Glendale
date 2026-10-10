@@ -253,7 +253,7 @@ class MessengerController extends Controller
         $site = $request->query('scope') === 'site' && mb_strlen($term) >= 2;
         $friendIds = $this->friendships->friendIds($viewer);
 
-        $users = ($site ? User::query()->whereNull('banned_at')->whereKeyNot($viewer->id) : $this->friendships->friendsQuery($viewer))
+        $users = ($site ? User::query()->whereNull('banned_at')->whereNull('frozen_at')->whereKeyNot($viewer->id) : $this->friendships->friendsQuery($viewer))
             ->when($term !== '', fn (Builder $q) => $q->where(fn (Builder $w) => $w
                 ->where('name', 'like', "%{$term}%")
                 ->orWhere('username', 'like', "%{$term}%")))

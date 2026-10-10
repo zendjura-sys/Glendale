@@ -18,7 +18,7 @@ class WeeklyLetter
     public function sendAll(): int
     {
         $sent = 0;
-        User::query()->where('email_social', true)->whereNull('banned_at')->orderBy('id')->chunkById(100, function ($users) use (&$sent) {
+        User::query()->where('email_social', true)->whereNull('banned_at')->whereNull('frozen_at')->orderBy('id')->chunkById(100, function ($users) use (&$sent) {
             foreach ($users as $user) {
                 $intro = $this->intro($user);
                 if ($intro === null) {

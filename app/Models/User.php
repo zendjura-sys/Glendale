@@ -70,6 +70,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $muted_until Тимчасовий мут на всьому сайті
  * @property string|null $mute_reason
  * @property string|null $locale
+ * @property Carbon|null $frozen_at Заморожено власником: сторінку не видно, вхід розморожує
  * @property array<string, mixed>|null $preferences
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -124,6 +125,7 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'playing_until' => 'datetime',
             'playing_auto' => 'boolean',
             'muted_until' => 'datetime',
+            'frozen_at' => 'datetime',
             'banned_at' => 'datetime',
             'is_verified' => 'boolean',
             'is_private' => 'boolean',
@@ -234,6 +236,11 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
     public function isStaff(): bool
     {
         return in_array($this->role, [self::ROLE_ADMIN, self::ROLE_MODERATOR], true);
+    }
+
+    public function isFrozen(): bool
+    {
+        return $this->frozen_at !== null;
     }
 
     public function isBanned(): bool

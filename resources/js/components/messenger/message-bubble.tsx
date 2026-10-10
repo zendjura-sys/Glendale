@@ -27,6 +27,7 @@ import {
 } from './message-media';
 import { useContentTranslation } from '@/components/gc/translate';
 import { tr } from '@/lib/i18n';
+import { useProfanityMask } from '@/lib/profanity';
 import { usePlugin } from '@/lib/plugins';
 
 export type BubbleActions = {
@@ -158,6 +159,7 @@ export function MessageBubble({
         (hasImages && !message.body && !message.reply_to && !files.length);
     const pending = message.pending;
     const translation = useContentTranslation('message', message.id);
+    const mask = useProfanityMask();
     const [toolsOpen, setToolsOpen] = useState(false);
 
     const meta = (
@@ -458,7 +460,7 @@ export function MessageBubble({
                         >
                             {message.body && (
                                 <span className="break-words whitespace-pre-wrap">
-                                    {translation.text ?? message.body}
+                                    {mask(translation.text ?? message.body)}
                                 </span>
                             )}
                             <span className="float-right mt-1.5 ml-2.5 translate-y-0.5">

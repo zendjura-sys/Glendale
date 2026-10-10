@@ -14,6 +14,7 @@ use App\Models\Movie;
 use App\Models\Photo;
 use App\Models\Post;
 use App\Models\User;
+use App\Services\Auth\AccountSecurity;
 use App\Services\CommunityService;
 use App\Services\Families\FamilyGate;
 use App\Services\FriendshipService;
@@ -29,6 +30,9 @@ use App\Support\Modules\ModuleManager;
 use App\Support\NotifyPrefs;
 use App\Support\Settings\SiteSettings;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Events\Failed;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
 use Illuminate\Contracts\Translation\Loader;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -107,6 +111,23 @@ class AppServiceProvider extends ServiceProvider
         Model::preventLazyLoading(! app()->isProduction());
 
         AccountMail::register();
+
+        // Журнал входів і список відкритих сесій.
+        Event::listen(Login::class, function (Login $event) {
+            if ($event->guard === 'web' && $event->user instanceof User) {
+                app(AccountSecurity::class)->logLogin($event->user, AccountSecurity::methodFromRoute(request()->route()?->getName()), true);
+            }
+        });
+        Event::listen(Failed::class, function (Failed $event) {
+            if ($event->user instanceof User) {
+                app(AccountSecurity::class)->logLogin($event->user, 'password', false);
+            }
+        });
+        Event::listen(Logout::class, function () {
+            if (request()->hasSession()) {
+                app(AccountSecurity::class)->forget(request()->session()->getId());
+            }
+        });
 
         // Тип листа визначає адресу: no-reply@ — «Оповіщення», social@ — «Соцмережі».
         Event::listen(MessageSending::class, function (MessageSending $event) {

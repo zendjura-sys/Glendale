@@ -26,7 +26,7 @@ class WelcomeController extends Controller
                 'posts' => Post::query()->count(),
             ],
             'members' => User::query()
-                ->whereNull('banned_at')
+                ->whereNull('banned_at')->whereNull('frozen_at')
                 ->whereNotNull('avatar_path')
                 ->latest('last_seen_at')
                 ->limit(12)

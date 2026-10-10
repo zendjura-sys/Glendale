@@ -93,6 +93,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('comments/{comment}/pin', [CommentController::class, 'pin'])->name('comments.pin');
 
     Route::post('block/{user}', [ProfileController::class, 'block'])->name('blocks.toggle');
+    Route::post('report/{user}', [ProfileController::class, 'report'])->middleware('throttle:10,10')->name('users.report');
 
     Route::middleware('module:friends')->group(function () {
         Route::get('friends', [FriendController::class, 'index'])->name('friends.index');
@@ -573,6 +574,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::put('settings', [Admin\ModerationController::class, 'settings'])->name('settings');
             Route::post('reports/{report}', [Admin\ModerationController::class, 'resolve'])->whereNumber('report')->name('resolve');
             Route::post('users/{user:id}/unmute', [Admin\ModerationController::class, 'unmute'])->whereNumber('user')->name('unmute');
+            Route::post('people/{user:id}', [Admin\ModerationController::class, 'resolvePerson'])->whereNumber('user')->name('people.resolve');
+            Route::post('appeals/{appeal}', [Admin\ModerationController::class, 'answerAppeal'])->whereNumber('appeal')->name('appeals.answer');
         });
         Route::get('families', [Admin\FamilyController::class, 'index'])->name('families.index');
         Route::patch('families/{family:id}', [Admin\FamilyController::class, 'update'])->whereNumber('family')->name('families.update');

@@ -10,10 +10,12 @@ use App\Models\PostAttachment;
 use App\Models\ProfileVisit;
 use App\Models\User;
 use App\Models\UserBlock;
+use App\Models\UserReport;
 use App\Services\Achievements;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
 use App\Services\Messenger;
+use App\Services\Moderation\PeopleModeration;
 use App\Services\MusicService;
 use App\Services\PhotoService;
 use App\Services\PlayedTogether;
@@ -29,6 +31,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -53,6 +56,9 @@ class ProfileController extends Controller
     public function show(Request $request, User $user, Messenger $messenger, ModuleManager $modules, PhotoService $photoService): Response
     {
         $viewer = $request->user();
+        if ($user->isFrozen() && ! $viewer?->is($user) && ! $viewer?->isStaff()) {
+            return Inertia::render('profile/frozen', ['name' => $user->name]);
+        }
         if ($viewer && ! $viewer->is($user) && $user->pref('show_visitors')) {
             ProfileVisit::query()->updateOrCreate(
                 ['user_id' => $user->id, 'visitor_id' => $viewer->id],
@@ -211,6 +217,18 @@ class ProfileController extends Controller
             'url' => $url,
             'qr' => preg_replace('/^<\?xml[^>]*>\s*/', '', $svg) ?: $svg,
         ]);
+    }
+
+    public function report(Request $request, User $user, PeopleModeration $moderation): RedirectResponse
+    {
+        $data = $request->validate([
+            'reason' => ['required', Rule::in(array_keys(UserReport::REASONS))],
+            'comment' => ['nullable', 'string', 'max:1000'],
+        ]);
+        $moderation->report($request->user(), $user, $data['reason'], $data['comment'] ?? null);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Скаргу надіслано модераторам. Дякуємо!']);
+
+        return back();
     }
 
     public function block(Request $request, User $user): RedirectResponse

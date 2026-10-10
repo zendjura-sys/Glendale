@@ -49,7 +49,7 @@ class FeedController extends Controller
 
         $query = Post::query()
             ->visibleTo($user, $friendIds)
-            ->whereHas('author', fn (Builder $q) => $q->whereNull('banned_at'));
+            ->whereHas('author', fn (Builder $q) => $q->whereNull('banned_at')->whereNull('frozen_at'));
 
         if ($tab === 'friends') {
             $query->where(fn (Builder $q) => $q

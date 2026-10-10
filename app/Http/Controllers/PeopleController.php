@@ -140,7 +140,7 @@ class PeopleController extends Controller
     private function search(array $filters): Builder
     {
         return User::query()
-            ->whereNull('banned_at')
+            ->whereNull('banned_at')->whereNull('frozen_at')
             ->when($filters['q'] ?? null, function (Builder $query, string $q) {
                 $words = preg_split('/\s+/', trim($q));
                 if ($words === false) {
