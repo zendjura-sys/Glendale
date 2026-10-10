@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\FeedController;
 use App\Http\Controllers\PostController;
 use App\Models\Post;
 use App\Models\User;
@@ -10,6 +11,7 @@ use App\Services\CommunityService;
 use App\Services\FeedSignals;
 use App\Services\FriendshipService;
 use App\Services\PostPresenter;
+use App\Support\I18n\LanguageGuess;
 use App\Support\MutedWords;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -59,6 +61,12 @@ class FeedApiController extends ApiController
                 ->orderByDesc('likes_count');
         }
 
+        $rawLang = $request->query('lang');
+        $lang = is_string($rawLang) && in_array($rawLang, LanguageGuess::LANGS, true) ? $rawLang : null;
+        if ($lang !== null) {
+            $query->where('lang', $lang);
+        }
+
         $this->signals->apply($query, $user, $tab === 'discover');
         MutedWords::hidePosts($query, $user);
 
@@ -67,6 +75,9 @@ class FeedApiController extends ApiController
 
         return response()->json([
             'tab' => $tab,
+            'lang' => $lang,
+            'languages' => LanguageGuess::LANGS,
+            'tomorrow' => $request->integer('page', 1) > 1 ? [] : app(FeedController::class)->tomorrowFor($user),
             'has_sources' => $hasSources,
             'posts' => $this->page($posts, $items),
             'suggestions' => collect($this->friendships->suggestions($user, 5))

@@ -130,6 +130,14 @@ class FeedController extends Controller
      *
      * @return list<array<string, mixed>>
      */
+    public function tomorrowFor(User $user): array
+    {
+        return $this->tomorrow($user);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
     private function tomorrow(User $user): array
     {
         $day = now(ReportService::TIMEZONE)->addDay()->toDateString();

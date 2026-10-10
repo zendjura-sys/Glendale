@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\User;
+use App\Services\Moderation\ContentFilter;
 use App\Support\Modules\ModuleManager;
 
 class AccountPresenter
@@ -39,6 +40,8 @@ class AccountPresenter
             'discord' => filled($user->discord_id),
             'discord_username' => $user->discord_username,
             'google' => filled($user->google_id),
+            // Застосунок ховає мат зірочками сам, якщо людина це ввімкнула.
+            'profanity_mask' => $user->pref('hide_profanity') ? app(ContentFilter::class)->clientPattern() : null,
         ];
     }
 }

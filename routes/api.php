@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AccountApiController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ChatApiController;
 use App\Http\Controllers\Api\FeedApiController;
@@ -65,6 +66,17 @@ Route::prefix('v1')->group(function () {
         Route::put('me/password', [SocialApiController::class, 'password']);
         Route::get('me/connections', [SocialApiController::class, 'connections']);
         Route::delete('me/connections/{provider}', [SocialApiController::class, 'unlink'])->whereIn('provider', ['discord', 'google']);
+
+        // Акаунт: пристрої й сесії, журнал входів, заморожування, оскарження, скарги й відгуки.
+        Route::get('me/security', [AccountApiController::class, 'show']);
+        Route::delete('me/sessions/{session}', [AccountApiController::class, 'revokeSession'])->whereNumber('session');
+        Route::delete('me/tokens/{token}', [AccountApiController::class, 'revokeToken'])->whereNumber('token');
+        Route::delete('me/sessions', [AccountApiController::class, 'revokeOthers']);
+        Route::put('me/profanity', [AccountApiController::class, 'profanity']);
+        Route::post('me/freeze', [AccountApiController::class, 'freeze'])->middleware('throttle:6,1');
+        Route::post('me/appeals', [AccountApiController::class, 'appeal'])->middleware('throttle:5,60');
+        Route::post('users/{target}/report', [AccountApiController::class, 'report'])->middleware('throttle:10,10');
+        Route::post('feedback', [AccountApiController::class, 'feedback'])->middleware('throttle:5,10');
 
         // Історії на 24 години.
         Route::prefix('stories')->middleware('module:feed')->group(function () {

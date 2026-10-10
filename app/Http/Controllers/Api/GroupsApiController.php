@@ -113,6 +113,11 @@ class GroupsApiController extends ApiController
                 'description' => $community->description,
                 'membership' => $membership?->status,
                 'managed' => $membership?->isManager() ?? false,
+                'rules' => $community->rules,
+                'handbook' => $community->handbook,
+                'tags' => $community->post_tags ?? [],
+                'premoderation' => $community->premoderation,
+                'slow_mode' => $community->slow_mode,
             ],
             'posts' => $this->page($posts, $this->presenter->many(new Collection($posts->items()), $user)),
         ]);
