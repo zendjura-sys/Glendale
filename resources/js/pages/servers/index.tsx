@@ -203,16 +203,21 @@ export default function Servers({
                     </div>
 
                     <div className="relative mt-6 flex flex-col gap-3 lg:flex-row lg:items-center">
-                        <div className="flex shrink-0 rounded-xl bg-white/[0.04] p-1">
+                        <div className="-mx-1 scrollbar-none flex min-w-0 snap-x snap-mandatory gap-1 overflow-x-auto overscroll-x-contain rounded-xl bg-white/[0.04] p-1 lg:shrink-0">
                             {tabs.map((tab) => (
                                 <button
                                     key={tab.label}
                                     type="button"
-                                    onClick={() =>
-                                        visit({ platform: tab.value })
-                                    }
+                                    onClick={(event) => {
+                                        event.currentTarget.scrollIntoView({
+                                            behavior: 'smooth',
+                                            block: 'nearest',
+                                            inline: 'center',
+                                        });
+                                        visit({ platform: tab.value });
+                                    }}
                                     className={cn(
-                                        'inline-flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium transition',
+                                        'inline-flex h-9 shrink-0 snap-start items-center gap-2 rounded-lg px-3 text-sm font-medium whitespace-nowrap transition',
                                         filters.platform === tab.value
                                             ? 'bg-white/10 text-white'
                                             : 'text-white/50 hover:text-white',
