@@ -8,10 +8,12 @@ export function FollowButton({
     kind,
     id,
     following,
+    className,
 }: {
     kind: 'game' | 'server';
     id: number;
     following: boolean;
+    className?: string;
 }) {
     const [on, setOn] = useState(following);
 
@@ -38,6 +40,7 @@ export function FollowButton({
             className={cn(
                 'inline-flex h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.08] px-4 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15',
                 on && 'border-gc-lilac-400/40 text-gc-lilac-200',
+                className,
             )}
         >
             <Bell className={cn('size-4', on && 'fill-current')} />

@@ -228,6 +228,10 @@ function GuideForm({ slug }: { slug: string }) {
 }
 
 /** Сторінка гри: опис, медіа, мультиплеєр, рейтинги, компанії, мови, магазини, спільнота й клани. */
+/** Матове «рідке скло» для кнопок поверх постера. */
+const POSTER_GLASS =
+    'h-10 rounded-xl border-white/25 bg-white/[0.12] px-3.5 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18)] backdrop-blur-xl backdrop-saturate-150 hover:bg-white/[0.2]';
+
 export default function GameShow({
     game,
     similar,
@@ -311,66 +315,71 @@ export default function GameShow({
                 <ArrowLeft className="size-4" /> {tr('Каталог ігор')}
             </Link>
             <div className="glass overflow-hidden rounded-3xl">
-                <div className="relative aspect-[16/9] max-h-[320px] w-full overflow-hidden bg-black/40 sm:aspect-[21/8]">
+                <div className="relative flex min-h-[420px] flex-col justify-end overflow-hidden bg-black/40 sm:min-h-[360px]">
                     {d.artworks?.[0] ? (
                         <img
                             src={d.artworks[0]}
                             alt=""
-                            className="size-full object-cover"
+                            className="absolute inset-0 size-full object-cover"
                         />
                     ) : (
-                        <GameCover game={game} />
+                        <GameCover game={game} className="absolute inset-0" />
                     )}
-                    <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/50 to-transparent" />
-                </div>
-                <div className="space-y-3 px-4 pt-4 sm:px-5">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0">
-                            <h1 className="font-display text-2xl leading-tight font-semibold break-words text-white sm:text-3xl">
-                                {game.name}
-                            </h1>
-                            <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/65">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/10" />
+                    <div className="relative space-y-3 p-4 sm:p-6">
+                        <h1 className="font-display text-[28px] leading-[1.1] font-bold tracking-tight break-words text-white drop-shadow-[0_2px_12px_rgb(0_0_0/0.6)] sm:text-4xl">
+                            {game.name}
+                        </h1>
+                        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium text-white/85">
+                            {game.released && (
+                                <span>{game.released.slice(0, 4)}</span>
+                            )}
+                            {game.platforms.length > 0 && (
                                 <span>
                                     {game.platforms
                                         .map((p) => p.label)
                                         .join(' · ')}
                                 </span>
-                                {game.released && (
-                                    <span>{game.released.slice(0, 4)}</span>
-                                )}
-                                {game.rating ? (
-                                    <span className="inline-flex items-center gap-1">
-                                        <Star className="size-3.5 fill-amber-300 text-amber-300" />{' '}
-                                        {game.rating.toFixed(1)}
-                                    </span>
-                                ) : null}
+                            )}
+                            {game.rating ? (
+                                <span className="inline-flex items-center gap-1">
+                                    <Star className="size-3.5 fill-amber-300 text-amber-300" />
+                                    {game.rating.toFixed(1)}
+                                </span>
+                            ) : null}
+                        </p>
+                        {(d.age_ratings?.length ?? 0) > 0 && (
+                            <p className="flex flex-wrap gap-1.5">
                                 {d.age_ratings?.map((a) => (
                                     <span
                                         key={a}
-                                        className="rounded-md border border-white/25 px-1.5 text-xs"
+                                        className="rounded-md border border-white/30 bg-black/20 px-1.5 py-0.5 text-xs font-medium text-white/85 backdrop-blur-md"
                                     >
                                         {a}
                                     </span>
                                 ))}
                             </p>
-                        </div>
-                        <span className="flex shrink-0 flex-wrap gap-2">
+                        )}
+                        <div className="flex flex-wrap gap-2 pt-1">
                             <FollowButton
                                 kind="game"
                                 id={game.id}
                                 following={following}
+                                className={POSTER_GLASS}
                             />
                             <PinButton
                                 kind="game"
                                 id={game.id}
                                 pinned={pinned}
+                                className={POSTER_GLASS}
                             />
                             <SaveButton
                                 kind="game"
                                 id={game.id}
                                 saved={saved}
+                                className={POSTER_GLASS}
                             />
-                        </span>
+                        </div>
                     </div>
                 </div>
                 <div className="space-y-4 p-4 sm:p-5">

@@ -8,10 +8,12 @@ export function PinButton({
     kind,
     id,
     pinned,
+    className,
 }: {
     kind: 'game' | 'server' | 'movie';
     id: number;
     pinned: boolean;
+    className?: string;
 }) {
     const [on, setOn] = useState(pinned);
 
@@ -37,6 +39,7 @@ export function PinButton({
             className={cn(
                 'inline-flex h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.08] px-4 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15',
                 on && 'text-gc-lilac-200',
+                className,
             )}
         >
             <Pin className={cn('size-4', on && 'fill-current')} />
