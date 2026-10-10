@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { api, ApiError } from '@/lib/api';
 import { compactNumber, plural } from '@/lib/format';
-import { cn, formText } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { usePlugin } from '@/lib/plugins';
 import type {
     CommentItem,
@@ -61,7 +61,6 @@ type Props = {
     soundtrack: { id: number; title: string; artist: string; url: string }[];
     saved: boolean;
     pinned: boolean;
-    playback: { player: string; subs: string };
     inTopTen: boolean;
 };
 
@@ -177,14 +176,11 @@ export default function CinemaShow({
     soundtrack,
     saved,
     pinned,
-    playback,
     inTopTen,
 }: Props) {
     const [state, setState] = useState(initialState);
     const marksOn = usePlugin('episode_marks');
     const tenOn = usePlugin('top_ten');
-    const playerOn = usePlugin('preferred_player');
-    const subsOn = usePlugin('subtitle_language');
     const [stats, setStats] = useState({
         user_rating: movie.user_rating,
         ratings_count: movie.ratings_count,
@@ -777,74 +773,7 @@ export default function CinemaShow({
                     ) : (
                         <>
                             <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.06] p-3">
-                                <form
-                                    className="flex flex-wrap items-center gap-2"
-                                    onSubmit={(event) => {
-                                        event.preventDefault();
-                                        const data = new FormData(
-                                            event.currentTarget,
-                                        );
-                                        router.put(
-                                            '/cinema/playback',
-                                            {
-                                                player: formText(
-                                                    data,
-                                                    'player',
-                                                ),
-                                                subs: formText(data, 'subs'),
-                                            },
-                                            { preserveScroll: true },
-                                        );
-                                    }}
-                                >
-                                    {playerOn && (
-                                        <select
-                                            name="player"
-                                            defaultValue={playback.player}
-                                            className="h-9 rounded-lg bg-white/10 px-2 text-xs text-white"
-                                        >
-                                            <option value="">
-                                                {tr('Плеєр')}
-                                            </option>
-                                            <option value="kodik">Kodik</option>
-                                            <option value="flixcdn">
-                                                FlixCDN
-                                            </option>
-                                            <option value="youtube">
-                                                YouTube
-                                            </option>
-                                        </select>
-                                    )}
-                                    {subsOn && (
-                                        <select
-                                            name="subs"
-                                            defaultValue={playback.subs}
-                                            className="h-9 rounded-lg bg-white/10 px-2 text-xs text-white"
-                                        >
-                                            <option value="">
-                                                {tr('Субтитри')}
-                                            </option>
-                                            <option value="uk">
-                                                {tr('Українська')}
-                                            </option>
-                                            <option value="en">
-                                                {tr('Англійська')}
-                                            </option>
-                                            <option value="ru">
-                                                {tr('Російська')}
-                                            </option>
-                                        </select>
-                                    )}
-                                    {(playerOn || subsOn) && (
-                                        <button
-                                            type="submit"
-                                            className="h-9 rounded-lg bg-white/10 px-3 text-xs text-white"
-                                        >
-                                            {tr('Зберегти')}
-                                        </button>
-                                    )}
-                                </form>
-                                <div className="flex gap-1">
+                                <div className="scrollbar-none flex max-w-full gap-1 overflow-x-auto">
                                     {tabs.map((tab) => (
                                         <button
                                             key={tab.key}

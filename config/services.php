@@ -89,6 +89,11 @@ return [
         'api_url' => env('KODIK_API_URL', 'https://kodik-api.com'),
     ],
 
+    'videoseed' => [
+        'token' => env('VIDEOSEED_TOKEN'),
+        'api_url' => env('VIDEOSEED_API_URL', 'https://api.videoseed.tv/apiv2.php'),
+    ],
+
     'flixcdn' => [
         'token' => env('FLIXCDN_TOKEN'),
         'template' => env('FLIXCDN_TEMPLATE'),

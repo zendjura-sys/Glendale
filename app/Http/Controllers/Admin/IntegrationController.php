@@ -26,6 +26,7 @@ use App\Services\Cinema\KodikClient;
 use App\Services\Cinema\Metadata\OmdbProvider;
 use App\Services\Cinema\Metadata\ShikimoriProvider;
 use App\Services\Cinema\Metadata\TmdbProvider;
+use App\Services\Cinema\VideoseedClient;
 use App\Services\Games\GameCatalog;
 use App\Services\Games\Igdb;
 use App\Services\I18n\DeepL;
@@ -521,6 +522,24 @@ class IntegrationController extends Controller
                     ['name' => 'api_updates', 'setting' => 'flixcdn_api_updates', 'type' => 'url', 'label' => 'API: оновлення',
                         'placeholder' => 'https://api.example/updates?token={token}&page={page}', 'help' => 'Список новинок для автонаповнення.',
                         'rules' => $url],
+                ],
+            ],
+            'videoseed' => [
+                'label' => 'Videoseed',
+                'group' => 'players',
+                'description' => 'Другий плеєр поруч із Kodik: фільми й серіали з озвучками, пошук за ID Кінопошуку, IMDb і TMDB, автоімпорт новинок.',
+                'docs' => 'https://videoseed.tv',
+                'steps' => [
+                    'Зареєструйтеся на videoseed.tv і відкрийте «Редагування профілю» — там API-токен.',
+                    'Вставте токен і натисніть «Перевірити».',
+                    'Адмінка → Кіно: позначте Videoseed в автонаповненні, а в «Плеєри» — порядок вкладок і озвучки.',
+                ],
+                'configured' => app(VideoseedClient::class)->configured(),
+                'stat' => MovieSource::query()->where('provider', 'videoseed')->count().' плеєрів у каталозі',
+                'test' => fn () => app(VideoseedClient::class)->test(),
+                'fields' => [
+                    ['name' => 'token', 'setting' => 'videoseed_token', 'type' => 'secret', 'label' => 'API-токен', 'env' => config('services.videoseed.token'),
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{16,64}$/'], 'message' => 'Токен Videoseed — це 16–64 латинські літери та цифри.'],
                 ],
             ],
             'tmdb' => [

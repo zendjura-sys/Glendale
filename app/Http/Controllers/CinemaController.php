@@ -172,7 +172,7 @@ class CinemaController extends Controller
         $plugins = app(Plugins::class);
         abort_unless($plugins->on('preferred_player') || $plugins->on('subtitle_language'), 404);
         $data = $request->validate([
-            'player' => ['nullable', Rule::in(['kodik', 'flixcdn', 'youtube'])],
+            'player' => ['nullable', Rule::in(['kodik', 'videoseed', 'flixcdn', 'youtube'])],
             'subs' => ['nullable', Rule::in(['uk', 'en', 'ru'])],
         ]);
         $patch = [];

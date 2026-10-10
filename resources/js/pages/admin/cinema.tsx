@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { PlayersPanel, TmdbPanel } from '@/components/cinema/admin-panels';
+import type { PlayersData, TmdbData } from '@/components/cinema/admin-panels';
 import { MoviePoster } from '@/components/cinema/movie-tile';
 import {
     PageHeader,
@@ -47,7 +49,7 @@ type AdminMovie = MovieCard & {
     imdb_id: string | null;
     shikimori_id: string | null;
     tmdb_id: string | null;
-    origin: 'manual' | 'kodik' | 'flixcdn';
+    origin: 'manual' | 'kodik' | 'flixcdn' | 'videoseed';
     enriched_at: string | null;
     created_at: string;
     deleted_at: string | null;
@@ -55,8 +57,9 @@ type AdminMovie = MovieCard & {
 
 type AutoConfig = {
     enabled: boolean;
-    providers: ('kodik' | 'flixcdn')[];
+    providers: ('kodik' | 'videoseed' | 'flixcdn')[];
     kodik_types: string[];
+    videoseed_lists: ('movie' | 'serial')[];
     pages: number;
     interval: number;
     publish: boolean;
@@ -117,6 +120,7 @@ type Props = {
     requests: MovieRequestRow[];
     providers: {
         kodik: boolean;
+        videoseed: boolean;
         flixcdn: boolean;
         flixcdn_api: boolean;
         metadata: boolean;
@@ -128,6 +132,8 @@ type Props = {
         kodik_types: MovieOption[];
         intervals: number[];
     };
+    players: PlayersData;
+    tmdb: TmdbData;
 };
 
 const filterTabs: { key: Filter; label: string }[] = [
@@ -191,6 +197,12 @@ function AutoImportPanel({
             hint: tr('Оновлення каталогу з усіма озвучками'),
         },
         {
+            key: 'videoseed' as const,
+            label: 'Videoseed',
+            ready: providers.videoseed,
+            hint: tr('Новинки фільмів і серіалів з озвучками'),
+        },
+        {
             key: 'flixcdn' as const,
             label: 'FlixCDN',
             ready: providers.flixcdn_api,
@@ -238,7 +250,7 @@ function AutoImportPanel({
 
             <div className="relative grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
                 <div className="space-y-4">
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                         {providerCards.map((p) => {
                             const on = data.providers.includes(p.key);
 
@@ -315,6 +327,53 @@ function AutoImportPanel({
                             ))}
                         </div>
                     </div>
+
+                    {data.providers.includes('videoseed') && (
+                        <div>
+                            <p className="mb-2 text-xs font-medium text-white/50">
+                                {tr('Що брати з Videoseed')}
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                                {(
+                                    [
+                                        ['movie', tr('Фільми й мультфільми')],
+                                        [
+                                            'serial',
+                                            tr('Серіали й мультсеріали'),
+                                        ],
+                                    ] as const
+                                ).map(([key, label]) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        onClick={() =>
+                                            setData(
+                                                'videoseed_lists',
+                                                data.videoseed_lists.includes(
+                                                    key,
+                                                )
+                                                    ? data.videoseed_lists.filter(
+                                                          (v) => v !== key,
+                                                      )
+                                                    : [
+                                                          ...data.videoseed_lists,
+                                                          key,
+                                                      ],
+                                            )
+                                        }
+                                        className={cn(
+                                            'rounded-full border px-3 py-1 text-xs transition',
+                                            data.videoseed_lists.includes(key)
+                                                ? 'border-gc-lilac-400/50 bg-gc-indigo/20 text-white'
+                                                : 'border-white/10 text-white/55 hover:text-white',
+                                        )}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                         <label className="grid gap-1.5 text-xs text-white/50">
@@ -574,6 +633,8 @@ export default function AdminCinema({
     stats,
     providers,
     auto,
+    players,
+    tmdb,
     requests,
 }: Props) {
     const [q, setQ] = useState(filters.q);
@@ -679,6 +740,11 @@ export default function AdminCinema({
                 providers={providers}
                 notEnriched={stats.not_enriched}
             />
+
+            <div className="mb-5 grid grid-cols-1 gap-5 xl:grid-cols-2">
+                <PlayersPanel data={players} />
+                <TmdbPanel data={tmdb} />
+            </div>
 
             {requests.length > 0 && <MovieRequests requests={requests} />}
 
@@ -807,7 +873,10 @@ export default function AdminCinema({
                                                     ? tr('Вручну')
                                                     : movie.origin === 'kodik'
                                                       ? 'Kodik'
-                                                      : 'FlixCDN'}
+                                                      : movie.origin ===
+                                                          'videoseed'
+                                                        ? 'Videoseed'
+                                                        : 'FlixCDN'}
                                             </Pill>
                                             {movie.enriched_at ? (
                                                 <Pill tone="violet">

@@ -16,15 +16,22 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $quality
  * @property string $link
  * @property int $position
+ * @property bool $is_hidden Схована адміністратором
  */
-#[Fillable(['provider', 'external_id', 'translation', 'translation_type', 'quality', 'link', 'position'])]
+#[Fillable(['provider', 'external_id', 'translation', 'translation_type', 'quality', 'link', 'position', 'is_hidden'])]
 class MovieSource extends Model
 {
     public const PROVIDERS = [
         'kodik' => 'Kodik',
+        'videoseed' => 'Videoseed',
         'flixcdn' => 'FlixCDN',
         'custom' => 'Власний плеєр',
     ];
+
+    protected function casts(): array
+    {
+        return ['is_hidden' => 'boolean'];
+    }
 
     /**
      * @return BelongsTo<Movie, $this>
@@ -48,6 +55,7 @@ class MovieSource extends Model
             'translation_type' => $this->translation_type,
             'quality' => $this->quality,
             'link' => $this->link,
+            'is_hidden' => (bool) $this->is_hidden,
         ];
     }
 }

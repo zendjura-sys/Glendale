@@ -54,12 +54,14 @@ export type MovieDetail = MovieCard & {
 export type MoviePlayer = {
     key: string;
     id: number | null;
-    provider: 'kodik' | 'flixcdn' | 'custom';
+    provider: 'kodik' | 'videoseed' | 'flixcdn' | 'custom';
     provider_label: string;
     translation: string | null;
     translation_type: string | null;
     quality: string | null;
     link: string;
+    /** Схована адміністратором (лише в адмінці). */
+    is_hidden?: boolean;
 };
 
 export type MovieState = {

@@ -14,12 +14,14 @@ use Illuminate\Support\Str;
 
 class CinemaService
 {
-    public const PROVIDERS = ['kodik', 'flixcdn'];
+    public const PROVIDERS = ['kodik', 'videoseed', 'flixcdn'];
 
     public function __construct(
         private readonly KodikClient $kodik,
         private readonly FlixcdnPlayer $flixcdn,
         private readonly FlixcdnClient $flixcdnApi,
+        private readonly VideoseedClient $videoseed,
+        private readonly CinemaPlayers $playerRules,
     ) {}
 
     /**
@@ -48,7 +50,7 @@ class CinemaService
 
             $meta = collect($candidate)->only([
                 'type', 'title', 'title_original', 'year', 'description', 'poster_url', 'backdrop_url', 'genres', 'countries',
-                'duration', 'age_rating', 'rating_kp', 'rating_imdb', 'rating_shikimori', 'kinopoisk_id', 'imdb_id', 'shikimori_id', 'episodes_count',
+                'duration', 'age_rating', 'rating_kp', 'rating_imdb', 'rating_shikimori', 'kinopoisk_id', 'imdb_id', 'shikimori_id', 'tmdb_id', 'episodes_count',
             ])->filter(fn ($v) => $v !== null && $v !== [] && $v !== '')->all();
 
             $movie->fill($fresh ? $meta : array_filter($meta, fn ($v, $k) => blank($movie->getAttribute($k)), ARRAY_FILTER_USE_BOTH));
@@ -91,6 +93,20 @@ class CinemaService
             }
             $this->syncSources($movie, 'flixcdn', $sources);
             $result['flixcdn'] = count($sources);
+        }
+        if ($this->videoseed->configured() && ($movie->kinopoisk_id || $movie->imdb_id || $movie->tmdb_id)) {
+            $sources = [];
+            foreach ($this->videoseed->search([
+                'kinopoisk_id' => $movie->kinopoisk_id,
+                'imdb_id' => $movie->imdb_id,
+                'tmdb_id' => $movie->tmdb_id,
+            ]) as $candidate) {
+                foreach ($this->sourceList($candidate['sources'] ?? null) as $source) {
+                    $sources[] = $source;
+                }
+            }
+            $this->syncSources($movie, 'videoseed', $sources);
+            $result['videoseed'] = count($sources);
         }
         if ($result === []) {
             throw new CinemaException('Жоден провайдер плеєрів не налаштований.', 422);
@@ -219,7 +235,7 @@ class CinemaService
      */
     public function players(Movie $movie, ?User $user = null): array
     {
-        $players = $movie->sources->map(fn (MovieSource $s) => $s->toPlayer())->all();
+        $players = $movie->sources->reject(fn (MovieSource $s) => $s->is_hidden)->map(fn (MovieSource $s) => $s->toPlayer())->values()->all();
 
         if (! $movie->sources->contains('provider', 'flixcdn') && $link = $this->flixcdn->link($movie)) {
             $players[] = [
@@ -237,13 +253,8 @@ class CinemaService
         $plugins = app(Plugins::class);
         $prefer = $user instanceof User && $plugins->on('preferred_player') ? (string) $user->pref('cinema_player', '') : '';
         $subs = $user instanceof User && $plugins->on('subtitle_language') ? (string) $user->pref('cinema_subs', '') : '';
-        usort($players, function (array $a, array $b) use ($prefer, $subs): int {
-            $rank = function (array $player) use ($prefer, $subs): array {
-                return [$this->providerRank($player, $prefer), $this->subtitleRank($player, $subs)];
-            };
-
-            return $rank($a) <=> $rank($b);
-        });
+        // Порядок і фільтри з адмінки; уподобання глядача (плеєр, субтитри) — важливіші.
+        $players = $this->playerRules->apply(array_values($players), fn (array $player): int => $this->providerRank($player, $prefer) * 10 + $this->subtitleRank($player, $subs));
 
         return $players;
     }
@@ -254,9 +265,7 @@ class CinemaService
     private function providerRank(array $player, string $prefer): int
     {
         if ($prefer === '') {
-            $order = ['kodik' => 0, 'flixcdn' => 1, 'custom' => 2];
-
-            return $order[$player['provider']] ?? 9;
+            return 0;
         }
         $provider = (string) $player['provider'];
         $link = (string) ($player['link'] ?? '');
@@ -264,6 +273,7 @@ class CinemaService
         $match = match ($prefer) {
             'youtube' => $youtube,
             'kodik' => $provider === 'kodik',
+            'videoseed' => $provider === 'videoseed',
             'flixcdn' => $provider === 'flixcdn',
             default => false,
         };

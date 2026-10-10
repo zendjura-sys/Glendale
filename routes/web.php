@@ -580,11 +580,13 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('/', [Admin\CinemaController::class, 'store'])->name('store');
             Route::get('import', [Admin\CinemaController::class, 'import'])->name('import');
             Route::put('auto', [Admin\CinemaController::class, 'updateAuto'])->name('auto.update');
+            Route::put('players', [Admin\CinemaController::class, 'updatePlayers'])->name('players.update');
+            Route::put('tmdb', [Admin\CinemaController::class, 'updateTmdb'])->name('tmdb.update');
             Route::delete('requests', [Admin\CinemaController::class, 'closeRequest'])->name('requests.close');
             Route::post('auto/run', [Admin\CinemaController::class, 'runAuto'])->middleware('throttle:10,1')->name('auto.run');
             Route::middleware('throttle:60,1')->group(function () {
-                Route::get('remote/{provider}/search', [Admin\CinemaController::class, 'remoteSearch'])->whereIn('provider', ['kodik', 'flixcdn'])->name('remote.search');
-                Route::get('remote/{provider}/latest', [Admin\CinemaController::class, 'remoteLatest'])->whereIn('provider', ['kodik', 'flixcdn'])->name('remote.latest');
+                Route::get('remote/{provider}/search', [Admin\CinemaController::class, 'remoteSearch'])->whereIn('provider', ['kodik', 'flixcdn', 'videoseed'])->name('remote.search');
+                Route::get('remote/{provider}/latest', [Admin\CinemaController::class, 'remoteLatest'])->whereIn('provider', ['kodik', 'flixcdn', 'videoseed'])->name('remote.latest');
                 Route::post('remote/import', [Admin\CinemaController::class, 'remoteImport'])->name('remote.import');
             });
             Route::whereNumber(['movie', 'source'])->group(function () {
@@ -597,6 +599,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
                 Route::post('{movie}/enrich', [Admin\CinemaController::class, 'enrich'])->middleware('throttle:30,1')->name('enrich');
                 Route::post('{movie}/sources', [Admin\CinemaController::class, 'storeSource'])->name('sources.store');
                 Route::delete('{movie}/sources/{source}', [Admin\CinemaController::class, 'destroySource'])->name('sources.destroy');
+                Route::patch('{movie}/sources/{source}', [Admin\CinemaController::class, 'toggleSource'])->name('sources.toggle');
             });
         });
         Route::get('integrations', [Admin\IntegrationController::class, 'index'])->name('integrations.index');
