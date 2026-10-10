@@ -9,6 +9,7 @@ use App\Models\Family;
 use App\Models\Message;
 use App\Models\PushDevice;
 use App\Models\User;
+use App\Models\WebPushSubscription;
 use App\Support\I18n\Locales;
 use App\Support\I18n\Translations;
 use Illuminate\Notifications\DatabaseNotification;
@@ -70,7 +71,7 @@ class PushNotifier
      */
     public function message(Conversation $conversation, Message $message, array $payload): void
     {
-        if ($message->user_id === null || ! $this->fcm->configured()) {
+        if ($message->user_id === null) {
             return;
         }
 
@@ -79,7 +80,10 @@ class PushNotifier
             ->where('is_muted', false)
             ->pluck('user_id')
             ->all();
-        $recipients = PushDevice::query()->whereIn('user_id', $recipients)->distinct()->pluck('user_id')->all();
+        $recipients = array_values(array_unique([
+            ...($this->fcm->configured() ? PushDevice::query()->whereIn('user_id', $recipients)->distinct()->pluck('user_id')->all() : []),
+            ...WebPushSubscription::query()->whereIn('user_id', $recipients)->distinct()->pluck('user_id')->all(),
+        ]));
         if ($recipients === []) {
             return;
         }
@@ -113,7 +117,8 @@ class PushNotifier
 
     private function reachable(int $userId): bool
     {
-        return $this->fcm->configured() && PushDevice::query()->where('user_id', $userId)->exists();
+        return ($this->fcm->configured() && PushDevice::query()->where('user_id', $userId)->exists())
+            || WebPushSubscription::query()->where('user_id', $userId)->exists();
     }
 
     /**

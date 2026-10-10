@@ -11,6 +11,7 @@ import {
 import { SettingsCard } from '@/layouts/settings/layout';
 import { formatDate, timeAgo } from '@/lib/format';
 import { tr } from '@/lib/i18n';
+import { WebPushSettings } from '@/components/gc/web-push-toggle';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -91,6 +92,12 @@ export default function Account({
         <>
             <Head title={tr('Акаунт')} />
             <div className="space-y-5">
+                <SettingsCard
+                    title={tr('Сповіщення в браузері')}
+                    description={tr('Push-сповіщення сайту на цьому пристрої.')}
+                >
+                    <WebPushSettings />
+                </SettingsCard>
                 <SettingsCard
                     title={tr('Пристрої і сесії')}
                     description={tr(

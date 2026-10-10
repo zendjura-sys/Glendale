@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    UserRoundSearch,
     AlarmClock,
     Bell,
     CalendarDays,
@@ -23,6 +24,7 @@ import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { NotificationItem } from '@/types';
 import { UserAvatar } from './user-avatar';
+import { WebPushButton } from './web-push-toggle';
 import { tr } from '@/lib/i18n';
 
 const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
@@ -46,6 +48,7 @@ const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
     family_warehouse: { icon: Package, className: 'bg-rose-500' },
     family_event: { icon: CalendarDays, className: 'bg-gc-indigo' },
     event_reminder: { icon: AlarmClock, className: 'bg-amber-500' },
+    party_join: { icon: UserRoundSearch, className: 'bg-gc-indigo' },
 };
 
 const familyIcon = { icon: Crown, className: 'bg-amber-500' };
@@ -132,6 +135,7 @@ export function NotificationsMenu() {
                             <span className="font-display text-sm font-semibold">
                                 {tr('Сповіщення')}
                             </span>
+                            <WebPushButton />
                         </div>
                         <div className="min-h-0 overflow-y-auto overscroll-contain p-1.5">
                             {items === null ? (

@@ -43,6 +43,7 @@ use App\Http\Controllers\TrackController;
 use App\Http\Controllers\TranslateController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Controllers\WatchPartyController;
+use App\Http\Controllers\WebPushController;
 use App\Http\Controllers\WelcomeController;
 use App\Models\VoiceRoom;
 use Illuminate\Support\Facades\Route;
@@ -98,6 +99,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('block/{user}', [ProfileController::class, 'block'])->name('blocks.toggle');
     Route::post('report/{user}', [ProfileController::class, 'report'])->middleware('throttle:10,10')->name('users.report');
     Route::post('feedback', [FeedbackController::class, 'store'])->middleware('throttle:5,10')->name('feedback.store');
+    Route::get('push/web/key', [WebPushController::class, 'key'])->name('web-push.key');
+    Route::post('push/web', [WebPushController::class, 'store'])->middleware('throttle:20,1')->name('web-push.store');
+    Route::delete('push/web', [WebPushController::class, 'destroy'])->name('web-push.destroy');
 
     Route::middleware('module:friends')->group(function () {
         Route::get('friends', [FriendController::class, 'index'])->name('friends.index');
