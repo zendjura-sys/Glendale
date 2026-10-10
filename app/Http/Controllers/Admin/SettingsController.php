@@ -26,6 +26,14 @@ class SettingsController extends Controller
 
         return Inertia::render('admin/settings', [
             'settings' => $this->settings->public(),
+            // Підказки для порожніх полів реквізитів: що стоїть у .env / config/legal.php.
+            'legal_defaults' => [
+                'legal_operator' => (string) config('legal.operator'),
+                'legal_email' => (string) config('legal.email'),
+                'legal_address' => (string) config('legal.address'),
+                'legal_country' => (string) config('legal.country'),
+                'legal_updated' => (string) config('legal.updated'),
+            ],
             'mail' => [
                 'mailer' => $mailer,
                 'from' => MailCategory::address(MailCategory::UPDATES),
@@ -95,6 +103,11 @@ class SettingsController extends Controller
             'max_message_file_mb' => ['required', 'integer', 'min:1', 'max:500'],
             'music_max_track_mb' => ['required', 'integer', 'min:1', 'max:500'],
             'maintenance_message' => ['nullable', 'string', 'max:500'],
+            'legal_operator' => ['nullable', 'string', 'max:160'],
+            'legal_email' => ['nullable', 'email', 'max:190'],
+            'legal_address' => ['nullable', 'string', 'max:250'],
+            'legal_country' => ['nullable', 'string', 'max:80'],
+            'legal_updated' => ['nullable', 'date_format:Y-m-d'],
         ]);
 
         $this->settings->put($data);

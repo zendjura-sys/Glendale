@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\Plus\Paddle;
+use App\Support\Settings\SiteSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\View;
@@ -141,14 +142,24 @@ class LegalController extends Controller
      */
     private function details(): array
     {
+        $address = $this->value('address');
+
         return [
-            'operator' => (string) config('legal.operator'),
-            'email' => (string) config('legal.email'),
-            'address' => config('legal.address') ? (string) config('legal.address') : null,
-            'country' => (string) config('legal.country'),
-            'updated' => (string) config('legal.updated'),
+            'operator' => $this->value('operator'),
+            'email' => $this->value('email'),
+            'address' => $address !== '' ? $address : null,
+            'country' => $this->value('country'),
+            'updated' => $this->value('updated'),
             'site' => rtrim((string) config('app.url'), '/'),
             'name' => (string) config('app.name'),
         ];
+    }
+
+    /** Реквізит з адмінки (Налаштування → Юридичні дані), інакше — з config/legal.php (.env LEGAL_*). */
+    private function value(string $key): string
+    {
+        $value = app(SiteSettings::class)->get('legal_'.$key);
+
+        return is_string($value) && trim($value) !== '' ? trim($value) : (string) config('legal.'.$key);
     }
 }

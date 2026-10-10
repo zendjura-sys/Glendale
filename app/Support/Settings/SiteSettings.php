@@ -89,6 +89,12 @@ class SiteSettings
         'sightengine_secret' => null,
         'vapid_private' => null,
         // GameCon+ через Paddle Billing: продавець, токени, секрет вебхука, пісочниця й Price ID товарів.
+        // Реквізити продавця на /terms, /privacy, /refund-policy (порожнє — значення з config/legal.php / .env).
+        'legal_operator' => null,
+        'legal_email' => null,
+        'legal_address' => null,
+        'legal_country' => null,
+        'legal_updated' => null,
         'paddle_seller_id' => null,
         'paddle_client_token' => null,
         'paddle_api_key' => null,

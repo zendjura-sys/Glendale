@@ -93,4 +93,33 @@ class LegalPagesTest extends TestCase
             ->has('footer.refund')
         );
     }
+
+    public function test_seller_details_are_managed_in_admin_settings_with_env_fallback(): void
+    {
+        $this->get('/terms?lang=en')->assertInertia(fn (Assert $page) => $page
+            ->where('html', fn (string $html) => str_contains($html, (string) config('legal.operator')))
+        );
+
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin)->get('/admin/settings')->assertInertia(fn (Assert $page) => $page
+            ->where('legal_defaults.legal_email', (string) config('legal.email'))
+        );
+
+        $payload = app(SiteSettings::class)->public();
+        $this->actingAs($admin)->put('/admin/settings', [
+            ...array_intersect_key($payload, array_flip(['site_name', 'max_post_length', 'max_attachments', 'max_upload_mb', 'max_message_file_mb', 'music_max_track_mb'])),
+            'legal_operator' => 'ФОП Коваленко Олена',
+            'legal_email' => 'billing@example.com',
+            'legal_country' => 'Ukraine',
+            'legal_updated' => '2026-11-01',
+        ])->assertSessionHasNoErrors();
+
+        $this->get('/refund-policy?lang=uk')->assertInertia(fn (Assert $page) => $page
+            ->where('updated', '2026-11-01')
+            ->where('html', fn (string $html) => str_contains($html, 'ФОП Коваленко Олена') && str_contains($html, 'billing@example.com'))
+        );
+
+        $this->actingAs($admin)->put('/admin/settings', [...$payload, 'legal_email' => 'not-an-email'])
+            ->assertSessionHasErrors('legal_email');
+    }
 }
