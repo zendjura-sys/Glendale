@@ -15,6 +15,7 @@ import { CommunityAvatar } from '@/components/gc/community-avatar';
 import { SettingsCard } from '@/layouts/settings/layout';
 import { cn } from '@/lib/utils';
 import type { CommunityDetails } from '@/types';
+import { BotsCard } from '@/components/bots/bots-card';
 import { tr } from '@/lib/i18n';
 
 type Props = {
@@ -427,6 +428,7 @@ export default function CommunitySettings({
                         <Error message={remove.errors.confirm} />
                     </SettingsCard>
                 )}
+                <BotsCard type="community" id={community.id} />
             </div>
         </>
     );

@@ -35,3 +35,6 @@ Schedule::command('i18n:translate')->dailyAt('03:20')->timezone('Europe/Kyiv')->
 Schedule::command('geoip:update')->weeklyOn(3, '04:10')->timezone('Europe/Kyiv')->withoutOverlapping(60)->runInBackground();
 Schedule::command('stories:prune')->hourly()->withoutOverlapping(30);
 Schedule::command('games:sync')->dailyAt('04:40')->timezone('Europe/Kyiv')->withoutOverlapping(120)->runInBackground();
+
+// Ролі Discord за складом груп, де підключено бота GameCon.
+Schedule::command('bots:roles')->hourly()->withoutOverlapping(30)->runInBackground();

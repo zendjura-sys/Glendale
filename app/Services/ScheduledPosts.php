@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Jobs\RelayToBots;
+use App\Models\Community;
 use App\Models\Post;
 use App\Models\User;
 use App\Notifications\PostInteraction;
@@ -54,6 +56,11 @@ class ScheduledPosts
 
         if ($post->author) {
             app(Mentions::class)->notify($post->author, $post->body, route('posts.show', $post, absolute: false));
+        }
+
+        // Пост спільноти — і в її чати Telegram / Discord, якщо керівники це ввімкнули.
+        if ($wall instanceof Community) {
+            RelayToBots::maybe('community', $wall->id, 'post', $post->id);
         }
     }
 }

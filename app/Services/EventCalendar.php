@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\RelayToBots;
 use App\Models\Clan;
 use App\Models\ClanEvent;
 use App\Models\ClanMember;
@@ -22,6 +23,7 @@ use App\Support\Settings\SiteSettings;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
@@ -292,6 +294,7 @@ class EventCalendar
                 $count += $this->remindEach($e, 'family',
                     fn () => User::query()->whereIn('id', $family->activeMembers()->whereNotIn('id', $declined ?: [0])->select('user_id'))->get(),
                     fn (string $left) => "⏰ {$left}: «{$e->title}»", '/f/'.$family->slug.'/events', $family->id);
+                $this->remindBots('family', $family->id, $e->id, $e->starts_at);
             });
 
         ClanEvent::query()->whereBetween('starts_at', $horizon)->get()
@@ -300,6 +303,7 @@ class EventCalendar
                 if ($clan instanceof Clan) {
                     $count += $this->remindEach($e, 'clan', fn () => $e->going()->get(),
                         fn (string $left) => "⏰ {$clan->display_name}: {$left} «{$e->title}»", '/clans/'.$clan->slug);
+                    $this->remindBots('clan', $clan->id, $e->id, $e->starts_at);
                 }
             });
 
@@ -639,5 +643,14 @@ class EventCalendar
     private function minutesLeft(CarbonInterface $startsAt): int
     {
         return max(1, (int) ceil(now()->diffInMinutes($startsAt, true)));
+    }
+
+    /** Нагадування в чати групи — один раз, за пів години до старту. */
+    private function remindBots(string $type, int $ownerId, int $eventId, CarbonInterface $startsAt): void
+    {
+        if ($startsAt->gt(now()->addMinutes(30)) || ! Cache::add("bots-remind:{$type}:{$eventId}", 1, now()->addHours(6))) {
+            return;
+        }
+        RelayToBots::maybe($type, $ownerId, $type.'_reminder', $eventId);
     }
 }

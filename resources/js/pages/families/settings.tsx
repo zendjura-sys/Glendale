@@ -26,6 +26,7 @@ import {
 import { uah } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type { FamilyShellProps } from '@/types';
+import { BotsCard } from '@/components/bots/bots-card';
 import { tr } from '@/lib/i18n';
 
 type Settings = {
@@ -130,6 +131,7 @@ export default function FamilySettings(props: Props) {
             />
             <SettingsPanel action={`${base}/settings`} settings={settings} />
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <BotsCard type="family" id={family.id} />
                 <WebhooksPanel base={base} webhooks={webhooks} />
                 <Panel
                     title={tr('Тижневий звіт')}

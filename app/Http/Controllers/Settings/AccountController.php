@@ -14,6 +14,7 @@ use App\Models\Post;
 use App\Models\User;
 use App\Models\UserSession;
 use App\Services\Auth\AccountSecurity;
+use App\Services\Bots\TelegramApi;
 use App\Services\FriendshipService;
 use App\Services\Servers\ServerOAuth;
 use Illuminate\Http\RedirectResponse;
@@ -41,6 +42,11 @@ class AccountController extends Controller
 
         return Inertia::render('settings/account', [
             'connections' => app(ServerOAuth::class)->connections($user),
+            'telegram' => [
+                'available' => app(TelegramApi::class)->configured(),
+                'username' => $user->telegram_id ? ($user->telegram_username ?? '') : null,
+                'discord' => $user->discord_username ?? ($user->discord_id ? '' : null),
+            ],
             'sessions' => array_values(UserSession::query()->where('user_id', $user->id)->latest('last_active_at')->limit(30)->get()
                 ->map(fn (UserSession $s) => [
                     'id' => $s->id,

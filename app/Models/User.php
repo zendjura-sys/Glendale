@@ -32,6 +32,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $email
  * @property string|null $discord_id
  * @property string|null $discord_username
+ * @property string|null $telegram_id
+ * @property string|null $telegram_username
  * @property string|null $google_id
  * @property string|null $google_email
  * @property Carbon|null $email_verified_at
@@ -79,7 +81,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
     'username', 'first_name', 'last_name', 'email', 'password',
     'status', 'about', 'city', 'country', 'birthday', 'gender', 'website', 'is_private', 'message_privacy', 'email_social',
 ])]
-#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'email', 'ban_reason', 'google_email'])]
+#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'email', 'ban_reason', 'google_email', 'telegram_id'])]
 class User extends Authenticatable implements HasLocalePreference, MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */

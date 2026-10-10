@@ -29,6 +29,7 @@ import { cn, formText } from '@/lib/utils';
 import type { ClanCard, UserCard } from '@/types';
 import { ClanLogo } from './index';
 import { eventTime } from '@/lib/event-time';
+import { BotsCard } from '@/components/bots/bots-card';
 import { LOCALE, tr } from '@/lib/i18n';
 
 type Member = {
@@ -245,7 +246,13 @@ export default function ClanShow(props: Props) {
         ['members', tr('Учасники'), Users, !!me],
         ['settings', tr('Налаштування'), Settings, can['settings.manage']],
     ].filter((t) => t[3]) as [string, string, typeof Users, boolean][];
-    const [tab, setTab] = useState('overview');
+    // ?tab=settings — сюди повертає підключення бота Discord.
+    const [tab, setTab] = useState(() =>
+        typeof window === 'undefined'
+            ? 'overview'
+            : (new URLSearchParams(window.location.search).get('tab') ??
+              'overview'),
+    );
 
     return (
         <>
@@ -610,6 +617,9 @@ export default function ClanShow(props: Props) {
                         applications={applications}
                         rankTitles={clan.rank_titles}
                     />
+                )}
+                {tab === 'settings' && props.settings && (
+                    <BotsCard type="clan" id={clan.id} />
                 )}
                 {tab === 'settings' && props.settings && (
                     <SettingsTab

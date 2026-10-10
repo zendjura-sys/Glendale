@@ -16,6 +16,11 @@ import { SCOPE_LABELS } from '@/components/servers/server-apps';
 import { cn } from '@/lib/utils';
 
 type Props = {
+    telegram: {
+        available: boolean;
+        username: string | null;
+        discord: string | null;
+    };
     connections: {
         client_id: number;
         name: string;
@@ -81,6 +86,7 @@ function statusLabel(status: Props['appeals'][number]['status']): string {
 }
 
 export default function Account({
+    telegram,
     connections,
     sessions,
     tokens,
@@ -107,6 +113,67 @@ export default function Account({
                     description={tr('Push-сповіщення сайту на цьому пристрої.')}
                 >
                     <WebPushSettings />
+                </SettingsCard>
+                <SettingsCard
+                    title={tr('Telegram і Discord')}
+                    description={tr(
+                        'Щоб кнопки «Піду» в групах ботів GameCon записували саме вас.',
+                    )}
+                >
+                    <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3">
+                            <span className="min-w-0 flex-1 text-sm text-white">
+                                Telegram
+                                <span className="block text-xs text-white/45">
+                                    {telegram.username !== null
+                                        ? telegram.username
+                                            ? `@${telegram.username}`
+                                            : tr('Прив’язано')
+                                        : tr('Не прив’язано')}
+                                </span>
+                            </span>
+                            {telegram.username !== null ? (
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        router.delete(
+                                            '/bots/telegram/account',
+                                            options,
+                                        )
+                                    }
+                                    className="text-sm font-medium text-rose-200 hover:text-rose-100"
+                                >
+                                    {tr('Відв’язати')}
+                                </button>
+                            ) : telegram.available ? (
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        router.post('/bots/telegram/account')
+                                    }
+                                    className="btn-glow h-9 rounded-xl px-4 text-sm font-semibold"
+                                >
+                                    {tr('Прив’язати Telegram')}
+                                </button>
+                            ) : (
+                                <span className="text-xs text-white/40">
+                                    {tr('Скоро')}
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3">
+                            <span className="min-w-0 flex-1 text-sm text-white">
+                                Discord
+                                <span className="block text-xs text-white/45">
+                                    {telegram.discord !== null
+                                        ? telegram.discord || tr('Прив’язано')
+                                        : tr(
+                                              'Увійдіть через Discord на сторінці входу, щоб прив’язати.',
+                                          )}
+                                </span>
+                            </span>
+                        </div>
+                    </div>
                 </SettingsCard>
                 {connections.length > 0 && (
                     <SettingsCard

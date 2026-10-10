@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Jobs\RelayToBots;
+use App\Models\ClanEvent;
 use App\Models\Comment;
 use App\Models\Community;
 use App\Models\Family;
@@ -92,6 +94,10 @@ class AppServiceProvider extends ServiceProvider
             $view->with('page', $page);
             app(SsrState::class)->setPage($page);
         });
+
+        // Нова подія сім’ї чи клану — картка з кнопками в підключені чати Telegram / Discord.
+        FamilyEvent::created(fn (FamilyEvent $event) => RelayToBots::maybe('family', $event->family_id, 'family_event', $event->id));
+        ClanEvent::created(fn (ClanEvent $event) => RelayToBots::maybe('clan', $event->clan_id, 'clan_event', $event->id));
 
         Relation::enforceMorphMap([
             'user' => User::class,

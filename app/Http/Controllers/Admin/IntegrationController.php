@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\BotLink;
 use App\Models\Game;
 use App\Models\MovieSource;
 use App\Models\PushDevice;
@@ -12,6 +13,8 @@ use App\Models\VoiceParticipant;
 use App\Models\VoiceRoom;
 use App\Services\Auth\DiscordOAuth;
 use App\Services\Auth\FirebaseAuth;
+use App\Services\Bots\DiscordApi;
+use App\Services\Bots\TelegramApi;
 use App\Services\Cinema\CinemaException;
 use App\Services\Cinema\FlixcdnClient;
 use App\Services\Cinema\FlixcdnPlayer;
@@ -324,6 +327,46 @@ class IntegrationController extends Controller
                         'rules' => ['nullable', 'string', 'max:10000', fn (string $attribute, mixed $value, \Closure $fail) => is_string($value) && FcmClient::parse($value) === null
                             ? $fail('Вставте повний JSON ключа сервісного акаунта Firebase (type: service_account).') : null],
                     ],
+                ],
+            ],
+            'telegram_bot' => [
+                'label' => 'Бот Telegram',
+                'group' => 'bots',
+                'description' => 'Офіційний бот GameCon: сім’ї, клани й спільноти додають його в свої групи одним натисканням. Події з кнопками «Піду / Не піду», нагадування, пости й меню — без команд.',
+                'docs' => 'https://t.me/BotFather',
+                'steps' => [
+                    'Відкрийте @BotFather → /newbot, задайте ім’я (наприклад, GameCon) і username, скопіюйте токен сюди.',
+                    'У @BotFather → /setjoingroups → Enable, щоб бота можна було додавати в групи.',
+                    'Натисніть «Перевірити»: сайт запам’ятає @username бота й сам підключить вебхук '.url('/api/bots/telegram').'.',
+                    'Далі керівники груп натискають «Додати в Telegram» у налаштуваннях своєї сім’ї, клану чи спільноти.',
+                ],
+                'configured' => app(TelegramApi::class)->token() !== null,
+                'stat' => BotLink::query()->where('platform', BotLink::TELEGRAM)->count().' груп · '.User::query()->whereNotNull('telegram_id')->count().' прив’язаних акаунтів',
+                'test' => fn () => app(TelegramApi::class)->connect(url('/api/bots/telegram')) !== null,
+                'fields' => [
+                    ['name' => 'token', 'setting' => 'telegram_bot_token', 'type' => 'secret', 'label' => 'Токен бота', 'env' => config('services.telegram.bot_token'),
+                        'rules' => ['nullable', 'string', 'regex:/^\d{6,12}:[A-Za-z0-9_-]{30,50}$/'], 'message' => 'Токен від @BotFather має вигляд 123456789:AA…'],
+                ],
+            ],
+            'discord_bot' => [
+                'label' => 'Бот Discord',
+                'group' => 'bots',
+                'description' => 'Той самий застосунок Discord, що й для входу: бот публікує картки з кнопками в обраний канал сервера групи й видає ролі за складом.',
+                'docs' => 'https://discord.com/developers/applications',
+                'steps' => [
+                    'Client ID, Client Secret і Bot Token беруться з блоку «Discord» вище — вони вже мають бути заповнені.',
+                    'Developer Portal → ваш застосунок → OAuth2 → Redirects: додайте '.route('bots.discord.callback').'.',
+                    'General Information → скопіюйте Public Key сюди.',
+                    'Там же Interactions Endpoint URL: '.url('/api/bots/discord/interactions').' — збережіть (Discord перевірить адресу; спершу збережіть Public Key тут і задеплойте).',
+                    'Ролі: роль бота на сервері групи має бути вище за ролі, які він видає.',
+                ],
+                'configured' => app(DiscordApi::class)->configured() && app(DiscordApi::class)->publicKey() !== null,
+                'stat' => BotLink::query()->where('platform', BotLink::DISCORD)->count().' серверів',
+                'test' => fn () => app(DiscordApi::class)->publicKey() !== null && $this->discord->testCredentials(),
+                'fields' => [
+                    ['name' => 'public_key', 'setting' => 'discord_public_key', 'type' => 'text', 'label' => 'Public Key', 'placeholder' => '64 символи hex',
+                        'env' => config('services.discord.public_key'),
+                        'rules' => ['nullable', 'string', 'regex:/^[0-9a-fA-F]{64}$/'], 'message' => 'Public Key — 64 символи 0–9, a–f.'],
                 ],
             ],
             'voice' => [

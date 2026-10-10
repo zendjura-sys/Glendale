@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Auth\SocialAuthController;
+use App\Http\Controllers\Bots;
 use App\Http\Controllers\CallController;
 use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\CinemaController;
@@ -47,6 +48,7 @@ use App\Http\Controllers\VoiceController;
 use App\Http\Controllers\WatchPartyController;
 use App\Http\Controllers\WebPushController;
 use App\Http\Controllers\WelcomeController;
+use App\Models\BotLink;
 use App\Models\VoiceRoom;
 use App\Services\Servers\ServerOAuth;
 use Illuminate\Support\Facades\Route;
@@ -105,6 +107,18 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::get('oauth/authorize', [OAuth\AuthorizeController::class, 'show'])->name('oauth.authorize');
     Route::post('oauth/authorize', [OAuth\AuthorizeController::class, 'decide'])->middleware('throttle:30,1')->name('oauth.decide');
     Route::get('developers', fn () => Inertia\Inertia::render('developers/oauth', ['scopes' => ServerOAuth::SCOPES, 'base' => url('/')]))->name('developers');
+    Route::prefix('bots')->name('bots.')->group(function () {
+        Route::get('{type}/{id}', [Bots\BotLinkController::class, 'state'])->whereIn('type', BotLink::OWNERS)->whereNumber('id')->middleware('throttle:30,1')->name('state');
+        Route::post('{type}/{id}/telegram', [Bots\BotLinkController::class, 'telegram'])->whereIn('type', BotLink::OWNERS)->whereNumber('id')->middleware('throttle:20,1')->name('telegram');
+        Route::post('{type}/{id}/discord', [Bots\BotLinkController::class, 'discord'])->whereIn('type', BotLink::OWNERS)->whereNumber('id')->middleware('throttle:20,1')->name('discord');
+        Route::get('discord/callback', [Bots\BotLinkController::class, 'discordCallback'])->name('discord.callback');
+        Route::patch('links/{link}', [Bots\BotLinkController::class, 'update'])->whereNumber('link')->name('update');
+        Route::post('links/{link}/panel', [Bots\BotLinkController::class, 'panel'])->whereNumber('link')->middleware('throttle:10,1')->name('panel');
+        Route::post('links/{link}/roles', [Bots\BotLinkController::class, 'roles'])->whereNumber('link')->middleware('throttle:6,1')->name('roles');
+        Route::delete('links/{link}', [Bots\BotLinkController::class, 'destroy'])->whereNumber('link')->name('destroy');
+        Route::post('telegram/account', [Bots\BotLinkController::class, 'telegramAccount'])->middleware('throttle:10,1')->name('telegram.account');
+        Route::delete('telegram/account', [Bots\BotLinkController::class, 'telegramUnlink'])->name('telegram.unlink');
+    });
     Route::get('push/web/key', [WebPushController::class, 'key'])->name('web-push.key');
     Route::post('push/web', [WebPushController::class, 'store'])->middleware('throttle:20,1')->name('web-push.store');
     Route::delete('push/web', [WebPushController::class, 'destroy'])->name('web-push.destroy');

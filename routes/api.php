@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\GroupsApiController;
 use App\Http\Controllers\Api\MediaApiController;
 use App\Http\Controllers\Api\PushApiController;
 use App\Http\Controllers\Api\SocialApiController;
+use App\Http\Controllers\Bots;
 use App\Http\Controllers\CallController;
 use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\CinemaController;
@@ -47,6 +48,10 @@ use Illuminate\Support\Facades\Route;
 
 // Вебхук сервера голосу LiveKit (підпис перевіряє контролер).
 Route::post('livekit/webhook', [VoiceController::class, 'webhook'])->middleware('throttle:600,1');
+
+// Боти GameCon: оновлення Telegram (секрет у заголовку) і кнопки Discord (підпис Ed25519).
+Route::post('bots/telegram', Bots\TelegramWebhookController::class)->middleware('throttle:600,1')->name('bots.telegram.webhook');
+Route::post('bots/discord/interactions', Bots\DiscordInteractionsController::class)->middleware('throttle:600,1')->name('bots.discord.interactions');
 
 // «Увійти через GameCon» для серверів: обмін коду, профіль гравця, синхронізація онлайну.
 Route::prefix('oauth')->group(function () {

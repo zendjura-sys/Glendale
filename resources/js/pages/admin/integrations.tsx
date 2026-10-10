@@ -320,6 +320,13 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                         ),
                     ],
                     [
+                        'bots',
+                        tr('Боти Telegram і Discord'),
+                        tr(
+                            'Офіційні боти GameCon для груп: події з кнопками «Піду», нагадування, пости, меню без команд і ролі Discord.',
+                        ),
+                    ],
+                    [
                         'voice',
                         tr('Голосові кімнати'),
                         tr(
