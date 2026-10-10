@@ -31,6 +31,8 @@ import { cn } from '@/lib/utils';
 import type { PersonCard, PostItem, ScrollData, UserCard } from '@/types';
 import { FriendsLive } from '@/components/streams/stream';
 import type { StreamInfo } from '@/components/streams/stream';
+import { FeedQuests } from '@/components/quests/quest-list';
+import type { Quest } from '@/components/quests/quest-list';
 import { tr } from '@/lib/i18n';
 
 type Props = {
@@ -39,6 +41,7 @@ type Props = {
     languages: string[];
     tomorrow?: TomorrowEvent[];
     streaming?: StreamInfo[];
+    quests?: Quest[];
     country: string | null;
     hasFriends: boolean;
     posts: ScrollData<PostItem>;
@@ -122,6 +125,7 @@ export default function Feed({
     languages,
     tomorrow,
     streaming,
+    quests,
     hasFriends,
     country,
     posts,
@@ -141,6 +145,7 @@ export default function Feed({
                 <div className="min-w-0 flex-1 space-y-4 xl:max-w-[640px]">
                     <StoriesBar />
                     <FriendsLive streams={streaming ?? []} />
+                    <FeedQuests quests={quests ?? []} />
                     <TomorrowCard events={tomorrow ?? []} />
                     {(picks?.length ?? 0) > 0 && (
                         <div className="flex gap-2 overflow-x-auto">

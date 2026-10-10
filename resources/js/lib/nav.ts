@@ -17,4 +17,5 @@ export const MOBILE_LABEL: Record<string, string> = {
     events: tr('Події'),
     party: tr('Паті'),
     moments: tr('Моменти'),
+    quests: tr('Завдання'),
 };

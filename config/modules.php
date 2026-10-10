@@ -133,6 +133,15 @@ return [
         'default' => true,
         'nav' => ['label' => 'Події', 'route' => 'events.index', 'position' => 107],
     ],
+    'quests' => [
+        'name' => 'Завдання й сезони',
+        'description' => 'Три завдання щодня: досвід у рівень і очки сезону, таблиця лідерів місяця.',
+        'icon' => 'target',
+        'core' => false,
+        'available' => true,
+        'default' => true,
+        'nav' => ['label' => 'Завдання', 'route' => 'quests.index', 'position' => 110],
+    ],
     'moments' => [
         'name' => 'Моменти',
         'description' => 'Кліпи гравців із YouTube, Twitch і Medal: стрічка, найкраще за тиждень, кліпи друзів і моменти на сторінці гри.',

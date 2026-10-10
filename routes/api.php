@@ -34,6 +34,7 @@ use App\Http\Controllers\PlayingController;
 use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\QuestController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\Settings\ProfileController as SettingsProfileController;
@@ -431,6 +432,11 @@ Route::prefix('v1')->group(function () {
                 Route::get('/', [ServerController::class, 'index']);
                 Route::post('suggest', [ServerController::class, 'suggest'])->middleware('throttle:5,10');
                 Route::get('{server}', [ServerController::class, 'show']);
+            });
+
+            Route::prefix('quests')->middleware('module:quests')->group(function () {
+                Route::get('/', [QuestController::class, 'index']);
+                Route::post('{quest}/claim', [QuestController::class, 'claim'])->where('quest', '[a-z]{2,24}')->middleware('throttle:30,1');
             });
 
             Route::prefix('moments')->middleware('module:moments')->whereNumber('moment')->group(function () {

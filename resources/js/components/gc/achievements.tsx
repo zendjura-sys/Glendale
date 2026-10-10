@@ -16,6 +16,7 @@ import {
     PartyPopper,
     PenLine,
     Rocket,
+    Target,
     Vote,
     Star,
     Swords,
@@ -67,6 +68,7 @@ const ICONS: Record<string, LucideIcon> = {
     'badge-check': BadgeCheck,
     rocket: Rocket,
     vote: Vote,
+    target: Target,
 };
 
 /** Рівень (досвід до наступного) і бейджі за активність у профілі. */

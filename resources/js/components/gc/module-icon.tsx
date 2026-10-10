@@ -2,6 +2,7 @@ import {
     Box,
     CalendarDays,
     Clapperboard,
+    Target,
     UserRoundSearch,
     Crown,
     Film,
@@ -35,6 +36,7 @@ const icons: Record<string, LucideIcon> = {
     swords: Swords,
     'calendar-days': CalendarDays,
     clapperboard: Clapperboard,
+    target: Target,
     'user-round-search': UserRoundSearch,
 };
 

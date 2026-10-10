@@ -26,6 +26,7 @@ const _icons = <String, IconData>{
   'badge-check': LucideIcons.badgeCheck,
   'rocket': LucideIcons.rocket,
   'vote': LucideIcons.vote,
+  'target': LucideIcons.target,
 };
 
 /// Рівень (досвід до наступного) і бейджі за активність — у профілі.

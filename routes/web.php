@@ -37,6 +37,7 @@ use App\Http\Controllers\PlayingController;
 use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\QuestController;
 use App\Http\Controllers\SavedController;
 use App\Http\Controllers\ServerAppController;
 use App\Http\Controllers\ServerController;
@@ -413,6 +414,11 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::patch('{server}/apps/{app}', [ServerAppController::class, 'update'])->name('apps.update');
         Route::post('{server}/apps/{app}/secret', [ServerAppController::class, 'secret'])->middleware('throttle:10,1')->name('apps.secret');
         Route::delete('{server}/apps/{app}', [ServerAppController::class, 'destroy'])->name('apps.destroy');
+    });
+
+    Route::prefix('quests')->name('quests.')->middleware('module:quests')->group(function () {
+        Route::get('/', [QuestController::class, 'index'])->name('index');
+        Route::post('{quest}/claim', [QuestController::class, 'claim'])->where('quest', '[a-z]{2,24}')->middleware('throttle:30,1')->name('claim');
     });
 
     Route::prefix('moments')->name('moments.')->middleware('module:moments')->whereNumber('moment')->group(function () {

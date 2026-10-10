@@ -15,6 +15,7 @@ use App\Models\Story;
 use App\Models\Track;
 use App\Models\User;
 use App\Models\WatchParty;
+use App\Services\Quests\DailyQuests;
 use App\Services\Servers\ServerVotes;
 use Illuminate\Support\Facades\Cache;
 
@@ -29,6 +30,7 @@ class Achievements
         'posts' => 10, 'comments' => 2, 'likes' => 1, 'friends' => 5, 'days' => 1,
         'photos' => 3, 'tracks' => 8, 'stories' => 4, 'events' => 15, 'parties' => 10,
         'votes' => ServerVotes::XP,
+        'quest_xp' => 1,
     ];
 
     /** Назви рівнів: з якого рівня яка. */
@@ -60,6 +62,7 @@ class Achievements
         ['key' => 'host', 'stat' => 'parties', 'target' => 1, 'title' => 'Ведучий', 'text' => 'Влаштувати спільний перегляд або прослуховування.', 'icon' => 'clapperboard'],
         ['key' => 'verified', 'stat' => 'verified', 'target' => 1, 'title' => 'Верифікований', 'text' => 'Мати підтверджений профіль.', 'icon' => 'badge-check'],
         ['key' => 'voter', 'stat' => 'votes', 'target' => 30, 'title' => 'Голос спільноти', 'text' => 'Проголосувати за сервери 30 разів.', 'icon' => 'vote'],
+        ['key' => 'quests_30', 'stat' => 'quests', 'target' => 30, 'title' => 'Сезонний гравець', 'text' => 'Виконати 30 щоденних завдань.', 'icon' => 'target'],
         ['key' => 'pioneer', 'stat' => 'pioneer', 'target' => 1, 'title' => 'Перші 100', 'text' => 'Бути серед перших ста користувачів.', 'icon' => 'rocket'],
     ];
 
@@ -155,6 +158,8 @@ class Achievements
             'verified' => $user->is_verified ? 1 : 0,
             'pioneer' => $user->id <= 100 ? 1 : 0,
             'votes' => app(ServerVotes::class)->countFor($user),
+            'quest_xp' => app(DailyQuests::class)->totalXp($user),
+            'quests' => app(DailyQuests::class)->completed($user),
         ];
     }
 }

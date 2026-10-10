@@ -14,8 +14,10 @@ use App\Services\FeedSignals;
 use App\Services\FollowAlerts;
 use App\Services\FriendshipService;
 use App\Services\PostPresenter;
+use App\Services\Quests\DailyQuests;
 use App\Services\Streams\LiveStreams;
 use App\Support\I18n\LanguageGuess;
+use App\Support\Modules\ModuleManager;
 use App\Support\MutedWords;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -89,6 +91,7 @@ class FeedController extends Controller
             'languages' => LanguageGuess::LANGS,
             'country' => $user->country,
             'tomorrow' => Inertia::defer(fn () => $this->tomorrow($user), 'events'),
+            'quests' => Inertia::defer(fn () => app(ModuleManager::class)->enabled('quests') ? app(DailyQuests::class)->board($user) : [], 'events'),
             'streaming' => Inertia::defer(fn () => app(LiveStreams::class)->friendsLive($user, $request->getHost()), 'events'),
             'hasFriends' => $hasSources,
             'posts' => Inertia::scroll(fn () => $posts->setCollection(collect($items))),
