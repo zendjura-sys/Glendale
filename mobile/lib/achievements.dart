@@ -25,6 +25,7 @@ const _icons = <String, IconData>{
   'clapperboard': LucideIcons.clapperboard,
   'badge-check': LucideIcons.badgeCheck,
   'rocket': LucideIcons.rocket,
+  'vote': LucideIcons.vote,
 };
 
 /// Рівень (досвід до наступного) і бейджі за активність — у профілі.

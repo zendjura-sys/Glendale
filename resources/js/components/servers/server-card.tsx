@@ -9,11 +9,13 @@ import {
     Send,
     Smartphone,
     Sparkles,
+    Vote,
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import type { GtaServerCard } from '@/types';
 import { OnlineMeter, ServerIcon } from './server-icon';
+import { shortNumber } from '@/lib/format';
 import { LOCALE, tr } from '@/lib/i18n';
 
 export function ConnectButton({ value }: { value: string }) {
@@ -122,6 +124,15 @@ export function ServerCard({
                                 ? '🇺🇦 UA'
                                 : server.language.toUpperCase()}
                         </span>
+                        {(server.votes_month ?? 0) > 0 && (
+                            <span
+                                title={tr('Голосів за місяць')}
+                                className="inline-flex items-center gap-1 rounded-full bg-emerald-400/10 px-2 py-0.5 text-emerald-200"
+                            >
+                                <Vote className="size-3" />
+                                {shortNumber(server.votes_month ?? 0)}
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>

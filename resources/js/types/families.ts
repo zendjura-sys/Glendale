@@ -21,6 +21,7 @@ export type GtaServerCard = {
     stats_updated_at: string | null;
     is_featured: boolean;
     families_count: number;
+    votes_month?: number;
     tags?: { mode: string | null; region: string | null };
 };
 

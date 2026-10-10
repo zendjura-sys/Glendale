@@ -15,6 +15,8 @@ import { useEffect, useState } from 'react';
 import { selectClass } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
 import { ServerCard } from '@/components/servers/server-card';
+import { VoteTops } from '@/components/servers/server-votes';
+import type { VoteTopRow } from '@/components/servers/server-votes';
 import {
     emptyServer,
     ServerFormFields,
@@ -33,6 +35,11 @@ import { usePlugin } from '@/lib/plugins';
 
 type Props = {
     servers: GtaServerCard[];
+    votes: {
+        voted_today: number | null;
+        day: VoteTopRow[];
+        month: VoteTopRow[];
+    } | null;
     filters: {
         platform: 'pc' | 'mobile' | null;
         q: string;
@@ -64,15 +71,18 @@ type Props = {
     };
 };
 
-const sorts = [
-    ['online', tr('За онлайном')],
-    ['families', tr('За сім’ями')],
-    ['name', tr('За назвою')],
-    ['new', tr('Нові')],
-] as const;
+const SORTS = (votes: boolean) =>
+    [
+        ['online', tr('За онлайном')],
+        ...(votes ? [['votes', tr('За голосами')] as const] : []),
+        ['families', tr('За сім’ями')],
+        ['name', tr('За назвою')],
+        ['new', tr('Нові')],
+    ] as const;
 
 export default function Servers({
     servers,
+    votes,
     filters,
     heading,
     languages,
@@ -277,7 +287,7 @@ export default function Servers({
                             onChange={(e) => visit({ sort: e.target.value })}
                             className={cn(selectClass, 'h-11')}
                         >
-                            {sorts.map(([value, label]) => (
+                            {SORTS(votes !== null).map(([value, label]) => (
                                 <option key={value} value={value}>
                                     {label}
                                 </option>
@@ -339,6 +349,14 @@ export default function Servers({
                             </span>
                         ))}
                     </div>
+                )}
+
+                {votes && (
+                    <VoteTops
+                        day={votes.day}
+                        month={votes.month}
+                        votedToday={votes.voted_today}
+                    />
                 )}
 
                 {favoritesOn && favorites.length > 0 && !filters.saved && (

@@ -20,6 +20,8 @@ import { EmptyState } from '@/components/gc/widget';
 import { FamilyLogo } from '@/components/families/family-logo';
 import { ConnectButton, ServerLinks } from '@/components/servers/server-card';
 import { OnlineMeter, ServerIcon } from '@/components/servers/server-icon';
+import { VotePanel } from '@/components/servers/server-votes';
+import type { ServerVotesInfo } from '@/components/servers/server-votes';
 import { timeAgo, shortNumber } from '@/lib/format';
 import { cn, formText } from '@/lib/utils';
 import type { FamilyCard, GtaServerCard, UserCard } from '@/types';
@@ -74,6 +76,7 @@ type Props = {
     };
     online: { day: string; players: number }[];
     similar: GtaServerCard[];
+    votes: ServerVotesInfo | null;
 };
 
 export default function ServerShow({
@@ -93,6 +96,7 @@ export default function ServerShow({
     ownership,
     online,
     similar,
+    votes,
 }: Props) {
     const [inviteUsername, setInviteUsername] = useState('');
     const compareOn = usePlugin('server_compare');
@@ -338,6 +342,7 @@ export default function ServerShow({
                         </details>
                     )}
                 </section>
+                {votes && <VotePanel slug={server.slug} votes={votes} />}
                 <section className="glass rounded-3xl p-5">
                     <h2 className="font-display text-lg font-semibold text-white">
                         {tr('Відгуки')}

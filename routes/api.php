@@ -228,6 +228,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/', [GroupsApiController::class, 'servers']);
             Route::post('/', [GroupsApiController::class, 'suggestServer'])->middleware('throttle:10,1');
             Route::get('{server}', [GroupsApiController::class, 'server']);
+            Route::post('{server}/vote', [GroupsApiController::class, 'voteServer'])->middleware('throttle:10,1');
         });
 
         Route::middleware('module:families')->group(function () {

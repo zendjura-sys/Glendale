@@ -24,6 +24,7 @@ use App\Services\SavedItems;
 use App\Services\Servers\DiscordInvites;
 use App\Services\Servers\ServerDirectory;
 use App\Services\Servers\ServerIconFetcher;
+use App\Services\Servers\ServerVotes;
 use App\Support\I18n\Locales;
 use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
@@ -48,7 +49,7 @@ class ServerController extends Controller
         $filters = $request->validate([
             'platform' => ['nullable', Rule::in(array_keys(GtaServer::PLATFORMS))],
             'q' => ['nullable', 'string', 'max:60'],
-            'sort' => ['nullable', Rule::in(['online', 'name', 'new', 'families'])],
+            'sort' => ['nullable', Rule::in(['online', 'name', 'new', 'families', 'votes'])],
             'lang' => ['nullable', 'string', Rule::in(['all', ...array_keys(GtaServer::LANGUAGES)])],
             'tag' => ['nullable', Rule::in(['rp', 'pvp', 'mixed'])],
         ]);
@@ -77,7 +78,15 @@ class ServerController extends Controller
             ->when($filters['tag'] ?? null, fn (Builder $q, string $tag) => $q->where('tags->mode', $tag))
             ->get();
 
+        $votesOn = $plugins->on('server_votes');
+        $votes = app(ServerVotes::class);
+        $monthVotes = $votesOn ? $votes->monthCounts() : [];
+        if (! $votesOn && $sort === 'votes') {
+            $sort = 'online';
+        }
+
         $servers = match ($sort) {
+            'votes' => $servers->sortByDesc(fn (GtaServer $s) => [$monthVotes[$s->id] ?? 0, $s->players_online ?? -1]),
             'name' => $servers->sortBy(fn (GtaServer $s) => Str::lower($s->name)),
             'new' => $servers->sortByDesc('created_at'),
             'families' => $servers->sortByDesc('families_count'),
@@ -87,7 +96,12 @@ class ServerController extends Controller
         $all = GtaServer::query()->published()->tap($byLanguage);
 
         return Inertia::render('servers/index', [
-            'servers' => $servers->values()->map(fn (GtaServer $s) => $s->toCard()),
+            'servers' => $servers->values()->map(fn (GtaServer $s) => [...$s->toCard(), 'votes_month' => $monthVotes[$s->id] ?? 0]),
+            'votes' => $votesOn ? [
+                'voted_today' => $votes->votedToday($request->user()),
+                'day' => $votes->top('day'),
+                'month' => $votes->top('month'),
+            ] : null,
             'filters' => ['platform' => $filters['platform'] ?? null, 'q' => $filters['q'] ?? '', 'sort' => $sort, 'lang' => $lang, 'saved' => $savedOnly, 'tag' => $filters['tag'] ?? null],
             'favorites' => $favoritesOn ? GtaServer::query()->published()->whereIn('id', $favoriteIds)->get()
                 ->sortBy(fn (GtaServer $server) => $favoriteIds->search($server->id))
@@ -175,6 +189,7 @@ class ServerController extends Controller
             'ownership' => $this->ownership($server, $request->user()),
             'online' => $this->onlineSeries($server),
             'similar' => $this->similarServers($server),
+            'votes' => app(Plugins::class)->on('server_votes') ? app(ServerVotes::class)->forServer($server, $request->user()) : null,
         ]);
     }
 
@@ -192,6 +207,15 @@ class ServerController extends Controller
             'region' => trim((string) ($data['region'] ?? '')) ?: null,
         ]])->save();
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Теги збережено.']);
+
+        return back();
+    }
+
+    public function vote(Request $request, GtaServer $server, ServerVotes $votes): RedirectResponse
+    {
+        app(Plugins::class)->ensure('server_votes');
+        $votes->vote($request->user(), $server);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Голос зараховано. Наступний — завтра.']);
 
         return back();
     }

@@ -15,6 +15,7 @@ use App\Models\Story;
 use App\Models\Track;
 use App\Models\User;
 use App\Models\WatchParty;
+use App\Services\Servers\ServerVotes;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -27,6 +28,7 @@ class Achievements
     private const XP = [
         'posts' => 10, 'comments' => 2, 'likes' => 1, 'friends' => 5, 'days' => 1,
         'photos' => 3, 'tracks' => 8, 'stories' => 4, 'events' => 15, 'parties' => 10,
+        'votes' => ServerVotes::XP,
     ];
 
     /** Назви рівнів: з якого рівня яка. */
@@ -57,6 +59,7 @@ class Achievements
         ['key' => 'stories', 'stat' => 'stories', 'target' => 10, 'title' => 'Сторісмейкер', 'text' => 'Опублікувати 10 сторіс.', 'icon' => 'circle-play'],
         ['key' => 'host', 'stat' => 'parties', 'target' => 1, 'title' => 'Ведучий', 'text' => 'Влаштувати спільний перегляд або прослуховування.', 'icon' => 'clapperboard'],
         ['key' => 'verified', 'stat' => 'verified', 'target' => 1, 'title' => 'Верифікований', 'text' => 'Мати підтверджений профіль.', 'icon' => 'badge-check'],
+        ['key' => 'voter', 'stat' => 'votes', 'target' => 30, 'title' => 'Голос спільноти', 'text' => 'Проголосувати за сервери 30 разів.', 'icon' => 'vote'],
         ['key' => 'pioneer', 'stat' => 'pioneer', 'target' => 1, 'title' => 'Перші 100', 'text' => 'Бути серед перших ста користувачів.', 'icon' => 'rocket'],
     ];
 
@@ -151,6 +154,7 @@ class Achievements
             'clan_founder' => Clan::query()->where('owner_id', $user->id)->exists() ? 1 : 0,
             'verified' => $user->is_verified ? 1 : 0,
             'pioneer' => $user->id <= 100 ? 1 : 0,
+            'votes' => app(ServerVotes::class)->countFor($user),
         ];
     }
 }

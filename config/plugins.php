@@ -52,6 +52,7 @@ return [
     ['key' => 'server_claim', 'group' => 'Сервери', 'name' => 'Це мій сервер', 'description' => 'Заявка на власність і підтвердження модератором.'],
     ['key' => 'server_online', 'group' => 'Сервери', 'name' => 'Графік онлайну', 'description' => 'Зріз гравців онлайн за останні дні.'],
     ['key' => 'server_tags', 'group' => 'Сервери', 'name' => 'Теги сервера', 'description' => 'RP, PvP і регіон.'],
+    ['key' => 'server_votes', 'group' => 'Сервери', 'name' => 'Голосування за сервер', 'description' => 'Один голос на день, топ дня й місяця, голоси для власника.'],
     ['key' => 'similar_servers', 'group' => 'Сервери', 'name' => 'Схожі сервери', 'description' => 'Сервери з тим самим клієнтом або мовою.'],
 
     ['key' => 'game_collections', 'group' => 'Ігри', 'name' => 'Добірки ігор', 'description' => 'Списки «на двох» і «на вечір».'],
