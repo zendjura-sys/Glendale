@@ -228,7 +228,7 @@ function GuideForm({ slug }: { slug: string }) {
 }
 
 /** Сторінка гри: опис, медіа, мультиплеєр, рейтинги, компанії, мови, магазини, спільнота й клани. */
-/** Матове «рідке скло» для кнопок поверх постера. */
+/** Матове «рідке скло» для кнопок під постером. */
 const POSTER_GLASS =
     'h-10 rounded-xl border-white/25 bg-white/[0.12] px-3.5 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18)] backdrop-blur-xl backdrop-saturate-150 hover:bg-white/[0.2]';
 
@@ -315,7 +315,7 @@ export default function GameShow({
                 <ArrowLeft className="size-4" /> {tr('Каталог ігор')}
             </Link>
             <div className="glass overflow-hidden rounded-3xl">
-                <div className="relative flex min-h-[420px] flex-col justify-end overflow-hidden bg-black/40 sm:min-h-[360px]">
+                <div className="relative flex min-h-[300px] flex-col justify-start overflow-hidden bg-black/40 sm:min-h-[340px]">
                     {d.artworks?.[0] ? (
                         <img
                             src={d.artworks[0]}
@@ -325,7 +325,7 @@ export default function GameShow({
                     ) : (
                         <GameCover game={game} className="absolute inset-0" />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/10" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/35 to-transparent" />
                     <div className="relative space-y-3 p-4 sm:p-6">
                         <h1 className="font-display text-[28px] leading-[1.1] font-bold tracking-tight break-words text-white drop-shadow-[0_2px_12px_rgb(0_0_0/0.6)] sm:text-4xl">
                             {game.name}
@@ -360,29 +360,29 @@ export default function GameShow({
                                 ))}
                             </p>
                         )}
-                        <div className="flex flex-wrap gap-2 pt-1">
-                            <FollowButton
-                                kind="game"
-                                id={game.id}
-                                following={following}
-                                className={POSTER_GLASS}
-                            />
-                            <PinButton
-                                kind="game"
-                                id={game.id}
-                                pinned={pinned}
-                                className={POSTER_GLASS}
-                            />
-                            <SaveButton
-                                kind="game"
-                                id={game.id}
-                                saved={saved}
-                                className={POSTER_GLASS}
-                            />
-                        </div>
                     </div>
                 </div>
                 <div className="space-y-4 p-4 sm:p-5">
+                    <div className="flex flex-wrap gap-2">
+                        <FollowButton
+                            kind="game"
+                            id={game.id}
+                            following={following}
+                            className={POSTER_GLASS}
+                        />
+                        <PinButton
+                            kind="game"
+                            id={game.id}
+                            pinned={pinned}
+                            className={POSTER_GLASS}
+                        />
+                        <SaveButton
+                            kind="game"
+                            id={game.id}
+                            saved={saved}
+                            className={POSTER_GLASS}
+                        />
+                    </div>
                     {(game.modes.length > 0 || game.genres.length > 0) && (
                         <div className="flex flex-wrap gap-1.5">
                             {game.modes.map((m) => (
