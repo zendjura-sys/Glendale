@@ -52,7 +52,7 @@ class PostPresenter
             return [];
         }
 
-        $posts->loadMissing(['author', 'wall', 'attachments', 'sharedPost.author', 'quotedPost.author']);
+        $posts->loadMissing(['author', 'wall', 'attachments', 'sharedPost.author', 'sharedPost.wall', 'quotedPost.author']);
         $ids = $posts->modelKeys();
 
         $previewComments = Comment::query()
@@ -194,6 +194,7 @@ class PostPresenter
             'badge' => $community && ! $publisher ? $this->badges[$community->id.':'.$post->author_id] ?? null : null,
             'tag' => $post->tag !== null && $community ? ['name' => $post->tag, 'href' => '/c/'.$community->slug.'?tag='.rawurlencode($post->tag)] : null,
             'pending' => $post->is_pending,
+            'lang' => $post->lang,
             'publisher' => $publisher ? [...$publisher->toCard(), 'href' => '/c/'.$publisher->slug] : null,
             'wall' => $wallCard,
             'attachments' => $post->attachments->map(fn (PostAttachment $a) => [
@@ -229,7 +230,7 @@ class PostPresenter
     }
 
     /**
-     * @return array{name: string, username: string, href: string, body: string}|null
+     * @return array{name: string, username: string, href: string, post_href: string, body: string, community: array{name: string, href: string}|null}|null
      */
     private function sharedCard(Post $post): ?array
     {
@@ -239,11 +240,16 @@ class PostPresenter
             return null;
         }
 
+        $community = $source->wall instanceof Community ? $source->wall : null;
+        $asCommunity = $community !== null && $source->as_community;
+
         return [
-            'name' => $author->name,
+            'name' => $asCommunity ? $community->name : $author->name,
             'username' => $author->username,
-            'href' => '/'.$author->username,
+            'href' => $asCommunity ? '/c/'.$community->slug : '/'.$author->username,
+            'post_href' => '/posts/'.$source->id,
             'body' => $source->spoiler ? 'Спойлер' : (string) $source->body,
+            'community' => $community ? ['name' => $community->name, 'href' => '/c/'.$community->slug] : null,
         ];
     }
 

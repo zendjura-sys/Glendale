@@ -172,3 +172,16 @@ export function formatLength(seconds: number): string {
         ? tr('{hours} год', { hours })
         : tr('{hours} год {v} хв', { hours, v: minutes % 60 });
 }
+
+/** Назва мови мовою інтерфейсу: «німецька», «English». */
+export function languageName(code: string, locale: string): string {
+    try {
+        const name = new Intl.DisplayNames([locale], { type: 'language' }).of(
+            code,
+        );
+
+        return name ? name.charAt(0).toUpperCase() + name.slice(1) : code;
+    } catch {
+        return code;
+    }
+}

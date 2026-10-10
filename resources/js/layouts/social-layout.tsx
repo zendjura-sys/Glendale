@@ -2,12 +2,14 @@ import { Link, router, usePage } from '@inertiajs/react';
 import {
     Bookmark,
     ChevronDown,
+    Keyboard,
     LayoutDashboard,
     LayoutGrid,
     LogOut,
     Megaphone,
     PanelBottom,
     MessageCircle,
+    MessageSquareHeart,
     Settings,
     ShieldCheck,
     UserRound,
@@ -47,6 +49,14 @@ import {
 } from '@/components/gc/language-switcher';
 import { tr } from '@/lib/i18n';
 import { PaletteSync } from '@/components/gc/palette-sync';
+import {
+    FeedbackDialog,
+    KeyboardHint,
+    KeyboardShortcuts,
+    WhatsNewButton,
+    openFeedback,
+    openShortcuts,
+} from '@/components/gc/site-extras';
 
 function useIsActive() {
     const { currentUrl } = useCurrentUrl();
@@ -150,6 +160,8 @@ function Sidebar() {
 
             <PlayStoreLink compact className="mt-3 self-center" />
 
+            <KeyboardHint />
+
             <div className="mt-auto px-3 pt-4 text-xs leading-relaxed text-white/30">
                 © {new Date().getFullYear()}{' '}
                 {tr('GameCon · Соціальна мережа нового покоління')}
@@ -236,6 +248,18 @@ function UserMenu() {
                         </Link>
                     </DropdownMenuItem>
                 )}
+                <DropdownMenuItem
+                    className="rounded-lg focus:bg-white/[0.06]"
+                    onSelect={openFeedback}
+                >
+                    <MessageSquareHeart /> {tr('Відгук адмінам')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    className="hidden rounded-lg focus:bg-white/[0.06] lg:flex"
+                    onSelect={openShortcuts}
+                >
+                    <Keyboard /> {tr('Гарячі клавіші')}
+                </DropdownMenuItem>
                 <LanguageMenu />
                 <DropdownMenuSeparator className="bg-white/5" />
                 <DropdownMenuItem
@@ -304,6 +328,7 @@ function Topbar() {
                             )}
                         </Link>
                     )}
+                    <WhatsNewButton />
                     <NotificationsMenu />
                     <span className="mx-1 hidden h-6 w-px bg-white/10 sm:block" />
                     <UserMenu />
@@ -549,6 +574,17 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                     <LanguageSelect className="mx-3 my-1.5" />
                     <button
                         type="button"
+                        onClick={() => {
+                            onClose();
+                            openFeedback();
+                        }}
+                        className="flex items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-white/80 active:bg-white/[0.06]"
+                    >
+                        <MessageSquareHeart className="size-[18px] text-white/50" />
+                        {tr('Відгук адмінам')}
+                    </button>
+                    <button
+                        type="button"
                         onClick={() => router.post('/logout')}
                         className="flex items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-rose-300 active:bg-rose-500/10"
                     >
@@ -614,6 +650,8 @@ export default function SocialLayout({ children }: PropsWithChildren) {
             <VoiceBar />
             {modules.includes('music') && <PlayerBar />}
             <MobileNav />
+            <FeedbackDialog />
+            <KeyboardShortcuts username={auth.user.username} />
         </div>
     );
 }

@@ -8,15 +8,19 @@ use App\Models\GtaServer;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\CommunityService;
+use App\Services\EventCalendar;
+use App\Services\Families\ReportService;
 use App\Services\FeedSignals;
 use App\Services\FollowAlerts;
 use App\Services\FriendshipService;
 use App\Services\PostPresenter;
+use App\Support\I18n\LanguageGuess;
 use App\Support\MutedWords;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -66,6 +70,12 @@ class FeedController extends Controller
                 ->orderByDesc('likes_count');
         }
 
+        $rawLang = $request->query('lang');
+        $lang = is_string($rawLang) && in_array($rawLang, LanguageGuess::LANGS, true) ? $rawLang : null;
+        if ($lang !== null) {
+            $query->where('lang', $lang);
+        }
+
         $this->signals->apply($query, $user, $tab === 'discover');
         MutedWords::hidePosts($query, $user);
 
@@ -74,7 +84,10 @@ class FeedController extends Controller
 
         return Inertia::render('feed/index', [
             'tab' => $tab,
+            'lang' => $lang,
+            'languages' => LanguageGuess::LANGS,
             'country' => $user->country,
+            'tomorrow' => Inertia::defer(fn () => $this->tomorrow($user), 'events'),
             'hasFriends' => $hasSources,
             'posts' => Inertia::scroll(fn () => $posts->setCollection(collect($items))),
             'suggestions' => Inertia::defer(fn () => collect($this->friendships->suggestions($user, 5))
@@ -103,12 +116,35 @@ class FeedController extends Controller
                 ->whereNotNull('birthday')
                 ->whereMonth('birthday', now()->month)
                 ->whereDay('birthday', '>=', now()->day)
-                ->orderByRaw('DAY(birthday)')
-                ->limit(4)
                 ->get()
+                ->sortBy(fn (User $u) => $u->birthday?->day)
+                ->take(4)
+                ->values()
                 ->map(fn (User $u) => [...$u->toCard(), 'birthday' => $u->birthday?->toDateString()])
                 ->all()),
         ]);
+    }
+
+    /**
+     * Події клану чи сім’ї людини, що будуть завтра (за київським часом).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function tomorrow(User $user): array
+    {
+        $day = now(ReportService::TIMEZONE)->addDay()->toDateString();
+        $items = [];
+        foreach (['clan', 'family'] as $kind) {
+            foreach (app(EventCalendar::class)->upcoming($user, $kind) as $item) {
+                $startsAt = Carbon::parse((string) $item['starts_at'])->setTimezone(ReportService::TIMEZONE);
+                if ($startsAt->toDateString() === $day && ($item['status'] ?? null) !== 'declined') {
+                    $items[] = $item;
+                }
+            }
+        }
+        usort($items, fn (array $a, array $b) => strcmp((string) $a['starts_at'], (string) $b['starts_at']));
+
+        return array_slice($items, 0, 3);
     }
 
     /**

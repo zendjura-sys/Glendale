@@ -16,6 +16,8 @@ import {
     UserPlus,
     UsersRound,
 } from 'lucide-react';
+import { LanguageFilter, TomorrowCard } from '@/components/gc/feed-extras';
+import type { TomorrowEvent } from '@/components/gc/feed-extras';
 import { FriendButton } from '@/components/gc/friend-button';
 import { PersonRow } from '@/components/gc/person-card';
 import { PostCard } from '@/components/gc/post-card';
@@ -31,6 +33,9 @@ import { tr } from '@/lib/i18n';
 
 type Props = {
     tab: 'friends' | 'discover' | 'country';
+    lang: string | null;
+    languages: string[];
+    tomorrow?: TomorrowEvent[];
     country: string | null;
     hasFriends: boolean;
     posts: ScrollData<PostItem>;
@@ -110,6 +115,9 @@ function FeedTabs({
 
 export default function Feed({
     tab,
+    lang,
+    languages,
+    tomorrow,
     hasFriends,
     country,
     posts,
@@ -128,6 +136,7 @@ export default function Feed({
             <div className="flex gap-5">
                 <div className="min-w-0 flex-1 space-y-4 xl:max-w-[640px]">
                     <StoriesBar />
+                    <TomorrowCard events={tomorrow ?? []} />
                     {(picks?.length ?? 0) > 0 && (
                         <div className="flex gap-2 overflow-x-auto">
                             {picks?.map((pick) => (
@@ -185,6 +194,11 @@ export default function Feed({
                     )}
                     <PostComposer />
                     <FeedTabs tab={tab} hasFriends={hasFriends} />
+                    <LanguageFilter
+                        tab={tab}
+                        lang={lang}
+                        languages={languages}
+                    />
 
                     {tab === 'discover' && !hasFriends && (
                         <div className="gradient-border glass flex items-center gap-4 rounded-3xl p-5">

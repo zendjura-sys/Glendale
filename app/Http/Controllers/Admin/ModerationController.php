@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Appeal;
+use App\Models\Feedback;
 use App\Models\Message;
 use App\Models\MessageReport;
 use App\Models\User;
@@ -92,8 +93,19 @@ class ModerationController extends Controller
                 'created_at' => $a->created_at->toIso8601String(),
             ])->values();
 
+        $feedback = Feedback::query()->where('status', Feedback::NEW)->with('user')->latest('id')->limit(100)->get()
+            ->map(fn (Feedback $f) => [
+                'id' => $f->id,
+                'kind' => Feedback::KINDS[$f->kind] ?? $f->kind,
+                'body' => $f->body,
+                'url' => $f->url,
+                'user' => $f->user?->toCard(),
+                'created_at' => $f->created_at->toIso8601String(),
+            ])->values();
+
         return Inertia::render('admin/moderation', [
             'reports' => $pending,
+            'feedback' => $feedback,
             'people' => $people,
             'appeals' => $appeals,
             'muted' => User::query()->where('muted_until', '>', now())->orderBy('muted_until')->limit(100)->get()
@@ -104,6 +116,7 @@ class ModerationController extends Controller
                 'pending' => MessageReport::query()->where('status', MessageReport::PENDING)->distinct('message_id')->count('message_id'),
                 'people' => $people->count(),
                 'appeals' => $appeals->count(),
+                'feedback' => $feedback->count(),
                 'resolved_week' => MessageReport::query()->where('status', '!=', MessageReport::PENDING)->where('updated_at', '>=', now()->subWeek())->count(),
             ],
         ]);
@@ -158,6 +171,13 @@ class ModerationController extends Controller
         abort_if($appeal->status !== Appeal::PENDING, 422, 'Оскарження вже розглянуто.');
         $moderation->answer($appeal, $moderator, (bool) $data['accept'], $data['reply'] ?? null);
         Inertia::flash('toast', ['type' => 'success', 'message' => $data['accept'] ? 'Оскарження прийнято.' : 'Оскарження відхилено.']);
+
+        return back();
+    }
+
+    public function readFeedback(Feedback $feedback): RedirectResponse
+    {
+        $feedback->update(['status' => Feedback::READ]);
 
         return back();
     }

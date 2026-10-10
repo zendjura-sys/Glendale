@@ -11,6 +11,7 @@ use App\Http\Controllers\CommunityMemberController;
 use App\Http\Controllers\CommunityWidgetController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
+use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\FriendController;
@@ -94,6 +95,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
 
     Route::post('block/{user}', [ProfileController::class, 'block'])->name('blocks.toggle');
     Route::post('report/{user}', [ProfileController::class, 'report'])->middleware('throttle:10,10')->name('users.report');
+    Route::post('feedback', [FeedbackController::class, 'store'])->middleware('throttle:5,10')->name('feedback.store');
 
     Route::middleware('module:friends')->group(function () {
         Route::get('friends', [FriendController::class, 'index'])->name('friends.index');
@@ -576,6 +578,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('users/{user:id}/unmute', [Admin\ModerationController::class, 'unmute'])->whereNumber('user')->name('unmute');
             Route::post('people/{user:id}', [Admin\ModerationController::class, 'resolvePerson'])->whereNumber('user')->name('people.resolve');
             Route::post('appeals/{appeal}', [Admin\ModerationController::class, 'answerAppeal'])->whereNumber('appeal')->name('appeals.answer');
+            Route::post('feedback/{feedback}', [Admin\ModerationController::class, 'readFeedback'])->whereNumber('feedback')->name('feedback.read');
         });
         Route::get('families', [Admin\FamilyController::class, 'index'])->name('families.index');
         Route::patch('families/{family:id}', [Admin\FamilyController::class, 'update'])->whereNumber('family')->name('families.update');

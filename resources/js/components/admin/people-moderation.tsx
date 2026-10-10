@@ -1,5 +1,13 @@
 import { Link, router } from '@inertiajs/react';
-import { Ban, Check, Gavel, UserX, VolumeX, X } from 'lucide-react';
+import {
+    Ban,
+    Check,
+    Gavel,
+    MessageSquareHeart,
+    UserX,
+    VolumeX,
+    X,
+} from 'lucide-react';
 import { useState } from 'react';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { formatDate, timeAgo } from '@/lib/format';
@@ -264,6 +272,89 @@ export function Appeals({ appeals }: { appeals: AppealItem[] }) {
                                 >
                                     <X className="size-4" />
                                     {tr('Відхилити')}
+                                </button>
+                            </div>
+                        </article>
+                    ))}
+                </div>
+            )}
+        </section>
+    );
+}
+
+export type FeedbackItem = {
+    id: number;
+    kind: string;
+    body: string;
+    url: string | null;
+    user: UserCard | null;
+    created_at: string;
+};
+
+/** Відгуки від людей: прочитане зникає зі списку. */
+export function FeedbackList({ feedback }: { feedback: FeedbackItem[] }) {
+    return (
+        <section className="glass mb-6 rounded-3xl p-4 sm:p-5">
+            <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
+                <MessageSquareHeart className="size-5 text-white/60" />
+                {tr('Відгуки')}
+            </h2>
+            {feedback.length === 0 ? (
+                <p className="text-sm text-white/45">
+                    {tr('Нових відгуків немає.')}
+                </p>
+            ) : (
+                <div className="space-y-3">
+                    {feedback.map((item) => (
+                        <article
+                            key={item.id}
+                            className="rounded-2xl bg-white/[0.03] p-3"
+                        >
+                            <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">
+                                {item.user && (
+                                    <Link
+                                        href={`/${item.user.username}`}
+                                        className="inline-flex items-center gap-2 text-sm font-semibold text-white"
+                                    >
+                                        <UserAvatar
+                                            user={item.user}
+                                            size="sm"
+                                        />
+                                        {item.user.name}
+                                    </Link>
+                                )}
+                                <span className="rounded-md bg-white/[0.06] px-2 py-0.5">
+                                    {tr(item.kind)}
+                                </span>
+                                {item.url && (
+                                    <Link
+                                        href={item.url}
+                                        className="truncate text-gc-lilac-300 hover:text-white"
+                                    >
+                                        {item.url}
+                                    </Link>
+                                )}
+                                <span className="ml-auto">
+                                    {timeAgo(item.created_at)}
+                                </span>
+                            </div>
+                            <p className="mt-2 text-sm whitespace-pre-line text-white/80">
+                                {item.body}
+                            </p>
+                            <div className="mt-2 flex justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        router.post(
+                                            `/admin/moderation/feedback/${item.id}`,
+                                            {},
+                                            { preserveScroll: true },
+                                        )
+                                    }
+                                    className={`${button} text-white/60 hover:bg-white/[0.06] hover:text-white`}
+                                >
+                                    <Check className="size-4" />
+                                    {tr('Прочитано')}
                                 </button>
                             </div>
                         </article>

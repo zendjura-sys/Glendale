@@ -34,6 +34,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $publish_at
  * @property bool $is_pending
  * @property string|null $tag
+ * @property string|null $lang Мова тексту (вгадана за текстом)
  * @property int|null $shared_post_id
  * @property int|null $quoted_post_id
  * @property string|null $sticker
@@ -44,7 +45,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
-#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'card', 'visibility', 'is_pinned', 'is_draft', 'comments_enabled', 'spoiler', 'edited_at', 'publish_at', 'shared_post_id', 'quoted_post_id', 'sticker', 'is_pending', 'tag'])]
+#[Fillable(['author_id', 'wall_type', 'wall_id', 'as_community', 'body', 'music', 'movie_id', 'link', 'card', 'visibility', 'is_pinned', 'is_draft', 'comments_enabled', 'spoiler', 'edited_at', 'publish_at', 'shared_post_id', 'quoted_post_id', 'sticker', 'is_pending', 'tag', 'lang'])]
 class Post extends Model
 {
     /** @use HasFactory<PostFactory> */

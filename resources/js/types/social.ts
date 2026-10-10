@@ -83,6 +83,7 @@ export type PostItem = {
     badge?: { title: string; color: string | null } | null;
     tag?: { name: string; href: string } | null;
     pending?: boolean;
+    lang?: string | null;
     publisher: {
         id: number;
         name: string;
@@ -124,7 +125,9 @@ export type PostItem = {
         name: string;
         username: string;
         href: string;
+        post_href?: string;
         body: string;
+        community?: { name: string; href: string } | null;
     } | null;
     quoted?: {
         id: number;

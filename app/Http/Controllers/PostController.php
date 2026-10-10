@@ -27,6 +27,7 @@ use App\Services\PostPresenter;
 use App\Services\ReactionDigest;
 use App\Services\ScheduledPosts;
 use App\Services\Spotify\SpotifyClient;
+use App\Support\I18n\LanguageGuess;
 use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
 use App\Support\Stickers;
@@ -223,6 +224,7 @@ class PostController extends Controller
                 'publish_at' => $publishAt,
                 'is_pending' => $pending,
                 'tag' => $tag,
+                'lang' => LanguageGuess::guess($data['body'] ?? null),
             ]);
 
             if (isset($data['poll'])) {
@@ -292,6 +294,7 @@ class PostController extends Controller
         $post->update([
             'body' => $body,
             'link' => $this->linkCard($body),
+            'lang' => LanguageGuess::guess($body),
             'edited_at' => now(),
         ]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Запис змінено.']);
@@ -404,6 +407,7 @@ class PostController extends Controller
             'wall_type' => $user->getMorphClass(),
             'wall_id' => $user->id,
             'body' => $source->body,
+            'lang' => $source->lang,
             'visibility' => Post::VISIBILITY_PUBLIC,
             'spoiler' => $source->spoiler,
             'link' => $source->link,

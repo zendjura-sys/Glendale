@@ -10,9 +10,14 @@ import {
     VolumeX,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Appeals, PeopleReports } from '@/components/admin/people-moderation';
+import {
+    Appeals,
+    FeedbackList,
+    PeopleReports,
+} from '@/components/admin/people-moderation';
 import type {
     AppealItem,
+    FeedbackItem,
     PersonReport,
 } from '@/components/admin/people-moderation';
 import { PageHeader, StatCard } from '@/components/gc/admin';
@@ -58,9 +63,11 @@ type Props = {
         resolved_week: number;
         people: number;
         appeals: number;
+        feedback: number;
     };
     people: PersonReport[];
     appeals: AppealItem[];
+    feedback: FeedbackItem[];
 };
 
 const PROFANITY = {
@@ -94,6 +101,7 @@ export default function AdminModeration({
     stats,
     people,
     appeals,
+    feedback,
 }: Props) {
     const form = useForm({
         ...settings,
@@ -285,6 +293,8 @@ export default function AdminModeration({
             />
 
             <Appeals appeals={appeals} />
+
+            <FeedbackList feedback={feedback} />
 
             {muted.length > 0 && (
                 <section className="glass mb-6 rounded-3xl p-4 sm:p-5">

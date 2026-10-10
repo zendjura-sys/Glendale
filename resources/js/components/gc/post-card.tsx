@@ -32,7 +32,7 @@ import {
 import { MovieCardEmbed } from '@/components/cinema/movie-card';
 import { MusicCard } from '@/components/music/music-card';
 import { api } from '@/lib/api';
-import { compactNumber, timeAgo } from '@/lib/format';
+import { compactNumber, languageName, timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { PostItem } from '@/types';
 import { MentionText } from './mention-text';
@@ -87,6 +87,7 @@ export function PostCard({
     const Visibility = visibilityMeta[post.visibility].icon;
     const publisherHref = post.publisher?.href ?? `/${post.author.username}`;
     const translation = useContentTranslation('post', post.id);
+    const { locale } = usePage().props;
     const body = translation.text ?? post.body ?? '';
     const isLong = body.length > LONG_TEXT;
 
@@ -430,12 +431,21 @@ export function PostCard({
                                 {tr('Показати повністю')}
                             </button>
                         )}
-                        <div>
-                            <TranslateToggle
-                                state={translation}
-                                className="mt-1.5"
-                            />
-                        </div>
+                        {(!post.lang || post.lang !== locale) && (
+                            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-white/40">
+                                {post.lang && translation.enabled && (
+                                    <span>
+                                        {tr('Оригінал: {language}', {
+                                            language: languageName(
+                                                post.lang,
+                                                locale,
+                                            ),
+                                        })}
+                                    </span>
+                                )}
+                                <TranslateToggle state={translation} />
+                            </div>
+                        )}
                     </div>
                 )
             )}
@@ -467,10 +477,21 @@ export function PostCard({
 
             {post.shared && (
                 <Link
-                    href={post.shared.href}
+                    href={post.shared.post_href ?? post.shared.href}
                     className="mt-3.5 block rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2.5"
                 >
-                    <span className="text-xs text-white/40">{tr('Запис')}</span>
+                    <span className="flex items-center gap-1 text-xs text-white/40">
+                        {post.shared.community ? (
+                            <>
+                                <UsersRound className="size-3.5" />
+                                {tr('Із спільноти «{name}»', {
+                                    name: post.shared.community.name,
+                                })}
+                            </>
+                        ) : (
+                            tr('Запис')
+                        )}
+                    </span>
                     <span className="mt-0.5 block text-sm font-medium text-white">
                         {post.shared.name}
                     </span>
