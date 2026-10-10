@@ -21,7 +21,7 @@ import {
     kyivDateTime,
 } from '@/components/families/ui';
 import { timeAgo } from '@/lib/format';
-import { uah } from '@/lib/money';
+import { uah, uahShort } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type {
     AuditEntry,
@@ -70,13 +70,13 @@ export default function FamilyOverview(props: Props) {
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <Metric
                     label={tr('Заробив за тиждень')}
-                    value={uah(stats.week_earned)}
+                    value={uahShort(stats.week_earned)}
                     tone="text-emerald-300"
                     icon={TrendingUp}
                 />
                 <Metric
                     label={tr('Виплати сім’ї (тиждень)')}
-                    value={uah(stats.week_total)}
+                    value={uahShort(stats.week_total)}
                     icon={Wallet}
                 />
                 <Metric

@@ -14,10 +14,6 @@ const timeOnly = new Intl.DateTimeFormat(LOCALE, {
     hour: '2-digit',
     minute: '2-digit',
 });
-const compact = new Intl.NumberFormat(LOCALE, {
-    notation: 'compact',
-    maximumFractionDigits: 1,
-});
 
 /**
  * «щойно», «5 хв тому», «вчора о 14:20», «12 березня о 09:10».
@@ -109,8 +105,33 @@ export function formatDate(iso: string, withYear = true): string {
     return (withYear ? dayMonthYear : dayMonth).format(new Date(iso));
 }
 
+const SHORT = [
+    { at: 1e9, suffix: 'B' },
+    { at: 1e6, suffix: 'M' },
+    { at: 1e3, suffix: 'K' },
+] as const;
+
+/** Коротке число: 999 → 999, 1 000 → 1K, 15 300 → 15,3K, 1 000 000 → 1M. */
+export function shortNumber(value: number): string {
+    const abs = Math.abs(value);
+    const sign = value < 0 ? '−' : '';
+    for (const { at, suffix } of SHORT) {
+        if (abs >= at) {
+            const scaled = abs / at;
+            const digits = scaled < 100 ? 1 : 0;
+            const text = new Intl.NumberFormat(LOCALE, {
+                maximumFractionDigits: digits,
+            }).format(Math.floor(scaled * 10 ** digits) / 10 ** digits);
+
+            return `${sign}${text}${suffix}`;
+        }
+    }
+
+    return `${sign}${abs}`;
+}
+
 export function compactNumber(value: number): string {
-    return value < 1000 ? String(value) : compact.format(value);
+    return shortNumber(value);
 }
 
 /**

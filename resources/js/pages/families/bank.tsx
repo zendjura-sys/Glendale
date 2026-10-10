@@ -27,7 +27,7 @@ import {
     inputClass,
 } from '@/components/servers/server-form';
 import { timeAgo } from '@/lib/format';
-import { toMinor, uah } from '@/lib/money';
+import { toMinor, uah, uahShort } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type {
     CashoutItem,
@@ -97,7 +97,7 @@ export default function FamilyBank(props: Props) {
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <Metric
                     label={tr('Мій баланс')}
-                    value={uah(me.balance)}
+                    value={uahShort(me.balance)}
                     tone={me.balance < 0 ? 'text-rose-300' : 'text-emerald-300'}
                     icon={Wallet}
                 />
@@ -105,7 +105,7 @@ export default function FamilyBank(props: Props) {
                     <>
                         <Metric
                             label={tr('Скарбниця')}
-                            value={uah(family.treasury)}
+                            value={uahShort(family.treasury)}
                             hint={tr('Видано за тиждень: {uah}', {
                                 uah: uah(totals.paid_week),
                             })}
@@ -113,7 +113,7 @@ export default function FamilyBank(props: Props) {
                         />
                         <Metric
                             label={tr('Борг перед учасниками')}
-                            value={uah(
+                            value={uahShort(
                                 totals.balances + totals.pending_cashouts,
                             )}
                             hint={tr('На видачу: {uah}', {
@@ -129,14 +129,14 @@ export default function FamilyBank(props: Props) {
                         />
                         <Metric
                             label={tr('Депозити')}
-                            value={uah(totals.deposits)}
+                            value={uahShort(totals.deposits)}
                             icon={PiggyBank}
                         />
                     </>
                 ) : (
                     <Metric
                         label={tr('Активні депозити')}
-                        value={uah(
+                        value={uahShort(
                             deposits
                                 .filter((d) => d.status === 'active')
                                 .reduce((s, d) => s + d.amount, 0),

@@ -138,7 +138,7 @@ export default function CommunitySettings({
                         title={tr('Основна інформація')}
                         description={tr('Назва, адреса та опис спільноти')}
                     >
-                        <div className="grid gap-4">
+                        <div className="grid grid-cols-1 gap-4">
                             <label className="text-sm font-medium text-white/80">
                                 {tr('Назва')}
                                 <input
@@ -154,8 +154,11 @@ export default function CommunitySettings({
                             <label className="text-sm font-medium text-white/80">
                                 {tr('Адреса сторінки')}
                                 <div className="input-glass mt-1.5 flex h-11 items-center rounded-xl pl-3.5 text-sm">
-                                    <span className="text-white/35">
-                                        gamecon.online/c/
+                                    <span className="shrink-0 text-white/35">
+                                        <span className="hidden sm:inline">
+                                            gamecon.online
+                                        </span>
+                                        /c/
                                     </span>
                                     <input
                                         value={data.slug}
@@ -166,7 +169,7 @@ export default function CommunitySettings({
                                             )
                                         }
                                         maxLength={32}
-                                        className="h-full min-w-0 flex-1 bg-transparent pr-3.5 text-white focus:outline-none"
+                                        className="h-full w-0 min-w-0 flex-1 bg-transparent pr-3.5 text-white focus:outline-none"
                                     />
                                 </div>
                                 <Error message={errors.slug} />

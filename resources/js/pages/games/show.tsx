@@ -311,7 +311,7 @@ export default function GameShow({
                 <ArrowLeft className="size-4" /> {tr('Каталог ігор')}
             </Link>
             <div className="glass overflow-hidden rounded-3xl">
-                <div className="relative aspect-[21/8] max-h-[320px] w-full overflow-hidden bg-black/40">
+                <div className="relative aspect-[16/9] max-h-[320px] w-full overflow-hidden bg-black/40 sm:aspect-[21/8]">
                     {d.artworks?.[0] ? (
                         <img
                             src={d.artworks[0]}
@@ -321,52 +321,56 @@ export default function GameShow({
                     ) : (
                         <GameCover game={game} />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-                    <div className="absolute inset-x-4 bottom-4">
-                        <div className="flex items-end justify-between gap-3">
-                            <h1 className="font-display text-2xl font-semibold text-white sm:text-3xl">
+                    <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/50 to-transparent" />
+                </div>
+                <div className="space-y-3 px-4 pt-4 sm:px-5">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                            <h1 className="font-display text-2xl leading-tight font-semibold break-words text-white sm:text-3xl">
                                 {game.name}
                             </h1>
-                            <span className="flex shrink-0 gap-2">
-                                <FollowButton
-                                    kind="game"
-                                    id={game.id}
-                                    following={following}
-                                />
-                                <PinButton
-                                    kind="game"
-                                    id={game.id}
-                                    pinned={pinned}
-                                />
-                                <SaveButton
-                                    kind="game"
-                                    id={game.id}
-                                    saved={saved}
-                                />
-                            </span>
+                            <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/65">
+                                <span>
+                                    {game.platforms
+                                        .map((p) => p.label)
+                                        .join(' · ')}
+                                </span>
+                                {game.released && (
+                                    <span>{game.released.slice(0, 4)}</span>
+                                )}
+                                {game.rating ? (
+                                    <span className="inline-flex items-center gap-1">
+                                        <Star className="size-3.5 fill-amber-300 text-amber-300" />{' '}
+                                        {game.rating.toFixed(1)}
+                                    </span>
+                                ) : null}
+                                {d.age_ratings?.map((a) => (
+                                    <span
+                                        key={a}
+                                        className="rounded-md border border-white/25 px-1.5 text-xs"
+                                    >
+                                        {a}
+                                    </span>
+                                ))}
+                            </p>
                         </div>
-                        <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/70">
-                            <span>
-                                {game.platforms.map((p) => p.label).join(' · ')}
-                            </span>
-                            {game.released && (
-                                <span>{game.released.slice(0, 4)}</span>
-                            )}
-                            {game.rating ? (
-                                <span className="inline-flex items-center gap-1">
-                                    <Star className="size-3.5 fill-amber-300 text-amber-300" />{' '}
-                                    {game.rating.toFixed(1)}
-                                </span>
-                            ) : null}
-                            {d.age_ratings?.map((a) => (
-                                <span
-                                    key={a}
-                                    className="rounded-md border border-white/25 px-1.5 text-xs"
-                                >
-                                    {a}
-                                </span>
-                            ))}
-                        </p>
+                        <span className="flex shrink-0 flex-wrap gap-2">
+                            <FollowButton
+                                kind="game"
+                                id={game.id}
+                                following={following}
+                            />
+                            <PinButton
+                                kind="game"
+                                id={game.id}
+                                pinned={pinned}
+                            />
+                            <SaveButton
+                                kind="game"
+                                id={game.id}
+                                saved={saved}
+                            />
+                        </span>
                     </div>
                 </div>
                 <div className="space-y-4 p-4 sm:p-5">

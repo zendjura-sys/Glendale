@@ -84,7 +84,7 @@ export function RulesForm({
                     'Сторінки для учасників і те, як стіна приймає записи',
                 )}
             >
-                <div className="grid gap-4">
+                <div className="grid grid-cols-1 gap-4">
                     {area(
                         'rules',
                         tr('Правила'),
