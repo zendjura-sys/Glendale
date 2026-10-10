@@ -1,4 +1,4 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     CircleCheck,
     CircleX,
@@ -12,9 +12,18 @@ import { SettingsCard } from '@/layouts/settings/layout';
 import { formatDate, timeAgo } from '@/lib/format';
 import { tr } from '@/lib/i18n';
 import { WebPushSettings } from '@/components/gc/web-push-toggle';
+import { SCOPE_LABELS } from '@/components/servers/server-apps';
 import { cn } from '@/lib/utils';
 
 type Props = {
+    connections: {
+        client_id: number;
+        name: string;
+        server: string;
+        slug: string;
+        scopes: string[];
+        last_used_at: string | null;
+    }[];
     sessions: {
         id: number;
         device: string;
@@ -72,6 +81,7 @@ function statusLabel(status: Props['appeals'][number]['status']): string {
 }
 
 export default function Account({
+    connections,
     sessions,
     tokens,
     logins,
@@ -98,6 +108,54 @@ export default function Account({
                 >
                     <WebPushSettings />
                 </SettingsCard>
+                {connections.length > 0 && (
+                    <SettingsCard
+                        title={tr('Підключені сервери')}
+                        description={tr(
+                            'Сервери, куди ви входили через GameCon. Скасуйте доступ, якщо більше там не граєте.',
+                        )}
+                    >
+                        <ul className="space-y-2">
+                            {connections.map((item) => (
+                                <li
+                                    key={item.client_id}
+                                    className="flex items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3"
+                                >
+                                    <span className="min-w-0 flex-1">
+                                        <Link
+                                            href={`/servers/${item.slug}`}
+                                            className="block truncate text-sm font-semibold text-white hover:underline"
+                                        >
+                                            {item.server}
+                                        </Link>
+                                        <span className="block truncate text-xs text-white/45">
+                                            {item.name} ·{' '}
+                                            {item.scopes
+                                                .map(
+                                                    (scope) =>
+                                                        SCOPE_LABELS()[scope] ??
+                                                        scope,
+                                                )
+                                                .join(', ')}
+                                        </span>
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            router.delete(
+                                                `/settings/account/connections/${item.client_id}`,
+                                                options,
+                                            )
+                                        }
+                                        className="shrink-0 text-sm font-medium text-rose-200 hover:text-rose-100"
+                                    >
+                                        {tr('Скасувати')}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </SettingsCard>
+                )}
                 <SettingsCard
                     title={tr('Пристрої і сесії')}
                     description={tr(

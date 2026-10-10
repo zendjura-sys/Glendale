@@ -21,6 +21,8 @@ import { FamilyLogo } from '@/components/families/family-logo';
 import { ConnectButton, ServerLinks } from '@/components/servers/server-card';
 import { OnlineMeter, ServerIcon } from '@/components/servers/server-icon';
 import { VotePanel } from '@/components/servers/server-votes';
+import { ServerApps, VerifiedPlayers } from '@/components/servers/server-apps';
+import type { ServerApp, VerifiedInfo } from '@/components/servers/server-apps';
 import { CharacterRow } from '@/components/characters/character-card';
 import type { CharacterCardData } from '@/components/characters/character-card';
 import type { ServerVotesInfo } from '@/components/servers/server-votes';
@@ -80,6 +82,8 @@ type Props = {
     similar: GtaServerCard[];
     votes: ServerVotesInfo | null;
     characters: CharacterCardData[];
+    apps: ServerApp[] | null;
+    verified: VerifiedInfo;
 };
 
 export default function ServerShow({
@@ -101,6 +105,8 @@ export default function ServerShow({
     similar,
     votes,
     characters,
+    apps,
+    verified,
 }: Props) {
     const [inviteUsername, setInviteUsername] = useState('');
     const compareOn = usePlugin('server_compare');
@@ -347,7 +353,9 @@ export default function ServerShow({
                         </details>
                     )}
                 </section>
+                <VerifiedPlayers verified={verified} />
                 {votes && <VotePanel slug={server.slug} votes={votes} />}
+                {apps && <ServerApps slug={server.slug} apps={apps} />}
                 {charactersOn && (
                     <section className="glass rounded-3xl p-5">
                         <div className="flex items-center justify-between gap-3">

@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Models\UserSession;
 use App\Services\Auth\AccountSecurity;
 use App\Services\FriendshipService;
+use App\Services\Servers\ServerOAuth;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -39,6 +40,7 @@ class AccountController extends Controller
         $this->security->touch($request, $user);
 
         return Inertia::render('settings/account', [
+            'connections' => app(ServerOAuth::class)->connections($user),
             'sessions' => array_values(UserSession::query()->where('user_id', $user->id)->latest('last_active_at')->limit(30)->get()
                 ->map(fn (UserSession $s) => [
                     'id' => $s->id,
@@ -94,6 +96,14 @@ class AccountController extends Controller
         abort_unless($token->user_id === $user->id, 404);
         $this->security->revoke($user, $request->session()->getId(), [], [$token->id]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Вихід із застосунку на цьому пристрої виконано.']);
+
+        return back();
+    }
+
+    public function disconnect(Request $request, int $client): RedirectResponse
+    {
+        app(ServerOAuth::class)->disconnect($this->user($request), $client);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Доступ серверу скасовано.']);
 
         return back();
     }

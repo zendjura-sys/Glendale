@@ -6,11 +6,14 @@ use App\Models\Clan;
 use App\Models\Family;
 use App\Models\FamilyMember;
 use App\Models\GtaServer;
+use App\Models\OAuthClient;
+use App\Models\OAuthToken;
 use App\Models\PlayedPlace;
 use App\Models\Save;
 use App\Models\ServerClaim;
 use App\Models\ServerEvent;
 use App\Models\ServerNews;
+use App\Models\ServerPlayer;
 use App\Models\ServerReview;
 use App\Models\User;
 use App\Notifications\GroupInvite;
@@ -191,6 +194,12 @@ class ServerController extends Controller
             'similar' => $this->similarServers($server),
             'votes' => app(Plugins::class)->on('server_votes') ? app(ServerVotes::class)->forServer($server, $request->user()) : null,
             'characters' => CharacterController::cards(server: $server),
+            'apps' => $server->owner_id === $request->user()->id || $request->user()->isAdmin() ? $this->apps($server) : null,
+            'verified' => [
+                'players' => ServerPlayer::query()->where('gta_server_id', $server->id)->count(),
+                'online' => ServerPlayer::query()->where('gta_server_id', $server->id)->where('online', true)->count(),
+                'me' => ($mine = ServerPlayer::query()->where('gta_server_id', $server->id)->where('user_id', $request->user()->id)->first()) ? ['nickname' => $mine->nickname] : null,
+            ],
         ]);
     }
 
@@ -210,6 +219,26 @@ class ServerController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Теги збережено.']);
 
         return back();
+    }
+
+    /**
+     * Застосунки «Увійти через GameCon» для власника; секрет — лише одразу після створення.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function apps(GtaServer $server): array
+    {
+        $fresh = session('oauth_secret');
+
+        return array_values(OAuthClient::query()->where('gta_server_id', $server->id)->whereNull('revoked_at')->oldest('id')->get()
+            ->map(fn (OAuthClient $app) => [
+                'id' => $app->id,
+                'name' => $app->name,
+                'client_id' => $app->client_id,
+                'redirect_uris' => $app->redirect_uris,
+                'users' => OAuthToken::query()->where('oauth_client_id', $app->id)->distinct()->count('user_id'),
+                'secret' => is_array($fresh) && ($fresh['id'] ?? null) === $app->id ? $fresh['secret'] : null,
+            ])->all());
     }
 
     public function vote(Request $request, GtaServer $server, ServerVotes $votes): RedirectResponse

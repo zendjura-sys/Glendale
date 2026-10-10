@@ -26,6 +26,7 @@ use App\Http\Controllers\MessengerController;
 use App\Http\Controllers\MusicController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NowPlayingController;
+use App\Http\Controllers\OAuth;
 use App\Http\Controllers\PartyController;
 use App\Http\Controllers\PeopleController;
 use App\Http\Controllers\PhotoAlbumController;
@@ -35,6 +36,7 @@ use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SavedController;
+use App\Http\Controllers\ServerAppController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StartController;
@@ -46,6 +48,7 @@ use App\Http\Controllers\WatchPartyController;
 use App\Http\Controllers\WebPushController;
 use App\Http\Controllers\WelcomeController;
 use App\Models\VoiceRoom;
+use App\Services\Servers\ServerOAuth;
 use Illuminate\Support\Facades\Route;
 
 // Мова інтерфейсу: ручний вибір і словник сайту.
@@ -99,6 +102,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('block/{user}', [ProfileController::class, 'block'])->name('blocks.toggle');
     Route::post('report/{user}', [ProfileController::class, 'report'])->middleware('throttle:10,10')->name('users.report');
     Route::post('feedback', [FeedbackController::class, 'store'])->middleware('throttle:5,10')->name('feedback.store');
+    Route::get('oauth/authorize', [OAuth\AuthorizeController::class, 'show'])->name('oauth.authorize');
+    Route::post('oauth/authorize', [OAuth\AuthorizeController::class, 'decide'])->middleware('throttle:30,1')->name('oauth.decide');
+    Route::get('developers', fn () => Inertia\Inertia::render('developers/oauth', ['scopes' => ServerOAuth::SCOPES, 'base' => url('/')]))->name('developers');
     Route::get('push/web/key', [WebPushController::class, 'key'])->name('web-push.key');
     Route::post('push/web', [WebPushController::class, 'store'])->middleware('throttle:20,1')->name('web-push.store');
     Route::delete('push/web', [WebPushController::class, 'destroy'])->name('web-push.destroy');
@@ -388,6 +394,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('{server}/tags', [ServerController::class, 'tags'])->name('tags');
         Route::post('{server}/reviews', [ServerController::class, 'review'])->middleware('throttle:20,1')->name('reviews.store');
         Route::post('{server}/vote', [ServerController::class, 'vote'])->middleware('throttle:10,1')->name('vote');
+        Route::post('{server}/apps', [ServerAppController::class, 'store'])->middleware('throttle:10,1')->name('apps.store');
+        Route::patch('{server}/apps/{app}', [ServerAppController::class, 'update'])->name('apps.update');
+        Route::post('{server}/apps/{app}/secret', [ServerAppController::class, 'secret'])->middleware('throttle:10,1')->name('apps.secret');
+        Route::delete('{server}/apps/{app}', [ServerAppController::class, 'destroy'])->name('apps.destroy');
     });
 
     Route::prefix('party')->name('party.')->middleware('module:party')->whereNumber('party')->group(function () {

@@ -25,6 +25,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('settings/account/sessions/{session}', [AccountController::class, 'revokeSession'])->whereNumber('session')->name('account.sessions.destroy');
     Route::delete('settings/account/tokens/{token}', [AccountController::class, 'revokeToken'])->whereNumber('token')->name('account.tokens.destroy');
     Route::delete('settings/account/sessions', [AccountController::class, 'revokeOthers'])->name('account.sessions.others');
+    Route::delete('settings/account/connections/{client}', [AccountController::class, 'disconnect'])->whereNumber('client')->name('account.connections.destroy');
     Route::put('settings/account/profanity', [AccountController::class, 'profanity'])->name('account.profanity');
     Route::get('settings/account/export', [AccountController::class, 'export'])->middleware('throttle:3,60')->name('account.export');
     Route::post('settings/account/freeze', [AccountController::class, 'freeze'])->middleware('throttle:6,1')->name('account.freeze');

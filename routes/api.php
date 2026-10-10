@@ -24,6 +24,7 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
 use App\Http\Controllers\MusicController;
 use App\Http\Controllers\NowPlayingController;
+use App\Http\Controllers\OAuth\TokenController as OAuthTokenController;
 use App\Http\Controllers\PartyController;
 use App\Http\Controllers\PhotoAlbumController;
 use App\Http\Controllers\PhotoController;
@@ -46,6 +47,13 @@ use Illuminate\Support\Facades\Route;
 
 // Вебхук сервера голосу LiveKit (підпис перевіряє контролер).
 Route::post('livekit/webhook', [VoiceController::class, 'webhook'])->middleware('throttle:600,1');
+
+// «Увійти через GameCon» для серверів: обмін коду, профіль гравця, синхронізація онлайну.
+Route::prefix('oauth')->group(function () {
+    Route::post('token', [OAuthTokenController::class, 'token'])->middleware('throttle:60,1');
+    Route::get('userinfo', [OAuthTokenController::class, 'userinfo'])->middleware('throttle:300,1');
+    Route::post('server/sync', [OAuthTokenController::class, 'sync'])->middleware('throttle:30,1');
+});
 
 Route::prefix('v1')->group(function () {
     // Мова застосунку: словник його рядків (мова — з X-Locale або Accept-Language).
