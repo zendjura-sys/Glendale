@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\EventCalendar;
 use App\Services\FollowAlerts;
 use App\Services\FriendshipService;
+use App\Services\Games\PosterPalette;
 use App\Services\Presence\PlayingStatus;
 use App\Services\SavedItems;
 use App\Support\Modules\ModuleManager;
@@ -142,7 +143,10 @@ class GameController extends Controller
             ], array_filter((array) $details['release_dates'], 'is_array')));
         }
 
+        $poster = is_array($details['artworks'] ?? null) && isset($details['artworks'][0]) ? (string) $details['artworks'][0] : $game->toCard()['cover'];
+
         $props = [
+            'palette' => app(PosterPalette::class)->for(is_string($poster) ? $poster : null),
             'game' => [
                 ...$game->toCard(),
                 'genres' => $game->genres ?? [],

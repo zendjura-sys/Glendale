@@ -20,7 +20,7 @@ import {
     X,
 } from 'lucide-react';
 import { useState } from 'react';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { EventList, GameEventForm } from '@/components/events/event-card';
 import type { CalendarEvent } from '@/components/events/event-card';
 import { PlayingNow } from '@/components/gc/playing';
@@ -79,7 +79,15 @@ type Details = {
     igdb_url?: string;
 };
 
+type PosterPalette = {
+    base: string;
+    accent: string;
+    soft: string;
+    swatches: Record<string, string>;
+} | null;
+
 type Props = {
+    palette?: PosterPalette;
     game: GameCard & {
         genres: string[];
         modes: { key: string; label: string }[];
@@ -228,11 +236,34 @@ function GuideForm({ slug }: { slug: string }) {
 }
 
 /** Сторінка гри: опис, медіа, мультиплеєр, рейтинги, компанії, мови, магазини, спільнота й клани. */
+/**
+ * Акцент сайту на сторінці гри — з постера (свотчі Palette API, порахував сервер).
+ * Змінні перевизначаються лише всередині сторінки, тож кнопки, мітки й посилання беруть колір гри.
+ */
+function paletteStyle(palette: PosterPalette): CSSProperties | undefined {
+    if (!palette) return undefined;
+
+    return {
+        '--color-gc-blue': palette.accent,
+        '--color-gc-indigo': palette.accent,
+        '--color-gc-purple': palette.soft,
+        '--color-gc-pink': palette.accent,
+        '--color-gc-lilac-200': palette.soft,
+        '--color-gc-lilac-300': palette.soft,
+        '--color-gc-lilac-400': palette.accent,
+        '--color-gc-lilac-500': palette.accent,
+        '--primary': palette.accent,
+        '--ring': palette.accent,
+        '--gc-gradient': `linear-gradient(120deg, ${palette.accent}, ${palette.soft})`,
+    } as CSSProperties;
+}
+
 /** Матове «рідке скло» для кнопок під постером. */
 const POSTER_GLASS =
-    'h-10 rounded-xl border-white/25 bg-white/[0.12] px-3.5 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18)] backdrop-blur-xl backdrop-saturate-150 hover:bg-white/[0.2]';
+    'h-10 rounded-xl border-gc-lilac-400/35 bg-gc-indigo/[0.14] px-3.5 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18)] backdrop-blur-xl backdrop-saturate-150 hover:bg-gc-indigo/25';
 
 export default function GameShow({
+    palette = null,
     game,
     similar,
     clans,
@@ -306,7 +337,16 @@ export default function GameShow({
     const beat = d.time_to_beat;
 
     return (
-        <>
+        <div className="relative isolate" style={paletteStyle(palette)}>
+            {palette && (
+                <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-x-[-12px] -top-6 -z-10 h-[620px] opacity-70 blur-3xl"
+                    style={{
+                        background: `radial-gradient(60% 55% at 25% 25%, ${palette.accent}66, transparent 70%), radial-gradient(55% 50% at 85% 45%, ${palette.soft}33, transparent 75%)`,
+                    }}
+                />
+            )}
             <Head title={game.name} />
             <Link
                 href="/games"
@@ -314,18 +354,32 @@ export default function GameShow({
             >
                 <ArrowLeft className="size-4" /> {tr('Каталог ігор')}
             </Link>
-            <div className="glass overflow-hidden rounded-3xl">
-                <div className="relative flex min-h-[300px] flex-col justify-start overflow-hidden bg-black/40 sm:min-h-[340px]">
-                    {d.artworks?.[0] ? (
-                        <img
-                            src={d.artworks[0]}
-                            alt=""
-                            className="absolute inset-0 size-full object-cover"
-                        />
-                    ) : (
-                        <GameCover game={game} className="absolute inset-0" />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/35 to-transparent" />
+            <div
+                className="glass overflow-hidden rounded-3xl"
+                style={
+                    palette
+                        ? {
+                              backgroundImage: `linear-gradient(to bottom, ${palette.base}e6, ${palette.accent}26 360px, transparent 760px)`,
+                          }
+                        : undefined
+                }
+            >
+                <div className="relative flex min-h-[300px] flex-col justify-start overflow-hidden sm:min-h-[340px]">
+                    <div
+                        className="absolute inset-0 [mask-image:linear-gradient(to_bottom,black_45%,transparent)]"
+                        aria-hidden
+                    >
+                        {d.artworks?.[0] ? (
+                            <img
+                                src={d.artworks[0]}
+                                alt=""
+                                className="size-full object-cover"
+                            />
+                        ) : (
+                            <GameCover game={game} />
+                        )}
+                    </div>
+                    <div className="absolute inset-x-0 top-0 h-2/3 bg-gradient-to-b from-black/80 via-black/35 to-transparent" />
                     <div className="relative space-y-3 p-4 sm:p-6">
                         <h1 className="font-display text-[28px] leading-[1.1] font-bold tracking-tight break-words text-white drop-shadow-[0_2px_12px_rgb(0_0_0/0.6)] sm:text-4xl">
                             {game.name}
@@ -389,7 +443,7 @@ export default function GameShow({
                                 <Link
                                     key={m.key}
                                     href={`/games?mode=${m.key}`}
-                                    className="rounded-lg bg-[var(--accent)]/20 px-2.5 py-1 text-xs text-[#c7d2fe] hover:bg-[var(--accent)]/30"
+                                    className="rounded-lg bg-gc-indigo/20 px-2.5 py-1 text-xs text-gc-lilac-200 hover:bg-gc-indigo/30"
                                 >
                                     {m.label}
                                 </Link>
@@ -1001,6 +1055,6 @@ export default function GameShow({
                     )}
                 </div>
             )}
-        </>
+        </div>
     );
 }
