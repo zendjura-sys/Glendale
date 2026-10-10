@@ -21,12 +21,14 @@ class CinemaPlayers
         'voice_prefer' => [],
         // Озвучки, що містять ці слова, не показуються.
         'voice_block' => [],
+        // Посерійний режим: під плеєром — сезони й серії, кожна відкривається окремо.
+        'episodes' => false,
     ];
 
     public function __construct(private readonly SiteSettings $settings) {}
 
     /**
-     * @return array{order: list<string>, disabled: list<string>, labels: array<string, string>, voice_prefer: list<string>, voice_block: list<string>}
+     * @return array{order: list<string>, disabled: list<string>, labels: array<string, string>, voice_prefer: list<string>, voice_block: list<string>, episodes: bool}
      */
     public function config(): array
     {
@@ -53,6 +55,7 @@ class CinemaPlayers
             'labels' => $labels,
             'voice_prefer' => self::strings($config['voice_prefer']),
             'voice_block' => self::strings($config['voice_block']),
+            'episodes' => (bool) $config['episodes'],
         ];
     }
 

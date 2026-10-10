@@ -55,6 +55,55 @@ class KodikClient
     }
 
     /**
+     * Сезони й серії (за всіма озвучками): номер сезону → номери серій.
+     *
+     * @param  array<string, string|null>  $criteria
+     * @return array<int, list<int>>
+     */
+    public function episodes(array $criteria): array
+    {
+        $params = array_filter($criteria, fn ($v) => filled($v));
+        if ($params === []) {
+            return [];
+        }
+
+        $seasons = [];
+        foreach ($this->request('/search', [...$params, 'limit' => 100, 'with_episodes' => 'true'])['results'] ?? [] as $item) {
+            if (! is_array($item) || ! is_array($item['seasons'] ?? null)) {
+                continue;
+            }
+            foreach ($item['seasons'] as $season => $data) {
+                if (! is_numeric($season) || ! is_array($data['episodes'] ?? null)) {
+                    continue;
+                }
+                foreach (array_keys($data['episodes']) as $episode) {
+                    if (is_numeric($episode)) {
+                        $seasons[(int) $season][(int) $episode] = (int) $episode;
+                    }
+                }
+            }
+        }
+
+        return self::sorted($seasons);
+    }
+
+    /**
+     * @param  array<int, array<int, int>>  $seasons
+     * @return array<int, list<int>>
+     */
+    public static function sorted(array $seasons): array
+    {
+        ksort($seasons);
+        $out = [];
+        foreach ($seasons as $season => $episodes) {
+            sort($episodes);
+            $out[$season] = $episodes;
+        }
+
+        return $out;
+    }
+
+    /**
      * Свіжі оновлення каталогу Kodik.
      *
      * @return list<array<string, mixed>>

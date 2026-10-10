@@ -223,6 +223,7 @@ class CinemaController extends Controller
             'voice_prefer.*' => ['string', 'max:60'],
             'voice_block' => ['array', 'max:50'],
             'voice_block.*' => ['string', 'max:60'],
+            'episodes' => ['sometimes', 'boolean'],
         ]);
 
         $this->players->save([
@@ -231,6 +232,7 @@ class CinemaController extends Controller
             'labels' => array_filter(array_intersect_key($data['labels'] ?? [], array_flip($providers)), fn ($v) => filled($v)),
             'voice_prefer' => array_values(array_filter(array_map('trim', $data['voice_prefer'] ?? []))),
             'voice_block' => array_values(array_filter(array_map('trim', $data['voice_block'] ?? []))),
+            'episodes' => (bool) ($data['episodes'] ?? false),
         ]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Налаштування плеєрів збережено.']);
 

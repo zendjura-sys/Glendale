@@ -18,6 +18,12 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import {
+    EpisodePicker,
+    episodeLink,
+    supportsEpisodes,
+} from '@/components/cinema/episode-picker';
+import type { EpisodePick, Season } from '@/components/cinema/episode-picker';
 import { MoviePoster, PosterRow } from '@/components/cinema/movie-tile';
 import { ShareMovieDialog } from '@/components/cinema/share-movie-dialog';
 import { Comments } from '@/components/gc/comments';
@@ -55,6 +61,8 @@ type Props = {
     seen: MovieFriend[];
     taste: (MovieFriend & { shared: number })[];
     episodeMarks: string[];
+    /** Посерійний режим (вмикається в адмінці); приходить окремим запитом. */
+    episodes?: Season[] | null;
     similar: MovieCard[];
     comments: CommentItem[];
     can: { manage: boolean };
@@ -170,6 +178,7 @@ export default function CinemaShow({
     seen,
     taste,
     episodeMarks,
+    episodes,
     similar,
     comments,
     can,
@@ -204,6 +213,12 @@ export default function CinemaShow({
     const player =
         providerPlayers.find((p) => p.key === playerKey) ?? providerPlayers[0];
     const startedRef = useRef(false);
+    const [pick, setPick] = useState<EpisodePick | null>(null);
+    const episodeMode =
+        provider !== 'trailer' &&
+        pick !== null &&
+        player !== undefined &&
+        supportsEpisodes(player.provider);
 
     const apply = (response: StateResponse) => {
         setState(response.state);
@@ -824,12 +839,20 @@ export default function CinemaShow({
                                     key={
                                         provider === 'trailer'
                                             ? 'trailer'
-                                            : player?.key
+                                            : episodeMode
+                                              ? `${player.key}:${pick.season}:${pick.episode}`
+                                              : player?.key
                                     }
                                     src={
                                         provider === 'trailer'
                                             ? (movie.trailer_url ?? '')
-                                            : player?.link
+                                            : episodeMode
+                                              ? episodeLink(
+                                                    player.provider,
+                                                    player.link,
+                                                    pick,
+                                                )
+                                              : player?.link
                                     }
                                     title={movie.title}
                                     className="absolute inset-0 size-full"
@@ -838,6 +861,19 @@ export default function CinemaShow({
                                     referrerPolicy="origin"
                                 />
                             </div>
+                            {episodes &&
+                                episodes.length > 0 &&
+                                provider !== 'trailer' && (
+                                    <EpisodePicker
+                                        seasons={episodes}
+                                        value={pick}
+                                        onChange={setPick}
+                                        supported={supportsEpisodes(
+                                            player?.provider,
+                                        )}
+                                        watched={marks}
+                                    />
+                                )}
                         </>
                     )}
                 </section>

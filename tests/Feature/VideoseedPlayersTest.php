@@ -6,6 +6,7 @@ use App\Models\Movie;
 use App\Models\MovieSource;
 use App\Models\User;
 use App\Services\Cinema\CinemaAutoImport;
+use App\Services\Cinema\CinemaPlayers;
 use App\Services\Cinema\CinemaService;
 use App\Services\Cinema\TmdbAutoParse;
 use App\Services\Cinema\VideoseedClient;
@@ -165,5 +166,27 @@ class VideoseedPlayersTest extends TestCase
             ->has('players.providers', 4)
             ->where('players.providers.1.key', 'videoseed')
             ->where('players.providers.1.configured', true));
+    }
+
+    public function test_episode_mode_lists_seasons_on_the_movie_page(): void
+    {
+        $item = $this->item(['seasons' => [
+            '1' => ['videos' => ['1' => [], '2' => [], '3' => []]],
+            '2' => ['videos' => ['1' => [], '2' => []]],
+        ]]);
+        Http::fake(['api.videoseed.tv/*' => Http::response(['status' => 'success', 'data' => $item])]);
+        $movie = app(CinemaService::class)->import(VideoseedClient::candidate($item), null, 'videoseed');
+        $movie->update(['is_published' => true]);
+        $viewer = User::factory()->create();
+
+        $this->actingAs($viewer)->get('/cinema/'.$movie->slug)->assertInertia(fn (Assert $page) => $page->where('episodes', null));
+
+        app(CinemaPlayers::class)->save(['episodes' => true]);
+        $this->actingAs($viewer)->get('/cinema/'.$movie->slug)->assertInertia(fn (Assert $page) => $page
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->has('episodes', 2)
+                ->where('episodes.0.number', 1)
+                ->where('episodes.0.episodes', [1, 2, 3])
+                ->where('episodes.1.episodes', [1, 2])));
     }
 }

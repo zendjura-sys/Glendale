@@ -14,6 +14,7 @@ export type PlayersData = {
         labels: Record<string, string>;
         voice_prefer: string[];
         voice_block: string[];
+        episodes: boolean;
     };
     providers: {
         key: string;
@@ -64,6 +65,7 @@ export function PlayersPanel({ data }: { data: PlayersData }) {
     );
     const [prefer, setPrefer] = useState(data.config.voice_prefer.join('\n'));
     const [block, setBlock] = useState(data.config.voice_block.join('\n'));
+    const [episodes, setEpisodes] = useState(data.config.episodes);
     const [saving, setSaving] = useState(false);
 
     const move = (index: number, delta: number) => {
@@ -83,6 +85,7 @@ export function PlayersPanel({ data }: { data: PlayersData }) {
                 labels,
                 voice_prefer: lines(prefer),
                 voice_block: lines(block),
+                episodes,
             },
             { preserveScroll: true, onFinish: () => setSaving(false) },
         );
@@ -179,6 +182,24 @@ export function PlayersPanel({ data }: { data: PlayersData }) {
                     );
                 })}
             </ul>
+
+            <div className="flex items-start gap-3 rounded-2xl bg-white/[0.03] p-4">
+                <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-white">
+                        {tr('Посерійний режим')}
+                    </p>
+                    <p className="text-xs text-white/45">
+                        {tr(
+                            'Під плеєром серіалу, аніме чи мультсеріалу — сезони й серії. Обрана серія відкривається окремо в Kodik чи Videoseed (вкладку плеєра глядач обирає сам).',
+                        )}
+                    </p>
+                </div>
+                <Toggle
+                    checked={episodes}
+                    onChange={setEpisodes}
+                    label={tr('Посерійний режим')}
+                />
+            </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
                 <label className="grid gap-1.5 text-xs text-white/50">

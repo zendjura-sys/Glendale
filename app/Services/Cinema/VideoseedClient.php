@@ -91,6 +91,42 @@ class VideoseedClient
     }
 
     /**
+     * Сезони й серії серіалу: номер сезону → номери серій.
+     *
+     * @param  array{kinopoisk_id?: string|null, imdb_id?: string|null, tmdb_id?: string|null}  $criteria
+     * @return array<int, list<int>>
+     */
+    public function episodes(array $criteria): array
+    {
+        $ids = array_filter([
+            'kp' => $criteria['kinopoisk_id'] ?? null,
+            'imdb' => $criteria['imdb_id'] ?? null,
+            'tmdb' => isset($criteria['tmdb_id']) ? preg_replace('/^(movie|tv):/', '', (string) $criteria['tmdb_id']) : null,
+        ], fn ($v) => filled($v));
+
+        foreach ($ids as $param => $value) {
+            foreach (self::items($this->request(['item' => 'search', $param => $value])) as $item) {
+                $seasons = [];
+                foreach (is_array($item['seasons'] ?? null) ? $item['seasons'] : [] as $season => $data) {
+                    if (! is_numeric($season) || ! is_array($data['videos'] ?? null)) {
+                        continue;
+                    }
+                    foreach (array_keys($data['videos']) as $episode) {
+                        if (is_numeric($episode)) {
+                            $seasons[(int) $season][(int) $episode] = (int) $episode;
+                        }
+                    }
+                }
+                if ($seasons !== []) {
+                    return KodikClient::sorted($seasons);
+                }
+            }
+        }
+
+        return [];
+    }
+
+    /**
      * Свіжі фільми й серіали однією сторінкою (для ручного імпорту в адмінці).
      *
      * @return list<array<string, mixed>>

@@ -9,7 +9,9 @@ use App\Models\MovieRequest;
 use App\Models\MovieSource;
 use App\Models\Track;
 use App\Models\User;
+use App\Services\Cinema\CinemaPlayers;
 use App\Services\Cinema\CinemaService;
+use App\Services\Cinema\EpisodeGuide;
 use App\Services\Cinema\EpisodeMarks;
 use App\Services\Cinema\FlixcdnPlayer;
 use App\Services\FriendshipService;
@@ -253,6 +255,10 @@ class CinemaController extends Controller
                 'tmdb_id' => $movie->tmdb_id,
             ],
             'players' => $this->cinema->players($movie, $viewer),
+            // Посерійний режим (Адмінка → Кіно → Плеєри): сезони й серії — окремим запитом, бо це звернення до API.
+            'episodes' => app(CinemaPlayers::class)->config()['episodes'] && $movie->sources->contains(fn ($s) => in_array($s->provider, ['kodik', 'videoseed'], true))
+                ? Inertia::defer(fn () => app(EpisodeGuide::class)->seasons($movie))
+                : null,
             'state' => $this->cinema->stateFor($movie, $viewer),
             'statuses' => $this->statusOptions(),
             'friends' => $this->friendsWatching($viewer, $movie),
