@@ -145,9 +145,12 @@ export default function Invite({
                                     )}
                                 </span>
                                 <span className="min-w-0 flex-1 text-sm text-white/80">
-                                    {tr('{n} активних друзів', {
-                                        n: step.target,
-                                    })}{' '}
+                                    {step.target}{' '}
+                                    {plural(step.target, [
+                                        'активний друг',
+                                        'активні друзі',
+                                        'активних друзів',
+                                    ])}{' '}
                                     — {REWARDS()[step.target]}
                                 </span>
                             </li>
