@@ -12,6 +12,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'extras.dart';
 
 final _categories = [('', tr('Усі')), ('pc', tr('ПК')), ('mobile', tr('Мобільні')), ('console', tr('Консолі'))];
 
@@ -381,6 +382,14 @@ class GameScreen extends StatelessWidget {
           onRefresh: reload,
           children: [
             _GameHero(game: game, poster: artwork ?? text(game['cover']), ages: _strings(d['age_ratings']), accent: accent, base: base),
+            if (game['id'] != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: SubjectActions(kind: 'game', id: game['id'], saved: data['saved'] == true, following: data['following'] == true, pinned: data['pinned'] == true, size: 38),
+                ),
+              ),
             Glass(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 if (modes.isNotEmpty || genres.isNotEmpty) ...[

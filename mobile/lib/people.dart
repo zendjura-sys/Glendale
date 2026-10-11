@@ -20,6 +20,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'extras.dart';
 
 // ───────────────────────── Дружба ─────────────────────────
 
@@ -645,6 +646,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ]),
                     if (text(profile['status']) != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(text(profile['status'])!, style: body(14, color: soft))),
                     if (profile['playing'] is Map) Padding(padding: const EdgeInsets.only(top: 8), child: PlayingBadge(mapOf(profile['playing']))),
+                    if (data['stream'] is Map) Padding(padding: const EdgeInsets.only(top: 8), child: StreamBadge(mapOf(data['stream']))),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,

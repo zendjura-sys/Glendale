@@ -121,11 +121,26 @@ class _CinemaScreenState extends State<CinemaScreen> {
               },
             ),
             const SizedBox(height: 10),
-            GhostButton(
-              label: intOf(myCounts['all']) > 0 ? tr('Мої списки · {v}', {'v': myCounts['all']}) : tr('Мої списки'),
-              icon: LucideIcons.bookmark,
-              onPressed: () => context.push('/cinema/my'),
-            ),
+            Row(children: [
+              Expanded(
+                child: GhostButton(
+                  label: intOf(myCounts['all']) > 0 ? tr('Мої списки · {v}', {'v': myCounts['all']}) : tr('Мої списки'),
+                  icon: LucideIcons.bookmark,
+                  onPressed: () => context.push('/cinema/my'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: GhostButton(
+                  label: tr('Мої десять'),
+                  icon: LucideIcons.trophy,
+                  onPressed: () {
+                    final me = text(AppScope.read(context).session.me?['username']);
+                    if (me != null) context.push('/cinema/ten/$me');
+                  },
+                ),
+              ),
+            ]),
             const SizedBox(height: 10),
             Segmented(
               scroll: true,

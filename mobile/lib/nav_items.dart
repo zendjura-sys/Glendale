@@ -32,6 +32,9 @@ final navCatalog = [
   NavItem('/clans', tr('Клани'), tr('Клани й гільдії'), LucideIcons.swords, LucideIcons.swords500),
   NavItem('/events', tr('Події'), tr('Календар подій'), LucideIcons.calendarDays, LucideIcons.calendarDays500),
   NavItem('/party', tr('Паті'), tr('Пошук паті'), LucideIcons.userRoundSearch, LucideIcons.userRoundSearch500),
+  NavItem('/moments', tr('Моменти'), tr('Моменти'), LucideIcons.clapperboard, LucideIcons.clapperboard500),
+  NavItem('/quests', tr('Завдання'), tr('Завдання й сезон'), LucideIcons.target, LucideIcons.target500),
+  NavItem('/saved', tr('Збережене'), tr('Збережене'), LucideIcons.bookmark, LucideIcons.bookmark500),
 ];
 
 final navMenu = NavItem('/menu', tr('Меню'), tr('Меню'), LucideIcons.layoutGrid, LucideIcons.layoutGrid500);

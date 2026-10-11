@@ -38,9 +38,17 @@ String appPathFor(String? sitePath) {
       final sub = rest(2);
       return '/communities/${rest(1)}${['members', 'settings', 'photos'].contains(sub) ? '/$sub' : ''}${sub == 'members' ? query : ''}';
     case 'messages':
+      if (rest(1) == 'saved') return '/starred';
       return parts.length > 1 && int.tryParse(rest(1)) != null ? '/messages/${rest(1)}' : '/messages';
     case 'posts':
-      return '/posts/${rest(1)}';
+      return rest(1) == 'drafts' ? '/drafts' : '/posts/${rest(1)}';
+    case 'moments':
+    case 'quests':
+    case 'saved':
+    case 'invite':
+      return '/$head';
+    case 'join':
+      return '/join/${rest(1)}';
     case 'albums':
       return '/albums/${rest(1)}$query';
     case 'photos':
@@ -58,7 +66,7 @@ String appPathFor(String? sitePath) {
     case 'listen':
       return '/listen/${rest(1)}';
     case 'events':
-      return '/events';
+      return rest(1) == 'releases' ? '/events/releases' : '/events';
     case 'games':
     case 'clans':
       return parts.length > 2 && rest(1) != 'create' ? '/$head/${rest(1)}' : '$path$query';
@@ -305,6 +313,22 @@ class _AppShellState extends State<AppShell> {
                           showProFeatures(context);
                         },
                       ),
+                      _MenuLink(icon: LucideIcons.userPlus, label: tr('Запросити друзів'), onTap: () {
+                        Navigator.pop(sheet);
+                        context.go('/invite');
+                      }),
+                      _MenuLink(icon: LucideIcons.filePen, label: tr('Чернетки'), onTap: () {
+                        Navigator.pop(sheet);
+                        context.go('/drafts');
+                      }),
+                      _MenuLink(icon: LucideIcons.star, label: tr('Обрані повідомлення'), onTap: () {
+                        Navigator.pop(sheet);
+                        context.go('/starred');
+                      }),
+                      _MenuLink(icon: LucideIcons.calendarClock, label: tr('Релізи і сезони'), onTap: () {
+                        Navigator.pop(sheet);
+                        context.go('/events/releases');
+                      }),
                       _MenuLink(icon: LucideIcons.panelBottom, label: tr('Налаштувати нижню панель'), onTap: () {
                         Navigator.pop(sheet);
                         context.go('/settings?tab=app');

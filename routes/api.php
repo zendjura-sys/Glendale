@@ -19,7 +19,9 @@ use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityMemberController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
+use App\Http\Controllers\FollowController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\InviteLinkController;
 use App\Http\Controllers\ListenPartyController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MessageController;
@@ -36,9 +38,12 @@ use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuestController;
+use App\Http\Controllers\ReferralController;
+use App\Http\Controllers\SavedController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\Settings\ProfileController as SettingsProfileController;
+use App\Http\Controllers\Settings\StreamController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StoryController;
 use App\Http\Controllers\TrackController;
@@ -287,6 +292,13 @@ Route::prefix('v1')->group(function () {
         Route::prefix('site')->middleware(BridgeSiteAction::class)->group(function () {
             Route::middleware('module:feed')->group(function () {
                 Route::post('posts/{post}/pin', [PostController::class, 'pin'])->whereNumber('post');
+                Route::get('posts/drafts', [PostController::class, 'drafts']);
+                Route::post('posts/{post}/publish', [PostController::class, 'release'])->whereNumber('post');
+                Route::patch('posts/{post}', [PostController::class, 'update'])->whereNumber('post');
+                Route::post('posts/{post}/share', [PostController::class, 'share'])->whereNumber('post')->middleware('throttle:30,1');
+                Route::post('posts/{post}/quote', [PostController::class, 'quote'])->whereNumber('post')->middleware('throttle:30,1');
+                Route::post('posts/{post}/hide', [PostController::class, 'hide'])->whereNumber('post');
+                Route::post('posts/{post}/mute', [PostController::class, 'mute'])->whereNumber('post');
                 Route::delete('comments/{comment}', [CommentController::class, 'destroy'])->whereNumber('comment');
                 Route::post('comments/{comment}/like', [CommentController::class, 'like'])->whereNumber('comment')->middleware('throttle:120,1');
             });
@@ -298,8 +310,25 @@ Route::prefix('v1')->group(function () {
             Route::post('me/cover', [ProfileController::class, 'updateCover']);
             Route::delete('settings/profile', [SettingsProfileController::class, 'destroy']);
             Route::put('settings/navigation', [NavigationController::class, 'update']);
+            // Свій канал Twitch/YouTube і позначка LIVE у профілі.
+            Route::put('settings/stream', [StreamController::class, 'update'])->middleware('throttle:10,1');
+            Route::delete('settings/stream', [StreamController::class, 'destroy']);
+            Route::post('settings/stream/live', [StreamController::class, 'live'])->middleware('throttle:20,1');
+
+            // Збережене: пости, фільми, ігри й сервери.
+            Route::get('saved', [SavedController::class, 'index']);
+            Route::post('saved', [SavedController::class, 'toggle'])->middleware('throttle:60,1');
+            // «Стежити» (сповіщення про новини гри, сервера чи фільму) і «Закріпити в профілі».
+            Route::post('follows', [FollowController::class, 'toggle'])->middleware('throttle:60,1');
+            Route::post('me/pin', [ProfileController::class, 'pin']);
+
+            // Запросити друзів (реферальна програма) і вступ за посиланням-запрошенням у клан, сім’ю чи спільноту.
+            Route::get('invite', [ReferralController::class, 'index']);
+            Route::get('join/{token}', [InviteLinkController::class, 'show']);
+            Route::post('join/{token}', [InviteLinkController::class, 'accept'])->middleware('throttle:20,1');
 
             Route::prefix('messages')->middleware('module:messages')->whereNumber(['conversation', 'message'])->group(function () {
+                Route::get('saved', [MessengerController::class, 'saved']);
                 Route::post('{conversation}/settings', [MessengerController::class, 'update']);
                 Route::post('{conversation}/members', [MessengerController::class, 'addMembers']);
                 Route::delete('{conversation}/members/{user}', [MessengerController::class, 'removeMember']);
@@ -321,6 +350,8 @@ Route::prefix('v1')->group(function () {
             // Календар подій.
             Route::prefix('events')->middleware('module:events')->group(function () {
                 Route::get('/', [EventController::class, 'index']);
+                Route::get('releases', [EventController::class, 'releases']);
+                Route::put('reminder', [EventController::class, 'reminder']);
                 Route::post('server/{server}', [EventController::class, 'storeServer'])->middleware('throttle:20,1');
                 Route::post('server/{event}/rsvp', [EventController::class, 'rsvpServer'])->whereNumber('event');
                 Route::delete('server/{event}', [EventController::class, 'destroyServer'])->whereNumber('event');
@@ -422,17 +453,26 @@ Route::prefix('v1')->group(function () {
             Route::prefix('cinema')->middleware('module:cinema')->group(function () {
                 Route::get('/', [CinemaController::class, 'index']);
                 Route::get('my', [CinemaController::class, 'my']);
+                Route::get('ten/{user:username}', [CinemaController::class, 'ten']);
+                Route::post('ten', [CinemaController::class, 'toggleTen']);
+                Route::post('ratings/{user:username}', [CinemaController::class, 'followRatings']);
                 Route::get('search', [CinemaController::class, 'search'])->middleware('throttle:120,1');
                 Route::get('{movie}', [CinemaController::class, 'show']);
                 Route::patch('{movie}/status', [CinemaController::class, 'status'])->middleware('throttle:60,1');
                 Route::put('{movie}/rating', [CinemaController::class, 'rate'])->middleware('throttle:60,1');
                 Route::post('{movie}/started', [CinemaController::class, 'started'])->middleware('throttle:30,1');
+                // Плеєр застосунку: серії й озвучки, позначки «переглянуто», місце перегляду, прямі потоки.
+                Route::get('{movie}/episodes', [CinemaController::class, 'episodeList'])->middleware('throttle:60,1');
+                Route::post('{movie}/episodes', [CinemaController::class, 'episode'])->middleware('throttle:60,1');
+                Route::put('{movie}/progress', [CinemaController::class, 'progress'])->middleware('throttle:60,1');
+                Route::get('{movie}/stream', [CinemaController::class, 'stream'])->middleware('throttle:60,1');
                 Route::get('{movie}/comments', [CinemaController::class, 'comments']);
                 Route::post('{movie}/comments', [CinemaController::class, 'comment'])->middleware('throttle:30,1');
             });
 
             Route::prefix('servers')->middleware('module:servers')->group(function () {
                 Route::get('/', [ServerController::class, 'index']);
+                Route::get('compare', [ServerController::class, 'compare']);
                 Route::post('suggest', [ServerController::class, 'suggest'])->middleware('throttle:5,10');
                 Route::get('{server}', [ServerController::class, 'show']);
             });

@@ -97,6 +97,21 @@ class _PostCardState extends State<PostCard> {
           mainAxisSize: MainAxisSize.min,
           children: [
             _SheetAction(icon: LucideIcons.link, label: tr('Копіювати посилання'), onTap: () => Navigator.pop(sheet, 'link')),
+            _SheetAction(
+              icon: post['saved'] == true ? LucideIcons.bookmarkCheck : LucideIcons.bookmark,
+              label: post['saved'] == true ? tr('Прибрати зі збереженого') : tr('Зберегти'),
+              onTap: () => Navigator.pop(sheet, 'save'),
+            ),
+            if (can['edit'] == true) _SheetAction(icon: LucideIcons.pencil, label: tr('Редагувати'), onTap: () => Navigator.pop(sheet, 'edit')),
+            if (can['share'] == true) _SheetAction(icon: LucideIcons.share2, label: tr('Поділитися на стіні'), onTap: () => Navigator.pop(sheet, 'share')),
+            if (can['quote'] == true) _SheetAction(icon: LucideIcons.quote, label: tr('Цитувати'), onTap: () => Navigator.pop(sheet, 'quote')),
+            if (can['hide'] == true) _SheetAction(icon: LucideIcons.eyeOff, label: tr('Не цікаво'), onTap: () => Navigator.pop(sheet, 'hide')),
+            if (can['mute'] == true)
+              _SheetAction(
+                icon: post['muted'] == true ? LucideIcons.volume2 : LucideIcons.volumeX,
+                label: post['muted'] == true ? tr('Зняти заглушку') : tr('Заглушити'),
+                onTap: () => Navigator.pop(sheet, 'mute'),
+              ),
             if (can['pin'] == true)
               _SheetAction(
                 icon: post['is_pinned'] == true ? LucideIcons.pinOff : LucideIcons.pin,
@@ -110,6 +125,51 @@ class _PostCardState extends State<PostCard> {
     );
     if (!mounted || choice == null) return;
     if (choice == 'link') return _copyLink();
+    if (choice == 'save') {
+      try {
+        final result = await api.post(Api.site('/saved'), {'kind': 'post', 'id': post['id']});
+        if (!mounted) return;
+        setState(() => post['saved'] = result['saved'] == true);
+        toast(context, post['saved'] == true ? tr('Збережено.') : tr('Прибрано зі збереженого.'));
+      } catch (e) {
+        if (mounted) toast(context, e);
+      }
+      return;
+    }
+    if (choice == 'edit') {
+      final body = await askText(context, tr('Редагувати запис'), initial: text(post['body']) ?? '', maxLines: 8);
+      if (body == null || body.trim().isEmpty || !mounted) return;
+      if (await attempt(context, () => api.patch(Api.site('/posts/${post['id']}'), {'body': body.trim()}))) {
+        setState(() => post['body'] = body.trim());
+        widget.onChanged?.call();
+      }
+      return;
+    }
+    if (choice == 'share') {
+      await attempt(context, () => api.post(Api.site('/posts/${post['id']}/share')), success: tr('Запис опубліковано на вашій стіні.'));
+      return;
+    }
+    if (choice == 'quote') {
+      final body = await askText(context, tr('Цитувати'), hint: tr('Ваш коментар до цитати…'), action: tr('Опублікувати'), maxLines: 5);
+      if (body == null || body.trim().isEmpty || !mounted) return;
+      await attempt(context, () => api.post(Api.site('/posts/${post['id']}/quote'), {'body': body.trim()}), success: tr('Цитату опубліковано.'));
+      return;
+    }
+    if (choice == 'hide') {
+      if (await attempt(context, () => api.post(Api.site('/posts/${post['id']}/hide')), success: tr('Більше не покажемо цей запис.'))) {
+        setState(() => deleted = true);
+        widget.onDeleted?.call();
+      }
+      return;
+    }
+    if (choice == 'mute') {
+      final wasMuted = post['muted'] == true;
+      if (await attempt(context, () => api.post(Api.site('/posts/${post['id']}/mute')), success: wasMuted ? tr('Заглушку знято.') : tr('Записи автора більше не з’являтимуться в стрічці.'))) {
+        setState(() => post['muted'] = !wasMuted);
+        widget.onChanged?.call();
+      }
+      return;
+    }
     if (choice == 'pin') {
       if (await attempt(context, () => api.post(Api.site('/posts/${post['id']}/pin')))) {
         setState(() => post['is_pinned'] = post['is_pinned'] != true);

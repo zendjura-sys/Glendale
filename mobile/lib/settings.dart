@@ -15,6 +15,7 @@ import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
 import 'language_picker.dart';
+import 'extras.dart';
 
 // ───────────────────────── Сповіщення ─────────────────────────
 
@@ -298,6 +299,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       PrimaryButton(label: tr('Зберегти зміни'), icon: LucideIcons.check, busy: saving, onPressed: _save),
       const SizedBox(height: 12),
       const PlayingSettingsCard(),
+      const SizedBox(height: 12),
+      const StreamSettingsCard(),
     ];
   }
 

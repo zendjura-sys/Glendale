@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
 import 'characters.dart';
+import 'extras.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -147,7 +148,11 @@ class _ServersScreenState extends State<ServersScreen> {
               ),
             ],
             const SizedBox(height: 12),
-            PrimaryButton(label: tr('Додати сервер'), icon: LucideIcons.plus, onPressed: _suggest),
+            Row(children: [
+              Expanded(child: PrimaryButton(label: tr('Додати сервер'), icon: LucideIcons.plus, onPressed: _suggest)),
+              const SizedBox(width: 8),
+              Expanded(child: GhostButton(label: tr('Порівняти'), icon: LucideIcons.gitCompareArrows, onPressed: () => context.push('/servers/compare'))),
+            ]),
           ],
         ),
         if (mine.isNotEmpty) ...[
@@ -422,6 +427,9 @@ class ServerScreen extends StatelessWidget {
               RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.canPop() ? context.pop() : context.go('/servers')),
               const SizedBox(width: 8),
               Text(tr('Сервери'), style: body(14, color: muted)),
+              const Spacer(),
+              if (server['id'] != null)
+                SubjectActions(kind: 'server', id: server['id'], saved: data['saved'] == true, following: data['following'] == true, pinned: data['pinned'] == true, size: 36),
             ]),
             const SizedBox(height: 10),
             ServerCard(server: server),

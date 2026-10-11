@@ -445,6 +445,37 @@ class _MovieScreenState extends State<MovieScreen> {
     }
   }
 
+  /// «Зберегти», «Закріпити в профілі», «Мої десять» — ті самі перемикачі, що на сайті.
+  Future<void> _toggleSubject(String what) async {
+    final id = mapOf(data?['movie'])['id'];
+    if (id == null) return;
+    try {
+      switch (what) {
+        case 'save':
+          final r = await api.post(Api.site('/saved'), {'kind': 'movie', 'id': id});
+          if (!mounted) return;
+          setState(() => data?['saved'] = r['saved'] == true);
+          toast(context, r['saved'] == true ? tr('Збережено.') : tr('Прибрано зі збереженого.'));
+        case 'pin':
+          final r = await api.post(Api.site('/me/pin'), {'kind': 'movie', 'id': id});
+          if (!mounted) return;
+          setState(() => data?['pinned'] = r['pinned'] == true);
+          toast(context, r['pinned'] == true ? tr('Закріплено у вашому профілі.') : tr('Відкріплено з профілю.'));
+        case 'ten':
+          final was = data?['inTopTen'] == true;
+          await api.post(Api.site('/cinema/ten'), {'movie_id': id});
+          // У списку максимум 10 фільмів — справжній стан беремо із сервера.
+          final fresh = await api.get(Api.site('/cinema/${widget.slug}'));
+          if (!mounted) return;
+          final now = fresh['inTopTen'] == true;
+          setState(() => data?['inTopTen'] = now);
+          toast(context, now == was ? tr('У ваших десяти вже 10 фільмів — спершу приберіть якийсь.') : (now ? tr('Додано до ваших десяти.') : tr('Прибрано з ваших десяти.')));
+      }
+    } catch (e) {
+      if (mounted) toast(context, e);
+    }
+  }
+
   Future<void> _menu() async {
     final action = await showGcSheet<String>(
       context,
@@ -455,6 +486,22 @@ class _MovieScreenState extends State<MovieScreen> {
           if (players.isNotEmpty) SheetAction(icon: LucideIcons.popcorn, label: tr('Дивитися разом'), onTap: () => Navigator.pop(sheet, 'together')),
           if (AppScope.read(context).session.prefs.getString('cinema.engine') != null)
             SheetAction(icon: LucideIcons.monitorPlay, label: tr('Обирати плеєр щоразу'), onTap: () => Navigator.pop(sheet, 'engine')),
+          SheetAction(
+            icon: data?['saved'] == true ? LucideIcons.bookmarkCheck : LucideIcons.bookmark,
+            label: data?['saved'] == true ? tr('Прибрати зі збереженого') : tr('Зберегти'),
+            onTap: () => Navigator.pop(sheet, 'save'),
+          ),
+          if (data?['inTopTen'] is bool)
+            SheetAction(
+              icon: data?['inTopTen'] == true ? LucideIcons.listX : LucideIcons.listPlus,
+              label: data?['inTopTen'] == true ? tr('Прибрати з моїх десяти') : tr('До моїх десяти'),
+              onTap: () => Navigator.pop(sheet, 'ten'),
+            ),
+          SheetAction(
+            icon: data?['pinned'] == true ? LucideIcons.pinOff : LucideIcons.pin,
+            label: data?['pinned'] == true ? tr('Відкріпити з профілю') : tr('Закріпити в профілі'),
+            onTap: () => Navigator.pop(sheet, 'pin'),
+          ),
           SheetAction(icon: LucideIcons.copy, label: tr('Скопіювати посилання'), onTap: () => Navigator.pop(sheet, 'copy')),
         ]),
       ),
@@ -468,6 +515,10 @@ class _MovieScreenState extends State<MovieScreen> {
       case 'engine':
         await AppScope.read(context).session.prefs.remove('cinema.engine');
         if (mounted) toast(context, tr('Плеєр обиратиметься перед переглядом'));
+      case 'save':
+      case 'pin':
+      case 'ten':
+        await _toggleSubject(action!);
       case 'copy':
         await Clipboard.setData(ClipboardData(text: '${Api.root}/cinema/${widget.slug}'));
         if (mounted) toast(context, tr('Посилання скопійовано'));
