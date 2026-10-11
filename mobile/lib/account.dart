@@ -405,7 +405,7 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
 
 
 /// Що нового в цій версії застосунку — один раз після оновлення.
-const whatsNewVersion = '1.1.40';
+const whatsNewVersion = '1.1.41';
 
 List<String> _whatsNew() => [
       tr('Плеєр GameCon: відео з Kodik грає прямо в застосунку, з вибором якості 360p–1080p.'),

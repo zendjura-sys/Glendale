@@ -280,7 +280,7 @@ class _FeaturedState extends State<_Featured> {
                       Padding(padding: const EdgeInsets.only(top: 8), child: Text(text(movie['description'])!, maxLines: 3, overflow: TextOverflow.ellipsis, style: body(13.5, color: soft).copyWith(height: 1.4))),
                     const SizedBox(height: 14),
                     Row(children: [
-                      Expanded(child: PrimaryButton(label: tr('Дивитися'), icon: LucideIcons.play, onPressed: () => context.push('/cinema/${movie['slug']}?play=1'))),
+                      Expanded(child: PrimaryButton(label: tr('Дивитися'), icon: LucideIcons.play, onPressed: () => context.push('/cinema/${movie['slug']}'))),
                       const SizedBox(width: 10),
                       Expanded(child: GhostButton(label: tr('Детальніше'), icon: LucideIcons.info, onPressed: () => context.push('/cinema/${movie['slug']}'))),
                     ]),

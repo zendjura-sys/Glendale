@@ -102,9 +102,8 @@ List<Season> voiceSeasons(List<Season> seasons, Map<String, dynamic> voice) {
 // ───────────────────────── Сторінка тайтлу ─────────────────────────
 
 class MovieScreen extends StatefulWidget {
-  const MovieScreen({required this.slug, this.autoplay = false, this.preview, super.key});
+  const MovieScreen({required this.slug, this.preview, super.key});
   final String slug;
-  final bool autoplay;
 
   /// Дані сторінки без мережі — для тестів і прев’ю вигляду.
   @visibleForTesting
@@ -151,7 +150,6 @@ class _MovieScreenState extends State<MovieScreen> {
         error = null;
       });
       await _loadEpisodes();
-      if (widget.autoplay && mounted) unawaited(_watch());
     } catch (e) {
       if (mounted) setState(() => error = e);
     }

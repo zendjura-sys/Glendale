@@ -136,7 +136,7 @@ Future<void> main() async {
             builder: (_, _) => const CinemaScreen(),
             routes: [
               GoRoute(path: 'my', builder: (_, state) => MyCinemaScreen(status: state.uri.queryParameters['status'] ?? 'all')),
-              GoRoute(path: ':slug', builder: (_, state) => MovieScreen(key: ValueKey(state.pathParameters['slug']), slug: state.pathParameters['slug']!, autoplay: state.uri.queryParameters['play'] == '1')),
+              GoRoute(path: ':slug', builder: (_, state) => MovieScreen(key: ValueKey(state.pathParameters['slug']), slug: state.pathParameters['slug']!)),
             ],
           ),
           GoRoute(path: '/events', builder: (_, _) => const EventsScreen()),
