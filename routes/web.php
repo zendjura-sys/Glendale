@@ -339,6 +339,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::put('{movie}/rating', [CinemaController::class, 'rate'])->middleware('throttle:60,1')->name('rate');
         Route::post('{movie}/started', [CinemaController::class, 'started'])->middleware('throttle:30,1')->name('started');
         Route::put('{movie}/progress', [CinemaController::class, 'progress'])->middleware('throttle:60,1')->name('progress');
+        Route::get('{movie}/episodes', [CinemaController::class, 'episodeList'])->middleware('throttle:60,1')->name('episodes.index');
         Route::post('{movie}/episodes', [CinemaController::class, 'episode'])->middleware('throttle:60,1')->name('episodes');
         Route::post('{movie}/soundtrack', [CinemaController::class, 'soundtrack'])->middleware('throttle:30,1')->name('soundtrack.store');
         Route::get('{movie}/comments', [CinemaController::class, 'comments'])->name('comments.index');
@@ -601,6 +602,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::get('import', [Admin\CinemaController::class, 'import'])->name('import');
             Route::put('auto', [Admin\CinemaController::class, 'updateAuto'])->name('auto.update');
             Route::put('players', [Admin\CinemaController::class, 'updatePlayers'])->name('players.update');
+            Route::post('players/bulk', [Admin\CinemaController::class, 'bulkPlayers'])->middleware('throttle:10,1')->name('players.bulk');
+            Route::delete('players/bulk', [Admin\CinemaController::class, 'cancelBulkPlayers'])->name('players.bulk.cancel');
             Route::put('tmdb', [Admin\CinemaController::class, 'updateTmdb'])->name('tmdb.update');
             Route::delete('requests', [Admin\CinemaController::class, 'closeRequest'])->name('requests.close');
             Route::post('auto/run', [Admin\CinemaController::class, 'runAuto'])->middleware('throttle:10,1')->name('auto.run');

@@ -73,11 +73,51 @@ class CinemaService
      */
     public function refresh(Movie $movie): array
     {
-        $result = [];
-        if ($this->kodik->configured()) {
-            $result['kodik'] = $this->refreshKodik($movie);
+        $found = $this->fetchPlayers($movie);
+        if ($found === []) {
+            throw new CinemaException('Жоден провайдер плеєрів не налаштований.', 422);
         }
-        if ($this->flixcdnApi->searchTemplate() && ($movie->kinopoisk_id || $movie->imdb_id || $movie->title)) {
+        $result = [];
+        foreach ($found as $provider => $sources) {
+            if ($sources !== null) {
+                $this->syncSources($movie, $provider, $sources);
+                $result[$provider] = count($sources);
+            }
+        }
+        $movie->forceFill(['synced_at' => Carbon::now()])->saveQuietly();
+
+        return $result;
+    }
+
+    /**
+     * Озвучки тайтлу в кожного налаштованого провайдера (без запису).
+     * null — провайдер не зміг шукати (немає потрібного ID); помилки API пробрасываются.
+     *
+     * @param  list<string>|null  $only  лише ці провайдери
+     * @return array<string, list<array<string, mixed>>|null>
+     */
+    public function fetchPlayers(Movie $movie, ?array $only = null): array
+    {
+        $want = fn (string $provider) => $only === null || in_array($provider, $only, true);
+        $result = [];
+        if ($want('kodik') && $this->kodik->configured()) {
+            $criteria = array_filter([
+                'kinopoisk_id' => $movie->kinopoisk_id,
+                'shikimori_id' => $movie->kinopoisk_id ? null : $movie->shikimori_id,
+                'imdb_id' => $movie->kinopoisk_id || $movie->shikimori_id ? null : $movie->imdb_id,
+            ]);
+            $sources = null;
+            if ($criteria !== []) {
+                $sources = [];
+                foreach ($this->kodik->search($criteria) as $candidate) {
+                    foreach ($this->sourceList($candidate['sources'] ?? null) as $source) {
+                        $sources[] = $source;
+                    }
+                }
+            }
+            $result['kodik'] = $sources;
+        }
+        if ($want('flixcdn') && $this->flixcdnApi->searchTemplate()) {
             $sources = [];
             foreach ($this->flixcdnApi->search([
                 'kinopoisk_id' => $movie->kinopoisk_id,
@@ -91,29 +131,88 @@ class CinemaService
                     $sources[] = $source;
                 }
             }
-            $this->syncSources($movie, 'flixcdn', $sources);
-            $result['flixcdn'] = count($sources);
+            $result['flixcdn'] = $sources;
         }
-        if ($this->videoseed->configured() && ($movie->kinopoisk_id || $movie->imdb_id || $movie->tmdb_id)) {
-            $sources = [];
-            foreach ($this->videoseed->search([
-                'kinopoisk_id' => $movie->kinopoisk_id,
-                'imdb_id' => $movie->imdb_id,
-                'tmdb_id' => $movie->tmdb_id,
-            ]) as $candidate) {
-                foreach ($this->sourceList($candidate['sources'] ?? null) as $source) {
-                    $sources[] = $source;
+        if ($want('videoseed') && $this->videoseed->configured()) {
+            $sources = null;
+            if ($movie->kinopoisk_id || $movie->imdb_id || $movie->tmdb_id) {
+                $sources = [];
+                foreach ($this->videoseed->search([
+                    'kinopoisk_id' => $movie->kinopoisk_id,
+                    'imdb_id' => $movie->imdb_id,
+                    'tmdb_id' => $movie->tmdb_id,
+                ]) as $candidate) {
+                    foreach ($this->sourceList($candidate['sources'] ?? null) as $source) {
+                        $sources[] = $source;
+                    }
                 }
             }
-            $this->syncSources($movie, 'videoseed', $sources);
-            $result['videoseed'] = count($sources);
+            $result['videoseed'] = $sources;
         }
-        if ($result === []) {
-            throw new CinemaException('Жоден провайдер плеєрів не налаштований.', 422);
-        }
-        $movie->forceFill(['synced_at' => Carbon::now()])->saveQuietly();
 
         return $result;
+    }
+
+    /**
+     * Проставка плеєрів: нові озвучки додаються завжди; наявні — замінюються лише з $replace.
+     * Із $replace зниклі в провайдера озвучки
+     * прибираються, але тільки коли провайдер щось повернув (порожня відповідь нічого не видаляє).
+     *
+     * @param  list<array<string, mixed>>  $sources
+     * @return array{added: int, replaced: int, removed: int}
+     */
+    public function mergeSources(Movie $movie, string $provider, array $sources, bool $replace): array
+    {
+        $stats = ['added' => 0, 'replaced' => 0, 'removed' => 0];
+        $existing = MovieSource::query()->where('movie_id', $movie->id)->where('provider', $provider)->get()->keyBy('external_id');
+        $next = $existing->count();
+        $seen = [];
+        foreach ($sources as $position => $source) {
+            $id = (string) ($source['external_id'] ?? '');
+            if ($id === '' || ! filled($source['link'] ?? null)) {
+                continue;
+            }
+            $seen[] = $id;
+            $values = array_intersect_key($source, array_flip(['translation', 'translation_type', 'quality', 'link']));
+            /** @var MovieSource|null $model */
+            $model = $existing->get($id);
+            if ($model === null) {
+                $model = new MovieSource([...$values, 'provider' => $provider, 'external_id' => $id, 'position' => $next++]);
+                $model->movie()->associate($movie);
+                $model->save();
+                $stats['added']++;
+
+                continue;
+            }
+            if (! $replace) {
+                continue;
+            }
+            $model->fill([...$values, 'position' => $position]);
+            if ($model->isDirty(['link', 'translation', 'translation_type', 'quality'])) {
+                $stats['replaced']++;
+            }
+            $model->save();
+        }
+        if ($replace && $seen !== []) {
+            $stats['removed'] = MovieSource::query()->where('movie_id', $movie->id)->where('provider', $provider)
+                ->whereNotIn('external_id', $seen)->delete();
+        }
+
+        return $stats;
+    }
+
+    /**
+     * Оновлює озвучки Kodik для фільму, якщо в нього є зовнішній ID.
+     */
+    public function refreshKodik(Movie $movie): int
+    {
+        $sources = $this->fetchPlayers($movie, ['kodik'])['kodik'] ?? null;
+        if ($sources === null) {
+            throw new CinemaException('У фільму немає зовнішнього ID (IMDb, Shikimori) — Kodik не знайде його.', 422);
+        }
+        $this->syncSources($movie, 'kodik', $sources);
+
+        return count($sources);
     }
 
     /**
@@ -129,31 +228,6 @@ class CinemaService
 
         return mb_strtolower((string) $candidate['title']) === mb_strtolower($movie->title)
             && (! $movie->year || ! $candidate['year'] || $movie->year === $candidate['year']);
-    }
-
-    /**
-     * Оновлює озвучки Kodik для фільму, якщо в нього є зовнішній ID.
-     */
-    public function refreshKodik(Movie $movie): int
-    {
-        $criteria = array_filter([
-            'kinopoisk_id' => $movie->kinopoisk_id,
-            'shikimori_id' => $movie->kinopoisk_id ? null : $movie->shikimori_id,
-            'imdb_id' => $movie->kinopoisk_id || $movie->shikimori_id ? null : $movie->imdb_id,
-        ]);
-        if ($criteria === []) {
-            throw new CinemaException('У фільму немає зовнішнього ID (IMDb, Shikimori) — Kodik не знайде його.', 422);
-        }
-
-        $sources = [];
-        foreach ($this->kodik->search($criteria) as $candidate) {
-            foreach ($this->sourceList($candidate['sources'] ?? null) as $source) {
-                $sources[] = $source;
-            }
-        }
-        $this->syncSources($movie, 'kodik', $sources);
-
-        return count($sources);
     }
 
     /**

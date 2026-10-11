@@ -202,6 +202,29 @@ class CinemaController extends Controller
         ];
     }
 
+    /**
+     * Сезони й серії для застосунку (на сайті це відкладений prop сторінки, який міст не віддає).
+     * episodes: null — посерійний режим вимкнено; [] — серій немає (фільм).
+     */
+    public function episodeList(Request $request, Movie $movie): JsonResponse
+    {
+        $viewer = $request->user();
+        abort_unless($movie->is_published || $viewer->isStaff(), 404);
+        $movie->load('sources');
+
+        return response()->json([
+            'episodes' => $this->episodeMode($movie) ? app(EpisodeGuide::class)->seasons($movie) : null,
+            'marks' => app(Plugins::class)->on('episode_marks') ? app(EpisodeMarks::class)->keys($viewer, $movie) : [],
+        ]);
+    }
+
+    /** Посерійний режим (Адмінка → Кіно → Плеєри) і є плеєр, що відкриває окрему серію. */
+    private function episodeMode(Movie $movie): bool
+    {
+        return app(CinemaPlayers::class)->config()['episodes']
+            && $movie->sources->contains(fn ($s) => in_array($s->provider, ['kodik', 'videoseed'], true));
+    }
+
     public function show(Request $request, Movie $movie): Response
     {
         $viewer = $request->user();
@@ -256,7 +279,7 @@ class CinemaController extends Controller
             ],
             'players' => $this->cinema->players($movie, $viewer),
             // Посерійний режим (Адмінка → Кіно → Плеєри): сезони й серії — окремим запитом, бо це звернення до API.
-            'episodes' => app(CinemaPlayers::class)->config()['episodes'] && $movie->sources->contains(fn ($s) => in_array($s->provider, ['kodik', 'videoseed'], true))
+            'episodes' => $this->episodeMode($movie)
                 ? Inertia::defer(fn () => app(EpisodeGuide::class)->seasons($movie))
                 : null,
             'state' => $this->cinema->stateFor($movie, $viewer),

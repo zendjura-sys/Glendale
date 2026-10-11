@@ -22,6 +22,8 @@ import {
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { PlayersPanel, TmdbPanel } from '@/components/cinema/admin-panels';
+import { BulkPlayersPanel } from '@/components/cinema/bulk-players';
+import type { BulkData } from '@/components/cinema/bulk-players';
 import type { PlayersData, TmdbData } from '@/components/cinema/admin-panels';
 import { MoviePoster } from '@/components/cinema/movie-tile';
 import {
@@ -134,6 +136,7 @@ type Props = {
     };
     players: PlayersData;
     tmdb: TmdbData;
+    bulk: BulkData;
 };
 
 const filterTabs: { key: Filter; label: string }[] = [
@@ -650,6 +653,7 @@ export default function AdminCinema({
     players,
     tmdb,
     requests,
+    bulk,
 }: Props) {
     const [q, setQ] = useState(filters.q);
 
@@ -754,6 +758,8 @@ export default function AdminCinema({
                 providers={providers}
                 notEnriched={stats.not_enriched}
             />
+
+            <BulkPlayersPanel data={bulk} types={types} />
 
             <div className="mb-5 grid grid-cols-1 gap-5 xl:grid-cols-2">
                 <PlayersPanel data={players} />

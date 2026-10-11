@@ -497,10 +497,36 @@ class MovieScreen extends StatefulWidget {
   State<MovieScreen> createState() => _MovieScreenState();
 }
 
+/// Сезон зі списку серій (GET /cinema/{slug}/episodes).
+typedef _Season = ({int number, List<int> episodes});
+
+/// Адреса плеєра без власних перемикачів (як на сайті, episode-picker.tsx): серія й озвучка
+/// обираються в застосунку. Kodik — hide_selectors + translations=false (лише з обраною серією або
+/// для фільму); серія — season/episode + only_season/only_episode. Videoseed — video=sXvY&only=true.
+String episodeUrl(String provider, String url, ({int season, int episode})? pick, {required bool bare}) {
+  final uri = Uri.tryParse(url);
+  if (uri == null) return url;
+  final query = Map<String, String>.of(uri.queryParameters);
+  if (provider == 'kodik' && bare) {
+    query['hide_selectors'] = 'true';
+    query['translations'] = 'false';
+  }
+  if (pick != null && provider == 'kodik') {
+    query.addAll({'season': '${pick.season}', 'episode': '${pick.episode}', 'only_season': 'true', 'only_episode': 'true'});
+  } else if (pick != null && provider == 'videoseed') {
+    query.addAll({'video': 's${pick.season}v${pick.episode}', 'only': 'true'});
+  }
+  return query.isEmpty ? url : uri.replace(queryParameters: query).toString();
+}
+
 class _MovieScreenState extends State<MovieScreen> {
   Map<String, dynamic>? data;
   Object? error;
   String? playerKey;
+  Map<String, dynamic>? source;
+  List<_Season> seasons = const [];
+  Set<String> marks = const {};
+  ({int season, int episode})? pick;
   WebViewController? web;
   bool started = false;
   final playerCard = GlobalKey();
@@ -527,11 +553,56 @@ class _MovieScreenState extends State<MovieScreen> {
         data = result;
         error = null;
       });
+      await _loadEpisodes();
       final players = maps(result['players']);
       if (widget.autoplay && players.isNotEmpty && web == null) _play(players.first);
     } catch (e) {
       if (mounted) setState(() => error = e);
     }
+  }
+
+  /// Сезони й серії (посерійний режим): одразу обираємо наступну непереглянуту серію.
+  Future<void> _loadEpisodes() async {
+    try {
+      final result = await api.get(Api.site('/cinema/${widget.slug}/episodes'));
+      final list = <_Season>[
+        for (final s in maps(result['episodes']))
+          (number: intOf(s['number']), episodes: [for (final e in (s['episodes'] as List? ?? const [])) intOf(e)]),
+      ].where((s) => s.episodes.isNotEmpty).toList();
+      final seen = {for (final m in (result['marks'] as List? ?? const [])) '$m'};
+      if (!mounted) return;
+      setState(() {
+        seasons = list;
+        marks = seen;
+        pick ??= _firstPick();
+      });
+    } catch (_) {
+      // Без списку серій плеєр працює як раніше — зі своїми перемикачами.
+    }
+  }
+
+  List<({int season, int episode})> get _allEpisodes => [
+        for (final s in seasons)
+          for (final e in s.episodes) (season: s.number, episode: e),
+      ];
+
+  ({int season, int episode})? _firstPick() {
+    final all = _allEpisodes;
+    if (all.isEmpty) return null;
+    var last = -1;
+    for (var i = 0; i < all.length; i++) {
+      if (marks.contains('${all[i].season}:${all[i].episode}')) last = i;
+    }
+    return all[(last + 1).clamp(0, all.length - 1)];
+  }
+
+  bool _episodic(Map<String, dynamic>? player) => seasons.isNotEmpty && const {'kodik', 'videoseed'}.contains(text(player?['provider']));
+
+  void _choose(({int season, int episode}) next) {
+    setState(() => pick = next);
+    final players = maps(data?['players']);
+    final current = source ?? (players.isEmpty ? null : players.first);
+    if (current != null) _play(current);
   }
 
   /// Спільний перегляд: створюємо кімнату й відкриваємо її; посилання — друзям.
@@ -549,9 +620,13 @@ class _MovieScreenState extends State<MovieScreen> {
     final raw = text(source['link']);
     if (raw == null) return;
     final iframe = RegExp('src=["\']([^"\']+)').firstMatch(raw);
-    final url = absolute(iframe?.group(1) ?? raw);
-    if (url == null) return;
+    final base = absolute(iframe?.group(1) ?? raw);
+    if (base == null) return;
+    final episodic = _episodic(source);
+    final single = intOf(mapOf(data?['movie'])['episodes_count']) <= 1;
+    final url = episodeUrl(text(source['provider']) ?? '', base, episodic ? pick : null, bare: (episodic && pick != null) || single);
     setState(() {
+      this.source = source;
       playerKey = text(source['key']);
       web = WebViewController()
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -741,6 +816,7 @@ class _MovieScreenState extends State<MovieScreen> {
                   IconButton(onPressed: web != null ? _fullscreen : null, tooltip: tr('На весь екран'), icon: Icon(LucideIcons.maximize, color: web != null ? soft : faint)),
                 ]),
               ),
+              if (_episodic(source ?? players.first) && pick != null) _EpisodeBar(seasons: seasons, pick: pick!, marks: marks, onPick: _choose),
             ]),
           ),
         ],
@@ -842,6 +918,107 @@ class _MovieScreenState extends State<MovieScreen> {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Сезони й серії під плеєром: «Попередня / Наступна», вкладки сезонів і сітка серій.
+class _EpisodeBar extends StatefulWidget {
+  const _EpisodeBar({required this.seasons, required this.pick, required this.marks, required this.onPick});
+  final List<_Season> seasons;
+  final ({int season, int episode}) pick;
+  final Set<String> marks;
+  final ValueChanged<({int season, int episode})> onPick;
+
+  @override
+  State<_EpisodeBar> createState() => _EpisodeBarState();
+}
+
+class _EpisodeBarState extends State<_EpisodeBar> {
+  late int season = widget.pick.season;
+
+  @override
+  void didUpdateWidget(_EpisodeBar old) {
+    super.didUpdateWidget(old);
+    if (old.pick.season != widget.pick.season) season = widget.pick.season;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final all = [
+      for (final s in widget.seasons)
+        for (final e in s.episodes) (season: s.number, episode: e),
+    ];
+    final index = all.indexWhere((p) => p.season == widget.pick.season && p.episode == widget.pick.episode);
+    final prev = index > 0 ? all[index - 1] : null;
+    final next = index >= 0 && index < all.length - 1 ? all[index + 1] : null;
+    final current = widget.seasons.firstWhere((s) => s.number == season, orElse: () => widget.seasons.first);
+    final label = widget.seasons.length > 1
+        ? tr('{s} сезон · {e} серія', {'s': widget.pick.season, 'e': widget.pick.episode})
+        : tr('{n} серія', {'n': widget.pick.episode});
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          RoundIcon(icon: LucideIcons.chevronLeft, onTap: prev == null ? null : () => widget.onPick(prev)),
+          Expanded(child: Text(label, textAlign: TextAlign.center, style: body(14, weight: FontWeight.w700))),
+          RoundIcon(icon: LucideIcons.chevronRight, onTap: next == null ? null : () => widget.onPick(next)),
+        ]),
+        if (widget.seasons.length > 1) ...[
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 36,
+            child: ListView(scrollDirection: Axis.horizontal, children: [
+              for (final s in widget.seasons)
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: SelectPill(label: tr('{n} сезон', {'n': s.number}), selected: s.number == current.number, onTap: () => setState(() => season = s.number)),
+                ),
+            ]),
+          ),
+        ],
+        const SizedBox(height: 10),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 220),
+          child: SingleChildScrollView(
+            child: Wrap(spacing: 6, runSpacing: 6, children: [
+              for (final e in current.episodes)
+                _EpisodeChip(
+                  number: e,
+                  active: widget.pick.season == current.number && widget.pick.episode == e,
+                  seen: widget.marks.contains('${current.number}:$e'),
+                  onTap: () => widget.onPick((season: current.number, episode: e)),
+                ),
+            ]),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+class _EpisodeChip extends StatelessWidget {
+  const _EpisodeChip({required this.number, required this.active, required this.seen, required this.onTap});
+  final int number;
+  final bool active;
+  final bool seen;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: active ? primary : Colors.white.withValues(alpha: seen ? 0.03 : 0.07),
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: SizedBox(
+          width: 46,
+          height: 38,
+          child: Center(child: Text('$number', style: body(14, color: active ? Colors.white : (seen ? faint : soft), weight: active ? FontWeight.w700 : FontWeight.w500))),
+        ),
+      ),
     );
   }
 }

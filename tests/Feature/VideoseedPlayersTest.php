@@ -188,5 +188,11 @@ class VideoseedPlayersTest extends TestCase
                 ->where('episodes.0.number', 1)
                 ->where('episodes.0.episodes', [1, 2, 3])
                 ->where('episodes.1.episodes', [1, 2])));
+
+        // Застосунок бере той самий список окремим запитом через міст.
+        $this->actingAs($viewer)->getJson('/cinema/'.$movie->slug.'/episodes')
+            ->assertOk()
+            ->assertJsonPath('episodes.0.episodes', [1, 2, 3])
+            ->assertJsonPath('episodes.1.number', 2);
     }
 }

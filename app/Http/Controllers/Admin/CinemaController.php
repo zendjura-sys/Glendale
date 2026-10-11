@@ -7,6 +7,7 @@ use App\Jobs\SyncCinemaCatalog;
 use App\Models\Movie;
 use App\Models\MovieRequest;
 use App\Models\MovieSource;
+use App\Services\Cinema\BulkPlayers;
 use App\Services\Cinema\CinemaAutoImport;
 use App\Services\Cinema\CinemaException;
 use App\Services\Cinema\CinemaPlayers;
@@ -115,6 +116,10 @@ class CinemaController extends Controller
                 'kodik_types' => collect(CinemaAutoImport::KODIK_TYPES)->map(fn ($label, $key) => ['key' => $key, 'label' => $label])->values(),
                 'intervals' => CinemaAutoImport::INTERVALS,
             ],
+            'bulk' => [
+                'state' => app(BulkPlayers::class)->state(),
+                'running' => app(BulkPlayers::class)->running(),
+            ],
             'players' => [
                 'config' => $this->players->config(),
                 'providers' => $this->playerProviders(),
@@ -204,6 +209,36 @@ class CinemaController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => $enrichOnly
             ? 'Збагачення метаданими запущено у фоні.'
             : 'Синхронізацію запущено у фоні — нові тайтли з’являться за кілька хвилин.']);
+
+        return back();
+    }
+
+    /**
+     * Масова проставка плеєрів на всі тайтли. replace — замінювати наявні плеєри; без нього лише
+     * додаються нові озвучки. Що саме змінено — у звіті проставки.
+     */
+    public function bulkPlayers(Request $request, BulkPlayers $bulk): RedirectResponse
+    {
+        $data = $request->validate([
+            'replace' => ['required', 'boolean'],
+            'type' => ['nullable', Rule::in(array_keys(Movie::TYPES))],
+            'providers' => ['nullable', 'array'],
+            'providers.*' => [Rule::in(['kodik', 'videoseed', 'flixcdn'])],
+        ]);
+        $started = $bulk->start((bool) $data['replace'], $data['type'] ?? null, array_values($data['providers'] ?? []));
+        Inertia::flash('toast', $started
+            ? ['type' => 'success', 'message' => $data['replace']
+                ? 'Проставку запущено у фоні: плеєри замінюються, нові озвучки додаються.'
+                : 'Проставку запущено у фоні: додаються лише нові озвучки.']
+            : ['type' => 'error', 'message' => 'Проставка вже виконується.']);
+
+        return back();
+    }
+
+    public function cancelBulkPlayers(BulkPlayers $bulk): RedirectResponse
+    {
+        $bulk->cancel();
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Проставку зупинено.']);
 
         return back();
     }
