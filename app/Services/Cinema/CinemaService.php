@@ -102,23 +102,46 @@ class CinemaService
         $result = [];
         if ($want('kodik') && $this->kodik->configured()) {
             // Шукаємо за кожним ID окремо й об’єднуємо: в аніме частина озвучок у Kodik прив’язана лише
-            // до Shikimori (без Кінопошуку), і пошук за одним ID їх не бачив.
-            $ids = array_filter([
+            // до Shikimori (без Кінопошуку). ID, яких у тайтлу немає, беремо з відповідей самого Kodik
+            // (запис однієї озвучки знає Shikimori/IMDb) і шукаємо ще раз — так знаходяться всі озвучки.
+            $queue = array_filter([
                 'kinopoisk_id' => $movie->kinopoisk_id,
                 'shikimori_id' => $movie->shikimori_id,
                 'imdb_id' => $movie->imdb_id,
             ], fn ($v) => filled($v));
             $sources = null;
-            if ($ids !== []) {
+            if ($queue !== []) {
                 $byId = [];
-                foreach ($ids as $field => $value) {
+                $searched = [];
+                $learned = [];
+                $rounds = 0;
+                while ($queue !== [] && $rounds++ < 6) {
+                    $field = (string) array_key_first($queue);
+                    $value = (string) array_shift($queue);
+                    $searched[$field.':'.$value] = true;
                     foreach ($this->kodik->search([$field => $value]) as $candidate) {
                         foreach ($this->sourceList($candidate['sources'] ?? null) as $source) {
                             $byId[(string) ($source['external_id'] ?? '')] ??= $source;
                         }
+                        foreach (['kinopoisk_id', 'shikimori_id', 'imdb_id'] as $key) {
+                            $id = $candidate[$key] ?? null;
+                            if (! filled($id) || isset($searched[$key.':'.$id]) || isset($queue[$key])) {
+                                continue;
+                            }
+                            // Лише якщо цей ID у тайтлу ще не заданий (не тягнемо чужий тайтл з іншим ID).
+                            if (filled($movie->{$key}) && (string) $movie->{$key} !== (string) $id) {
+                                continue;
+                            }
+                            $queue[$key] = (string) $id;
+                            $learned[$key] = (string) $id;
+                        }
                     }
                 }
                 $sources = array_values($byId);
+                $learned = array_filter($learned, fn ($v, $k) => blank($movie->{$k}), ARRAY_FILTER_USE_BOTH);
+                if ($learned !== [] && $movie->exists) {
+                    $movie->forceFill($learned)->saveQuietly();
+                }
             }
             $result['kodik'] = $sources;
         }

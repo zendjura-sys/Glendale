@@ -1141,22 +1141,42 @@ class _EpisodeListScreenState extends State<EpisodeListScreen> {
 
 // ───────────────────────── Власний плеєр ─────────────────────────
 
-/// Скрипт, що вбудовується в сторінку плеєра балансера (Kodik / Videoseed): ховає весь рідний інтерфейс
-/// (кнопки, перемикачі, значки віку, спінер) і лишає тільки `<video>` на весь екран. Далі наш Flutter-шар
-/// керує відео напряму (play / pause / seek / швидкість), а стан шле через канал GcBridge двічі на секунду.
-/// Сторінку відкриваємо як головну (а не в iframe), інакше чужий документ недоступний для скрипта.
-const _bridgeScript = r'''
+/// Скрипт плеєра, що вбудовується на старті кожного документа (головна сторінка-обгортка сайту й iframe
+/// балансера; див. FrameScriptPlugin на Android). Балансер (Kodik, Videoseed) лишається у своєму iframe на
+/// сторінці сайту, як на сайті, а скрипт у його фреймі ховає рідний інтерфейс (кнопки, перемикачі, значок
+/// віку, спінер), лишаючи тільки `<video>`. Наш Flutter-шар керує відео напряму й отримує стан двічі на секунду.
+const _frameScript = r'''
 (function () {
   if (window.__gcPlayer) return; window.__gcPlayer = true;
+  var top = window.top === window;
+  function frames() { return [].slice.call(document.querySelectorAll('iframe')).map(function (f) { return f.contentWindow; }).filter(Boolean); }
+  function broadcast(data) { frames().forEach(function (w) { try { w.postMessage(data, '*'); } catch (e) {} }); }
+  if (top) {
+    // Обгортка сайту: стан із фреймів — у Flutter, команди Flutter — у фрейми.
+    window.addEventListener('message', function (e) {
+      var d = e.data;
+      if (!d || !d.gc) return;
+      var first = document.querySelector('iframe');
+      // Повідомлення прямого iframe вже пересилає сама обгортка (/play/embed) — не дублюємо.
+      if (first && e.source === first.contentWindow && window.gcSend) return;
+      try { GcBridge.postMessage(JSON.stringify(d)); } catch (err) {}
+    });
+    window.gcCmd = function (cmd, arg) { broadcast({ gcCmd: cmd, arg: arg }); };
+    var hello = setInterval(function () { try { GcBridge.postMessage('{"gc":"hello"}'); clearInterval(hello); } catch (e) {} }, 300);
+    return;
+  }
   var style = document.createElement('style');
   style.textContent =
-    'html,body{background:#000!important;overflow:hidden!important;margin:0!important}' +
-    'body *{visibility:hidden!important;pointer-events:none!important}' +
+    'html,body{background:#000!important;overflow:hidden!important}' +
+    'body *{visibility:hidden!important}' +
     'video.gc-main{visibility:visible!important;position:fixed!important;left:0!important;top:0!important;' +
     'width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;' +
     'z-index:2147483647!important;object-fit:contain!important;background:#000!important;opacity:1!important;transform:none!important}';
-  (document.head || document.documentElement).appendChild(style);
-  function send(msg) { try { GcBridge.postMessage(JSON.stringify(msg)); } catch (e) {} }
+  var native = false;
+  function mount() { if (!style.parentNode) (document.head || document.documentElement).appendChild(style); }
+  mount();
+  document.addEventListener('DOMContentLoaded', mount);
+  function send(msg) { try { window.top.postMessage(msg, '*'); } catch (e) {} }
   function main() {
     var list = [].slice.call(document.querySelectorAll('video'));
     if (!list.length) return null;
@@ -1165,21 +1185,19 @@ const _bridgeScript = r'''
     var v = list[0];
     list.forEach(function (x) { if (x !== v) x.classList.remove('gc-main'); });
     v.classList.add('gc-main');
-    v.controls = false;
     return v;
   }
-  // Деякі плеєри створюють <video> лише після натискання власної кнопки — натискаємо її за користувача.
+  // Деякі плеєри створюють <video> лише після натискання власної кнопки — натискаємо її (лише фрейм балансера).
   function poke() {
+    if (window.parent !== window.top) return;
     style.disabled = true;
     var el = document.elementFromPoint(innerWidth / 2, innerHeight / 2);
-    style.disabled = false;
-    if (el) { el.click(); }
+    style.disabled = native;
+    if (el) el.click();
   }
-  var idle = 0;
   setInterval(function () {
     var v = main();
-    if (!v) { idle++; send({ gc: 'wait', idle: idle }); return; }
-    idle = 0;
+    if (!v) return;
     send({
       gc: 'state',
       time: v.currentTime || 0,
@@ -1190,18 +1208,22 @@ const _bridgeScript = r'''
       ad: isFinite(v.duration) && v.duration > 0 && v.duration < 120
     });
   }, 500);
-  window.gcCmd = function (cmd, arg) {
+  window.addEventListener('message', function (e) {
+    var d = e.data;
+    if (!d || !d.gcCmd) return;
+    broadcast(d); // вкладені фрейми (плеєр усередині плеєра)
+    if (d.gcCmd === 'native') { native = !!d.arg; style.disabled = native; return; }
     var v = main();
-    if (!v) { if (cmd === 'play') poke(); return; }
-    if (cmd === 'play') { var p = v.play(); if (p && p.catch) p.catch(function () { poke(); }); }
-    else if (cmd === 'pause') v.pause();
-    else if (cmd === 'seek') v.currentTime = Math.max(0, arg);
-    else if (cmd === 'speed') v.playbackRate = arg;
-  };
-  // Аварійний режим: показати рідний плеєр (якщо відео так і не знайшлося).
-  window.gcNative = function (on) { style.disabled = !!on; };
+    if (!v) { if (d.gcCmd === 'play') poke(); return; }
+    if (d.gcCmd === 'play') { var p = v.play(); if (p && p.catch) p.catch(function () { poke(); }); }
+    else if (d.gcCmd === 'pause') v.pause();
+    else if (d.gcCmd === 'seek') v.currentTime = Math.max(0, d.arg);
+    else if (d.gcCmd === 'speed') v.playbackRate = d.arg;
+  });
 })();
 ''';
+
+const _frames = MethodChannel('gamecon/webview');
 
 /// Плеєр на весь екран: відео балансера (сторінка плеєра в WebView з прихованим рідним інтерфейсом),
 /// поверх — наш шар керування. Прогрес (серія, секунда, озвучка) — локально й в акаунті.
@@ -1269,7 +1291,6 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
 
   /// Скрипт у сторінці відповів (канал працює).
   bool bridgeSeen = false;
-  Timer? inject;
   Timer? watchdog;
   bool locked = false;
   bool landscape = true;
@@ -1292,14 +1313,13 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
     super.initState();
     pick = widget.pick;
     _orientation(true);
-    _load();
+    unawaited(_load());
   }
 
   @override
   void dispose() {
     hide?.cancel();
     skipTimer?.cancel();
-    inject?.cancel();
     watchdog?.cancel();
     _remember(push: true);
     playback.dispose();
@@ -1324,37 +1344,29 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
     return episodeUrl(text(widget.source['provider']) ?? '', base, target, bare: true);
   }
 
-  void _load({bool embed = false}) {
+  Future<void> _load() async {
     widget.memory.last = pick;
     final url = _url(pick);
     final controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.black)
       ..setUserAgent('Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36')
-      ..addJavaScriptChannel('GcBridge', onMessageReceived: (m) => _onBridge(m.message))
-      ..setNavigationDelegate(NavigationDelegate(
-        onPageStarted: (_) => embed ? null : web?.runJavaScript(_bridgeScript).catchError((_) {}),
-        onPageFinished: (_) => embed ? null : web?.runJavaScript(_bridgeScript).catchError((_) {}),
-      ));
-    if (embed) {
-      // Запасний шлях: рідний плеєр в обгортці сайту (як раніше).
-      unawaited(controller.loadRequest(Uri.parse('${Api.root}/play/embed').replace(queryParameters: {'src': url})));
-    } else {
-      // Сторінку плеєра відкриваємо напряму (з нашим Referer — балансер прив’язаний до домену сайту).
-      unawaited(controller.loadRequest(Uri.parse(url), headers: {'Referer': '${Api.root}/'}));
-    }
+      ..addJavaScriptChannel('GcBridge', onMessageReceived: (m) => _onBridge(m.message));
+    // Скрипт — у кожен фрейм (і в iframe балансера) ще до завантаження сторінки.
+    var scripted = false;
     final platform = controller.platform;
-    if (platform is AndroidWebViewController) unawaited(platform.setMediaPlaybackRequiresUserGesture(false));
-    // Сторінка балансера може довго довантажуватись — повторюємо вбудовування, поки скрипт не відповість.
-    inject?.cancel();
+    if (platform is AndroidWebViewController) {
+      unawaited(platform.setMediaPlaybackRequiresUserGesture(false));
+      try {
+        scripted = await _frames.invokeMethod<bool>('addFrameScript', {'id': platform.webViewIdentifier, 'script': _frameScript}) ?? false;
+      } catch (_) {}
+    }
+    if (!mounted) return;
+    // Балансер — у своєму iframe на сторінці сайту (напряму Kodik сторінку не віддає).
+    unawaited(controller.loadRequest(Uri.parse('${Api.root}/play/embed').replace(queryParameters: {'src': url})));
     watchdog?.cancel();
     bridgeSeen = false;
-    if (!embed) {
-      inject = Timer.periodic(const Duration(milliseconds: 1500), (t) {
-        if (bridgeSeen || !mounted) return t.cancel();
-        unawaited(web?.runJavaScript(_bridgeScript).catchError((_) {}));
-      });
-    }
+    final embed = !scripted;
     playback.position.value = 0;
     playback.duration.value = 0;
     playback.playing.value = false;
@@ -1387,6 +1399,7 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
     }
     if (!mounted || embedded) return;
     bridgeSeen = true;
+    if (data['gc'] == 'hello') return;
     if (data['gc'] != 'state') return;
     final time = (data['time'] as num?)?.toDouble() ?? 0;
     final duration = (data['duration'] as num?)?.toDouble() ?? 0;
@@ -1472,7 +1485,8 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
         watchdog?.cancel();
         watchdog = Timer(const Duration(seconds: 6), () {
           if (!mounted || started) return;
-          bridgeSeen ? _assist(true) : _load(embed: true);
+          // Без скрипта керувати відео нема як — лишаємо рідний плеєр.
+          bridgeSeen ? _assist(true) : setState(() => embedded = true);
         });
       }
       _cmd('play');
@@ -1482,7 +1496,7 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
   }
 
   void _assist(bool on) {
-    unawaited(web?.runJavaScript('window.gcNative && window.gcNative(${on ? 'true' : 'false'});').catchError((_) {}));
+    _cmd('native', on ? 1 : 0);
     setState(() => assist = on);
     if (!on) _autoHide();
   }
@@ -1542,7 +1556,7 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
     if (target == null) return;
     _remember(push: true);
     pick = target;
-    _load();
+    unawaited(_load());
   }
 
   Future<void> _speedMenu() async {

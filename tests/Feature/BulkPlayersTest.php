@@ -152,4 +152,18 @@ class BulkPlayersTest extends TestCase
 
         $this->assertSame(['Дубляж', 'AniDub'], array_column($found, 'translation'));
     }
+
+    public function test_kodik_ids_are_learned_from_results(): void
+    {
+        // У тайтлу лише Кінопошук; запис AniLibria в Kodik знає Shikimori — за ним знаходяться інші озвучки.
+        $anilibria = [...$this->item('movie-1', 'AniLibria'), 'shikimori_id' => '269'];
+        $this->results = [$anilibria];
+        $this->shikimori = [$anilibria, [...$this->item('anime-2', 'AniDub'), 'kinopoisk_id' => null, 'shikimori_id' => '269']];
+        $movie = Movie::query()->create(['slug' => 'bleach', 'type' => 'anime', 'title' => 'Бліч', 'kinopoisk_id' => '301', 'is_published' => true]);
+
+        $found = app(CinemaService::class)->fetchPlayers($movie, ['kodik'])['kodik'];
+
+        $this->assertSame(['AniLibria', 'AniDub'], array_column($found, 'translation'));
+        $this->assertSame('269', $movie->fresh()->shikimori_id);
+    }
 }

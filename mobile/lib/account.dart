@@ -405,7 +405,7 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
 
 
 /// Що нового в цій версії застосунку — один раз після оновлення.
-const whatsNewVersion = '1.1.38';
+const whatsNewVersion = '1.1.39';
 
 List<String> _whatsNew() => [
       tr('Новий плеєр: лише відео й наше керування — без чужих кнопок і написів поверх.'),
