@@ -326,12 +326,8 @@ class CinemaController extends Controller
             'similar' => $this->cards($similar),
             'comments' => $comments->map(fn (Comment $c) => $this->presenter->comment($c, $viewer, $liked->has($c->id), $viewer->isStaff()))->values(),
             'can' => ['manage' => $viewer->isStaff()],
-            'soundtrack' => $movie->tracks()->get()->map(fn (Track $track) => [
-                'id' => $track->id,
-                'title' => $track->title,
-                'artist' => $track->artist,
-                'url' => $track->url,
-            ])->all(),
+            // Картки як у музиці: обкладинка, тривалість — грають у плеєрі сайту.
+            'soundtrack' => $movie->tracks()->get()->map(fn (Track $track) => $track->toCard())->all(),
             'saved' => app(SavedItems::class)->has($viewer, 'movie', $movie->id),
             'pinned' => is_array($pin = $viewer->pref('pin')) && ($pin['kind'] ?? null) === 'movie' && (int) ($pin['id'] ?? 0) === $movie->id,
             'playback' => $this->playbackPrefs($viewer),

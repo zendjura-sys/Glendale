@@ -8,8 +8,10 @@ import {
     Clock,
     Eye,
     MessageCircle,
+    Pause,
     Pencil,
     Play,
+    Plus,
     Share2,
     Star,
     Tv,
@@ -38,11 +40,14 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { api, ApiError } from '@/lib/api';
-import { compactNumber, plural } from '@/lib/format';
+import { compactNumber, formatDuration, plural } from '@/lib/format';
+import { playQueue, toggle, usePlayer } from '@/lib/player';
+import { Equalizer, TrackCover } from '@/components/music/track-cover';
 import { cn } from '@/lib/utils';
 import { usePlugin } from '@/lib/plugins';
 import type {
     CommentItem,
+    LocalTrack,
     MovieCard,
     MovieDetail,
     MovieFriend,
@@ -67,7 +72,7 @@ type Props = {
     similar: MovieCard[];
     comments: CommentItem[];
     can: { manage: boolean };
-    soundtrack: { id: number; title: string; artist: string; url: string }[];
+    soundtrack: LocalTrack[];
     saved: boolean;
     pinned: boolean;
     inTopTen: boolean;
@@ -748,28 +753,11 @@ export default function CinemaShow({
                                 </p>
                             </section>
                         )}
-                        <section className="glass rounded-3xl p-5">
-                            <h2 className="mb-3 font-display text-lg font-semibold text-white">
-                                {tr('Саундтрек')}
-                            </h2>
-                            <div className="space-y-2">
-                                {soundtrack.map((track) => (
-                                    <a
-                                        key={track.id}
-                                        href={track.url}
-                                        className="block rounded-2xl bg-white/[0.04] px-3 py-2 text-sm text-white hover:bg-white/10"
-                                    >
-                                        {track.artist} — {track.title}
-                                    </a>
-                                ))}
-                                {soundtrack.length === 0 && (
-                                    <p className="text-sm text-white/45">
-                                        {tr('Треків ще немає.')}
-                                    </p>
-                                )}
-                            </div>
-                            {can.manage && <SoundtrackForm slug={movie.slug} />}
-                        </section>
+                        <Soundtrack
+                            tracks={soundtrack}
+                            slug={movie.slug}
+                            canAdd={can.manage}
+                        />
                         <section className="glass rounded-3xl p-5">
                             <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
                                 <MessageCircle className="size-5 text-gc-lilac-400" />
@@ -924,6 +912,133 @@ export default function CinemaShow({
     );
 }
 
+/** Саундтрек як список у плеєрі: обкладинка з «Слухати», назва, виконавець, тривалість. */
+function Soundtrack({
+    tracks,
+    slug,
+    canAdd,
+}: {
+    tracks: LocalTrack[];
+    slug: string;
+    canAdd: boolean;
+}) {
+    const player = usePlayer();
+    const [adding, setAdding] = useState(false);
+
+    return (
+        <section className="glass rounded-3xl p-5">
+            <div className="mb-3 flex items-center justify-between gap-3">
+                <h2 className="font-display text-lg font-semibold text-white">
+                    {tr('Саундтрек')}
+                </h2>
+                {canAdd && (
+                    <button
+                        type="button"
+                        onClick={() => setAdding((v) => !v)}
+                        aria-label={tr('Додати трек')}
+                        title={tr('Додати трек')}
+                        className={cn(
+                            'flex size-9 items-center justify-center rounded-full transition',
+                            adding
+                                ? 'bg-[var(--btn-primary,#6366f1)] text-white'
+                                : 'bg-white/[0.06] text-white/70 hover:bg-white/10 hover:text-white',
+                        )}
+                    >
+                        <Plus
+                            className={cn(
+                                'size-5 transition-transform',
+                                adding && 'rotate-45',
+                            )}
+                        />
+                    </button>
+                )}
+            </div>
+            {adding && <SoundtrackForm slug={slug} />}
+            <ol className="space-y-0.5">
+                {tracks.map((track, index) => {
+                    const isCurrent = player.current?.key === track.key;
+                    const playing = isCurrent && player.playing;
+
+                    return (
+                        <li
+                            key={track.key}
+                            className={cn(
+                                'group flex items-center gap-3 rounded-2xl p-2 pr-3 transition hover:bg-white/[0.045]',
+                                isCurrent &&
+                                    'bg-gradient-to-r from-gc-indigo/15 to-transparent',
+                            )}
+                        >
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    isCurrent
+                                        ? toggle()
+                                        : playQueue(tracks, index)
+                                }
+                                className="relative shrink-0"
+                                aria-label={
+                                    playing ? tr('Пауза') : tr('Слухати')
+                                }
+                            >
+                                <TrackCover
+                                    url={track.cover_url}
+                                    seed={track.key}
+                                    className="size-12 rounded-xl"
+                                />
+                                <span className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40">
+                                    {playing ? (
+                                        <Pause className="size-4 fill-white text-white" />
+                                    ) : (
+                                        <Play className="ml-0.5 size-4 fill-white text-white" />
+                                    )}
+                                </span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    isCurrent
+                                        ? toggle()
+                                        : playQueue(tracks, index)
+                                }
+                                className="min-w-0 flex-1 text-left"
+                            >
+                                <p
+                                    className={cn(
+                                        'flex items-center gap-2 text-[15px] font-medium',
+                                        isCurrent
+                                            ? 'text-[#c3caff]'
+                                            : 'text-white',
+                                    )}
+                                >
+                                    {isCurrent && (
+                                        <Equalizer paused={!playing} />
+                                    )}
+                                    <span className="truncate">
+                                        {track.title}
+                                    </span>
+                                </p>
+                                <p className="truncate text-xs text-white/50">
+                                    {track.artist}
+                                </p>
+                            </button>
+                            {track.duration ? (
+                                <span className="shrink-0 text-xs text-white/40 tabular-nums">
+                                    {formatDuration(track.duration)}
+                                </span>
+                            ) : null}
+                        </li>
+                    );
+                })}
+            </ol>
+            {tracks.length === 0 && (
+                <p className="text-sm text-white/45">
+                    {tr('Треків ще немає.')}
+                </p>
+            )}
+        </section>
+    );
+}
+
 function SoundtrackForm({ slug }: { slug: string }) {
     const [query, setQuery] = useState('');
     const [hits, setHits] = useState<
@@ -932,7 +1047,7 @@ function SoundtrackForm({ slug }: { slug: string }) {
 
     return (
         <form
-            className="mt-3 space-y-2"
+            className="mb-3 space-y-2"
             onSubmit={(event) => {
                 event.preventDefault();
                 void api<{
