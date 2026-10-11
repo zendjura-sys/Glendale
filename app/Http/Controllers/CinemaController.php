@@ -218,6 +218,32 @@ class CinemaController extends Controller
         ]);
     }
 
+    /**
+     * Розподіл оцінок (1–10) і скільки людей має тайтл у кожному списку — для блоків «Рейтинг»
+     * і «У списках у людей».
+     *
+     * @return array{ratings: array<int, int>, statuses: array<string, int>}
+     */
+    private function audience(Movie $movie): array
+    {
+        $ratings = array_fill(1, 10, 0);
+        foreach (DB::table('movie_user')->where('movie_id', $movie->id)->whereNotNull('rating')
+            ->selectRaw('rating, count(*) as total')->groupBy('rating')->pluck('total', 'rating') as $rating => $total) {
+            if (isset($ratings[(int) $rating])) {
+                $ratings[(int) $rating] = (int) $total;
+            }
+        }
+        $statuses = array_fill_keys(array_keys(Movie::STATUSES), 0);
+        foreach (DB::table('movie_user')->where('movie_id', $movie->id)->whereNotNull('status')
+            ->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status') as $status => $total) {
+            if (isset($statuses[(string) $status])) {
+                $statuses[(string) $status] = (int) $total;
+            }
+        }
+
+        return ['ratings' => $ratings, 'statuses' => $statuses];
+    }
+
     /** Посерійний режим (Адмінка → Кіно → Плеєри) і є плеєр, що відкриває окрему серію. */
     private function episodeMode(Movie $movie): bool
     {
@@ -283,6 +309,7 @@ class CinemaController extends Controller
                 ? Inertia::defer(fn () => app(EpisodeGuide::class)->seasons($movie))
                 : null,
             'state' => $this->cinema->stateFor($movie, $viewer),
+            'audience' => $this->audience($movie),
             'statuses' => $this->statusOptions(),
             'friends' => $this->friendsWatching($viewer, $movie),
             'seen' => app(Plugins::class)->on('friends_seen') ? $this->friendsSeen($viewer, $movie) : [],

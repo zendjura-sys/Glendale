@@ -11,6 +11,7 @@ import 'audio.dart';
 import 'auth_screen.dart';
 import 'chat.dart';
 import 'cinema.dart';
+import 'movie_screen.dart';
 import 'clans.dart';
 import 'communities.dart';
 import 'families.dart';

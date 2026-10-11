@@ -231,7 +231,7 @@ class KodikClient
 
     /**
      * @param  array<string, mixed>  $item
-     * @return array{provider: string, external_id: string, translation: string|null, translation_type: string|null, quality: string|null, link: string}
+     * @return array{provider: string, external_id: string, translation: string|null, translation_type: string|null, quality: string|null, link: string, episodes: int|null}
      */
     private static function source(array $item): array
     {
@@ -244,6 +244,7 @@ class KodikClient
             'translation_type' => self::str($item['translation']['type'] ?? null),
             'quality' => self::str($item['quality'] ?? null),
             'link' => str_starts_with($link, '//') ? 'https:'.$link : $link,
+            'episodes' => ((int) ($item['last_episode'] ?? $item['episodes_count'] ?? 0)) ?: null,
         ];
     }
 

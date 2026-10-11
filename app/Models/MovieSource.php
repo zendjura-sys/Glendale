@@ -17,8 +17,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $link
  * @property int $position
  * @property bool $is_hidden Схована адміністратором
+ * @property int|null $episodes Скільки серій є в цій озвучці
  */
-#[Fillable(['provider', 'external_id', 'translation', 'translation_type', 'quality', 'link', 'position', 'is_hidden'])]
+#[Fillable(['provider', 'external_id', 'translation', 'translation_type', 'quality', 'link', 'position', 'is_hidden', 'episodes'])]
 class MovieSource extends Model
 {
     public const PROVIDERS = [
@@ -30,7 +31,7 @@ class MovieSource extends Model
 
     protected function casts(): array
     {
-        return ['is_hidden' => 'boolean'];
+        return ['is_hidden' => 'boolean', 'episodes' => 'integer'];
     }
 
     /**
@@ -56,6 +57,7 @@ class MovieSource extends Model
             'quality' => $this->quality,
             'link' => $this->link,
             'is_hidden' => (bool) $this->is_hidden,
+            'episodes' => $this->episodes,
         ];
     }
 }

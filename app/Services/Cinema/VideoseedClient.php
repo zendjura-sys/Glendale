@@ -254,7 +254,7 @@ class VideoseedClient
 
     /**
      * @param  array<string, mixed>  $item
-     * @return list<array{provider: string, external_id: string, translation: string|null, translation_type: string|null, quality: string|null, link: string}>
+     * @return list<array{provider: string, external_id: string, translation: string|null, translation_type: string|null, quality: string|null, link: string, episodes?: int|null}>
      */
     private static function sources(array $item, string $id): array
     {
@@ -271,6 +271,7 @@ class VideoseedClient
                 'translation_type' => null,
                 'quality' => null,
                 'link' => $link,
+                'episodes' => ((int) ($voice['count'] ?? 0)) ?: null,
             ];
         }
 

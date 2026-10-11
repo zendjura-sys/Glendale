@@ -1,0 +1,1357 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:ui' show ImageFilter;
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+
+import 'api.dart';
+import 'cinema.dart' show PosterCard;
+import 'i18n.dart';
+import 'posts.dart';
+import 'state.dart';
+import 'theme.dart';
+import 'widgets.dart';
+
+// Сторінка тайтлу в застосунку: велика обкладинка, статус, «Дивитися» → озвучка → серія → власна
+// оболонка керування поверх плеєра балансера (Kodik / Videoseed через міст /play/embed).
+
+typedef Pick = ({int season, int episode});
+typedef Season = ({int number, List<int> episodes});
+
+/// Адреса плеєра без власних перемикачів (як на сайті, episode-picker.tsx): серія й озвучка
+/// обираються в застосунку. Kodik — hide_selectors + translations=false (лише з обраною серією або
+/// для фільму); серія — season/episode + only_season/only_episode. Videoseed — video=sXvY&only=true.
+String episodeUrl(String provider, String url, Pick? pick, {required bool bare}) {
+  final uri = Uri.tryParse(url);
+  if (uri == null) return url;
+  final query = Map<String, String>.of(uri.queryParameters);
+  if (provider == 'kodik' && bare) {
+    query['hide_selectors'] = 'true';
+    query['translations'] = 'false';
+  }
+  if (pick != null && provider == 'kodik') {
+    query.addAll({'season': '${pick.season}', 'episode': '${pick.episode}', 'only_season': 'true', 'only_episode': 'true'});
+  } else if (pick != null && provider == 'videoseed') {
+    query.addAll({'video': 's${pick.season}v${pick.episode}', 'only': 'true'});
+  }
+  return query.isEmpty ? url : uri.replace(queryParameters: query).toString();
+}
+
+/// «12:07» / «1:02:07».
+String clock(double seconds) {
+  final total = seconds.isFinite && seconds > 0 ? seconds.floor() : 0;
+  final h = total ~/ 3600;
+  final m = (total % 3600) ~/ 60;
+  final s = (total % 60).toString().padLeft(2, '0');
+  return h > 0 ? '$h:${m.toString().padLeft(2, '0')}:$s' : '${m.toString().padLeft(2, '0')}:$s';
+}
+
+/// Локальна пам’ять перегляду: остання озвучка, остання серія й позиція в кожній серії.
+class WatchMemory {
+  WatchMemory(this.prefs, this.slug);
+  final SharedPreferences prefs;
+  final String slug;
+
+  String? get voice => prefs.getString('cinema.voice.$slug');
+  set voice(String? key) => key == null ? prefs.remove('cinema.voice.$slug') : prefs.setString('cinema.voice.$slug', key);
+
+  Pick? get last {
+    final raw = prefs.getString('cinema.last.$slug')?.split(':');
+    if (raw == null || raw.length != 2) return null;
+    final s = int.tryParse(raw[0]);
+    final e = int.tryParse(raw[1]);
+    return s == null || e == null ? null : (season: s, episode: e);
+  }
+
+  set last(Pick? pick) => pick == null ? prefs.remove('cinema.last.$slug') : prefs.setString('cinema.last.$slug', '${pick.season}:${pick.episode}');
+
+  int position(Pick? pick) => prefs.getInt(_pos(pick)) ?? 0;
+  void savePosition(Pick? pick, int seconds) => prefs.setInt(_pos(pick), seconds);
+  String _pos(Pick? pick) => pick == null ? 'cinema.pos.$slug' : 'cinema.pos.$slug.${pick.season}.${pick.episode}';
+}
+
+const _statusColors = {'watching': green, 'planned': violet, 'watched': cyan, 'dropped': danger};
+
+bool _episodic(Map<String, dynamic>? player) => const {'kodik', 'videoseed'}.contains(text(player?['provider']));
+
+/// Серії озвучки: загальний список сезонів, а для односезонного тайтлу — не більше, ніж є в озвучці.
+List<Season> voiceSeasons(List<Season> seasons, Map<String, dynamic> voice) {
+  final count = intOf(voice['episodes']);
+  if (count <= 0 || seasons.length != 1) return seasons;
+  final only = seasons.first;
+  final cut = only.episodes.where((e) => e <= count).toList();
+  return cut.isEmpty ? seasons : [(number: only.number, episodes: cut)];
+}
+
+// ───────────────────────── Сторінка тайтлу ─────────────────────────
+
+class MovieScreen extends StatefulWidget {
+  const MovieScreen({required this.slug, this.autoplay = false, super.key});
+  final String slug;
+  final bool autoplay;
+
+  @override
+  State<MovieScreen> createState() => _MovieScreenState();
+}
+
+class _MovieScreenState extends State<MovieScreen> {
+  Map<String, dynamic>? data;
+  Object? error;
+  List<Season> seasons = const [];
+  Set<String> marks = {};
+  bool about = false;
+  final commentsKey = GlobalKey();
+
+  Api get api => AppScope.read(context).session.api;
+  late final WatchMemory memory = WatchMemory(AppScope.read(context).session.prefs, widget.slug);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  Future<void> _load() async {
+    try {
+      final result = await api.get(Api.site('/cinema/${widget.slug}'));
+      if (!mounted) return;
+      setState(() {
+        data = result;
+        error = null;
+      });
+      await _loadEpisodes();
+      if (widget.autoplay && mounted) unawaited(_watch());
+    } catch (e) {
+      if (mounted) setState(() => error = e);
+    }
+  }
+
+  Future<void> _loadEpisodes() async {
+    try {
+      final result = await api.get(Api.site('/cinema/${widget.slug}/episodes'));
+      if (!mounted) return;
+      setState(() {
+        seasons = [
+          for (final s in maps(result['episodes']))
+            (number: intOf(s['number']), episodes: [for (final e in (s['episodes'] as List? ?? const [])) intOf(e)]),
+        ].where((s) => s.episodes.isNotEmpty).toList();
+        marks = {for (final m in (result['marks'] as List? ?? const [])) '$m'};
+      });
+    } catch (_) {
+      // Посерійний режим вимкнено або мережа — серії обираються в самому плеєрі.
+    }
+  }
+
+  List<Map<String, dynamic>> get players => maps(data?['players']);
+
+  Map<String, dynamic>? get voice {
+    final list = players;
+    if (list.isEmpty) return null;
+    final key = memory.voice;
+    return list.firstWhere((p) => text(p['key']) == key, orElse: () => list.first);
+  }
+
+  /// Наступна серія: після останньої переглянутої (позначки) або остання відкрита.
+  Pick? _continuePick(List<Season> list) {
+    final all = [for (final s in list) for (final e in s.episodes) (season: s.number, episode: e)];
+    if (all.isEmpty) return null;
+    final last = memory.last;
+    if (last != null && all.contains(last)) return last;
+    var seen = -1;
+    for (var i = 0; i < all.length; i++) {
+      if (marks.contains('${all[i].season}:${all[i].episode}')) seen = i;
+    }
+    return all[(seen + 1).clamp(0, all.length - 1)];
+  }
+
+  /// «Дивитися»: озвучку вже обирали — одразу плеєр з тієї ж серії, інакше вибір озвучки.
+  Future<void> _watch() async {
+    final current = voice;
+    if (current == null) return;
+    if (memory.voice == null) return _chooseVoice();
+    final list = _episodic(current) ? voiceSeasons(seasons, current) : const <Season>[];
+    await _open(current, list.isEmpty ? null : _continuePick(list));
+  }
+
+  Future<void> _chooseVoice() async {
+    final picked = await Navigator.of(context).push<Map<String, dynamic>>(MaterialPageRoute(
+      builder: (_) => VoicePickerScreen(players: players, selected: text(voice?['key']), seasons: seasons),
+    ));
+    if (picked == null || !mounted) return;
+    memory.voice = text(picked['key']);
+    setState(() {});
+    final list = _episodic(picked) ? voiceSeasons(seasons, picked) : const <Season>[];
+    if (list.isEmpty) return _open(picked, null);
+    final pick = await Navigator.of(context).push<Pick>(MaterialPageRoute(
+      builder: (_) => EpisodeListScreen(voice: picked, seasons: list, marks: marks, memory: memory, onToggle: _toggleMark),
+    ));
+    if (pick != null && mounted) await _open(picked, pick);
+  }
+
+  Future<void> _open(Map<String, dynamic> source, Pick? pick) async {
+    final movie = mapOf(data?['movie']);
+    final list = _episodic(source) ? voiceSeasons(seasons, source) : const <Season>[];
+    unawaited(api.post(Api.site('/cinema/${widget.slug}/started')).then(_applyState).catchError((_) {}));
+    await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute<void>(
+      fullscreenDialog: true,
+      builder: (_) => MoviePlayerScreen(
+        title: text(movie['title']) ?? '',
+        source: source,
+        seasons: list,
+        pick: pick,
+        single: intOf(movie['episodes_count']) <= 1 && list.isEmpty,
+        memory: memory,
+        onWatched: (p) {
+          if (!marks.contains('${p.season}:${p.episode}')) unawaited(_toggleMark(p));
+          unawaited(api.put(Api.site('/cinema/${widget.slug}/progress'), {'season': p.season, 'episode': p.episode}).then(_applyState).catchError((_) {}));
+        },
+      ),
+    ));
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _toggleMark(Pick pick) async {
+    try {
+      final result = await api.post(Api.site('/cinema/${widget.slug}/episodes'), {'season': pick.season, 'episode': pick.episode});
+      if (mounted) setState(() => marks = {for (final m in (result['marks'] as List? ?? const [])) '$m'});
+    } catch (e) {
+      if (mounted) toast(context, e);
+    }
+  }
+
+  void _applyState(Map<String, dynamic> result) {
+    if (!mounted || data == null) return;
+    setState(() {
+      data!['state'] = mapOf(result['state']);
+      final movie = mapOf(data!['movie']);
+      for (final key in ['user_rating', 'ratings_count', 'watchers_count']) {
+        if (result.containsKey(key)) movie[key] = result[key];
+      }
+      data!['movie'] = movie;
+    });
+  }
+
+  Future<void> _status(String? status) async {
+    try {
+      _applyState(await api.patch(Api.site('/cinema/${widget.slug}/status'), {'status': status}));
+      await _refreshAudience();
+    } catch (e) {
+      if (mounted) toast(context, e);
+    }
+  }
+
+  Future<void> _rate(int? rating) async {
+    try {
+      _applyState(await api.put(Api.site('/cinema/${widget.slug}/rating'), {'rating': rating}));
+      await _refreshAudience();
+    } catch (e) {
+      if (mounted) toast(context, e);
+    }
+  }
+
+  Future<void> _refreshAudience() async {
+    try {
+      final fresh = await api.get(Api.site('/cinema/${widget.slug}'));
+      if (mounted) setState(() => data!['audience'] = fresh['audience']);
+    } catch (_) {}
+  }
+
+  Future<void> _statusDialog() async {
+    final statuses = maps(data?['statuses']);
+    final current = text(mapOf(data?['state'])['status']);
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        backgroundColor: popover,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(tr('Статус перегляду'), style: display(19)),
+        contentPadding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          for (final option in [{'key': '', 'label': tr('Не в списку')}, ...statuses])
+            ListTile(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              leading: Icon(
+                (text(option['key']) ?? '') == (current ?? '') ? LucideIcons.circleDot : LucideIcons.circle,
+                color: (text(option['key']) ?? '') == (current ?? '') ? (_statusColors[option['key']] ?? primary) : muted,
+              ),
+              title: Text('${option['label']}', style: body(15.5)),
+              onTap: () => Navigator.pop(dialog, '${option['key']}'),
+            ),
+        ]),
+        actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: Text(tr('Скасувати'), style: body(14, color: primary, weight: FontWeight.w600)))],
+      ),
+    );
+    if (picked == null) return;
+    await _status(picked.isEmpty ? null : picked);
+  }
+
+  Future<void> _watchTogether() async {
+    try {
+      final result = await api.post('/api/v1/cinema/${widget.slug}/watch', {'player_key': text(voice?['key'])});
+      final code = text(result['code']);
+      if (code != null && mounted) context.push('/watch/$code');
+    } catch (e) {
+      if (mounted) toast(context, e);
+    }
+  }
+
+  Future<void> _menu() async {
+    final action = await showGcSheet<String>(
+      context,
+      builder: (sheet) => Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          if (players.isNotEmpty) SheetAction(icon: LucideIcons.languages, label: tr('Обрати озвучку й серію'), onTap: () => Navigator.pop(sheet, 'voice')),
+          if (players.isNotEmpty) SheetAction(icon: LucideIcons.popcorn, label: tr('Дивитися разом'), onTap: () => Navigator.pop(sheet, 'together')),
+          SheetAction(icon: LucideIcons.copy, label: tr('Скопіювати посилання'), onTap: () => Navigator.pop(sheet, 'copy')),
+        ]),
+      ),
+    );
+    if (!mounted) return;
+    switch (action) {
+      case 'voice':
+        await _chooseVoice();
+      case 'together':
+        await _watchTogether();
+      case 'copy':
+        await Clipboard.setData(ClipboardData(text: '${Api.root}/cinema/${widget.slug}'));
+        if (mounted) toast(context, tr('Посилання скопійовано'));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final page = data;
+    if (page == null) {
+      return error == null
+          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
+          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.film, title: tr('Фільм недоступний'), text: '$error')));
+    }
+    final movie = mapOf(page['movie']);
+    final state = mapOf(page['state']);
+    final statuses = maps(page['statuses']);
+    final friends = mapOf(page['friends']);
+    final similar = maps(page['similar']);
+    final audience = mapOf(page['audience']);
+    final genres = [for (final g in (movie['genres'] as List? ?? const [])) '$g'];
+    final countries = [for (final c in (movie['countries'] as List? ?? const [])) '$c'];
+    final status = text(state['status']);
+    final statusLabel = statuses.firstWhere((s) => s['key'] == status, orElse: () => const {})['label'];
+    final current = voice;
+    final added = current == null
+        ? null
+        : [
+            if (intOf(current['episodes']) > 0) tr('{n} серія', {'n': current['episodes']}),
+            text(current['translation']) ?? tr('Оригінал'),
+            text(current['provider_label']),
+          ].whereType<String>().join(' | ');
+    final last = memory.last;
+    final watchLabel = memory.voice != null && last != null && seasons.isNotEmpty
+        ? tr('Продовжити · {s}×{e}', {'s': last.season, 'e': last.episode})
+        : tr('Дивитися');
+    final duration = intOf(movie['duration']);
+    final episodes = intOf(movie['episodes_count']);
+
+    return ScreenScroll(
+      onRefresh: _load,
+      children: [
+        _Hero(
+          poster: text(movie['poster']),
+          backdrop: text(movie['backdrop']),
+          onBack: () => context.canPop() ? context.pop() : context.go('/cinema'),
+          onMenu: _menu,
+        ),
+        const SizedBox(height: 16),
+        Text(text(movie['title']) ?? '', style: display(23).copyWith(height: 1.2)),
+        const SizedBox(height: 4),
+        Row(children: [
+          if (text(movie['title_original']) != null) Expanded(child: Text(text(movie['title_original'])!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: muted))) else const Spacer(),
+          if (text(movie['age_rating']) != null) Pill(label: text(movie['age_rating'])!),
+        ]),
+        const SizedBox(height: 14),
+        Row(children: [
+          Expanded(
+            child: _OutlineAction(
+              icon: status == null ? LucideIcons.plus : LucideIcons.chevronDown,
+              label: status == null ? tr('Додати до списку') : '$statusLabel',
+              color: _statusColors[status] ?? soft,
+              onTap: _statusDialog,
+            ),
+          ),
+          const SizedBox(width: 8),
+          _OutlineAction(icon: LucideIcons.bookmark, label: compact(movie['watchers_count']), color: gold, onTap: _statusDialog),
+          const SizedBox(width: 8),
+          _OutlineAction(
+            icon: LucideIcons.messageSquare,
+            color: soft,
+            onTap: () {
+              final target = commentsKey.currentContext;
+              if (target != null) unawaited(Scrollable.ensureVisible(target, duration: const Duration(milliseconds: 400), curve: Curves.easeOutCubic));
+            },
+          ),
+        ]),
+        if (players.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(22), border: Border.all(color: line)),
+            child: Column(children: [
+              Row(children: [
+                Expanded(child: PrimaryButton(label: watchLabel, icon: LucideIcons.play, onPressed: _watch)),
+                RoundIcon(icon: LucideIcons.ellipsisVertical, color: soft, onTap: _menu),
+              ]),
+              if (added != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
+                  child: Text(tr('Додано: {v}', {'v': added}), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
+                ),
+            ]),
+          ),
+        ],
+        const SizedBox(height: 16),
+        if (countries.isNotEmpty || movie['year'] != null)
+          _InfoRow(icon: LucideIcons.globe, label: [if (countries.isNotEmpty) countries.take(2).join(', '), if (movie['year'] != null) '${movie['year']}'].join(', ')),
+        if (episodes > 1)
+          _InfoRow(icon: LucideIcons.tv, label: duration > 0 ? tr('{n} еп. по ~{m} хв', {'n': episodes, 'm': duration}) : tr('{n} еп.', {'n': episodes}))
+        else if (duration > 0)
+          _InfoRow(icon: LucideIcons.clock, label: tr('{v} хв', {'v': duration})),
+        if (text(movie['type_label']) != null) _InfoRow(icon: LucideIcons.clapperboard, label: text(movie['type_label'])!),
+        if (mapOf(movie['ratings']).isNotEmpty)
+          _InfoRow(icon: LucideIcons.star, label: [for (final r in mapOf(movie['ratings']).entries) '${r.key.toUpperCase()} ${r.value}'].join('  ·  ')),
+        if (genres.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(genres.join(', '), style: body(14.5, color: const Color(0xFF9AA8FF), weight: FontWeight.w600))),
+        if (text(movie['tagline']) != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text('«${text(movie['tagline'])}»', style: body(14, color: soft).copyWith(fontStyle: FontStyle.italic))),
+        if (text(movie['description']) != null)
+          GestureDetector(
+            onTap: () => setState(() => about = !about),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: AnimatedSize(
+                duration: const Duration(milliseconds: 250),
+                alignment: Alignment.topCenter,
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(text(movie['description'])!, maxLines: about ? null : 5, overflow: about ? null : TextOverflow.fade, style: body(15, color: soft).copyWith(height: 1.5)),
+                  Padding(padding: const EdgeInsets.only(top: 4), child: Text(about ? tr('Згорнути') : tr('Читати повністю'), style: body(13.5, color: primary, weight: FontWeight.w600))),
+                ]),
+              ),
+            ),
+          ),
+        if (text(movie['trailer_url']) != null) ...[
+          SectionLabel(tr('Відео')),
+          _TrailerCard(image: text(movie['backdrop']) ?? text(movie['poster']), onTap: () => launchUrl(Uri.parse(text(movie['trailer_url'])!), mode: LaunchMode.externalApplication)),
+        ],
+        SectionLabel(tr('Рейтинг')),
+        _RatingBlock(movie: movie, ratings: mapOf(audience['ratings']), mine: intOf(state['rating']), onRate: _rate),
+        if (mapOf(audience['statuses']).values.any((v) => intOf(v) > 0)) ...[
+          SectionLabel(tr('У списках у людей')),
+          _ListsBar(counts: mapOf(audience['statuses']), statuses: statuses),
+        ],
+        if (maps(friends['users']).isNotEmpty) ...[
+          SectionLabel(tr('Друзі дивляться'), trailing: '${friends['total']}'),
+          Glass(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+            child: Column(children: [
+              for (final user in maps(friends['users']))
+                UserTile(
+                  user: user,
+                  subtitle: [
+                    for (final s in statuses)
+                      if (s['key'] == user['movie_status']) '${s['label']}',
+                    if (user['movie_rating'] != null) '★ ${user['movie_rating']}',
+                  ].join(' · '),
+                ),
+            ]),
+          ),
+        ],
+        if (similar.isNotEmpty) ...[
+          SectionLabel(tr('Рекомендуємо також')),
+          SizedBox(
+            height: 250,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: similar.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 10),
+              itemBuilder: (_, i) => SizedBox(width: 132, child: PosterCard(movie: similar[i])),
+            ),
+          ),
+        ],
+        SectionLabel(tr('Коментарі'), key: commentsKey, trailing: intOf(movie['comments_count']) > 0 ? '${movie['comments_count']}' : null),
+        Glass(
+          child: CommentsThread(
+            endpoint: Api.site('/cinema/${widget.slug}/comments'),
+            initial: maps(page['comments']),
+            total: intOf(movie['comments_count']),
+            canComment: movie['comments_enabled'] != false,
+            onCount: (value) => setState(() => movie['comments_count'] = value),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Hero extends StatelessWidget {
+  const _Hero({required this.poster, required this.backdrop, required this.onBack, required this.onMenu});
+  final String? poster;
+  final String? backdrop;
+  final VoidCallback onBack;
+  final VoidCallback onMenu;
+
+  @override
+  Widget build(BuildContext context) {
+    final cover = poster ?? backdrop;
+    return SizedBox(
+      height: 430,
+      child: Stack(children: [
+        Positioned.fill(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: Stack(fit: StackFit.expand, children: [
+              ImageFiltered(imageFilter: ImageFilter.blur(sigmaX: 26, sigmaY: 26), child: NetImage(backdrop ?? cover)),
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x66050712), Color(0xCC050712)]),
+                ),
+              ),
+            ]),
+          ),
+        ),
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 22),
+            child: AspectRatio(
+              aspectRatio: 2 / 3,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: const [BoxShadow(color: Color(0x99000000), blurRadius: 30, offset: Offset(0, 16), spreadRadius: -8)],
+                ),
+                child: NetImage(cover, radius: 24),
+              ),
+            ),
+          ),
+        ),
+        Positioned(left: 10, top: 10, child: RoundIcon(icon: LucideIcons.arrowLeft, color: Colors.white, filled: true, onTap: onBack)),
+        Positioned(right: 10, top: 10, child: RoundIcon(icon: LucideIcons.ellipsis, color: Colors.white, filled: true, onTap: onMenu)),
+      ]),
+    );
+  }
+}
+
+class _OutlineAction extends StatelessWidget {
+  const _OutlineAction({required this.icon, required this.color, required this.onTap, this.label});
+  final IconData icon;
+  final String? label;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color.withValues(alpha: 0.06),
+      shape: StadiumBorder(side: BorderSide(color: color.withValues(alpha: 0.55), width: 1.4)),
+      child: InkWell(
+        customBorder: const StadiumBorder(),
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: label == null ? 16 : 16, vertical: 12),
+          child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(icon, size: 19, color: color),
+            if (label != null) ...[
+              const SizedBox(width: 8),
+              Flexible(child: Text(label!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, color: color, weight: FontWeight.w600))),
+            ],
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(children: [
+        Icon(icon, size: 20, color: muted),
+        const SizedBox(width: 12),
+        Expanded(child: Text(label, style: body(15, color: soft))),
+      ]),
+    );
+  }
+}
+
+class _TrailerCard extends StatelessWidget {
+  const _TrailerCard({required this.image, required this.onTap});
+  final String? image;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(fit: StackFit.expand, children: [
+            NetImage(image),
+            const DecoratedBox(decoration: BoxDecoration(color: Color(0x66050712))),
+            Center(
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: const BoxDecoration(color: primary, shape: BoxShape.circle),
+                  child: const Icon(LucideIcons.play, color: Colors.white, size: 26),
+                ),
+                const SizedBox(width: 12),
+                Text(tr('Трейлер'), style: display(22, color: Colors.white)),
+              ]),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+/// Середня оцінка, розподіл 10…1 і моя оцінка.
+class _RatingBlock extends StatelessWidget {
+  const _RatingBlock({required this.movie, required this.ratings, required this.mine, required this.onRate});
+  final Map<String, dynamic> movie;
+  final Map<String, dynamic> ratings;
+  final int mine;
+  final ValueChanged<int?> onRate;
+
+  @override
+  Widget build(BuildContext context) {
+    final counts = {for (var i = 1; i <= 10; i++) i: intOf(ratings['$i'])};
+    final top = counts.values.fold<int>(0, (a, b) => b > a ? b : a);
+    final average = (movie['user_rating'] as num?)?.toDouble();
+    return Glass(
+      child: Column(children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+          SizedBox(
+            width: 110,
+            child: Column(children: [
+              Text(average == null ? '—' : average.toStringAsFixed(1), style: display(44)),
+              Text(tr('{n} оцінок', {'n': intOf(movie['ratings_count'])}), style: body(12.5, color: muted)),
+            ]),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(children: [
+              for (var i = 10; i >= 1; i--)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 1.5),
+                  child: Row(children: [
+                    SizedBox(width: 18, child: Text('$i', textAlign: TextAlign.right, style: body(10.5, color: faint))),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: top == 0 ? 0 : counts[i]! / top,
+                          minHeight: 6,
+                          backgroundColor: Colors.white.withValues(alpha: 0.06),
+                          valueColor: const AlwaysStoppedAnimation(primary),
+                        ),
+                      ),
+                    ),
+                  ]),
+                ),
+            ]),
+          ),
+        ]),
+        const SizedBox(height: 14),
+        Row(children: [
+          Text(tr('Моя оцінка'), style: body(13, color: muted)),
+          const Spacer(),
+          if (mine > 0) TextButton(onPressed: () => onRate(null), child: Text(tr('Скинути'), style: body(12.5, color: muted))),
+        ]),
+        Row(children: [
+          for (var i = 1; i <= 10; i++)
+            Expanded(
+              child: GestureDetector(
+                onTap: () => onRate(i),
+                child: Icon(mine >= i ? LucideIcons.star600 : LucideIcons.star, color: mine >= i ? gold : faint, size: 26),
+              ),
+            ),
+        ]),
+      ]),
+    );
+  }
+}
+
+/// «У списках у людей»: смуга з частками й легенда.
+class _ListsBar extends StatelessWidget {
+  const _ListsBar({required this.counts, required this.statuses});
+  final Map<String, dynamic> counts;
+  final List<Map<String, dynamic>> statuses;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = [
+      for (final s in statuses)
+        if (intOf(counts['${s['key']}']) > 0) (key: '${s['key']}', label: '${s['label']}', count: intOf(counts['${s['key']}'])),
+    ];
+    return Glass(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: SizedBox(
+            height: 14,
+            child: Row(children: [
+              for (final item in items) Expanded(flex: item.count, child: ColoredBox(color: _statusColors[item.key] ?? muted)),
+            ]),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Wrap(spacing: 18, runSpacing: 8, children: [
+          for (final item in items)
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              Container(width: 10, height: 10, decoration: BoxDecoration(color: _statusColors[item.key] ?? muted, shape: BoxShape.circle)),
+              const SizedBox(width: 6),
+              Text(item.label, style: body(13.5, color: muted)),
+              const SizedBox(width: 6),
+              Text(compact(item.count), style: body(13.5, weight: FontWeight.w700)),
+            ]),
+        ]),
+      ]),
+    );
+  }
+}
+
+// ───────────────────────── Вибір озвучки ─────────────────────────
+
+class VoicePickerScreen extends StatefulWidget {
+  const VoicePickerScreen({required this.players, required this.selected, required this.seasons, super.key});
+  final List<Map<String, dynamic>> players;
+  final String? selected;
+  final List<Season> seasons;
+
+  @override
+  State<VoicePickerScreen> createState() => _VoicePickerScreenState();
+}
+
+class _VoicePickerScreenState extends State<VoicePickerScreen> {
+  String filter = 'all';
+  bool hint = true;
+
+  static bool _subs(Map<String, dynamic> p) => text(p['translation_type']) == 'subtitles';
+
+  @override
+  Widget build(BuildContext context) {
+    final hasSubs = widget.players.any(_subs);
+    final list = widget.players.where((p) => filter == 'all' || (filter == 'subs') == _subs(p)).toList();
+    return Scaffold(
+      backgroundColor: voidColor,
+      body: SafeArea(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _PageBar(title: tr('Оберіть варіант'), onBack: () => Navigator.pop(context)),
+          if (hasSubs)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: Wrap(spacing: 8, children: [
+                SelectPill(label: tr('Усі'), selected: filter == 'all', onTap: () => setState(() => filter = 'all')),
+                SelectPill(label: tr('Озвучки'), selected: filter == 'voice', onTap: () => setState(() => filter = 'voice')),
+                SelectPill(label: tr('Субтитри'), selected: filter == 'subs', onTap: () => setState(() => filter = 'subs')),
+              ]),
+            ),
+          if (hint)
+            _Hint(
+              text: tr('Біля кожної озвучки — скільки серій у ній доступно. Якщо плеєр не завантажився, спробуйте іншу озвучку чи джерело.'),
+              onClose: () => setState(() => hint = false),
+            ),
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.only(bottom: 24),
+              itemCount: list.length,
+              separatorBuilder: (_, _) => Divider(height: 1, color: line, indent: 16, endIndent: 16),
+              itemBuilder: (_, i) {
+                final p = list[i];
+                final name = text(p['translation']) ?? tr('Оригінал');
+                final count = intOf(p['episodes']);
+                final active = text(p['key']) == widget.selected;
+                return InkWell(
+                  onTap: () => Navigator.pop(context, p),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(children: [
+                      _VoiceBadge(name: name, subs: _subs(p)),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(name, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(16, weight: FontWeight.w700)),
+                          const SizedBox(height: 2),
+                          Text(
+                            [if (count > 0) tr('{n} серій', {'n': count}), text(p['provider_label']), text(p['quality'])].whereType<String>().join(' · '),
+                            style: body(13, color: muted),
+                          ),
+                        ]),
+                      ),
+                      if (active) const Icon(LucideIcons.circleCheck, color: primary),
+                    ]),
+                  ),
+                );
+              },
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+class _VoiceBadge extends StatelessWidget {
+  const _VoiceBadge({required this.name, required this.subs});
+  final String name;
+  final bool subs;
+
+  static const _tones = [
+    [Color(0xFF6D5DFC), Color(0xFFA855F7)],
+    [Color(0xFF4F8BFF), Color(0xFF38E1FF)],
+    [Color(0xFFF04FD8), Color(0xFFA855F7)],
+    [Color(0xFF34D399), Color(0xFF4F8BFF)],
+    [Color(0xFFF5C451), Color(0xFFF0734A)],
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final letters = name.replaceAll(RegExp(r'[^\p{L}\p{N}]', unicode: true), '');
+    return Container(
+      width: 54,
+      height: 54,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(colors: _tones[name.hashCode.abs() % _tones.length], begin: Alignment.topLeft, end: Alignment.bottomRight),
+      ),
+      child: subs
+          ? const Icon(LucideIcons.captions, color: Colors.white)
+          : (letters.isEmpty ? const Icon(LucideIcons.mic, color: Colors.white) : Text(letters.characters.take(2).toString().toUpperCase(), style: display(18, color: Colors.white))),
+    );
+  }
+}
+
+class _PageBar extends StatelessWidget {
+  const _PageBar({required this.title, required this.onBack, this.subtitle, this.trailing});
+  final String title;
+  final String? subtitle;
+  final VoidCallback onBack;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(6, 6, 6, 8),
+      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: line))),
+      child: Row(children: [
+        IconButton(onPressed: onBack, icon: const Icon(LucideIcons.arrowLeft, color: ink)),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: display(20)),
+            if (subtitle != null) Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, color: muted)),
+          ]),
+        ),
+        ?trailing,
+      ]),
+    );
+  }
+}
+
+class _Hint extends StatelessWidget {
+  const _Hint({required this.text, required this.onClose});
+  final String text;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: lineStrong), color: Colors.white.withValues(alpha: 0.03)),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(child: Text(text, style: body(13.5, color: muted).copyWith(height: 1.45))),
+        IconButton(onPressed: onClose, icon: const Icon(LucideIcons.circleX, color: muted, size: 22)),
+      ]),
+    );
+  }
+}
+
+// ───────────────────────── Вибір серії ─────────────────────────
+
+class EpisodeListScreen extends StatefulWidget {
+  const EpisodeListScreen({required this.voice, required this.seasons, required this.marks, required this.memory, required this.onToggle, super.key});
+  final Map<String, dynamic> voice;
+  final List<Season> seasons;
+  final Set<String> marks;
+  final WatchMemory memory;
+  final Future<void> Function(Pick pick) onToggle;
+
+  @override
+  State<EpisodeListScreen> createState() => _EpisodeListScreenState();
+}
+
+class _EpisodeListScreenState extends State<EpisodeListScreen> {
+  late int season = widget.memory.last?.season ?? widget.seasons.first.number;
+  bool newestFirst = false;
+  bool hint = true;
+
+  @override
+  Widget build(BuildContext context) {
+    final current = widget.seasons.firstWhere((s) => s.number == season, orElse: () => widget.seasons.first);
+    final episodes = newestFirst ? current.episodes.reversed.toList() : current.episodes;
+    return Scaffold(
+      backgroundColor: voidColor,
+      body: SafeArea(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _PageBar(
+            title: tr('Оберіть серію'),
+            subtitle: tr('Джерело {v}', {'v': text(widget.voice['provider_label']) ?? ''}),
+            onBack: () => Navigator.pop(context),
+            trailing: IconButton(
+              tooltip: tr('Порядок'),
+              onPressed: () => setState(() => newestFirst = !newestFirst),
+              icon: Icon(newestFirst ? LucideIcons.arrowUpWideNarrow : LucideIcons.arrowDownNarrowWide, color: soft),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+            child: Text(text(widget.voice['translation']) ?? tr('Оригінал'), style: display(28)),
+          ),
+          if (widget.seasons.length > 1)
+            SizedBox(
+              height: 44,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                children: [
+                  for (final s in widget.seasons)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: SelectPill(label: tr('{n} сезон', {'n': s.number}), selected: s.number == current.number, onTap: () => setState(() => season = s.number)),
+                    ),
+                ],
+              ),
+            ),
+          if (hint)
+            _Hint(
+              text: tr('Якщо серія не запускається, спробуйте іншу озвучку чи джерело. Реклама у відео належить плеєру й до GameCon стосунку не має.'),
+              onClose: () => setState(() => hint = false),
+            ),
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.only(bottom: 24),
+              itemCount: episodes.length,
+              separatorBuilder: (_, _) => Divider(height: 1, color: line, indent: 16, endIndent: 16),
+              itemBuilder: (_, i) {
+                final pick = (season: current.number, episode: episodes[i]);
+                final seen = widget.marks.contains('${pick.season}:${pick.episode}');
+                final at = widget.memory.position(pick);
+                final last = widget.memory.last == pick;
+                return InkWell(
+                  onTap: () => Navigator.pop(context, pick),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+                    child: Row(children: [
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(
+                            widget.seasons.length > 1 ? tr('{s} сезон · {e} серія', {'s': pick.season, 'e': pick.episode}) : tr('{n} серія', {'n': pick.episode}),
+                            style: body(16.5, weight: FontWeight.w700, color: last ? primary : ink),
+                          ),
+                          if (at > 0) Text(tr('Переглянуто до {t}', {'t': clock(at.toDouble())}), style: body(13, color: muted)),
+                        ]),
+                      ),
+                      IconButton(
+                        tooltip: seen ? tr('Переглянуто') : tr('Позначити переглянутою'),
+                        onPressed: () async {
+                          await widget.onToggle(pick);
+                          if (mounted) setState(() => seen ? widget.marks.remove('${pick.season}:${pick.episode}') : widget.marks.add('${pick.season}:${pick.episode}'));
+                        },
+                        icon: Icon(seen ? LucideIcons.circleCheck : LucideIcons.circle, color: seen ? green : faint),
+                      ),
+                    ]),
+                  ),
+                );
+              },
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+// ───────────────────────── Власна оболонка плеєра ─────────────────────────
+
+/// Плеєр на весь екран: плеєр балансера у WebView, а поверх — наші кнопки. Керування через
+/// postMessage-API плеєра (Kodik: kodik_player_api; Videoseed/Playerjs: api). Поки плеєр не прислав
+/// час (реклама, старт), дотики йдуть у сам плеєр; далі — наша оболонка.
+class MoviePlayerScreen extends StatefulWidget {
+  const MoviePlayerScreen({
+    required this.title,
+    required this.source,
+    required this.seasons,
+    required this.pick,
+    required this.single,
+    required this.memory,
+    required this.onWatched,
+    super.key,
+  });
+
+  final String title;
+  final Map<String, dynamic> source;
+  final List<Season> seasons;
+  final Pick? pick;
+  final bool single;
+  final WatchMemory memory;
+  final ValueChanged<Pick> onWatched;
+
+  @override
+  State<MoviePlayerScreen> createState() => _MoviePlayerScreenState();
+}
+
+class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
+  WebViewController? web;
+  Pick? pick;
+  double time = 0;
+  double duration = 0;
+  bool playing = false;
+  bool ready = false;
+  bool controls = true;
+  bool locked = false;
+  bool seeking = false;
+  double seekValue = 0;
+  bool reported = false;
+  bool resumed = false;
+  int savedAt = 0;
+  Timer? hide;
+
+  bool get kodik => text(widget.source['provider']) == 'kodik';
+
+  List<Pick> get all => [for (final s in widget.seasons) for (final e in s.episodes) (season: s.number, episode: e)];
+
+  @override
+  void initState() {
+    super.initState();
+    pick = widget.pick;
+    SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    _load();
+  }
+
+  @override
+  void dispose() {
+    hide?.cancel();
+    _remember();
+    SystemChrome.setPreferredOrientations(const []);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    super.dispose();
+  }
+
+  void _load() {
+    final raw = text(widget.source['link']);
+    if (raw == null) return;
+    final iframe = RegExp('src=["\']([^"\']+)').firstMatch(raw);
+    final base = absolute(iframe?.group(1) ?? raw) ?? raw;
+    final url = episodeUrl(text(widget.source['provider']) ?? '', base, pick, bare: pick != null || widget.single);
+    widget.memory.last = pick;
+    setState(() {
+      time = 0;
+      duration = 0;
+      ready = false;
+      reported = false;
+      resumed = false;
+      playing = false;
+      web = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setBackgroundColor(Colors.black)
+        ..setUserAgent('Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36')
+        ..addJavaScriptChannel('GcBridge', onMessageReceived: (m) => _onPlayer(m.message))
+        ..loadRequest(Uri.parse('${Api.root}/play/embed').replace(queryParameters: {'src': url}));
+    });
+  }
+
+  void _remember() {
+    if (time > 5) widget.memory.savePosition(pick, time.floor());
+  }
+
+  void _onPlayer(String raw) {
+    Map<String, dynamic> data;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return;
+      data = Map<String, dynamic>.from(decoded);
+    } catch (_) {
+      return;
+    }
+    final name = '${data['key'] ?? data['event'] ?? ''}';
+    final value = data['value'] ?? data['data'];
+    final number = value is num ? value.toDouble() : (value is Map && value['time'] is num ? (value['time'] as num).toDouble() : double.tryParse('$value'));
+    if (!mounted) return;
+
+    if (RegExp(r'duration', caseSensitive: false).hasMatch(name)) {
+      if (number != null && number > 0) setState(() => duration = number);
+      return;
+    }
+    if (RegExp(r'time_update|^time$|timeupdate', caseSensitive: false).hasMatch(name)) {
+      if (number == null) return;
+      setState(() {
+        time = number;
+        playing = true;
+        if (!ready) {
+          ready = true;
+          _autoHide();
+        }
+      });
+      // Продовжити з місця, де зупинились (якщо далі за 20 с і не в самому кінці).
+      if (!resumed) {
+        resumed = true;
+        final at = widget.memory.position(pick);
+        if (at > 20 && (duration == 0 || at < duration - 30)) _send('seek', at.toDouble());
+      }
+      final now = DateTime.now().millisecondsSinceEpoch;
+      if (now - savedAt > 5000) {
+        savedAt = now;
+        _remember();
+      }
+      if (!reported && duration > 0 && time / duration > 0.9 && pick != null) {
+        reported = true;
+        widget.onWatched(pick!);
+      }
+      return;
+    }
+    if (RegExp('pause', caseSensitive: false).hasMatch(name)) {
+      setState(() => playing = false);
+    } else if (RegExp(r'play$|_play|^play', caseSensitive: false).hasMatch(name)) {
+      setState(() => playing = true);
+    } else if (RegExp(r'end', caseSensitive: false).hasMatch(name) && _next != null) {
+      setState(() => controls = true);
+    }
+  }
+
+  void _send(String method, [double? seconds]) {
+    final controller = web;
+    if (controller == null) return;
+    final msg = kodik
+        ? {'key': 'kodik_player_api', 'value': method == 'seek' ? {'method': method, 'seconds': seconds} : {'method': method}}
+        : (method == 'seek' ? {'api': 'seek', 'set': seconds} : {'api': method});
+    unawaited(controller.runJavaScript('window.gcSend && window.gcSend(${jsonEncode(msg)});').catchError((_) {}));
+  }
+
+  void _toggle() {
+    _send(playing ? 'pause' : 'play');
+    setState(() => playing = !playing);
+    _autoHide();
+  }
+
+  void _seekBy(double delta) {
+    final target = (time + delta).clamp(0, duration > 0 ? duration : time + delta).toDouble();
+    _send('seek', target);
+    setState(() => time = target);
+    _autoHide();
+  }
+
+  Pick? get _prev {
+    final i = pick == null ? -1 : all.indexOf(pick!);
+    return i > 0 ? all[i - 1] : null;
+  }
+
+  Pick? get _next {
+    final i = pick == null ? -1 : all.indexOf(pick!);
+    return i >= 0 && i < all.length - 1 ? all[i + 1] : null;
+  }
+
+  void _goto(Pick? target) {
+    if (target == null) return;
+    _remember();
+    pick = target;
+    _load();
+  }
+
+  void _autoHide() {
+    hide?.cancel();
+    hide = Timer(const Duration(seconds: 4), () {
+      if (mounted && playing && !seeking) setState(() => controls = false);
+    });
+  }
+
+  String get _subtitle {
+    final voice = text(widget.source['translation']);
+    final p = pick;
+    final episode = p == null ? null : (widget.seasons.length > 1 ? tr('{s} сезон · {e} серія', {'s': p.season, 'e': p.episode}) : tr('{n} серія', {'n': p.episode}));
+    return [episode, voice].whereType<String>().join(' · ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = web;
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(children: [
+        if (controller != null) Positioned.fill(child: WebViewWidget(controller: controller)),
+        if (!ready)
+          // Старт і реклама — у самому плеєрі; наша лише кнопка «Назад».
+          Positioned(left: 8, top: 8, child: SafeArea(child: RoundIcon(icon: LucideIcons.arrowLeft, color: Colors.white, filled: true, onTap: () => Navigator.pop(context))))
+        else if (locked)
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => setState(() => controls = !controls),
+              child: AnimatedOpacity(
+                opacity: controls ? 1 : 0,
+                duration: const Duration(milliseconds: 200),
+                child: Align(
+                  alignment: Alignment.topRight,
+                  child: SafeArea(child: Padding(padding: const EdgeInsets.all(12), child: RoundIcon(icon: LucideIcons.lock, color: Colors.white, filled: true, onTap: () => setState(() => locked = false)))),
+                ),
+              ),
+            ),
+          )
+        else
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                setState(() => controls = !controls);
+                if (controls) _autoHide();
+              },
+              onDoubleTapDown: (details) => _seekBy(details.localPosition.dx < MediaQuery.sizeOf(context).width / 2 ? -10 : 10),
+              onDoubleTap: () {},
+              child: AnimatedOpacity(
+                opacity: controls ? 1 : 0,
+                duration: const Duration(milliseconds: 220),
+                child: IgnorePointer(ignoring: !controls, child: _overlay(context)),
+              ),
+            ),
+          ),
+      ]),
+    );
+  }
+
+  Widget _overlay(BuildContext context) {
+    final max = duration > 0 ? duration : (time > 0 ? time : 1.0);
+    final value = (seeking ? seekValue : time).clamp(0, max).toDouble();
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xCC000000), Color(0x22000000), Color(0x22000000), Color(0xDD000000)],
+          stops: [0, 0.3, 0.65, 1],
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+          child: Column(children: [
+            Row(children: [
+              IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(LucideIcons.arrowLeft, color: Colors.white)),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: display(18, color: Colors.white)),
+                  if (_subtitle.isNotEmpty) Text(_subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, color: Colors.white70)),
+                ]),
+              ),
+              IconButton(
+                tooltip: tr('Заблокувати екран'),
+                onPressed: () => setState(() {
+                  locked = true;
+                  controls = false;
+                }),
+                icon: const Icon(LucideIcons.lockOpen, color: Colors.white),
+              ),
+            ]),
+            const Spacer(),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              if (widget.seasons.isNotEmpty) _CenterButton(icon: LucideIcons.skipBack, size: 30, onTap: _prev == null ? null : () => _goto(_prev)),
+              const SizedBox(width: 36),
+              _CenterButton(icon: LucideIcons.rotateCcw, size: 28, onTap: () => _seekBy(-10)),
+              const SizedBox(width: 28),
+              _CenterButton(icon: playing ? LucideIcons.pause : LucideIcons.play, size: 54, onTap: _toggle),
+              const SizedBox(width: 28),
+              _CenterButton(icon: LucideIcons.rotateCw, size: 28, onTap: () => _seekBy(10)),
+              const SizedBox(width: 36),
+              if (widget.seasons.isNotEmpty) _CenterButton(icon: LucideIcons.skipForward, size: 30, onTap: _next == null ? null : () => _goto(_next)),
+            ]),
+            const Spacer(),
+            SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 3,
+                activeTrackColor: primary,
+                inactiveTrackColor: Colors.white24,
+                thumbColor: Colors.white,
+                overlayShape: SliderComponentShape.noOverlay,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+              ),
+              child: Slider(
+                value: value,
+                max: max,
+                onChangeStart: (v) => setState(() {
+                  seeking = true;
+                  seekValue = v;
+                  hide?.cancel();
+                }),
+                onChanged: (v) => setState(() => seekValue = v),
+                onChangeEnd: (v) {
+                  _send('seek', v);
+                  setState(() {
+                    seeking = false;
+                    time = v;
+                  });
+                  _autoHide();
+                },
+              ),
+            ),
+            Row(children: [
+              const SizedBox(width: 8),
+              Text('${clock(value)} / ${duration > 0 ? clock(duration) : '--:--'}', style: body(14, color: Colors.white)),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: () => _seekBy(85),
+                icon: const Icon(LucideIcons.chevronsRight, color: Colors.white, size: 20),
+                label: Text(tr('Пропустити 85 с'), style: body(13.5, color: Colors.white, weight: FontWeight.w600)),
+              ),
+              if (_next != null)
+                TextButton.icon(
+                  onPressed: () => _goto(_next),
+                  icon: const Icon(LucideIcons.stepForward, color: Colors.white, size: 20),
+                  label: Text(tr('Наступна серія'), style: body(13.5, color: Colors.white, weight: FontWeight.w600)),
+                ),
+            ]),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+class _CenterButton extends StatelessWidget {
+  const _CenterButton({required this.icon, required this.size, required this.onTap});
+  final IconData icon;
+  final double size;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: onTap,
+      iconSize: size,
+      icon: Icon(icon, color: onTap == null ? Colors.white30 : Colors.white),
+    );
+  }
+}

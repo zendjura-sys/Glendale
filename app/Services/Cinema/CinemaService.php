@@ -173,7 +173,7 @@ class CinemaService
                 continue;
             }
             $seen[] = $id;
-            $values = array_intersect_key($source, array_flip(['translation', 'translation_type', 'quality', 'link']));
+            $values = array_intersect_key($source, array_flip(['translation', 'translation_type', 'quality', 'link', 'episodes']));
             /** @var MovieSource|null $model */
             $model = $existing->get($id);
             if ($model === null) {

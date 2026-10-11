@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gamecon/cinema.dart';
+import 'package:gamecon/movie_screen.dart';
 
 void main() {
   test('Kodik: серія без власних перемикачів плеєра', () {
