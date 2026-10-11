@@ -11,6 +11,7 @@ use App\Services\Cinema\BulkPlayers;
 use App\Services\Cinema\CinemaService;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -22,6 +23,9 @@ class BulkPlayersTest extends TestCase
 
     /** @var list<array<string, mixed>> */
     private array $results = [];
+
+    /** @var list<array<string, mixed>>|null відповідь Kodik на пошук за Shikimori ID */
+    private ?array $shikimori = null;
 
     /**
      * @return array<string, mixed>
@@ -52,7 +56,11 @@ class BulkPlayersTest extends TestCase
         config(['services.kodik.api_url' => 'https://kodik-api.com', 'services.kodik.token' => null]);
         app(SiteSettings::class)->putSecret('kodik_token', 'kodik-token');
         $this->results = [$this->item('movie-1', 'Дубляж', 'new'), $this->item('movie-2', 'LostFilm')];
-        Http::fake(['kodik-api.com/search*' => fn () => Http::response(['results' => $this->results])]);
+        Http::fake(['kodik-api.com/search*' => function (Request $request) {
+            parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $q);
+
+            return Http::response(['results' => isset($q['shikimori_id']) && $this->shikimori !== null ? $this->shikimori : $this->results]);
+        }]);
     }
 
     public function test_admin_starts_bulk_and_add_only_keeps_existing_players(): void
@@ -132,5 +140,16 @@ class BulkPlayersTest extends TestCase
         $this->assertSame(['Дубляж', null, 'LostFilm'], $movie->sources()->orderBy('id')->pluck('translation')->all());
         $this->assertSame('https://kodik.info/video/movie-1/old/720p', $movie->sources()->where('external_id', 'movie-1')->value('link'));
         $this->assertFalse(RefreshMoviePlayers::due($movie->fresh()));
+    }
+
+    public function test_kodik_voices_are_merged_from_every_id(): void
+    {
+        $this->results = [$this->item('movie-1', 'Дубляж')];
+        $this->shikimori = [$this->item('anime-2', 'AniDub'), $this->item('movie-1', 'Дубляж')];
+        $movie = Movie::query()->create(['slug' => 'bleach', 'type' => 'anime', 'title' => 'Бліч', 'kinopoisk_id' => '301', 'shikimori_id' => '269', 'is_published' => true]);
+
+        $found = app(CinemaService::class)->fetchPlayers($movie, ['kodik'])['kodik'];
+
+        $this->assertSame(['Дубляж', 'AniDub'], array_column($found, 'translation'));
     }
 }

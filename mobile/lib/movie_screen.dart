@@ -9,6 +9,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import 'api.dart';
 import 'cinema.dart' show PosterCard;
@@ -111,6 +112,13 @@ class _MovieScreenState extends State<MovieScreen> {
   Set<String> marks = {};
   bool about = false;
   final commentsKey = GlobalKey();
+  final scroll = ScrollController();
+
+  @override
+  void dispose() {
+    scroll.dispose();
+    super.dispose();
+  }
 
   Api get api => AppScope.read(context).session.api;
   late final WatchMemory memory = WatchMemory(AppScope.read(context).session.prefs, widget.slug);
@@ -150,6 +158,8 @@ class _MovieScreenState extends State<MovieScreen> {
             (number: intOf(s['number']), episodes: [for (final e in (s['episodes'] as List? ?? const [])) intOf(e)]),
         ].where((s) => s.episodes.isNotEmpty).toList();
         marks = {for (final m in (result['marks'] as List? ?? const [])) '$m'};
+        // Сервер щойно міг дотягнути нові озвучки — показуємо актуальний список.
+        if (result['players'] is List && data != null) data!['players'] = result['players'];
       });
     } catch (_) {
       // Посерійний режим вимкнено або мережа — серії обираються в самому плеєрі.
@@ -161,15 +171,23 @@ class _MovieScreenState extends State<MovieScreen> {
   Map<String, dynamic>? get voice {
     final list = players;
     if (list.isEmpty) return null;
-    final key = memory.voice;
+    final key = memory.voice ?? text(_state['player_key']);
     return list.firstWhere((p) => text(p['key']) == key, orElse: () => list.first);
+  }
+
+  Map<String, dynamic> get _state => mapOf(data?['state']);
+
+  /// Де зупинились (з акаунта — щоб продовжити з іншого пристрою).
+  Pick? get _serverPick {
+    final e = intOf(_state['episode']);
+    return e > 0 ? (season: intOf(_state['season']) > 0 ? intOf(_state['season']) : 1, episode: e) : null;
   }
 
   /// Наступна серія: після останньої переглянутої (позначки) або остання відкрита.
   Pick? _continuePick(List<Season> list) {
     final all = [for (final s in list) for (final e in s.episodes) (season: s.number, episode: e)];
     if (all.isEmpty) return null;
-    final last = memory.last;
+    final last = memory.last ?? _serverPick;
     if (last != null && all.contains(last)) return last;
     var seen = -1;
     for (var i = 0; i < all.length; i++) {
@@ -182,7 +200,7 @@ class _MovieScreenState extends State<MovieScreen> {
   Future<void> _watch() async {
     final current = voice;
     if (current == null) return;
-    if (memory.voice == null) return _chooseVoice();
+    if (memory.voice == null && text(_state['player_key']) == null) return _chooseVoice();
     final list = _episodic(current) ? voiceSeasons(seasons, current) : const <Season>[];
     await _open(current, list.isEmpty ? null : _continuePick(list));
   }
@@ -215,10 +233,20 @@ class _MovieScreenState extends State<MovieScreen> {
         pick: pick,
         single: intOf(movie['episodes_count']) <= 1 && list.isEmpty,
         memory: memory,
+        resumeAt: pick != null && pick == _serverPick ? intOf(_state['position']) : (pick == null ? intOf(_state['position']) : 0),
         onWatched: (p) {
           if (!marks.contains('${p.season}:${p.episode}')) unawaited(_toggleMark(p));
-          unawaited(api.put(Api.site('/cinema/${widget.slug}/progress'), {'season': p.season, 'episode': p.episode}).then(_applyState).catchError((_) {}));
         },
+        // Серія, секунда й озвучка — в акаунт: «Продовжити» працює й на сайті, й на іншому телефоні.
+        onProgress: (p, seconds) => api
+            .put(Api.site('/cinema/${widget.slug}/progress'), {
+              'season': p?.season,
+              'episode': p?.episode ?? 1,
+              'position': seconds,
+              'player_key': text(source['key']),
+            })
+            .then(_applyState)
+            .catchError((_) {}),
       ),
     ));
     if (mounted) setState(() {});
@@ -359,14 +387,15 @@ class _MovieScreenState extends State<MovieScreen> {
             text(current['translation']) ?? tr('Оригінал'),
             text(current['provider_label']),
           ].whereType<String>().join(' | ');
-    final last = memory.last;
-    final watchLabel = memory.voice != null && last != null && seasons.isNotEmpty
+    final last = memory.last ?? _serverPick;
+    final watchLabel = (memory.voice != null || text(_state['player_key']) != null) && last != null && seasons.isNotEmpty
         ? tr('Продовжити · {s}×{e}', {'s': last.season, 'e': last.episode})
         : tr('Дивитися');
     final duration = intOf(movie['duration']);
     final episodes = intOf(movie['episodes_count']);
 
     return ScreenScroll(
+      controller: scroll,
       onRefresh: _load,
       children: [
         _Hero(
@@ -400,8 +429,13 @@ class _MovieScreenState extends State<MovieScreen> {
             label: intOf(movie['comments_count']) > 0 ? compact(movie['comments_count']) : null,
             color: soft,
             onTap: () {
+              // Список будується ліниво: коментарі ще можуть бути не створені — їдемо в самий низ.
               final target = commentsKey.currentContext;
-              if (target != null) unawaited(Scrollable.ensureVisible(target, duration: const Duration(milliseconds: 400), curve: Curves.easeOutCubic));
+              if (target != null) {
+                unawaited(Scrollable.ensureVisible(target, duration: const Duration(milliseconds: 400), curve: Curves.easeOutCubic));
+              } else if (scroll.hasClients) {
+                unawaited(scroll.animateTo(scroll.position.maxScrollExtent, duration: const Duration(milliseconds: 600), curve: Curves.easeOutCubic));
+              }
             },
           ),
         ]),
@@ -1104,9 +1138,10 @@ class _EpisodeListScreenState extends State<EpisodeListScreen> {
 
 // ───────────────────────── Власна оболонка плеєра ─────────────────────────
 
-/// Плеєр на весь екран: плеєр балансера у WebView, а поверх — наші кнопки. Керування через
-/// postMessage-API плеєра (Kodik: kodik_player_api; Videoseed/Playerjs: api). Поки плеєр не прислав
-/// час (реклама, старт), дотики йдуть у сам плеєр; далі — наша оболонка.
+/// Плеєр на весь екран: відео балансера у WebView, а все керування — наше (API плеєра через postMessage:
+/// Kodik — `kodik_player_api` / події `kodik_player_*`, Videoseed — Playerjs `api` / `event`).
+/// Перемикачі балансера сховані (hide_selectors), серія й озвучка обираються в застосунку.
+/// Прогрес (серія, секунда, озвучка) зберігається локально й в акаунті.
 class MoviePlayerScreen extends StatefulWidget {
   const MoviePlayerScreen({
     required this.title,
@@ -1116,6 +1151,8 @@ class MoviePlayerScreen extends StatefulWidget {
     required this.single,
     required this.memory,
     required this.onWatched,
+    required this.onProgress,
+    this.resumeAt = 0,
     super.key,
   });
 
@@ -1126,12 +1163,18 @@ class MoviePlayerScreen extends StatefulWidget {
   final bool single;
   final WatchMemory memory;
   final ValueChanged<Pick> onWatched;
+  final Future<void> Function(Pick? pick, int seconds) onProgress;
+
+  /// Секунда з акаунта (якщо локально позиції немає).
+  final int resumeAt;
 
   @override
   State<MoviePlayerScreen> createState() => _MoviePlayerScreenState();
 }
 
 class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
+  static const _speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+
   WebViewController? web;
   Pick? pick;
   double time = 0;
@@ -1141,11 +1184,16 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
   bool controls = true;
   bool locked = false;
   bool seeking = false;
+  bool tapped = false;
+  bool passThrough = false;
   double seekValue = 0;
+  double speed = 1;
   bool reported = false;
   bool resumed = false;
   int savedAt = 0;
+  int sentAt = 0;
   Timer? hide;
+  Timer? fallback;
 
   bool get kodik => text(widget.source['provider']) == 'kodik';
 
@@ -1163,37 +1211,54 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
   @override
   void dispose() {
     hide?.cancel();
-    _remember();
+    fallback?.cancel();
+    _remember(push: true);
     SystemChrome.setPreferredOrientations(const []);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 
-  void _load() {
-    final raw = text(widget.source['link']);
-    if (raw == null) return;
+  String _url(Pick? target) {
+    final raw = text(widget.source['link']) ?? '';
     final iframe = RegExp('src=["\']([^"\']+)').firstMatch(raw);
     final base = absolute(iframe?.group(1) ?? raw) ?? raw;
-    final url = episodeUrl(text(widget.source['provider']) ?? '', base, pick, bare: pick != null || widget.single);
+    return episodeUrl(text(widget.source['provider']) ?? '', base, target, bare: target != null || widget.single || widget.seasons.isNotEmpty);
+  }
+
+  void _load() {
     widget.memory.last = pick;
+    final controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(Colors.black)
+      ..setUserAgent('Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36')
+      ..addJavaScriptChannel('GcBridge', onMessageReceived: (m) => _onPlayer(m.message))
+      ..loadRequest(Uri.parse('${Api.root}/play/embed').replace(queryParameters: {'src': _url(pick)}));
+    // Дозволяємо запуск відео з нашої кнопки (без дотику всередині плеєра).
+    final platform = controller.platform;
+    if (platform is AndroidWebViewController) unawaited(platform.setMediaPlaybackRequiresUserGesture(false));
     setState(() {
       time = 0;
       duration = 0;
       ready = false;
+      tapped = false;
+      passThrough = false;
       reported = false;
       resumed = false;
       playing = false;
-      web = WebViewController()
-        ..setJavaScriptMode(JavaScriptMode.unrestricted)
-        ..setBackgroundColor(Colors.black)
-        ..setUserAgent('Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36')
-        ..addJavaScriptChannel('GcBridge', onMessageReceived: (m) => _onPlayer(m.message))
-        ..loadRequest(Uri.parse('${Api.root}/play/embed').replace(queryParameters: {'src': url}));
+      controls = true;
+      web = controller;
     });
   }
 
-  void _remember() {
-    if (time > 5) widget.memory.savePosition(pick, time.floor());
+  /// Зберегти позицію: локально — завжди, в акаунт — не частіше ніж раз на 15 с (і при виході).
+  void _remember({bool push = false}) {
+    if (time < 5) return;
+    widget.memory.savePosition(pick, time.floor());
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (push || now - sentAt > 15000) {
+      sentAt = now;
+      unawaited(widget.onProgress(pick, time.floor()));
+    }
   }
 
   void _onPlayer(String raw) {
@@ -1205,63 +1270,104 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
     } catch (_) {
       return;
     }
-    final name = '${data['key'] ?? data['event'] ?? ''}';
+    if (!mounted) return;
+    final name = '${data['key'] ?? data['event'] ?? ''}'.toLowerCase();
     final value = data['value'] ?? data['data'];
     final number = value is num ? value.toDouble() : (value is Map && value['time'] is num ? (value['time'] as num).toDouble() : double.tryParse('$value'));
-    if (!mounted) return;
 
-    if (RegExp(r'duration', caseSensitive: false).hasMatch(name)) {
+    if (name.contains('duration')) {
       if (number != null && number > 0) setState(() => duration = number);
-      return;
-    }
-    if (RegExp(r'time_update|^time$|timeupdate', caseSensitive: false).hasMatch(name)) {
+    } else if (name.contains('time_update') || name == 'time' || name == 'timeupdate' || name.endsWith('_time')) {
       if (number == null) return;
-      setState(() {
-        time = number;
-        playing = true;
-        if (!ready) {
-          ready = true;
-          _autoHide();
-        }
-      });
-      // Продовжити з місця, де зупинились (якщо далі за 20 с і не в самому кінці).
-      if (!resumed) {
-        resumed = true;
-        final at = widget.memory.position(pick);
-        if (at > 20 && (duration == 0 || at < duration - 30)) _send('seek', at.toDouble());
-      }
-      final now = DateTime.now().millisecondsSinceEpoch;
-      if (now - savedAt > 5000) {
-        savedAt = now;
-        _remember();
-      }
-      if (!reported && duration > 0 && time / duration > 0.9 && pick != null) {
-        reported = true;
-        widget.onWatched(pick!);
-      }
-      return;
-    }
-    if (RegExp('pause', caseSensitive: false).hasMatch(name)) {
+      _onTime(number);
+    } else if (name.contains('current_episode') && value is Map) {
+      // Kodik сам повідомляє, яка серія грає (після change_episode чи власного перемикання).
+      final e = intOf(value['episode']);
+      if (e > 0) setState(() => pick = (season: intOf(value['season']) > 0 ? intOf(value['season']) : (pick?.season ?? 1), episode: e));
+    } else if (name.contains('pause')) {
       setState(() => playing = false);
-    } else if (RegExp(r'play$|_play|^play', caseSensitive: false).hasMatch(name)) {
+      _remember(push: true);
+    } else if (name.contains('ended') || name == 'end' || name == 'finish') {
+      _remember(push: true);
+      if (_next != null) {
+        _goto(_next);
+      } else {
+        setState(() => controls = true);
+      }
+    } else if (name.contains('play') || name.contains('started') || name == 'start') {
       setState(() => playing = true);
-    } else if (RegExp(r'end', caseSensitive: false).hasMatch(name) && _next != null) {
-      setState(() => controls = true);
     }
   }
 
-  void _send(String method, [double? seconds]) {
+  void _onTime(double value) {
+    fallback?.cancel();
+    setState(() {
+      time = value;
+      playing = true;
+      passThrough = false;
+      if (!ready) {
+        ready = true;
+        _autoHide();
+      }
+    });
+    // Продовжити з місця, де зупинились (якщо далі за 20 с і не в самому кінці).
+    if (!resumed) {
+      resumed = true;
+      final local = widget.memory.position(pick);
+      final at = local > 0 ? local : (pick == widget.pick ? widget.resumeAt : 0);
+      if (at > 20 && (duration == 0 || at < duration - 30)) {
+        _send('seek', at.toDouble());
+        if (speed != 1) _speed(speed);
+      }
+    }
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - savedAt > 5000) {
+      savedAt = now;
+      _remember();
+    }
+    if (!reported && duration > 0 && time / duration > 0.9 && pick != null) {
+      reported = true;
+      widget.onWatched(pick!);
+    }
+  }
+
+  void _send(String method, [Object? arg]) {
     final controller = web;
     if (controller == null) return;
-    final msg = kodik
-        ? {'key': 'kodik_player_api', 'value': method == 'seek' ? {'method': method, 'seconds': seconds} : {'method': method}}
-        : (method == 'seek' ? {'api': 'seek', 'set': seconds} : {'api': method});
+    final Map<String, dynamic> msg;
+    if (kodik) {
+      final value = <String, dynamic>{'method': method};
+      if (method == 'seek') value['seconds'] = arg;
+      if (method == 'speed') value['speed'] = arg;
+      if (method == 'change_episode' && arg is Pick) {
+        value
+          ..['season'] = arg.season
+          ..['episode'] = arg.episode
+          ..['without_reload'] = true;
+      }
+      msg = {'key': 'kodik_player_api', 'value': value};
+    } else {
+      msg = arg == null ? {'api': method} : {'api': method, 'set': arg};
+    }
     unawaited(controller.runJavaScript('window.gcSend && window.gcSend(${jsonEncode(msg)});').catchError((_) {}));
   }
 
+  /// Перший запуск — з нашої кнопки. Якщо плеєр не запустився (реклама, політика автозапуску),
+  /// за 4 с пропускаємо дотики до самого плеєра, поки він не почне грати.
+  void _start() {
+    setState(() => tapped = true);
+    _send('play');
+    fallback?.cancel();
+    fallback = Timer(const Duration(seconds: 4), () {
+      if (mounted && !ready) setState(() => passThrough = true);
+    });
+  }
+
   void _toggle() {
+    if (!ready) return _start();
     _send(playing ? 'pause' : 'play');
     setState(() => playing = !playing);
+    if (!playing) _remember(push: true);
     _autoHide();
   }
 
@@ -1270,6 +1376,11 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
     _send('seek', target);
     setState(() => time = target);
     _autoHide();
+  }
+
+  void _speed(double value) {
+    _send('speed', value);
+    setState(() => speed = value);
   }
 
   Pick? get _prev {
@@ -1284,7 +1395,20 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
 
   void _goto(Pick? target) {
     if (target == null) return;
-    _remember();
+    _remember(push: true);
+    if (kodik && ready) {
+      // Kodik перемикає серію без перезавантаження — відео не зникає, повноекранний режим лишається.
+      setState(() {
+        pick = target;
+        time = 0;
+        duration = 0;
+        reported = false;
+        resumed = false;
+      });
+      widget.memory.last = target;
+      _send('change_episode', target);
+      return;
+    }
     pick = target;
     _load();
   }
@@ -1294,6 +1418,27 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
     hide = Timer(const Duration(seconds: 4), () {
       if (mounted && playing && !seeking) setState(() => controls = false);
     });
+  }
+
+  Future<void> _speedMenu() async {
+    hide?.cancel();
+    final picked = await showModalBottomSheet<double>(
+      context: context,
+      backgroundColor: popover,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (sheet) => SafeArea(
+        child: Wrap(alignment: WrapAlignment.center, spacing: 8, runSpacing: 8, children: [
+          Padding(padding: const EdgeInsets.all(14), child: Text(tr('Швидкість'), style: display(17))),
+          for (final s in _speeds)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: SelectPill(label: s == 1 ? tr('Звичайна') : '${s}x', selected: s == speed, onTap: () => Navigator.pop(sheet, s)),
+            ),
+        ]),
+      ),
+    );
+    if (picked != null) _speed(picked);
+    _autoHide();
   }
 
   String get _subtitle {
@@ -1306,46 +1451,66 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
   @override
   Widget build(BuildContext context) {
     final controller = web;
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(children: [
-        if (controller != null) Positioned.fill(child: WebViewWidget(controller: controller)),
-        if (!ready)
-          // Старт і реклама — у самому плеєрі; наша лише кнопка «Назад».
-          Positioned(left: 8, top: 8, child: SafeArea(child: RoundIcon(icon: LucideIcons.arrowLeft, color: Colors.white, filled: true, onTap: () => Navigator.pop(context))))
-        else if (locked)
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => setState(() => controls = !controls),
-              child: AnimatedOpacity(
-                opacity: controls ? 1 : 0,
-                duration: const Duration(milliseconds: 200),
-                child: Align(
-                  alignment: Alignment.topRight,
-                  child: SafeArea(child: Padding(padding: const EdgeInsets.all(12), child: RoundIcon(icon: LucideIcons.lock, color: Colors.white, filled: true, onTap: () => setState(() => locked = false)))),
+    return PopScope(
+      onPopInvokedWithResult: (_, _) => _remember(push: true),
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(children: [
+          if (controller != null) Positioned.fill(child: WebViewWidget(controller: controller)),
+          if (passThrough && !ready)
+            // Плеєр просить дотик усередині (реклама чи перший запуск) — пропускаємо його, лишаємо «Назад».
+            Positioned(
+              left: 8,
+              top: 8,
+              right: 8,
+              child: SafeArea(
+                child: Row(children: [
+                  _OverlayIcon(icon: LucideIcons.arrowLeft, onTap: () => Navigator.pop(context)),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(12)),
+                      child: Text(tr('Торкніться відео, щоб запустити'), style: body(13, color: Colors.white)),
+                    ),
+                  ),
+                ]),
+              ),
+            )
+          else if (locked)
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => setState(() => controls = !controls),
+                child: AnimatedOpacity(
+                  opacity: controls ? 1 : 0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Align(
+                    alignment: Alignment.topRight,
+                    child: SafeArea(child: Padding(padding: const EdgeInsets.all(12), child: _OverlayIcon(icon: LucideIcons.lock, onTap: () => setState(() => locked = false)))),
+                  ),
+                ),
+              ),
+            )
+          else
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  setState(() => controls = !controls);
+                  if (controls) _autoHide();
+                },
+                onDoubleTapDown: (details) => _seekBy(details.localPosition.dx < MediaQuery.sizeOf(context).width / 2 ? -10 : 10),
+                onDoubleTap: () {},
+                child: AnimatedOpacity(
+                  opacity: controls || !ready ? 1 : 0,
+                  duration: const Duration(milliseconds: 220),
+                  child: IgnorePointer(ignoring: !(controls || !ready), child: _overlay(context)),
                 ),
               ),
             ),
-          )
-        else
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                setState(() => controls = !controls);
-                if (controls) _autoHide();
-              },
-              onDoubleTapDown: (details) => _seekBy(details.localPosition.dx < MediaQuery.sizeOf(context).width / 2 ? -10 : 10),
-              onDoubleTap: () {},
-              child: AnimatedOpacity(
-                opacity: controls ? 1 : 0,
-                duration: const Duration(milliseconds: 220),
-                child: IgnorePointer(ignoring: !controls, child: _overlay(context)),
-              ),
-            ),
-          ),
-      ]),
+        ]),
+      ),
     );
   }
 
@@ -1353,13 +1518,17 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
     final max = duration > 0 ? duration : (time > 0 ? time : 1.0);
     final value = (seeking ? seekValue : time).clamp(0, max).toDouble();
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xCC000000), Color(0x22000000), Color(0x22000000), Color(0xDD000000)],
-          stops: [0, 0.3, 0.65, 1],
-        ),
+      decoration: BoxDecoration(
+        // До старту відео ховаємо стандартний вигляд плеєра під нашою заставкою.
+        color: ready ? null : Colors.black.withValues(alpha: 0.82),
+        gradient: ready
+            ? const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xCC000000), Color(0x22000000), Color(0x22000000), Color(0xDD000000)],
+                stops: [0, 0.3, 0.65, 1],
+              )
+            : null,
       ),
       child: SafeArea(
         child: Padding(
@@ -1374,75 +1543,113 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
                   if (_subtitle.isNotEmpty) Text(_subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5, color: Colors.white70)),
                 ]),
               ),
+              TextButton.icon(
+                onPressed: ready ? _speedMenu : null,
+                icon: const Icon(LucideIcons.gauge, color: Colors.white, size: 20),
+                label: Text(speed == 1 ? tr('Звичайна') : '${speed}x', style: body(14, color: Colors.white, weight: FontWeight.w600)),
+              ),
               IconButton(
                 tooltip: tr('Заблокувати екран'),
-                onPressed: () => setState(() {
-                  locked = true;
-                  controls = false;
-                }),
-                icon: const Icon(LucideIcons.lockOpen, color: Colors.white),
+                onPressed: ready
+                    ? () => setState(() {
+                          locked = true;
+                          controls = false;
+                        })
+                    : null,
+                icon: Icon(LucideIcons.lockOpen, color: ready ? Colors.white : Colors.white38),
               ),
             ]),
             const Spacer(),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              if (widget.seasons.isNotEmpty) _CenterButton(icon: LucideIcons.skipBack, size: 30, onTap: _prev == null ? null : () => _goto(_prev)),
-              const SizedBox(width: 36),
-              _CenterButton(icon: LucideIcons.rotateCcw, size: 28, onTap: () => _seekBy(-10)),
-              const SizedBox(width: 28),
-              _CenterButton(icon: playing ? LucideIcons.pause : LucideIcons.play, size: 54, onTap: _toggle),
-              const SizedBox(width: 28),
-              _CenterButton(icon: LucideIcons.rotateCw, size: 28, onTap: () => _seekBy(10)),
-              const SizedBox(width: 36),
-              if (widget.seasons.isNotEmpty) _CenterButton(icon: LucideIcons.skipForward, size: 30, onTap: _next == null ? null : () => _goto(_next)),
-            ]),
+            if (!ready)
+              Column(mainAxisSize: MainAxisSize.min, children: [
+                _CenterButton(icon: LucideIcons.play600, size: 64, onTap: _start),
+                if (tapped)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white70)),
+                      const SizedBox(width: 8),
+                      Text(tr('Завантаження…'), style: body(13, color: Colors.white70)),
+                    ]),
+                  ),
+              ])
+            else
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                if (widget.seasons.isNotEmpty) _CenterButton(icon: LucideIcons.skipBack, size: 30, onTap: _prev == null ? null : () => _goto(_prev)),
+                const SizedBox(width: 36),
+                _CenterButton(icon: LucideIcons.rotateCcw, size: 28, onTap: () => _seekBy(-10)),
+                const SizedBox(width: 28),
+                _CenterButton(icon: playing ? LucideIcons.pause : LucideIcons.play, size: 54, onTap: _toggle),
+                const SizedBox(width: 28),
+                _CenterButton(icon: LucideIcons.rotateCw, size: 28, onTap: () => _seekBy(10)),
+                const SizedBox(width: 36),
+                if (widget.seasons.isNotEmpty) _CenterButton(icon: LucideIcons.skipForward, size: 30, onTap: _next == null ? null : () => _goto(_next)),
+              ]),
             const Spacer(),
-            SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                trackHeight: 3,
-                activeTrackColor: primary,
-                inactiveTrackColor: Colors.white24,
-                thumbColor: Colors.white,
-                overlayShape: SliderComponentShape.noOverlay,
-                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
-              ),
-              child: Slider(
-                value: value,
-                max: max,
-                onChangeStart: (v) => setState(() {
-                  seeking = true;
-                  seekValue = v;
-                  hide?.cancel();
-                }),
-                onChanged: (v) => setState(() => seekValue = v),
-                onChangeEnd: (v) {
-                  _send('seek', v);
-                  setState(() {
-                    seeking = false;
-                    time = v;
-                  });
-                  _autoHide();
-                },
-              ),
-            ),
-            Row(children: [
-              const SizedBox(width: 8),
-              Text('${clock(value)} / ${duration > 0 ? clock(duration) : '--:--'}', style: body(14, color: Colors.white)),
-              const Spacer(),
-              TextButton.icon(
-                onPressed: () => _seekBy(85),
-                icon: const Icon(LucideIcons.chevronsRight, color: Colors.white, size: 20),
-                label: Text(tr('Пропустити 85 с'), style: body(13.5, color: Colors.white, weight: FontWeight.w600)),
-              ),
-              if (_next != null)
-                TextButton.icon(
-                  onPressed: () => _goto(_next),
-                  icon: const Icon(LucideIcons.stepForward, color: Colors.white, size: 20),
-                  label: Text(tr('Наступна серія'), style: body(13.5, color: Colors.white, weight: FontWeight.w600)),
+            if (ready) ...[
+              SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  trackHeight: 3,
+                  activeTrackColor: primary,
+                  inactiveTrackColor: Colors.white24,
+                  thumbColor: Colors.white,
+                  overlayShape: SliderComponentShape.noOverlay,
+                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
                 ),
-            ]),
+                child: Slider(
+                  value: value,
+                  max: max,
+                  onChangeStart: (v) => setState(() {
+                    seeking = true;
+                    seekValue = v;
+                    hide?.cancel();
+                  }),
+                  onChanged: (v) => setState(() => seekValue = v),
+                  onChangeEnd: (v) {
+                    _send('seek', v);
+                    setState(() {
+                      seeking = false;
+                      time = v;
+                    });
+                    _autoHide();
+                  },
+                ),
+              ),
+              Row(children: [
+                const SizedBox(width: 8),
+                Text('${clock(value)} / ${duration > 0 ? clock(duration) : '--:--'}', style: body(14, color: Colors.white)),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () => _seekBy(85),
+                  icon: const Icon(LucideIcons.chevronsRight, color: Colors.white, size: 20),
+                  label: Text(tr('Пропустити 85 с'), style: body(13.5, color: Colors.white, weight: FontWeight.w600)),
+                ),
+                if (_next != null)
+                  TextButton.icon(
+                    onPressed: () => _goto(_next),
+                    icon: const Icon(LucideIcons.stepForward, color: Colors.white, size: 20),
+                    label: Text(tr('Наступна серія'), style: body(13.5, color: Colors.white, weight: FontWeight.w600)),
+                  ),
+              ]),
+            ],
           ]),
         ),
       ),
+    );
+  }
+}
+
+class _OverlayIcon extends StatelessWidget {
+  const _OverlayIcon({required this.icon, required this.onTap});
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black.withValues(alpha: 0.55),
+      shape: const CircleBorder(),
+      child: InkWell(customBorder: const CircleBorder(), onTap: onTap, child: SizedBox(width: 44, height: 44, child: Icon(icon, color: Colors.white, size: 21))),
     );
   }
 }

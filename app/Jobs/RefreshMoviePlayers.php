@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Movie;
 use App\Services\Cinema\CinemaService;
+use App\Support\Settings\SiteSettings;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -36,7 +37,13 @@ class RefreshMoviePlayers implements ShouldBeUnique, ShouldQueue
 
     public static function due(Movie $movie): bool
     {
-        return $movie->synced_at === null || $movie->synced_at->lt(Carbon::now()->subDays(self::STALE_DAYS));
+        if ($movie->synced_at === null || $movie->synced_at->lt(Carbon::now()->subDays(self::STALE_DAYS))) {
+            return true;
+        }
+        // Після оновлення пошуку (міграція ставить мітку) старі плеєри перечитуються одразу.
+        $since = app(SiteSettings::class)->get('cinema_players_refetch_at');
+
+        return is_string($since) && $movie->synced_at->lt(Carbon::parse($since));
     }
 
     public function handle(CinemaService $cinema): void

@@ -101,19 +101,24 @@ class CinemaService
         $want = fn (string $provider) => $only === null || in_array($provider, $only, true);
         $result = [];
         if ($want('kodik') && $this->kodik->configured()) {
-            $criteria = array_filter([
+            // Шукаємо за кожним ID окремо й об’єднуємо: в аніме частина озвучок у Kodik прив’язана лише
+            // до Shikimori (без Кінопошуку), і пошук за одним ID їх не бачив.
+            $ids = array_filter([
                 'kinopoisk_id' => $movie->kinopoisk_id,
-                'shikimori_id' => $movie->kinopoisk_id ? null : $movie->shikimori_id,
-                'imdb_id' => $movie->kinopoisk_id || $movie->shikimori_id ? null : $movie->imdb_id,
-            ]);
+                'shikimori_id' => $movie->shikimori_id,
+                'imdb_id' => $movie->imdb_id,
+            ], fn ($v) => filled($v));
             $sources = null;
-            if ($criteria !== []) {
-                $sources = [];
-                foreach ($this->kodik->search($criteria) as $candidate) {
-                    foreach ($this->sourceList($candidate['sources'] ?? null) as $source) {
-                        $sources[] = $source;
+            if ($ids !== []) {
+                $byId = [];
+                foreach ($ids as $field => $value) {
+                    foreach ($this->kodik->search([$field => $value]) as $candidate) {
+                        foreach ($this->sourceList($candidate['sources'] ?? null) as $source) {
+                            $byId[(string) ($source['external_id'] ?? '')] ??= $source;
+                        }
                     }
                 }
+                $sources = array_values($byId);
             }
             $result['kodik'] = $sources;
         }
@@ -387,22 +392,28 @@ class CinemaService
      */
     public function stateFor(Movie $movie, User $user): array
     {
-        $row = DB::table('movie_user')->where('user_id', $user->id)->where('movie_id', $movie->id)->first(['status', 'rating', 'season', 'episode']);
+        $row = DB::table('movie_user')->where('user_id', $user->id)->where('movie_id', $movie->id)->first(['status', 'rating', 'season', 'episode', 'position', 'player_key']);
 
         return [
             'status' => $row->status ?? null,
             'rating' => isset($row->rating) ? (int) $row->rating : null,
             'season' => isset($row->season) ? (int) $row->season : null,
             'episode' => isset($row->episode) ? (int) $row->episode : null,
+            'position' => isset($row->position) ? (int) $row->position : null,
+            'player_key' => $row->player_key ?? null,
         ];
     }
 
-    public function progress(User $user, Movie $movie, ?int $season, int $episode): void
+    public function progress(User $user, Movie $movie, ?int $season, int $episode, ?int $position = null, ?string $playerKey = null): void
     {
+        $current = DB::table('movie_user')->where('user_id', $user->id)->where('movie_id', $movie->id)->value('status');
         $this->upsert($user, $movie, [
-            'status' => 'watching',
+            // Переглянуте чи закинуте не перетворюємо назад на «Дивлюся» від самого прогресу.
+            'status' => in_array($current, ['watched', 'dropped'], true) ? $current : 'watching',
             'season' => $season,
             'episode' => $episode,
+            'position' => $position,
+            'player_key' => $playerKey,
         ]);
     }
 

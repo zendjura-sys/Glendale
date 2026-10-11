@@ -72,6 +72,10 @@ class ReleasesProgressSpoilersTest extends TestCase
             'episode' => 4,
         ])->assertOk()->assertJsonPath('state.episode', 4)->assertJsonPath('state.season', 2)->assertJsonPath('state.status', 'watching');
         $this->actingAs($user)->putJson(route('cinema.progress', $serial), ['episode' => 99])->assertUnprocessable();
+        // Застосунок зберігає й секунду, й озвучку — для продовження на будь-якому пристрої.
+        $this->actingAs($user)->putJson(route('cinema.progress', $serial), ['season' => 2, 'episode' => 5, 'position' => 731, 'player_key' => 'kodik:9'])
+            ->assertOk()->assertJsonPath('state.position', 731)->assertJsonPath('state.player_key', 'kodik:9')->assertJsonPath('state.episode', 5);
+        $this->actingAs($user)->putJson(route('cinema.progress', $serial), ['season' => 2, 'episode' => 4])->assertOk();
         $this->withoutVite()->actingAs($user)->get(route('cinema.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page

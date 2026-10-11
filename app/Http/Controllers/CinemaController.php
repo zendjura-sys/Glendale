@@ -219,10 +219,18 @@ class CinemaController extends Controller
     {
         $viewer = $request->user();
         abort_unless($movie->is_published || $viewer->isStaff(), 404);
+        // Застосунок чекає цей запит окремо від сторінки — тут можна дотягнути нові озвучки одразу,
+        // навіть якщо черга на сервері не запущена.
+        if (RefreshMoviePlayers::due($movie)) {
+            RefreshMoviePlayers::dispatchSync($movie->id);
+            $movie->refresh();
+        }
         $movie->load('sources');
 
         return response()->json([
-            'episodes' => $this->episodeMode($movie) ? app(EpisodeGuide::class)->seasons($movie) : null,
+            'players' => $this->cinema->players($movie, $viewer),
+            // Застосунок завжди обирає серію сам (плеєр без власних перемикачів), тож список — незалежно від посерійного режиму сайту.
+            'episodes' => $movie->sources->contains(fn ($s) => in_array($s->provider, ['kodik', 'videoseed'], true)) ? app(EpisodeGuide::class)->seasons($movie) : null,
             'marks' => app(Plugins::class)->on('episode_marks') ? app(EpisodeMarks::class)->keys($viewer, $movie) : [],
         ]);
     }
@@ -443,12 +451,21 @@ class CinemaController extends Controller
         $data = $request->validate([
             'season' => ['nullable', 'integer', 'min:1', 'max:50'],
             'episode' => ['required', 'integer', 'min:1', 'max:5000'],
+            'position' => ['nullable', 'integer', 'min:0', 'max:86400'],
+            'player_key' => ['nullable', 'string', 'max:60'],
         ]);
         $episode = (int) $data['episode'];
         if ($movie->episodes_count !== null && $episode > $movie->episodes_count) {
             throw ValidationException::withMessages(['episode' => 'Такої серії в каталозі немає.']);
         }
-        $this->cinema->progress($request->user(), $movie, isset($data['season']) ? (int) $data['season'] : null, $episode);
+        $this->cinema->progress(
+            $request->user(),
+            $movie,
+            isset($data['season']) ? (int) $data['season'] : null,
+            $episode,
+            isset($data['position']) ? (int) $data['position'] : null,
+            $data['player_key'] ?? null,
+        );
 
         return $this->stateResponse($request->user(), $movie);
     }
@@ -757,11 +774,12 @@ class CinemaController extends Controller
             return false;
         }
 
-        if (MovieSource::query()->where('link', $url)->exists()) {
+        $host = strtolower((string) $parts['host']);
+        // Посилання плеєра з каталогу — і з параметрами серії/озвучки (Videoseed video=s1v3, default_audio_id).
+        if (MovieSource::query()->where('link', $url)->orWhere('link', 'like', 'https://'.$host.'/%')->exists()) {
             return true;
         }
 
-        $host = strtolower((string) $parts['host']);
         foreach (['kodik.info', 'kodik.cc', 'kodik.biz', 'kodikplayer.com', 'youtube.com', 'youtube-nocookie.com', 'youtu.be'] as $suffix) {
             if ($host === $suffix || str_ends_with($host, '.'.$suffix)) {
                 return true;
