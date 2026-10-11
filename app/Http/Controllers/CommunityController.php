@@ -9,6 +9,7 @@ use App\Models\Post;
 use App\Models\User;
 use App\Services\CommunityService;
 use App\Services\CommunityWall;
+use App\Services\Donations\MonobankJar;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
 use App\Services\PhotoService;
@@ -161,6 +162,8 @@ class CommunityController extends Controller
 
         return Inertia::render('communities/show', [
             'community' => $this->details($community),
+            // Банку видно лише тим, хто бачить вміст спільноти.
+            'donation' => $canView ? Inertia::defer(fn () => app(MonobankJar::class)->card($community->donation_jar, $community->donation_note)) : null,
             'tags' => $tags,
             'tag' => $tag,
             'queue' => $queue,
@@ -212,7 +215,30 @@ class CommunityController extends Controller
             ],
             'slowModes' => CommunityWall::SLOW_MODES,
             'stats' => Inertia::defer(fn () => $this->wall->stats($community)),
+            'jar' => ['url' => $community->donation_jar, 'note' => $community->donation_note],
         ]);
+    }
+
+    /** Банка Monobank для донатів спільноті (картка «Підтримати» на сторінці; лише сайт). */
+    public function updateJar(Request $request, Community $community, MonobankJar $jars): RedirectResponse
+    {
+        $this->authorizeAdmin($request, $community);
+        $data = $request->validate([
+            'url' => ['nullable', 'string', 'max:200'],
+            'note' => ['nullable', 'string', 'max:200'],
+        ]);
+        $id = MonobankJar::clientId($data['url'] ?? null);
+        abort_if(filled($data['url'] ?? null) && $id === null, 422, 'Вставте посилання на банку Monobank: https://send.monobank.ua/jar/…');
+
+        $jars->forget($community->donation_jar);
+        $community->forceFill([
+            'donation_jar' => $id !== null ? MonobankJar::url($id) : null,
+            'donation_note' => filled($data['note'] ?? null) ? trim((string) $data['note']) : null,
+        ])->save();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => $community->donation_jar ? 'Банку збережено — картка «Підтримати» з’явилася на сторінці спільноти.' : 'Банку прибрано.']);
+
+        return back();
     }
 
     public function updateRules(Request $request, Community $community): RedirectResponse

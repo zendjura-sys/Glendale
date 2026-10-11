@@ -10,6 +10,8 @@ import {
     TrendingUp,
     Wallet,
 } from 'lucide-react';
+import { DonationJarCard } from '@/components/gc/donation-jar';
+import type { DonationJar } from '@/components/gc/donation-jar';
 import { FamilyShell } from '@/components/families/family-shell';
 import { InviteLinkButton } from '@/components/gc/invite-link';
 import { VoiceRooms } from '@/components/gc/voice-rooms';
@@ -56,6 +58,8 @@ type Props = FamilyShellProps & {
         unit: string | null;
     }[];
     activity: AuditEntry[];
+    /** Банка Monobank сім’ї (відкладений проп). */
+    donation?: DonationJar | null;
 };
 
 const medals = ['🥇', '🥈', '🥉'];
@@ -99,6 +103,11 @@ export default function FamilyOverview(props: Props) {
                     className="glass inline-flex h-10 w-fit items-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white"
                 />
             )}
+
+            <DonationJarCard
+                jar={props.donation}
+                title={tr('Підтримати сім’ю')}
+            />
 
             {/* Голосові кімнати — одразу під показниками, щоб на телефоні не губились унизу. */}
             <VoiceRooms

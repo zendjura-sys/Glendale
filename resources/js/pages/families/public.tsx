@@ -1,5 +1,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, Clock3, ShieldCheck, UserPlus, Users } from 'lucide-react';
+import { DonationJarCard } from '@/components/gc/donation-jar';
+import type { DonationJar } from '@/components/gc/donation-jar';
 import { FamilyLogo } from '@/components/families/family-logo';
 import {
     btnGhost,
@@ -25,6 +27,8 @@ type Props = {
     } | null;
     blocked: { username: string; name: string }[];
     can_block: boolean;
+    /** Банка Monobank сім’ї (відкладений проп). */
+    donation?: DonationJar | null;
 };
 
 export default function FamilyPublic({
@@ -33,6 +37,7 @@ export default function FamilyPublic({
     application,
     blocked,
     can_block,
+    donation,
 }: Props) {
     const form = useForm({ rp_nickname: '', static_id: '', note: '' });
     const pending = application?.status === 'pending';
@@ -118,6 +123,10 @@ export default function FamilyPublic({
                                 </p>
                             </section>
                         )}
+                        <DonationJarCard
+                            jar={donation}
+                            title={tr('Підтримати сім’ю')}
+                        />
                         <section className="glass rounded-3xl p-5">
                             <h2 className="mb-3 font-display font-semibold text-white">
                                 {tr('Керівництво')}

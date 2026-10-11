@@ -23,6 +23,8 @@ import {
     UsersRound,
     X,
 } from 'lucide-react';
+import { DonationJarCard } from '@/components/gc/donation-jar';
+import type { DonationJar } from '@/components/gc/donation-jar';
 import { useRef } from 'react';
 import { membersLabel } from '@/components/communities/community-card';
 import { JoinButton } from '@/components/communities/join-button';
@@ -50,6 +52,8 @@ import { tr } from '@/lib/i18n';
 
 type Props = {
     community: CommunityDetails;
+    /** Банка Monobank спільноти (відкладений проп). */
+    donation?: DonationJar | null;
     membership: { status: MembershipStatus; role: CommunityRole } | null;
     can: {
         view: boolean;
@@ -147,6 +151,7 @@ export default function CommunityShow({
     queue,
     my_pending,
     rules,
+    donation,
 }: Props) {
     const isPublic = community.type === 'public';
     const moderate = (postId: number, approve: boolean) => {
@@ -380,6 +385,10 @@ export default function CommunityShow({
                                 href={`/c/${community.slug}`}
                             />
                         )}
+                        <DonationJarCard
+                            jar={donation}
+                            title={tr('Підтримати спільноту')}
+                        />
                         {(community.description ||
                             rules.rules ||
                             rules.handbook) && (

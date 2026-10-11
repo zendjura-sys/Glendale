@@ -1,6 +1,7 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { ArrowLeft, Globe2, Lock, Megaphone, UsersRound } from 'lucide-react';
+import { DonationJarForm } from '@/components/gc/donation-jar';
 import type { FormEvent } from 'react';
 import { selectClass } from '@/components/gc/admin';
 import {
@@ -26,6 +27,7 @@ type Props = {
     extras: CommunityExtras;
     slowModes: number[];
     stats?: CommunityStats;
+    jar: { url: string | null; note: string | null };
 };
 
 const field =
@@ -90,6 +92,7 @@ export default function CommunitySettings({
     extras,
     slowModes,
     stats,
+    jar,
 }: Props) {
     const form = useForm({
         name: community.name,
@@ -385,6 +388,14 @@ export default function CommunitySettings({
                     slug={community.slug}
                     extras={extras}
                     slowModes={slowModes}
+                />
+
+                <DonationJarForm
+                    action={`/c/${community.slug}/settings/jar`}
+                    initial={jar}
+                    hint={tr(
+                        'Вставте посилання на банку Monobank — на сторінці спільноти з’явиться картка «Підтримати» з прогресом збору. Порожнє поле — прибрати картку.',
+                    )}
                 />
 
                 <StatsCard stats={stats} />

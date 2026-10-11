@@ -237,6 +237,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::get('settings', [CommunityController::class, 'edit'])->name('edit');
             Route::patch('settings', [CommunityController::class, 'update'])->name('update');
             Route::patch('settings/rules', [CommunityController::class, 'updateRules'])->name('rules.update');
+            Route::put('settings/jar', [CommunityController::class, 'updateJar'])->name('jar.update');
             Route::get('rules', [CommunityController::class, 'page'])->defaults('page', 'rules')->name('rules');
             Route::get('handbook', [CommunityController::class, 'page'])->defaults('page', 'handbook')->name('handbook');
             Route::post('queue/{post}', [CommunityController::class, 'approvePost'])->whereNumber('post')->name('queue.approve');
@@ -547,6 +548,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('settings/profile', [Families\FamilySettingsController::class, 'profile'])->name('settings.profile');
             Route::put('settings', [Families\FamilySettingsController::class, 'update'])->name('settings.update');
             Route::put('settings/webhooks', [Families\FamilySettingsController::class, 'webhooks'])->name('settings.webhooks');
+            Route::put('settings/jar', [Families\FamilySettingsController::class, 'jar'])->name('settings.jar');
             Route::post('settings/webhooks/test', [Families\FamilySettingsController::class, 'test'])->middleware('throttle:6,1')->name('settings.webhooks.test');
             Route::post('settings/digest', [Families\FamilySettingsController::class, 'digest'])->middleware('throttle:3,10')->name('settings.digest');
         });

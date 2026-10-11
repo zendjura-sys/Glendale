@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Support\PlusStyle;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -40,7 +41,11 @@ use Illuminate\Support\Facades\Storage;
  * @property array<string, string>|null $plus_style
  * @property-read string|null $logo_url
  * @property-read string|null $cover_url
+ * @property string|null $donation_jar Банка Monobank (https://send.monobank.ua/jar/…)
+ * @property string|null $donation_note
  */
+// Банка — лише для сторінок сайту (картка «Підтримати»); у застосунок і API не віддається.
+#[Hidden(['donation_jar', 'donation_note'])]
 #[Fillable([
     'server_id', 'owner_id', 'slug', 'name', 'tag', 'description', 'status', 'status_reason', 'verified_at',
     'settings', 'rank_titles', 'permissions', 'webhooks', 'is_recruiting', 'season_started_at',

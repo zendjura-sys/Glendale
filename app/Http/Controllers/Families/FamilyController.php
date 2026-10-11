@@ -10,6 +10,7 @@ use App\Models\FamilyMember;
 use App\Models\FamilyTransaction;
 use App\Models\GtaServer;
 use App\Models\User;
+use App\Services\Donations\MonobankJar;
 use App\Services\Families\FamilyRating;
 use App\Services\Families\FamilyService;
 use App\Services\Families\MemberStats;
@@ -122,6 +123,7 @@ class FamilyController extends FamilyBaseController
         $can = $this->gate->abilities($member, $family);
 
         return $this->page($family, $member, 'families/overview', 'overview', [
+            'donation' => Inertia::defer(fn () => app(MonobankJar::class)->card($family->donation_jar, $family->donation_note)),
             'stats' => $stats->overview($family, $member),
             'leaders' => array_slice($rating->leaderboard($family, 'week'), 0, 5),
             'events' => FamilyEvent::query()->where('family_id', $family->id)
@@ -226,6 +228,7 @@ class FamilyController extends FamilyBaseController
         return Inertia::render('families/public', [
             'family' => [...$family->toCard(), 'description' => $family->description, 'created_at' => $family->created_at->toIso8601String()],
             'leaders' => $leaders,
+            'donation' => $family->isVerified() ? Inertia::defer(fn () => app(MonobankJar::class)->card($family->donation_jar, $family->donation_note)) : null,
             'can_block' => $isLeader && app(Plugins::class)->on('family_blacklist'),
             'blocked' => $isLeader && app(Plugins::class)->on('family_blacklist')
                 ? User::query()->whereIn('id', DB::table('family_blocks')->where('family_id', $family->id)->pluck('user_id'))->get()->map(fn (User $user) => $user->toCard())->values()

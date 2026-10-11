@@ -48,6 +48,12 @@ return [
         'maxmind_url' => env('GEOIP_MAXMIND_URL', 'https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz'),
     ],
 
+    // Банка Monobank для донатів сім’ям і спільнотам: публічні ендпоінти віджетів (перевизначаються для тестів).
+    'monobank_jar' => [
+        'send_url' => env('MONOBANK_JAR_SEND_URL', 'https://send.monobank.ua'),
+        'api_url' => env('MONOBANK_JAR_API_URL', 'https://api.monobank.ua'),
+    ],
+
     // Donatello: донати для поповнення рахунку. Токен зазвичай задають в адмінці (Інтеграції → Donatello).
     'donatello' => [
         'token' => env('DONATELLO_TOKEN'),
