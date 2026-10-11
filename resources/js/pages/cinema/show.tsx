@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import {
     EpisodePicker,
     episodeLink,
+    firstPick,
     supportsEpisodes,
 } from '@/components/cinema/episode-picker';
 import type { EpisodePick, Season } from '@/components/cinema/episode-picker';
@@ -211,7 +212,25 @@ export default function CinemaShow({
     const player =
         providerPlayers.find((p) => p.key === playerKey) ?? providerPlayers[0];
     const startedRef = useRef(false);
-    const [pick, setPick] = useState<EpisodePick | null>(null);
+    // Серія обирається під плеєром (сам плеєр — без перемикачів): одразу наступна непереглянута.
+    const [pick, setPick] = useState<EpisodePick | null>(() =>
+        episodes?.length ? firstPick(episodes, episodeMarks) : null,
+    );
+    // Список серій приходить окремим запитом (defer): тоді й обираємо серію.
+    const [picked, setPicked] = useState(false);
+    useEffect(() => {
+        if (picked || !episodes?.length) return;
+        setPicked(true);
+        setPick((current) => current ?? firstPick(episodes, episodeMarks));
+    }, [episodes, episodeMarks, picked]);
+    // Поки список серій вантажиться, плеєр не показуємо, щоб він не перезапускався.
+    const waitingEpisodes =
+        episodes === undefined &&
+        player !== undefined &&
+        supportsEpisodes(player.provider) &&
+        (movie.episodes_count ?? 0) > 1;
+    // Фільм (або серіал без списку серій у посерійному режимі вимкнено): Kodik без перемикачів лише для фільмів.
+    const bare = !((movie.episodes_count ?? 0) > 1);
     const episodeMode =
         provider !== 'trailer' &&
         pick !== null &&
@@ -644,6 +663,13 @@ export default function CinemaShow({
                                         </button>
                                     ))}
                                 </div>
+                                {providerPlayers.length === 1 &&
+                                    provider !== 'trailer' &&
+                                    player?.translation && (
+                                        <span className="ml-auto max-w-full truncate rounded-xl border border-white/[0.06] px-3 py-2 text-sm text-white/60">
+                                            {player.translation}
+                                        </span>
+                                    )}
                                 {providerPlayers.length > 1 && (
                                     <select
                                         value={player?.key}
@@ -677,13 +703,14 @@ export default function CinemaShow({
                                     src={
                                         provider === 'trailer'
                                             ? (movie.trailer_url ?? '')
-                                            : episodeMode
+                                            : player && !waitingEpisodes
                                               ? episodeLink(
                                                     player.provider,
                                                     player.link,
-                                                    pick,
+                                                    episodeMode ? pick : null,
+                                                    episodeMode || bare,
                                                 )
-                                              : player?.link
+                                              : undefined
                                     }
                                     title={movie.title}
                                     className="absolute inset-0 size-full"
