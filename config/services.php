@@ -99,6 +99,9 @@ return [
     'kodik' => [
         'token' => env('KODIK_TOKEN'),
         'api_url' => env('KODIK_API_URL', 'https://kodik-api.com'),
+        // Партнерський метод прямих посилань (ключ видає Kodik на запит; задається в адмінці).
+        'links_key' => env('KODIK_LINKS_KEY'),
+        'links_url' => env('KODIK_LINKS_URL', 'https://kodik.biz/api/video-links'),
     ],
 
     'videoseed' => [

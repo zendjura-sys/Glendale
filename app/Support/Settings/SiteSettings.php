@@ -29,6 +29,7 @@ class SiteSettings
         'spotify_client_id' => null,
         'spotify_client_secret' => null,
         'kodik_token' => null,
+        'kodik_links_key' => null,
         'videoseed_token' => null,
         // Порядок, назви й фільтри плеєрів (CinemaPlayers) і автопарсинг TMDB (TmdbAutoParse).
         'cinema_players' => [],
@@ -102,7 +103,7 @@ class SiteSettings
     ];
 
     /** Ключі, які не можна віддавати у фронтенд. */
-    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'videoseed_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key', 'deepl_key', 'maxmind_license_key', 'vapid_private', 'telegram_bot_token', 'telegram_webhook_secret', 'twitch_client_secret', 'sightengine_secret', 'donatello_token'];
+    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'kodik_links_key', 'videoseed_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key', 'deepl_key', 'maxmind_license_key', 'vapid_private', 'telegram_bot_token', 'telegram_webhook_secret', 'twitch_client_secret', 'sightengine_secret', 'donatello_token'];
 
     /** @var array<string, mixed>|null */
     private ?array $values = null;

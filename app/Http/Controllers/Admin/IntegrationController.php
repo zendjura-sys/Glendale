@@ -495,6 +495,9 @@ class IntegrationController extends Controller
                 'fields' => [
                     ['name' => 'token', 'setting' => 'kodik_token', 'type' => 'secret', 'label' => 'API-токен', 'env' => config('services.kodik.token'),
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{16,64}$/'], 'message' => 'Токен Kodik — це 16–64 латинські літери та цифри.'],
+                    // Прямі посилання на потоки (video-links) — для власного плеєра застосунку. Ключ видає Kodik.
+                    ['name' => 'links_key', 'setting' => 'kodik_links_key', 'type' => 'secret', 'label' => 'Ключ прямих посилань (video-links) — для плеєра застосунку; порожньо — використовується токен Kodik', 'env' => config('services.kodik.links_key'),
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{16,64}$/'], 'message' => 'Ключ — 16–64 латинські літери та цифри.'],
                 ],
             ],
             'flixcdn' => [

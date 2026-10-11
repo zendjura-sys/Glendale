@@ -10,6 +10,7 @@ use App\Models\MovieRequest;
 use App\Models\MovieSource;
 use App\Models\Track;
 use App\Models\User;
+use App\Services\Cinema\CinemaException;
 use App\Services\Cinema\CinemaPlayers;
 use App\Services\Cinema\CinemaService;
 use App\Services\Cinema\EpisodeGuide;
@@ -259,6 +260,45 @@ class CinemaController extends Controller
         }
 
         return ['ratings' => $ratings, 'statuses' => $statuses];
+    }
+
+    /**
+     * Прямі потоки серії для власного плеєра застосунку (Kodik video-links, ключ партнера в адмінці).
+     * available=false — ключа немає чи озвучка не Kodik: застосунок відкриває веб-плеєр.
+     */
+    public function stream(Request $request, Movie $movie): JsonResponse
+    {
+        $viewer = $request->user();
+        abort_unless($movie->is_published || $viewer->isStaff(), 404);
+        $data = $request->validate([
+            'source' => ['required', 'integer'],
+            'season' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'episode' => ['nullable', 'integer', 'min:1', 'max:5000'],
+        ]);
+        $source = $movie->sources()->whereKey((int) $data['source'])->where('is_hidden', false)->first();
+        $kodik = app(KodikClient::class);
+        if ($source === null || $source->provider !== 'kodik' || ! $kodik->streamsAvailable()) {
+            return response()->json(['available' => false, 'qualities' => []]);
+        }
+        $season = isset($data['season']) ? (int) $data['season'] : null;
+        $episode = isset($data['episode']) ? (int) $data['episode'] : null;
+
+        try {
+            // Посилання живуть недовго — кешуємо на 10 хвилин.
+            $qualities = Cache::remember("cinema.stream.{$source->id}.{$season}.{$episode}", 600, function () use ($kodik, $source, $season, $episode) {
+                $link = $kodik->episodeLink($source->external_id, $season, $episode) ?? ($episode === null ? $source->link : null);
+
+                return $link === null ? [] : $kodik->streams($link);
+            });
+        } catch (CinemaException $e) {
+            report($e);
+            $qualities = [];
+        }
+
+        return response()->json([
+            'available' => $qualities !== [],
+            'qualities' => collect($qualities)->map(fn (string $url, string $label) => ['label' => $label, 'url' => $url])->values(),
+        ]);
     }
 
     /** Посерійний режим (Адмінка → Кіно → Плеєри) і є плеєр, що відкриває окрему серію. */
