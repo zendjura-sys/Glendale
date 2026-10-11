@@ -92,9 +92,13 @@ List<Season> voiceSeasons(List<Season> seasons, Map<String, dynamic> voice) {
 // ───────────────────────── Сторінка тайтлу ─────────────────────────
 
 class MovieScreen extends StatefulWidget {
-  const MovieScreen({required this.slug, this.autoplay = false, super.key});
+  const MovieScreen({required this.slug, this.autoplay = false, this.preview, super.key});
   final String slug;
   final bool autoplay;
+
+  /// Дані сторінки без мережі — для тестів і прев’ю вигляду.
+  @visibleForTesting
+  final Map<String, dynamic>? preview;
 
   @override
   State<MovieScreen> createState() => _MovieScreenState();
@@ -114,6 +118,10 @@ class _MovieScreenState extends State<MovieScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.preview != null) {
+      data = widget.preview;
+      return;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
@@ -180,7 +188,7 @@ class _MovieScreenState extends State<MovieScreen> {
   }
 
   Future<void> _chooseVoice() async {
-    final picked = await Navigator.of(context).push<Map<String, dynamic>>(MaterialPageRoute(
+    final picked = await Navigator.of(context, rootNavigator: true).push<Map<String, dynamic>>(MaterialPageRoute(
       builder: (_) => VoicePickerScreen(players: players, selected: text(voice?['key']), seasons: seasons),
     ));
     if (picked == null || !mounted) return;
@@ -188,7 +196,7 @@ class _MovieScreenState extends State<MovieScreen> {
     setState(() {});
     final list = _episodic(picked) ? voiceSeasons(seasons, picked) : const <Season>[];
     if (list.isEmpty) return _open(picked, null);
-    final pick = await Navigator.of(context).push<Pick>(MaterialPageRoute(
+    final pick = await Navigator.of(context, rootNavigator: true).push<Pick>(MaterialPageRoute(
       builder: (_) => EpisodeListScreen(voice: picked, seasons: list, marks: marks, memory: memory, onToggle: _toggleMark),
     ));
     if (pick != null && mounted) await _open(picked, pick);
@@ -377,18 +385,19 @@ class _MovieScreenState extends State<MovieScreen> {
         const SizedBox(height: 14),
         Row(children: [
           Expanded(
-            child: _OutlineAction(
+            child: _TonalAction(
               icon: status == null ? LucideIcons.plus : LucideIcons.chevronDown,
               label: status == null ? tr('Додати до списку') : '$statusLabel',
-              color: _statusColors[status] ?? soft,
+              color: _statusColors[status] ?? primary,
               onTap: _statusDialog,
             ),
           ),
           const SizedBox(width: 8),
-          _OutlineAction(icon: LucideIcons.bookmark, label: compact(movie['watchers_count']), color: gold, onTap: _statusDialog),
+          _TonalAction(icon: LucideIcons.bookmark, label: compact(movie['watchers_count']), color: gold, onTap: _statusDialog),
           const SizedBox(width: 8),
-          _OutlineAction(
+          _TonalAction(
             icon: LucideIcons.messageSquare,
+            label: intOf(movie['comments_count']) > 0 ? compact(movie['comments_count']) : null,
             color: soft,
             onTap: () {
               final target = commentsKey.currentContext;
@@ -398,20 +407,27 @@ class _MovieScreenState extends State<MovieScreen> {
         ]),
         if (players.isNotEmpty) ...[
           const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(22), border: Border.all(color: line)),
-            child: Column(children: [
-              Row(children: [
-                Expanded(child: PrimaryButton(label: watchLabel, icon: LucideIcons.play, onPressed: _watch)),
-                RoundIcon(icon: LucideIcons.ellipsisVertical, color: soft, onTap: _menu),
-              ]),
-              if (added != null)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
-                  child: Text(tr('Додано: {v}', {'v': added}), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
-                ),
-            ]),
-          ),
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            // Кнопка лежить на темній підкладці, під нею в тій самій підкладці — «Додано: …».
+            Expanded(
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(28)),
+                child: Column(children: [
+                  _PlayPill(label: watchLabel, onTap: _watch),
+                  if (added != null)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 7, 14, 9),
+                      child: Text(tr('Додано: {v}', {'v': added}), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
+                    ),
+                ]),
+              ),
+            ),
+            SizedBox(
+              width: 44,
+              height: 54,
+              child: IconButton(onPressed: _menu, tooltip: tr('Ще'), icon: const Icon(LucideIcons.ellipsisVertical, color: soft)),
+            ),
+          ]),
         ],
         const SizedBox(height: 16),
         if (countries.isNotEmpty || movie['year'] != null)
@@ -435,7 +451,8 @@ class _MovieScreenState extends State<MovieScreen> {
                 alignment: Alignment.topCenter,
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(text(movie['description'])!, maxLines: about ? null : 5, overflow: about ? null : TextOverflow.fade, style: body(15, color: soft).copyWith(height: 1.5)),
-                  Padding(padding: const EdgeInsets.only(top: 4), child: Text(about ? tr('Згорнути') : tr('Читати повністю'), style: body(13.5, color: primary, weight: FontWeight.w600))),
+                  if (text(movie['description'])!.length > 220)
+                    Center(child: Padding(padding: const EdgeInsets.only(top: 10), child: Text(about ? tr('Згорнути') : tr('Детальніше…'), style: body(14.5, weight: FontWeight.w700)))),
                 ]),
               ),
             ),
@@ -444,12 +461,15 @@ class _MovieScreenState extends State<MovieScreen> {
           SectionLabel(tr('Відео')),
           _TrailerCard(image: text(movie['backdrop']) ?? text(movie['poster']), onTap: () => launchUrl(Uri.parse(text(movie['trailer_url'])!), mode: LaunchMode.externalApplication)),
         ],
-        SectionLabel(tr('Рейтинг')),
+        const _Hairline(),
+        _SectionTitle(tr('Рейтинг')),
         _RatingBlock(movie: movie, ratings: mapOf(audience['ratings']), mine: intOf(state['rating']), onRate: _rate),
         if (mapOf(audience['statuses']).values.any((v) => intOf(v) > 0)) ...[
-          SectionLabel(tr('У списках у людей')),
+          const _Hairline(),
+          _SectionTitle(tr('У списках у людей')),
           _ListsBar(counts: mapOf(audience['statuses']), statuses: statuses),
         ],
+        const _Hairline(),
         if (maps(friends['users']).isNotEmpty) ...[
           SectionLabel(tr('Друзі дивляться'), trailing: '${friends['total']}'),
           Glass(
@@ -522,7 +542,7 @@ class _Hero extends StatelessWidget {
         ),
         Center(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 22),
+            padding: const EdgeInsets.fromLTRB(24, 64, 24, 24),
             child: AspectRatio(
               aspectRatio: 2 / 3,
               child: Container(
@@ -535,15 +555,36 @@ class _Hero extends StatelessWidget {
             ),
           ),
         ),
-        Positioned(left: 10, top: 10, child: RoundIcon(icon: LucideIcons.arrowLeft, color: Colors.white, filled: true, onTap: onBack)),
-        Positioned(right: 10, top: 10, child: RoundIcon(icon: LucideIcons.ellipsis, color: Colors.white, filled: true, onTap: onMenu)),
+        Positioned(left: 12, top: 12, child: _GlassIcon(icon: LucideIcons.arrowLeft, onTap: onBack)),
+        Positioned(right: 12, top: 12, child: _GlassIcon(icon: LucideIcons.ellipsis, onTap: onMenu)),
       ]),
     );
   }
 }
 
-class _OutlineAction extends StatelessWidget {
-  const _OutlineAction({required this.icon, required this.color, required this.onTap, this.label});
+/// Напівпрозора кнопка-квадрат поверх обкладинки (назад, меню).
+class _GlassIcon extends StatelessWidget {
+  const _GlassIcon({required this.icon, required this.onTap});
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black.withValues(alpha: 0.45),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: Colors.white.withValues(alpha: 0.10))),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: SizedBox(width: 46, height: 46, child: Icon(icon, size: 21, color: Colors.white.withValues(alpha: 0.9))),
+      ),
+    );
+  }
+}
+
+/// Овальна кнопка з тонкою обводкою кольору статусу.
+class _TonalAction extends StatelessWidget {
+  const _TonalAction({required this.icon, required this.color, required this.onTap, this.label});
   final IconData icon;
   final String? label;
   final Color color;
@@ -553,19 +594,56 @@ class _OutlineAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: color.withValues(alpha: 0.06),
-      shape: StadiumBorder(side: BorderSide(color: color.withValues(alpha: 0.55), width: 1.4)),
+      shape: StadiumBorder(side: BorderSide(color: color.withValues(alpha: 0.65), width: 1.5)),
       child: InkWell(
         customBorder: const StadiumBorder(),
         onTap: onTap,
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: label == null ? 16 : 16, vertical: 12),
-          child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(icon, size: 19, color: color),
-            if (label != null) ...[
-              const SizedBox(width: 8),
-              Flexible(child: Text(label!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, color: color, weight: FontWeight.w600))),
-            ],
-          ]),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 50, minWidth: 64),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(icon, size: 18, color: color),
+              if (label != null) ...[
+                const SizedBox(width: 8),
+                Flexible(child: FittedBox(fit: BoxFit.scaleDown, child: Text(label!, maxLines: 1, style: body(14.5, color: color, weight: FontWeight.w700)))),
+              ],
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Головна кнопка «Дивитися»: овальна, з фірмовим градієнтом.
+class _PlayPill extends StatelessWidget {
+  const _PlayPill({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        customBorder: const StadiumBorder(),
+        onTap: onTap,
+        child: Ink(
+          height: 54,
+          decoration: ShapeDecoration(
+            shape: const StadiumBorder(),
+            gradient: buttonGradient,
+            shadows: [BoxShadow(color: indigo.withValues(alpha: 0.45), blurRadius: 22, offset: const Offset(0, 8), spreadRadius: -10)],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const Icon(LucideIcons.play600, color: Colors.white, size: 22),
+              const SizedBox(width: 10),
+              Flexible(child: FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1, style: body(16.5, color: Colors.white, weight: FontWeight.w700)))),
+            ]),
+          ),
         ),
       ),
     );
@@ -635,34 +713,44 @@ class _RatingBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final counts = {for (var i = 1; i <= 10; i++) i: intOf(ratings['$i'])};
+    // Оцінки 1–10 зводимо в 5 смуг (9–10, 7–8 …), як п’ять зірок.
+    final counts = {for (var g = 1; g <= 5; g++) g: intOf(ratings['${g * 2}']) + intOf(ratings['${g * 2 - 1}'])};
     final top = counts.values.fold<int>(0, (a, b) => b > a ? b : a);
     final average = (movie['user_rating'] as num?)?.toDouble();
-    return Glass(
+    final total = intOf(movie['ratings_count']);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
       child: Column(children: [
+        if (total == 0)
+          Row(children: [
+            const Icon(LucideIcons.star, size: 20, color: faint),
+            const SizedBox(width: 10),
+            Expanded(child: Text(tr('Оцінок ще немає — будьте першими.'), style: body(14, color: muted))),
+          ])
+        else
         Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
           SizedBox(
             width: 110,
             child: Column(children: [
-              Text(average == null ? '—' : average.toStringAsFixed(1), style: display(44)),
-              Text(tr('{n} оцінок', {'n': intOf(movie['ratings_count'])}), style: body(12.5, color: muted)),
+              Text(average == null ? '—' : average.toStringAsFixed(1), style: display(48)),
+              Text(tr('{n} оцінок', {'n': total}), style: body(12.5, color: muted)),
             ]),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(children: [
-              for (var i = 10; i >= 1; i--)
+              for (var i = 5; i >= 1; i--)
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 1.5),
+                  padding: const EdgeInsets.symmetric(vertical: 3),
                   child: Row(children: [
-                    SizedBox(width: 18, child: Text('$i', textAlign: TextAlign.right, style: body(10.5, color: faint))),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 14, child: Text('$i', textAlign: TextAlign.right, style: body(12, color: muted))),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(99),
                         child: LinearProgressIndicator(
                           value: top == 0 ? 0 : counts[i]! / top,
-                          minHeight: 6,
+                          minHeight: 10,
                           backgroundColor: Colors.white.withValues(alpha: 0.06),
                           valueColor: const AlwaysStoppedAnimation(primary),
                         ),
@@ -705,31 +793,50 @@ class _ListsBar extends StatelessWidget {
       for (final s in statuses)
         if (intOf(counts['${s['key']}']) > 0) (key: '${s['key']}', label: '${s['label']}', count: intOf(counts['${s['key']}'])),
     ];
-    return Glass(
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(999),
-          child: SizedBox(
-            height: 14,
-            child: Row(children: [
-              for (final item in items) Expanded(flex: item.count, child: ColoredBox(color: _statusColors[item.key] ?? muted)),
-            ]),
-          ),
+          borderRadius: BorderRadius.circular(99),
+          child: Row(children: [
+            for (final item in items) Expanded(flex: item.count, child: Container(height: 16, color: _statusColors[item.key] ?? muted)),
+          ]),
         ),
         const SizedBox(height: 12),
-        Wrap(spacing: 18, runSpacing: 8, children: [
-          for (final item in items)
-            Row(mainAxisSize: MainAxisSize.min, children: [
-              Container(width: 10, height: 10, decoration: BoxDecoration(color: _statusColors[item.key] ?? muted, shape: BoxShape.circle)),
-              const SizedBox(width: 6),
-              Text(item.label, style: body(13.5, color: muted)),
-              const SizedBox(width: 6),
-              Text(compact(item.count), style: body(13.5, weight: FontWeight.w700)),
-            ]),
-        ]),
+        LayoutBuilder(
+          builder: (context, box) => Wrap(runSpacing: 8, children: [
+            for (final item in items)
+              SizedBox(
+                width: box.maxWidth / 2,
+                child: Row(children: [
+                  Container(width: 12, height: 12, decoration: BoxDecoration(color: _statusColors[item.key] ?? muted, shape: BoxShape.circle)),
+                  const SizedBox(width: 8),
+                  Flexible(child: Text(item.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: muted))),
+                  const SizedBox(width: 6),
+                  Text(compact(item.count), style: body(14, weight: FontWeight.w700)),
+                ]),
+              ),
+          ]),
+        ),
       ]),
     );
   }
+}
+
+/// Тонкий роздільник між розділами сторінки.
+class _Hairline extends StatelessWidget {
+  const _Hairline();
+
+  @override
+  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.symmetric(vertical: 14), child: Divider(height: 1, color: line));
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.label);
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(bottom: 14), child: Text(label, style: display(20)));
 }
 
 // ───────────────────────── Вибір озвучки ─────────────────────────
@@ -775,7 +882,7 @@ class _VoicePickerScreenState extends State<VoicePickerScreen> {
             ),
           Expanded(
             child: ListView.separated(
-              padding: const EdgeInsets.only(bottom: 24),
+              padding: EdgeInsets.only(bottom: 24 + MediaQuery.viewPaddingOf(context).bottom),
               itemCount: list.length,
               separatorBuilder: (_, _) => Divider(height: 1, color: line, indent: 16, endIndent: 16),
               itemBuilder: (_, i) {
@@ -953,7 +1060,7 @@ class _EpisodeListScreenState extends State<EpisodeListScreen> {
             ),
           Expanded(
             child: ListView.separated(
-              padding: const EdgeInsets.only(bottom: 24),
+              padding: EdgeInsets.only(bottom: 24 + MediaQuery.viewPaddingOf(context).bottom),
               itemCount: episodes.length,
               separatorBuilder: (_, _) => Divider(height: 1, color: line, indent: 16, endIndent: 16),
               itemBuilder: (_, i) {

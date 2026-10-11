@@ -300,7 +300,8 @@ class PrimaryButton extends StatelessWidget {
         else if (icon != null)
           Icon(icon, color: Colors.white, size: compact ? 16 : 18),
         if (busy || icon != null) const SizedBox(width: 8),
-        Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(compact ? 13.5 : 15, color: Colors.white, weight: FontWeight.w600))),
+        // Довгий підпис чи великий системний шрифт — текст трохи зменшується, а не обрізається «…».
+        Flexible(child: FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1, style: body(compact ? 13.5 : 15, color: Colors.white, weight: FontWeight.w600)))),
       ],
     );
     return Opacity(
@@ -312,7 +313,7 @@ class PrimaryButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           child: Ink(
             height: height,
-            padding: EdgeInsets.symmetric(horizontal: compact ? 14 : 20),
+            padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 16),
             decoration: BoxDecoration(
               gradient: buttonGradient,
               borderRadius: BorderRadius.circular(14),
@@ -348,14 +349,14 @@ class GhostButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           child: Ink(
             height: compact ? 40 : 48,
-            padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 18),
+            padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 14),
             decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: lineStrong)),
             child: Row(
               mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (icon != null) ...[Icon(icon, size: compact ? 16 : 18, color: iconColor ?? color), const SizedBox(width: 8)],
-                Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(compact ? 13 : 14.5, color: color, weight: FontWeight.w600))),
+                Flexible(child: FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1, style: body(compact ? 13 : 14.5, color: color, weight: FontWeight.w600)))),
               ],
             ),
           ),
@@ -1363,7 +1364,8 @@ Future<T?> showGcSheet<T>(BuildContext context, {String? title, String? subtitle
         ],
       );
       return Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(sheet).bottom),
+        // Клавіатура або системна смуга жестів унизу — що більше.
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(sheet).bottom > 0 ? MediaQuery.viewInsetsOf(sheet).bottom : MediaQuery.viewPaddingOf(sheet).bottom),
         child: height == null ? content : SizedBox(height: height, child: content),
       );
       }

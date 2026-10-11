@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\RefreshMoviePlayers;
 use App\Models\Comment;
 use App\Models\Like;
 use App\Models\Movie;
@@ -266,6 +267,10 @@ class CinemaController extends Controller
 
         $this->cinema->recordView($movie, $request);
         $movie->load('sources');
+        // Давно не оновлені плеєри — у фоні дотягуємо нові озвучки (сторінка не чекає).
+        if (RefreshMoviePlayers::due($movie) && config('queue.default') !== 'sync') {
+            RefreshMoviePlayers::dispatch($movie->id);
+        }
 
         $pinned = $movie->comments()->with('user')->where('is_pinned', true)->get();
         $comments = $pinned->concat(

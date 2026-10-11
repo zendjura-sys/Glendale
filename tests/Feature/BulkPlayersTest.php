@@ -3,10 +3,12 @@
 namespace Tests\Feature;
 
 use App\Jobs\AssignCinemaPlayers;
+use App\Jobs\RefreshMoviePlayers;
 use App\Models\Movie;
 use App\Models\MovieSource;
 use App\Models\User;
 use App\Services\Cinema\BulkPlayers;
+use App\Services\Cinema\CinemaService;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -118,5 +120,17 @@ class BulkPlayersTest extends TestCase
         $bulk->cancel();
         $this->assertSame('cancelled', $bulk->state()['status']);
         $this->assertFalse($bulk->step());
+    }
+
+    public function test_opening_a_stale_title_adds_missing_voices_without_touching_existing(): void
+    {
+        $movie = $this->movie();
+        $this->assertTrue(RefreshMoviePlayers::due($movie));
+
+        (new RefreshMoviePlayers($movie->id))->handle(app(CinemaService::class));
+
+        $this->assertSame(['Дубляж', null, 'LostFilm'], $movie->sources()->orderBy('id')->pluck('translation')->all());
+        $this->assertSame('https://kodik.info/video/movie-1/old/720p', $movie->sources()->where('external_id', 'movie-1')->value('link'));
+        $this->assertFalse(RefreshMoviePlayers::due($movie->fresh()));
     }
 }
