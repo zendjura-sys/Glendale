@@ -9,14 +9,29 @@ class PlusStyle
 {
     /**
      * @param  array<string, mixed>|null  $style
-     * @return array{name: list<string>|null, frame: list<string>|null}
+     * @return array{name: list<string>|null, frame: list<string>|null, fx: string|null}
      */
     public static function card(?array $style): array
     {
+        $fx = $style['fx'] ?? null;
+
         return [
             'name' => self::colors('name_colors', $style['name'] ?? null),
             'frame' => self::frame($style['frame'] ?? null),
+            'fx' => is_string($fx) && in_array($fx, (array) config('plus.name_effects'), true) ? $fx : null,
         ];
+    }
+
+    /**
+     * Ефект шапки профілю (null — без ефекту).
+     *
+     * @param  array<string, mixed>|null  $style
+     */
+    public static function header(?array $style): ?string
+    {
+        $header = $style['header'] ?? null;
+
+        return is_string($header) && in_array($header, (array) config('plus.header_effects'), true) ? $header : null;
     }
 
     /**
@@ -33,7 +48,7 @@ class PlusStyle
     /**
      * Дозволені варіанти для форми налаштувань.
      *
-     * @return array{names: array<string, list<string>>, frames: array<string, list<string>>, accents: array<string, list<string>>}
+     * @return array{names: array<string, list<string>>, frames: array<string, list<string>>, accents: array<string, list<string>>, effects: list<string>, headers: list<string>}
      */
     public static function options(): array
     {
@@ -46,6 +61,8 @@ class PlusStyle
             'names' => (array) config('plus.name_colors'),
             'frames' => $frames,
             'accents' => array_column(Palette::all(), 'colors', 'id'),
+            'effects' => array_values((array) config('plus.name_effects')),
+            'headers' => array_values((array) config('plus.header_effects')),
         ];
     }
 
@@ -64,6 +81,12 @@ class PlusStyle
         }
         if (is_string($input['accent'] ?? null) && Palette::exists($input['accent'])) {
             $out['accent'] = $input['accent'];
+        }
+        if (is_string($input['fx'] ?? null) && in_array($input['fx'], (array) config('plus.name_effects'), true)) {
+            $out['fx'] = $input['fx'];
+        }
+        if (is_string($input['header'] ?? null) && in_array($input['header'], (array) config('plus.header_effects'), true)) {
+            $out['header'] = $input['header'];
         }
 
         return $out;

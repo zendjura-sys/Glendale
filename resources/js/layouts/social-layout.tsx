@@ -31,7 +31,7 @@ import { VoiceBar } from '@/components/gc/voice-bar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { BillingHost } from '@/components/billing/billing-host';
 import { PlusMenuCard } from '@/components/gc/plus-card';
-import { PlusBadge, plusNameStyle } from '@/components/gc/plus';
+import { PlusBadge, plusNameProps, plusNameStyle } from '@/components/gc/plus';
 import { PlayerBar } from '@/components/music/player-bar';
 import {
     DropdownMenu,
@@ -514,7 +514,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                         <UserAvatar user={user} size="md" ring />
                         <span className="min-w-0">
                             <span className="flex items-center gap-1 truncate text-sm font-semibold text-white">
-                                <span style={plusNameStyle(user.plus)}>
+                                <span {...plusNameProps(user.plus)}>
                                     {user.name}
                                 </span>
                                 {user.is_verified && (

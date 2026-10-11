@@ -26,6 +26,7 @@ use App\Services\Presence\SteamPresence;
 use App\Services\Streams\LiveStreams;
 use App\Support\Modules\ModuleManager;
 use App\Support\Palette;
+use App\Support\PlusStyle;
 use App\Support\ProfileBlocks;
 use chillerlan\QRCode\Output\QROutputInterface;
 use chillerlan\QRCode\QRCode;
@@ -125,6 +126,7 @@ class ProfileController extends Controller
                 'cover_url' => $user->cover_url,
                 // GameCon+: власні кольори сторінки (з палітр сайту).
                 'accent' => $user->isPlus() ? Palette::colors((string) ($user->plus_style['accent'] ?? '')) : null,
+                'header_fx' => $user->isPlus() ? PlusStyle::header($user->plus_style) : null,
                 'about' => $canSeeContent ? $user->about : null,
                 'city' => $user->city,
                 'birthday' => $canSeeContent ? $user->birthday?->toDateString() : null,
@@ -143,7 +145,8 @@ class ProfileController extends Controller
                 'list' => $mark?->list,
             ],
             'steamLibrary' => $canSeeContent ? app(SteamPresence::class)->library($user) : [],
-            'together' => $canSeeContent ? app(PlayedTogether::class)->cards($user) : [],
+            'together' => $canSeeContent ? app(PlayedTogether::class)->cards($user, owner: $viewer?->id === $user->id) : [],
+            'togetherOff' => $viewer?->id === $user->id && (bool) $user->pref('together_off'),
             'relation' => $relation,
             'canSeeContent' => $canSeeContent,
             'limited' => $limited,
@@ -284,6 +287,32 @@ class ProfileController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Обкладинку оновлено.']);
 
         return back();
+    }
+
+    /** «Дивилися й слухали разом»: приховати людину, показати всіх знову або вимкнути блок для інших. */
+    public function together(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'hide' => ['nullable', 'integer', 'min:1'],
+            'reset' => ['boolean'],
+            'off' => ['nullable', 'boolean'],
+        ]);
+        $user = $request->user();
+        if (isset($data['hide'])) {
+            $hidden = array_values(array_unique([...array_map('intval', (array) $user->pref('together_hidden', [])), (int) $data['hide']]));
+            $user->mergePref(['together_hidden' => array_slice($hidden, -200)]);
+        }
+        if ($request->boolean('reset')) {
+            $user->mergePref(['together_hidden' => []]);
+        }
+        if (array_key_exists('off', $data) && $data['off'] !== null) {
+            $user->mergePref(['together_off' => (bool) $data['off']]);
+        }
+
+        return response()->json([
+            'together' => app(PlayedTogether::class)->cards($user, owner: true),
+            'off' => (bool) $user->pref('together_off'),
+        ]);
     }
 
     public function pin(Request $request, PostCards $cards): JsonResponse

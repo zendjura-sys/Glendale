@@ -13,10 +13,10 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useState } from 'react';
-import type { FormEvent } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 import { PlusTabs } from '@/components/billing/plus-tabs';
 import { FamilyLogo } from '@/components/families/family-logo';
-import { PlusBadge, plusNameStyle } from '@/components/gc/plus';
+import { PlusBadge, plusNameProps } from '@/components/gc/plus';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { money, openTopup } from '@/lib/billing';
 import { formatDate } from '@/lib/format';
@@ -24,7 +24,7 @@ import { tr } from '@/lib/i18n';
 import { buyProduct, PLUS_PRICES, PRODUCT_LABELS } from '@/lib/plus';
 import type { PlusProduct } from '@/lib/plus';
 import { cn } from '@/lib/utils';
-import type { FamilyCard } from '@/types';
+import type { FamilyCard, PlusMark } from '@/types';
 
 type State = {
     active: boolean;
@@ -38,7 +38,13 @@ type State = {
     } | null;
 };
 
-type Style = { name?: string; frame?: string; accent?: string };
+type Style = {
+    name?: string;
+    frame?: string;
+    accent?: string;
+    fx?: string;
+    header?: string;
+};
 
 type Props = {
     state: State;
@@ -47,6 +53,8 @@ type Props = {
         names: Record<string, string[]>;
         frames: Record<string, string[]>;
         accents: Record<string, string[]>;
+        effects: string[];
+        headers: string[];
     };
     products: Record<string, { available: boolean }>;
     families: (FamilyCard & { state: State; style: Style })[];
@@ -373,13 +381,19 @@ function StyleEditor({
         name: style.name ?? '',
         frame: style.frame ?? '',
         accent: style.accent ?? '',
+        fx: style.fx ?? '',
+        header: style.header ?? '',
     });
     const mark = {
         name: form.data.name ? (options.names[form.data.name] ?? null) : null,
         frame: form.data.frame
             ? (options.frames[form.data.frame] ?? null)
             : null,
+        fx: (form.data.fx || null) as PlusMark['fx'],
     };
+    const nameProps = plusNameProps(mark);
+    const accentColors = (form.data.accent &&
+        options.accents[form.data.accent]) || ['#6366f1', '#a855f7', '#22d3ee'];
     const submit = (event: FormEvent) => {
         event.preventDefault();
         form.put('/plus/style', { preserveScroll: true });
@@ -394,7 +408,12 @@ function StyleEditor({
             <div className="flex items-center gap-3 rounded-2xl bg-white/[0.04] p-3">
                 <UserAvatar user={{ ...preview, plus: mark }} size="lg" />
                 <span className="flex items-center gap-1.5 font-semibold text-white">
-                    <span style={plusNameStyle(mark)}>{preview.name}</span>
+                    <span
+                        className={nameProps.className}
+                        style={nameProps.style}
+                    >
+                        {preview.name}
+                    </span>
                     <PlusBadge />
                 </span>
             </div>
@@ -442,11 +461,45 @@ function StyleEditor({
                     ))}
                 </div>
             </div>
+            <EffectPicker
+                label={tr('Анімація ніку')}
+                value={form.data.fx ?? ''}
+                options={options.effects}
+                names={NAME_FX()}
+                onChange={(value) => form.setData('fx', value)}
+            />
             <AccentPicker
                 value={form.data.accent ?? ''}
                 accents={options.accents}
                 onChange={(value) => form.setData('accent', value)}
                 label={tr('Кольори сторінки профілю')}
+            />
+            <EffectPicker
+                label={tr('Ефект шапки профілю')}
+                value={form.data.header ?? ''}
+                options={options.headers}
+                names={HEADER_FX()}
+                onChange={(value) => form.setData('header', value)}
+                preview={(key) => (
+                    <span className="relative block h-9 w-full overflow-hidden rounded-lg bg-white/[0.05]">
+                        {key === 'aurora' && (
+                            <span
+                                className="profile-aurora absolute inset-x-0 bottom-0 h-2/3 [mask-image:linear-gradient(to_top,black,transparent)] opacity-60"
+                                style={{
+                                    backgroundImage: `linear-gradient(90deg, ${accentColors.join(', ')}, ${accentColors[0]})`,
+                                }}
+                            />
+                        )}
+                        {key === 'rim' && (
+                            <span
+                                className="profile-rim"
+                                style={{
+                                    backgroundImage: `linear-gradient(120deg, ${accentColors.join(', ')}, ${accentColors[0]})`,
+                                }}
+                            />
+                        )}
+                    </span>
+                )}
             />
             <button
                 type="submit"
@@ -456,6 +509,60 @@ function StyleEditor({
                 {tr('Зберегти')}
             </button>
         </form>
+    );
+}
+
+const NAME_FX = (): Record<string, string> => ({
+    '': tr('Без анімації'),
+    flow: tr('Перелив'),
+    shine: tr('Відблиск'),
+});
+
+const HEADER_FX = (): Record<string, string> => ({
+    '': tr('Без ефекту'),
+    aurora: tr('Сяйво обкладинки'),
+    rim: tr('Жива рамка'),
+});
+
+/** Вибір ефекту: «без ефекту» + варіанти з сервера (із прев’ю, якщо є). */
+function EffectPicker({
+    label,
+    value,
+    options,
+    names,
+    onChange,
+    preview,
+}: {
+    label: string;
+    value: string;
+    options: string[];
+    names: Record<string, string>;
+    onChange: (value: string) => void;
+    preview?: (key: string) => ReactNode;
+}) {
+    return (
+        <div>
+            <p className="mb-2 text-sm text-white/60">{label}</p>
+            <div className="grid grid-cols-3 gap-2">
+                {['', ...options].map((key) => (
+                    <button
+                        key={key || 'none'}
+                        type="button"
+                        aria-pressed={value === key}
+                        onClick={() => onChange(key)}
+                        className={cn(
+                            'flex flex-col items-stretch gap-2 rounded-2xl border p-2.5 text-xs font-medium transition',
+                            value === key
+                                ? 'border-indigo-400/60 bg-indigo-500/10 text-white'
+                                : 'border-white/10 text-white/65 hover:border-white/25',
+                        )}
+                    >
+                        {preview?.(key)}
+                        {names[key] ?? key}
+                    </button>
+                ))}
+            </div>
+        </div>
     );
 }
 

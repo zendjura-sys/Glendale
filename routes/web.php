@@ -576,6 +576,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::delete('me/avatar', [ProfileController::class, 'destroyAvatar'])->name('profile.avatar.destroy');
     Route::post('me/cover', [ProfileController::class, 'updateCover'])->name('profile.cover');
     Route::post('me/pin', [ProfileController::class, 'pin'])->name('profile.pin');
+    Route::post('me/together', [ProfileController::class, 'together'])->middleware('throttle:30,1')->name('profile.together');
 
     Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
         Route::get('/', Admin\DashboardController::class)->name('dashboard');

@@ -35,6 +35,42 @@ export function plusNameStyle(
     };
 }
 
+/**
+ * Анімований нік GameCon+ (профіль, меню, прев’ю оформлення): перелив кольорів або відблиск.
+ * Без ефекту — звичайний колір. Анімації вимикаються при «зменшити рух» (app.css).
+ */
+export function plusNameProps(plus: PlusMark | null | undefined): {
+    style?: CSSProperties;
+    className?: string;
+} {
+    if (!plus?.fx) return { style: plusNameStyle(plus) };
+    const colors = plus.name?.length ? plus.name : ['#ffffff'];
+    const first = colors[0];
+    const last = colors[colors.length - 1];
+    const stops =
+        plus.fx === 'flow'
+            ? colors.length > 1
+                ? [...colors, first]
+                : [first, '#ffffff', first]
+            : [
+                  `${first} 0%`,
+                  `${last} 42%`,
+                  '#ffffff 50%',
+                  `${last} 58%`,
+                  `${first} 100%`,
+              ];
+
+    return {
+        className: plus.fx === 'flow' ? 'plus-name-flow' : 'plus-name-shine',
+        style: {
+            backgroundImage: `linear-gradient(100deg, ${stops.join(', ')})`,
+            WebkitBackgroundClip: 'text',
+            backgroundClip: 'text',
+            color: 'transparent',
+        },
+    };
+}
+
 /** Ім’я з кольором GameCon+ і позначкою. */
 export function PlusName({
     name,

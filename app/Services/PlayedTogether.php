@@ -6,15 +6,23 @@ use App\Models\ListenPartyMember;
 use App\Models\User;
 use App\Models\WatchPartyMember;
 
-/** Люди, з якими цей профіль був у спільному кіно чи музиці. */
+/**
+ * Люди, з якими цей профіль дивився кіно чи слухав музику разом («together» — назва фільму чи треку).
+ *
+ * Власник профілю може приховати окремих людей (pref together_hidden) або весь блок (pref together_off).
+ */
 class PlayedTogether
 {
     /**
      * @return list<array<string, mixed>>
      */
-    public function cards(User $user, int $limit = 8): array
+    public function cards(User $user, int $limit = 8, bool $owner = false): array
     {
-        $rows = [];
+        if (! $owner && $user->pref('together_off')) {
+            return [];
+        }
+        $hidden = array_map('intval', (array) $user->pref('together_hidden', []));
+        $rows = array_fill_keys($hidden, null);
 
         $watchIds = WatchPartyMember::query()->where('user_id', $user->id)->pluck('watch_party_id');
         if ($watchIds->isNotEmpty()) {
@@ -26,7 +34,7 @@ class PlayedTogether
                 ->limit(40)
                 ->get();
             foreach ($mates as $mate) {
-                if ($mate->user === null || isset($rows[$mate->user_id])) {
+                if ($mate->user === null || array_key_exists($mate->user_id, $rows)) {
                     continue;
                 }
                 $rows[$mate->user_id] = [
@@ -47,7 +55,7 @@ class PlayedTogether
                 ->limit(40)
                 ->get();
             foreach ($mates as $mate) {
-                if ($mate->user === null || isset($rows[$mate->user_id])) {
+                if ($mate->user === null || array_key_exists($mate->user_id, $rows)) {
                     continue;
                 }
                 $title = $mate->party?->track?->title;
@@ -59,6 +67,6 @@ class PlayedTogether
             }
         }
 
-        return array_slice(array_values($rows), 0, $limit);
+        return array_slice(array_values(array_filter($rows)), 0, $limit);
     }
 }

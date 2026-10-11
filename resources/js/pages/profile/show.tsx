@@ -31,7 +31,9 @@ import { PostSkeleton } from '@/components/gc/post-skeleton';
 import { ReportPersonButton } from '@/components/gc/report-person';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
-import { PlusBadge, plusNameStyle } from '@/components/gc/plus';
+import { PlusBadge, plusNameProps } from '@/components/gc/plus';
+import { WatchedTogether } from '@/components/profile/watched-together';
+import type { TogetherPerson } from '@/components/profile/watched-together';
 import { EmptyState, Widget } from '@/components/gc/widget';
 import { NowPlayingCard } from '@/components/music/now-playing';
 import { AchievementsCard } from '@/components/gc/achievements';
@@ -82,6 +84,8 @@ type Profile = UserCard & {
     cover_url: string | null;
     /** GameCon+: кольори сторінки. */
     accent?: string[] | null;
+    /** GameCon+: ефект шапки — сяйво внизу обкладинки або жива рамка. */
+    header_fx?: 'aurora' | 'rim' | null;
     about: string | null;
     city: string | null;
     birthday: string | null;
@@ -143,7 +147,8 @@ type Props = {
     steamLibrary?: { name: string; hours: number; href: string | null }[];
     characters?: CharacterCardData[];
     stream?: StreamInfo | null;
-    together?: (UserCard & { kind: 'cinema' | 'music'; together: string })[];
+    together?: TogetherPerson[];
+    togetherOff?: boolean;
 };
 
 function Counter({
@@ -242,11 +247,19 @@ export default function ProfileShow({
     posts,
     steamLibrary,
     together = [],
+    togetherOff = false,
     characters = [],
     stream = null,
 }: Props) {
     const { modules } = usePage().props;
     const isSelf = relation === 'self';
+    // Кольори ефекту шапки: кольори сторінки, інакше колір ніку, інакше акцент сайту.
+    const headerColors = profile.accent?.length
+        ? profile.accent
+        : profile.plus?.name?.length
+          ? [...profile.plus.name, '#a855f7']
+          : ['#6366f1', '#a855f7', '#22d3ee'];
+    const nameProps = plusNameProps(profile.plus);
     const charactersOn = usePlugin('rp_characters');
     const roleBadge =
         profile.role === 'admin'
@@ -260,6 +273,15 @@ export default function ProfileShow({
             <Head title={profile.name} />
 
             <section className="glass relative overflow-hidden rounded-[28px]">
+                {profile.header_fx === 'rim' && (
+                    <div
+                        aria-hidden
+                        className="profile-rim"
+                        style={{
+                            backgroundImage: `linear-gradient(120deg, ${headerColors.join(', ')}, ${headerColors[0]})`,
+                        }}
+                    />
+                )}
                 <div className="relative h-52 overflow-hidden sm:h-72">
                     {profile.cover_url ? (
                         <img
@@ -277,11 +299,12 @@ export default function ProfileShow({
                     ) : (
                         <div className="size-full bg-[radial-gradient(circle_at_20%_20%,#4f8bff_0%,transparent_45%),radial-gradient(circle_at_80%_30%,#a855f7_0%,transparent_45%),radial-gradient(circle_at_50%_100%,#f04fd8_0%,transparent_50%)] opacity-80" />
                     )}
-                    {profile.accent && (
+                    {profile.header_fx === 'aurora' && (
                         <div
-                            className="absolute inset-x-0 bottom-0 z-10 h-[3px]"
+                            aria-hidden
+                            className="profile-aurora absolute inset-x-0 bottom-0 z-10 h-2/3 [mask-image:linear-gradient(to_top,black,transparent)] opacity-45 mix-blend-screen"
                             style={{
-                                backgroundImage: `linear-gradient(90deg, ${profile.accent.join(', ')})`,
+                                backgroundImage: `linear-gradient(90deg, ${headerColors.join(', ')}, ${headerColors[0]})`,
                             }}
                         />
                     )}
@@ -321,8 +344,11 @@ export default function ProfileShow({
                         <div className="min-w-0 flex-1 pb-1">
                             <div className="flex flex-wrap items-center gap-2">
                                 <h1
-                                    className="font-display text-2xl font-bold tracking-tight text-white sm:text-[30px]"
-                                    style={plusNameStyle(profile.plus)}
+                                    className={cn(
+                                        'font-display text-2xl font-bold tracking-tight text-white sm:text-[30px]',
+                                        nameProps.className,
+                                    )}
+                                    style={nameProps.style}
                                 >
                                     {profile.alias || profile.name}
                                 </h1>
@@ -392,25 +418,12 @@ export default function ProfileShow({
                                     <PlayingBadge playing={profile.playing} />
                                 </div>
                             )}
-                            {together.length > 0 && (
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                    <span className="text-xs text-white/40">
-                                        {tr('Грали разом')}
-                                    </span>
-                                    {together.map((person) => (
-                                        <Link
-                                            key={person.id}
-                                            href={`/${person.username}`}
-                                            className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.06] px-2.5 py-1 text-xs text-white/80 hover:text-white"
-                                        >
-                                            {person.name}
-                                            <span className="text-white/40">
-                                                {person.together}
-                                            </span>
-                                        </Link>
-                                    ))}
-                                </div>
-                            )}
+                            <WatchedTogether
+                                key={profile.id}
+                                people={together}
+                                isSelf={isSelf}
+                                hiddenForOthers={togetherOff}
+                            />
                             <p className="mt-1.5 flex items-center gap-1.5 text-xs text-white/45">
                                 {profile.is_online ? (
                                     <>
