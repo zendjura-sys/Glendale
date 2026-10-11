@@ -570,22 +570,23 @@ function AutoImportPanel({
                                     </div>
                                 ))}
                             </div>
-                            {Object.entries(last.providers).map(
-                                ([key, counts]) => (
+                            {Object.entries(last.providers)
+                                .sort(
+                                    ([a], [b]) =>
+                                        providerOrder(a) - providerOrder(b),
+                                )
+                                .map(([key, counts]) => (
                                     <p
                                         key={key}
                                         className="mt-2 text-xs text-white/50"
                                     >
                                         <b className="text-white/75">
-                                            {key === 'kodik'
-                                                ? 'Kodik'
-                                                : 'FlixCDN'}
+                                            {PROVIDER_LABELS()[key] ?? key}
                                         </b>
                                         : +{counts.created}
                                         {tr(', оновлено')} {counts.updated}
                                     </p>
-                                ),
-                            )}
+                                ))}
                             {last.errors.length > 0 && (
                                 <ul className="mt-3 space-y-1">
                                     {last.errors.map((e) => (
@@ -625,6 +626,19 @@ function AutoImportPanel({
         </section>
     );
 }
+
+/** Підписи й порядок джерел у звіті «Останній запуск»: Kodik, FlixCDN, Videoseed, далі TMDB. */
+const PROVIDER_LABELS = (): Record<string, string> => ({
+    kodik: 'Kodik',
+    flixcdn: 'FlixCDN',
+    videoseed: 'Videoseed',
+    tmdb: tr('TMDB (автопарсинг)'),
+});
+const providerOrder = (key: string) => {
+    const index = ['kodik', 'flixcdn', 'videoseed', 'tmdb'].indexOf(key);
+
+    return index === -1 ? 99 : index;
+};
 
 export default function AdminCinema({
     movies,

@@ -286,9 +286,14 @@ class KodikClient
         if (! str_contains($url, 'token=')) {
             $params['token'] = $this->token();
         }
+        // Параметри дописуємо в саму адресу: next_page від Kodik уже має рядок запиту (token, next),
+        // а передача окремого масиву query його повністю замінює — друга сторінка йшла без токена.
+        if ($params !== []) {
+            $url .= (str_contains($url, '?') ? '&' : '?').http_build_query($params);
+        }
 
         try {
-            $response = Http::acceptJson()->timeout(20)->get($url, $params);
+            $response = Http::acceptJson()->timeout(20)->get($url);
         } catch (ConnectionException) {
             throw new CinemaException('Kodik не відповідає. Спробуйте пізніше.');
         }
