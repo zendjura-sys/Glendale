@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
 import 'state.dart';
+import 'subscription.dart';
 import 'theme.dart';
 import 'i18n.dart';
 
@@ -1284,9 +1285,14 @@ class SectionLabel extends StatelessWidget {
 
 void toast(BuildContext context, Object message) {
   final text = '$message';
+  // Ліміт GameCon+ від сервера («З GameCon+ — до 25») — лише пояснення, що це, без жодної оплати.
+  final plus = isPlusLimit(message);
   ScaffoldMessenger.maybeOf(context)
     ?..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(text)));
+    ..showSnackBar(SnackBar(
+      content: Text(text),
+      action: plus ? SnackBarAction(label: tr('Що таке GameCon+?'), onPressed: () => showProFeatures(context)) : null,
+    ));
 }
 
 /// Шторка знизу зі скляним фоном, ручкою й заголовком.

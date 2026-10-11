@@ -12,6 +12,7 @@ import 'family_widget.dart';
 import 'nav_items.dart';
 import 'player_view.dart';
 import 'state.dart';
+import 'subscription.dart';
 import 'theme.dart';
 import 'voice_room.dart';
 import 'widgets.dart';
@@ -294,6 +295,15 @@ class _AppShellState extends State<AppShell> {
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Column(
                     children: [
+                      // GameCon+ — лише статус і перелік переваг (без цін і оплати, див. subscription.dart).
+                      _MenuLink(
+                        icon: LucideIcons.sparkles,
+                        label: AppScope.read(context).session.subscription.isPro ? tr('GameCon+ · активний') : 'GameCon+',
+                        onTap: () {
+                          Navigator.pop(sheet);
+                          showProFeatures(context);
+                        },
+                      ),
                       _MenuLink(icon: LucideIcons.panelBottom, label: tr('Налаштувати нижню панель'), onTap: () {
                         Navigator.pop(sheet);
                         context.go('/settings?tab=app');

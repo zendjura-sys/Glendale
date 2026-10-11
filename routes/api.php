@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\GroupsApiController;
 use App\Http\Controllers\Api\MediaApiController;
 use App\Http\Controllers\Api\PushApiController;
 use App\Http\Controllers\Api\SocialApiController;
+use App\Http\Controllers\Api\SubscriptionStatusController;
 use App\Http\Controllers\Bots;
 use App\Http\Controllers\CallController;
 use App\Http\Controllers\CharacterController;
@@ -76,6 +77,8 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware(['auth.api', 'verified.site'])->group(function () {
         Route::get('me', [AuthController::class, 'me']);
+        // GameCon+ у застосунку: лише статус доступу, без жодних цін і посилань на оплату.
+        Route::get('user/subscription-status', SubscriptionStatusController::class)->middleware('throttle:60,1');
         Route::post('me/locale', [LocaleController::class, 'update'])->middleware('throttle:30,1');
         Route::post('translate', TranslateController::class)->middleware('throttle:60,1');
         Route::post('logout', [AuthController::class, 'logout']);
