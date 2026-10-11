@@ -7,6 +7,8 @@ use App\Services\Cinema\Metadata\MetadataEnricher;
 use App\Services\Cinema\Metadata\TmdbProvider;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -58,7 +60,12 @@ class TmdbAutoParse
         'min_votes' => 50,
         'min_year' => null,
         'publish' => true,
+        // Пошук у кінотеці нічого не знайшов — шукати в TMDB і додавати знайдене (з плеєром) до каталогу.
+        'search_import' => true,
     ];
+
+    /** Скільки результатів TMDB перевіряти за один пошук. */
+    public const SEARCH_LIMIT = 4;
 
     public function __construct(
         private readonly SiteSettings $settings,
@@ -170,6 +177,50 @@ class TmdbAutoParse
         foreach ($counts as $key => $value) {
             $stats[$key] += $value;
         }
+    }
+
+    /**
+     * Пошук у каталозі порожній: шукаємо назву в TMDB, а знайдене, для чого є плеєр Videoseed чи Kodik,
+     * додаємо до каталогу (опублікованим) і збагачуємо метаданими. Повертає опубліковані тайтли —
+     * і щойно додані, і ті, що вже були в каталозі під іншою назвою. Той самий запит — раз на добу.
+     *
+     * @return list<Movie>
+     */
+    public function searchImport(string $query, CinemaService $cinema, VideoseedClient $videoseed, KodikClient $kodik, MetadataEnricher $enricher): array
+    {
+        $query = trim($query);
+        if (! $this->config()['search_import'] || mb_strlen($query) < 2 || ! $this->tmdb->configured() || (! $videoseed->configured() && ! $kodik->configured())) {
+            return [];
+        }
+
+        $key = 'cinema.tmdb_search.'.md5(Str::lower($query));
+        $ids = Cache::get($key);
+        if (! is_array($ids)) {
+            $ids = [];
+            try {
+                foreach (array_slice($this->tmdb->search($query), 0, self::SEARCH_LIMIT) as $row) {
+                    $tmdbId = $row['kind'].':'.$row['id'];
+                    $existing = Movie::withTrashed()->where('tmdb_id', $tmdbId)->first();
+                    if ($existing !== null) {
+                        $ids[] = $existing->id;
+
+                        continue;
+                    }
+                    $movie = $this->importOne($row, $tmdbId, $cinema, $videoseed, $kodik, true);
+                    if ($movie !== null) {
+                        $enricher->enrich($movie);
+                        $ids[] = $movie->id;
+                    }
+                }
+            } catch (Throwable $e) {
+                report($e);
+
+                return [];
+            }
+            Cache::put($key, $ids, now()->addDay());
+        }
+
+        return array_values(Movie::query()->published()->whereIn('id', $ids)->get()->sortBy(fn (Movie $m) => array_search($m->id, $ids, true))->all());
     }
 
     /**

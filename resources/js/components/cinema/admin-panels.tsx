@@ -37,6 +37,7 @@ export type TmdbData = {
         min_votes: number;
         min_year: number | null;
         publish: boolean;
+        search_import: boolean;
     };
     configured: boolean;
     language: string;
@@ -372,6 +373,14 @@ export function TmdbPanel({ data }: { data: TmdbData }) {
                         label={tr('Автододавання')}
                     />
                 </div>
+                <span className="flex items-center gap-2 text-sm text-white/70">
+                    <Toggle
+                        checked={d.search_import}
+                        onChange={(v) => setData('search_import', v)}
+                        label={tr('Пошук: додавати з TMDB')}
+                    />
+                    {tr('Пошук: якщо тайтлу немає — знайти в TMDB і додати')}
+                </span>
                 {d.discover && (
                     <>
                         <div className="flex flex-wrap gap-1.5">

@@ -168,6 +168,49 @@ class VideoseedPlayersTest extends TestCase
             ->where('players.providers.1.configured', true));
     }
 
+    public function test_empty_search_finds_title_in_tmdb_and_adds_it_to_the_catalog(): void
+    {
+        app(SiteSettings::class)->putSecret('tmdb_token', 'eyJhbGciOiJIUzI1NiJ9.payload.sig');
+        Http::fake([
+            'api.themoviedb.org/3/search/multi*' => Http::response(['results' => [
+                ['id' => 105, 'media_type' => 'tv', 'name' => 'Секс і місто', 'first_air_date' => '1998-06-06', 'vote_count' => 900],
+                ['id' => 999, 'media_type' => 'movie', 'title' => 'Без плеєра', 'release_date' => '2024-01-01', 'vote_count' => 900],
+                ['id' => 7, 'media_type' => 'person', 'name' => 'Актор'],
+            ]]),
+            'api.themoviedb.org/3/tv/105*' => Http::response(['id' => 105, 'name' => 'Секс і місто', 'original_name' => 'Sex and the City', 'overview' => 'Опис з TMDB', 'vote_average' => 7.3]),
+            'api.themoviedb.org/*' => Http::response([], 404),
+            'api.videoseed.tv/*' => function (HttpRequest $request) {
+                return Http::response($request['tmdb'] === '105'
+                    ? ['status' => 'success', 'data' => $this->item()]
+                    : ['status' => 'success', 'data' => []]);
+            },
+        ]);
+        $viewer = User::factory()->create();
+
+        $this->actingAs($viewer)->get('/cinema?q=Sex+and+the+City')
+            ->assertInertia(fn (Assert $page) => $page->where('total', 0)->where('lookup', true));
+
+        $this->actingAs($viewer)->getJson('/cinema/lookup?q=Sex+and+the+City')
+            ->assertOk()
+            ->assertJsonCount(1, 'movies')
+            ->assertJsonPath('movies.0.title', 'Секс і місто');
+
+        $movie = Movie::query()->sole();
+        $this->assertTrue($movie->is_published);
+        $this->assertSame('tv:105', $movie->tmdb_id);
+        $this->assertGreaterThan(0, $movie->sources()->count());
+
+        // Повторний пошук — з кешу, без нових запитів і дублів.
+        Http::fake(['*' => Http::response([], 500)]);
+        $this->actingAs($viewer)->getJson('/cinema/lookup?q=sex and the city')->assertJsonCount(1, 'movies');
+        $this->assertSame(1, Movie::query()->count());
+
+        app(TmdbAutoParse::class)->save(['search_import' => false]);
+        $this->actingAs($viewer)->get('/cinema?q=Нема такого')
+            ->assertInertia(fn (Assert $page) => $page->where('lookup', false));
+        $this->actingAs($viewer)->getJson('/cinema/lookup?q=Нема такого')->assertJsonCount(0, 'movies');
+    }
+
     public function test_episode_mode_lists_seasons_on_the_movie_page(): void
     {
         $item = $this->item(['seasons' => [

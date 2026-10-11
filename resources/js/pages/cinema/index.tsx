@@ -5,6 +5,7 @@ import {
     Clock,
     Film,
     Info,
+    Loader2,
     Play,
     Search,
     SlidersHorizontal,
@@ -30,6 +31,7 @@ import type {
     MovieType,
     ScrollData,
 } from '@/types';
+import { api } from '@/lib/api';
 import { tr } from '@/lib/i18n';
 import { usePlugin } from '@/lib/plugins';
 
@@ -54,7 +56,58 @@ type Props = {
     years: number[];
     myCounts: Record<string, number>;
     requests: string[];
+    /** Пошук порожній — спитати TMDB і показати додане до каталогу. */
+    lookup?: boolean;
 };
+
+/** Порожній пошук: TMDB → тайтли з плеєром одразу додаються до каталогу. */
+function TmdbLookup({ query }: { query: string }) {
+    const [found, setFound] = useState<MovieCard[] | null>(null);
+
+    useEffect(() => {
+        let alive = true;
+        setFound(null);
+        api<{ movies: MovieCard[] }>(
+            'GET',
+            `/cinema/lookup?q=${encodeURIComponent(query)}`,
+        )
+            .then((r) => alive && setFound(r.movies))
+            .catch(() => alive && setFound([]));
+
+        return () => {
+            alive = false;
+        };
+    }, [query]);
+
+    if (found === null) {
+        return (
+            <section className="glass flex items-center gap-3 rounded-3xl p-4 text-sm text-white/65">
+                <Loader2 className="size-4 animate-spin" />
+                {tr('У каталозі немає — шукаємо в TMDB і додаємо знайдене…')}
+            </section>
+        );
+    }
+    if (found.length === 0) return null;
+
+    return (
+        <section className="glass rounded-3xl p-4 sm:p-5">
+            <h2 className="font-display text-lg font-semibold text-white">
+                {tr('Знайдено в TMDB')}
+                <span className="ml-2 text-sm font-normal text-white/40">
+                    {found.length}
+                </span>
+            </h2>
+            <p className="mb-4 text-xs text-white/45">
+                {tr('Ці тайтли щойно додано до каталогу — можна дивитися.')}
+            </p>
+            <div className={movieGridClass}>
+                {found.map((movie) => (
+                    <MovieTile key={movie.id} movie={movie} />
+                ))}
+            </div>
+        </section>
+    );
+}
 
 const sorts: { key: Filters['sort']; label: string }[] = [
     { key: 'new', label: tr('Нові на сайті') },
@@ -233,6 +286,7 @@ export default function CinemaIndex({
     years,
     myCounts,
     requests,
+    lookup = false,
 }: Props) {
     const [search, setSearch] = useState(filters.q);
     const requestOn = usePlugin('movie_request');
@@ -474,6 +528,7 @@ export default function CinemaIndex({
                         />
                     ))}
 
+                {lookup && <TmdbLookup query={filters.q} />}
                 {movies.data.length === 0 ? (
                     <EmptyState
                         icon={Film}

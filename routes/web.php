@@ -334,6 +334,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::put('playback', [CinemaController::class, 'playback'])->name('playback');
         Route::post('requests', [CinemaController::class, 'requestMovie'])->middleware('throttle:10,1')->name('requests.store');
         Route::get('search', [CinemaController::class, 'search'])->middleware('throttle:120,1')->name('search');
+        Route::get('lookup', [CinemaController::class, 'lookup'])->middleware('throttle:10,1')->name('lookup');
         Route::get('{movie}', [CinemaController::class, 'show'])->name('show');
         Route::patch('{movie}/status', [CinemaController::class, 'status'])->middleware('throttle:60,1')->name('status');
         Route::put('{movie}/rating', [CinemaController::class, 'rate'])->middleware('throttle:60,1')->name('rate');

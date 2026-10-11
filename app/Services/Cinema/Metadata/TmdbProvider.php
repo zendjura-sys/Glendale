@@ -86,6 +86,34 @@ class TmdbProvider extends MetadataProvider
         return $out;
     }
 
+    /**
+     * Пошук фільмів і серіалів за назвою (/search/multi) — той самий формат, що й discover().
+     *
+     * @return list<array{kind: string, id: string, title: string, year: int|null, rating: float|null, votes: int}>
+     */
+    public function search(string $query): array
+    {
+        $json = $this->get('/search/multi', ['language' => $this->language(), 'query' => $query, 'include_adult' => 'false', 'page' => 1]);
+        $rows = is_array($json['results'] ?? null) ? $json['results'] : [];
+
+        $out = [];
+        foreach ($rows as $row) {
+            if (! is_array($row) || ! is_numeric($row['id'] ?? null) || ! in_array($row['media_type'] ?? null, ['movie', 'tv'], true)) {
+                continue;
+            }
+            $out[] = [
+                'kind' => (string) $row['media_type'],
+                'id' => (string) $row['id'],
+                'title' => (string) (self::str($row['title'] ?? $row['name'] ?? null) ?? ''),
+                'year' => self::year($row['release_date'] ?? $row['first_air_date'] ?? null),
+                'rating' => self::rating($row['vote_average'] ?? null),
+                'votes' => (int) ($row['vote_count'] ?? 0),
+            ];
+        }
+
+        return $out;
+    }
+
     public function imdbId(string $kind, string $id): ?string
     {
         $json = $this->get("/{$kind}/{$id}/external_ids");

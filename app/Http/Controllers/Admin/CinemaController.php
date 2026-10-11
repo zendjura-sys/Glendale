@@ -291,6 +291,7 @@ class CinemaController extends Controller
             'min_votes' => ['required', 'integer', 'between:0,100000'],
             'min_year' => ['nullable', 'integer', 'between:1900,2100'],
             'publish' => ['required', 'boolean'],
+            'search_import' => ['sometimes', 'boolean'],
             'language' => ['required', 'string', 'regex:/^[a-z]{2}-[A-Z]{2}$/'],
         ], ['language.regex' => 'Мова у форматі uk-UA.']);
 

@@ -14,6 +14,11 @@ use App\Services\Cinema\CinemaService;
 use App\Services\Cinema\EpisodeGuide;
 use App\Services\Cinema\EpisodeMarks;
 use App\Services\Cinema\FlixcdnPlayer;
+use App\Services\Cinema\KodikClient;
+use App\Services\Cinema\Metadata\MetadataEnricher;
+use App\Services\Cinema\Metadata\TmdbProvider;
+use App\Services\Cinema\TmdbAutoParse;
+use App\Services\Cinema\VideoseedClient;
 use App\Services\FriendshipService;
 use App\Services\PostPresenter;
 use App\Services\SavedItems;
@@ -86,6 +91,9 @@ class CinemaController extends Controller
             'filtered' => $filtered,
             'movies' => Inertia::scroll(fn () => $page),
             'total' => $page->total(),
+            // Порожній пошук — сторінка сама спитає TMDB (/cinema/lookup) і покаже додане.
+            'lookup' => filled($filters['q'] ?? null) && $page->total() === 0 && app(TmdbAutoParse::class)->config()['search_import']
+                && app(TmdbProvider::class)->configured(),
             'featured' => $filtered ? [] : $this->featured(),
             'rows' => $filtered ? [] : array_values(array_filter([
                 ['key' => 'continue', 'title' => 'Продовжити перегляд', 'movies' => $this->watching($user)],
@@ -350,6 +358,23 @@ class CinemaController extends Controller
             'statuses' => $this->statusOptions(),
             'counts' => $this->myCounts($user),
         ]);
+    }
+
+    /**
+     * Пошук у каталозі нічого не дав — шукаємо в TMDB і додаємо знайдене з плеєром (див. TmdbAutoParse::searchImport).
+     */
+    public function lookup(Request $request): JsonResponse
+    {
+        $data = $request->validate(['q' => ['required', 'string', 'min:2', 'max:100']]);
+        $movies = app(TmdbAutoParse::class)->searchImport(
+            $data['q'],
+            $this->cinema,
+            app(VideoseedClient::class),
+            app(KodikClient::class),
+            app(MetadataEnricher::class),
+        );
+
+        return response()->json(['movies' => array_map(fn (Movie $m) => $m->toCard(), $movies)]);
     }
 
     public function search(Request $request): JsonResponse
