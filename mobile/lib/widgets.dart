@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'plus.dart';
 import 'state.dart';
 import 'subscription.dart';
 import 'theme.dart';
@@ -133,8 +134,10 @@ class GradientText extends StatelessWidget {
 
 /// Скляна картка `.glass`.
 class Glass extends StatelessWidget {
-  const Glass({required this.child, this.padding = const EdgeInsets.all(16), this.radius = 22, this.onTap, this.gradient, this.border, super.key});
+  const Glass({required this.child, this.padding = const EdgeInsets.all(16), this.radius = 22, this.onTap, this.gradient, this.border, this.overlay, super.key});
   final Widget child;
+  /// Шар поверх картки на весь її розмір (напр. жива рамка GameCon+).
+  final Widget? overlay;
   final EdgeInsets padding;
   final double radius;
   final VoidCallback? onTap;
@@ -158,7 +161,9 @@ class Glass extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       borderRadius: shape,
-      child: onTap == null ? box : InkWell(onTap: onTap, borderRadius: shape, child: box),
+      child: overlay == null
+          ? (onTap == null ? box : InkWell(onTap: onTap, borderRadius: shape, child: box))
+          : Stack(children: [onTap == null ? box : InkWell(onTap: onTap, borderRadius: shape, child: box), Positioned.fill(child: overlay!)]),
     );
   }
 }
@@ -807,8 +812,10 @@ class GcSwitch extends StatelessWidget {
 // ───────────────────────── Люди ─────────────────────────
 
 class Avatar extends StatelessWidget {
-  const Avatar({required this.name, this.url, this.size = 44, this.online = false, this.ring = false, this.square = false, super.key});
+  const Avatar({required this.name, this.url, this.size = 44, this.online = false, this.ring = false, this.square = false, this.frame, super.key});
   final String? url;
+  /// Рамка GameCon+ (кольори з `plus.frame`): тонке двоколірне кільце.
+  final List<Color>? frame;
   final String name;
   final double size;
   final bool online;
@@ -835,29 +842,40 @@ class Avatar extends StatelessWidget {
     final photo = absolute(url);
     final colors = _palette[name.hashCode.abs() % _palette.length];
     final radius = square ? BorderRadius.circular(size * 0.28) : BorderRadius.circular(size);
+    final framed = frame != null && !ring && !square;
+    final gap = framed ? (size * 0.035).clamp(1.5, 3.0) : 0.0;
+    final inner = size - gap * 4;
     Widget face = ClipRRect(
       borderRadius: radius,
       child: photo == null
           ? Container(
-              width: size,
-              height: size,
+              width: inner,
+              height: inner,
               alignment: Alignment.center,
               decoration: BoxDecoration(gradient: LinearGradient(colors: colors, begin: Alignment.topLeft, end: Alignment.bottomRight)),
-              child: Text(initials(name), style: display(size * 0.34, color: Colors.white)),
+              child: Text(initials(name), style: display(inner * 0.34, color: Colors.white)),
             )
           : CachedNetworkImage(
               imageUrl: photo,
               fit: BoxFit.cover,
-              width: size,
-              height: size,
+              width: inner,
+              height: inner,
               placeholder: (_, _) => Container(color: raised),
               errorWidget: (_, _, _) => Container(color: raised),
             ),
     );
+    if (framed) {
+      face = Container(
+        padding: EdgeInsets.all(gap),
+        decoration: BoxDecoration(borderRadius: radius, gradient: LinearGradient(colors: frame!.length > 1 ? frame! : [frame!.first, frame!.first], begin: Alignment.topLeft, end: Alignment.bottomRight)),
+        child: Container(padding: EdgeInsets.all(gap), decoration: BoxDecoration(borderRadius: radius, color: voidColor), child: face),
+      );
+    }
     if (ring) {
+      final rim = frame == null ? brand : LinearGradient(colors: frame!.length > 1 ? frame! : [frame!.first, frame!.first], begin: Alignment.topLeft, end: Alignment.bottomRight);
       face = Container(
         padding: EdgeInsets.all(size * 0.03),
-        decoration: BoxDecoration(borderRadius: radius, gradient: brand),
+        decoration: BoxDecoration(borderRadius: radius, gradient: rim),
         child: Container(
           padding: EdgeInsets.all(size * 0.03),
           decoration: BoxDecoration(borderRadius: radius, color: voidColor),
@@ -911,16 +929,13 @@ class UserTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         child: Row(
           children: [
-            Avatar(url: text(user['avatar_url']), name: name, size: size, online: user['is_online'] == true),
+            Avatar(url: text(user['avatar_url']), name: name, size: size, online: user['is_online'] == true, frame: PlusMark.of(user)?.frame),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(children: [
-                    Flexible(child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w600))),
-                    if (user['is_verified'] == true) ...[const SizedBox(width: 4), const Icon(LucideIcons.badgeCheck, size: 15, color: primary)],
-                  ]),
+                  PlusNameRow(user: user, style: body(15, weight: FontWeight.w600)),
                   Text(
                     subtitle ?? '@${text(user['username']) ?? ''}',
                     maxLines: 1,

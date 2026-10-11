@@ -36,6 +36,7 @@ class SubscriptionController extends ChangeNotifier with WidgetsBindingObserver 
   bool _isPro = false;
   DateTime? _expiresAt;
   String? _planName;
+  Map<String, dynamic>? _style;
   DateTime? _checkedAt;
   bool loading = false;
 
@@ -43,6 +44,9 @@ class SubscriptionController extends ChangeNotifier with WidgetsBindingObserver 
   bool get isPro => _isPro && (_expiresAt == null || _expiresAt!.isAfter(DateTime.now()));
   DateTime? get proExpiresAt => isPro ? _expiresAt : null;
   String get planName => _planName ?? 'GameCon+';
+
+  /// Оформлення, обране на сайті (колір ніку, рамка, ефект) — як поле `plus` у картці користувача.
+  Map<String, dynamic>? get style => isPro ? (_style ?? const {}) : null;
 
   /// Перепитати сервер. Повертає актуальне isPro; у разі помилки лишає попередній стан.
   Future<bool> refreshSubscriptionStatus({bool force = true}) async {
@@ -55,8 +59,9 @@ class SubscriptionController extends ChangeNotifier with WidgetsBindingObserver 
       _isPro = json['is_pro'] == true;
       _expiresAt = DateTime.tryParse('${json['expires_at'] ?? ''}')?.toLocal();
       _planName = json['plan_name'] is String ? json['plan_name'] as String : null;
+      _style = json['style'] is Map ? Map<String, dynamic>.from(json['style'] as Map) : null;
       _checkedAt = DateTime.now();
-      await _prefs.setString(_key, jsonEncode({'is_pro': _isPro, 'expires_at': _expiresAt?.toUtc().toIso8601String(), 'plan_name': _planName}));
+      await _prefs.setString(_key, jsonEncode({'is_pro': _isPro, 'expires_at': _expiresAt?.toUtc().toIso8601String(), 'plan_name': _planName, 'style': _style}));
     } catch (_) {
       // Немає мережі — лишаємо збережений статус.
     } finally {
@@ -71,6 +76,7 @@ class SubscriptionController extends ChangeNotifier with WidgetsBindingObserver 
     _isPro = false;
     _expiresAt = null;
     _planName = null;
+    _style = null;
     _checkedAt = null;
     await _prefs.remove(_key);
     notifyListeners();
@@ -90,6 +96,7 @@ class SubscriptionController extends ChangeNotifier with WidgetsBindingObserver 
       _isPro = json['is_pro'] == true;
       _expiresAt = DateTime.tryParse('${json['expires_at'] ?? ''}')?.toLocal();
       _planName = json['plan_name'] as String?;
+      _style = json['style'] is Map ? Map<String, dynamic>.from(json['style'] as Map) : null;
     } catch (_) {}
   }
 

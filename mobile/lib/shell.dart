@@ -11,6 +11,7 @@ import 'api.dart';
 import 'family_widget.dart';
 import 'nav_items.dart';
 import 'player_view.dart';
+import 'plus.dart';
 import 'state.dart';
 import 'subscription.dart';
 import 'theme.dart';
@@ -254,13 +255,13 @@ class _AppShellState extends State<AppShell> {
                   },
                   child: Row(
                     children: [
-                      Avatar(url: text(me['avatar_url']), name: text(me['name']) ?? tr('Я'), size: 44, online: true),
+                      Avatar(url: text(me['avatar_url']), name: text(me['name']) ?? tr('Я'), size: 44, online: true, frame: PlusMark.from(widget.session.subscription.style)?.frame),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(text(me['name']) ?? 'GameCon', style: body(15, weight: FontWeight.w700)),
+                            PlusNameRow(user: {...me, 'plus': widget.session.subscription.style}, style: body(15, weight: FontWeight.w700), animate: true),
                             Text('@${text(me['username']) ?? ''}', style: body(12.5, color: muted)),
                           ],
                         ),

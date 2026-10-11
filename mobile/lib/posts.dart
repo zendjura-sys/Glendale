@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
 import 'player_view.dart';
+import 'plus.dart';
 import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
@@ -169,7 +170,7 @@ class _PostCardState extends State<PostCard> {
               children: [
                 GestureDetector(
                   onTap: openWho,
-                  child: Avatar(url: text(who['avatar_url']), name: name, size: 44, online: publisher == null && author['is_online'] == true, square: publisher != null),
+                  child: Avatar(url: text(who['avatar_url']), name: name, size: 44, online: publisher == null && author['is_online'] == true, square: publisher != null, frame: publisher == null ? PlusMark.of(author)?.frame : null),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -180,8 +181,9 @@ class _PostCardState extends State<PostCard> {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         spacing: 4,
                         children: [
-                          GestureDetector(onTap: openWho, child: Text(name, style: body(15, weight: FontWeight.w700))),
+                          GestureDetector(onTap: openWho, child: PlusName(name, plus: publisher == null ? PlusMark.of(author) : null, style: body(15, weight: FontWeight.w700), maxLines: null)),
                           if (who['is_verified'] == true) const Icon(LucideIcons.badgeCheck, size: 15, color: primary),
+                          if (publisher == null && PlusMark.of(author) != null) const PlusBadge(size: 15),
                           if (badge != null) RoleBadge(title: text(badge['title']) ?? '', color: text(badge['color'])),
                           if (wall != null) ...[
                             const Icon(LucideIcons.chevronRight, size: 16, color: faint),
