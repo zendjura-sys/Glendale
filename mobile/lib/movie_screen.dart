@@ -1261,7 +1261,16 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
   WebViewController? web;
   Pick? pick;
   bool started = false;
-  bool native = false;
+  /// Запасний шлях: рідний плеєр в обгортці сайту.
+  bool embedded = false;
+
+  /// Допомога зі стартом: сторінка балансера видима й приймає дотики (його ▶, реклама), поки не піде відео.
+  bool assist = false;
+
+  /// Скрипт у сторінці відповів (канал працює).
+  bool bridgeSeen = false;
+  Timer? inject;
+  Timer? watchdog;
   bool locked = false;
   bool landscape = true;
   double speed = 1;
@@ -1290,6 +1299,8 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
   void dispose() {
     hide?.cancel();
     skipTimer?.cancel();
+    inject?.cancel();
+    watchdog?.cancel();
     _remember(push: true);
     playback.dispose();
     controls.dispose();
@@ -1334,6 +1345,16 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
     }
     final platform = controller.platform;
     if (platform is AndroidWebViewController) unawaited(platform.setMediaPlaybackRequiresUserGesture(false));
+    // Сторінка балансера може довго довантажуватись — повторюємо вбудовування, поки скрипт не відповість.
+    inject?.cancel();
+    watchdog?.cancel();
+    bridgeSeen = false;
+    if (!embed) {
+      inject = Timer.periodic(const Duration(milliseconds: 1500), (t) {
+        if (bridgeSeen || !mounted) return t.cancel();
+        unawaited(web?.runJavaScript(_bridgeScript).catchError((_) {}));
+      });
+    }
     playback.position.value = 0;
     playback.duration.value = 0;
     playback.playing.value = false;
@@ -1342,7 +1363,8 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
     setState(() {
       started = false;
       tapAt = 0;
-      native = embed;
+      embedded = embed;
+      assist = false;
       reported = false;
       resumed = false;
       ended = false;
@@ -1363,25 +1385,32 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
     } catch (_) {
       return;
     }
-    if (!mounted) return;
-    if (data['gc'] == 'wait') {
-      // Відео так і не з’явилось (за ~12 с після натискання) — показуємо рідний плеєр, щоб не застрягти.
-      if (!native && tapAt > 0 && DateTime.now().millisecondsSinceEpoch - tapAt > 10000) _load(embed: true);
-      return;
-    }
+    if (!mounted || embedded) return;
+    bridgeSeen = true;
     if (data['gc'] != 'state') return;
-    if (native) return;
-    tapAt = 0;
     final time = (data['time'] as num?)?.toDouble() ?? 0;
     final duration = (data['duration'] as num?)?.toDouble() ?? 0;
     final paused = data['paused'] == true;
     final ad = data['ad'] == true;
+    if (ad) {
+      // Реклама: показуємо її (кнопка «Пропустити» — у плеєрі балансера), позицію серії не чіпаємо.
+      if (!assist) _assist(true);
+      return;
+    }
     playback.buffering.value = data['buffering'] == true || duration == 0;
-    playback.playing.value = !paused;
-    if (ad) return; // Рекламний ролик: позицію й тривалість серії не чіпаємо.
+    if (started || time > 0) playback.playing.value = !paused;
+    // Серія справді пішла — ховаємо сторінку балансера, керування переходить до нас.
+    if (!paused && time > 0.3) {
+      if (assist) _assist(false);
+      if (!started) {
+        watchdog?.cancel();
+        tapAt = 0;
+        setState(() => started = true);
+      }
+    }
+    if (!started && time == 0) return;
     playback.duration.value = duration;
     playback.position.value = time;
-    if (!paused && !started) setState(() => started = true);
     if (!paused && controls.value && hide == null) _autoHide();
     _onTime(time, duration);
     if (data['ended'] == true && !ended) {
@@ -1436,11 +1465,26 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
       _remember(push: true);
       _show(keep: true);
     } else {
-      if (!started && tapAt == 0) tapAt = DateTime.now().millisecondsSinceEpoch;
+      if (!started && tapAt == 0) {
+        tapAt = DateTime.now().millisecondsSinceEpoch;
+        // Відео не пішло за 6 с (плеєр балансера чекає дотику на свою кнопку чи показує рекламу) —
+        // відкриваємо його сторінку для дотику; скрипт не відповідає взагалі — запасна обгортка.
+        watchdog?.cancel();
+        watchdog = Timer(const Duration(seconds: 6), () {
+          if (!mounted || started) return;
+          bridgeSeen ? _assist(true) : _load(embed: true);
+        });
+      }
       _cmd('play');
       playback.playing.value = true;
       _autoHide();
     }
+  }
+
+  void _assist(bool on) {
+    unawaited(web?.runJavaScript('window.gcNative && window.gcNative(${on ? 'true' : 'false'});').catchError((_) {}));
+    setState(() => assist = on);
+    if (!on) _autoHide();
   }
 
   void _seekTo(double seconds) {
@@ -1555,9 +1599,11 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
       child: Scaffold(
         backgroundColor: Colors.black,
         body: Stack(fit: StackFit.expand, children: [
-          if (controller != null) IgnorePointer(ignoring: !native, child: WebViewWidget(controller: controller)),
-          if (native)
+          if (controller != null) IgnorePointer(ignoring: !(embedded || assist), child: WebViewWidget(controller: controller)),
+          if (embedded)
             _NativeFallback(onBack: () => Navigator.pop(context))
+          else if (assist)
+            _AssistBar(onBack: () => Navigator.pop(context))
           else if (locked)
             _LockLayer(controls: controls, onUnlock: () => setState(() => locked = false))
           else
@@ -1646,7 +1692,7 @@ class _MoviePlayerScreenState extends State<MoviePlayerScreen> {
                 valueListenable: playback.buffering,
                 builder: (context, buffering, _) => ValueListenableBuilder(
                   valueListenable: playback.playing,
-                  builder: (context, playing, _) => _BigPlay(playing: playing, loading: buffering && started && playing, onTap: _togglePlay),
+                  builder: (context, playing, _) => _BigPlay(playing: playing, loading: buffering && playing, onTap: _togglePlay),
                 ),
               ),
               SizedBox(width: episodic ? 40 : 0),
@@ -1915,6 +1961,37 @@ class _LockLayer extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Поки серія не пішла: сторінка балансера видима (його ▶ чи реклама), зверху — «Назад» і підказка.
+class _AssistBar extends StatelessWidget {
+  const _AssistBar({required this.onBack});
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.topLeft,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Material(
+              color: Colors.black.withValues(alpha: 0.55),
+              shape: const CircleBorder(),
+              child: IconButton(onPressed: onBack, icon: const Icon(LucideIcons.arrowLeft, color: Colors.white)),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(12)),
+              child: Text(tr('Торкніться ▶ у плеєрі — далі керування перейде до GameCon'), style: body(13, color: Colors.white)),
+            ),
+          ]),
         ),
       ),
     );
