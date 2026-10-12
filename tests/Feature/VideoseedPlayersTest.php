@@ -73,7 +73,32 @@ class VideoseedPlayersTest extends TestCase
         $this->assertSame('tv:105', $movie->tmdb_id);
         $this->assertSame('77042', $movie->kinopoisk_id);
         $this->assertSame(3, $movie->sources()->where('provider', 'videoseed')->count());
-        Http::assertSent(fn (HttpRequest $r) => $r['list'] === 'serial' && $r['token'] === self::TOKEN);
+        Http::assertSent(fn (HttpRequest $r) => ($r['list'] ?? null) === 'serial' && $r['token'] === self::TOKEN);
+        // Після імпорту тайтл одразу шукається за його ID — щоб підтягнути всі озвучки, а не лише зі списку.
+        Http::assertSent(fn (HttpRequest $r) => ! isset($r['list']) && filled($r['kp'] ?? $r['tmdb'] ?? $r['imdb'] ?? null));
+    }
+
+    public function test_title_from_kodik_catalog_also_gets_videoseed_voices(): void
+    {
+        config(['services.kodik.api_url' => 'https://kodik-api.com']);
+        app(SiteSettings::class)->putSecret('kodik_token', 'kodik-token');
+        Http::fake([
+            'kodik-api.com/*' => Http::response(['results' => [[
+                'id' => 'serial-9', 'type' => 'foreign-serial', 'link' => '//kodik.info/serial/9/hash/720p', 'title' => 'Секс и город',
+                'kinopoisk_id' => '77042', 'translation' => ['id' => 1, 'title' => 'LostFilm', 'type' => 'voice'],
+            ]]]),
+            'api.videoseed.tv/*' => Http::response(['status' => 'success', 'data' => [$this->item()], 'next_page' => null]),
+        ]);
+
+        // Автозаповнення з каталогу Kodik приносить одну озвучку Kodik.
+        $movie = app(CinemaService::class)->import([
+            'type' => 'serial', 'title' => 'Секс у великому місті', 'kinopoisk_id' => '77042',
+            'sources' => [['external_id' => 'serial-9', 'translation' => 'LostFilm', 'link' => 'https://kodik.info/serial/9/hash/720p']],
+        ], null, 'kodik', true, false);
+
+        // Решта плеєрів тайтлу (Videoseed за тим самим Кінопошук ID) додається одразу.
+        $this->assertSame(1, $movie->sources()->where('provider', 'kodik')->count());
+        $this->assertSame(3, $movie->sources()->where('provider', 'videoseed')->count());
     }
 
     public function test_player_rules_order_hide_and_rename(): void

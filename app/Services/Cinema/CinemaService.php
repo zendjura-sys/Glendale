@@ -2,6 +2,7 @@
 
 namespace App\Services\Cinema;
 
+use App\Jobs\RefreshMoviePlayers;
 use App\Models\Movie;
 use App\Models\MovieSource;
 use App\Models\User;
@@ -27,6 +28,7 @@ class CinemaService
     /**
      * Імпортує кандидата з Kodik/FlixCDN: створює фільм або оновлює наявний за зовнішніми ID.
      * Озвучки кандидата додаються й оновлюються, решта плеєрів тайтлу лишається; метадані наявного фільму лише доповнюються.
+     * Після запису фоном збираються всі озвучки тайтлу в усіх провайдерів (RefreshMoviePlayers).
      *
      * @param  array<string, mixed>  $candidate
      */
@@ -61,6 +63,8 @@ class CinemaService
 
             $this->syncSources($movie, $provider, $candidate['sources'] ?? []);
             $movie->wasRecentlyCreated = $fresh;
+            // Каталог приносить озвучки одного провайдера — решту (Kodik, Videoseed, FlixCDN за всіма ID) дотягуємо одразу.
+            RefreshMoviePlayers::dispatch($movie->id)->afterCommit();
 
             return $movie;
         });
