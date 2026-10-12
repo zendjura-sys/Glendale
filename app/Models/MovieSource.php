@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -18,10 +19,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $position
  * @property bool $is_hidden Схована адміністратором
  * @property int|null $episodes Скільки серій є в цій озвучці
+ * @property Carbon|null $missing_since Відколи провайдер не віддає озвучку
  */
-#[Fillable(['provider', 'external_id', 'translation', 'translation_type', 'quality', 'link', 'position', 'is_hidden', 'episodes'])]
+#[Fillable(['provider', 'external_id', 'translation', 'translation_type', 'quality', 'link', 'position', 'is_hidden', 'episodes', 'missing_since'])]
 class MovieSource extends Model
 {
+    /** Скільки днів поспіль провайдер має не віддавати озвучку, щоб її прибрали. */
+    public const RETIRE_DAYS = 30;
+
     public const PROVIDERS = [
         'kodik' => 'Kodik',
         'videoseed' => 'Videoseed',
@@ -31,7 +36,7 @@ class MovieSource extends Model
 
     protected function casts(): array
     {
-        return ['is_hidden' => 'boolean', 'episodes' => 'integer'];
+        return ['is_hidden' => 'boolean', 'episodes' => 'integer', 'missing_since' => 'datetime'];
     }
 
     /**

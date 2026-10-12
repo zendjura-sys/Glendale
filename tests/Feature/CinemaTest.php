@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Movie;
+use App\Models\MovieSource;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\Cinema\CinemaAutoImport;
@@ -222,9 +223,35 @@ class CinemaTest extends TestCase
         $this->assertSame('https://kodik.info/video/movie-1/hash/720p', $movie->sources->first()->link);
         $this->assertSame('16+', $movie->age_rating);
 
+        // Провайдер перестав віддавати «Дубляж»: озвучка лишається, доки не зникне на RETIRE_DAYS днів.
         $results = [$this->kodikItem('movie-2', 'LostFilm')];
         $this->actingAs($admin)->post("/admin/cinema/{$movie->id}/refresh")->assertRedirect();
+        $this->assertSame(['Дубляж', 'LostFilm'], $movie->sources()->orderBy('position')->pluck('translation')->all());
+        $this->assertNotNull($movie->sources()->where('translation', 'Дубляж')->value('missing_since'));
+
+        $this->travel(MovieSource::RETIRE_DAYS + 1)->days();
+        $this->actingAs($admin)->post("/admin/cinema/{$movie->id}/refresh")->assertRedirect();
         $this->assertSame(['LostFilm'], $movie->sources()->pluck('translation')->all());
+    }
+
+    public function test_catalog_import_keeps_other_voices_and_custom_players(): void
+    {
+        $movie = Movie::query()->create(['slug' => 'matrix', 'type' => 'movie', 'title' => 'Матриця', 'kinopoisk_id' => '301', 'is_published' => true]);
+        foreach ([['kodik', 'movie-1', 'Дубляж', 'https://kodik.info/video/movie-1/hash/720p'], ['kodik', 'movie-2', 'LostFilm', 'https://kodik.info/video/movie-2/hash/720p'], ['custom', 'own-1', 'Свій', 'https://example.com/embed/1']] as $i => [$provider, $id, $voice, $link]) {
+            $source = new MovieSource(['provider' => $provider, 'external_id' => $id, 'translation' => $voice, 'link' => $link, 'position' => $i]);
+            $source->movie()->associate($movie)->save();
+        }
+        $movie->sources()->where('external_id', 'movie-2')->update(['is_hidden' => true]);
+
+        // Автозаповнення каталогу приносить лише одну озвучку цього тайтлу.
+        app(CinemaService::class)->import([
+            'type' => 'movie', 'title' => 'Матриця', 'kinopoisk_id' => '301',
+            'sources' => [['external_id' => 'movie-3', 'translation' => 'AniDUB', 'link' => 'https://kodik.info/video/movie-3/hash/720p']],
+        ], null, 'kodik', true, false);
+
+        $this->assertSame(['Дубляж', 'LostFilm', 'Свій', 'AniDUB'], $movie->sources()->orderBy('position')->pluck('translation')->all());
+        $this->assertTrue((bool) $movie->sources()->where('external_id', 'movie-2')->value('is_hidden'));
+        $this->assertSame(0, $movie->sources()->whereNotNull('missing_since')->count());
     }
 
     public function test_kodik_token_error_is_reported_to_admin(): void

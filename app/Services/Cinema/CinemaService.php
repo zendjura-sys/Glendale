@@ -26,7 +26,7 @@ class CinemaService
 
     /**
      * Імпортує кандидата з Kodik/FlixCDN: створює фільм або оновлює наявний за зовнішніми ID.
-     * Плеєри провайдера синхронізуються повністю; метадані наявного фільму лише доповнюються.
+     * Озвучки кандидата додаються й оновлюються, решта плеєрів тайтлу лишається; метадані наявного фільму лише доповнюються.
      *
      * @param  array<string, mixed>  $candidate
      */
@@ -80,7 +80,7 @@ class CinemaService
         $result = [];
         foreach ($found as $provider => $sources) {
             if ($sources !== null) {
-                $this->syncSources($movie, $provider, $sources);
+                $this->syncSources($movie, $provider, $sources, true);
                 $result[$provider] = count($sources);
             }
         }
@@ -182,9 +182,9 @@ class CinemaService
     }
 
     /**
-     * Проставка плеєрів: нові озвучки додаються завжди; наявні — замінюються лише з $replace.
-     * Із $replace зниклі в провайдера озвучки
-     * прибираються, але тільки коли провайдер щось повернув (порожня відповідь нічого не видаляє).
+     * Проставка плеєрів: нові озвучки додаються завжди; наявні — оновлюються лише з $replace.
+     * Озвучки, яких провайдер цього разу не віддав, не видаляються одразу: їх прибирає лише
+     * тривала відсутність (MovieSource::RETIRE_DAYS), і тільки коли провайдер щось повернув.
      *
      * @param  list<array<string, mixed>>  $sources
      * @return array{added: int, replaced: int, removed: int}
@@ -212,21 +212,38 @@ class CinemaService
 
                 continue;
             }
-            if (! $replace) {
-                continue;
-            }
-            $model->fill([...$values, 'position' => $position]);
-            if ($model->isDirty(['link', 'translation', 'translation_type', 'quality'])) {
-                $stats['replaced']++;
+            $model->missing_since = null;
+            if ($replace) {
+                $model->fill([...$values, 'position' => $position]);
+                if ($model->isDirty(['link', 'translation', 'translation_type', 'quality'])) {
+                    $stats['replaced']++;
+                }
+            } elseif (isset($values['episodes'])) {
+                // Кількість серій росте — її оновлюємо завжди, решту лишаємо як є.
+                $model->episodes = $values['episodes'];
             }
             $model->save();
         }
-        if ($replace && $seen !== []) {
-            $stats['removed'] = MovieSource::query()->where('movie_id', $movie->id)->where('provider', $provider)
-                ->whereNotIn('external_id', $seen)->delete();
-        }
+        $stats['removed'] = $this->retire($movie, $provider, $seen);
 
         return $stats;
+    }
+
+    /**
+     * Озвучки провайдера, яких не було у відповіді, позначаються зниклими; прибираються лише ті,
+     * що зникли понад MovieSource::RETIRE_DAYS днів тому. Порожня відповідь нічого не чіпає.
+     *
+     * @param  list<string>  $seen  external_id з відповіді провайдера
+     */
+    private function retire(Movie $movie, string $provider, array $seen): int
+    {
+        if ($seen === []) {
+            return 0;
+        }
+        $missing = MovieSource::query()->where('movie_id', $movie->id)->where('provider', $provider)->whereNotIn('external_id', $seen);
+        (clone $missing)->whereNull('missing_since')->update(['missing_since' => Carbon::now()]);
+
+        return (clone $missing)->where('missing_since', '<', Carbon::now()->subDays(MovieSource::RETIRE_DAYS))->delete();
     }
 
     /**
@@ -238,7 +255,7 @@ class CinemaService
         if ($sources === null) {
             throw new CinemaException('У фільму немає зовнішнього ID (IMDb, Shikimori) — Kodik не знайде його.', 422);
         }
-        $this->syncSources($movie, 'kodik', $sources);
+        $this->syncSources($movie, 'kodik', $sources, true);
 
         return count($sources);
     }
@@ -259,20 +276,37 @@ class CinemaService
     }
 
     /**
+     * Записує озвучки провайдера, нічого не видаляючи одразу: інші озвучки й плеєри тайтлу лишаються.
+     * $complete — це повна відповідь провайдера (оновлення плеєрів), а не один результат каталогу:
+     * лише тоді давно зниклі озвучки прибираються (див. retire()).
+     *
      * @param  list<array<string, mixed>>  $sources
      */
-    public function syncSources(Movie $movie, string $provider, array $sources): void
+    public function syncSources(Movie $movie, string $provider, array $sources, bool $complete = false): void
     {
-        $keep = [];
-        foreach ($sources as $position => $source) {
-            $model = $movie->sources()->getQuery()->firstOrNew(['provider' => $provider, 'external_id' => $source['external_id']]);
-            $model->fill([...$source, 'provider' => $provider, 'position' => $position]);
-            $model->movie()->associate($movie);
+        $existing = MovieSource::query()->where('movie_id', $movie->id)->where('provider', $provider)->get()->keyBy('external_id');
+        $next = (int) MovieSource::query()->where('movie_id', $movie->id)->max('position') + 1;
+        $seen = [];
+        foreach ($sources as $source) {
+            $id = (string) ($source['external_id'] ?? '');
+            if ($id === '' || ! filled($source['link'] ?? null)) {
+                continue;
+            }
+            $seen[] = $id;
+            $values = array_intersect_key($source, array_flip(['translation', 'translation_type', 'quality', 'link', 'episodes']));
+            /** @var MovieSource|null $model */
+            $model = $existing->get($id);
+            if ($model === null) {
+                $model = new MovieSource(['provider' => $provider, 'external_id' => $id, 'position' => $next++]);
+                $model->movie()->associate($movie);
+            }
+            // Схованість і порядок, які задав адміністратор, не чіпаємо.
+            $model->fill([...$values, 'missing_since' => null]);
             $model->save();
-            $keep[] = $model->id;
         }
-
-        MovieSource::query()->where('movie_id', $movie->id)->where('provider', $provider)->whereNotIn('id', $keep)->delete();
+        if ($complete) {
+            $this->retire($movie, $provider, $seen);
+        }
     }
 
     /**
