@@ -30,14 +30,14 @@ yarn-error.log
 /.agents
 /.amp
 /.claude
-/.cursor
+/.cursor/*
+!/.cursor/rules/
 /.factory
 /.grok
 /.junie
 /.kiro
 /.pi
 /.mcp.json
-/AGENTS.md
 /CLAUDE.md
 /boost.json
 /opencode.json
