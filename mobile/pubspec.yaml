@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.1.43+54
+version: 1.1.44+55
 
 environment:
   sdk: ^3.13.5
@@ -59,7 +59,7 @@ dependencies:
   home_widget: ^0.10.0
   # GameCon+ у застосунку — лише через Google Play Billing (сервер перевіряє кожну покупку).
   in_app_purchase: ^3.2.3
-  in_app_purchase_android: ^0.4.0
+  in_app_purchase_android: ^0.5.4
 dev_dependencies:
   flutter_test:
     sdk: flutter
