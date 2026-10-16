@@ -21,7 +21,7 @@ class Session extends ChangeNotifier {
   final Api api;
   static String? _token;
 
-  /// GameCon+ цього акаунта: статус і покупка через Google Play Billing (див. subscription.dart, play_billing.dart).
+  /// GameCon+ цього акаунта — лише статус (купівлі в застосунку немає, див. subscription.dart).
   late final SubscriptionController subscription;
 
   static bool get hasToken => _token != null;
