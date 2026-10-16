@@ -36,6 +36,7 @@ export default defineConfig({
     lint: {
         ignorePatterns: [
             'vendor/**',
+            '.claude/**',
             'node_modules/**',
             'public/**',
             'mobile/**',
@@ -60,6 +61,8 @@ export default defineConfig({
         htmlWhitespaceSensitivity: 'css',
         ignorePatterns: [
             '.github/**',
+            // Скопійовані скіли Anthropic — сторонній текст, не форматуємо.
+            '.claude/**',
             'composer.json',
             // Flutter-застосунок форматує `dart format`, не vp.
             'mobile/**',
