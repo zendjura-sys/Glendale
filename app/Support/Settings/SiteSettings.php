@@ -95,15 +95,25 @@ class SiteSettings
         'legal_address' => null,
         'legal_country' => null,
         'legal_updated' => null,
-        // Білінг: способи поповнення рахунку (посилання, увімкнення) і токен Donatello.
+        // Реквізити ФОП для документів і підвалу (Закон «Про електронну комерцію», ст. 7).
+        'legal_tax_id' => null,
+        'legal_registry' => null,
+        'legal_phone' => null,
+        'legal_tax_status' => null,
+        // Старі способи поповнення рахунку й токен Donatello (баланс прибрано; лишаються для історії).
         'plus_methods' => [],
         // Товари, зняті з продажу (ключі config('plus.products')): зникають зі сторінок цін і GameCon+.
         'plus_disabled' => [],
         'donatello_token' => null,
+        // Оплата карткою: токен еквайрингу monobank, тарифи й правила підписок (Catalog), Google Pay.
+        'monobank_acquiring_token' => null,
+        'billing_products' => [],
+        'billing_rules' => [],
+        'google_pay' => [],
     ];
 
     /** Ключі, які не можна віддавати у фронтенд. */
-    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'kodik_links_key', 'videoseed_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key', 'deepl_key', 'maxmind_license_key', 'vapid_private', 'telegram_bot_token', 'telegram_webhook_secret', 'twitch_client_secret', 'sightengine_secret', 'donatello_token'];
+    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'kodik_links_key', 'videoseed_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key', 'deepl_key', 'maxmind_license_key', 'vapid_private', 'telegram_bot_token', 'telegram_webhook_secret', 'twitch_client_secret', 'sightengine_secret', 'donatello_token', 'monobank_acquiring_token'];
 
     /** @var array<string, mixed>|null */
     private ?array $values = null;

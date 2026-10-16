@@ -3,7 +3,6 @@
 namespace App\Services\Plus;
 
 use App\Models\Family;
-use App\Models\PlusCode;
 use App\Models\PlusGrant;
 use App\Models\PlusRenewal;
 use App\Models\User;
@@ -112,20 +111,6 @@ class Plus
         $value = $until !== null && now()->lt($until) ? $latest : null;
 
         $owner->forceFill(['plus_until' => $value])->saveQuietly();
-    }
-
-    public function redeem(User $user, string $code): PlusGrant
-    {
-        return DB::transaction(function () use ($user, $code) {
-            $row = PlusCode::query()->where('code', mb_strtoupper(trim($code)))->lockForUpdate()->first();
-            abort_unless($row !== null && $row->usable(), 422, 'Промокод недійсний або вже використаний.');
-            abort_if($row->redemptions()->where('user_id', $user->id)->exists(), 422, 'Ви вже використали цей промокод.');
-
-            $row->redemptions()->create(['user_id' => $user->id]);
-            $row->increment('uses');
-
-            return $this->grant($user, $row->days, 'code', note: $row->code);
-        });
     }
 
     /**

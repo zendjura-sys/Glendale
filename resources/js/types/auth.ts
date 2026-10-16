@@ -21,8 +21,6 @@ export type User = {
     nav_tabs: string[];
     palette?: string;
     hide_spoilers?: boolean;
-    /** Баланс рахунку, копійки (лише сайт). */
-    balance?: number;
     /** GameCon+ активний до (ISO), null — немає. */
     plus_until?: string | null;
     profanity_mask?: string | null;

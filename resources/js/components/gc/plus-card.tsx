@@ -1,10 +1,9 @@
 import { Link } from '@inertiajs/react';
-import { ChevronRight, Sparkles, Wallet } from 'lucide-react';
+import { ChevronRight, CreditCard, Sparkles } from 'lucide-react';
 import { PlusBadge } from '@/components/gc/plus';
-import { money } from '@/lib/billing';
+import { usePrice } from '@/lib/billing';
 import { formatDate } from '@/lib/format';
 import { tr } from '@/lib/i18n';
-import { PLUS_PRICES } from '@/lib/plus';
 import { cn } from '@/lib/utils';
 
 const PERKS = (): string[] => [
@@ -15,17 +14,16 @@ const PERKS = (): string[] => [
 
 /**
  * Картка GameCon+ у меню: статус (до коли, скільки днів лишилось) або коротко про бонуси,
- * кнопка оформлення й рахунок. Плоска: скло, тонка рамка, один акцент — без світіння й 3D.
+ * кнопка оформлення й оплата. Плоска: скло, тонка рамка, один акцент — без світіння й 3D.
  */
 export function PlusMenuCard({
     until,
-    balance,
     className,
 }: {
     until: string | null | undefined;
-    balance: number;
     className?: string;
 }) {
+    const monthly = usePrice('plus_month');
     const ends = until ? new Date(until).getTime() : 0;
     const active = ends > Date.now();
     const daysLeft = active ? Math.ceil((ends - Date.now()) / 86_400_000) : 0;
@@ -90,7 +88,7 @@ export function PlusMenuCard({
                     </ul>
                     <p className="mt-2.5 text-sm text-white/60">
                         {tr('від {price} ₴ на місяць', {
-                            price: PLUS_PRICES.plus_month,
+                            price: monthly,
                         })}
                     </p>
                 </div>
@@ -107,9 +105,10 @@ export function PlusMenuCard({
                 <Link
                     href="/plus/billing"
                     className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-sm font-semibold text-white/85 transition hover:bg-white/10 active:bg-white/[0.12]"
+                    aria-label={tr('Оплата й підписки')}
                 >
-                    <Wallet className="size-4 text-white/60" />
-                    <span className="tabular-nums">{money(balance)}</span>
+                    <CreditCard className="size-4 text-white/60" />
+                    {tr('Оплата')}
                 </Link>
             </div>
         </section>

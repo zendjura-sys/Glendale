@@ -1,18 +1,15 @@
 import { LayoutTemplate, Megaphone, Sparkle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { money } from '@/lib/billing';
+import { useProducts } from '@/lib/billing';
 import { formatDate } from '@/lib/format';
 import { tr } from '@/lib/i18n';
-import { buyProduct, PLUS_PRICES } from '@/lib/plus';
-import type { PlusProduct } from '@/lib/plus';
+import { buyProduct } from '@/lib/plus';
 
 export type ServerPromotionData = {
     active: { kind: string; starts_at: string; ends_at: string }[];
     free_at: Record<string, string>;
     /** Товари просування, які зараз продаються. */
     available: string[];
-    /** Баланс рахунку власника, копійки. */
-    balance: number;
 };
 
 const KINDS = (): {
@@ -20,7 +17,6 @@ const KINDS = (): {
     icon: LucideIcon;
     title: string;
     text: string;
-    products: PlusProduct[];
 }[] => [
     {
         kind: 'top',
@@ -29,7 +25,6 @@ const KINDS = (): {
         text: tr(
             'Сервер стоїть першим у каталозі. Одночасно — до трьох серверів.',
         ),
-        products: ['promo_top_7', 'promo_top_30'],
     },
     {
         kind: 'highlight',
@@ -38,14 +33,12 @@ const KINDS = (): {
         text: tr(
             'Рамка в кольорі сайту й позначка — картку помітно серед інших.',
         ),
-        products: ['promo_highlight_7', 'promo_highlight_30'],
     },
     {
         kind: 'banner',
         icon: LayoutTemplate,
         title: tr('Банер над каталогом'),
         text: tr('Великий банер над списком серверів на 30 днів. Одне місце.'),
-        products: ['promo_banner_30'],
     },
 ];
 
@@ -57,7 +50,8 @@ export function ServerPromotion({
     serverId: number;
     data: ServerPromotionData;
 }) {
-    const buy = (product: PlusProduct) =>
+    const catalog = useProducts();
+    const buy = (product: string) =>
         buyProduct(product, { server_id: serverId });
 
     return (
@@ -67,12 +61,16 @@ export function ServerPromotion({
             </h2>
             <p className="mt-1 text-sm text-white/50">
                 {tr(
-                    'Платні місця позначаються «Реклама» і не впливають на голоси та рейтинг. Оплата — з рахунку ({balance}).',
-                    { balance: money(data.balance) },
+                    'Платні місця позначаються «Реклама» і не впливають на голоси та рейтинг. Оплата карткою через monobank.',
                 )}
             </p>
             <div className="mt-4 grid gap-3 md:grid-cols-3">
-                {KINDS().map(({ kind, icon: Icon, title, text, products }) => {
+                {KINDS().map(({ kind, icon: Icon, title, text }) => {
+                    const products = Object.entries(catalog)
+                        .filter(
+                            ([, p]) => p.kind === 'promo' && p.promo === kind,
+                        )
+                        .map(([key]) => key);
                     const mine = data.active.filter((p) => p.kind === kind);
                     const freeAt = data.free_at[kind];
                     const waits =
@@ -124,13 +122,10 @@ export function ServerPromotion({
                                         onClick={() => buy(product)}
                                         className="inline-flex h-9 items-center rounded-xl bg-[var(--btn-primary,#6366f1)] px-3 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
                                     >
-                                        {product.endsWith('_7')
-                                            ? tr('7 днів · {price} ₴', {
-                                                  price: PLUS_PRICES[product],
-                                              })
-                                            : tr('30 днів · {price} ₴', {
-                                                  price: PLUS_PRICES[product],
-                                              })}
+                                        {tr('{days} дн. · {price} ₴', {
+                                            days: catalog[product].days,
+                                            price: catalog[product].price,
+                                        })}
                                     </button>
                                 ))}
                             </div>

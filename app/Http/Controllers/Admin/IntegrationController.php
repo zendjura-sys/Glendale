@@ -17,7 +17,7 @@ use App\Models\VoiceParticipant;
 use App\Models\VoiceRoom;
 use App\Services\Auth\DiscordOAuth;
 use App\Services\Auth\FirebaseAuth;
-use App\Services\Billing\Donatello;
+use App\Services\Billing\MonobankAcquiring;
 use App\Services\Bots\DiscordApi;
 use App\Services\Bots\TelegramApi;
 use App\Services\Cinema\CinemaException;
@@ -622,23 +622,24 @@ class IntegrationController extends Controller
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{6,40}$/'], 'message' => 'Ключ OMDb — латинські літери та цифри.'],
                 ],
             ],
-            'donatello' => [
-                'label' => 'Donatello (поповнення рахунку)',
+            'monobank' => [
+                'label' => 'monobank — інтернет-еквайринг',
                 'group' => 'payments',
-                'description' => 'Автоматичне поповнення рахунку: людина донатить на вашу сторінку Donatello з кодом заявки в повідомленні, і сума зараховується сама протягом хвилини.',
-                'docs' => 'https://donatello.to',
+                'description' => 'Оплата GameCon+ і просування карткою Visa / Mastercard, Apple Pay, Google Pay і в застосунку monobank. Збережені картки — для автопродовження. Кошти надходять на рахунок ФОП у monobank.',
+                'docs' => 'https://monobank.ua/api-docs/acquiring',
                 'steps' => [
-                    'Увійдіть у donatello.to → Налаштування → API: увімкніть API й скопіюйте токен сюди.',
-                    'Натисніть «Перевірити».',
-                    'В Адмінка → Білінг → «Способи поповнення» ввімкніть Donatello й вставте посилання на свою сторінку донатів.',
-                    'Донати без коду в повідомленні з’являться в Адмінка → Білінг → «Донати без заявки» — їх можна прив’язати вручну.',
+                    'Підключіть інтернет-еквайринг до ФОП: застосунок monobank → ФОП → «Еквайринг» → «Інтернет-еквайринг» (потрібні сайт і юридичні документи).',
+                    'Вебкабінет web.monobank.ua → Еквайринг → Налаштування → скопіюйте токен (X-Token) сюди. Для перевірки є тестовий токен на api.monobank.ua.',
+                    'Натисніть «Перевірити» — має з’явитися назва вашого магазину.',
+                    'Адреса вебхука задається сама: '.rtrim((string) config('app.url'), '/').'/billing/monobank/webhook (сайт має бути доступний з інтернету по https).',
+                    'Тарифи, автопродовження й Google Pay — в Адмінка → Білінг.',
                 ],
-                'configured' => app(Donatello::class)->configured(),
+                'configured' => app(MonobankAcquiring::class)->configured(),
                 'stat' => PlusGrant::query()->where('ends_at', '>', now())->distinct()->count('owner_id').' з GameCon+ · '.PlusPayment::query()->where('status', PlusPayment::PAID)->count().' покупок',
-                'test' => fn () => app(Donatello::class)->test(),
+                'test' => fn () => rescue(fn () => app(MonobankAcquiring::class)->details() !== null, false, report: false),
                 'fields' => [
-                    ['name' => 'token', 'setting' => 'donatello_token', 'type' => 'secret', 'label' => 'API-токен', 'env' => config('services.donatello.token'),
-                        'rules' => ['nullable', 'string', 'min:10', 'max:200', 'regex:/^[A-Za-z0-9_\-.]+$/'], 'message' => 'Токен — латинські літери, цифри, _, - і крапка.'],
+                    ['name' => 'token', 'setting' => 'monobank_acquiring_token', 'type' => 'secret', 'label' => 'Токен еквайрингу (X-Token)', 'env' => config('services.monobank_acquiring.token'),
+                        'rules' => ['nullable', 'string', 'min:20', 'max:200', 'regex:/^[A-Za-z0-9_\-]+$/'], 'message' => 'Токен — латинські літери, цифри, _ і -.'],
                 ],
             ],
         ];

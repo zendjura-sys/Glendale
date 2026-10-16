@@ -5,6 +5,7 @@ namespace App\Services\Billing;
 use App\Http\Controllers\PlusController;
 use App\Models\Family;
 use App\Models\GtaServer;
+use App\Models\PaymentOrder;
 use App\Models\PlusGrant;
 use App\Models\PlusPayment;
 use App\Models\PlusRenewal;
@@ -14,7 +15,6 @@ use App\Notifications\BillingNotice;
 use App\Notifications\PlusGifted;
 use App\Services\Plus\Plus;
 use App\Services\Plus\ServerPromotions;
-use App\Support\Settings\SiteSettings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -23,44 +23,43 @@ use Illuminate\Validation\ValidationException;
  */
 class Shop
 {
-    /** За скільки до кінця періоду автопродовження списує оплату. */
-    public const RENEW_BEFORE_HOURS = 24;
-
     public function __construct(
         private readonly Wallet $wallet,
         private readonly Plus $plus,
         private readonly ServerPromotions $promotions,
     ) {}
 
-    /** Ціна товару в копійках. */
+    /** Ціна товару в копійках (з урахуванням правок адмінки). */
     public static function price(string $product): int
     {
-        return (int) config("plus.products.{$product}.price") * 100;
+        return app(Catalog::class)->price($product);
     }
 
     /** Товар у продажу: є в каталозі й не знятий адміністратором. */
     public static function enabled(string $product): bool
     {
-        return array_key_exists($product, (array) config('plus.products'))
-            && ! in_array($product, (array) app(SiteSettings::class)->get('plus_disabled', []), true);
+        return app(Catalog::class)->enabled($product);
     }
 
     /**
      * Товари в продажу з цінами (₴) — для сторінок цін, GameCon+ і просування.
      *
-     * @return array<string, array{kind: string, price: int, days: int, recurring: bool, available: bool}>
+     * @return array<string, array{kind: string, promo: string|null, name: string, price: int, old_price: int|null, days: int, recurring: bool, badge: string|null, available: bool}>
      */
     public static function catalog(): array
     {
         $out = [];
-        foreach ((array) config('plus.products') as $key => $product) {
-            $product = (array) $product;
-            $out[(string) $key] = [
-                'kind' => (string) $product['kind'],
-                'price' => (int) $product['price'],
-                'days' => (int) $product['days'],
-                'recurring' => (bool) $product['recurring'],
-                'available' => self::enabled((string) $key),
+        foreach (app(Catalog::class)->products() as $key => $product) {
+            $out[$key] = [
+                'kind' => $product['kind'],
+                'promo' => $product['promo'],
+                'name' => $product['name'],
+                'price' => $product['price'],
+                'old_price' => $product['old_price'],
+                'days' => $product['days'],
+                'recurring' => $product['recurring'],
+                'badge' => $product['badge'],
+                'available' => $product['enabled'],
             ];
         }
 
@@ -69,7 +68,7 @@ class Shop
 
     public static function label(string $product): string
     {
-        return (string) config("plus.products.{$product}.name", $product);
+        return app(Catalog::class)->label($product);
     }
 
     /**
@@ -80,7 +79,7 @@ class Shop
      */
     public function target(User $payer, string $product, array $input): User|Family|GtaServer
     {
-        $kind = (string) config("plus.products.{$product}.kind");
+        $kind = (string) (app(Catalog::class)->get($product)['kind'] ?? '');
 
         return match ($kind) {
             'plus' => $payer,
@@ -111,7 +110,7 @@ class Shop
             $this->apply($payment, $product, $target, $payer, 'purchase');
 
             if ($target instanceof User || $target instanceof Family) {
-                if ((string) config("plus.products.{$product}.kind") !== 'gift') {
+                if ((string) (app(Catalog::class)->get($product)['kind'] ?? '') !== 'gift') {
                     $this->setRenewal($payer, $product, $target, $renew);
                 }
             }
@@ -121,7 +120,7 @@ class Shop
     }
 
     /** Увімкнути / вимкнути автопродовження для власника (людини чи сім’ї). */
-    public function setRenewal(User $payer, string $product, User|Family $owner, bool $active): ?PlusRenewal
+    public function setRenewal(User $payer, string $product, User|Family $owner, bool $active, ?int $cardId = null): ?PlusRenewal
     {
         $where = ['owner_type' => $this->plus->type($owner), 'owner_id' => $owner->id];
         if (! $active) {
@@ -130,60 +129,138 @@ class Shop
             return null;
         }
 
-        return PlusRenewal::query()->updateOrCreate($where, [
-            'user_id' => $payer->id,
-            'product' => $product,
-            'active' => true,
-            'failed_at' => null,
-        ]);
+        $values = ['user_id' => $payer->id, 'product' => $product, 'active' => true, 'failed_at' => null, 'attempts' => 0];
+        if ($cardId !== null) {
+            $values['card_id'] = $cardId;
+        }
+
+        return PlusRenewal::query()->updateOrCreate($where, $values);
     }
 
     /**
-     * Продовжити, якщо період закінчується протягом доби (або вже закінчився).
-     * Коштів не вистачає — повідомлення раз на добу, спроба повториться.
+     * Продовжити, якщо період закінчується найближчим часом (Catalog::rules renew_before_hours) або вже закінчився.
+     * Спершу — залишок старого балансу (якщо покриває ціну), далі — збережена картка (оплата приходить вебхуком).
+     * Невдалі спроби повторюються через retry_hours, не більше retry_max разів.
      */
     public function renew(PlusRenewal $renewal): bool
     {
         if (! $renewal->active) {
             return false;
         }
+        $catalog = app(Catalog::class);
+        $rules = $catalog->rules();
         $owner = $this->plus->owner($renewal->owner_type, $renewal->owner_id);
         $payer = $renewal->user;
         $stillLeader = ! $owner instanceof Family || PlusController::ledFamilies($payer)->contains('id', $owner->id);
-        if ($owner === null || ! $stillLeader || ! self::enabled($renewal->product)) {
+        if ($owner === null || ! $stillLeader || ! self::enabled($renewal->product) || ! in_array($renewal->product, $catalog->renewable(), true)) {
             $renewal->update(['active' => false]);
 
             return false;
         }
-        if ($owner->plus_until !== null && $owner->plus_until->gt(now()->addHours(self::RENEW_BEFORE_HOURS))) {
+        if ($owner->plus_until !== null && $owner->plus_until->gt(now()->addHours($rules['renew_before_hours']))) {
+            return false;
+        }
+        if ($renewal->failed_at !== null && $renewal->failed_at->gt(now()->subHours(max(1, $rules['retry_hours'])))) {
+            return false;
+        }
+        if ($renewal->attempts >= max(1, $rules['retry_max'])) {
             return false;
         }
 
-        try {
+        // Залишок старого балансу покриває ціну — списуємо з нього.
+        if ((int) $payer->balance >= self::price($renewal->product)) {
             DB::transaction(function () use ($renewal, $owner, $payer) {
                 $payment = $this->charge($payer, $renewal->product, $owner, 'renewal', 'Автопродовження: '.self::label($renewal->product));
                 $this->apply($payment, $renewal->product, $owner, $payer, 'renewal');
-                $renewal->update(['renewed_at' => now(), 'failed_at' => null]);
+                $renewal->update(['renewed_at' => now(), 'failed_at' => null, 'attempts' => 0]);
             });
-        } catch (InsufficientFunds $e) {
-            if ($renewal->failed_at === null || $renewal->failed_at->lt(now()->subDay())) {
-                $renewal->update(['failed_at' => now()]);
-                $payer->notify(new BillingNotice(
-                    'plus_renewal_failed',
-                    'Не вдалося продовжити '.self::label($renewal->product).': бракує '.Wallet::uah($e->shortfall).'. Поповніть рахунок — продовження спрацює саме.',
-                ));
-            }
+            $owner->refresh();
+            $payer->notify(new BillingNotice('plus_renewed', self::label($renewal->product).' продовжено до '.$owner->plus_until?->format('d.m.Y').'.'));
+
+            return true;
+        }
+
+        $checkout = app(Checkout::class);
+        $card = $renewal->card;
+        if ($card === null || ! $rules['card_renewals'] || ! $checkout->available()) {
+            $renewal->update(['failed_at' => now(), 'attempts' => $renewal->attempts + 1]);
+            $payer->notify(new BillingNotice(
+                'plus_renewal_failed',
+                self::label($renewal->product).' закінчується — оплатіть продовження в GameCon+'.($card === null ? ' (збережіть картку, щоб наступного разу продовження було автоматичним).' : '.'),
+            ));
 
             return false;
         }
+        // Не списувати двічі, поки попередня спроба ще в банку.
+        $busy = PaymentOrder::query()->where('renewal_id', $renewal->id)->where('status', PaymentOrder::PENDING)
+            ->where('created_at', '>=', now()->subHours(2))->exists();
+        if ($busy) {
+            return false;
+        }
 
-        $owner->refresh();
-        $payer->notify(new BillingNotice(
-            'plus_renewed',
-            self::label($renewal->product).' продовжено з рахунку до '.$owner->plus_until?->format('d.m.Y').'.',
-        ));
+        return $checkout->chargeSaved($renewal, $card)->status === PaymentOrder::PAID;
+    }
 
-        return true;
+    /**
+     * Видати товар за оплачене замовлення (викликає Checkout після успіху в monobank): запис оплати,
+     * GameCon+ / просування, автопродовження з карткою. Залишок старого балансу, зарахований у ціну, списується.
+     */
+    public function fulfil(PaymentOrder $order): PlusPayment
+    {
+        if ($order->payment_id !== null && ($existing = PlusPayment::query()->find($order->payment_id)) !== null) {
+            return $existing;
+        }
+        $payer = $order->user;
+        $target = $this->targetOf($order->target_type, $order->target_id);
+        abort_if($target === null, 422, 'Отримувача покупки більше немає.');
+
+        if ($order->credit_used > 0) {
+            try {
+                $this->wallet->debit($payer, $order->credit_used, $order->kind === 'renewal' ? 'renewal' : 'purchase', 'Залишок балансу в оплату: '.self::label($order->product), $order->product, 'order:'.$order->id);
+            } catch (InsufficientFunds) {
+                // Баланс змінився між замовленням і оплатою — товар однаково видаємо, різницю бачить адміністратор.
+            }
+        }
+        $payment = PlusPayment::query()->create([
+            'provider' => $order->invoice_id !== null ? 'monobank' : 'wallet',
+            'provider_id' => $order->invoice_id ?? 'order-'.$order->id,
+            'user_id' => $payer->id,
+            'product' => $order->product,
+            'target_type' => $order->target_type,
+            'target_id' => $order->target_id,
+            'amount' => $order->price,
+            'currency' => 'UAH',
+            'status' => PlusPayment::PAID,
+            'receipt_url' => null,
+        ]);
+        $order->update(['payment_id' => $payment->id]);
+        $this->apply($payment, $order->product, $target, $payer, $order->kind === 'renewal' ? 'renewal' : 'purchase');
+
+        if ($order->kind === 'renewal' && $order->renewal_id !== null) {
+            PlusRenewal::query()->whereKey($order->renewal_id)->update(['renewed_at' => now(), 'failed_at' => null, 'attempts' => 0]);
+        } elseif (($target instanceof User || $target instanceof Family) && (string) (app(Catalog::class)->get($order->product)['kind'] ?? '') !== 'gift') {
+            $this->setRenewal($payer, $order->product, $target, $order->renew, $order->card_id);
+        }
+
+        return $payment;
+    }
+
+    public function targetType(User|Family|GtaServer $target): string
+    {
+        return match (true) {
+            $target instanceof GtaServer => 'server',
+            $target instanceof Family => 'family',
+            default => 'user',
+        };
+    }
+
+    private function targetOf(string $type, int $id): User|Family|GtaServer|null
+    {
+        return match ($type) {
+            'server' => GtaServer::query()->find($id),
+            'family' => Family::query()->find($id),
+            default => User::query()->find($id),
+        };
     }
 
     /** Після поповнення — одразу продовжити те, що чекало коштів. */
@@ -194,9 +271,10 @@ class Shop
     }
 
     /**
-     * Повернення покупки на рахунок: доступ і просування знімаються, гроші — на баланс платника.
+     * Повернення покупки: доступ і просування знімаються. Оплата з балансу — гроші назад на баланс;
+     * оплата карткою — повернення на картку робить Checkout::refund (тут — лише залишок балансу, зарахований у ціну).
      */
-    public function refund(PlusPayment $payment, User $by): void
+    public function refund(PlusPayment $payment, ?User $by): void
     {
         DB::transaction(function () use ($payment, $by) {
             $payment = PlusPayment::query()->lockForUpdate()->findOrFail($payment->id);
@@ -209,8 +287,12 @@ class Shop
             ServerPromotion::query()->where('payment_id', $payment->id)->update(['ends_at' => now()]);
 
             $payer = $payment->user;
-            if ($payer !== null && $payment->provider === 'wallet') {
+            if ($payer !== null && $payment->provider === 'wallet' && str_starts_with($payment->provider_id, 'wt-')) {
                 $this->wallet->credit($payer, $payment->amount, 'refund', 'Повернення: '.self::label($payment->product), $payment->product, 'payment:'.$payment->id, $by);
+            }
+            $order = PaymentOrder::query()->where('payment_id', $payment->id)->first();
+            if ($payer !== null && $order !== null && $order->credit_used > 0) {
+                $this->wallet->credit($payer, $order->credit_used, 'refund', 'Повернення залишку балансу: '.self::label($payment->product), $payment->product, 'order:'.$order->id, $by);
             }
         });
     }
@@ -245,11 +327,11 @@ class Shop
 
     private function apply(PlusPayment $payment, string $product, User|Family|GtaServer $target, User $payer, string $source): void
     {
-        $meta = (array) config("plus.products.{$product}");
+        $meta = (array) app(Catalog::class)->get($product);
         $days = (int) ($meta['days'] ?? 0);
 
         if ($target instanceof GtaServer) {
-            $this->promotions->start($target, (string) $meta['promo'], $days, $payer, $payment->id);
+            $this->promotions->start($target, (string) ($meta['promo'] ?? 'top'), $days, $payer, $payment->id);
 
             return;
         }

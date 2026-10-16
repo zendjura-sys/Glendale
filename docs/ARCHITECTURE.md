@@ -11,15 +11,15 @@ GameCon (gamecon.online) — социальная сеть для геймеро
 
 ## 1. Стек
 
-| Часть | Технологии |
-|---|---|
-| Бэкенд | PHP 8.3+, **Laravel 13**, Fortify (вход, 2FA, passkeys), Reverb (WebSocket), очереди и кеш в Redis, БД MariaDB |
-| Веб‑клиент | **Inertia.js + React 19 + TypeScript**, Vite, Tailwind CSS 4, Radix UI, иконки Lucide, Wayfinder (типизированные маршруты), Laravel Echo (реалтайм) |
-| Приложение | **Flutter** (Dart 3), go_router, http, just_audio + audio_service (музыка в фоне), video_player (свой плеер кино), webview_flutter (плееры балансеров), livekit_client (голос), firebase_messaging (push), home_widget (виджет семьи) |
-| Голос и звонки | LiveKit (отдельный сервер, конфиг в `deploy/livekit`) |
-| Push | Firebase Cloud Messaging (приложение) + Web Push VAPID (сайт) |
-| Сервер | Ubuntu, nginx, PHP‑FPM, systemd‑сервисы `gamecon-queue`, `gamecon-reverb`, `gamecon-scheduler` (см. `deploy/`) |
-| CI | GitHub Actions: `tests.yml` (сайт), `app-build.yml` (APK + AAB), `app-audio-check.yml` (фоновое аудио на эмуляторе) |
+| Часть          | Технологии                                                                                                                                                                                                                            |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Бэкенд         | PHP 8.3+, **Laravel 13**, Fortify (вход, 2FA, passkeys), Reverb (WebSocket), очереди и кеш в Redis, БД MariaDB                                                                                                                        |
+| Веб‑клиент     | **Inertia.js + React 19 + TypeScript**, Vite, Tailwind CSS 4, Radix UI, иконки Lucide, Wayfinder (типизированные маршруты), Laravel Echo (реалтайм)                                                                                   |
+| Приложение     | **Flutter** (Dart 3), go_router, http, just_audio + audio_service (музыка в фоне), video_player (свой плеер кино), webview_flutter (плееры балансеров), livekit_client (голос), firebase_messaging (push), home_widget (виджет семьи) |
+| Голос и звонки | LiveKit (отдельный сервер, конфиг в `deploy/livekit`)                                                                                                                                                                                 |
+| Push           | Firebase Cloud Messaging (приложение) + Web Push VAPID (сайт)                                                                                                                                                                         |
+| Сервер         | Ubuntu, nginx, PHP‑FPM, systemd‑сервисы `gamecon-queue`, `gamecon-reverb`, `gamecon-scheduler` (см. `deploy/`)                                                                                                                        |
+| CI             | GitHub Actions: `tests.yml` (сайт), `app-build.yml` (APK + AAB), `app-audio-check.yml` (фоновое аудио на эмуляторе)                                                                                                                   |
 
 ---
 
@@ -166,14 +166,14 @@ sequenceDiagram
    (`AuthenticateApiToken`, токены выдаёт `App\Services\Auth\ApiTokens`).
 3. **Мост** `/api/v1/site/*` — middleware `BridgeSiteAction`. Приложение вызывает **те же контроллеры,
    что и сайт**, без дублирования логики:
-   - GET страницы → JSON её props;
-   - действие с `back()`/redirect + toast → `{ ok, message, redirect }`;
-   - ошибки валидации → обычный JSON 422.
+    - GET страницы → JSON её props;
+    - действие с `back()`/redirect + toast → `{ ok, message, redirect }`;
+    - ошибки валидации → обычный JSON 422.
 
-   ⚠️ **Маршрут сайта не появляется в мосте сам.** Каждый путь, который нужен приложению, надо явно
-   добавить в группу `Route::prefix('site')` в `routes/api.php` (тот же контроллер, тот же путь).
-   Если забыть — приложение покажет «Цей розділ запрацює після оновлення сайту» (это 404 маршрута).
-   Проверка: `tests/Feature/AppSiteParityTest.php`.
+    ⚠️ **Маршрут сайта не появляется в мосте сам.** Каждый путь, который нужен приложению, надо явно
+    добавить в группу `Route::prefix('site')` в `routes/api.php` (тот же контроллер, тот же путь).
+    Если забыть — приложение покажет «Цей розділ запрацює після оновлення сайту» (это 404 маршрута).
+    Проверка: `tests/Feature/AppSiteParityTest.php`.
 
 ### 4.2. Разделы, модули, плагины
 
@@ -198,6 +198,7 @@ flowchart LR
 ```
 
 Правила, которые нельзя ломать:
+
 - Тайтл хранит озвучки в `movie_sources` (provider + external_id). **Импорт и обновление только
   добавляют и обновляют.** Пропавшая у провайдера озвучка получает `missing_since` и удаляется лишь через
   `MovieSource::RETIRE_DAYS` (30) дней отсутствия. Пустой ответ провайдера не удаляет ничего.
@@ -228,23 +229,23 @@ flowchart LR
 
 ## 5. Приложение (mobile/)
 
-| Файл | Что внутри |
-|---|---|
-| `main.dart` | запуск, роутер go_router (все пути приложения), обработка ссылок |
-| `api.dart` | HTTP‑клиент: `Api.root` (адрес сайта), `Api.site('/путь')` → мост, Bearer‑токен, разбор ошибок |
-| `state.dart` | `Session` (пользователь, токен, prefs), `AppScope` |
-| `shell.dart` | оболочка: шапка, нижняя панель, меню, `appPathFor()` — перевод ссылок сайта в пути приложения |
-| `nav_items.dart` | разделы, которые можно закрепить в нижней панели |
-| `widgets.dart`, `theme.dart` | общие виджеты (Glass, кнопки, поля) и цвета — новые экраны строить из них |
-| `feed.dart`, `posts.dart` | лента, карточка поста и его меню, комментарии |
-| `cinema.dart`, `movie_screen.dart` | каталог кино; страница тайтла, выбор озвучки/серии, свой плеер (video_player / WebView) |
-| `music.dart`, `audio.dart`, `player_view.dart` | музыка, фоновое воспроизведение |
-| `chat.dart`, `voice_room.dart`, `voice_note.dart` | сообщения, голосовые комнаты/звонки (LiveKit) |
-| `extras.dart` | Моменты, Завдання, Збережене, Чернетки, Обрані, Релізи, «Мої десять», порівняння серверів, стрім, запрошення |
-| `push.dart` | FCM, локальные уведомления |
-| `account.dart`, `settings.dart`, `plus.dart` | аккаунт, настройки, статус GameCon+ (**без цен и оплаты** — правила Google Play) |
-| `android/.../FrameScriptPlugin.kt` | внедрение скрипта в iframe плеера (WebView) |
-| `android/.../FamilyWidgetProvider.kt` | виджет семьи на рабочем столе |
+| Файл                                              | Что внутри                                                                                                   |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `main.dart`                                       | запуск, роутер go_router (все пути приложения), обработка ссылок                                             |
+| `api.dart`                                        | HTTP‑клиент: `Api.root` (адрес сайта), `Api.site('/путь')` → мост, Bearer‑токен, разбор ошибок               |
+| `state.dart`                                      | `Session` (пользователь, токен, prefs), `AppScope`                                                           |
+| `shell.dart`                                      | оболочка: шапка, нижняя панель, меню, `appPathFor()` — перевод ссылок сайта в пути приложения                |
+| `nav_items.dart`                                  | разделы, которые можно закрепить в нижней панели                                                             |
+| `widgets.dart`, `theme.dart`                      | общие виджеты (Glass, кнопки, поля) и цвета — новые экраны строить из них                                    |
+| `feed.dart`, `posts.dart`                         | лента, карточка поста и его меню, комментарии                                                                |
+| `cinema.dart`, `movie_screen.dart`                | каталог кино; страница тайтла, выбор озвучки/серии, свой плеер (video_player / WebView)                      |
+| `music.dart`, `audio.dart`, `player_view.dart`    | музыка, фоновое воспроизведение                                                                              |
+| `chat.dart`, `voice_room.dart`, `voice_note.dart` | сообщения, голосовые комнаты/звонки (LiveKit)                                                                |
+| `extras.dart`                                     | Моменты, Завдання, Збережене, Чернетки, Обрані, Релізи, «Мої десять», порівняння серверів, стрім, запрошення |
+| `push.dart`                                       | FCM, локальные уведомления                                                                                   |
+| `account.dart`, `settings.dart`, `plus.dart`      | аккаунт, настройки, статус GameCon+ (**без цен и оплаты** — правила Google Play)                             |
+| `android/.../FrameScriptPlugin.kt`                | внедрение скрипта в iframe плеера (WebView)                                                                  |
+| `android/.../FamilyWidgetProvider.kt`             | виджет семьи на рабочем столе                                                                                |
 
 Версия приложения — `mobile/pubspec.yaml` (`version: X.Y.Z+build`); при выпуске повышать оба числа и
 обновлять `whatsNewVersion` и список `_whatsNew()` в `account.dart`.

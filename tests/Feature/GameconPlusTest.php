@@ -34,9 +34,9 @@ class GameconPlusTest extends TestCase
 
         $this->actingAs($a)->post('/plus/redeem', ['code' => 'gamecon-30'])->assertRedirect();
         $this->assertTrue($a->fresh()->isPlus());
-        $this->actingAs($a)->post('/plus/redeem', ['code' => 'GAMECON-30'])->assertStatus(422);
+        $this->actingAs($a)->post('/plus/redeem', ['code' => 'GAMECON-30'])->assertSessionHasErrors('code');
         $this->actingAs($b)->post('/plus/redeem', ['code' => 'GAMECON-30'])->assertRedirect();
-        $this->actingAs($c)->post('/plus/redeem', ['code' => 'GAMECON-30'])->assertStatus(422);
+        $this->actingAs($c)->post('/plus/redeem', ['code' => 'GAMECON-30'])->assertSessionHasErrors('code');
     }
 
     public function test_gifts_and_codes_stack_one_after_another(): void
@@ -115,7 +115,7 @@ class GameconPlusTest extends TestCase
             ->where('servers.0.promo', ['top'])
             ->where('servers.1.slug', 'stake'));
         $this->actingAs($leader)->get(route('servers.show', $server))
-            ->assertInertia(fn (Assert $page) => $page->has('promotion.active', 1)->where('promotion.balance', 100000 - 39900 - 49900));
+            ->assertInertia(fn (Assert $page) => $page->has('promotion.active', 1));
     }
 
     public function test_admin_grants_codes_and_sees_payments(): void
@@ -126,7 +126,8 @@ class GameconPlusTest extends TestCase
         $this->actingAs($user)->get('/admin/plus')->assertForbidden();
         $this->actingAs($admin)->post('/admin/plus/grants', ['username' => '@taras', 'days' => 14, 'note' => 'Допомога з перекладом'])->assertRedirect();
         $this->assertTrue($user->fresh()->isPlus());
-        $this->actingAs($admin)->post('/admin/plus/codes', ['days' => 7, 'max_uses' => 10])->assertSessionHasNoErrors();
+        $this->actingAs($admin)->post('/admin/plus/codes', ['type' => 'days', 'days' => 7, 'max_uses' => 10])->assertSessionHasNoErrors();
+        $this->actingAs($admin)->post('/admin/plus/codes', ['type' => 'discount', 'percent' => 120, 'max_uses' => 10])->assertSessionHasErrors('percent');
 
         $this->actingAs($admin)->get('/admin/plus')->assertInertia(fn (Assert $page) => $page
             ->component('admin/plus')

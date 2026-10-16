@@ -8,11 +8,11 @@
 
 ## 1. Три места, где живут секреты
 
-| Где | Что там | Кто меняет |
-|---|---|---|
+| Где                                                         | Что там                                                                                                                         | Кто меняет                        |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
 | **Админка → Інтеграції** (таблица настроек, `SiteSettings`) | ключи внешних сервисов: Kodik, Videoseed, FlixCDN, TMDB, Spotify, Discord, Telegram, Steam, DeepL, Sightengine, FCM, LiveKit, … | администратор сайта через админку |
-| **`.env` на сервере** (`/var/www/gamecon/.env`) | `APP_KEY`, пароли БД и Redis, почта, Reverb, запасные значения ключей интеграций | только владелец сервера |
-| **GitHub → Settings → Secrets and variables → Actions** | ключ подписи Android‑приложения и пароли к нему | только владелец репозитория |
+| **`.env` на сервере** (`/var/www/gamecon/.env`)             | `APP_KEY`, пароли БД и Redis, почта, Reverb, запасные значения ключей интеграций                                                | только владелец сервера           |
+| **GitHub → Settings → Secrets and variables → Actions**     | ключ подписи Android‑приложения и пароли к нему                                                                                 | только владелец репозитория       |
 
 Шаблоны без значений: `.env.example` (локально), `deploy/.env.production.example` (сервер).
 
@@ -44,6 +44,7 @@ app(SiteSettings::class)->putSecret('kodik_token', $value); // null или '' �
 ```
 
 Новый секрет добавляется так:
+
 1. ключ в `SiteSettings::DEFAULTS` (значение `null`) **и** в `SiteSettings::SECRETS`;
 2. поле `type => 'secret'` в `Admin\IntegrationController` (с `rules` для формата);
 3. запасной `env('…')` в `config/services.php` + пустая строка в `.env.example`;
@@ -65,12 +66,12 @@ app(SiteSettings::class)->putSecret('kodik_token', $value); // null или '' �
 
 Имена секретов, которые ждёт `.github/workflows/app-build.yml`:
 
-| Секрет | Что это |
-|---|---|
+| Секрет                    | Что это                                                     |
+| ------------------------- | ----------------------------------------------------------- |
 | `GAMECON_KEYSTORE_BASE64` | файл ключа загрузки Android (`gamecon-upload.jks`) в base64 |
-| `GAMECON_STORE_PASSWORD` | пароль хранилища ключей |
-| `GAMECON_KEY_ALIAS` | имя ключа |
-| `GAMECON_KEY_PASSWORD` | пароль ключа |
+| `GAMECON_STORE_PASSWORD`  | пароль хранилища ключей                                     |
+| `GAMECON_KEY_ALIAS`       | имя ключа                                                   |
+| `GAMECON_KEY_PASSWORD`    | пароль ключа                                                |
 
 Без них сборка релиза останавливается с ошибкой (специально — неподписанный релиз не нужен).
 Ключ загрузки и ключ подписи Google Play — разные: Play Market переподписывает приложение своим ключом,

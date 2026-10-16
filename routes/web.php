@@ -27,6 +27,7 @@ use App\Http\Controllers\Mail\UnsubscribeController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
 use App\Http\Controllers\MomentController;
+use App\Http\Controllers\MonobankWebhookController;
 use App\Http\Controllers\MusicController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NowPlayingController;
@@ -65,6 +66,9 @@ Route::get('i18n/{locale}.js', [LocaleController::class, 'script'])->where('loca
 
 Route::get('/', WelcomeController::class)->name('home');
 
+// Вебхук еквайрингу monobank (без входу й CSRF; підпис X-Sign перевіряє контролер).
+Route::post('billing/monobank/webhook', MonobankWebhookController::class)->middleware('throttle:120,1')->name('billing.monobank.webhook');
+
 // Юридичні документи й тарифи — відкриті без входу (їх читають гості й платіжні сервіси). Мова: ?lang=en|uk|de|…
 Route::get('terms', [LegalController::class, 'terms'])->name('legal.terms');
 Route::get('privacy', [LegalController::class, 'privacy'])->name('legal.privacy');
@@ -89,14 +93,17 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
 
     Route::get('feed', [FeedController::class, 'index'])->middleware('module:feed')->name('feed');
     Route::get('invite', [ReferralController::class, 'index'])->name('referrals.index');
-    // Білінг (лише сайт, усередині GameCon+): рахунок, поповнення донатом, покупки з рахунку, автопродовження.
+    // Оплата (лише сайт, усередині GameCon+): покупка карткою через monobank, картки, автопродовження, історія.
     Route::prefix('plus/billing')->name('billing.')->controller(BillingController::class)->group(function () {
         Route::get('/', 'index')->name('index');
-        Route::post('topups', 'storeTopup')->middleware('throttle:10,1')->name('topups.store');
-        Route::get('topups/{topup}', 'showTopup')->name('topups.show');
-        Route::post('topups/{topup}/claim', 'claimTopup')->middleware('throttle:10,1')->name('topups.claim');
-        Route::delete('topups/{topup}', 'cancelTopup')->middleware('throttle:20,1')->name('topups.cancel');
         Route::post('purchase', 'purchase')->middleware('throttle:20,1')->name('purchase');
+        Route::post('promo', 'promo')->middleware('throttle:10,1')->name('promo');
+        Route::get('quote', 'quote')->middleware('throttle:60,1')->name('quote');
+        Route::get('orders/{order}', 'showOrder')->whereNumber('order')->middleware('throttle:60,1')->name('orders.show');
+        Route::get('orders/{order}/return', 'returned')->whereNumber('order')->name('orders.return');
+        Route::delete('orders/{order}', 'cancelOrder')->whereNumber('order')->middleware('throttle:20,1')->name('orders.cancel');
+        Route::post('orders/{order}/google-pay', 'googlePay')->whereNumber('order')->middleware('throttle:10,1')->name('orders.google-pay');
+        Route::delete('cards/{card}', 'forgetCard')->whereNumber('card')->middleware('throttle:20,1')->name('cards.destroy');
         Route::post('renewals', 'renewal')->middleware('throttle:20,1')->name('renewals');
     });
     Route::prefix('plus')->name('plus.')->group(function () {
@@ -641,14 +648,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         });
         Route::prefix('billing')->name('billing.')->controller(Admin\BillingController::class)->group(function () {
             Route::get('/', 'index')->name('index');
-            Route::post('topups/{topup}/confirm', 'confirm')->whereNumber('topup')->name('topups.confirm');
-            Route::post('topups/{topup}/cancel', 'cancel')->whereNumber('topup')->name('topups.cancel');
-            Route::post('donations/{donation}/attach', 'attach')->whereNumber('donation')->name('donations.attach');
-            Route::post('donations/sync', 'sync')->middleware('throttle:10,1')->name('donations.sync');
-            Route::post('adjust', 'adjust')->name('adjust');
+            Route::post('orders/{order}/refund', 'refundOrder')->whereNumber('order')->name('orders.refund');
             Route::post('payments/{payment}/refund', 'refund')->whereNumber('payment')->name('payments.refund');
-            Route::put('methods', 'methods')->name('methods');
+            Route::post('adjust', 'adjust')->name('adjust');
             Route::put('products', 'products')->name('products');
+            Route::put('rules', 'rules')->name('rules');
+            Route::put('google-pay', 'googlePay')->name('google-pay');
         });
         Route::get('stickers', [Admin\StickerController::class, 'index'])->name('stickers.index');
         Route::post('stickers', [Admin\StickerController::class, 'store'])->name('stickers.store');

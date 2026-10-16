@@ -8,6 +8,7 @@ use App\Models\PlusPayment;
 use App\Models\User;
 use App\Services\Billing\Shop;
 use App\Services\Plus\Plus;
+use App\Services\Plus\PromoCodes;
 use App\Support\PlusStyle;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -46,16 +47,16 @@ class PlusController extends Controller
                     'receipt_url' => $p->receipt_url,
                     'created_at' => $p->created_at->toIso8601String(),
                 ]),
-            'balance' => (int) $user->balance,
         ]);
     }
 
-    public function redeem(Request $request): RedirectResponse
+    /** Активувати промокод: дні GameCon+, знижку на підписку чи перший платіж, безкоштовний період. */
+    public function redeem(Request $request, PromoCodes $codes): RedirectResponse
     {
-        $data = $request->validate(['code' => ['required', 'string', 'max:32']]);
-        $grant = $this->plus->redeem($request->user(), $data['code']);
+        $data = $request->validate(['code' => ['required', 'string', 'max:32'], 'product' => ['nullable', 'string', 'max:40']]);
+        $result = $codes->redeem($request->user(), $data['code'], $data['product'] ?? null);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Промокод активовано: GameCon+ до '.$grant->ends_at->format('d.m.Y').'.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => $result['message']]);
 
         return back();
     }

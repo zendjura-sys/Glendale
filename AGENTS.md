@@ -4,6 +4,7 @@
 Android‑приложение (Flutter, папка `mobile/`) на **одном бэкенде и одной БД**.
 
 Прочитай перед работой:
+
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — устройство, структура и карта связей;
 - [docs/SECRETS.md](docs/SECRETS.md) — где секреты и как ими пользоваться;
 - [docs/web-vs-app-checklist.md](docs/web-vs-app-checklist.md) — сверка функций сайта и приложения.
@@ -62,16 +63,16 @@ cd mobile && flutter analyze && flutter test
 
 ## Где что искать
 
-| Задача | Куда смотреть |
-|---|---|
-| Маршрут сайта | `routes/web.php` → `app/Http/Controllers/*` → `resources/js/pages/*` |
-| API приложения | `routes/api.php` (`/api/v1/*`, мост `/api/v1/site/*`) |
-| Логика раздела | `app/Services/<Раздел>/` |
-| Экран приложения | `mobile/lib/<раздел>.dart`, маршрут — `mobile/lib/main.dart` |
-| Ссылка сайта → экран приложения | `appPathFor()` в `mobile/lib/shell.dart` |
-| Фоновые задачи | `app/Jobs/`, расписание — `routes/console.php` |
-| Ключи интеграций | `docs/SECRETS.md`, `SiteSettings::SECRETS`, `Admin\IntegrationController` |
-| Деплой | `deploy/` (`server-deploy.sh`, `remote.sh`, systemd, nginx) |
+| Задача                          | Куда смотреть                                                             |
+| ------------------------------- | ------------------------------------------------------------------------- |
+| Маршрут сайта                   | `routes/web.php` → `app/Http/Controllers/*` → `resources/js/pages/*`      |
+| API приложения                  | `routes/api.php` (`/api/v1/*`, мост `/api/v1/site/*`)                     |
+| Логика раздела                  | `app/Services/<Раздел>/`                                                  |
+| Экран приложения                | `mobile/lib/<раздел>.dart`, маршрут — `mobile/lib/main.dart`              |
+| Ссылка сайта → экран приложения | `appPathFor()` в `mobile/lib/shell.dart`                                  |
+| Фоновые задачи                  | `app/Jobs/`, расписание — `routes/console.php`                            |
+| Ключи интеграций                | `docs/SECRETS.md`, `SiteSettings::SECRETS`, `Admin\IntegrationController` |
+| Деплой                          | `deploy/` (`server-deploy.sh`, `remote.sh`, systemd, nginx)               |
 
 ## Стиль
 

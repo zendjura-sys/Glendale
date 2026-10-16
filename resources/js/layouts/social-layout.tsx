@@ -539,11 +539,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                     </button>
                 </div>
 
-                <PlusMenuCard
-                    until={user.plus_until}
-                    balance={user.balance ?? 0}
-                    className="mb-4"
-                />
+                <PlusMenuCard until={user.plus_until} className="mb-4" />
 
                 <div className="grid grid-cols-3 gap-2 min-[420px]:grid-cols-4">
                     {items.map((item) => {

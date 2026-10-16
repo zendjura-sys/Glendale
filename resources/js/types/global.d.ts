@@ -1,4 +1,5 @@
 import type { Auth, FirebaseConfig } from '@/types/auth';
+import type { SharedBilling } from '@/types/billing';
 import type { SharedMusic } from '@/types/music';
 import type { NavEntry } from '@/types/social';
 
@@ -42,6 +43,8 @@ declare module '@inertiajs/core' {
                     google: FirebaseConfig | null;
                 };
             };
+            /** Оплата карткою (monobank): тарифи з адмінки, Google Pay. */
+            billing: SharedBilling;
             nav: NavEntry[];
             modules: string[];
             plugins: Record<string, boolean>;

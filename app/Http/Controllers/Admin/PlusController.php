@@ -9,11 +9,14 @@ use App\Models\PlusGrant;
 use App\Models\PlusPayment;
 use App\Models\PlusRenewal;
 use App\Models\User;
+use App\Services\Billing\Catalog;
 use App\Services\Plus\Plus;
+use App\Services\Plus\PromoCodes;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -60,11 +63,22 @@ class PlusController extends Controller
                 'id' => $c->id,
                 'code' => $c->code,
                 'days' => $c->days,
+                'type' => $c->type,
+                'months' => $c->months,
+                'percent' => $c->percent,
+                'amount_off' => $c->amount_off,
+                'payments' => $c->payments,
+                'products' => $c->products,
+                'new_only' => $c->new_only,
+                'note' => $c->note,
+                'summary' => PromoCodes::describe($c),
                 'uses' => $c->uses,
                 'max_uses' => $c->max_uses,
                 'expires_at' => $c->expires_at?->toIso8601String(),
                 'usable' => $c->usable(),
             ]),
+            // Тарифи для обмеження промокоду.
+            'products' => array_values(array_map(fn (array $p) => ['key' => $p['key'], 'name' => $p['name'], 'kind' => $p['kind']], app(Catalog::class)->products())),
         ]);
     }
 
@@ -96,22 +110,52 @@ class PlusController extends Controller
         return back();
     }
 
+    /**
+     * Новий промокод: тип (дні GameCon+ / знижка на підписку / знижка на перший платіж / безкоштовний період),
+     * значення, ліміт використань, строк дії, «лише для нових», тарифи.
+     */
     public function storeCode(Request $request): RedirectResponse
     {
         $this->admin($request);
         $request->merge(['code' => Str::upper(trim((string) $request->input('code')))]);
+        $keys = array_keys(app(Catalog::class)->products());
         $data = $request->validate([
             'code' => ['nullable', 'string', 'min:4', 'max:32', 'regex:/^[A-Z0-9\-]+$/', Rule::unique('plus_codes', 'code')],
-            'days' => ['required', 'integer', 'min:1', 'max:3650'],
+            'type' => ['required', Rule::in(PromoCodes::TYPES)],
+            'days' => ['nullable', 'integer', 'min:1', 'max:3650', 'required_if:type,days'],
+            'months' => ['nullable', 'integer', 'min:0', 'max:36'],
+            'percent' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'amount_off' => ['nullable', 'integer', 'min:1', 'max:100000'],
+            'payments' => ['nullable', 'integer', 'min:1', 'max:120'],
+            'products' => ['nullable', 'array'],
+            'products.*' => ['string', Rule::in($keys)],
+            'new_only' => ['boolean'],
             'max_uses' => ['required', 'integer', 'min:1', 'max:100000'],
             'expires_at' => ['nullable', 'date', 'after:now'],
+            'note' => ['nullable', 'string', 'max:120'],
         ], ['code.regex' => 'Код — латинські літери, цифри й дефіс.']);
+
+        $type = $data['type'];
+        if (in_array($type, ['discount', 'first_payment'], true) && blank($data['percent'] ?? null) === blank($data['amount_off'] ?? null)) {
+            throw ValidationException::withMessages(['percent' => 'Для знижки вкажіть або відсоток, або суму (щось одне).']);
+        }
+        if ($type === 'trial' && (int) ($data['months'] ?? 0) === 0 && (int) ($data['days'] ?? 0) === 0) {
+            throw ValidationException::withMessages(['months' => 'Для безкоштовного періоду вкажіть кількість місяців або днів.']);
+        }
 
         PlusCode::query()->create([
             'code' => $data['code'] ?: 'GC-'.Str::upper(Str::random(8)),
-            'days' => $data['days'],
+            'type' => $type,
+            'days' => (int) ($data['days'] ?? 0),
+            'months' => $type === 'trial' ? (int) ($data['months'] ?? 0) : 0,
+            'percent' => in_array($type, ['discount', 'first_payment'], true) ? ($data['percent'] ?? null) : null,
+            'amount_off' => in_array($type, ['discount', 'first_payment'], true) && blank($data['percent'] ?? null) ? ($data['amount_off'] ?? null) : null,
+            'payments' => $type === 'discount' ? ($data['payments'] ?? null) : null,
+            'products' => ($data['products'] ?? []) !== [] ? array_values($data['products']) : null,
+            'new_only' => (bool) ($data['new_only'] ?? false),
             'max_uses' => $data['max_uses'],
             'expires_at' => $data['expires_at'] ?? null,
+            'note' => $data['note'] ?? null,
             'created_by' => $request->user()->id,
         ]);
 

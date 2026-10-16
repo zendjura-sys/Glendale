@@ -1,4 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
+import { PaymentBadges } from '@/components/billing/payment-badges';
 import { cn } from '@/lib/utils';
 
 /**
@@ -48,6 +49,7 @@ export function SiteFooter({
                     </span>
                 ))}
             </nav>
+            <PaymentBadges className="mt-3 justify-center" />
             <p className="mt-2">
                 © {footer.year} {name || 'GameCon'}. {t.rights}
             </p>

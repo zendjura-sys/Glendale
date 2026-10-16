@@ -214,7 +214,6 @@ class ServerController extends Controller
                 'active' => app(ServerPromotions::class)->forServer($server),
                 'free_at' => collect(ServerPromotion::KINDS)->mapWithKeys(fn (string $kind) => [$kind => app(ServerPromotions::class)->freeAt($kind)->toIso8601String()]),
                 'available' => collect(Shop::catalog())->filter(fn (array $p) => $p['kind'] === 'promo' && $p['available'])->keys()->values(),
-                'balance' => (int) $request->user()->balance,
             ] : null,
             'verified' => [
                 'players' => ServerPlayer::query()->where('gta_server_id', $server->id)->count(),

@@ -5,6 +5,10 @@ namespace App\Http\Middleware;
 use App\Models\User;
 use App\Services\Auth\DiscordOAuth;
 use App\Services\Auth\FirebaseAuth;
+use App\Services\Billing\Catalog;
+use App\Services\Billing\Checkout;
+use App\Services\Billing\GooglePay;
+use App\Services\Billing\Shop;
 use App\Services\FriendshipService;
 use App\Services\I18n\ContentTranslator;
 use App\Services\Messenger;
@@ -99,12 +103,19 @@ class HandleInertiaRequests extends Middleware
                     'palette' => $user->palette(),
                     'hide_spoilers' => app(Plugins::class)->on('spoiler_switch') && (bool) $user->pref('hide_spoilers'),
                     'profanity_mask' => $user->pref('hide_profanity') ? app(ContentFilter::class)->clientPattern() : null,
-                    // Білінг (лише сайт): баланс рахунку в копійках і до коли діє GameCon+.
-                    'balance' => (int) $user->balance,
+                    // До коли діє GameCon+ (оплата — карткою через monobank, без балансу).
                     'plus_until' => $user->plus_until?->toIso8601String(),
                     'created_at' => $user->created_at,
                     'updated_at' => $user->updated_at,
                 ] : null,
+            ],
+            // Оплата (лише сайт): тарифи з адмінки, чи працює оплата карткою, нативний Google Pay, значки карток у підвалі.
+            'billing' => fn () => [
+                'card' => app(Checkout::class)->available(),
+                'products' => Shop::catalog(),
+                'save_card' => app(Catalog::class)->rules()['offer_save_card'],
+                'badges' => app(Catalog::class)->rules()['badges'],
+                'google_pay' => $user ? app(GooglePay::class)->clientConfig() : null,
             ],
             'nav' => $user ? fn () => $this->modules->navigation() : [],
             'modules' => fn () => $this->modules->enabledKeys(),

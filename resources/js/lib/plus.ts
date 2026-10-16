@@ -1,23 +1,21 @@
 import { openPurchase } from '@/lib/billing';
 import { tr } from '@/lib/i18n';
 
-/** Ціни GameCon+ у гривнях (як у config/plus.php; списуються з рахунку). */
-export const PLUS_PRICES = {
-    plus_month: 149,
-    plus_year: 1290,
-    gift_month: 149,
-    gift_year: 1290,
-    family_month: 399,
-    family_year: 3490,
-    promo_top_7: 499,
-    promo_top_30: 1490,
-    promo_highlight_7: 199,
-    promo_highlight_30: 590,
-    promo_banner_30: 2490,
-} as const;
+/** Базові тарифи (ключі). Ціни й назви приходять із сервера (props.billing.products), бо їх змінює адміністратор. */
+export type PlusProduct =
+    | 'plus_month'
+    | 'plus_year'
+    | 'gift_month'
+    | 'gift_year'
+    | 'family_month'
+    | 'family_year'
+    | 'promo_top_7'
+    | 'promo_top_30'
+    | 'promo_highlight_7'
+    | 'promo_highlight_30'
+    | 'promo_banner_30';
 
-export type PlusProduct = keyof typeof PLUS_PRICES;
-
+/** Назви базових тарифів мовою інтерфейсу; власні тарифи адміністратора — назвою з каталогу. */
 export const PRODUCT_LABELS = (): Record<string, string> => ({
     plus_month: tr('GameCon+ на місяць'),
     plus_year: tr('GameCon+ на рік'),
@@ -32,14 +30,11 @@ export const PRODUCT_LABELS = (): Record<string, string> => ({
     promo_banner_30: tr('Банер над каталогом · 30 днів'),
 });
 
-/** Купити з рахунку: відкриває вікно підтвердження (BillingHost). */
+/** Купити карткою: відкриває вікно оплати (BillingHost). */
 export function buyProduct(
-    product: PlusProduct,
+    product: string,
     extra: Record<string, string | number> = {},
 ): void {
-    openPurchase({
-        product,
-        extra,
-        renewable: product.startsWith('plus_') || product.startsWith('family_'),
-    });
+    // Чи пропонувати автопродовження, вирішує вікно оплати за каталогом (recurring).
+    openPurchase({ product, extra });
 }

@@ -3,133 +3,178 @@
 namespace App\Http\Controllers;
 
 use App\Models\Family;
+use App\Models\PaymentCard;
+use App\Models\PaymentOrder;
 use App\Models\PlusRenewal;
-use App\Models\WalletTopup;
-use App\Models\WalletTransaction;
-use App\Services\Billing\InsufficientFunds;
+use App\Services\Billing\Catalog;
+use App\Services\Billing\Checkout;
+use App\Services\Billing\GooglePay;
 use App\Services\Billing\Shop;
-use App\Services\Billing\TopUps;
-use App\Services\Billing\Wallet;
 use App\Services\Plus\Plus;
+use App\Services\Plus\PromoCodes;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Білінг (лише сайт): особистий рахунок, поповнення донатом, покупки з рахунку й автопродовження.
+ * Оплата (лише сайт): покупка карткою через monobank, збережені картки, автопродовження, історія оплат.
  */
 class BillingController extends Controller
 {
     public function __construct(
-        private readonly TopUps $topups,
-        private readonly Shop $shop,
+        private readonly Checkout $checkout,
+        private readonly Catalog $catalog,
         private readonly Plus $plus,
     ) {}
 
     public function index(Request $request): Response
     {
         $user = $request->user();
+        $open = $request->integer('order') ?: null;
+        if ($open !== null) {
+            $order = PaymentOrder::query()->where('user_id', $user->id)->find($open);
+            if ($order !== null) {
+                $this->checkout->sync($order);
+            }
+        }
 
         return Inertia::render('plus/billing', [
-            'balance' => (int) $user->balance,
-            'methods' => $this->topups->methods(),
-            'limits' => ['min' => TopUps::MIN, 'max' => TopUps::MAX],
-            'topups' => WalletTopup::query()->where('user_id', $user->id)
-                ->where(fn ($q) => $q->where('status', WalletTopup::PENDING)->orWhere('created_at', '>=', now()->subDays(30)))
-                ->latest('id')->limit(20)->get()->map->toCard()->values(),
-            'transactions' => WalletTransaction::query()->where('user_id', $user->id)->latest('id')->limit(50)->get()->map->toCard()->values(),
+            'orders' => PaymentOrder::query()->where('user_id', $user->id)->where('status', '!=', PaymentOrder::CANCELLED)
+                ->latest('id')->limit(30)->get()->map->toCard()->values(),
+            'cards' => $this->checkout->cards($user),
             'renewals' => $this->renewals($request),
             'plus' => $this->plus->state($user),
-            'open' => $request->integer('topup') ?: null,
+            'credit' => max(0, (int) $user->balance),
+            'available' => $this->checkout->available(),
+            'open' => $open,
         ]);
     }
 
-    public function storeTopup(Request $request): JsonResponse
-    {
-        $data = $request->validate(['amount' => ['required', 'integer', 'min:'.TopUps::MIN, 'max:'.TopUps::MAX]]);
-        $topup = $this->topups->create($request->user(), (int) $data['amount']);
-
-        return response()->json(['topup' => $topup->toCard(), 'methods' => $this->topups->methods()]);
-    }
-
-    public function showTopup(Request $request, WalletTopup $topup): JsonResponse
-    {
-        abort_unless($topup->user_id === $request->user()->id, 404);
-
-        return response()->json(['topup' => $topup->toCard(), 'methods' => $this->topups->methods(), 'balance' => (int) $request->user()->balance]);
-    }
-
-    public function claimTopup(Request $request, WalletTopup $topup): JsonResponse
-    {
-        abort_unless($topup->user_id === $request->user()->id, 404);
-        $data = $request->validate([
-            'method' => ['required', 'string', Rule::in(array_keys((array) config('plus.methods')))],
-            'note' => ['nullable', 'string', 'max:300'],
-        ]);
-        $this->topups->claim($topup, $data['method'], $data['note'] ?? null);
-
-        return response()->json(['topup' => $topup->refresh()->toCard(), 'balance' => $request->user()->refresh()->balance]);
-    }
-
-    public function cancelTopup(Request $request, WalletTopup $topup): JsonResponse
-    {
-        abort_unless($topup->user_id === $request->user()->id, 404);
-        $this->topups->cancel($topup);
-
-        return response()->json(['topup' => $topup->refresh()->toCard()]);
-    }
-
-    /** Покупка з рахунку. Не вистачає коштів — 422 з errors.shortfall (копійки), щоб запропонувати поповнення. */
+    /**
+     * Купити: замовлення → сторінка оплати monobank (redirect). Якщо ціну покрив залишок старого балансу — paid одразу.
+     */
     public function purchase(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'product' => ['required', 'string', Rule::in(array_keys((array) config('plus.products')))],
+            'product' => ['required', 'string', Rule::in(array_keys($this->catalog->products()))],
             'username' => ['nullable', 'string', 'max:64'],
             'family_id' => ['nullable', 'integer'],
             'server_id' => ['nullable', 'integer'],
             'renew' => ['boolean'],
+            'save_card' => ['boolean'],
         ]);
-        $user = $request->user();
-
-        try {
-            $payment = $this->shop->buy($user, $data['product'], $data, $request->boolean('renew'));
-        } catch (InsufficientFunds $e) {
-            return response()->json([
-                'message' => 'На рахунку не вистачає '.Wallet::uah($e->shortfall).'.',
-                'errors' => ['shortfall' => [(string) $e->shortfall]],
-            ], 422);
-        }
+        $order = $this->checkout->start($request->user(), $data['product'], $data, $request->boolean('renew'), $request->boolean('save_card'));
 
         return response()->json([
-            'payment_id' => $payment->id,
-            'balance' => (int) $user->balance,
-            'message' => Shop::label($data['product']).' — готово!',
+            'order' => $order->toCard(),
+            'redirect' => $order->status === PaymentOrder::PENDING ? $order->page_url : null,
+            'message' => $order->status === PaymentOrder::PAID ? $this->catalog->label($order->product).' — готово!' : null,
         ]);
     }
 
-    /** Увімкнути / вимкнути автопродовження свого GameCon+ або GameCon+ сім’ї, яку очолює людина. */
+    /** Розрахунок для вікна оплати: ціна, знижка за промокодом, залишок старого балансу, до сплати карткою. */
+    public function quote(Request $request, PromoCodes $codes): JsonResponse
+    {
+        $data = $request->validate(['product' => ['required', 'string', Rule::in(array_keys($this->catalog->products()))]]);
+        $user = $request->user();
+        $price = $this->catalog->price($data['product']);
+        $promo = $codes->discountFor($user, $data['product'], $price);
+        $credit = min(max(0, (int) $user->balance), $price - $promo['amount']);
+
+        return response()->json([
+            'price' => $price,
+            'discount' => $promo['amount'],
+            'promo' => $promo['redemption'] !== null ? PromoCodes::describe($promo['redemption']->code) : null,
+            'credit' => $credit,
+            'amount' => $price - $promo['amount'] - $credit,
+            'cards' => $this->checkout->cards($user),
+            'available' => $this->checkout->available(),
+        ]);
+    }
+
+    /** Промокод у вікні оплати: активувати й показати нову ціну. */
+    public function promo(Request $request, PromoCodes $codes): JsonResponse
+    {
+        $data = $request->validate([
+            'code' => ['required', 'string', 'max:32'],
+            'product' => ['required', 'string', Rule::in(array_keys($this->catalog->products()))],
+        ]);
+        $result = $codes->redeem($request->user(), $data['code'], $data['product']);
+        $price = $this->catalog->price($data['product']);
+
+        return response()->json([
+            ...$result,
+            'discount' => $codes->discountFor($request->user(), $data['product'], $price)['amount'],
+        ]);
+    }
+
+    public function showOrder(Request $request, PaymentOrder $order): JsonResponse
+    {
+        abort_unless($order->user_id === $request->user()->id, 404);
+
+        return response()->json(['order' => $this->checkout->sync($order)->toCard()]);
+    }
+
+    /** Повернення зі сторінки оплати monobank: уточнюємо статус і відкриваємо замовлення в історії. */
+    public function returned(Request $request, PaymentOrder $order): RedirectResponse
+    {
+        abort_unless($order->user_id === $request->user()->id, 404);
+        $this->checkout->sync($order);
+
+        return redirect('/plus/billing?order='.$order->id);
+    }
+
+    public function cancelOrder(Request $request, PaymentOrder $order): JsonResponse
+    {
+        abort_unless($order->user_id === $request->user()->id, 404);
+        $this->checkout->cancel($order);
+
+        return response()->json(['order' => $order->refresh()->toCard()]);
+    }
+
+    /** Нативна кнопка Google Pay: токен оплати → monobank. */
+    public function googlePay(Request $request, PaymentOrder $order, GooglePay $googlePay): JsonResponse
+    {
+        abort_unless($order->user_id === $request->user()->id, 404);
+        abort_unless($googlePay->enabled(), 404);
+        $data = $request->validate(['token' => ['required', 'string', 'max:20000']]);
+        $result = $this->checkout->googlePay($order, $data['token']);
+
+        return response()->json(['order' => $result['order']->toCard(), 'redirect' => $result['tds_url']]);
+    }
+
+    public function forgetCard(Request $request, PaymentCard $card): JsonResponse
+    {
+        abort_unless($card->user_id === $request->user()->id, 404);
+        $this->checkout->forget($card);
+
+        return response()->json(['cards' => $this->checkout->cards($request->user()), 'renewals' => $this->renewals($request)]);
+    }
+
+    /** Увімкнути / вимкнути автопродовження свого GameCon+ або GameCon+ сім’ї й обрати картку. */
     public function renewal(Request $request): JsonResponse
     {
         $data = $request->validate([
             'family_id' => ['nullable', 'integer'],
-            'product' => ['required', 'string', Rule::in(['plus_month', 'plus_year', 'family_month', 'family_year'])],
+            'product' => ['required', 'string', Rule::in($this->catalog->renewable())],
             'active' => ['required', 'boolean'],
+            'card_id' => ['nullable', 'integer'],
         ]);
         $user = $request->user();
         $owner = isset($data['family_id'])
             ? PlusController::ledFamilies($user)->firstWhere('id', (int) $data['family_id'])
             : $user;
         abort_if($owner === null, 403, 'Керувати GameCon+ сім’ї може лише її лідер.');
-        abort_unless(($owner instanceof Family) === str_starts_with($data['product'], 'family_'), 422);
+        abort_unless(($owner instanceof Family) === (($this->catalog->get($data['product'])['kind'] ?? null) === 'family'), 422);
+        $card = isset($data['card_id']) ? PaymentCard::query()->where('user_id', $user->id)->find((int) $data['card_id']) : null;
+        abort_if(isset($data['card_id']) && $card === null, 422, 'Картку не знайдено.');
 
-        $this->shop->setRenewal($user, $data['product'], $owner, (bool) $data['active']);
-        if ($data['active']) {
-            $this->shop->renewDueFor($user);
-        }
+        app(Shop::class)->setRenewal($user, $data['product'], $owner, (bool) $data['active'], $card?->id);
 
-        return response()->json(['renewals' => $this->renewals($request), 'balance' => $user->refresh()->balance]);
+        return response()->json(['renewals' => $this->renewals($request)]);
     }
 
     /**
@@ -141,7 +186,7 @@ class BillingController extends Controller
     {
         $user = $request->user();
         $owners = collect([$user])->concat(PlusController::ledFamilies($user));
-        $rows = PlusRenewal::query()->where('user_id', $user->id)->get();
+        $rows = PlusRenewal::query()->with('card')->where('user_id', $user->id)->get();
 
         return $owners->map(function ($owner) use ($rows) {
             $type = $this->plus->type($owner);
@@ -156,6 +201,7 @@ class BillingController extends Controller
                 'product' => $renewal?->product,
                 'active' => $active,
                 'failed' => $active && $renewal->failed_at !== null,
+                'card' => $renewal?->card?->toCard(),
             ];
         })->values()->all();
     }

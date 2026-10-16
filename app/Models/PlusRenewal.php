@@ -19,9 +19,12 @@ use Illuminate\Support\Carbon;
  * @property bool $active
  * @property Carbon|null $renewed_at
  * @property Carbon|null $failed_at Остання невдала спроба (не вистачило коштів)
+ * @property int|null $card_id Збережена картка: списати, якщо на рахунку не вистачає
+ * @property int $attempts Невдалих спроб поспіль
+ * @property-read PaymentCard|null $card
  * @property-read User $user
  */
-#[Fillable(['user_id', 'product', 'owner_type', 'owner_id', 'active', 'renewed_at', 'failed_at'])]
+#[Fillable(['user_id', 'product', 'owner_type', 'owner_id', 'active', 'renewed_at', 'failed_at', 'card_id', 'attempts'])]
 class PlusRenewal extends Model
 {
     protected function casts(): array
@@ -39,5 +42,13 @@ class PlusRenewal extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * @return BelongsTo<PaymentCard, $this>
+     */
+    public function card(): BelongsTo
+    {
+        return $this->belongsTo(PaymentCard::class, 'card_id');
     }
 }

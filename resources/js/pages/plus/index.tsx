@@ -1,4 +1,4 @@
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import {
     Check,
     Gift,
@@ -9,7 +9,6 @@ import {
     Sparkles,
     Ticket,
     Users,
-    Wallet,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useState } from 'react';
@@ -18,11 +17,10 @@ import { PlusTabs } from '@/components/billing/plus-tabs';
 import { FamilyLogo } from '@/components/families/family-logo';
 import { PlusBadge, plusNameProps } from '@/components/gc/plus';
 import { UserAvatar } from '@/components/gc/user-avatar';
-import { money, openTopup } from '@/lib/billing';
+import { perPeriod, periodLabel, useKind } from '@/lib/billing';
 import { formatDate } from '@/lib/format';
 import { tr } from '@/lib/i18n';
-import { buyProduct, PLUS_PRICES, PRODUCT_LABELS } from '@/lib/plus';
-import type { PlusProduct } from '@/lib/plus';
+import { buyProduct, PRODUCT_LABELS } from '@/lib/plus';
 import { cn } from '@/lib/utils';
 import type { FamilyCard, PlusMark } from '@/types';
 
@@ -67,8 +65,6 @@ type Props = {
         receipt_url: string | null;
         created_at: string;
     }[];
-    /** Баланс рахунку, копійки. */
-    balance: number;
 };
 
 const PERKS = (): { icon: LucideIcon; title: string; text: string }[] => [
@@ -121,24 +117,22 @@ export default function PlusPage({
     state,
     style,
     options,
-    products,
     families,
     payments,
-    balance,
 }: Props) {
+    const plans = useKind('plus');
     const user = usePage().props.auth.user;
     const busy: string | null = null;
     const buy = (
-        product: PlusProduct,
+        product: string,
         extra: Record<string, string | number> = {},
     ) => buyProduct(product, extra);
-    const can = (product: PlusProduct) => products[product]?.available === true;
 
     return (
         <>
             <Head title="GameCon+" />
             <div className="mx-auto max-w-4xl space-y-5">
-                <PlusTabs current="plus" balance={balance} />
+                <PlusTabs current="plus" />
                 <section className="glass rounded-3xl p-5 sm:p-7">
                     <h1 className="flex items-center gap-2.5 font-display text-2xl font-bold text-white sm:text-3xl">
                         <PlusBadge className="size-7 rounded-lg [&_svg]:size-5" />
@@ -149,28 +143,6 @@ export default function PlusPage({
                             'Підтримайте GameCon і отримайте оформлення, більше місця й зручності. Усе, що вже безкоштовне, лишається безкоштовним.',
                         )}
                     </p>
-                    <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3">
-                        <Wallet className="size-5 text-indigo-300" />
-                        <span className="text-sm text-white">
-                            {tr('На рахунку')}{' '}
-                            <b className="tabular-nums">{money(balance)}</b>
-                        </span>
-                        <span className="ml-auto flex gap-2">
-                            <button
-                                type="button"
-                                className={cn(primary, 'h-9')}
-                                onClick={() => openTopup()}
-                            >
-                                {tr('Поповнити')}
-                            </button>
-                            <Link
-                                href="/plus/billing"
-                                className={cn(secondary, 'h-9')}
-                            >
-                                {tr('Рахунок')}
-                            </Link>
-                        </span>
-                    </div>
                     {state.active && (
                         <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3">
                             <Check className="size-5 text-emerald-300" />
@@ -191,9 +163,9 @@ export default function PlusPage({
                                     {state.renewal
                                         ? state.renewal.failed
                                             ? tr(
-                                                  'для автопродовження бракує коштів',
+                                                  'автопродовження не вдалося — перевірте картку',
                                               )
-                                            : tr('автопродовження з рахунку')
+                                            : tr('автопродовження карткою')
                                         : tr('без автопродовження')}
                                 </span>
                             </span>
@@ -201,61 +173,61 @@ export default function PlusPage({
                     )}
 
                     <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                        {(['plus_month', 'plus_year'] as const).map(
-                            (product) => (
-                                <div
-                                    key={product}
-                                    className={cn(
-                                        'flex flex-col gap-3 rounded-2xl border p-4',
-                                        product === 'plus_year'
-                                            ? 'border-indigo-400/40 bg-indigo-500/[0.07]'
-                                            : 'border-white/10 bg-white/[0.03]',
+                        {plans.map(([product, plan], i) => (
+                            <div
+                                key={product}
+                                className={cn(
+                                    'flex flex-col gap-3 rounded-2xl border p-4',
+                                    plan.badge ||
+                                        (plans.length > 1 &&
+                                            i === plans.length - 1)
+                                        ? 'border-indigo-400/40 bg-indigo-500/[0.07]'
+                                        : 'border-white/10 bg-white/[0.03]',
+                                )}
+                            >
+                                <div className="flex items-baseline justify-between gap-2">
+                                    <span className="font-semibold text-white">
+                                        {periodLabel(plan)}
+                                    </span>
+                                    {plan.badge && (
+                                        <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[11px] font-semibold text-indigo-200">
+                                            {plan.badge}
+                                        </span>
                                     )}
-                                >
-                                    <div className="flex items-baseline justify-between gap-2">
-                                        <span className="font-semibold text-white">
-                                            {product === 'plus_month'
-                                                ? tr('Місяць')
-                                                : tr('Рік')}
-                                        </span>
-                                        {product === 'plus_year' && (
-                                            <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[11px] font-semibold text-indigo-200">
-                                                {tr(
-                                                    '−28% · 2 місяці в подарунок',
-                                                )}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <p className="font-display text-3xl font-bold text-white">
-                                        {PLUS_PRICES[product].toLocaleString(
-                                            'uk-UA',
-                                        )}{' '}
-                                        ₴
-                                        <span className="ml-1 text-sm font-medium text-white/45">
-                                            {product === 'plus_month'
-                                                ? tr('/ місяць')
-                                                : tr('/ рік')}
-                                        </span>
-                                    </p>
-                                    <button
-                                        type="button"
-                                        className={primary}
-                                        disabled={!can(product)}
-                                        onClick={() => buy(product)}
-                                    >
-                                        {!can(product)
-                                            ? tr('Зараз не продається')
-                                            : state.active
-                                              ? tr('Продовжити')
-                                              : tr('Оформити')}
-                                    </button>
                                 </div>
-                            ),
+                                <p className="font-display text-3xl font-bold text-white">
+                                    {plan.old_price && (
+                                        <span className="mr-2 text-lg text-white/35 line-through">
+                                            {plan.old_price.toLocaleString(
+                                                'uk-UA',
+                                            )}
+                                        </span>
+                                    )}
+                                    {plan.price.toLocaleString('uk-UA')} ₴
+                                    <span className="ml-1 text-sm font-medium text-white/45">
+                                        {perPeriod(plan.days)}
+                                    </span>
+                                </p>
+                                <button
+                                    type="button"
+                                    className={primary}
+                                    onClick={() => buy(product)}
+                                >
+                                    {state.active
+                                        ? tr('Продовжити')
+                                        : tr('Оформити')}
+                                </button>
+                            </div>
+                        ))}
+                        {plans.length === 0 && (
+                            <p className="text-sm text-white/45">
+                                {tr('Зараз GameCon+ не продається.')}
+                            </p>
                         )}
                     </div>
                     <p className="mt-3 text-xs text-white/40">
                         {tr(
-                            'Оплата — з рахунку GameCon, його поповнюють донатом. Жодних автосписань з картки: автопродовження списує ціну лише з рахунку й вимикається будь-коли. Дні нової покупки додаються після чинного періоду. Повернення протягом 14 днів — див. «Повернення коштів».',
+                            'Оплата карткою Visa / Mastercard, Apple Pay чи Google Pay через monobank. Автопродовження вмикаєте ви самі: ціна списується зі збереженої картки за добу до кінця періоду, вимкнути можна будь-коли в «Оплата й підписки». Дні нової покупки додаються після чинного періоду. Повернення — див. «Повернення коштів».',
                         )}
                     </p>
                 </section>
@@ -283,14 +255,13 @@ export default function PlusPage({
                 )}
 
                 <div className="grid gap-5 md:grid-cols-2">
-                    <GiftForm can={can} buy={buy} busy={busy} />
+                    <GiftForm buy={buy} busy={busy} />
                     <RedeemForm />
                 </div>
 
                 <FamilyPlans
                     families={families}
                     options={options}
-                    can={can}
                     buy={buy}
                     busy={busy}
                 />
@@ -602,17 +573,13 @@ function AccentPicker({
 }
 
 function GiftForm({
-    can,
     buy,
     busy,
 }: {
-    can: (product: PlusProduct) => boolean;
-    buy: (
-        product: PlusProduct,
-        extra?: Record<string, string | number>,
-    ) => void;
+    buy: (product: string, extra?: Record<string, string | number>) => void;
     busy: string | null;
 }) {
+    const gifts = useKind('gift');
     const [username, setUsername] = useState('');
     const ready = username.trim().length > 1 && busy === null;
 
@@ -632,25 +599,18 @@ function GiftForm({
                 className="input-glass h-10 rounded-xl px-3 text-sm"
             />
             <div className="flex flex-wrap gap-2">
-                {(['gift_month', 'gift_year'] as const).map((product) => (
+                {gifts.map(([product, plan]) => (
                     <button
                         key={product}
                         type="button"
                         className={secondary}
-                        disabled={!ready || !can(product)}
+                        disabled={!ready}
                         onClick={() =>
                             buy(product, { username: username.trim() })
                         }
                     >
-                        {product === 'gift_month'
-                            ? tr('Місяць · {price} ₴', {
-                                  price: PLUS_PRICES[product],
-                              })
-                            : tr('Рік · {price} ₴', {
-                                  price: PLUS_PRICES[product].toLocaleString(
-                                      'uk-UA',
-                                  ),
-                              })}
+                        {periodLabel(plan)} ·{' '}
+                        {plan.price.toLocaleString('uk-UA')} ₴
                     </button>
                 ))}
             </div>
@@ -702,19 +662,15 @@ function RedeemForm() {
 function FamilyPlans({
     families,
     options,
-    can,
     buy,
     busy,
 }: {
     families: Props['families'];
     options: Props['options'];
-    can: (product: PlusProduct) => boolean;
-    buy: (
-        product: PlusProduct,
-        extra?: Record<string, string | number>,
-    ) => void;
+    buy: (product: string, extra?: Record<string, string | number>) => void;
     busy: string | null;
 }) {
+    const plans = useKind('family');
     return (
         <section className="glass rounded-3xl p-5">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
@@ -727,17 +683,16 @@ function FamilyPlans({
                 )}
             </p>
             <p className="mt-2 font-display text-xl font-bold text-white">
-                {PLUS_PRICES.family_month} ₴
-                <span className="text-sm font-medium text-white/45">
-                    {' '}
-                    {tr('/ місяць')}
-                </span>
-                <span className="mx-2 text-white/25">·</span>
-                {PLUS_PRICES.family_year.toLocaleString('uk-UA')} ₴
-                <span className="text-sm font-medium text-white/45">
-                    {' '}
-                    {tr('/ рік')}
-                </span>
+                {plans.map(([key, plan], i) => (
+                    <span key={key}>
+                        {i > 0 && <span className="mx-2 text-white/25">·</span>}
+                        {plan.price.toLocaleString('uk-UA')} ₴
+                        <span className="text-sm font-medium text-white/45">
+                            {' '}
+                            {perPeriod(plan.days)}
+                        </span>
+                    </span>
+                ))}
             </p>
             {families.length === 0 ? (
                 <p className="mt-3 text-sm text-white/40">
@@ -750,7 +705,6 @@ function FamilyPlans({
                             key={family.id}
                             family={family}
                             options={options}
-                            can={can}
                             buy={buy}
                             busy={busy}
                         />
@@ -764,19 +718,15 @@ function FamilyPlans({
 function FamilyRow({
     family,
     options,
-    can,
     buy,
     busy,
 }: {
     family: Props['families'][number];
     options: Props['options'];
-    can: (product: PlusProduct) => boolean;
-    buy: (
-        product: PlusProduct,
-        extra?: Record<string, string | number>,
-    ) => void;
+    buy: (product: string, extra?: Record<string, string | number>) => void;
     busy: string | null;
 }) {
+    const plans = useKind('family');
     const [accent, setAccent] = useState(family.style.accent ?? '');
 
     return (
@@ -794,19 +744,18 @@ function FamilyRow({
                                   date: formatDate(family.state.until),
                               })
                             : tr('Без GameCon+')}
-                        {family.state.renewal &&
-                            ` · ${tr('автопродовження з рахунку')}`}
+                        {family.state.renewal && ` · ${tr('автопродовження')}`}
                     </span>
                 </span>
-                {(['family_month', 'family_year'] as const).map((product) => (
+                {plans.map(([product, plan]) => (
                     <button
                         key={product}
                         type="button"
                         className={cn(primary, 'h-9')}
-                        disabled={!can(product) || busy !== null}
+                        disabled={busy !== null}
                         onClick={() => buy(product, { family_id: family.id })}
                     >
-                        {product === 'family_month' ? tr('Місяць') : tr('Рік')}
+                        {periodLabel(plan)}
                     </button>
                 ))}
             </div>

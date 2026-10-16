@@ -6,13 +6,13 @@
 - **Сайт:** Laravel 13 + Inertia + React 19 (TypeScript), MariaDB, Redis, Reverb.
 - **Приложение:** Flutter (Android), папка [`mobile/`](mobile/), работает с тем же бэкендом.
 
-| Документ | О чём |
-|---|---|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | как всё устроено, структура и карта связей |
-| [docs/SECRETS.md](docs/SECRETS.md) | где лежат ключи и как их использовать (без значений) |
-| [AGENTS.md](AGENTS.md) | правила для ИИ‑агентов (Codex, Cursor, Claude) и для людей |
-| [docs/web-vs-app-checklist.md](docs/web-vs-app-checklist.md) | сверка функций сайта и приложения |
-| [docs/backlog.md](docs/backlog.md) | список идей и задач |
+| Документ                                                     | О чём                                                      |
+| ------------------------------------------------------------ | ---------------------------------------------------------- |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)                 | как всё устроено, структура и карта связей                 |
+| [docs/SECRETS.md](docs/SECRETS.md)                           | где лежат ключи и как их использовать (без значений)       |
+| [AGENTS.md](AGENTS.md)                                       | правила для ИИ‑агентов (Codex, Cursor, Claude) и для людей |
+| [docs/web-vs-app-checklist.md](docs/web-vs-app-checklist.md) | сверка функций сайта и приложения                          |
+| [docs/backlog.md](docs/backlog.md)                           | список идей и задач                                        |
 
 ## Быстрый старт (локально)
 

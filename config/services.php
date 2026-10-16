@@ -54,6 +54,13 @@ return [
         'api_url' => env('MONOBANK_JAR_API_URL', 'https://api.monobank.ua'),
     ],
 
+    // Інтернет-еквайринг monobank: оплата карткою, Apple Pay, Google Pay, збережені картки для автопродовження.
+    // Токен (X-Token) задають в адмінці (Інтеграції → monobank); тут — запасний варіант і адреса API (для тестів).
+    'monobank_acquiring' => [
+        'url' => env('MONOBANK_ACQUIRING_URL', 'https://api.monobank.ua'),
+        'token' => env('MONOBANK_ACQUIRING_TOKEN'),
+    ],
+
     // Donatello: донати для поповнення рахунку. Токен зазвичай задають в адмінці (Інтеграції → Donatello).
     'donatello' => [
         'token' => env('DONATELLO_TOKEN'),
