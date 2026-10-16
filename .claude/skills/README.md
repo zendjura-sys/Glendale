@@ -17,7 +17,8 @@
 в облачных сессиях они и так доступны), canvas-design (5,6 МБ шрифтов), brand-guidelines (фирменный стиль
 Anthropic), doc-coauthoring (без файла лицензии).
 
-**Правила проекта важнее скиллов:** дизайн — по разделу «Design direction» в AGENTS.md / CLAUDE.md
-(минимализм, индиго-акцент, Lucide, Montserrat), даже если frontend-design советует иное.
+**Правила проекта важнее скиллов:** интерфейс строится из существующих компонентов и стилей проекта
+(AGENTS.md, docs/ARCHITECTURE.md: иконки только Lucide, виджеты приложения из `mobile/lib/widgets.dart`),
+даже если frontend-design советует иное.
 
 Обновить: скачать репозитории заново и заменить папки (`git clone --depth 1 https://github.com/anthropics/skills`).
