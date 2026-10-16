@@ -2,6 +2,7 @@ import { useForm, usePage } from '@inertiajs/react';
 import {
     BarChart3,
     Earth,
+    EyeOff,
     ImagePlus,
     Lock,
     Megaphone,
@@ -461,7 +462,7 @@ export function PostComposer({
 
             <div
                 className={cn(
-                    'relative mt-3 flex items-center gap-1.5',
+                    'relative mt-3 flex flex-wrap items-center gap-1.5',
                     !expanded && 'sm:pl-14',
                 )}
             >
@@ -476,6 +477,7 @@ export function PostComposer({
                 <button
                     type="button"
                     onClick={() => fileRef.current?.click()}
+                    aria-label={tr('Фото')}
                     className="inline-flex h-9 items-center gap-2 rounded-xl px-2.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white sm:px-3"
                 >
                     <ImagePlus className="size-[18px] text-[#6fa2ff]" />
@@ -484,6 +486,7 @@ export function PostComposer({
                 <button
                     type="button"
                     onClick={() => setPickingSticker((open) => !open)}
+                    aria-label={tr('Стікер')}
                     className={cn(
                         'inline-flex h-9 items-center gap-2 rounded-xl px-2.5 text-sm font-medium transition hover:bg-white/[0.06] hover:text-white sm:px-3',
                         form.data.sticker ? 'text-white' : 'text-white/65',
@@ -495,16 +498,20 @@ export function PostComposer({
                 <button
                     type="button"
                     onClick={() => form.setData('spoiler', !form.data.spoiler)}
+                    aria-label={tr('Спойлер')}
+                    aria-pressed={form.data.spoiler}
                     className={cn(
                         'inline-flex h-9 items-center gap-2 rounded-xl px-2.5 text-sm font-medium transition hover:bg-white/[0.06] hover:text-white sm:px-3',
                         form.data.spoiler ? 'text-white' : 'text-white/65',
                     )}
                 >
+                    <EyeOff className="size-[18px] text-[#ff8fa3]" />
                     <span className="hidden sm:inline">{tr('Спойлер')}</span>
                 </button>
                 <button
                     type="button"
                     onClick={() => setPickingCard((value) => !value)}
+                    aria-label={tr('Картка')}
                     className="inline-flex h-9 items-center gap-2 rounded-xl px-2.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white sm:px-3"
                 >
                     <Sparkles className="size-[18px] text-[#ffd27a]" />
@@ -520,6 +527,7 @@ export function PostComposer({
                                 : { question: '', options: ['', ''] },
                         )
                     }
+                    aria-label={tr('Опитування')}
                     className={cn(
                         'inline-flex h-9 items-center gap-2 rounded-xl px-2.5 text-sm font-medium transition hover:bg-white/[0.06] hover:text-white sm:px-3',
                         form.data.poll ? 'text-white' : 'text-white/65',
@@ -532,6 +540,7 @@ export function PostComposer({
                     <button
                         type="button"
                         onClick={() => setPicking(true)}
+                        aria-label={tr('Музика')}
                         className="inline-flex h-9 items-center gap-2 rounded-xl px-2.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white sm:px-3"
                     >
                         <Music2 className="size-[18px] text-[#c58bff]" />
