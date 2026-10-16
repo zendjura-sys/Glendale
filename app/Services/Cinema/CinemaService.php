@@ -228,9 +228,32 @@ class CinemaService
             }
             $model->save();
         }
-        $stats['removed'] = $this->retire($movie, $provider, $seen);
+        $stats['removed'] = $this->retire($movie, $provider, $seen) + $this->dropSplit($movie, $provider, $seen);
 
         return $stats;
+    }
+
+    /**
+     * Плеєр «Усі озвучки», який провайдер тепер віддає окремими озвучками (external_id «77» → «77:10», «77:11»),
+     * видаляється одразу, щоб не дублювати їх.
+     *
+     * @param  list<string>  $seen
+     */
+    private function dropSplit(Movie $movie, string $provider, array $seen): int
+    {
+        if ($provider !== 'flixcdn') {
+            return 0;
+        }
+        $parents = array_values(array_unique(array_filter(array_map(
+            fn (string $id) => str_contains($id, ':') ? strstr($id, ':', true) : null,
+            $seen,
+        ))));
+        if ($parents === []) {
+            return 0;
+        }
+
+        return MovieSource::query()->where('movie_id', $movie->id)->where('provider', $provider)
+            ->whereIn('external_id', array_diff($parents, $seen))->delete();
     }
 
     /**
@@ -311,6 +334,7 @@ class CinemaService
         if ($complete) {
             $this->retire($movie, $provider, $seen);
         }
+        $this->dropSplit($movie, $provider, $seen);
     }
 
     /**

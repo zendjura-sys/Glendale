@@ -344,6 +344,41 @@ class CinemaTest extends TestCase
         $this->assertSame('flixcdn', $movie->sources()->value('provider'));
     }
 
+    public function test_flixcdn_voices_become_separate_players(): void
+    {
+        $item = [
+            'id' => 77, 'kp_id' => 301, 'ru_title' => 'Матрица', 'year' => 1999,
+            'iframe_url' => 'https://flixcdn.test/embed/77?token=abc#start',
+            'translations' => [['id' => 10, 'title' => 'Дубляж'], ['id' => 11, 'title' => 'LostFilm', 'type' => 'voice'], ['id' => 12, 'title' => 'Субтитри', 'type' => 'subtitles']],
+        ];
+
+        $sources = FlixcdnClient::group([$item])[0]['sources'];
+        $this->assertCount(3, $sources);
+        $this->assertSame(['Дубляж', 'LostFilm', 'Субтитри'], array_column($sources, 'translation'));
+        $this->assertSame('https://flixcdn.test/embed/77?token=abc&translation=11#start', $sources[1]['link']);
+        $this->assertSame('77:12', $sources[2]['external_id']);
+        $this->assertSame('subtitles', $sources[2]['translation_type']);
+
+        // Старий плеєр «Усі озвучки» замінюється окремими озвучками, інші плеєри не чіпаються.
+        $movie = $this->movie(['kinopoisk_id' => '301']);
+        $movie->sources()->create(['provider' => 'flixcdn', 'external_id' => '77', 'translation' => 'Усі озвучки', 'link' => 'https://flixcdn.test/embed/77', 'position' => 0]);
+        $movie->sources()->create(['provider' => 'kodik', 'external_id' => 'movie-1', 'translation' => 'Дубляж', 'link' => 'https://kodik.test/1', 'position' => 1]);
+        app(CinemaService::class)->mergeSources($movie, 'flixcdn', $sources, false);
+        $this->assertSame(['77:10', '77:11', '77:12'], $movie->sources()->where('provider', 'flixcdn')->orderBy('external_id')->pluck('external_id')->all());
+        $this->assertTrue($movie->sources()->where('provider', 'kodik')->exists());
+
+        // Карта {id: назва} і власний параметр.
+        $map = FlixcdnClient::group([[...$item, 'translations' => ['610' => 'AniLibria', '609' => 'AniDub']]], 'voice')[0]['sources'];
+        $this->assertSame('https://flixcdn.test/embed/77?token=abc&voice=609#start', $map[1]['link']);
+
+        // Розбиття вимкнено («-») — один плеєр з усіма озвучками.
+        app(SiteSettings::class)->put(['flixcdn_translation_param' => '-']);
+        $this->assertSame('', app(FlixcdnClient::class)->translationParam());
+        $single = FlixcdnClient::group([$item], '')[0]['sources'];
+        $this->assertCount(1, $single);
+        $this->assertSame('https://flixcdn.test/embed/77?token=abc#start', $single[0]['link']);
+    }
+
     public function test_flixcdn_template_player_is_offered_when_no_api_sources(): void
     {
         $user = User::factory()->create();

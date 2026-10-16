@@ -207,9 +207,15 @@ export default function CinemaShow({
         () => [...new Set(players.map((p) => p.provider))],
         [players],
     );
-    const [provider, setProvider] = useState<string | null>(
+    const [chosen, setProvider] = useState<string | null>(
         providers[0] ?? (movie.trailer_url ? 'trailer' : null),
     );
+    // Після оновлення сторінки обраного провайдера може вже не бути — тоді беремо перший наявний.
+    const provider =
+        chosen === 'trailer' ||
+        (chosen !== null && (providers as string[]).includes(chosen))
+            ? chosen
+            : (providers[0] ?? (movie.trailer_url ? 'trailer' : null));
     const providerPlayers = players.filter((p) => p.provider === provider);
     const [playerKey, setPlayerKey] = useState<string | null>(
         providerPlayers[0]?.key ?? null,
@@ -217,6 +223,7 @@ export default function CinemaShow({
     const player =
         providerPlayers.find((p) => p.key === playerKey) ?? providerPlayers[0];
     const startedRef = useRef(false);
+    const frameRef = useRef<HTMLIFrameElement>(null);
     // Серія обирається під плеєром (сам плеєр — без перемикачів): одразу наступна непереглянута.
     const [pick, setPick] = useState<EpisodePick | null>(() =>
         episodes?.length ? firstPick(episodes, episodeMarks) : null,
@@ -299,6 +306,8 @@ export default function CinemaShow({
     useEffect(() => {
         const onMessage = (event: MessageEvent) => {
             if (startedRef.current) return;
+            // Лише події нашого плеєра, а не інших вкладок чи вбудованого вмісту.
+            if (event.source !== frameRef.current?.contentWindow) return;
             const data = event.data as { key?: string; event?: string } | null;
             const key =
                 typeof data === 'object' && data
@@ -677,7 +686,7 @@ export default function CinemaShow({
                                     )}
                                 {providerPlayers.length > 1 && (
                                     <select
-                                        value={player?.key}
+                                        value={player?.key ?? ''}
                                         onChange={(e) =>
                                             setPlayerKey(e.target.value)
                                         }
@@ -698,6 +707,7 @@ export default function CinemaShow({
                             </div>
                             <div className="relative aspect-video bg-black">
                                 <iframe
+                                    ref={frameRef}
                                     key={
                                         provider === 'trailer'
                                             ? 'trailer'

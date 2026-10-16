@@ -38,6 +38,8 @@ class SiteSettings
         'flixcdn_template' => null,
         'flixcdn_api_search' => null,
         'flixcdn_api_updates' => null,
+        // Параметр адреси плеєра FlixCDN, що вибирає озвучку (кожна озвучка — окремий плеєр).
+        'flixcdn_translation_param' => null,
         'tmdb_token' => null,
         'tmdb_language' => 'uk-UA',
         'omdb_key' => null,

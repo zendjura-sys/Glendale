@@ -525,6 +525,9 @@ class IntegrationController extends Controller
                     ['name' => 'api_updates', 'setting' => 'flixcdn_api_updates', 'type' => 'url', 'label' => 'API: оновлення',
                         'placeholder' => 'https://api.example/updates?token={token}&page={page}', 'help' => 'Список новинок для автонаповнення.',
                         'rules' => $url],
+                    ['name' => 'translation_param', 'setting' => 'flixcdn_translation_param', 'type' => 'text', 'label' => 'Параметр озвучки',
+                        'placeholder' => 'translation', 'help' => 'Кожна озвучка з API стає окремим плеєром: до адреси додається ?параметр=ID озвучки. Порожньо — типово translation; «-» — не розбивати (один плеєр «Усі озвучки»).',
+                        'rules' => ['nullable', 'string', 'max:40', 'regex:/^(-|[A-Za-z_][A-Za-z0-9_\-\[\]]*)$/'], 'message' => 'Латинські літери, цифри, _ або «-».'],
                 ],
             ],
             'videoseed' => [
