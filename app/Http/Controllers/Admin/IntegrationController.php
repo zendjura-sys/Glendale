@@ -9,6 +9,7 @@ use App\Models\ImageFlag;
 use App\Models\MovieSource;
 use App\Models\PlusGrant;
 use App\Models\PlusPayment;
+use App\Models\PlusSubscription;
 use App\Models\PushDevice;
 use App\Models\SpotifyAccount;
 use App\Models\User;
@@ -17,6 +18,7 @@ use App\Models\VoiceParticipant;
 use App\Models\VoiceRoom;
 use App\Services\Auth\DiscordOAuth;
 use App\Services\Auth\FirebaseAuth;
+use App\Services\Billing\GooglePlay;
 use App\Services\Billing\MonobankAcquiring;
 use App\Services\Bots\DiscordApi;
 use App\Services\Bots\TelegramApi;
@@ -623,6 +625,36 @@ class IntegrationController extends Controller
                 'fields' => [
                     ['name' => 'key', 'setting' => 'omdb_key', 'type' => 'secret', 'label' => 'API Key', 'env' => config('services.omdb.key'),
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{6,40}$/'], 'message' => 'Ключ OMDb — латинські літери та цифри.'],
+                ],
+            ],
+            'google_play' => [
+                'label' => 'Google Play — підписки в застосунку',
+                'group' => 'payments',
+                'description' => 'GameCon+ у застосунку купується через Google Play Billing: Google приймає оплату й раз на місяць перераховує виручку (мінус комісію) на ваш рахунок. Сервер перевіряє кожну покупку в Google і сам вмикає й вимикає GameCon+.',
+                'docs' => 'https://developer.android.com/google/play/billing/getting-ready',
+                'steps' => [
+                    'Play Console → Налаштування → Платіжний профіль: дані ФОП і рахунок для виплат (валютний рахунок ФОП у monobank).',
+                    'Play Console → Монетизація → Підписки: створіть підписку з ID gamecon_plus (або власним — впишіть нижче) і базові плани, напр. monthly і yearly, з цінами.',
+                    'Google Cloud Console (проєкт, пов’язаний із Play Console): увімкніть Google Play Android Developer API, створіть сервісний акаунт і ключ JSON.',
+                    'Play Console → Користувачі й дозволи → запросіть email сервісного акаунта з правами «Перегляд фінансових даних» і «Керування замовленнями й підписками». Можна використати акаунт Firebase — тоді поле ключа лишіть порожнім.',
+                    'Real-time developer notifications: створіть тему Pub/Sub, дайте google-play-developer-notifications@system.gserviceaccount.com роль Publisher, push-підписку на адресу '.app(GooglePlay::class)->rtdnUrl().' і вкажіть тему в Play Console → Монетизація → Налаштування монетизації.',
+                    'Увімкніть перемикач нижче й натисніть «Перевірити». Купувати можна лише у версії застосунку з Google Play (для тестів — ліцензовані тестувальники).',
+                ],
+                'configured' => app(GooglePlay::class)->enabled(),
+                'stat' => PlusSubscription::query()->where('provider', PlusSubscription::GOOGLE_PLAY)->whereIn('status', PlusSubscription::ENTITLED)->where('renews_at', '>', now())->count().' активних підписок',
+                'test' => fn () => app(GooglePlay::class)->test(),
+                'fields' => [
+                    ['name' => 'enabled', 'setting' => 'google_play_enabled', 'type' => 'bool', 'label' => 'Продавати GameCon+ у застосунку', 'rules' => ['required', 'boolean']],
+                    ['name' => 'products', 'setting' => 'google_play_products', 'type' => 'text', 'label' => 'ID підписок', 'placeholder' => 'gamecon_plus',
+                        'help' => 'Через кому, як у Play Console. Порожньо — gamecon_plus.',
+                        'rules' => ['nullable', 'string', 'max:200', 'regex:/^[a-z0-9][a-z0-9_.]*(\s*,\s*[a-z0-9][a-z0-9_.]*)*$/'], 'message' => 'ID — малі латинські літери, цифри, _ і крапка; кілька — через кому.'],
+                    ['name' => 'package', 'setting' => 'google_play_package', 'type' => 'text', 'label' => 'Пакет застосунку', 'placeholder' => (string) config('services.google_play.package'),
+                        'rules' => ['nullable', 'string', 'max:100', 'regex:/^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/'], 'message' => 'Напр. online.gamecon.app'],
+                    ['name' => 'service_account', 'setting' => 'google_play_service_account', 'type' => 'secret', 'label' => 'Ключ сервісного акаунта (JSON)', 'placeholder' => '{"type": "service_account", …}',
+                        'env' => config('services.google_play.credentials'), 'help' => 'Порожньо — ключ Firebase з блоку Push-сповіщень (якщо йому дано доступ у Play Console).',
+                        'rules' => ['nullable', 'string', 'max:10000', fn (string $attribute, mixed $value, \Closure $fail) => is_string($value) && FcmClient::parse($value) === null
+                            ? $fail('Вставте повний JSON ключа сервісного акаунта (type: service_account).') : null],
+                    ],
                 ],
             ],
             'monobank' => [

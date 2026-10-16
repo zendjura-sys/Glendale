@@ -25,7 +25,9 @@
   `flixcdn_token`, `tmdb_token`, `omdb_key`, `discord_client_secret`, `discord_bot_token`,
   `fcm_service_account`, `livekit_api_secret`, `rawg_key`, `igdb_client_secret`, `steam_api_key`,
   `deepl_key`, `maxmind_license_key`, `vapid_private`, `telegram_bot_token`, `telegram_webhook_secret`,
-  `twitch_client_secret`, `sightengine_secret`, `monobank_acquiring_token` (X-Token эквайринга monobank;
+  `twitch_client_secret`, `sightengine_secret`, `google_play_service_account` (ключ сервисного аккаунта с доступом
+  к Google Play Developer API; пусто — используется `fcm_service_account`), `google_play_rtdn_token` (секрет в адресе
+  Pub/Sub push, создаётся сам), `monobank_acquiring_token` (X-Token эквайринга monobank;
   запасной вариант — `MONOBANK_ACQUIRING_TOKEN` в `.env`). `donatello_token` остался в списке только для
   старых данных — Donatello больше не используется.
 - Хранятся **зашифрованными** (`Crypt::encryptString`, ключ шифрования — `APP_KEY` из `.env`).

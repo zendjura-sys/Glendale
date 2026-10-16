@@ -56,6 +56,13 @@ return [
 
     // Інтернет-еквайринг monobank: оплата карткою, Apple Pay, Google Pay, збережені картки для автопродовження.
     // Токен (X-Token) задають в адмінці (Інтеграції → monobank); тут — запасний варіант і адреса API (для тестів).
+    // Google Play Billing (підписки в застосунку): пакет, адреса API (для тестів) і запасний ключ сервісного акаунта.
+    'google_play' => [
+        'package' => env('GOOGLE_PLAY_PACKAGE', 'online.gamecon.app'),
+        'url' => env('GOOGLE_PLAY_API_URL', 'https://androidpublisher.googleapis.com'),
+        'credentials' => env('GOOGLE_PLAY_CREDENTIALS'),
+    ],
+
     'monobank_acquiring' => [
         'url' => env('MONOBANK_ACQUIRING_URL', 'https://api.monobank.ua'),
         'token' => env('MONOBANK_ACQUIRING_TOKEN'),

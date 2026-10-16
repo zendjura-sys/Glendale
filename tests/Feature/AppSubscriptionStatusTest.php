@@ -31,7 +31,7 @@ class AppSubscriptionStatusTest extends TestCase
         $this->getJson('/api/v1/user/subscription-status')->assertUnauthorized();
 
         $this->withToken($token)->getJson('/api/v1/user/subscription-status')
-            ->assertOk()->assertExactJson(['is_pro' => false, 'expires_at' => null, 'plan_name' => null, 'style' => null]);
+            ->assertOk()->assertExactJson(['is_pro' => false, 'expires_at' => null, 'plan_name' => null, 'style' => null, 'store' => null, 'auto_renew' => null, 'manage_url' => null]);
 
         app(Plus::class)->grant($user, 30, 'admin');
         app(Wallet::class)->credit($user, 50000, 'topup', 'Тест');

@@ -19,6 +19,7 @@ use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\GooglePlayRtdnController;
 use App\Http\Controllers\InviteLinkController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\ListenPartyController;
@@ -68,6 +69,7 @@ Route::get('/', WelcomeController::class)->name('home');
 
 // Вебхук еквайрингу monobank (без входу й CSRF; підпис X-Sign перевіряє контролер).
 Route::post('billing/monobank/webhook', MonobankWebhookController::class)->middleware('throttle:120,1')->name('billing.monobank.webhook');
+Route::post('billing/google-play/rtdn', GooglePlayRtdnController::class)->middleware('throttle:240,1')->name('billing.google-play.rtdn');
 
 // Юридичні документи й тарифи — відкриті без входу (їх читають гості й платіжні сервіси). Мова: ?lang=en|uk|de|…
 Route::get('terms', [LegalController::class, 'terms'])->name('legal.terms');

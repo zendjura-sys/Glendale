@@ -220,6 +220,18 @@ flowchart LR
   `billing:tick`, `streams:check`, `games:sync`, `i18n:translate`, `geoip:update`, …
 - Реалтайм: Reverb (сервис `gamecon-reverb`), на сайте — Laravel Echo.
 
+### 4.4.0. GameCon+ в приложении (Google Play Billing)
+
+- Приложение продаёт GameCon+ **только через Google Play Billing** (`mobile/lib/play_billing.dart`, пакет
+  `in_app_purchase`): цены и планы — из Google Play, сервер отдаёт лишь ID подписок и `account_id`
+  (`GET /api/v1/google-play`, он уходит в obfuscatedAccountId). Никаких ссылок на оплату на сайте (anti-steering).
+- Токен покупки → `POST /api/v1/google-play/verify` → `Services/Billing/GooglePlay::sync`: состояние, срок и
+  владелец берутся из Google Play Developer API (subscriptionsv2), покупка подтверждается (acknowledge),
+  доступ — `plus_grants` с `subscription_id` (таблица `plus_subscriptions`). Доверять данным из приложения нельзя.
+- Продления/отмены/возвраты: RTDN (Pub/Sub push на `/billing/google-play/rtdn?token=…`, секрет
+  `google_play_rtdn_token`) и `billing:tick` (перечитывает истекающие подписки).
+- Настройки: Админка → Інтеграції → Google Play (ключ — секрет `google_play_service_account` или ключ Firebase).
+
 ### 4.4.1. Биллинг (только сайт)
 
 - Оплата картой через **эквайринг monobank** (`Services/Billing/MonobankAcquiring`, токен — секрет

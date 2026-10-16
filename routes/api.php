@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AccountApiController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ChatApiController;
 use App\Http\Controllers\Api\FeedApiController;
+use App\Http\Controllers\Api\GooglePlayController;
 use App\Http\Controllers\Api\GroupsApiController;
 use App\Http\Controllers\Api\MediaApiController;
 use App\Http\Controllers\Api\PushApiController;
@@ -84,6 +85,9 @@ Route::prefix('v1')->group(function () {
         Route::get('me', [AuthController::class, 'me']);
         // GameCon+ у застосунку: лише статус доступу, без жодних цін і посилань на оплату.
         Route::get('user/subscription-status', SubscriptionStatusController::class)->middleware('throttle:60,1');
+        // Покупка GameCon+ у застосунку — лише через Google Play Billing; сервер перевіряє токен у Google.
+        Route::get('google-play', [GooglePlayController::class, 'show'])->middleware('throttle:60,1');
+        Route::post('google-play/verify', [GooglePlayController::class, 'verify'])->middleware('throttle:30,1');
         Route::post('me/locale', [LocaleController::class, 'update'])->middleware('throttle:30,1');
         Route::post('translate', TranslateController::class)->middleware('throttle:60,1');
         Route::post('logout', [AuthController::class, 'logout']);
