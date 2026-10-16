@@ -26,7 +26,7 @@ class LegalPagesTest extends TestCase
                     ->component('legal/show')
                     ->where('document', $doc)
                     ->where('locale', $lang)
-                    ->where('is_master', $lang === 'en')
+                    ->where('is_master', $lang === 'uk')
                     ->where('html', fn (string $html) => str_contains($html, (string) config('legal.email')))
                     ->has('translations', count((array) config('legal.languages')))
                 );
@@ -34,27 +34,44 @@ class LegalPagesTest extends TestCase
         }
     }
 
-    public function test_missing_translation_falls_back_to_interface_language_then_english(): void
+    public function test_missing_translation_falls_back_to_the_ukrainian_master(): void
     {
-        // Перекладу fr немає → мова інтерфейсу (за замовчуванням uk).
+        // Перекладу fr немає → мова інтерфейсу (за замовчуванням uk) — це й майстер-версія.
         $this->get('/terms?lang=fr')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->where('locale', 'uk')
-            ->where('is_master', false)
-            ->where('labels.prevail_en', fn (string $text) => str_contains($text, 'English'))
+            ->where('is_master', true)
+            ->where('master', 'uk')
+            ->where('labels.prevail_en', fn (string $text) => str_contains($text, 'українська версія'))
         );
         $this->get('/terms?lang=../../etc')->assertOk()->assertInertia(fn (Assert $page) => $page->where('locale', 'uk'));
 
-        // Мова інтерфейсу без перекладу документа → англійський оригінал.
+        // Мова інтерфейсу без перекладу документа → український оригінал.
         $this->withSession(['locale' => 'fr'])->get('/terms')->assertOk()->assertInertia(fn (Assert $page) => $page
-            ->where('locale', 'en')
+            ->where('locale', 'uk')
             ->where('is_master', true)
+        );
+
+        // Англійський переклад — не майстер, із застереженням українською.
+        $this->get('/terms?lang=en')->assertInertia(fn (Assert $page) => $page
+            ->where('is_master', false)
+            ->where('labels.prevail', fn (string $text) => str_contains($text, 'Ukrainian version shall prevail'))
         );
     }
 
-    public function test_refund_policy_describes_wallet_auto_renewal_and_the_14_day_window(): void
+    public function test_documents_follow_ukrainian_law_for_card_payments(): void
     {
+        $this->get('/terms?lang=uk')->assertInertia(fn (Assert $page) => $page
+            ->where('html', fn (string $html) => str_contains($html, 'публічною офертою') && str_contains($html, 'monobank')
+                && str_contains($html, 'Автопродовження') && ! str_contains($html, 'Donatello'))
+        );
+        $this->get('/refund-policy?lang=uk')->assertInertia(fn (Assert $page) => $page
+            ->where('html', fn (string $html) => str_contains($html, '14 днів') && str_contains($html, 'на ту саму картку') && ! str_contains($html, 'Donatello'))
+        );
         $this->get('/refund-policy?lang=en')->assertInertia(fn (Assert $page) => $page
-            ->where('html', fn (string $html) => str_contains($html, 'Personal account') && str_contains($html, 'Auto-renewal') && str_contains($html, '14 days') && ! str_contains($html, 'Paddle'))
+            ->where('html', fn (string $html) => str_contains($html, '14 days') && str_contains($html, 'same card') && ! str_contains($html, 'Paddle'))
+        );
+        $this->get('/privacy?lang=uk')->assertInertia(fn (Assert $page) => $page
+            ->where('html', fn (string $html) => str_contains($html, 'Про захист персональних даних') && str_contains($html, 'замаскований номер картки'))
         );
     }
 
@@ -103,12 +120,25 @@ class LegalPagesTest extends TestCase
             'legal_email' => 'billing@example.com',
             'legal_country' => 'Ukraine',
             'legal_updated' => '2026-11-01',
+            'legal_tax_id' => '1234567890',
+            'legal_registry' => '2010350000000123456 від 01.10.2026',
+            'legal_phone' => '+380 67 123 45 67',
+            'legal_address' => 'м. Київ, вул. Хрещатик, 1',
+            'legal_tax_status' => 'платник єдиного податку 3 групи, не є платником ПДВ',
         ])->assertSessionHasNoErrors();
 
         $this->get('/refund-policy?lang=uk')->assertInertia(fn (Assert $page) => $page
             ->where('updated', '2026-11-01')
-            ->where('html', fn (string $html) => str_contains($html, 'ФОП Коваленко Олена') && str_contains($html, 'billing@example.com'))
+            ->where('html', fn (string $html) => str_contains($html, 'ФОП Коваленко Олена') && str_contains($html, 'billing@example.com')
+                && str_contains($html, 'РНОКПП: 1234567890') && str_contains($html, '2010350000000123456') && str_contains($html, 'tel:+380671234567')
+                && str_contains($html, 'єдиного податку 3 групи'))
         );
+        $this->get('/terms?lang=en')->assertInertia(fn (Assert $page) => $page
+            ->where('html', fn (string $html) => str_contains($html, 'Taxpayer ID (RNOKPP): 1234567890'))
+        );
+
+        $this->actingAs($admin)->put('/admin/settings', [...$payload, 'legal_tax_id' => '12ab'])
+            ->assertSessionHasErrors('legal_tax_id');
 
         $this->actingAs($admin)->put('/admin/settings', [...$payload, 'legal_email' => 'not-an-email'])
             ->assertSessionHasErrors('legal_email');

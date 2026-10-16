@@ -13,8 +13,10 @@ use Inertia\Response;
 /**
  * Юридичні документи: Terms of Service, Privacy Policy, Refund & Cancellation Policy, а також публічна сторінка цін.
  *
- * Мова документа: ?lang= → мова сесії / інтерфейсу (App::getLocale()) → англійська.
- * Шаблон: resources/views/legal/{document}/{locale}.blade.php, якщо перекладу немає — en.blade.php.
+ * Мова документа: ?lang= → мова сесії / інтерфейсу (App::getLocale()) → українська (майстер-версія).
+ * Шаблон: resources/views/legal/{document}/{locale}.blade.php, якщо перекладу немає — майстер (uk).
+ * Документи складено за законодавством України: публічна оферта (ЦК ст. 633, 641, 642), ЗУ «Про електронну
+ * комерцію», «Про захист прав споживачів», «Про цифровий контент та цифрові послуги», «Про захист персональних даних».
  * Сторінки відкриті без входу: їх читають гості й платіжні сервіси під час перевірки сайту.
  */
 class LegalController extends Controller
@@ -51,9 +53,10 @@ class LegalController extends Controller
 
     private function document(Request $request, string $document): Response
     {
+        $master = (string) config('legal.master');
         $locale = $this->locale($request, $document);
-        $view = View::exists("legal.{$document}.{$locale}") ? "legal.{$document}.{$locale}" : "legal.{$document}.en";
-        $actual = $view === "legal.{$document}.en" ? 'en' : $locale;
+        $view = View::exists("legal.{$document}.{$locale}") ? "legal.{$document}.{$locale}" : "legal.{$document}.{$master}";
+        $actual = $view === "legal.{$document}.{$master}" ? $master : $locale;
         $legal = $this->details();
 
         return Inertia::render('legal/show', [
@@ -61,14 +64,15 @@ class LegalController extends Controller
             'document' => $document,
             'title' => __('ui.'.$document, [], $actual),
             'html' => View::file(View::getFinder()->find($view), ['legal' => $legal])->render(),
-            'is_master' => $actual === config('legal.master'),
+            'is_master' => $actual === $master,
+            'master' => $master,
             'translations' => $this->translations($document),
             'updated' => $legal['updated'],
         ]);
     }
 
     /**
-     * ?lang= має пріоритет; далі — мова інтерфейсу (сесія / cookie / профіль через SetLocale); інакше — англійська.
+     * ?lang= має пріоритет; далі — мова інтерфейсу (сесія / cookie / профіль через SetLocale); інакше — українська.
      */
     private function locale(Request $request, ?string $document): string
     {
@@ -120,7 +124,8 @@ class LegalController extends Controller
                 'pricing' => $t('pricing'),
                 'view_original' => $t('view_original'),
                 'prevail' => $t('prevail'),
-                'prevail_en' => __('ui.prevail', [], 'en'),
+                // Застереження мовою майстер-версії (українською) — показується завжди.
+                'prevail_en' => __('ui.prevail', [], (string) config('legal.master')),
                 'last_updated' => $t('last_updated'),
                 'language' => $t('language'),
                 'rights' => $t('all_rights_reserved'),
@@ -129,16 +134,20 @@ class LegalController extends Controller
     }
 
     /**
-     * @return array{operator: string, email: string, address: string|null, country: string, updated: string, site: string, name: string}
+     * @return array{operator: string, email: string, address: string|null, tax_id: string|null, registry: string|null, phone: string|null, tax_status: string|null, country: string, updated: string, site: string, name: string}
      */
     private function details(): array
     {
-        $address = $this->value('address');
+        $optional = fn (string $key) => ($value = $this->value($key)) !== '' ? $value : null;
 
         return [
             'operator' => $this->value('operator'),
             'email' => $this->value('email'),
-            'address' => $address !== '' ? $address : null,
+            'address' => $optional('address'),
+            'tax_id' => $optional('tax_id'),
+            'registry' => $optional('registry'),
+            'phone' => $optional('phone'),
+            'tax_status' => $optional('tax_status'),
             'country' => $this->value('country'),
             'updated' => $this->value('updated'),
             'site' => rtrim((string) config('app.url'), '/'),

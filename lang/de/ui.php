@@ -8,8 +8,8 @@ return [
     'privacy' => 'Datenschutzerklärung',
     'refund' => 'Rückerstattungs- und Kündigungsrichtlinie',
     'pricing' => 'Preise',
-    'view_original' => 'Original anzeigen (Englisch)',
-    'prevail' => 'Im Falle von Widersprüchen, Abweichungen oder Unstimmigkeiten zwischen der englischen Fassung und einer übersetzten Fassung ist die englische Fassung maßgeblich.',
+    'view_original' => 'Original anzeigen (Ukrainisch)',
+    'prevail' => 'Im Falle von Widersprüchen, Abweichungen oder Unstimmigkeiten zwischen der ukrainischen Fassung und einer übersetzten Fassung ist die ukrainische Fassung maßgeblich.',
     'last_updated' => 'Zuletzt aktualisiert',
     'language' => 'Sprache',
 ];

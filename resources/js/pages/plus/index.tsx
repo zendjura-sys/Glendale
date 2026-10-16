@@ -27,7 +27,7 @@ import type { FamilyCard, PlusMark } from '@/types';
 type State = {
     active: boolean;
     until: string | null;
-    /** Автопродовження з рахунку (Білінг). */
+    /** Автопродовження збереженою карткою (Білінг). */
     renewal: {
         id: number;
         product: string;

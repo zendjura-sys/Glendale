@@ -119,7 +119,7 @@ export default function AdminPlus({
             <PageHeader
                 title="GameCon+"
                 description={tr(
-                    'Хто з GameCon+, ручна видача й промокоди. Рахунки, поповнення й товари в продажу — у розділі «Білінг».',
+                    'Хто з GameCon+, ручна видача й промокоди. Оплати, тарифи й підписки — у розділі «Білінг».',
                 )}
                 actions={
                     <Link href="/admin/billing" className={button}>

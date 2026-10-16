@@ -1,56 +1,58 @@
-{{-- Privacy Policy — English master version. --}}
-<p>This Privacy Policy explains how <strong>{{ $legal['operator'] }}</strong> ({{ $legal['country'] }}), the operator of {{ $legal['name'] }} (<a href="{{ $legal['site'] }}">{{ $legal['site'] }}</a>, the mobile app and bots), collects and uses personal data. We act as the data controller. Contact: <a href="mailto:{{ $legal['email'] }}">{{ $legal['email'] }}</a>.</p>
+{{-- Privacy Policy — English translation. Master version: uk.blade.php. --}}
+<p>This Policy explains how <strong>{{ $legal['operator'] }}</strong> — the owner of personal data under the Law of Ukraine "On Personal Data Protection" and the controller under the GDPR — collects, uses and protects personal data of {{ $legal['name'] }} users (<a href="{{ $legal['site'] }}">{{ $legal['site'] }}</a>, the mobile app and bots). Contact for personal data matters: <a href="mailto:{{ $legal['email'] }}">{{ $legal['email'] }}</a>.</p>
 
-<h2>1. Data we collect</h2>
+<h2>1. Data we process</h2>
 <ul>
-    <li><strong>Account data:</strong> name, username, e-mail, password (stored hashed), optional profile details (avatar, cover, city, country, birthday, gender, website, “about”), language and settings.</li>
-    <li><strong>Content and activity:</strong> posts, comments, reactions, messages, voice messages, photos, clips, RP characters, family, clan and community activity, votes, quests, referrals, cinema lists and ratings.</li>
-    <li><strong>Connected accounts</strong> (only if you connect them): Google, Discord, Telegram, Steam, Spotify, Twitch or YouTube identifiers and public profile data needed for the feature.</li>
-    <li><strong>Technical data:</strong> IP address, approximate country (for regional restrictions), device and browser information, log data, session and security events, push-notification tokens.</li>
-    <li><strong>Payment data:</strong> when you top up your account, we receive from the donation or payment service the details needed to credit it: the name or nickname you entered, your message (with the top-up code), amount, currency, time and transaction ID. We keep a record of your account operations (top-ups, purchases, renewals, refunds). <strong>We never receive or store your card details.</strong></li>
-    <li><strong>Voice:</strong> voice rooms and calls are transmitted in real time through our media server and are <strong>not recorded</strong> by us.</li>
+    <li><strong>Account data:</strong> name, username, e-mail, password (hashed only), optional profile data (avatar, cover, city, country, birthday, gender, website, bio), language and settings.</li>
+    <li><strong>Content and activity:</strong> posts, comments, reactions, messages, voice notes, photos, clips, RP characters, activity in families, clans and communities, votes, quests, film lists and ratings.</li>
+    <li><strong>Connected accounts</strong> (only if you connect them): identifiers and public data from Google, Discord, Telegram, Steam, Spotify, Twitch or YouTube.</li>
+    <li><strong>Technical data:</strong> IP address, approximate country, device and browser data, logs, sessions and security events, push tokens.</li>
+    <li><strong>Payment data:</strong> order number, product, amount, status, date, monobank payment ID, <strong>masked card number</strong> (e.g. 4441 11** **** 1234) and card network. If you agreed to save a card for auto-renewal, we store only the card token issued by monobank, encrypted. <strong>We never receive or store the full card number, expiry date or CVV</strong> — they are handled by the bank.</li>
+    <li><strong>Voice:</strong> voice rooms and calls are relayed in real time through our media server and are <strong>not recorded</strong>.</li>
 </ul>
 
-<h2>2. Purposes and legal bases (GDPR art. 6)</h2>
+<h2>2. Purposes and legal bases</h2>
 <ul>
-    <li>Providing the Service and your account, messaging, voice, notifications — <em>performance of a contract</em>.</li>
-    <li>Paid features, billing records, taxes and accounting — <em>contract</em> and <em>legal obligation</em>.</li>
-    <li>Safety, moderation, anti-spam, anti-fraud, automated checks of uploaded images, enforcing our Terms, security logs — <em>legitimate interests</em>.</li>
-    <li>Improving the Service, statistics, server owner analytics in aggregated form — <em>legitimate interests</em>.</li>
-    <li>Optional e-mails and push notifications, connected accounts — <em>consent</em> (you can withdraw it in settings at any time).</li>
+    <li>Providing the Service, the account, messaging, notifications — <em>performance of the contract</em> (public offer).</li>
+    <li>Accepting payments, auto-renewal, refunds, income records and tax reporting of the entrepreneur — <em>contract</em> and <em>legal obligation</em>.</li>
+    <li>Security, moderation, spam and fraud prevention, automatic image checks — <em>legitimate interest</em>.</li>
+    <li>Improving the Service, anonymised statistics — <em>legitimate interest</em>.</li>
+    <li>Optional e-mails and push notifications, connected accounts — <em>consent</em>, which you can withdraw in settings.</li>
 </ul>
 
 <h2>3. Who we share data with</h2>
-<p>We do not sell personal data. We share it only with processors and partners that help us run the Service, under appropriate agreements:</p>
+<p>We do not sell personal data. We share it only as needed to run the Service:</p>
 <ul>
-    <li>the donation and payment services you choose (for example Donatello, Diaka, Donatik, Buy Me a Coffee, Patreon) and, for in-app purchases, Google Play — each under its own privacy notice;</li>
-    <li>hosting, storage, e-mail delivery and backup providers;</li>
-    <li>Google Firebase (push notifications in the app), browser push services (web push);</li>
-    <li>Sightengine (automated checks of uploaded images for explicit content);</li>
-    <li>DeepL (only the text you ask to translate);</li>
-    <li>Google, Discord, Telegram, Steam, Spotify, Twitch (only when you use a related feature);</li>
-    <li>game servers you authorise via “Sign in with {{ $legal['name'] }}” — only the scopes you approve;</li>
-    <li>authorities, when required by law or to protect rights and safety.</li>
+    <li><strong>monobank (JSC "Universal Bank")</strong> — accepting payments, card tokens, refunds; the bank processes card data under its own policy;</li>
+    <li>Google (Google Pay — if you pay with it; Google Play — in-app purchases; Firebase — push notifications);</li>
+    <li>hosting, storage, e-mail and backup providers;</li>
+    <li>Sightengine — automatic checks of uploaded images; DeepL — only text you ask to translate;</li>
+    <li>Google, Discord, Telegram, Steam, Spotify, Twitch — only when you use the relevant feature;</li>
+    <li>game servers you authorised via "Sign in with {{ $legal['name'] }}" — within the permissions you granted;</li>
+    <li>public authorities — in cases and in the manner required by law.</li>
 </ul>
-<p>Embedded third-party players and media (for example Kodik, Videoseed, FlixCDN, YouTube, Twitch) are loaded from their servers and may set their own cookies and process your IP address under their own policies.</p>
+<p>Embedded third-party players and media (Kodik, Videoseed, FlixCDN, YouTube, Twitch, etc.) load from their servers and may process your IP address and set cookies under their own rules.</p>
 
-<h2>4. International transfers</h2>
-<p>Some providers process data outside your country, including outside the EEA/UK. In those cases we rely on adequacy decisions or Standard Contractual Clauses and other safeguards required by law.</p>
+<h2>4. Cross-border transfers</h2>
+<p>Some providers process data outside Ukraine. We transfer data only to countries ensuring adequate protection or with safeguards required by law (including standard contractual clauses).</p>
 
 <h2>5. Retention</h2>
-<p>We keep data while your account is active. After you delete your account, we delete or anonymise personal data within 30 days, except data we must keep by law (for example records of payments and account operations, kept as required for accounting and tax purposes), security logs for a limited time and backups that are overwritten on a rolling basis. Messages you sent may remain visible to their recipients.</p>
+<p>Account data is kept while the account is active. After account deletion we delete or anonymise data within 30 days, except data we must keep by law: payment records and settlement documents are kept for the periods set by tax and accounting laws (generally 3 years, longer in some cases). Security logs are kept for a limited time; backups are overwritten over time.</p>
 
 <h2>6. Your rights</h2>
-<p>Depending on your location you have the right to access, rectify, delete, restrict or object to processing, to data portability, and to withdraw consent. You can export or delete much of your data directly in the settings, or write to <a href="mailto:{{ $legal['email'] }}">{{ $legal['email'] }}</a>. You also have the right to lodge a complaint with your data protection authority. California residents: we do not sell or share personal information for cross-context behavioural advertising.</p>
+<p>Under Article 8 of the Law of Ukraine "On Personal Data Protection" (and, for EU residents, the GDPR) you have the right to know what data we process and why; to access it; to request correction or deletion; to object to or restrict processing; to withdraw consent; and to receive your data in a machine-readable format. Many actions are available in account settings (export, deletion); others on request at <a href="mailto:{{ $legal['email'] }}">{{ $legal['email'] }}</a>; we reply within 30 days. You may complain to the Ukrainian Parliament Commissioner for Human Rights or a court, and EU residents to their data protection authority.</p>
 
 <h2>7. Cookies and local storage</h2>
-<p>We use strictly necessary cookies (session, security, CSRF protection, language) and local storage for preferences (for example player and appearance settings). We do not use third-party advertising cookies. Third-party embeds may set their own cookies.</p>
+<p>We use only necessary cookies (session, security, CSRF protection, language) and local storage for preferences (player, appearance). There are no third-party advertising or analytics cookies. The monobank payment page and the Google Pay button may use the bank's and Google's own cookies.</p>
 
 <h2>8. Children</h2>
-<p>The Service is not intended for children under 13 (or the higher age of digital consent in your country). If you believe a child has provided us data without the required consent, contact us and we will delete it.</p>
+<p>The Service is not intended for children under 13. Data of users under 14 is processed with the consent of their parents (legal guardians). If you believe a child has given us data without the required consent, contact us and we will delete it.</p>
 
 <h2>9. Security</h2>
-<p>We use encryption in transit (HTTPS), hashed passwords, encrypted storage of secret keys, two-factor authentication and passkeys, access controls and monitoring. No system is perfectly secure; please use a strong unique password.</p>
+<p>We use encryption in transit (HTTPS), password hashing, encrypted storage of card tokens and secret keys, two-factor authentication and passkeys, access control and monitoring. Every bank notification is signature-checked to prevent forged payments.</p>
 
 <h2>10. Changes</h2>
-<p>We may update this policy; the “Last updated” date shows the current version. Material changes will be announced in the Service.</p>
+<p>We may update this Policy; the "Updated" date shows the current version. We will announce material changes in the Service.</p>
+
+<h2>11. Data owner</h2>
+@include('legal.partials.seller_en')

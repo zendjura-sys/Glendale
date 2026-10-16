@@ -42,6 +42,10 @@ type Settings = {
     legal_address: string;
     legal_country: string;
     legal_updated: string;
+    legal_tax_id: string;
+    legal_registry: string;
+    legal_phone: string;
+    legal_tax_status: string;
 };
 
 type LegalKey =
@@ -49,7 +53,11 @@ type LegalKey =
     | 'legal_email'
     | 'legal_address'
     | 'legal_country'
-    | 'legal_updated';
+    | 'legal_updated'
+    | 'legal_tax_id'
+    | 'legal_registry'
+    | 'legal_phone'
+    | 'legal_tax_status';
 
 /** Поля реквізитів: порожнє поле — значення з .env (LEGAL_*), воно показане підказкою. */
 const LEGAL_FIELDS = (): {
@@ -61,8 +69,32 @@ const LEGAL_FIELDS = (): {
     {
         key: 'legal_operator',
         label: tr('Продавець'),
+        hint: tr('Як у виписці з ЄДР, напр. «ФОП Іваненко Іван Іванович».'),
+    },
+    {
+        key: 'legal_tax_id',
+        label: tr('РНОКПП (ІПН)'),
         hint: tr(
-            'ПІБ фізособи, ФОП або назва компанії — як у платіжних сервісах.',
+            '10 цифр; для ФОП закон вимагає показувати його покупцям. Є у виписці з ЄДР.',
+        ),
+    },
+    {
+        key: 'legal_registry',
+        label: tr('Запис в ЄДР'),
+        hint: tr(
+            'Номер і дата запису про реєстрацію ФОП (виписка з ЄДР у Дії або на usr.minjust.gov.ua).',
+        ),
+    },
+    {
+        key: 'legal_phone',
+        label: tr('Телефон'),
+        hint: tr('Для звернень покупців, напр. +380 67 123 45 67.'),
+    },
+    {
+        key: 'legal_tax_status',
+        label: tr('Податковий статус'),
+        hint: tr(
+            'Напр. «платник єдиного податку 3 групи, не є платником ПДВ».',
         ),
     },
     {
@@ -76,7 +108,9 @@ const LEGAL_FIELDS = (): {
     {
         key: 'legal_address',
         label: tr('Адреса'),
-        hint: tr('Необовʼязково: місто й країна або повна адреса.'),
+        hint: tr(
+            'Місцезнаходження ФОП (адреса реєстрації з виписки ЄДР) — обовʼязково для інтернет-продажу.',
+        ),
     },
     {
         key: 'legal_country',
@@ -247,6 +281,10 @@ export default function AdminSettings({
         legal_address: settings.legal_address ?? '',
         legal_country: settings.legal_country ?? '',
         legal_updated: settings.legal_updated ?? '',
+        legal_tax_id: settings.legal_tax_id ?? '',
+        legal_registry: settings.legal_registry ?? '',
+        legal_phone: settings.legal_phone ?? '',
+        legal_tax_status: settings.legal_tax_status ?? '',
     });
     const { data, setData, errors, processing } = form;
 

@@ -130,8 +130,9 @@ flowchart TB
         AUTH[Вход] --> GOOGLE[Google OAuth / Firebase Auth]
         AUTH --> DISCAUTH[Discord OAuth]
         MUS[Музыка] --> SPOTIFY[Spotify API]
-        BILL[Services/Billing, Donations] --> DONATELLO[Donatello]
-        BILL --> MONO[Monobank «банки»]
+        BILL[Services/Billing] --> ACQ[monobank эквайринг]
+        BILL --> GPAY[Google Pay pay.js]
+        JAR[Банки семей/сообществ] --> MONO[Monobank «банки»]
         GEO[Services/Geo] --> MAXMIND[MaxMind / DB‑IP]
     end
 ```
@@ -216,8 +217,23 @@ flowchart LR
 - Очередь: `Jobs/*` (push, обновление плееров, проставка плееров, …). Сервис `gamecon-queue`.
 - Планировщик (`routes/console.php`, сервис `gamecon-scheduler`): `cinema:sync`, `servers:sync`,
   `families:tick`, `posts:publish`, `events:remind`, `events:sync`, `discord:presence`, `steam:presence`,
-  `billing:donations`, `billing:tick`, `streams:check`, `games:sync`, `i18n:translate`, `geoip:update`, …
+  `billing:tick`, `streams:check`, `games:sync`, `i18n:translate`, `geoip:update`, …
 - Реалтайм: Reverb (сервис `gamecon-reverb`), на сайте — Laravel Echo.
+
+### 4.4.1. Биллинг (только сайт)
+
+- Оплата картой через **эквайринг monobank** (`Services/Billing/MonobankAcquiring`, токен — секрет
+  `monobank_acquiring_token`). Баланса больше нет: `Catalog` (тарифы = `config/plus.php` + правки админки
+  `billing_products`) → `Checkout` (заказ `payment_orders` → счёт monobank → вебхук) → `Shop::fulfil` (выдача).
+- Вебхук `POST /billing/monobank/webhook` (без CSRF): подпись `X-Sign` (ECDSA, публичный ключ monobank)
+  проверяется всегда; повторы отсекаются таблицей `payment_webhooks`. Не ослаблять проверку подписи.
+- Автопродление: сохранённые карты (`payment_cards`, токен зашифрован), `billing:tick` списывает за N часов
+  до конца периода (`billing_rules`), повторы ограничены. Промокоды: `Services/Plus/PromoCodes` (дни,
+  скидка, первый платёж, пробный период).
+- Остаток старого баланса (`users.balance`) только расходуется в следующую оплату (`credit_used`).
+- Google Pay: `Services/Billing/GooglePay` + `components/billing/google-pay-button.tsx` (шлюз monobank).
+- Юридические документы: `resources/views/legal/{terms,privacy,refund}/{uk,en}.blade.php`, мастер — **uk**;
+  реквизиты ФОП — Админка → Налаштування → Юридичні дані (`legal_*`).
 
 ### 4.5. Админка
 

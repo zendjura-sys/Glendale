@@ -8,8 +8,8 @@ return [
     'privacy' => 'Informativa sulla privacy',
     'refund' => 'Politica di rimborso e cancellazione',
     'pricing' => 'Prezzi',
-    'view_original' => 'Visualizza l’originale (inglese)',
-    'prevail' => 'In caso di conflitto, discrepanza o incoerenza tra la versione inglese e qualsiasi versione tradotta, prevarrà la versione inglese.',
+    'view_original' => 'Visualizza l’originale (ucraino)',
+    'prevail' => 'In caso di conflitto, discrepanza o incoerenza tra la versione ucraina e qualsiasi versione tradotta, prevarrà la versione ucraina.',
     'last_updated' => 'Ultimo aggiornamento',
     'language' => 'Lingua',
 ];

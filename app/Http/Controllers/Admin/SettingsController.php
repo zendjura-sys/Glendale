@@ -33,6 +33,10 @@ class SettingsController extends Controller
                 'legal_address' => (string) config('legal.address'),
                 'legal_country' => (string) config('legal.country'),
                 'legal_updated' => (string) config('legal.updated'),
+                'legal_tax_id' => (string) config('legal.tax_id'),
+                'legal_registry' => (string) config('legal.registry'),
+                'legal_phone' => (string) config('legal.phone'),
+                'legal_tax_status' => (string) config('legal.tax_status'),
             ],
             'mail' => [
                 'mailer' => $mailer,
@@ -108,6 +112,10 @@ class SettingsController extends Controller
             'legal_address' => ['nullable', 'string', 'max:250'],
             'legal_country' => ['nullable', 'string', 'max:80'],
             'legal_updated' => ['nullable', 'date_format:Y-m-d'],
+            'legal_tax_id' => ['nullable', 'string', 'regex:/^\d{8,10}$/'],
+            'legal_registry' => ['nullable', 'string', 'max:120'],
+            'legal_phone' => ['nullable', 'string', 'max:32', 'regex:/^[+\d\s()\-]{7,32}$/'],
+            'legal_tax_status' => ['nullable', 'string', 'max:200'],
         ]);
 
         $this->settings->put($data);

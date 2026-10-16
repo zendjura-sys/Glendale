@@ -413,9 +413,28 @@ function PurchaseDialog({
 
                     <p className="flex items-start gap-2 text-[11px] leading-relaxed text-white/40">
                         <ShieldCheck className="mt-0.5 size-3.5 shrink-0" />
-                        {tr(
-                            'Оплата на захищеній сторінці monobank: Visa, Mastercard, Apple Pay, Google Pay. Натискаючи «Оплатити», ви приймаєте умови публічної оферти й політику повернення.',
-                        )}
+                        <span>
+                            {tr(
+                                'Оплата на захищеній сторінці monobank: Visa, Mastercard, Apple Pay, Google Pay. Натискаючи «Оплатити», ви приймаєте публічну оферту й просите почати надання послуги одразу; у такому разі під час відмови протягом 14 днів кошти повертаються пропорційно невикористаному періоду.',
+                            )}{' '}
+                            <a
+                                href="/terms"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="underline hover:text-white"
+                            >
+                                {tr('Оферта')}
+                            </a>
+                            {' · '}
+                            <a
+                                href="/refund-policy"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="underline hover:text-white"
+                            >
+                                {tr('Повернення коштів')}
+                            </a>
+                        </span>
                     </p>
                 </div>
             )}
