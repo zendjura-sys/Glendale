@@ -180,19 +180,21 @@ export default function Welcome({
             <Aurora intense />
 
             <header className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.05] bg-background/50 pt-[env(safe-area-inset-top)] backdrop-blur-2xl">
-                <div className="mx-auto flex h-16 max-w-[1240px] items-center gap-4 px-5">
-                    <Logo />
-                    <nav className="ml-auto flex items-center gap-2">
+                <div className="mx-auto flex h-16 max-w-[1240px] items-center gap-3 px-4 sm:px-5">
+                    {/* На вузьких екранах (чи з великим системним шрифтом) — лише знак, щоб кнопки не вилазили за край. */}
+                    <Logo compact className="min-[400px]:hidden" />
+                    <Logo className="max-[399px]:hidden" />
+                    <nav className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
                         <Link
                             href={login()}
-                            className="rounded-xl px-4 py-2 text-sm font-medium text-white/75 transition hover:bg-white/[0.06] hover:text-white"
+                            className="rounded-xl px-3 py-2 text-sm font-medium whitespace-nowrap text-white/75 transition hover:bg-white/[0.06] hover:text-white sm:px-4"
                         >
                             {tr('Увійти')}
                         </Link>
                         {canRegister && (
                             <Link
                                 href={register()}
-                                className="btn-glow rounded-xl px-4 py-2 text-sm font-semibold text-white"
+                                className="btn-glow rounded-xl px-3.5 py-2 text-sm font-semibold whitespace-nowrap sm:px-4"
                             >
                                 {tr('Реєстрація')}
                             </Link>
@@ -221,11 +223,12 @@ export default function Welcome({
                             )}
                         </p>
 
-                        <div className="mt-9 flex flex-wrap items-center gap-3">
+                        {/* Телефон: кнопки однакової ширини одна під одною, значок Google Play по центру. */}
+                        <div className="mt-9 grid gap-3 sm:flex sm:flex-wrap sm:items-center">
                             {canRegister && (
                                 <Link
                                     href={register()}
-                                    className="btn-glow group inline-flex h-13 items-center gap-2 rounded-2xl px-7 text-[15px] font-semibold text-white"
+                                    className="btn-glow group inline-flex h-13 items-center justify-center gap-2 rounded-2xl px-7 text-[15px] font-semibold"
                                 >
                                     {tr('Створити акаунт')}
                                     <ArrowRight className="size-4 transition group-hover:translate-x-1" />
@@ -233,11 +236,11 @@ export default function Welcome({
                             )}
                             <Link
                                 href={login()}
-                                className="glass inline-flex h-13 items-center rounded-2xl px-7 text-[15px] font-semibold text-white/85 transition hover:border-white/20 hover:text-white"
+                                className="glass inline-flex h-13 items-center justify-center rounded-2xl px-7 text-[15px] font-semibold text-white/85 transition hover:border-white/20 hover:text-white"
                             >
                                 {tr('У мене вже є акаунт')}
                             </Link>
-                            <PlayStoreLink />
+                            <PlayStoreLink className="mt-1 justify-self-center sm:mt-0" />
                         </div>
 
                         <div className="mt-10 flex items-center gap-4">
