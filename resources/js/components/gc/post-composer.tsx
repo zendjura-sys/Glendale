@@ -489,6 +489,7 @@ export function PostComposer({
                         type="button"
                         title={tr('Стікер')}
                         onClick={() => setPickingSticker((open) => !open)}
+                        aria-pressed={Boolean(form.data.sticker)}
                         className={cn(
                             'inline-flex size-9 items-center justify-center rounded-xl text-sm font-medium transition hover:bg-white/[0.06] hover:text-white',
                             form.data.sticker
@@ -505,6 +506,7 @@ export function PostComposer({
                         onClick={() =>
                             form.setData('spoiler', !form.data.spoiler)
                         }
+                        aria-pressed={form.data.spoiler}
                         className={cn(
                             'inline-flex size-9 items-center justify-center rounded-xl text-sm font-medium transition hover:bg-white/[0.06] hover:text-white',
                             form.data.spoiler

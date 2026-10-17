@@ -185,6 +185,23 @@ class BillingTest extends TestCase
         $this->assertSame(0, $user->fresh()->balance);
     }
 
+    public function test_refund_returns_only_the_balance_that_was_really_debited(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $user = User::factory()->create();
+        app(Wallet::class)->credit($user, 5000, 'topup', 'Старий баланс');
+        $order = $this->buy($user, ['product' => 'plus_month']);
+        $this->assertSame(5000, $order->credit_used);
+
+        // Баланс витратили до оплати: fulfil не зміг списати залишок, товар однаково видано.
+        app(Wallet::class)->debit($user, 5000, 'purchase', 'Інша покупка');
+        $this->webhook(['invoiceId' => $order->invoice_id, 'status' => 'success', 'modifiedDate' => '2026-10-16T10:00:00Z'])->assertOk();
+        $this->assertSame(0, $user->fresh()->balance);
+
+        $this->actingAs($admin)->post("/admin/billing/orders/{$order->id}/refund")->assertSessionHasNoErrors();
+        $this->assertSame(0, $user->fresh()->balance);
+    }
+
     public function test_promo_codes_of_every_type(): void
     {
         $user = User::factory()->create();

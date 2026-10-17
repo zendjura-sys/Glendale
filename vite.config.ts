@@ -38,6 +38,9 @@ export default defineConfig({
             // Скіли Anthropic (.claude/skills) — сторонній код, лишаємо як в оригіналі.
             '.claude/**',
             'vendor/**',
+            '.claude/**',
+            // Генератор макетів дизайну — разовий скрипт, не код сайту.
+            'docs/design-options/**',
             'node_modules/**',
             'public/**',
             'mobile/**',
@@ -63,6 +66,10 @@ export default defineConfig({
         ignorePatterns: [
             '.claude/**',
             '.github/**',
+            // Скопійовані скіли Anthropic — сторонній текст, не форматуємо.
+            '.claude/**',
+            // Генератор макетів дизайну — разовий скрипт, не код сайту.
+            'docs/design-options/**',
             'composer.json',
             // Flutter-застосунок форматує `dart format`, не vp.
             'mobile/**',

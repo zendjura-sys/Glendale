@@ -11,6 +11,7 @@ use App\Models\PlusPayment;
 use App\Models\PlusRenewal;
 use App\Models\ServerPromotion;
 use App\Models\User;
+use App\Models\WalletTransaction;
 use App\Notifications\BillingNotice;
 use App\Notifications\PlusGifted;
 use App\Services\Plus\Plus;
@@ -291,8 +292,12 @@ class Shop
                 $this->wallet->credit($payer, $payment->amount, 'refund', 'Повернення: '.self::label($payment->product), $payment->product, 'payment:'.$payment->id, $by);
             }
             $order = PaymentOrder::query()->where('payment_id', $payment->id)->first();
-            if ($payer !== null && $order !== null && $order->credit_used > 0) {
-                $this->wallet->credit($payer, $order->credit_used, 'refund', 'Повернення залишку балансу: '.self::label($payment->product), $payment->product, 'order:'.$order->id, $by);
+            // Повертаємо лише те, що справді списали з балансу (fulfil пропускає списання, якщо коштів уже не було).
+            $debited = $order === null ? 0 : -(int) WalletTransaction::query()->where('user_id', $order->user_id)
+                ->where('reference', 'order:'.$order->id)->where('amount', '<', 0)->sum('amount');
+            $credit = $order === null ? 0 : min($order->credit_used, $debited);
+            if ($payer !== null && $order !== null && $credit > 0) {
+                $this->wallet->credit($payer, $credit, 'refund', 'Повернення залишку балансу: '.self::label($payment->product), $payment->product, 'order:'.$order->id, $by);
             }
         });
     }
