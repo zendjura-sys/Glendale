@@ -1,0 +1,431 @@
+import { Head, router, useForm } from '@inertiajs/react';
+import {
+    CheckCircle2,
+    Download,
+    Eye,
+    FileCode2,
+    Palette,
+    RotateCcw,
+    Trash2,
+    Upload,
+} from 'lucide-react';
+import { useRef, useState } from 'react';
+import type { FormEvent } from 'react';
+import { PageHeader, Pill } from '@/components/gc/admin';
+import InputError from '@/components/input-error';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import { tr } from '@/lib/i18n';
+
+type Theme = {
+    id: number;
+    name: string;
+    description: string | null;
+    author: string | null;
+    url: string;
+    size: number;
+    version: number;
+    is_active: boolean;
+    uploaded_by: string | null;
+    updated_at: string;
+};
+
+type Props = {
+    themes: Theme[];
+    limits: { max_kb: number };
+};
+
+// Попередній перегляд — повне завантаження сторінки: стиль підключається в <head> лише при першому відкритті.
+const previewUrl = (id: number | 'default') => `/feed?design_preview=${id}`;
+
+const kb = (bytes: number) =>
+    `${Math.max(1, Math.round(bytes / 1024)).toLocaleString('uk-UA')} КБ`;
+
+export default function AdminDesign({ themes, limits }: Props) {
+    const active = themes.find((theme) => theme.is_active) ?? null;
+    const fileRef = useRef<HTMLInputElement>(null);
+    const form = useForm<{
+        name: string;
+        author: string;
+        description: string;
+        file: File | null;
+        activate: boolean;
+    }>({ name: '', author: '', description: '', file: null, activate: false });
+
+    const upload = (e: FormEvent) => {
+        e.preventDefault();
+        form.post('/admin/design', {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                form.reset();
+                if (fileRef.current) fileRef.current.value = '';
+            },
+        });
+    };
+
+    return (
+        <>
+            <Head title={tr('Дизайн — Адмін-панель')} />
+            <PageHeader
+                title={tr('Дизайн')}
+                description={tr(
+                    'Стилі сайту: CSS-файли, що змінюють кольори, фон і заокруглення поверх стандартного вигляду. Увімкнений стиль бачать усі відвідувачі.',
+                )}
+                actions={
+                    <a
+                        href="/admin/design/template"
+                        className="flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 text-sm font-medium text-white/80 transition hover:bg-white/[0.08] hover:text-white"
+                    >
+                        <Download className="size-4" />
+                        {tr('Шаблон стилю')}
+                    </a>
+                }
+            />
+
+            <section className="glass mb-5 flex flex-wrap items-center gap-3 rounded-2xl p-4">
+                <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-brand text-white">
+                    <Palette className="size-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                    <p className="text-xs text-white/45">
+                        {tr('Зараз на сайті')}
+                    </p>
+                    <p className="font-display text-base font-bold text-white">
+                        {active ? active.name : tr('Стандартний вигляд')}
+                    </p>
+                </div>
+                {active && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (
+                                confirm(
+                                    tr(
+                                        'Повернути стандартний вигляд для всіх відвідувачів?',
+                                    ),
+                                )
+                            ) {
+                                router.post(
+                                    '/admin/design/reset',
+                                    {},
+                                    { preserveScroll: true },
+                                );
+                            }
+                        }}
+                        className="flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white"
+                    >
+                        <RotateCcw className="size-4" />
+                        {tr('Стандартний вигляд')}
+                    </button>
+                )}
+            </section>
+
+            <form
+                onSubmit={upload}
+                className="glass mb-5 grid gap-3 rounded-2xl p-4 sm:grid-cols-2"
+            >
+                <h2 className="font-display text-base font-bold text-white sm:col-span-2">
+                    {tr('Новий стиль')}
+                </h2>
+                <div>
+                    <Input
+                        value={form.data.name}
+                        onChange={(e) => form.setData('name', e.target.value)}
+                        placeholder={tr('Назва, наприклад «Зима 2026»')}
+                        aria-label={tr('Назва стилю')}
+                        className="h-10"
+                    />
+                    <InputError message={form.errors.name} className="mt-1" />
+                </div>
+                <Input
+                    value={form.data.author}
+                    onChange={(e) => form.setData('author', e.target.value)}
+                    placeholder={tr('Автор (необов’язково)')}
+                    aria-label={tr('Автор стилю')}
+                    className="h-10"
+                />
+                <div className="sm:col-span-2">
+                    <Input
+                        value={form.data.description}
+                        onChange={(e) =>
+                            form.setData('description', e.target.value)
+                        }
+                        placeholder={tr('Короткий опис (необов’язково)')}
+                        aria-label={tr('Опис стилю')}
+                        className="h-10"
+                    />
+                    <InputError
+                        message={form.errors.description}
+                        className="mt-1"
+                    />
+                </div>
+                <div className="sm:col-span-2">
+                    <button
+                        type="button"
+                        onClick={() => fileRef.current?.click()}
+                        className="flex w-full items-center gap-3 rounded-xl border border-dashed border-white/15 px-4 py-3 text-left text-sm text-white/60 transition hover:border-[#8b7dff]/60 hover:text-white"
+                    >
+                        <FileCode2 className="size-5 shrink-0" />
+                        <span className="min-w-0 flex-1 truncate">
+                            {form.data.file
+                                ? form.data.file.name
+                                : tr('Оберіть CSS-файл (до {kb} КБ)', {
+                                      kb: limits.max_kb,
+                                  })}
+                        </span>
+                    </button>
+                    <input
+                        ref={fileRef}
+                        type="file"
+                        accept=".css,text/css"
+                        hidden
+                        onChange={(e) =>
+                            form.setData('file', e.target.files?.[0] ?? null)
+                        }
+                    />
+                    <InputError message={form.errors.file} className="mt-1" />
+                </div>
+                <label className="flex items-center gap-2 text-sm text-white/70">
+                    <input
+                        type="checkbox"
+                        checked={form.data.activate}
+                        onChange={(e) =>
+                            form.setData('activate', e.target.checked)
+                        }
+                        className="size-4 accent-[#6d5dfc]"
+                    />
+                    {tr('Одразу увімкнути для всіх')}
+                </label>
+                <div className="flex justify-end">
+                    <button
+                        type="submit"
+                        disabled={
+                            form.processing ||
+                            !form.data.name.trim() ||
+                            !form.data.file
+                        }
+                        className="btn-glow flex h-10 items-center gap-2 rounded-xl bg-gradient-brand px-4 text-sm font-semibold text-white disabled:opacity-50"
+                    >
+                        <Upload className="size-4" />
+                        {form.processing
+                            ? tr('Завантаження…')
+                            : tr('Завантажити стиль')}
+                    </button>
+                </div>
+                <p className="text-xs leading-relaxed text-white/40 sm:col-span-2">
+                    {tr(
+                        'Почніть із шаблону: у ньому всі змінні теми. Дозволено лише CSS у UTF-8 без @import, без «<» і без зовнішніх адрес — у url() тільки data: або шляхи цього сайту.',
+                    )}
+                </p>
+            </form>
+
+            <div className="grid gap-3">
+                <DefaultCard active={active === null} />
+                {themes.map((theme) => (
+                    <ThemeCard
+                        key={theme.id}
+                        theme={theme}
+                        limit={limits.max_kb}
+                    />
+                ))}
+                {themes.length === 0 && (
+                    <div className="glass rounded-3xl px-6 py-10 text-center text-sm text-white/40">
+                        {tr(
+                            'Завантажених стилів ще немає. Скачайте шаблон, змініть кольори й завантажте файл.',
+                        )}
+                    </div>
+                )}
+            </div>
+        </>
+    );
+}
+
+const actionClass =
+    'flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-40';
+
+function DefaultCard({ active }: { active: boolean }) {
+    return (
+        <section className="glass flex flex-wrap items-center gap-3 rounded-2xl p-4">
+            <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-display text-base font-bold text-white">
+                        {tr('Стандартний вигляд')}
+                    </h3>
+                    {active && <Pill tone="green">{tr('На сайті')}</Pill>}
+                    <Pill>{tr('Вбудований')}</Pill>
+                </div>
+                <p className="mt-0.5 text-xs text-white/40">
+                    {tr('Темна тема GameCon без додаткових стилів.')}
+                </p>
+            </div>
+            <a
+                href={previewUrl('default')}
+                target="_blank"
+                rel="noopener"
+                className={actionClass}
+            >
+                <Eye className="size-4" />
+                {tr('Переглянути')}
+            </a>
+        </section>
+    );
+}
+
+function ThemeCard({ theme, limit }: { theme: Theme; limit: number }) {
+    const fileRef = useRef<HTMLInputElement>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [busy, setBusy] = useState(false);
+
+    const newVersion = (file: File | undefined) => {
+        if (!file) return;
+        setBusy(true);
+        setError(null);
+        router.post(
+            `/admin/design/${theme.id}`,
+            {
+                name: theme.name,
+                author: theme.author,
+                description: theme.description,
+                file,
+            },
+            {
+                forceFormData: true,
+                preserveScroll: true,
+                onError: (errors) =>
+                    setError(
+                        Object.values(errors)[0] ?? tr('Помилка завантаження'),
+                    ),
+                onFinish: () => setBusy(false),
+            },
+        );
+    };
+
+    return (
+        <section
+            className={cn(
+                'glass rounded-2xl p-4',
+                theme.is_active && 'ring-1 ring-emerald-400/30',
+            )}
+        >
+            <div className="flex flex-wrap items-center gap-3">
+                <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-display text-base font-bold text-white">
+                            {theme.name}
+                        </h3>
+                        {theme.is_active && (
+                            <Pill tone="green">{tr('На сайті')}</Pill>
+                        )}
+                        <Pill>v{theme.version}</Pill>
+                        <Pill>{kb(theme.size)}</Pill>
+                    </div>
+                    {theme.description && (
+                        <p className="mt-1 text-sm text-white/60">
+                            {theme.description}
+                        </p>
+                    )}
+                    <p className="mt-0.5 text-xs text-white/40">
+                        {[
+                            theme.author &&
+                                tr('Автор: {author}', { author: theme.author }),
+                            theme.uploaded_by &&
+                                tr('Завантажив: {name}', {
+                                    name: theme.uploaded_by,
+                                }),
+                            new Date(theme.updated_at).toLocaleString('uk-UA', {
+                                dateStyle: 'medium',
+                                timeStyle: 'short',
+                            }),
+                        ]
+                            .filter(Boolean)
+                            .join(' · ')}
+                    </p>
+                </div>
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-1">
+                <a
+                    href={previewUrl(theme.id)}
+                    target="_blank"
+                    rel="noopener"
+                    className={actionClass}
+                >
+                    <Eye className="size-4" />
+                    {tr('Переглянути')}
+                </a>
+                {!theme.is_active && (
+                    <button
+                        type="button"
+                        onClick={() =>
+                            router.post(
+                                `/admin/design/${theme.id}/activate`,
+                                {},
+                                { preserveScroll: true },
+                            )
+                        }
+                        className={cn(actionClass, 'text-emerald-200')}
+                    >
+                        <CheckCircle2 className="size-4" />
+                        {tr('Увімкнути для всіх')}
+                    </button>
+                )}
+                <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    disabled={busy}
+                    className={actionClass}
+                >
+                    <Upload className="size-4" />
+                    {busy ? tr('Завантаження…') : tr('Нова версія')}
+                </button>
+                <a
+                    href={theme.url}
+                    target="_blank"
+                    rel="noopener"
+                    className={actionClass}
+                >
+                    <FileCode2 className="size-4" />
+                    CSS
+                </a>
+                <button
+                    type="button"
+                    onClick={() => {
+                        if (
+                            confirm(
+                                theme.is_active
+                                    ? tr(
+                                          'Стиль «{name}» зараз на сайті. Видалити його й повернути стандартний вигляд?',
+                                          { name: theme.name },
+                                      )
+                                    : tr('Видалити стиль «{name}»?', {
+                                          name: theme.name,
+                                      }),
+                            )
+                        ) {
+                            router.delete(`/admin/design/${theme.id}`, {
+                                preserveScroll: true,
+                            });
+                        }
+                    }}
+                    className={cn(actionClass, 'ml-auto hover:text-rose-300')}
+                >
+                    <Trash2 className="size-4" />
+                    {tr('Видалити')}
+                </button>
+            </div>
+            {error && <p className="mt-2 text-xs text-rose-300">{error}</p>}
+            <input
+                ref={fileRef}
+                type="file"
+                accept=".css,text/css"
+                hidden
+                aria-label={tr('Нова версія стилю (до {kb} КБ)', { kb: limit })}
+                onChange={(e) => {
+                    newVersion(e.target.files?.[0]);
+                    e.target.value = '';
+                }}
+            />
+        </section>
+    );
+}

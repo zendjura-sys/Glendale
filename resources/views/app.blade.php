@@ -63,6 +63,11 @@
         @endif
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
+        {{-- Стиль сайту з Адмінка → Дизайн: після app.css, щоб перевизначати змінні теми. --}}
+        @php($designTheme = app(\App\Services\Design\SiteThemes::class)->urlFor(request()))
+        @if ($designTheme)
+            <link rel="stylesheet" href="{{ $designTheme }}" data-site-theme>
+        @endif
         <x-inertia::head>
             <title>{{ config('app.name', 'GameCon') }}</title>
         </x-inertia::head>

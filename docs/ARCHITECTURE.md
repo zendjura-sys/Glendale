@@ -256,6 +256,9 @@ flowchart LR
 - Сервер: `app/Http/Controllers/Admin/*`, маршруты `/admin/*`; клиент: `resources/js/pages/admin/*`.
 - Интеграции и ключи: **Админка → Інтеграції** (`Admin\IntegrationController`) → пишет в `SiteSettings`.
 - Каждое действие админа пишется в журнал (аудит). Модераторы видят только часть разделов.
+- Дизайн: **Админка → Дизайн** (`Admin\DesignController`, `Services/Design/SiteThemes`, таблица `site_themes`) —
+  загружаемые CSS‑стили поверх `app.css`; активный (один) подключается в `app.blade.php`, админ смотрит любой
+  через `?design_preview=<id>`. Шаблон переменных — `resources/design/theme-template.css`.
 
 ---
 

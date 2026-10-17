@@ -663,6 +663,17 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::delete('stickers/{pack}', [Admin\StickerController::class, 'destroy'])->name('stickers.destroy');
         Route::post('stickers/{pack}/items', [Admin\StickerController::class, 'upload'])->name('stickers.upload');
         Route::delete('stickers/{pack}/items/{sticker}', [Admin\StickerController::class, 'destroySticker'])->scopeBindings()->name('stickers.items.destroy');
+        Route::prefix('design')->name('design.')->controller(Admin\DesignController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('template', 'template')->name('template');
+            Route::post('/', 'store')->middleware('throttle:30,1')->name('store');
+            Route::post('reset', 'reset')->name('reset');
+            Route::whereNumber('theme')->group(function () {
+                Route::post('{theme}', 'update')->middleware('throttle:30,1')->name('update');
+                Route::post('{theme}/activate', 'activate')->name('activate');
+                Route::delete('{theme}', 'destroy')->name('destroy');
+            });
+        });
         Route::get('communities', [Admin\CommunityController::class, 'index'])->name('communities.index');
         Route::patch('communities/{community:id}', [Admin\CommunityController::class, 'update'])->name('communities.update');
         Route::delete('communities/{community}', [Admin\CommunityController::class, 'destroy'])->whereNumber('community')->name('communities.destroy');
