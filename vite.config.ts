@@ -35,6 +35,8 @@ export default defineConfig({
     },
     lint: {
         ignorePatterns: [
+            // Скіли Anthropic (.claude/skills) — сторонній код, лишаємо як в оригіналі.
+            '.claude/**',
             'vendor/**',
             'node_modules/**',
             'public/**',
@@ -59,6 +61,7 @@ export default defineConfig({
         singleAttributePerLine: false,
         htmlWhitespaceSensitivity: 'css',
         ignorePatterns: [
+            '.claude/**',
             '.github/**',
             'composer.json',
             // Flutter-застосунок форматує `dart format`, не vp.

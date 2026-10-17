@@ -1053,3 +1053,135 @@ label:has(
         animation: none;
     }
 }
+
+/*
+ * Вхід і реєстрація (layouts/auth-layout.tsx). Поза шарами — щоб перекрити утиліти Input:
+ * поля тут «лінійні» (лише нижня лінія), а половина-запрошення має скошений край на ПК.
+ */
+.auth-invite {
+    isolation: isolate;
+}
+.auth-invite::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+        linear-gradient(
+            165deg,
+            color-mix(in oklab, var(--primary) 14%, transparent),
+            transparent 70%
+        ),
+        rgb(255 255 255 / 0.025);
+    border-top: 1px solid rgb(255 255 255 / 0.06);
+    transition: clip-path 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (min-width: 1024px) {
+    .auth-invite::before {
+        border: 0;
+    }
+    .auth-invite--right::before {
+        clip-path: polygon(16% 0, 100% 0, 100% 100%, 0 100%);
+    }
+    .auth-invite--left::before {
+        clip-path: polygon(0 0, 100% 0, 84% 100%, 0 100%);
+    }
+    .auth-invite--right {
+        padding-left: 4.5rem;
+    }
+    .auth-invite--left {
+        padding-right: 4.5rem;
+    }
+}
+.auth-form [data-slot='input'] {
+    height: 2.75rem;
+    padding-left: 0;
+    border: 0;
+    border-bottom: 1px solid rgb(255 255 255 / 0.14);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    transition:
+        border-color 0.25s,
+        box-shadow 0.25s;
+}
+.auth-form [data-slot='input']:focus,
+.auth-form [data-slot='input']:focus-visible {
+    outline: none;
+    background: transparent;
+    border-bottom-color: var(--primary);
+    box-shadow: 0 1px 0 0 var(--primary);
+}
+.auth-form [data-slot='input'][aria-invalid='true'] {
+    border-bottom-color: var(--destructive);
+}
+
+/*
+ * «Рідке скло» (liquid glass): товсте скло з розмиттям і насиченням того, що під ним,
+ * світлим кантом-відблиском по краю й м’яким відблиском, що йде за курсором (--lx/--ly).
+ * Використання: <div class="liquid-glass"><span class="liquid-glass__glare" aria-hidden />…</div>
+ */
+.liquid-glass {
+    position: relative;
+    isolation: isolate;
+    background:
+        linear-gradient(
+            150deg,
+            rgb(255 255 255 / 0.075),
+            rgb(255 255 255 / 0.015) 38%,
+            rgb(255 255 255 / 0.035)
+        ),
+        rgb(10 13 28 / 0.5);
+    border: 1px solid rgb(255 255 255 / 0.07);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 0.16),
+        inset 0 -24px 48px -36px rgb(255 255 255 / 0.12),
+        0 40px 90px -40px rgb(0 0 0 / 0.95);
+    backdrop-filter: blur(26px) saturate(170%) brightness(1.05);
+    -webkit-backdrop-filter: blur(26px) saturate(170%) brightness(1.05);
+}
+.liquid-glass::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    padding: 1px;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+        135deg,
+        rgb(255 255 255 / 0.4),
+        rgb(255 255 255 / 0.06) 26%,
+        transparent 50%,
+        rgb(255 255 255 / 0.05) 74%,
+        rgb(255 255 255 / 0.24)
+    );
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+}
+.liquid-glass__glare {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(
+        480px circle at var(--lx, 30%) var(--ly, -10%),
+        rgb(255 255 255 / 0.07),
+        transparent 60%
+    );
+}
+/* На телефонах розмиття під полями вводу ламає клавіатуру (див. вище) — скло щільне. */
+@media (hover: none) and (pointer: coarse) {
+    .liquid-glass {
+        background-color: rgb(10 14 30 / 0.95);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+    .liquid-glass__glare {
+        display: none;
+    }
+}

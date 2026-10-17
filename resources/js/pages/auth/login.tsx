@@ -1,4 +1,4 @@
-import { Form, Head, usePage } from '@inertiajs/react';
+import { Form, Head } from '@inertiajs/react';
 import { SocialLogin } from '@/components/auth/social-login';
 import InputError from '@/components/input-error';
 import PasskeyVerify from '@/components/passkey-verify';
@@ -9,7 +9,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 import { tr } from '@/lib/i18n';
@@ -20,8 +19,6 @@ type Props = {
 };
 
 export default function Login({ status, canResetPassword }: Props) {
-    const { site } = usePage().props;
-
     return (
         <>
             <Head title={tr('Вхід')} />
@@ -129,15 +126,6 @@ export default function Login({ status, canResetPassword }: Props) {
                                 {tr('Увійти')}
                             </Button>
                         </div>
-
-                        {site?.registration_open !== false && (
-                            <div className="text-center text-sm text-white/45">
-                                {tr('Ще немає акаунта?')}{' '}
-                                <TextLink href={register()} tabIndex={5}>
-                                    {tr('Зареєструватися')}
-                                </TextLink>
-                            </div>
-                        )}
                     </>
                 )}
             </Form>
