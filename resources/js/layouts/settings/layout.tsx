@@ -6,6 +6,7 @@ import {
     ShieldCheck,
     UserRound,
 } from 'lucide-react';
+import { motion, useReducedMotion } from 'motion/react';
 import type { PropsWithChildren } from 'react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
@@ -15,6 +16,7 @@ import { edit } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import { PageTransition } from '@/components/gc/page-transition';
 import { tr } from '@/lib/i18n';
+import { motionOr, SNAP } from '@/lib/motion';
 
 const items = [
     {
@@ -51,6 +53,7 @@ const items = [
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
+    const reduce = useReducedMotion();
 
     return (
         <div className="mx-auto max-w-[980px]">
@@ -77,22 +80,38 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                     <Link
                                         key={toUrl(href)}
                                         href={href}
+                                        aria-current={
+                                            active ? 'page' : undefined
+                                        }
                                         className={cn(
-                                            'flex flex-1 shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 whitespace-nowrap transition',
+                                            'relative flex flex-1 shrink-0 items-center gap-3 rounded-xl px-2.5 py-2 whitespace-nowrap transition-colors',
                                             active
-                                                ? 'nav-active text-white'
+                                                ? 'text-white'
                                                 : 'text-white/60 hover:bg-white/[0.045] hover:text-white',
                                         )}
                                     >
-                                        <Icon
+                                        {/* Підсвітка активного розділу «перетікає» між пунктами. */}
+                                        {active && (
+                                            <motion.span
+                                                layoutId="settings-nav-active"
+                                                transition={motionOr(
+                                                    reduce,
+                                                    SNAP,
+                                                )}
+                                                className="absolute inset-0 rounded-xl bg-white/[0.07] shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)]"
+                                            />
+                                        )}
+                                        <span
                                             className={cn(
-                                                'size-[18px] shrink-0',
+                                                'relative flex size-8 shrink-0 items-center justify-center rounded-[10px] transition-colors',
                                                 active
-                                                    ? 'text-gc-lilac-400'
-                                                    : 'text-white/40',
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'bg-white/[0.05] text-white/50',
                                             )}
-                                        />
-                                        <span className="min-w-0">
+                                        >
+                                            <Icon className="size-4" />
+                                        </span>
+                                        <span className="relative min-w-0">
                                             <span className="block text-sm font-medium">
                                                 {title}
                                             </span>

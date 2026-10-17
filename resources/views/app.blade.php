@@ -55,6 +55,8 @@
         <link rel="manifest" href="/site.webmanifest">
 
 
+        {{-- Розмір тексту пристрою (lib/device-prefs.ts) — до першого кадру, щоб сторінка не «стрибала». --}}
+        <script>try{var t=localStorage.getItem('gc.text-size');if(t==='s'||t==='l'||t==='xl')document.documentElement.dataset.text=t}catch(e){}</script>
         @php($locale = app()->getLocale())
         @if ($locale === 'uk')
             <script>window.__I18N__={locale:'uk',dict:{}};</script>

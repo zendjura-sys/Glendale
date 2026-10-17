@@ -18,7 +18,8 @@ import {
     X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import type { PropsWithChildren } from 'react';
+import type { PropsWithChildren, ReactNode } from 'react';
+import { LayoutGroup, motion, useReducedMotion } from 'motion/react';
 import { Aurora } from '@/components/gc/aurora';
 import { IncomingCall } from '@/components/gc/incoming-call';
 import { InboxListener } from '@/components/gc/inbox-listener';
@@ -44,6 +45,7 @@ import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useUnreadMessages } from '@/lib/inbox';
 import { usePlayer } from '@/lib/player';
 import { MOBILE_LABEL } from '@/lib/nav';
+import { motionOr, SNAP } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { PageTransition } from '@/components/gc/page-transition';
 import { PlayStoreLink } from '@/components/gc/play-store';
@@ -373,6 +375,86 @@ function useMobileSplit<T extends { key: string }>(items: T[]) {
     return { primary, rest: items.filter((i) => !primary.includes(i)) };
 }
 
+/** Пункт острова: іконка; вибраний — пігулка акценту з підписом, що «перетікає» між пунктами. */
+function IslandTab({
+    href,
+    onClick,
+    expanded,
+    active,
+    badge,
+    label,
+    icon,
+}: {
+    href?: string;
+    onClick?: () => void;
+    expanded?: boolean;
+    active: boolean;
+    badge: number;
+    label: string;
+    icon: ReactNode;
+}) {
+    const reduce = useReducedMotion();
+    const className = cn(
+        'relative flex h-11 min-w-11 items-center justify-center rounded-2xl text-sm font-semibold transition-colors active:scale-95',
+        active
+            ? 'max-w-[45%] flex-none px-2 text-primary-foreground'
+            : 'flex-1 text-white/50',
+    );
+    const body = (
+        <>
+            {active && (
+                <motion.span
+                    layoutId="tabbar-active"
+                    transition={motionOr(reduce, SNAP)}
+                    className="absolute inset-0 rounded-2xl bg-primary"
+                />
+            )}
+            <span className="relative flex min-w-0 items-center gap-2 px-2">
+                <span className="relative shrink-0">
+                    {icon}
+                    {badge > 0 && (
+                        <span className="absolute -top-1.5 -right-2 min-w-4 rounded-full bg-gc-pink px-1 text-center text-[10px] leading-4 font-bold text-white ring-2 ring-[rgb(13_16_34)]">
+                            {badge > 99 ? '99+' : badge}
+                        </span>
+                    )}
+                </span>
+                {active && (
+                    <motion.span
+                        initial={reduce ? false : { opacity: 0, x: -4 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.25, delay: 0.08 }}
+                        className="truncate"
+                    >
+                        {label}
+                    </motion.span>
+                )}
+            </span>
+        </>
+    );
+
+    return href ? (
+        <Link
+            href={href}
+            aria-current={active ? 'page' : undefined}
+            aria-label={label}
+            className={className}
+        >
+            {body}
+        </Link>
+    ) : (
+        <button
+            type="button"
+            onClick={onClick}
+            aria-expanded={expanded}
+            aria-label={label}
+            data-test="mobile-menu"
+            className={className}
+        >
+            {body}
+        </button>
+    );
+}
+
 function MobileNav() {
     const isActive = useIsActive();
     const items = useNavItems();
@@ -384,65 +466,35 @@ function MobileNav() {
 
     return (
         <>
-            <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-sidebar/70 pb-[env(safe-area-inset-bottom)] backdrop-blur-md [view-transition-name:gc-tabbar] lg:hidden">
-                <div className="flex items-stretch justify-around">
-                    {primary.map((item) => {
-                        const active = isActive(item.href, item.key);
-
-                        return (
-                            <Link
+            {/* Острів: плаваюча пігулка над краєм екрана; вибраний пункт розкривається з підписом. */}
+            <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(env(safe-area-inset-bottom)+0.625rem)] [view-transition-name:gc-tabbar] lg:hidden">
+                <LayoutGroup id="tabbar">
+                    <div className="liquid-glass liquid-glass--dense pointer-events-auto flex w-full max-w-[440px] items-center justify-between gap-1 rounded-[22px] p-1.5">
+                        {primary.map((item) => (
+                            <IslandTab
                                 key={item.key}
                                 href={item.href}
-                                aria-current={active ? 'page' : undefined}
-                                className={cn(
-                                    'relative flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition active:scale-95',
-                                    active ? 'text-white' : 'text-white/45',
-                                )}
-                            >
-                                {item.badge > 0 && (
-                                    <span className="absolute top-1 left-1/2 ml-1.5 min-w-4 rounded-full bg-gradient-brand px-1 text-center text-[11px] leading-4 font-bold text-white">
-                                        {item.badge > 99 ? '99+' : item.badge}
-                                    </span>
-                                )}
-                                <ModuleIcon
-                                    name={item.icon}
-                                    className={cn(
-                                        'size-5',
-                                        active &&
-                                            'text-gc-lilac-400 drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]',
-                                    )}
-                                />
-                                <span className="max-w-full truncate px-0.5">
-                                    {MOBILE_LABEL[item.key] ?? item.label}
-                                </span>
-                            </Link>
-                        );
-                    })}
-                    <button
-                        type="button"
-                        onClick={() => setOpen(true)}
-                        aria-expanded={open}
-                        data-test="mobile-menu"
-                        className={cn(
-                            'relative flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition active:scale-95',
-                            open || restActive ? 'text-white' : 'text-white/45',
-                        )}
-                    >
-                        {restBadge > 0 && (
-                            <span className="absolute top-1 left-1/2 ml-1.5 min-w-4 rounded-full bg-gradient-brand px-1 text-center text-[11px] leading-4 font-bold text-white">
-                                {restBadge}
-                            </span>
-                        )}
-                        <LayoutGrid
-                            className={cn(
-                                'size-5',
-                                (open || restActive) &&
-                                    'text-gc-lilac-400 drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]',
-                            )}
+                                active={isActive(item.href, item.key)}
+                                badge={item.badge}
+                                label={MOBILE_LABEL[item.key] ?? item.label}
+                                icon={
+                                    <ModuleIcon
+                                        name={item.icon}
+                                        className="size-5"
+                                    />
+                                }
+                            />
+                        ))}
+                        <IslandTab
+                            onClick={() => setOpen(true)}
+                            expanded={open}
+                            active={open || restActive}
+                            badge={restBadge}
+                            label={tr('Меню')}
+                            icon={<LayoutGrid className="size-5" />}
                         />
-                        {tr('Меню')}
-                    </button>
-                </div>
+                    </div>
+                </LayoutGroup>
             </nav>
             {open && <MobileMenu onClose={() => setOpen(false)} />}
         </>

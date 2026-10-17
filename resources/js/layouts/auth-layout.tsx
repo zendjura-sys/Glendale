@@ -13,6 +13,7 @@ import { Logo } from '@/components/gc/logo';
 import { PaletteSync } from '@/components/gc/palette-sync';
 import { SiteFooter } from '@/components/gc/site-footer';
 import { tr } from '@/lib/i18n';
+import { blurSwap, EASE_OUT, motionOr, SWAP } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
 /**
@@ -23,8 +24,6 @@ import { cn } from '@/lib/utils';
  */
 
 type Mode = 'login' | 'register' | 'other';
-
-const EASE = [0.22, 1, 0.36, 1] as const;
 
 function useMode(): Mode {
     const component = usePage().component;
@@ -121,28 +120,8 @@ export default function AuthLayout({
     };
     // Вхід: форма ліворуч, запрошення праворуч; реєстрація — навпаки (як у референсі).
     const inviteFirst = mode === 'register';
-    const spring = reduce
-        ? { duration: 0 }
-        : { type: 'spring' as const, stiffness: 140, damping: 22, mass: 0.9 };
-    const fade = reduce
-        ? {
-              initial: false as const,
-              animate: { opacity: 1 },
-              exit: { opacity: 1 },
-          }
-        : {
-              initial: { opacity: 0, filter: 'blur(10px)' },
-              animate: {
-                  opacity: 1,
-                  filter: 'blur(0px)',
-                  transition: { duration: 0.45, ease: EASE, delay: 0.12 },
-              },
-              exit: {
-                  opacity: 0,
-                  filter: 'blur(10px)',
-                  transition: { duration: 0.22, ease: EASE },
-              },
-          };
+    const spring = motionOr(reduce, SWAP);
+    const fade = blurSwap(reduce);
 
     return (
         <div className="relative flex min-h-dvh flex-col items-center justify-center px-4 py-8 sm:px-6">
@@ -163,7 +142,7 @@ export default function AuthLayout({
                 <motion.div
                     initial={reduce ? false : { opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, ease: EASE }}
+                    transition={{ duration: 0.6, ease: EASE_OUT }}
                     ref={card}
                     onPointerMove={glare}
                     className="auth-card liquid-glass overflow-hidden rounded-[30px]"

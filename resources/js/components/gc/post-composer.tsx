@@ -3,6 +3,7 @@ import {
     BarChart3,
     Earth,
     ImagePlus,
+    EyeOff,
     Lock,
     Megaphone,
     Music2,
@@ -461,83 +462,101 @@ export function PostComposer({
 
             <div
                 className={cn(
-                    'relative mt-3 flex items-center gap-1.5',
+                    'relative mt-3 flex flex-wrap items-center gap-1.5',
                     !expanded && 'sm:pl-14',
                 )}
             >
-                <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    hidden
-                    onChange={(event) => addFiles(event.target.files)}
-                />
-                <button
-                    type="button"
-                    onClick={() => fileRef.current?.click()}
-                    className="inline-flex h-9 items-center gap-2 rounded-xl px-2.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white sm:px-3"
-                >
-                    <ImagePlus className="size-[18px] text-[#6fa2ff]" />
-                    <span className="hidden sm:inline">{tr('Фото')}</span>
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setPickingSticker((open) => !open)}
-                    className={cn(
-                        'inline-flex h-9 items-center gap-2 rounded-xl px-2.5 text-sm font-medium transition hover:bg-white/[0.06] hover:text-white sm:px-3',
-                        form.data.sticker ? 'text-white' : 'text-white/65',
-                    )}
-                >
-                    <Smile className="size-[18px] text-[#ffd27a]" />
-                    <span className="hidden sm:inline">{tr('Стікер')}</span>
-                </button>
-                <button
-                    type="button"
-                    onClick={() => form.setData('spoiler', !form.data.spoiler)}
-                    className={cn(
-                        'inline-flex h-9 items-center gap-2 rounded-xl px-2.5 text-sm font-medium transition hover:bg-white/[0.06] hover:text-white sm:px-3',
-                        form.data.spoiler ? 'text-white' : 'text-white/65',
-                    )}
-                >
-                    <span className="hidden sm:inline">{tr('Спойлер')}</span>
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setPickingCard((value) => !value)}
-                    className="inline-flex h-9 items-center gap-2 rounded-xl px-2.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white sm:px-3"
-                >
-                    <Sparkles className="size-[18px] text-[#ffd27a]" />
-                    <span className="hidden sm:inline">{tr('Картка')}</span>
-                </button>
-                <button
-                    type="button"
-                    onClick={() =>
-                        form.setData(
-                            'poll',
-                            form.data.poll
-                                ? null
-                                : { question: '', options: ['', ''] },
-                        )
-                    }
-                    className={cn(
-                        'inline-flex h-9 items-center gap-2 rounded-xl px-2.5 text-sm font-medium transition hover:bg-white/[0.06] hover:text-white sm:px-3',
-                        form.data.poll ? 'text-white' : 'text-white/65',
-                    )}
-                >
-                    <BarChart3 className="size-[18px] text-[#7dffb3]" />
-                    <span className="hidden sm:inline">{tr('Опитування')}</span>
-                </button>
-                {modules.includes('music') && (
+                {/* Інструменти — лише іконки (назва — у підказці), далі видимість, час і кнопки дії праворуч. */}
+                <div className="flex min-w-0 basis-full items-center gap-0.5 sm:basis-auto">
+                    <input
+                        ref={fileRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        hidden
+                        onChange={(event) => addFiles(event.target.files)}
+                    />
                     <button
                         type="button"
-                        onClick={() => setPicking(true)}
-                        className="inline-flex h-9 items-center gap-2 rounded-xl px-2.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white sm:px-3"
+                        title={tr('Фото')}
+                        onClick={() => fileRef.current?.click()}
+                        className="inline-flex size-9 items-center justify-center rounded-xl text-sm font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white"
                     >
-                        <Music2 className="size-[18px] text-[#c58bff]" />
-                        <span className="hidden sm:inline">{tr('Музика')}</span>
+                        <ImagePlus className="size-[18px] text-[#6fa2ff]" />
+                        <span className="sr-only">{tr('Фото')}</span>
                     </button>
-                )}
+                    <button
+                        type="button"
+                        title={tr('Стікер')}
+                        onClick={() => setPickingSticker((open) => !open)}
+                        className={cn(
+                            'inline-flex size-9 items-center justify-center rounded-xl text-sm font-medium transition hover:bg-white/[0.06] hover:text-white',
+                            form.data.sticker
+                                ? 'bg-white/10 text-white'
+                                : 'text-white/65',
+                        )}
+                    >
+                        <Smile className="size-[18px] text-[#ffd27a]" />
+                        <span className="sr-only">{tr('Стікер')}</span>
+                    </button>
+                    <button
+                        type="button"
+                        title={tr('Спойлер')}
+                        onClick={() =>
+                            form.setData('spoiler', !form.data.spoiler)
+                        }
+                        className={cn(
+                            'inline-flex size-9 items-center justify-center rounded-xl text-sm font-medium transition hover:bg-white/[0.06] hover:text-white',
+                            form.data.spoiler
+                                ? 'bg-white/10 text-white'
+                                : 'text-white/65',
+                        )}
+                    >
+                        <EyeOff className="size-[18px] text-white/70" />
+                        <span className="sr-only">{tr('Спойлер')}</span>
+                    </button>
+                    <button
+                        type="button"
+                        title={tr('Картка')}
+                        onClick={() => setPickingCard((value) => !value)}
+                        className="inline-flex size-9 items-center justify-center rounded-xl text-sm font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white"
+                    >
+                        <Sparkles className="size-[18px] text-[#ffd27a]" />
+                        <span className="sr-only">{tr('Картка')}</span>
+                    </button>
+                    <button
+                        type="button"
+                        title={tr('Опитування')}
+                        onClick={() =>
+                            form.setData(
+                                'poll',
+                                form.data.poll
+                                    ? null
+                                    : { question: '', options: ['', ''] },
+                            )
+                        }
+                        className={cn(
+                            'inline-flex size-9 items-center justify-center rounded-xl text-sm font-medium transition hover:bg-white/[0.06] hover:text-white',
+                            form.data.poll
+                                ? 'bg-white/10 text-white'
+                                : 'text-white/65',
+                        )}
+                    >
+                        <BarChart3 className="size-[18px] text-[#7dffb3]" />
+                        <span className="sr-only">{tr('Опитування')}</span>
+                    </button>
+                    {modules.includes('music') && (
+                        <button
+                            type="button"
+                            title={tr('Музика')}
+                            onClick={() => setPicking(true)}
+                            className="inline-flex size-9 items-center justify-center rounded-xl text-sm font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white"
+                        >
+                            <Music2 className="size-[18px] text-[#c58bff]" />
+                            <span className="sr-only">{tr('Музика')}</span>
+                        </button>
+                    )}
+                </div>
 
                 {community &&
                     community.type === 'group' &&
@@ -619,36 +638,38 @@ export function PostComposer({
                         value={publishAt}
                         onChange={(event) => setPublishAt(event.target.value)}
                         aria-label={tr('Час публікації')}
-                        className="h-10 rounded-xl bg-transparent px-2 text-xs text-white/70"
+                        className="h-10 w-[12.5rem] min-w-0 rounded-xl bg-white/[0.04] px-2.5 text-xs text-white/70 [color-scheme:dark]"
                     />
                 )}
-                <a
-                    href="/posts/drafts"
-                    className="inline-flex h-10 items-center rounded-xl px-2 text-xs font-medium text-white/45 hover:text-white"
-                >
-                    {tr('Чернетки')}
-                </a>
-                <button
-                    type="button"
-                    onClick={() => submit(true)}
-                    disabled={!canSubmit}
-                    className="inline-flex h-10 items-center rounded-xl px-3 text-sm font-medium text-white/70 hover:text-white disabled:pointer-events-none disabled:opacity-40"
-                >
-                    {tr('Чернетка')}
-                </button>
-                <button
-                    type="button"
-                    onClick={() => submit(false)}
-                    disabled={!canSubmit}
-                    aria-label={tr('Опублікувати')}
-                    className="btn-glow ml-auto inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold disabled:pointer-events-none disabled:opacity-40 sm:px-5"
-                >
-                    <Sparkles className="size-4" />
-                    <span className="hidden min-[440px]:inline">
-                        {tr('Опублікувати')}
-                    </span>
-                    <span className="min-[440px]:hidden">{tr('Пост')}</span>
-                </button>
+                <div className="ml-auto flex items-center gap-1">
+                    <a
+                        href="/posts/drafts"
+                        className="inline-flex h-10 items-center rounded-xl px-2 text-xs font-medium text-white/45 hover:text-white"
+                    >
+                        {tr('Чернетки')}
+                    </a>
+                    <button
+                        type="button"
+                        onClick={() => submit(true)}
+                        disabled={!canSubmit}
+                        className="inline-flex h-10 items-center rounded-xl px-3 text-sm font-medium text-white/70 hover:text-white disabled:pointer-events-none disabled:opacity-40"
+                    >
+                        {tr('Чернетка')}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => submit(false)}
+                        disabled={!canSubmit}
+                        aria-label={tr('Опублікувати')}
+                        className="btn-glow inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold disabled:pointer-events-none disabled:opacity-40 sm:px-5"
+                    >
+                        <Sparkles className="size-4" />
+                        <span className="hidden min-[440px]:inline">
+                            {tr('Опублікувати')}
+                        </span>
+                        <span className="min-[440px]:hidden">{tr('Пост')}</span>
+                    </button>
+                </div>
             </div>
 
             {modules.includes('music') && (

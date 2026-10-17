@@ -1,4 +1,4 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import {
     Bell,
     Check,
@@ -9,11 +9,21 @@ import {
     Moon,
     UsersRound,
 } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
+import { type FormEvent, useEffect, useState } from 'react';
 import AppearanceController from '@/actions/App/Http/Controllers/Settings/AppearanceController';
-import { Button } from '@/components/ui/button';
+import { UserAvatar } from '@/components/gc/user-avatar';
+import { countChanges, PendingBar } from '@/components/settings/pending-bar';
 import { SettingsCard } from '@/layouts/settings/layout';
+import {
+    applyTextSize,
+    readTextSize,
+    saveTextSize,
+    TEXT_SIZES,
+    type TextSize,
+} from '@/lib/device-prefs';
 import { tr } from '@/lib/i18n';
+import { motionOr, POP, SNAP } from '@/lib/motion';
 import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
 import type { UserCard } from '@/types';
@@ -124,10 +134,41 @@ export default function Appearance({
         hide_spoilers: hideSpoilers,
     });
     const [phrase, setPhrase] = useState('');
+    const reduce = useReducedMotion();
+    const user = usePage().props.auth.user;
+    // Збережений стан: від нього рахуються незбережені зміни й до нього повертає «Скасувати».
+    const [saved, setSaved] = useState(form.data);
+    const [textSize, setTextSize] = useState<TextSize>(readTextSize);
+    const [savedText, setSavedText] = useState<TextSize>(readTextSize);
+    const changes =
+        countChanges(form.data, saved) + (textSize !== savedText ? 1 : 0);
+
+    // Пішли зі сторінки, не зберігши, — розмір тексту повертається до збереженого.
+    useEffect(() => () => applyTextSize(readTextSize()), []);
+
+    const previewText = (size: TextSize) => {
+        setTextSize(size);
+        applyTextSize(size);
+    };
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
-        form.submit(AppearanceController.update(), { preserveScroll: true });
+        if (textSize !== savedText) {
+            saveTextSize(textSize);
+            setSavedText(textSize);
+        }
+        if (countChanges(form.data, saved) === 0) return;
+        form.submit(AppearanceController.update(), {
+            preserveScroll: true,
+            onSuccess: () => setSaved(form.data),
+        });
+    };
+
+    const discard = () => {
+        form.setData(saved);
+        form.clearErrors();
+        document.documentElement.dataset.palette = saved.palette;
+        previewText(savedText);
     };
 
     const pick = (id: string) => {
@@ -145,7 +186,86 @@ export default function Appearance({
     return (
         <>
             <Head title={tr('Вигляд')} />
-            <form onSubmit={submit} className="space-y-4">
+            <form id="appearance-form" onSubmit={submit} className="space-y-4">
+                {/* Живий попередній перегляд: палітра й розмір тексту змінюються тут одразу. */}
+                <div className="liquid-glass overflow-hidden rounded-3xl p-5 sm:p-6">
+                    <span aria-hidden className="liquid-glass__glare" />
+                    <p className="text-xs text-white/40">
+                        {tr('Попередній перегляд — зміни видно одразу')}
+                    </p>
+                    <div className="mt-4 flex items-start gap-3">
+                        {user && <UserAvatar user={user} size="md" />}
+                        <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-white">
+                                {user?.name ?? 'GameCon'}
+                            </p>
+                            <p className="mt-1 text-[15px] leading-relaxed text-white/75">
+                                {tr(
+                                    'Збираємо паті на вечір: хто з нами? Після гри — кіно разом.',
+                                )}
+                            </p>
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                                <span className="inline-flex h-8 items-center rounded-full bg-primary px-3.5 text-xs font-semibold text-primary-foreground">
+                                    {tr('Я в ділі')}
+                                </span>
+                                <span className="inline-flex h-8 items-center rounded-full border border-white/15 px-3.5 text-xs font-medium text-white/70">
+                                    {tr('Пізніше')}
+                                </span>
+                                <span className="text-xs font-medium text-primary">
+                                    {tr('12 відповідей')}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <SettingsCard
+                    title={tr('Розмір тексту')}
+                    description={tr(
+                        'Для цього пристрою: на телефоні й комп’ютері можна різний.',
+                    )}
+                >
+                    <div
+                        className="grid grid-cols-4 gap-2"
+                        role="radiogroup"
+                        aria-label={tr('Розмір тексту')}
+                    >
+                        {TEXT_SIZES.map((size, i) => {
+                            const active = textSize === size;
+
+                            return (
+                                <button
+                                    key={size}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={active}
+                                    onClick={() => previewText(size)}
+                                    className={cn(
+                                        'relative flex h-14 items-center justify-center rounded-2xl transition-colors',
+                                        active
+                                            ? 'text-white'
+                                            : 'bg-white/[0.03] text-white/50 hover:bg-white/[0.06] hover:text-white',
+                                    )}
+                                >
+                                    {active && (
+                                        <motion.span
+                                            layoutId="text-size-active"
+                                            transition={motionOr(reduce, SNAP)}
+                                            className="absolute inset-0 rounded-2xl border border-primary/60 bg-primary/10"
+                                        />
+                                    )}
+                                    <span
+                                        className="relative font-semibold"
+                                        style={{ fontSize: `${13 + i * 3}px` }}
+                                    >
+                                        Aa
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </SettingsCard>
+
                 {palettesOn && (
                     <SettingsCard
                         title={tr('Палітра')}
@@ -190,7 +310,27 @@ export default function Appearance({
                                             </span>
                                         </span>
                                         {active && (
-                                            <Check className="size-4 shrink-0 text-white" />
+                                            <motion.span
+                                                initial={
+                                                    reduce
+                                                        ? false
+                                                        : {
+                                                              scale: 0,
+                                                              rotate: -45,
+                                                          }
+                                                }
+                                                animate={{
+                                                    scale: 1,
+                                                    rotate: 0,
+                                                }}
+                                                transition={motionOr(
+                                                    reduce,
+                                                    POP,
+                                                )}
+                                                className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary"
+                                            >
+                                                <Check className="size-3 text-primary-foreground" />
+                                            </motion.span>
                                         )}
                                     </button>
                                 );
@@ -607,15 +747,13 @@ export default function Appearance({
                         </div>
                     </SettingsCard>
                 )}
-
-                <Button
-                    type="submit"
-                    disabled={form.processing}
-                    className="h-11 rounded-xl bg-gradient-brand px-5 text-white"
-                >
-                    {tr('Зберегти')}
-                </Button>
             </form>
+            <PendingBar
+                count={changes}
+                processing={form.processing}
+                onDiscard={discard}
+                form="appearance-form"
+            />
         </>
     );
 }

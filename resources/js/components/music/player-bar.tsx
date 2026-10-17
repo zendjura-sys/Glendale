@@ -215,7 +215,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                     'pointer-events-none fixed inset-x-0 z-40 bg-transparent px-3 [view-transition-name:gc-player]',
                     standalone
                         ? 'bottom-[calc(env(safe-area-inset-bottom)+12px)] lg:left-[256px]'
-                        : 'bottom-[calc(4.25rem+env(safe-area-inset-bottom))] lg:bottom-4',
+                        : 'bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-4',
                 )}
             >
                 <div className="pointer-events-auto relative mx-auto max-w-[1100px] overflow-hidden rounded-2xl border border-white/10 bg-[#0f1426]/70 shadow-[0_18px_50px_-28px_rgb(109_93_252/0.85)] backdrop-blur-md">
