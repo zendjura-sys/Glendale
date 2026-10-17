@@ -118,6 +118,11 @@ export function EditTrackDialog({
                                 rows={6}
                                 className="input-glass mt-1.5 w-full rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none"
                             />
+                            <span className="mt-1.5 block text-xs font-normal text-white/45">
+                                {tr(
+                                    'Вставте текст у форматі LRC ([01:23.45] рядок) — у плеєрі рядки підсвічуватимуться в такт пісні.',
+                                )}
+                            </span>
                         </label>
                     )}
                 </div>

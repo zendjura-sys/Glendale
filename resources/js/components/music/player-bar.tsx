@@ -34,6 +34,7 @@ import {
     usePlayer,
 } from '@/lib/player';
 import { cn } from '@/lib/utils';
+import { FullPlayer } from './full-player';
 import { Equalizer, SpotifyLogo, TrackCover } from './track-cover';
 import { tr } from '@/lib/i18n';
 
@@ -89,7 +90,7 @@ function IconButton({
             className={cn(
                 'flex size-9 items-center justify-center rounded-full transition',
                 active
-                    ? 'text-gc-lilac-400 drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]'
+                    ? 'bg-white/10 text-white'
                     : 'text-white/60 hover:bg-white/[0.06] hover:text-white',
                 className,
             )}
@@ -104,6 +105,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
     const { music } = usePage().props;
     const { currentUrl } = useCurrentUrl();
     const [queueOpen, setQueueOpen] = useState(false);
+    const [expanded, setExpanded] = useState(false);
     const track = player.current;
 
     useEffect(() => {
@@ -124,7 +126,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
             type="button"
             onClick={toggle}
             aria-label={player.playing ? tr('Пауза') : tr('Відтворити')}
-            className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-[#0b0d1d] shadow-[0_0_24px_-4px_rgb(139_107_255/0.9)] transition hover:scale-105"
+            className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-[#0b0d1d] transition-colors hover:bg-white/90"
         >
             {player.loading && !player.playing ? (
                 <Loader2 className="size-5 animate-spin" />
@@ -218,18 +220,18 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                         : 'bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-4',
                 )}
             >
-                <div className="pointer-events-auto relative mx-auto max-w-[1100px] overflow-hidden rounded-2xl border border-white/10 bg-[#0f1426]/70 shadow-[0_18px_50px_-28px_rgb(109_93_252/0.85)] backdrop-blur-md">
+                <div className="liquid-glass liquid-glass--dense pointer-events-auto relative mx-auto max-w-[1100px] overflow-hidden rounded-[22px]">
                     {player.current?.cover_url && (
                         <img
                             src={player.current.cover_url}
                             alt=""
-                            className="pointer-events-none absolute inset-0 size-full scale-125 object-cover opacity-[0.12] blur-3xl"
+                            className="pointer-events-none absolute inset-0 size-full scale-125 object-cover opacity-[0.16] blur-3xl"
                         />
                     )}
 
                     <div className="absolute inset-x-0 top-0 lg:hidden">
                         <div
-                            className="h-0.5 bg-gradient-brand transition-[width]"
+                            className="h-0.5 bg-white/80 transition-[width]"
                             style={{
                                 width: `${player.duration ? (player.position / player.duration) * 100 : 0}%`,
                             }}
@@ -237,8 +239,17 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                     </div>
 
                     <div className="relative mx-auto flex h-16 max-w-[1320px] items-center gap-3 px-3 lg:h-[76px] lg:gap-6 lg:px-5">
-                        <div className="flex min-w-0 flex-1 items-center gap-3 lg:w-[30%] lg:flex-none">
-                            <div className="relative">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setQueueOpen(false);
+                                setExpanded(true);
+                            }}
+                            aria-label={tr('Відкрити плеєр')}
+                            title={tr('Відкрити плеєр')}
+                            className="flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:w-[30%] lg:flex-none"
+                        >
+                            <span className="relative shrink-0">
                                 <TrackCover
                                     url={track.cover_url}
                                     seed={track.key}
@@ -249,12 +260,12 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                                         <SpotifyLogo className="size-3.5" />
                                     </span>
                                 )}
-                            </div>
-                            <div className="min-w-0">
-                                <p className="truncate text-sm font-semibold text-white">
+                            </span>
+                            <span className="min-w-0">
+                                <span className="block truncate text-sm font-semibold text-white">
                                     {track.title}
-                                </p>
-                                <p className="truncate text-xs text-white/50">
+                                </span>
+                                <span className="block truncate text-xs text-white/50">
                                     {track.artist}
                                     {player.engine === 'embed' && (
                                         <span className="ml-1.5 text-spotify/80">
@@ -266,9 +277,9 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                                             · Spotify Premium
                                         </span>
                                     )}
-                                </p>
-                            </div>
-                        </div>
+                                </span>
+                            </span>
+                        </button>
 
                         <div className="hidden flex-1 flex-col items-center gap-1 lg:flex">
                             <div className="flex items-center gap-2">
@@ -379,6 +390,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                     </div>
                 </div>
             </div>
+            <FullPlayer open={expanded} onOpenChange={setExpanded} />
         </>
     );
 }
