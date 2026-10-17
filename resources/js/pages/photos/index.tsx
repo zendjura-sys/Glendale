@@ -136,7 +136,7 @@ export default function PhotosIndex({
                 ) : (
                     <>
                         <section>
-                            <h2 className="mb-3 px-1 font-display text-[13px] font-semibold tracking-wide text-white/70 uppercase">
+                            <h2 className="mb-3 px-1 font-display text-[13px] font-semibold text-white/70">
                                 {tr('Альбоми')}
                             </h2>
                             <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
@@ -148,7 +148,7 @@ export default function PhotosIndex({
 
                         {photos.data.length > 0 && (
                             <section className="glass rounded-3xl p-3 sm:p-4">
-                                <h2 className="mb-3 flex items-center gap-2 px-1 font-display text-[13px] font-semibold tracking-wide text-white/70 uppercase">
+                                <h2 className="mb-3 flex items-center gap-2 px-1 font-display text-[13px] font-semibold text-white/70">
                                     <Images className="size-4 text-gc-lilac-400" />
                                     {tr('Усі фотографії')}
                                 </h2>

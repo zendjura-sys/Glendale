@@ -482,7 +482,7 @@ function ReportDetail({
                     </div>
                 </div>
                 <div className="text-right">
-                    <div className="text-xs tracking-wide text-white/40 uppercase">
+                    <div className="text-xs text-white/40">
                         {tr('До виплати')}
                     </div>
                     <div className="font-display text-2xl font-bold text-emerald-300">

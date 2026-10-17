@@ -57,7 +57,7 @@ export function ContactShareDialog({
                         autoFocus
                     />
                 </label>
-                <p className="mb-1 px-1 text-xs font-semibold tracking-wide text-white/35 uppercase">
+                <p className="mb-1 px-1 text-xs font-semibold text-white/35">
                     {site ? tr('Результати по всьому сайту') : tr('Ваші друзі')}
                 </p>
 

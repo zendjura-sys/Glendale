@@ -199,7 +199,7 @@ export default function FamilyBank(props: Props) {
                     <div className="overflow-x-auto">
                         <InfiniteScroll data="ledger" preserveUrl>
                             <table className="w-full min-w-[560px] text-sm">
-                                <thead className="text-left text-xs tracking-wide text-white/35 uppercase">
+                                <thead className="text-left text-xs text-white/35">
                                     <tr>
                                         <th className="py-2 pr-3 font-medium">
                                             {tr('Час')}

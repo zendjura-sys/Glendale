@@ -234,7 +234,7 @@ export default function FamilyRating(props: Props) {
                     <Panel padded={false} className="overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full min-w-[640px] text-sm">
-                                <thead className="text-left text-xs tracking-wide text-white/35 uppercase">
+                                <thead className="text-left text-xs text-white/35">
                                     <tr className="border-b border-white/[0.06]">
                                         <th className="px-4 py-3 font-medium">
                                             #

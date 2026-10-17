@@ -38,7 +38,7 @@ export default function AdminPlugins({ plugins }: { plugins: PluginItem[] }) {
             <div className="space-y-8">
                 {groups.map((group) => (
                     <section key={group}>
-                        <h2 className="mb-3 font-display text-sm font-semibold tracking-wide text-white/90 uppercase">
+                        <h2 className="mb-3 font-display text-sm font-semibold text-white/90">
                             {tr(group)}
                         </h2>
                         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">

@@ -1,7 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { Globe2 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Aurora } from '@/components/gc/aurora';
+import { SiteBackground } from '@/components/backgrounds/site-background';
 import { Logo } from '@/components/gc/logo';
 import { SiteFooter } from '@/components/gc/site-footer';
 
@@ -39,7 +39,7 @@ export function LegalShell({
             <Head title={title}>
                 <meta name="robots" content="index,follow" />
             </Head>
-            <Aurora />
+            <SiteBackground />
             <div className="relative mx-auto min-h-dvh max-w-3xl px-4 pt-6 pb-4 sm:pt-10">
                 <header className="mb-6 flex items-center gap-3">
                     <Link href="/" aria-label="GameCon">

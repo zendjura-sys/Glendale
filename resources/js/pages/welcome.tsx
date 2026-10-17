@@ -13,7 +13,7 @@ import {
     Sparkles,
     UsersRound,
 } from 'lucide-react';
-import { Aurora } from '@/components/gc/aurora';
+import { SiteBackground } from '@/components/backgrounds/site-background';
 import { Logo } from '@/components/gc/logo';
 import { PlayStoreLink } from '@/components/gc/play-store';
 import { UserAvatar } from '@/components/gc/user-avatar';
@@ -147,7 +147,7 @@ function MockMovie() {
                 className="h-[72px] w-[52px] shrink-0 rounded-lg bg-[linear-gradient(160deg,#1d2b64_0%,#7a1fa2_55%,#ff6b3d_100%)]"
             />
             <div className="min-w-0">
-                <div className="text-xs font-medium tracking-wider text-[#ff9de6] uppercase">
+                <div className="text-xs font-medium text-[#ff9de6]">
                     {tr('Дивляться зараз')}
                 </div>
                 <div className="truncate text-sm font-semibold text-white">
@@ -183,10 +183,10 @@ export default function Welcome({
     return (
         <>
             <Head title={tr('Соціальна мережа для геймерів і кіноманів')} />
-            <Aurora intense />
+            <SiteBackground />
 
-            <header className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.05] bg-background/50 pt-[env(safe-area-inset-top)] backdrop-blur-2xl">
-                <div className="mx-auto flex h-16 max-w-[1240px] items-center gap-3 px-4 sm:px-5">
+            <header className="fixed inset-x-0 top-0 z-40 pt-[env(safe-area-inset-top)]">
+                <div className="liquid-glass liquid-glass--dense mx-2 mt-2 flex h-14 items-center gap-3 rounded-[22px] px-3 sm:mx-3 sm:px-4 xl:mx-auto xl:max-w-[1240px]">
                     {/* На вузьких екранах (чи з великим системним шрифтом) — лише знак, щоб кнопки не вилазили за край. */}
                     <Logo compact className="min-[400px]:hidden" />
                     <Logo className="max-[399px]:hidden" />
@@ -312,7 +312,7 @@ export default function Welcome({
                                 <div className="text-gradient font-display text-3xl font-bold sm:text-4xl">
                                     {s.value}
                                 </div>
-                                <div className="mt-1 text-xs tracking-wider text-white/40 uppercase">
+                                <div className="mt-1 text-xs text-white/40">
                                     {s.label}
                                 </div>
                             </div>

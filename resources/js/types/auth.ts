@@ -20,6 +20,8 @@ export type User = {
     /** Ключі розділів нижньої панелі на телефоні (без «Меню»). */
     nav_tabs: string[];
     palette?: string;
+    /** Фон сайту: сцена, чи рухається вона, і відео YouTube (лише з GameCon+). */
+    background?: SiteBackgroundPrefs;
     hide_spoilers?: boolean;
     /** GameCon+ активний до (ISO), null — немає. */
     plus_until?: string | null;
@@ -66,4 +68,18 @@ export type TwoFactorSetupData = {
 
 export type TwoFactorSecretKey = {
     secretKey: string;
+};
+
+export type SiteBackgroundPreset =
+    | 'dune'
+    | 'aurora'
+    | 'night'
+    | 'ocean'
+    | 'mesh'
+    | 'none';
+
+export type SiteBackgroundPrefs = {
+    preset: SiteBackgroundPreset;
+    motion: boolean;
+    video: string | null;
 };

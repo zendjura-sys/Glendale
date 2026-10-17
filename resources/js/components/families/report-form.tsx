@@ -493,7 +493,7 @@ export function ReportForm({
 
             <div className="flex items-center gap-3 rounded-2xl bg-white/[0.03] p-3 ring-1 ring-white/[0.06]">
                 <div className="min-w-0 flex-1">
-                    <div className="text-xs tracking-wide text-white/40 uppercase">
+                    <div className="text-xs text-white/40">
                         {tr('Очікувана винагорода')}
                     </div>
                     <div className="font-display text-xl font-bold text-emerald-300">

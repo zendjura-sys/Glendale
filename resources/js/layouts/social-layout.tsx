@@ -20,7 +20,7 @@ import {
 import { useEffect, useState } from 'react';
 import type { PropsWithChildren, ReactNode } from 'react';
 import { LayoutGroup, m, useReducedMotion } from 'motion/react';
-import { Aurora } from '@/components/gc/aurora';
+import { SiteBackground } from '@/components/backgrounds/site-background';
 import { IncomingCall } from '@/components/gc/incoming-call';
 import { InboxListener } from '@/components/gc/inbox-listener';
 import { Logo, LogoMark } from '@/components/gc/logo';
@@ -289,12 +289,8 @@ function Topbar() {
 
     return (
         <header className="pointer-events-none fixed inset-x-0 top-0 z-40 bg-transparent pt-[env(safe-area-inset-top)] [view-transition-name:gc-topbar]">
-            {/* Підкладка: контент, що прокручується під шапку, не накладається на пошук і кнопки. */}
-            <div
-                aria-hidden
-                className="absolute inset-x-0 top-0 h-[calc(5rem+env(safe-area-inset-top))] bg-gradient-to-b from-background/95 via-background/80 to-transparent [mask-image:linear-gradient(to_bottom,black_65%,transparent)] backdrop-blur-xl"
-            />
-            <div className="pointer-events-auto relative mx-auto flex h-16 max-w-[1320px] items-center gap-2 px-3 sm:gap-4 sm:px-5">
+            {/* Шапка — острів: плаваюча матова плита з відступом від країв (стиль Dune). */}
+            <div className="liquid-glass liquid-glass--dense pointer-events-auto relative mx-2 mt-2 flex h-14 items-center gap-2 rounded-[22px] px-2 sm:mx-3 sm:gap-4 sm:px-3 xl:mx-auto xl:max-w-[1320px]">
                 <Link href="/feed" className="shrink-0 lg:w-[232px]">
                     <Logo className="hidden sm:inline-flex" />
                     <LogoMark className="sm:hidden" />
@@ -303,7 +299,7 @@ function Topbar() {
                 <div className="ml-auto flex items-center gap-1">
                     <Link
                         href="/friends?tab=requests"
-                        className="relative hidden size-11 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white sm:flex"
+                        className="relative hidden size-10 items-center justify-center rounded-full bg-black/25 text-white/75 ring-1 ring-white/[0.06] transition hover:bg-black/40 hover:text-white sm:flex"
                         aria-label={tr('Заявки в друзі')}
                     >
                         <UsersRound className="size-[19px]" />
@@ -316,7 +312,7 @@ function Topbar() {
                     {modules.includes('messages') && (
                         <Link
                             href="/messages"
-                            className="relative hidden size-11 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white sm:flex"
+                            className="relative hidden size-10 items-center justify-center rounded-full bg-black/25 text-white/75 ring-1 ring-white/[0.06] transition hover:bg-black/40 hover:text-white sm:flex"
                             aria-label={
                                 unreadMessages > 0
                                     ? tr('Повідомлення: {count} непрочитаних', {
@@ -398,7 +394,7 @@ function IslandTab({
         'relative flex h-11 min-w-11 items-center justify-center rounded-2xl text-sm font-semibold transition-colors active:scale-95',
         active
             ? 'max-w-[45%] flex-none px-2 text-primary-foreground'
-            : 'flex-1 text-white/50',
+            : 'flex-1 bg-black/25 text-white/60 ring-1 ring-white/[0.05]',
     );
     const body = (
         <>
@@ -704,7 +700,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                     <IncomingCall userId={auth.user.id} />
                 </>
             )}
-            <Aurora />
+            <SiteBackground />
             <Topbar />
             <div
                 className={cn(

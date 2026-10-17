@@ -244,7 +244,7 @@ export function FamilyShell({
                                     />
                                 </div>
                                 <div className="ml-auto border-l border-white/10 pl-3 text-right">
-                                    <div className="text-xs tracking-wide text-white/40 uppercase">
+                                    <div className="text-xs text-white/40">
                                         {tr('Баланс')}
                                     </div>
                                     <div

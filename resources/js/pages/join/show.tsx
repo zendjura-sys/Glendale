@@ -24,9 +24,7 @@ export default function JoinShow({ token, invite }: Props) {
         <>
             <Head title={tr('Запрошення')} />
             <section className="glass mx-auto max-w-md rounded-3xl p-6">
-                <p className="text-xs font-semibold tracking-wide text-white/40 uppercase">
-                    {kind}
-                </p>
+                <p className="text-xs font-semibold text-white/40">{kind}</p>
                 <h1 className="mt-1 font-display text-2xl font-bold text-white">
                     {invite.name}
                 </h1>

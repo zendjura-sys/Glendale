@@ -163,7 +163,7 @@ function EmojiGrid({ onPick }: { onPick: (emoji: string) => void }) {
             >
                 {sections.map((section) => (
                     <section key={section.key} data-section={section.key}>
-                        <h4 className="sticky top-0 z-10 bg-[#11162a]/95 px-1.5 pt-2 pb-1 text-xs font-semibold tracking-wide text-white/45 uppercase backdrop-blur">
+                        <h4 className="sticky top-0 z-10 bg-[#11162a]/95 px-1.5 pt-2 pb-1 text-xs font-semibold text-white/45 backdrop-blur">
                             {section.label}
                         </h4>
                         <div className="grid grid-cols-8 gap-0.5">

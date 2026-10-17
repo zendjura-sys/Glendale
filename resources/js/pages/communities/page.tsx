@@ -87,7 +87,7 @@ export default function CommunityPage({ community, page, text, other }: Props) {
                         aria-label={tr('Зміст')}
                         className="glass rounded-3xl p-4 sm:p-5"
                     >
-                        <p className="mb-2 text-xs font-semibold tracking-wide text-white/45 uppercase">
+                        <p className="mb-2 text-xs font-semibold text-white/45">
                             {tr('Зміст')}
                         </p>
                         <ol className="space-y-1 text-sm">

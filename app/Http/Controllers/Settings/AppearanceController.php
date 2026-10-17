@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Services\FriendshipService;
+use App\Support\Backgrounds;
 use App\Support\I18n\Locales;
 use App\Support\MutedWords;
 use App\Support\NotifyPrefs;
@@ -12,6 +13,7 @@ use App\Support\Plugins\Plugins;
 use App\Support\ProfileBlocks;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -24,6 +26,13 @@ class AppearanceController extends Controller
         return Inertia::render('settings/appearance', [
             'palette' => $user->palette(),
             'palettes' => Palette::all(),
+            'background' => [
+                ...Backgrounds::for($user),
+                // Поле вводу показує збережене відео навіть після закінчення GameCon+.
+                'video' => Backgrounds::youtubeId($user->pref('background_video')),
+            ],
+            'backgrounds' => Backgrounds::PRESETS,
+            'isPlus' => $user->isPlus(),
             'quiet' => [
                 'enabled' => (bool) $user->pref('quiet_enabled'),
                 'from' => (string) $user->pref('quiet_from', '23:00'),
@@ -69,6 +78,9 @@ class AppearanceController extends Controller
             'mute_words' => ['sometimes', 'array', 'max:20'],
             'mute_words.*' => ['string', 'max:40'],
             'hide_spoilers' => ['sometimes', 'boolean'],
+            'background' => ['sometimes', 'string', 'in:'.implode(',', Backgrounds::PRESETS)],
+            'background_motion' => ['sometimes', 'boolean'],
+            'background_video' => ['sometimes', 'nullable', 'string', 'max:200'],
         ]);
 
         $enabled = app(Locales::class)->enabled();
@@ -118,6 +130,23 @@ class AppearanceController extends Controller
                     : NotifyPrefs::enabled($request->user(), $key);
             }
             $patch['notify'] = $notify;
+        }
+        if (array_key_exists('background', $data)) {
+            $patch['background'] = $data['background'];
+        }
+        if (array_key_exists('background_motion', $data)) {
+            $patch['background_motion'] = (bool) $data['background_motion'];
+        }
+        if (array_key_exists('background_video', $data)) {
+            $video = Backgrounds::youtubeId($data['background_video']);
+            if (filled($data['background_video']) && $video === null) {
+                throw ValidationException::withMessages(['background_video' => 'Не вдалося розпізнати посилання на відео YouTube.']);
+            }
+            // Нове відео може поставити лише учасник GameCon+; прибрати своє — будь-хто.
+            if ($video !== null && $video !== $request->user()->pref('background_video') && ! $request->user()->isPlus()) {
+                throw ValidationException::withMessages(['background_video' => 'Відеофон доступний з GameCon+.']);
+            }
+            $patch['background_video'] = $video;
         }
         $request->user()->mergePref($patch);
 

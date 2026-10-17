@@ -159,9 +159,7 @@ function Section({
 function Fact({ label, value }: { label: string; value: ReactNode }) {
     return (
         <div className="rounded-2xl bg-white/[0.03] p-3">
-            <p className="text-xs tracking-wide text-white/40 uppercase">
-                {label}
-            </p>
+            <p className="text-xs text-white/40">{label}</p>
             <p className="mt-0.5 text-sm text-white/85">{value}</p>
         </div>
     );

@@ -14,6 +14,7 @@ use App\Services\I18n\ContentTranslator;
 use App\Services\Messenger;
 use App\Services\Moderation\ContentFilter;
 use App\Services\Spotify\SpotifyClient;
+use App\Support\Backgrounds;
 use App\Support\I18n\Locales;
 use App\Support\Modules\ModuleManager;
 use App\Support\NotifyPrefs;
@@ -101,6 +102,7 @@ class HandleInertiaRequests extends Middleware
                     'cover_url' => $user->cover_url,
                     'nav_tabs' => $this->modules->navTabsFor($user),
                     'palette' => $user->palette(),
+                    'background' => Backgrounds::for($user),
                     'hide_spoilers' => app(Plugins::class)->on('spoiler_switch') && (bool) $user->pref('hide_spoilers'),
                     'profanity_mask' => $user->pref('hide_profanity') ? app(ContentFilter::class)->clientPattern() : null,
                     // До коли діє GameCon+ (оплата — карткою через monobank, без балансу).

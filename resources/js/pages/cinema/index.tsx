@@ -181,7 +181,7 @@ function Hero({ items }: { items: MovieFeatured[] }) {
                     key={movie.id}
                     className="max-w-xl min-w-0 flex-1 animate-rise"
                 >
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-2.5 py-1 text-xs font-semibold tracking-wider text-white/70 uppercase backdrop-blur">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-2.5 py-1 text-xs font-semibold text-white/70 backdrop-blur">
                         <Sparkles className="size-3.5 text-gc-amber" />
                         {tr('Рекомендуємо')}
                     </span>
@@ -337,7 +337,7 @@ export default function CinemaIndex({
                         <div className="pointer-events-none absolute -top-24 -right-16 size-80 rounded-full bg-gc-indigo/25 blur-3xl" />
                         <div className="pointer-events-none absolute -bottom-36 left-10 size-80 rounded-full bg-gc-pink/15 blur-3xl" />
                         <div className="relative">
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs font-semibold tracking-wider text-white/60 uppercase">
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs font-semibold text-white/60">
                                 <Clapperboard className="size-3.5 text-gc-lilac-400" />
                                 {tr('Кіно GameCon')}
                             </span>

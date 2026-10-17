@@ -237,7 +237,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                 )}
                             </div>
                             <div className="min-w-0 flex-1 text-center sm:text-left">
-                                <p className="text-xs font-semibold tracking-wider text-gc-lilac-200 uppercase">
+                                <p className="text-xs font-semibold text-gc-lilac-200">
                                     {tr('Слухаємо разом')}
                                     {party.ended && tr(' · завершено')}
                                 </p>

@@ -8,10 +8,12 @@ import {
     Languages,
     Moon,
     UsersRound,
+    Youtube,
 } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
 import { type FormEvent, useEffect, useState } from 'react';
 import AppearanceController from '@/actions/App/Http/Controllers/Settings/AppearanceController';
+import { PlusBadge } from '@/components/gc/plus';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { countChanges, PendingBar } from '@/components/settings/pending-bar';
 import { SettingsCard } from '@/layouts/settings/layout';
@@ -22,11 +24,20 @@ import {
     TEXT_SIZES,
     type TextSize,
 } from '@/lib/device-prefs';
+import {
+    BACKGROUNDS,
+    setBackgroundPreview,
+    youtubeId,
+} from '@/lib/backgrounds';
 import { tr } from '@/lib/i18n';
 import { motionOr, POP, SNAP } from '@/lib/motion';
 import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
-import type { UserCard } from '@/types';
+import type {
+    SiteBackgroundPreset,
+    SiteBackgroundPrefs,
+    UserCard,
+} from '@/types';
 
 type PaletteOption = { id: string; name: string; colors: string[] };
 
@@ -79,6 +90,9 @@ type Form = {
     notify: NotifyPrefs;
     mute_words: string[];
     hide_spoilers: boolean;
+    background: SiteBackgroundPreset;
+    background_motion: boolean;
+    background_video: string;
 };
 
 export default function Appearance({
@@ -95,6 +109,8 @@ export default function Appearance({
     notify,
     muteWords,
     hideSpoilers,
+    background,
+    isPlus,
 }: {
     palette: string;
     palettes: PaletteOption[];
@@ -109,6 +125,8 @@ export default function Appearance({
     notify: NotifyPrefs;
     muteWords: string[];
     hideSpoilers: boolean;
+    background: SiteBackgroundPrefs;
+    isPlus: boolean;
 }) {
     const palettesOn = usePlugin('palettes');
     const quietOn = usePlugin('quiet_hours');
@@ -132,6 +150,11 @@ export default function Appearance({
         notify,
         mute_words: muteWords,
         hide_spoilers: hideSpoilers,
+        background: background.preset,
+        background_motion: background.motion,
+        background_video: background.video
+            ? `https://youtu.be/${background.video}`
+            : '',
     });
     const [phrase, setPhrase] = useState('');
     const reduce = useReducedMotion();
@@ -145,6 +168,21 @@ export default function Appearance({
 
     // Пішли зі сторінки, не зберігши, — розмір тексту повертається до збереженого.
     useEffect(() => () => applyTextSize(readTextSize()), []);
+
+    // Фон сайту змінюється одразу (попередній перегляд); піти без «Зберегти» — повернеться збережений.
+    useEffect(() => {
+        setBackgroundPreview({
+            preset: form.data.background,
+            motion: form.data.background_motion,
+            video: isPlus ? youtubeId(form.data.background_video) : null,
+        });
+    }, [
+        form.data.background,
+        form.data.background_motion,
+        form.data.background_video,
+        isPlus,
+    ]);
+    useEffect(() => () => setBackgroundPreview(null), []);
 
     const previewText = (size: TextSize) => {
         setTextSize(size);
@@ -218,6 +256,141 @@ export default function Appearance({
                         </div>
                     </div>
                 </div>
+
+                <SettingsCard
+                    title={tr('Фон')}
+                    description={tr(
+                        'Жива сцена за інтерфейсом. Видно одразу — збережіть, якщо подобається.',
+                    )}
+                >
+                    <div
+                        className="grid grid-cols-2 gap-2.5 sm:grid-cols-3"
+                        role="radiogroup"
+                        aria-label={tr('Фон')}
+                    >
+                        {BACKGROUNDS().map((item) => {
+                            const active =
+                                form.data.background === item.id &&
+                                !youtubeId(form.data.background_video);
+
+                            return (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={active}
+                                    // Вибір сцени замінює відеофон (порожнє поле посилання).
+                                    onClick={() =>
+                                        form.setData((data) => ({
+                                            ...data,
+                                            background: item.id,
+                                            background_video: '',
+                                        }))
+                                    }
+                                    className="group flex flex-col justify-start text-left"
+                                >
+                                    <span
+                                        className={cn(
+                                            'bg-thumb relative block aspect-[16/10] overflow-hidden rounded-2xl ring-1 transition',
+                                            `bg-thumb--${item.id}`,
+                                            active
+                                                ? 'ring-2 ring-primary'
+                                                : 'ring-white/10 group-hover:ring-white/30',
+                                        )}
+                                    >
+                                        {active && (
+                                            <m.span
+                                                initial={
+                                                    reduce
+                                                        ? false
+                                                        : {
+                                                              scale: 0.4,
+                                                              opacity: 0,
+                                                          }
+                                                }
+                                                animate={{
+                                                    scale: 1,
+                                                    opacity: 1,
+                                                }}
+                                                transition={motionOr(
+                                                    reduce,
+                                                    POP,
+                                                )}
+                                                className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground"
+                                            >
+                                                <Check className="size-3.5" />
+                                            </m.span>
+                                        )}
+                                    </span>
+                                    <span className="mt-2 block text-sm font-medium text-white">
+                                        {item.name}
+                                    </span>
+                                    <span className="block text-xs text-white/45">
+                                        {item.hint}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <label className="mt-5 flex min-h-11 items-center gap-3 text-sm text-white">
+                        <input
+                            type="checkbox"
+                            checked={form.data.background_motion}
+                            onChange={(e) =>
+                                form.setData(
+                                    'background_motion',
+                                    e.target.checked,
+                                )
+                            }
+                            className="size-4 accent-gc-lilac-400"
+                        />
+                        {tr('Рухомий фон')}
+                        <span className="text-xs text-white/40">
+                            {tr('вимкніть, щоб сцена стояла нерухомо')}
+                        </span>
+                    </label>
+
+                    <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                        <div className="flex items-center gap-2 text-sm font-medium text-white">
+                            <Youtube className="size-4 text-[#ff4e45]" />
+                            {tr('Відео з YouTube як фон')}
+                            <PlusBadge className="size-4" />
+                        </div>
+                        <p className="mt-1 text-xs text-white/45">
+                            {isPlus
+                                ? tr(
+                                      'Вставте посилання — відео гратиме без звуку по колу замість сцени. Порожнє поле — повернути сцену.',
+                                  )
+                                : tr('Власний відеофон — привілей GameCon+.')}
+                        </p>
+                        <input
+                            type="url"
+                            inputMode="url"
+                            value={form.data.background_video}
+                            onChange={(e) =>
+                                form.setData('background_video', e.target.value)
+                            }
+                            disabled={!isPlus && !form.data.background_video}
+                            placeholder="https://youtu.be/…"
+                            aria-label={tr('Посилання на відео YouTube')}
+                            className="input-glass mt-3 h-11 w-full rounded-xl px-3.5 text-sm text-white placeholder:text-white/30 focus:outline-none disabled:opacity-50"
+                        />
+                        {form.errors.background_video && (
+                            <p className="mt-2 text-xs text-rose-300">
+                                {form.errors.background_video}
+                            </p>
+                        )}
+                        {!isPlus && (
+                            <a
+                                href="/plus"
+                                className="mt-3 inline-flex text-xs font-medium text-primary hover:underline"
+                            >
+                                {tr('Дізнатися про GameCon+')}
+                            </a>
+                        )}
+                    </div>
+                </SettingsCard>
 
                 <SettingsCard
                     title={tr('Розмір тексту')}

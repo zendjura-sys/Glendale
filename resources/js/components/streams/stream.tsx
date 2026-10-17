@@ -25,7 +25,7 @@ export function LiveBadge({ className }: { className?: string }) {
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-1 rounded-md bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase',
+                'inline-flex items-center gap-1 rounded-md bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold text-white',
                 className,
             )}
         >
@@ -108,7 +108,7 @@ export function FriendsLive({ streams }: { streams: StreamInfo[] }) {
 
     return (
         <section className="glass rounded-3xl p-4">
-            <h2 className="mb-3 flex items-center gap-2 px-1 font-display text-[13px] font-semibold tracking-wide text-white/90 uppercase">
+            <h2 className="mb-3 flex items-center gap-2 px-1 font-display text-[13px] font-semibold text-white/90">
                 <Radio className="size-4 text-rose-400" />
                 {tr('Друзі в ефірі')}
             </h2>

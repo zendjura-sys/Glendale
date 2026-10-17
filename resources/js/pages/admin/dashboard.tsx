@@ -314,7 +314,7 @@ export default function AdminDashboard({
                 <section className="glass rounded-3xl p-5 sm:p-6">
                     <div className="mb-4 flex items-center gap-2">
                         <Activity className="size-4 text-gc-lilac-400" />
-                        <h2 className="font-display text-sm font-semibold tracking-wide text-white/90 uppercase">
+                        <h2 className="font-display text-sm font-semibold text-white/90">
                             {tr('Активність за 30 днів')}
                         </h2>
                     </div>
@@ -381,7 +381,7 @@ export default function AdminDashboard({
                     <section className="glass rounded-3xl p-5">
                         <div className="mb-3 flex items-center gap-2">
                             <Server className="size-4 text-gc-lilac-400" />
-                            <h2 className="font-display text-xs font-semibold tracking-wide text-white/80 uppercase">
+                            <h2 className="font-display text-xs font-semibold text-white/80">
                                 {tr('Система')}
                             </h2>
                         </div>
@@ -412,7 +412,7 @@ export default function AdminDashboard({
             <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <section className="glass rounded-3xl p-5">
                     <div className="mb-3 flex items-center justify-between">
-                        <h2 className="font-display text-sm font-semibold tracking-wide text-white/90 uppercase">
+                        <h2 className="font-display text-sm font-semibold text-white/90">
                             {tr('Нові користувачі')}
                         </h2>
                         <Link
@@ -452,7 +452,7 @@ export default function AdminDashboard({
                 </section>
                 <section className="glass rounded-3xl p-5">
                     <div className="mb-3 flex items-center justify-between">
-                        <h2 className="font-display text-sm font-semibold tracking-wide text-white/90 uppercase">
+                        <h2 className="font-display text-sm font-semibold text-white/90">
                             {tr('Останні записи')}
                         </h2>
                         <Link

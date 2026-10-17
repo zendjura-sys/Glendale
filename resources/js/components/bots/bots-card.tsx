@@ -102,7 +102,7 @@ function Preview({ community }: { community: boolean }) {
 
     return (
         <div className="rounded-2xl border border-white/[0.06] bg-black/20 p-3">
-            <div className="mb-2 text-[11px] font-medium tracking-wide text-white/35 uppercase">
+            <div className="mb-2 text-[11px] font-medium text-white/35">
                 {tr('Так виглядає панель бота')}
             </div>
             <div className="flex flex-wrap gap-1.5">

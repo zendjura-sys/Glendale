@@ -163,7 +163,7 @@ export default function Servers({
                     <div className="pointer-events-none absolute -bottom-36 -left-10 size-96 rounded-full bg-[#2563eb]/25 blur-3xl" />
                     <div className="relative flex flex-wrap items-start justify-between gap-5">
                         <div className="max-w-xl">
-                            <span className="inline-flex items-center gap-2 rounded-full border border-[#facc15]/25 bg-[#facc15]/10 px-3 py-1 text-xs font-semibold tracking-wider text-[#fde68a] uppercase">
+                            <span className="inline-flex items-center gap-2 rounded-full border border-[#facc15]/25 bg-[#facc15]/10 px-3 py-1 text-xs font-semibold text-[#fde68a]">
                                 {tr('🇺🇦 Зроблено в Україні')}
                             </span>
                             <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
@@ -375,7 +375,7 @@ export default function Servers({
                                 </span>
                             )}
                         </span>
-                        <span className="shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-white/55 uppercase">
+                        <span className="shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold text-white/55">
                             {tr('Реклама')}
                         </span>
                     </Link>

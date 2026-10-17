@@ -58,7 +58,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                     <div className="pointer-events-none absolute -bottom-40 left-10 size-96 rounded-full bg-gc-indigo/25 blur-3xl" />
                     <div className="relative flex flex-wrap items-end justify-between gap-5">
                         <div className="max-w-xl">
-                            <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-xs font-semibold tracking-wider text-amber-200 uppercase">
+                            <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-xs font-semibold text-amber-200">
                                 <Crown className="size-3.5" /> Family ERP
                             </span>
                             <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">

@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import type { PropsWithChildren } from 'react';
-import { Aurora } from '@/components/gc/aurora';
+import { SiteBackground } from '@/components/backgrounds/site-background';
 import { LogoMark } from '@/components/gc/logo';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { PlayerBar } from '@/components/music/player-bar';
@@ -93,7 +93,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
     return (
         <div className="relative min-h-dvh">
             <PaletteSync />
-            <Aurora className="opacity-70" />
+            <SiteBackground />
 
             <aside className="fixed inset-y-0 left-0 z-40 hidden w-[256px] flex-col border-r border-white/[0.06] bg-void/80 p-4 backdrop-blur-2xl [view-transition-name:gc-sidebar] lg:flex">
                 <Link
@@ -105,7 +105,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                         <span className="block font-display text-[15px] font-bold text-white">
                             Game<span className="text-gradient">Con</span>
                         </span>
-                        <span className="flex items-center gap-1 text-xs font-medium tracking-wider text-gold uppercase">
+                        <span className="flex items-center gap-1 text-xs font-medium text-gold">
                             <ShieldCheck className="size-3" />{' '}
                             {tr('Адмін-панель')}
                         </span>

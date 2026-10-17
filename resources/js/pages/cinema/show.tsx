@@ -798,7 +798,7 @@ export default function CinemaShow({
                     <aside className="space-y-5">
                         {seen.length > 0 && (
                             <section className="glass rounded-3xl p-5">
-                                <h2 className="mb-3 font-display text-sm font-semibold tracking-wide text-white/70 uppercase">
+                                <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
                                     {tr('Уже бачили')}
                                 </h2>
                                 <ul className="space-y-2">
@@ -823,7 +823,7 @@ export default function CinemaShow({
                         )}
                         {taste.length > 0 && (
                             <section className="glass rounded-3xl p-5">
-                                <h2 className="mb-3 font-display text-sm font-semibold tracking-wide text-white/70 uppercase">
+                                <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
                                     {tr('Схожий смак')}
                                 </h2>
                                 <ul className="space-y-2">
@@ -852,7 +852,7 @@ export default function CinemaShow({
                             </section>
                         )}
                         <section className="glass rounded-3xl p-5">
-                            <h2 className="mb-3 font-display text-sm font-semibold tracking-wide text-white/70 uppercase">
+                            <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
                                 {tr('Друзі та цей фільм')}
                             </h2>
                             {friends.users.length === 0 ? (

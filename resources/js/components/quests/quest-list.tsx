@@ -172,7 +172,7 @@ export function FeedQuests({ quests }: { quests: Quest[] }) {
     return (
         <section className="glass rounded-3xl p-4">
             <div className="mb-3 flex items-center justify-between gap-2 px-1">
-                <h2 className="flex items-center gap-2 font-display text-[13px] font-semibold tracking-wide text-white/90 uppercase">
+                <h2 className="flex items-center gap-2 font-display text-[13px] font-semibold text-white/90">
                     <Target className="size-4 text-gc-lilac-400" />
                     {tr('Завдання дня')}
                 </h2>

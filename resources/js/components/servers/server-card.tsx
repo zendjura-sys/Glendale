@@ -150,7 +150,7 @@ export function ServerCard({
                             server.promo?.includes('highlight')) && (
                             <span
                                 title={tr('Платне просування')}
-                                className="ml-auto shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-white/55 uppercase"
+                                className="ml-auto shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold text-white/55"
                             >
                                 {tr('Реклама')}
                             </span>
