@@ -1,9 +1,19 @@
 # Deploys Glendale to the VDS over SSH. Runs only when started by hand:
 # Actions → "Deploy to VDS" → Run workflow.
+#
+# GitHub shows "Run workflow" only for workflows that exist on the repository's DEFAULT branch
+# (currently `main`). Merge this file into `main` (or make this branch the default) first.
+#
 # Repository secrets (Settings → Secrets and variables → Actions):
-#   VDS_HOST     — server address, e.g. 212.95.33.196
-#   VDS_USER     — SSH user (root or a user with sudo)
-#   VDS_SSH_KEY  — private SSH key whose public half is in ~/.ssh/authorized_keys on the server
+#   VDS_HOST         — server address, e.g. 212.95.33.196
+#   VDS_USER         — SSH user: root, or a user allowed to run `sudo` WITHOUT a password
+#                      (the session has no terminal to type one)
+#   VDS_SSH_KEY      — private SSH key whose public half is in ~/.ssh/authorized_keys on the server
+#   VDS_FINGERPRINT  — the server's SSH host key fingerprint, so the job refuses an impostor host.
+#                      Get it on the server: ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
+#                      (the "SHA256:…" part)
+# Optional repository variable (Settings → Secrets and variables → Actions → Variables):
+#   VDS_APP_DIR      — path of the git checkout on the server (default: /home/monsory/Glendale)
 name: Deploy to VDS
 
 on:
@@ -16,24 +26,50 @@ on:
 
 concurrency: deploy-vds
 
+# The job never uses GITHUB_TOKEN.
+permissions: {}
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1
+      - name: Check inputs and secrets
         env:
           BRANCH: ${{ inputs.branch }}
+          FINGERPRINT: ${{ secrets.VDS_FINGERPRINT }}
+        run: |
+          # A branch name must not look like a git option and must be a valid ref name.
+          case "$BRANCH" in -*) echo "::error::Invalid branch name"; exit 1 ;; esac
+          git check-ref-format --branch "$BRANCH" > /dev/null || { echo "::error::Invalid branch name: $BRANCH"; exit 1; }
+          [ -n "$FINGERPRINT" ] || { echo "::error::Add the VDS_FINGERPRINT secret (see the comment at the top of this file)"; exit 1; }
+
+      - name: Deploy over SSH
+        # Pinned to the commit of v1.2.5: this step receives the server's private key.
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
+        env:
+          BRANCH: ${{ inputs.branch }}
+          APP_DIR: ${{ vars.VDS_APP_DIR || '/home/monsory/Glendale' }}
         with:
           host: ${{ secrets.VDS_HOST }}
           username: ${{ secrets.VDS_USER }}
           key: ${{ secrets.VDS_SSH_KEY }}
-          envs: BRANCH
+          fingerprint: ${{ secrets.VDS_FINGERPRINT }}
+          envs: BRANCH,APP_DIR
           command_timeout: 20m
           script: |
             set -e
-            cd ~/Glendale
-            git fetch origin "$BRANCH"
-            git checkout "$BRANCH"
-            git reset --hard "origin/$BRANCH"
-            sudo DOMAIN=social.monsory.net EMAIL=abbyss.prime@gmail.com bash deploy/install.sh
+            cd "$APP_DIR"
+            # Check sudo first: fail fast instead of waiting for a password nobody can type,
+            # and before the checkout is touched.
+            if [ "$(id -u)" -ne 0 ] && ! sudo -n true 2>/dev/null; then
+              echo "This user needs passwordless sudo (or use root as VDS_USER)."; exit 1
+            fi
+            # Explicit refspec: works in shallow / single-branch clones too.
+            git fetch origin "+refs/heads/$BRANCH:refs/remotes/origin/$BRANCH"
+            # -f -B: switch and reset in one step, local edits on the server don't block the deploy.
+            git checkout -f -B "$BRANCH" "refs/remotes/origin/$BRANCH"
+            if [ "$(id -u)" -eq 0 ]; then
+              DOMAIN=social.monsory.net EMAIL=abbyss.prime@gmail.com bash deploy/install.sh
+            else
+              sudo -n DOMAIN=social.monsory.net EMAIL=abbyss.prime@gmail.com bash deploy/install.sh
+            fi
