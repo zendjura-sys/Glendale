@@ -33,7 +33,7 @@ export function PhotoTile({
                     {tr('Чутливе')}
                 </span>
             )}
-            <span className="absolute inset-0 flex items-end justify-start gap-3 bg-gradient-to-t from-black/70 via-transparent to-transparent p-2.5 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">
+            <span className="scrim scrim-dark absolute inset-0 flex items-end justify-start gap-3 p-2.5 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">
                 <span className="inline-flex items-center gap-1">
                     <Heart className="size-3.5" />
                     {compactNumber(photo.likes_count)}

@@ -170,7 +170,7 @@ export function FamilyShell({
                         ) : (
                             <div className="size-full bg-[radial-gradient(120%_120%_at_0%_0%,#f59e0b55,transparent_55%),radial-gradient(120%_120%_at_100%_0%,#6d5dfc66,transparent_60%),linear-gradient(135deg,#0b0f1d,#141a33)]" />
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d18] via-[#0a0d18]/30 to-transparent" />
+                        <div className="scrim absolute inset-0" />
                         {family.plus?.accent && (
                             <div
                                 className="absolute inset-x-0 bottom-0 h-[3px]"

@@ -362,8 +362,8 @@ export default function CinemaShow({
                             )}
                         />
                     )}
-                    <div className="absolute inset-0 -z-10 bg-gradient-to-r from-gc-ink via-gc-ink/85 to-gc-ink/30" />
-                    <div className="absolute inset-0 -z-10 bg-gradient-to-t from-gc-ink via-gc-ink/40 to-transparent" />
+                    <div className="scrim scrim-side absolute inset-0 -z-10" />
+                    <div className="scrim absolute inset-0 -z-10" />
 
                     <div className="p-5 sm:p-7">
                         <div className="mb-5 flex items-center gap-2">

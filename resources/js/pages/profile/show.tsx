@@ -308,7 +308,7 @@ export default function ProfileShow({
                             }}
                         />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#070a16] via-[#070a16]/30 to-transparent" />
+                    <div className="scrim absolute inset-0" />
                     <div className="grid-lines absolute inset-0 opacity-40" />
                     {isSelf && (
                         <Uploader

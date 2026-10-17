@@ -93,7 +93,7 @@ export function MovieTile({
                     movie={movie}
                     className="size-full transition duration-500 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 transition group-hover:opacity-100" />
+                <div className="scrim scrim-dark absolute inset-0 opacity-0 transition group-hover:opacity-100" />
                 <div className="absolute top-2 left-2 flex flex-col items-start gap-1">
                     <RatingBadge value={movie.rating} />
                 </div>

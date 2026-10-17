@@ -1216,3 +1216,35 @@ html[data-text='xl'] {
         opacity: 0;
     }
 }
+
+/*
+ * Затемнення під текстом на фото, постерах і обкладинках (scrim). Плавний («eased») градієнт із
+ * кількох зупинок — без смуг і різкої межі; колір — тло теми, тож стилі з Адмінка → Дизайн його міняють.
+ *   .scrim        — знизу вгору (текст унизу картки)
+ *   .scrim-top    — згори вниз (кнопки/текст угорі)
+ *   .scrim-side   — зліва направо (герой із текстом ліворуч)
+ *   .scrim-dark   — чорний замість кольору тла (наведення на фото)
+ */
+.scrim {
+    --scrim: var(--background);
+    --scrim-dir: to top;
+    background-image: linear-gradient(
+        var(--scrim-dir),
+        color-mix(in oklab, var(--scrim) 94%, transparent) 0%,
+        color-mix(in oklab, var(--scrim) 80%, transparent) 16%,
+        color-mix(in oklab, var(--scrim) 60%, transparent) 32%,
+        color-mix(in oklab, var(--scrim) 38%, transparent) 48%,
+        color-mix(in oklab, var(--scrim) 19%, transparent) 64%,
+        color-mix(in oklab, var(--scrim) 6%, transparent) 80%,
+        transparent 100%
+    );
+}
+.scrim-top {
+    --scrim-dir: to bottom;
+}
+.scrim-side {
+    --scrim-dir: to right;
+}
+.scrim-dark {
+    --scrim: #000;
+}

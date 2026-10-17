@@ -172,8 +172,8 @@ function Hero({ items }: { items: MovieFeatured[] }) {
                     )}
                 </div>
             ))}
-            <div className="absolute inset-0 -z-10 bg-gradient-to-r from-gc-ink via-gc-ink/80 to-transparent" />
-            <div className="absolute inset-0 -z-10 bg-gradient-to-t from-gc-ink via-transparent to-gc-ink/30" />
+            <div className="scrim scrim-side absolute inset-0 -z-10" />
+            <div className="scrim absolute inset-0 -z-10" />
 
             <div className="flex min-h-[340px] items-end gap-6 p-5 sm:min-h-[420px] sm:p-8">
                 <div

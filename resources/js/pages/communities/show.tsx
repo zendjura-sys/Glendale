@@ -179,7 +179,7 @@ export default function CommunityShow({
                     ) : (
                         <div className="size-full bg-[radial-gradient(circle_at_15%_30%,#4f8bff_0%,transparent_45%),radial-gradient(circle_at_70%_20%,#a855f7_0%,transparent_45%),radial-gradient(circle_at_95%_100%,#38e1ff_0%,transparent_45%)] opacity-80" />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#070a16] via-[#070a16]/30 to-transparent" />
+                    <div className="scrim absolute inset-0" />
                     <div className="grid-lines absolute inset-0 opacity-40" />
                     {can.manage && (
                         <ImageUpload

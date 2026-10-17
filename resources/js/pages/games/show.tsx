@@ -384,7 +384,7 @@ export default function GameShow({
                             <GameCover game={game} />
                         )}
                     </div>
-                    <div className="absolute inset-x-0 top-0 h-2/3 bg-gradient-to-b from-black/80 via-black/35 to-transparent" />
+                    <div className="scrim scrim-top scrim-dark absolute inset-x-0 top-0 h-2/3" />
                     <div className="relative space-y-3 p-4 sm:p-6">
                         <h1 className="font-display text-[28px] leading-[1.1] font-bold tracking-tight break-words text-white drop-shadow-[0_2px_12px_rgb(0_0_0/0.6)] sm:text-4xl">
                             {game.name}
