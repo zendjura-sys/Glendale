@@ -194,6 +194,8 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                     <div className="h-20 overflow-hidden">
                                         {f.cover_url ? (
                                             <img
+                                                loading="lazy"
+                                                decoding="async"
                                                 src={f.cover_url}
                                                 alt=""
                                                 className="size-full object-cover opacity-80 transition group-hover:scale-105"

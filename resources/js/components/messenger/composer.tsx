@@ -450,6 +450,8 @@ export function Composer({
                             className="relative size-[72px] shrink-0 animate-in overflow-hidden rounded-xl ring-1 ring-white/10 zoom-in-90"
                         >
                             <img
+                                loading="lazy"
+                                decoding="async"
                                 src={url}
                                 alt=""
                                 className="size-full object-cover"

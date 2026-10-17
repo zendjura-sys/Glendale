@@ -224,6 +224,8 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                             <div className="size-40 shrink-0 overflow-hidden rounded-2xl bg-white/[0.06] sm:size-44">
                                 {state.track?.cover_url ? (
                                     <img
+                                        loading="lazy"
+                                        decoding="async"
                                         src={state.track.cover_url}
                                         alt=""
                                         className="size-full object-cover"
@@ -432,6 +434,8 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                             <span className="size-9 shrink-0 overflow-hidden rounded-lg bg-white/[0.06]">
                                                 {t.cover_url ? (
                                                     <img
+                                                        loading="lazy"
+                                                        decoding="async"
                                                         src={t.cover_url}
                                                         alt=""
                                                         className="size-full object-cover"

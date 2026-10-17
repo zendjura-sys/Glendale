@@ -159,6 +159,7 @@ function Hero({ items }: { items: MovieFeatured[] }) {
                 >
                     {item.backdrop || item.poster ? (
                         <img
+                            decoding="async"
                             src={item.backdrop ?? item.poster ?? ''}
                             alt=""
                             className={cn(

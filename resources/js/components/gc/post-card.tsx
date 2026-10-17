@@ -533,6 +533,8 @@ export function PostCard({
                 >
                     {post.card.image && (
                         <img
+                            loading="lazy"
+                            decoding="async"
                             src={post.card.image}
                             alt=""
                             className="size-14 rounded-xl object-cover"
@@ -612,6 +614,8 @@ export function PostCard({
                 >
                     {post.link.thumbnail && (
                         <img
+                            loading="lazy"
+                            decoding="async"
                             src={post.link.thumbnail}
                             alt={post.link.title}
                             className="h-24 w-40 shrink-0 object-cover"

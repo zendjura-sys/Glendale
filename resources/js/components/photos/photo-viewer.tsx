@@ -194,6 +194,7 @@ export function PhotoViewer({
                         {imageUrl ? (
                             <>
                                 <img
+                                    decoding="async"
                                     key={imageUrl}
                                     src={imageUrl}
                                     alt={photo?.alt ?? ''}

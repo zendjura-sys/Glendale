@@ -354,6 +354,8 @@ export default function CinemaShow({
                 <section className="relative isolate overflow-hidden rounded-3xl border border-white/[0.08] bg-gc-ink">
                     {(movie.backdrop || movie.poster) && (
                         <img
+                            decoding="async"
+                            fetchPriority="high"
                             src={movie.backdrop ?? movie.poster ?? ''}
                             alt=""
                             className={cn(

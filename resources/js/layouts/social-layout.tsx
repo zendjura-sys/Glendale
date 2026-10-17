@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { PropsWithChildren, ReactNode } from 'react';
-import { LayoutGroup, motion, useReducedMotion } from 'motion/react';
+import { LayoutGroup, m, useReducedMotion } from 'motion/react';
 import { Aurora } from '@/components/gc/aurora';
 import { IncomingCall } from '@/components/gc/incoming-call';
 import { InboxListener } from '@/components/gc/inbox-listener';
@@ -403,7 +403,7 @@ function IslandTab({
     const body = (
         <>
             {active && (
-                <motion.span
+                <m.span
                     layoutId="tabbar-active"
                     transition={motionOr(reduce, SNAP)}
                     className="absolute inset-0 rounded-2xl bg-primary"
@@ -419,14 +419,14 @@ function IslandTab({
                     )}
                 </span>
                 {active && (
-                    <motion.span
+                    <m.span
                         initial={reduce ? false : { opacity: 0, x: -4 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.25, delay: 0.08 }}
                         className="truncate"
                     >
                         {label}
-                    </motion.span>
+                    </m.span>
                 )}
             </span>
         </>
@@ -435,6 +435,8 @@ function IslandTab({
     return href ? (
         <Link
             href={href}
+            // На телефоні наведення немає: сторінку підтягуємо вже на дотику, до відпускання пальця.
+            prefetch={['hover', 'click']}
             aria-current={active ? 'page' : undefined}
             aria-label={label}
             className={className}

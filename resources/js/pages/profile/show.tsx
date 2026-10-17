@@ -285,6 +285,8 @@ export default function ProfileShow({
                 <div className="relative h-52 overflow-hidden sm:h-72">
                     {profile.cover_url ? (
                         <img
+                            decoding="async"
+                            fetchPriority="high"
                             src={profile.cover_url}
                             alt=""
                             className="size-full object-cover"

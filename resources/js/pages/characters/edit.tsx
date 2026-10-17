@@ -139,6 +139,8 @@ export default function CharacterEdit({
                         <label className="group relative flex aspect-[4/5] w-40 shrink-0 cursor-pointer items-center justify-center self-center overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/10 transition hover:bg-white/[0.07] sm:w-44 sm:self-start">
                             {preview ? (
                                 <img
+                                    loading="lazy"
+                                    decoding="async"
                                     src={preview}
                                     alt=""
                                     className="size-full object-cover"

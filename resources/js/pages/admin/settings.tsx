@@ -360,6 +360,8 @@ export default function AdminSettings({
                         <InputError message={errors.seo_description} />
                     </div>
                     <img
+                        loading="lazy"
+                        decoding="async"
                         src="/og.jpg"
                         alt={tr('Превʼю посилання GameCon')}
                         className="aspect-[1200/630] w-full max-w-md rounded-2xl border border-white/10"
@@ -474,6 +476,8 @@ export default function AdminSettings({
                                     )}
                                 >
                                     <img
+                                        loading="lazy"
+                                        decoding="async"
                                         src={badge.src}
                                         alt={badge.title}
                                         className="h-11 w-auto self-start"

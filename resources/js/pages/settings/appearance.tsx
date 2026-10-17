@@ -9,7 +9,7 @@ import {
     Moon,
     UsersRound,
 } from 'lucide-react';
-import { motion, useReducedMotion } from 'motion/react';
+import { m, useReducedMotion } from 'motion/react';
 import { type FormEvent, useEffect, useState } from 'react';
 import AppearanceController from '@/actions/App/Http/Controllers/Settings/AppearanceController';
 import { UserAvatar } from '@/components/gc/user-avatar';
@@ -248,7 +248,7 @@ export default function Appearance({
                                     )}
                                 >
                                     {active && (
-                                        <motion.span
+                                        <m.span
                                             layoutId="text-size-active"
                                             transition={motionOr(reduce, SNAP)}
                                             className="absolute inset-0 rounded-2xl border border-primary/60 bg-primary/10"
@@ -310,7 +310,7 @@ export default function Appearance({
                                             </span>
                                         </span>
                                         {active && (
-                                            <motion.span
+                                            <m.span
                                                 initial={
                                                     reduce
                                                         ? false
@@ -330,7 +330,7 @@ export default function Appearance({
                                                 className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary"
                                             >
                                                 <Check className="size-3 text-primary-foreground" />
-                                            </motion.span>
+                                            </m.span>
                                         )}
                                     </button>
                                 );

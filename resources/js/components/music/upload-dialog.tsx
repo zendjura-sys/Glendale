@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react';
 import { AlertCircle, ArrowUp, Loader2, X } from 'lucide-react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -234,13 +234,13 @@ export function UploadTracksDialog({
                             aria-hidden
                             className="absolute inset-0 rounded-full bg-primary/20 motion-safe:animate-[upload-ring_2.4s_ease-out_1.2s_infinite]"
                         />
-                        <motion.span
+                        <m.span
                             animate={{ scale: dragging ? 1.12 : 1 }}
                             transition={motionOr(reduce, POP)}
                             className="relative flex size-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_10px_30px_-10px_var(--primary)]"
                         >
                             <ArrowUp className="size-7" strokeWidth={2.4} />
-                        </motion.span>
+                        </m.span>
                     </span>
                     <span className="mt-4 text-[15px] font-semibold">
                         {dragging
@@ -284,7 +284,7 @@ export function UploadTracksDialog({
                     <ul className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
                         <AnimatePresence initial={false}>
                             {items.map((item) => (
-                                <motion.li
+                                <m.li
                                     key={item.id}
                                     layout={!reduce}
                                     initial={
@@ -419,7 +419,7 @@ export function UploadTracksDialog({
                                             )}
                                         </div>
                                     </div>
-                                </motion.li>
+                                </m.li>
                             ))}
                         </AnimatePresence>
                     </ul>

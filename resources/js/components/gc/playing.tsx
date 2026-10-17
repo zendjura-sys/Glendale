@@ -27,6 +27,8 @@ export function PlayingBadge({
         <>
             {playing.icon ? (
                 <img
+                    loading="lazy"
+                    decoding="async"
                     src={playing.icon}
                     alt=""
                     className="size-4 shrink-0 rounded object-cover"
@@ -353,6 +355,8 @@ export function PlayingDialog({
                                         <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/[0.06]">
                                             {o.icon ? (
                                                 <img
+                                                    loading="lazy"
+                                                    decoding="async"
                                                     src={o.icon}
                                                     alt=""
                                                     className="size-full object-cover"

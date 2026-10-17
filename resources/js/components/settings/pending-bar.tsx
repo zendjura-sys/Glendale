@@ -1,4 +1,4 @@
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import { createPortal } from 'react-dom';
 import { pluralForm, tr } from '@/lib/i18n';
 import { motionOr, RISE } from '@/lib/motion';
@@ -27,7 +27,7 @@ export function PendingBar({
     return createPortal(
         <AnimatePresence>
             {count > 0 && (
-                <motion.div
+                <m.div
                     initial={
                         reduce
                             ? { opacity: 0 }
@@ -49,7 +49,7 @@ export function PendingBar({
                             <span className="absolute inset-0 animate-ping rounded-full bg-primary/60 motion-reduce:animate-none" />
                             <span className="relative size-2 rounded-full bg-primary" />
                         </span>
-                        <motion.span
+                        <m.span
                             key={count}
                             initial={reduce ? false : { opacity: 0, y: -6 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -57,7 +57,7 @@ export function PendingBar({
                         >
                             {count}{' '}
                             {pluralForm(count, ['зміна', 'зміни', 'змін'])}
-                        </motion.span>
+                        </m.span>
                         <button
                             type="button"
                             onClick={onDiscard}
@@ -75,7 +75,7 @@ export function PendingBar({
                             {processing ? tr('Зберігаємо…') : tr('Зберегти')}
                         </button>
                     </div>
-                </motion.div>
+                </m.div>
             )}
         </AnimatePresence>,
         document.body,

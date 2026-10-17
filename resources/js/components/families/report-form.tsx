@@ -439,6 +439,8 @@ export function ReportForm({
                             className="relative size-20 overflow-hidden rounded-xl ring-1 ring-white/10"
                         >
                             <img
+                                loading="lazy"
+                                decoding="async"
                                 src={src}
                                 alt=""
                                 className="size-full object-cover"

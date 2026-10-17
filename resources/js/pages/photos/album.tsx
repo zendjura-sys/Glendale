@@ -130,6 +130,8 @@ export default function PhotoAlbum({
                 <section className="glass relative overflow-hidden rounded-3xl">
                     {album.cover_url && (
                         <img
+                            loading="lazy"
+                            decoding="async"
                             src={album.cover_url}
                             alt=""
                             className="absolute inset-0 size-full scale-110 object-cover opacity-25 blur-2xl"

@@ -77,11 +77,13 @@ function MockPost() {
     return (
         <div className="glass-strong w-[340px] animate-float rounded-3xl p-4 shadow-[0_30px_80px_-30px_rgb(79_70_229/0.7)]">
             <div className="flex items-center gap-3">
-                <img
-                    src="https://randomuser.me/api/portraits/women/44.jpg"
-                    alt=""
-                    className="size-10 rounded-full object-cover ring-2 ring-gc-indigo/60"
-                />
+                {/* Макет без сторонніх картинок: перша сторінка не ходить на чужі сервери. */}
+                <span
+                    aria-hidden
+                    className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-gc-pink to-gc-purple text-sm font-bold text-white ring-2 ring-gc-indigo/60"
+                >
+                    СМ
+                </span>
                 <div className="leading-tight">
                     <div className="text-sm font-semibold text-white">
                         {tr('Софія Мельник')}
@@ -96,11 +98,13 @@ function MockPost() {
                     "Нарешті пройшли рейд усією командою! Хто з нами в п'ятницю? 🔥",
                 )}
             </p>
-            <img
-                src="https://picsum.photos/seed/gc-raid/680/400"
-                alt=""
-                className="mt-3 aspect-[17/10] w-full rounded-2xl object-cover"
-            />
+            <div
+                aria-hidden
+                className="relative mt-3 aspect-[17/10] w-full overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_70%_30%,#ff9d5c_0,#c2417a_32%,#3b1d6e_62%,#0d1030_100%)]"
+            >
+                <div className="absolute inset-x-0 bottom-0 h-1/2 bg-[linear-gradient(170deg,transparent_40%,#0b0d24_41%)] opacity-90" />
+                <div className="absolute bottom-[38%] left-[18%] size-10 rounded-full bg-[#ffd9a8] shadow-[0_0_40px_#ffb36b]" />
+            </div>
             <div className="mt-3 flex items-center gap-4 text-xs text-white/50">
                 <span className="flex items-center gap-1.5 text-[#ff7ad9]">
                     <Heart className="size-4 fill-current" /> 248
@@ -138,10 +142,9 @@ function MockChat() {
 function MockMovie() {
     return (
         <div className="glass-strong flex w-[250px] animate-float items-center gap-3 rounded-2xl p-3 [animation-delay:-5s]">
-            <img
-                src="https://picsum.photos/seed/gc-movie/120/170"
-                alt=""
-                className="h-[72px] w-[52px] rounded-lg object-cover"
+            <span
+                aria-hidden
+                className="h-[72px] w-[52px] shrink-0 rounded-lg bg-[linear-gradient(160deg,#1d2b64_0%,#7a1fa2_55%,#ff6b3d_100%)]"
             />
             <div className="min-w-0">
                 <div className="text-xs font-medium tracking-wider text-[#ff9de6] uppercase">
@@ -151,12 +154,15 @@ function MockMovie() {
                     {tr('Нічне місто')}
                 </div>
                 <div className="mt-1 flex -space-x-1.5">
-                    {[21, 33, 47].map((n) => (
-                        <img
-                            key={n}
-                            src={`https://randomuser.me/api/portraits/thumb/men/${n}.jpg`}
-                            alt=""
-                            className="size-5 rounded-full border border-[#0c1024]"
+                    {[
+                        'from-gc-blue to-gc-cyan',
+                        'from-gc-mint to-gc-blue',
+                        'from-gc-purple to-gc-pink',
+                    ].map((tone) => (
+                        <span
+                            key={tone}
+                            aria-hidden
+                            className={`size-5 rounded-full border border-[#0c1024] bg-gradient-to-br ${tone}`}
                         />
                     ))}
                     <span className="pl-3 text-xs text-white/45">

@@ -43,6 +43,8 @@ export function Lightbox({
             onClick={onClose}
         >
             <img
+                loading="lazy"
+                decoding="async"
                 src={items[current].url}
                 alt=""
                 className="max-h-[90vh] max-w-[92vw] animate-in rounded-xl object-contain shadow-2xl zoom-in-95"

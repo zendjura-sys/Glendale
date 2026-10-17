@@ -864,6 +864,8 @@ function EventsTab({
                 >
                     {e.cover_url && (
                         <img
+                            loading="lazy"
+                            decoding="async"
                             src={e.cover_url}
                             alt=""
                             className="aspect-[3/1] w-full rounded-2xl object-cover"

@@ -33,6 +33,8 @@ export function TomorrowCard({ events }: { events: TomorrowEvent[] }) {
                         >
                             {event.image ? (
                                 <img
+                                    loading="lazy"
+                                    decoding="async"
                                     src={event.image}
                                     alt=""
                                     className="size-11 shrink-0 rounded-xl object-cover"

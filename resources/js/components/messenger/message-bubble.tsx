@@ -84,6 +84,8 @@ function Images({
                 }}
             >
                 <img
+                    loading="lazy"
+                    decoding="async"
                     src={image.url}
                     alt=""
                     onLoad={onLoad}
@@ -110,6 +112,8 @@ function Images({
                     className="aspect-square overflow-hidden"
                 >
                     <img
+                        loading="lazy"
+                        decoding="async"
                         src={image.url}
                         alt=""
                         onLoad={onLoad}
@@ -364,6 +368,8 @@ export function MessageBubble({
                     {isSticker && message.sticker && (
                         <div className="relative">
                             <img
+                                loading="lazy"
+                                decoding="async"
                                 src={message.sticker.url}
                                 alt={message.sticker.emoji ?? tr('Стікер')}
                                 onLoad={actions.onMediaLoad}
@@ -435,6 +441,8 @@ export function MessageBubble({
                         >
                             {message.card.image && (
                                 <img
+                                    loading="lazy"
+                                    decoding="async"
                                     src={message.card.image}
                                     alt=""
                                     className="size-10 rounded-lg object-cover"

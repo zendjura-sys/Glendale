@@ -376,6 +376,8 @@ export default function GameShow({
                     >
                         {d.artworks?.[0] ? (
                             <img
+                                decoding="async"
+                                fetchPriority="high"
                                 src={d.artworks[0]}
                                 alt=""
                                 className="size-full object-cover"
@@ -994,6 +996,8 @@ export default function GameShow({
                                     <span className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/10 text-sm font-bold text-white">
                                         {c.logo_url ? (
                                             <img
+                                                loading="lazy"
+                                                decoding="async"
                                                 src={c.logo_url}
                                                 alt=""
                                                 className="size-full object-cover"
@@ -1069,6 +1073,8 @@ export default function GameShow({
                         />
                     ) : (
                         <img
+                            loading="lazy"
+                            decoding="async"
                             src={shot!.replace('t_screenshot_big', 't_1080p')}
                             alt=""
                             className="max-h-full max-w-full rounded-2xl"

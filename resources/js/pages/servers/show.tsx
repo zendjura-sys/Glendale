@@ -151,6 +151,8 @@ export default function ServerShow({
                 <section className="glass noise relative overflow-hidden rounded-3xl p-6 sm:p-8">
                     {server.icon && (
                         <img
+                            loading="lazy"
+                            decoding="async"
                             src={server.icon}
                             alt=""
                             className="pointer-events-none absolute -top-20 -right-20 size-[420px] rounded-full object-cover opacity-[0.07] blur-2xl"

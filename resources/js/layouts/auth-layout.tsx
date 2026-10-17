@@ -2,7 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     AnimatePresence,
     LayoutGroup,
-    motion,
+    m,
     useReducedMotion,
 } from 'motion/react';
 import { useRef } from 'react';
@@ -139,7 +139,7 @@ export default function AuthLayout({
                 >
                     <Logo />
                 </Link>
-                <motion.div
+                <m.div
                     initial={reduce ? false : { opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, ease: EASE_OUT }}
@@ -151,7 +151,7 @@ export default function AuthLayout({
                     <LayoutGroup>
                         <div className="relative flex flex-col lg:grid lg:min-h-[600px] lg:grid-cols-2">
                             {/* Запрошення: на ПК — половина зі скошеним краєм, на телефоні — рядок над формою. */}
-                            <motion.section
+                            <m.section
                                 layout
                                 transition={spring}
                                 className={cn(
@@ -163,17 +163,17 @@ export default function AuthLayout({
                                 )}
                             >
                                 <AnimatePresence mode="wait" initial={false}>
-                                    <motion.div
+                                    <m.div
                                         key={`invite-${mode}`}
                                         className="h-full"
                                         {...fade}
                                     >
                                         <Invite mode={mode} />
-                                    </motion.div>
+                                    </m.div>
                                 </AnimatePresence>
-                            </motion.section>
+                            </m.section>
 
-                            <motion.section
+                            <m.section
                                 layout
                                 transition={spring}
                                 className={cn(
@@ -190,7 +190,7 @@ export default function AuthLayout({
                                     <Logo />
                                 </Link>
                                 <AnimatePresence mode="wait" initial={false}>
-                                    <motion.div key={component} {...fade}>
+                                    <m.div key={component} {...fade}>
                                         <h1 className="font-display text-xl font-semibold tracking-tight text-white">
                                             {title}
                                         </h1>
@@ -200,12 +200,12 @@ export default function AuthLayout({
                                             </p>
                                         )}
                                         <div className="mt-7">{children}</div>
-                                    </motion.div>
+                                    </m.div>
                                 </AnimatePresence>
-                            </motion.section>
+                            </m.section>
                         </div>
                     </LayoutGroup>
-                </motion.div>
+                </m.div>
 
                 <div className="mt-5 flex justify-center">
                     <LanguageSelect />

@@ -22,6 +22,8 @@ export function PlaylistCover({
         >
             {playlist.cover_url ? (
                 <img
+                    loading="lazy"
+                    decoding="async"
                     src={playlist.cover_url}
                     alt=""
                     className="size-full object-cover"
@@ -30,6 +32,8 @@ export function PlaylistCover({
                 <div className="grid size-full grid-cols-2 grid-rows-2">
                     {covers.map((url, i) => (
                         <img
+                            loading="lazy"
+                            decoding="async"
                             key={i}
                             src={url}
                             alt=""
@@ -39,6 +43,8 @@ export function PlaylistCover({
                 </div>
             ) : covers.length > 0 ? (
                 <img
+                    loading="lazy"
+                    decoding="async"
                     src={covers[0]}
                     alt=""
                     className="size-full object-cover"

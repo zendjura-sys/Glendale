@@ -15,7 +15,7 @@ import {
     VolumeX,
     X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { formatDuration } from '@/lib/format';
 import {
@@ -34,9 +34,13 @@ import {
     usePlayer,
 } from '@/lib/player';
 import { cn } from '@/lib/utils';
-import { FullPlayer } from './full-player';
 import { Equalizer, SpotifyLogo, TrackCover } from './track-cover';
 import { tr } from '@/lib/i18n';
+
+// Повноекранний плеєр — окремим файлом: вантажиться, лише коли його вперше відкривають.
+const FullPlayer = lazy(() =>
+    import('./full-player').then((module) => ({ default: module.FullPlayer })),
+);
 
 function Range({
     value,
@@ -106,6 +110,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
     const { currentUrl } = useCurrentUrl();
     const [queueOpen, setQueueOpen] = useState(false);
     const [expanded, setExpanded] = useState(false);
+    const [fullLoaded, setFullLoaded] = useState(false);
     const track = player.current;
 
     useEffect(() => {
@@ -223,6 +228,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                 <div className="liquid-glass liquid-glass--dense pointer-events-auto relative mx-auto max-w-[1100px] overflow-hidden rounded-[22px]">
                     {player.current?.cover_url && (
                         <img
+                            decoding="async"
                             src={player.current.cover_url}
                             alt=""
                             className="pointer-events-none absolute inset-0 size-full scale-125 object-cover opacity-[0.16] blur-3xl"
@@ -243,6 +249,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                             type="button"
                             onClick={() => {
                                 setQueueOpen(false);
+                                setFullLoaded(true);
                                 setExpanded(true);
                             }}
                             aria-label={tr('Відкрити плеєр')}
@@ -390,7 +397,11 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                     </div>
                 </div>
             </div>
-            <FullPlayer open={expanded} onOpenChange={setExpanded} />
+            {fullLoaded && (
+                <Suspense fallback={null}>
+                    <FullPlayer open={expanded} onOpenChange={setExpanded} />
+                </Suspense>
+            )}
         </>
     );
 }

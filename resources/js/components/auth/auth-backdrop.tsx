@@ -1,9 +1,4 @@
-import {
-    motion,
-    useReducedMotion,
-    useSpring,
-    useTransform,
-} from 'motion/react';
+import { m, useReducedMotion, useSpring, useTransform } from 'motion/react';
 import { useEffect, useMemo } from 'react';
 
 /**
@@ -103,7 +98,7 @@ export function AuthBackdrop() {
             <div className="absolute -top-[25%] left-[8%] h-[70vmax] w-[70vmax] animate-aurora rounded-full bg-[radial-gradient(circle,color-mix(in_oklab,var(--primary)_55%,transparent),transparent_62%)] opacity-35 blur-[110px]" />
             <div className="absolute -top-[10%] right-[-18%] h-[60vmax] w-[60vmax] animate-aurora rounded-full bg-[radial-gradient(circle,color-mix(in_oklab,var(--color-gc-purple)_60%,transparent),transparent_62%)] opacity-25 blur-[120px] [animation-delay:-9s]" />
             <div className="absolute inset-0 [mask-image:linear-gradient(to_bottom,transparent_12%,#000_45%)] [perspective:1100px]">
-                <motion.div
+                <m.div
                     className="absolute -inset-x-[20%] top-[18%] -bottom-[40%] origin-top"
                     style={{ rotateX: tiltX, rotateY: ry, rotateZ: -6 }}
                 >
@@ -126,7 +121,7 @@ export function AuthBackdrop() {
                             />
                         ))}
                     </svg>
-                </motion.div>
+                </m.div>
             </div>
             {/* Світло акценту зверху й затемнення до країв: плити тонуть у темряві. */}
             <div className="absolute inset-x-0 -top-[30%] h-[80%] bg-[radial-gradient(ellipse_at_50%_30%,color-mix(in_oklab,var(--primary)_22%,transparent),transparent_65%)]" />

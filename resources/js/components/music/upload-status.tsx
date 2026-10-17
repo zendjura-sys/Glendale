@@ -1,4 +1,4 @@
-import { motion, useReducedMotion } from 'motion/react';
+import { m, useReducedMotion } from 'motion/react';
 import { EASE_OUT } from '@/lib/motion';
 
 /**
@@ -51,7 +51,7 @@ export function SuccessCheck() {
     const reduce = useReducedMotion();
 
     return (
-        <motion.span
+        <m.span
             initial={reduce ? false : { scale: 0.6, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 500, damping: 22 }}
@@ -67,13 +67,13 @@ export function SuccessCheck() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
             >
-                <motion.path
+                <m.path
                     d="M5 12.5l4.5 4.5L19 7.5"
                     initial={reduce ? false : { pathLength: 0 }}
                     animate={{ pathLength: 1 }}
                     transition={{ duration: 0.45, ease: EASE_OUT, delay: 0.1 }}
                 />
             </svg>
-        </motion.span>
+        </m.span>
     );
 }

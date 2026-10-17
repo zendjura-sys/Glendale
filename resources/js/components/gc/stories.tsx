@@ -175,6 +175,8 @@ function Composer({
                             />
                         ) : (
                             <img
+                                loading="lazy"
+                                decoding="async"
                                 src={preview}
                                 alt=""
                                 className="size-full object-cover"
@@ -442,6 +444,7 @@ function StoryViewer({
                         />
                     ) : (
                         <img
+                            decoding="async"
                             key={story.id}
                             src={story.url}
                             alt=""

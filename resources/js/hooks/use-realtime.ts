@@ -1,3 +1,4 @@
+import '@/lib/echo';
 import { useChannel } from '@laravel/echo-react';
 import { useEffect, useEffectEvent } from 'react';
 

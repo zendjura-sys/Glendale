@@ -45,6 +45,8 @@ export default function Saved({ items }: { items: Item[] }) {
                             >
                                 {item.image ? (
                                     <img
+                                        loading="lazy"
+                                        decoding="async"
                                         src={item.image}
                                         alt=""
                                         className="size-14 rounded-xl object-cover"

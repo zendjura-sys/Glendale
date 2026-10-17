@@ -156,6 +156,7 @@ export function FamilyShell({
                     <div className="relative h-28 sm:h-36">
                         {family.cover_url ? (
                             <img
+                                decoding="async"
                                 src={family.cover_url}
                                 alt=""
                                 className="size-full object-cover"

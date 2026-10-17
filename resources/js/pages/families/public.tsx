@@ -61,6 +61,8 @@ export default function FamilyPublic({
                     <div className="h-40 sm:h-52">
                         {family.cover_url ? (
                             <img
+                                loading="lazy"
+                                decoding="async"
                                 src={family.cover_url}
                                 alt=""
                                 className="size-full object-cover"

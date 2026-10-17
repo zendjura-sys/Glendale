@@ -246,6 +246,8 @@ function StickerGrid({ onPick }: { onPick: (sticker: StickerItem) => void }) {
                         )}
                     >
                         <img
+                            loading="lazy"
+                            decoding="async"
                             src={pack.stickers[0]?.url}
                             alt={pack.name}
                             className="size-full object-contain"

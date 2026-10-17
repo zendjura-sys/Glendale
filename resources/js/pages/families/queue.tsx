@@ -610,6 +610,8 @@ function ReportDetail({
                     onClick={() => setZoom(null)}
                 >
                     <img
+                        loading="lazy"
+                        decoding="async"
                         src={zoom}
                         alt=""
                         className="max-h-full max-w-full rounded-xl"

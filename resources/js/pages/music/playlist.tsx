@@ -78,6 +78,8 @@ export default function PlaylistShow({
                 <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-7">
                     {playlist.covers[0] && (
                         <img
+                            loading="lazy"
+                            decoding="async"
                             src={playlist.cover_url ?? playlist.covers[0]}
                             alt=""
                             className="pointer-events-none absolute inset-0 size-full scale-125 object-cover opacity-25 blur-3xl"

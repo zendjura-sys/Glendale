@@ -282,6 +282,8 @@ export function PostComposer({
                             className="group relative aspect-square animate-rise overflow-hidden rounded-xl bg-white/5"
                         >
                             <img
+                                loading="lazy"
+                                decoding="async"
                                 src={url}
                                 alt=""
                                 className="size-full object-cover"

@@ -6,7 +6,7 @@ import {
     ShieldCheck,
     UserRound,
 } from 'lucide-react';
-import { motion, useReducedMotion } from 'motion/react';
+import { m, useReducedMotion } from 'motion/react';
 import type { PropsWithChildren } from 'react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
@@ -92,7 +92,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                     >
                                         {/* Підсвітка активного розділу «перетікає» між пунктами. */}
                                         {active && (
-                                            <motion.span
+                                            <m.span
                                                 layoutId="settings-nav-active"
                                                 transition={motionOr(
                                                     reduce,

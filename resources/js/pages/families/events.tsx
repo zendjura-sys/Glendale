@@ -130,6 +130,8 @@ export default function FamilyEvents(props: Props) {
                         <Panel key={e.id}>
                             {e.cover_url && (
                                 <img
+                                    loading="lazy"
+                                    decoding="async"
                                     src={e.cover_url}
                                     alt=""
                                     className="-mx-1 -mt-1 mb-3 aspect-[3/1] w-[calc(100%+0.5rem)] rounded-2xl object-cover"

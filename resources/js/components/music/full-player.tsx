@@ -14,7 +14,7 @@ import {
     Volume2,
     VolumeX,
 } from 'lucide-react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import type { PanInfo } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
@@ -102,6 +102,7 @@ function Vinyl({
             <div className="absolute inset-[33%] overflow-hidden rounded-full bg-[var(--tint)] ring-4 ring-black/40">
                 {cover && (
                     <img
+                        decoding="async"
                         src={cover}
                         alt=""
                         className="size-full object-cover"
@@ -133,20 +134,20 @@ function Stage({
     return (
         // Обкладинка + вініл, що визирає праворуч; зсув ліворуч центрує всю композицію.
         <div className="relative aspect-square w-[min(64vw,40dvh,360px)] -translate-x-[16%] lg:w-[min(30vw,62dvh,440px)]">
-            <motion.div
+            <m.div
                 className="absolute inset-0"
                 initial={reduce ? false : { x: '0%' }}
                 animate={{ x: '34%' }}
                 transition={motionOr(reduce, { ...RISE, delay: 0.15 })}
             >
                 <Vinyl cover={track.cover_url} spinning={playing} />
-            </motion.div>
+            </m.div>
             <AnimatePresence
                 initial={false}
                 custom={direction}
                 mode="popLayout"
             >
-                <motion.div
+                <m.div
                     key={track.key}
                     custom={direction}
                     variants={{
@@ -181,7 +182,7 @@ function Stage({
                         seed={track.key}
                         className="pointer-events-none size-full rounded-[22px] shadow-[0_30px_70px_-25px_rgb(0_0_0/0.9)] ring-1 ring-white/10 select-none"
                     />
-                </motion.div>
+                </m.div>
             </AnimatePresence>
         </div>
     );
@@ -363,7 +364,7 @@ export function FullPlayer({
     const info = (
         <div className="min-w-0">
             <AnimatePresence mode="wait" initial={false}>
-                <motion.div
+                <m.div
                     key={track.key}
                     initial={reduce ? false : { opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -382,7 +383,7 @@ export function FullPlayer({
                             </span>
                         )}
                     </p>
-                </motion.div>
+                </m.div>
             </AnimatePresence>
         </div>
     );
@@ -414,7 +415,7 @@ export function FullPlayer({
             <Control onClick={() => go(-1)} label={tr('Попередній')}>
                 <SkipBack className="size-6 fill-current" />
             </Control>
-            <motion.button
+            <m.button
                 type="button"
                 onClick={toggle}
                 whileTap={reduce ? undefined : { scale: 0.92 }}
@@ -429,7 +430,7 @@ export function FullPlayer({
                 ) : (
                     <Play className="ml-1 size-7 fill-current" />
                 )}
-            </motion.button>
+            </m.button>
             <Control onClick={() => go(1)} label={tr('Наступний')}>
                 <SkipForward className="size-6 fill-current" />
             </Control>
@@ -459,7 +460,7 @@ export function FullPlayer({
                             asChild
                             aria-describedby={undefined}
                         >
-                            <motion.div
+                            <m.div
                                 initial={
                                     reduce
                                         ? { opacity: 0 }
@@ -492,6 +493,7 @@ export function FullPlayer({
                                 >
                                     {track.cover_url && (
                                         <img
+                                            decoding="async"
                                             src={track.cover_url}
                                             alt=""
                                             className="absolute inset-0 size-full scale-150 object-cover opacity-45 blur-[90px] transition-opacity duration-700"
@@ -623,7 +625,7 @@ export function FullPlayer({
                                         </div>
                                     </div>
                                 </div>
-                            </motion.div>
+                            </m.div>
                         </DialogPrimitive.Content>
                     </DialogPrimitive.Portal>
                 )}

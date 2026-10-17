@@ -48,6 +48,8 @@ export function MusicCard({
         >
             {track.cover_url && (
                 <img
+                    loading="lazy"
+                    decoding="async"
                     src={track.cover_url}
                     alt=""
                     className="pointer-events-none absolute inset-0 size-full scale-150 object-cover opacity-[0.1] blur-2xl"

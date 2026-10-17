@@ -186,6 +186,8 @@ function PackCard({
                 <span className="flex size-12 items-center justify-center rounded-2xl bg-white/[0.05] p-1.5">
                     {pack.stickers[0] ? (
                         <img
+                            loading="lazy"
+                            decoding="async"
                             src={pack.stickers[0].url}
                             alt=""
                             className="size-full object-contain"

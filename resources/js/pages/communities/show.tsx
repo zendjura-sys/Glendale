@@ -172,6 +172,8 @@ export default function CommunityShow({
                 <div className="relative h-48 overflow-hidden sm:h-64">
                     {community.cover_url ? (
                         <img
+                            decoding="async"
+                            fetchPriority="high"
                             src={community.cover_url}
                             alt=""
                             className="size-full object-cover"
