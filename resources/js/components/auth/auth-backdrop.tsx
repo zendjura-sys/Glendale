@@ -97,7 +97,7 @@ export function AuthBackdrop() {
     return (
         <div
             aria-hidden
-            className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-void"
+            className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-background"
         >
             {/* Aurora: повільне кольорове сяйво під «підлогою»; колір — з палітри акаунта. */}
             <div className="absolute -top-[25%] left-[8%] h-[70vmax] w-[70vmax] animate-aurora rounded-full bg-[radial-gradient(circle,color-mix(in_oklab,var(--primary)_55%,transparent),transparent_62%)] opacity-35 blur-[110px]" />
@@ -116,8 +116,11 @@ export function AuthBackdrop() {
                             <polygon
                                 key={i}
                                 points={f.points}
-                                fill={`rgb(${Math.round(12 + f.shade * 22)} ${Math.round(14 + f.shade * 24)} ${Math.round(24 + f.shade * 36)})`}
-                                stroke="rgb(3 5 12)"
+                                style={{
+                                    // Від кольорів теми: стилі з Адмінка → Дизайн перефарбовують і «підлогу».
+                                    fill: `color-mix(in oklab, var(--color-gc-lilac-400) ${(3 + f.shade * 17).toFixed(1)}%, var(--background))`,
+                                    stroke: 'var(--background)',
+                                }}
                                 strokeWidth="2.2"
                                 strokeLinejoin="round"
                             />
@@ -127,7 +130,7 @@ export function AuthBackdrop() {
             </div>
             {/* Світло акценту зверху й затемнення до країв: плити тонуть у темряві. */}
             <div className="absolute inset-x-0 -top-[30%] h-[80%] bg-[radial-gradient(ellipse_at_50%_30%,color-mix(in_oklab,var(--primary)_22%,transparent),transparent_65%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_40%,transparent_35%,var(--color-void)_95%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_40%,transparent_35%,var(--background)_95%)]" />
         </div>
     );
 }

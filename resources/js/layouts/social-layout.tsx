@@ -413,7 +413,7 @@ function IslandTab({
                 <span className="relative shrink-0">
                     {icon}
                     {badge > 0 && (
-                        <span className="absolute -top-1.5 -right-2 min-w-4 rounded-full bg-gc-pink px-1 text-center text-[10px] leading-4 font-bold text-white ring-2 ring-[rgb(13_16_34)]">
+                        <span className="absolute -top-1.5 -right-2 min-w-4 rounded-full bg-gc-pink px-1 text-center text-[10px] leading-4 font-bold text-white ring-2 ring-popover">
                             {badge > 99 ? '99+' : badge}
                         </span>
                     )}

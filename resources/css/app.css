@@ -495,29 +495,21 @@ html[data-palette='copper'] {
         color: transparent;
     }
 
+    /* Головна кнопка: плоский акцент теми, без градієнта й світіння (назву лишено заради сумісності). */
     .btn-glow {
         position: relative;
-        isolation: isolate;
-        background-image: var(--gc-gradient);
-        background-size: 180% 100%;
-        background-position: 0% 0;
-        color: #fff;
-        box-shadow:
-            0 10px 30px -10px rgb(109 93 252 / 0.85),
-            inset 0 1px 0 rgb(255 255 255 / 0.25);
+        background-color: var(--primary);
+        color: var(--primary-foreground);
+        box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18);
         transition:
-            background-position 0.6s ease,
-            box-shadow 0.3s ease,
-            transform 0.2s ease;
+            background-color 0.2s ease,
+            transform 0.15s ease;
     }
     .btn-glow:hover {
-        background-position: 100% 0;
-        box-shadow:
-            0 14px 40px -10px rgb(168 85 247 / 0.95),
-            inset 0 1px 0 rgb(255 255 255 / 0.3);
+        background-color: color-mix(in oklab, var(--primary) 88%, white);
     }
     .btn-glow:active {
-        transform: translateY(1px) scale(0.99);
+        transform: translateY(1px);
     }
 
     .skeleton {
@@ -1131,7 +1123,7 @@ label:has(
             rgb(255 255 255 / 0.015) 38%,
             rgb(255 255 255 / 0.035)
         ),
-        rgb(10 13 28 / 0.5);
+        color-mix(in oklab, var(--popover) 55%, transparent);
     border: 1px solid rgb(255 255 255 / 0.07);
     box-shadow:
         inset 0 1px 0 rgb(255 255 255 / 0.16),
@@ -1177,7 +1169,7 @@ label:has(
 /* На телефонах розмиття під полями вводу ламає клавіатуру (див. вище) — скло щільне. */
 @media (hover: none) and (pointer: coarse) {
     .liquid-glass {
-        background-color: rgb(10 14 30 / 0.95);
+        background-color: color-mix(in oklab, var(--popover) 95%, transparent);
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
     }
@@ -1196,7 +1188,8 @@ html[data-text='l'] {
 html[data-text='xl'] {
     font-size: 112.5%;
 }
-/* Плаваючі панелі над вмістом (панель змін, тости): скло щільніше, щоб текст під ним не заважав. */
+/* Плаваючі панелі над вмістом (панель змін, острів меню): непрозорі, щоб текст під ними не заважав.
+   Кольори скла — від змінних теми (--popover), тож стилі з Адмінка → Дизайн їх теж перефарбовують. */
 .liquid-glass--dense {
     background:
         linear-gradient(
@@ -1205,7 +1198,7 @@ html[data-text='xl'] {
             rgb(255 255 255 / 0.02) 40%,
             rgb(255 255 255 / 0.04)
         ),
-        rgb(13 16 34);
+        var(--popover);
     box-shadow:
         inset 0 1px 0 rgb(255 255 255 / 0.16),
         0 24px 60px -20px rgb(0 0 0 / 0.9),

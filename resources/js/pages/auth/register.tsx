@@ -17,7 +17,7 @@ export default function Register({ passwordRules }: Props) {
     return (
         <>
             <Head title={tr('Реєстрація')} />
-            <div className="mb-6">
+            <div className="mb-6 empty:hidden">
                 <SocialLogin mode="register" />
             </div>
             <Form
