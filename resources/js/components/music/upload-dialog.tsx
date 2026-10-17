@@ -1,11 +1,6 @@
 import { router } from '@inertiajs/react';
-import {
-    AlertCircle,
-    CheckCircle2,
-    Loader2,
-    UploadCloud,
-    X,
-} from 'lucide-react';
+import { AlertCircle, ArrowUp, Loader2, X } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -17,8 +12,10 @@ import {
 import { xsrfToken } from '@/lib/api';
 import { formatBytes, formatDuration } from '@/lib/format';
 import { guessFromFilename, readDuration, readTags } from '@/lib/id3';
+import { motionOr, POP, RISE } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { TrackCover } from './track-cover';
+import { ProgressRing, SuccessCheck } from './upload-status';
 import { tr } from '@/lib/i18n';
 
 type Item = {
@@ -93,6 +90,7 @@ export function UploadTracksDialog({
     const [busy, setBusy] = useState(false);
     const [dragging, setDragging] = useState(false);
     const input = useRef<HTMLInputElement>(null);
+    const reduce = useReducedMotion();
 
     const update = (id: string, patch: Partial<Item>) =>
         setItems((all) =>
@@ -198,11 +196,11 @@ export function UploadTracksDialog({
                 </DialogTitle>
                 <DialogDescription className="mt-1 text-sm text-white/50">
                     {tr(
-                        'Назву, виконавця й обкладинку підставимо з тегів файлу. До',
-                    )}{' '}
-                    {maxMb} {tr('МБ на трек.')}
+                        'Назву, виконавця й обкладинку підставимо з тегів файлу.',
+                    )}
                 </DialogDescription>
 
+                {/* Зона перетягування: кільця навколо кнопки «дихають», а під файлом — розходяться ширше. */}
                 <button
                     type="button"
                     onClick={() => input.current?.click()}
@@ -217,24 +215,56 @@ export function UploadTracksDialog({
                         void addFiles(event.dataTransfer.files);
                     }}
                     className={cn(
-                        'mt-4 flex flex-col items-center rounded-2xl border-2 border-dashed px-4 py-6 text-center transition sm:mt-5 sm:px-6 sm:py-7',
+                        'group mt-4 flex flex-col items-center rounded-3xl border border-dashed px-4 text-center transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:mt-5',
+                        items.length > 0 ? 'py-5' : 'py-9 sm:py-11',
                         dragging
-                            ? 'border-gc-lilac-500 bg-gc-indigo/10'
-                            : 'border-white/10 hover:border-white/25',
+                            ? 'border-primary bg-primary/[0.08]'
+                            : 'border-white/15 bg-white/[0.02] hover:border-white/30',
                     )}
                 >
-                    <UploadCloud className="size-9 text-gc-lilac-300" />
-                    <span className="mt-2 text-sm font-semibold">
-                        {tr('Перетягніть аудіофайли або натисніть')}
+                    <span className="relative flex size-16 items-center justify-center">
+                        <span
+                            aria-hidden
+                            className={cn(
+                                'absolute inset-0 rounded-full bg-primary/25 motion-safe:animate-[upload-ring_2.4s_ease-out_infinite]',
+                                dragging && 'bg-primary/40',
+                            )}
+                        />
+                        <span
+                            aria-hidden
+                            className="absolute inset-0 rounded-full bg-primary/20 motion-safe:animate-[upload-ring_2.4s_ease-out_1.2s_infinite]"
+                        />
+                        <motion.span
+                            animate={{ scale: dragging ? 1.12 : 1 }}
+                            transition={motionOr(reduce, POP)}
+                            className="relative flex size-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_10px_30px_-10px_var(--primary)]"
+                        >
+                            <ArrowUp className="size-7" strokeWidth={2.4} />
+                        </motion.span>
                     </span>
-                    <span className="mt-1 text-xs text-white/45">
+                    <span className="mt-4 text-[15px] font-semibold">
+                        {dragging
+                            ? tr('Відпустіть, щоб додати')
+                            : tr('Перетягніть аудіофайли сюди')}
+                    </span>
+                    <span className="mt-1 text-sm text-white/50">
+                        {tr('або')}{' '}
+                        <span className="font-medium text-primary underline-offset-4 group-hover:underline">
+                            {tr('оберіть на пристрої')}
+                        </span>
+                    </span>
+                    <span className="mt-3 text-xs text-white/35">
                         {formats
                             .filter(
                                 (f) =>
                                     !['mpga', 'oga', 'mp4', 'webm'].includes(f),
                             )
                             .join(', ')
-                            .toUpperCase()}
+                            .toUpperCase()}{' '}
+                        ·{' '}
+                        <span className="whitespace-nowrap">
+                            {tr('до')} {maxMb} {tr('МБ')}
+                        </span>
                     </span>
                 </button>
                 <input
@@ -252,107 +282,146 @@ export function UploadTracksDialog({
 
                 {items.length > 0 && (
                     <ul className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-                        {items.map((item) => (
-                            <li
-                                key={item.id}
-                                className="relative overflow-hidden rounded-2xl bg-white/[0.04] p-3"
-                            >
-                                {item.status === 'uploading' && (
-                                    <span
-                                        className="absolute inset-y-0 left-0 bg-gc-indigo/15 transition-[width]"
-                                        style={{ width: `${item.progress}%` }}
-                                    />
-                                )}
-                                <div className="relative flex items-start gap-3">
-                                    <TrackCover
-                                        url={item.coverUrl}
-                                        seed={item.file.name}
-                                        className="size-12 shrink-0 rounded-xl"
-                                    />
-                                    <div className="@container min-w-0 flex-1">
-                                        <div className="flex items-start gap-2">
-                                            <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 @md:grid-cols-2">
-                                                <input
-                                                    value={item.title}
-                                                    onChange={(event) =>
-                                                        update(item.id, {
-                                                            title: event.target
-                                                                .value,
-                                                        })
-                                                    }
-                                                    disabled={
-                                                        item.status ===
-                                                            'done' || busy
-                                                    }
-                                                    placeholder={tr('Назва')}
-                                                    maxLength={150}
-                                                    className="input-glass h-10 w-full min-w-0 rounded-lg px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
-                                                />
-                                                <input
-                                                    value={item.artist}
-                                                    onChange={(event) =>
-                                                        update(item.id, {
-                                                            artist: event.target
-                                                                .value,
-                                                        })
-                                                    }
-                                                    disabled={
-                                                        item.status ===
-                                                            'done' || busy
-                                                    }
-                                                    placeholder={tr(
-                                                        'Виконавець',
-                                                    )}
-                                                    maxLength={150}
-                                                    className="input-glass h-10 w-full min-w-0 rounded-lg px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
-                                                />
-                                            </div>
-                                            <span className="flex size-10 shrink-0 items-center justify-center">
-                                                {item.status === 'uploading' ? (
-                                                    <Loader2 className="size-5 animate-spin text-gc-lilac-300" />
-                                                ) : item.status === 'done' ? (
-                                                    <CheckCircle2 className="size-5 text-emerald-400" />
-                                                ) : item.status === 'error' ? (
-                                                    <AlertCircle className="size-5 text-rose-300" />
-                                                ) : (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            setItems((all) =>
-                                                                all.filter(
-                                                                    (i) =>
-                                                                        i.id !==
-                                                                        item.id,
-                                                                ),
-                                                            )
+                        <AnimatePresence initial={false}>
+                            {items.map((item) => (
+                                <motion.li
+                                    key={item.id}
+                                    layout={!reduce}
+                                    initial={
+                                        reduce ? false : { opacity: 0, y: 12 }
+                                    }
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={
+                                        reduce
+                                            ? undefined
+                                            : { opacity: 0, x: -16 }
+                                    }
+                                    transition={motionOr(reduce, RISE)}
+                                    className={cn(
+                                        'relative overflow-hidden rounded-2xl border p-3 transition-colors',
+                                        item.status === 'done'
+                                            ? 'border-emerald-400/20 bg-emerald-400/[0.05]'
+                                            : item.status === 'error'
+                                              ? 'border-rose-400/25 bg-rose-400/[0.05]'
+                                              : 'border-white/[0.07] bg-white/[0.04]',
+                                    )}
+                                >
+                                    <div className="relative flex items-start gap-3">
+                                        <TrackCover
+                                            url={item.coverUrl}
+                                            seed={item.file.name}
+                                            className="size-12 shrink-0 rounded-xl"
+                                        />
+                                        <div className="@container min-w-0 flex-1">
+                                            <div className="flex items-start gap-2">
+                                                <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 @md:grid-cols-2">
+                                                    <input
+                                                        value={item.title}
+                                                        onChange={(event) =>
+                                                            update(item.id, {
+                                                                title: event
+                                                                    .target
+                                                                    .value,
+                                                            })
                                                         }
-                                                        className="rounded-full p-1.5 text-white/40 hover:bg-white/10 hover:text-white"
-                                                        aria-label={tr(
-                                                            'Прибрати',
+                                                        disabled={
+                                                            item.status ===
+                                                                'done' || busy
+                                                        }
+                                                        placeholder={tr(
+                                                            'Назва',
                                                         )}
-                                                    >
-                                                        <X className="size-4" />
-                                                    </button>
-                                                )}
-                                            </span>
-                                        </div>
-                                        <p className="mt-1.5 truncate text-xs leading-4 text-white/40">
-                                            {item.file.name} ·{' '}
-                                            {formatBytes(item.file.size)}
-                                            {item.duration > 0 &&
-                                                ` · ${formatDuration(item.duration)}`}
-                                            {item.album && ` · ${item.album}`}
-                                            {item.error && (
-                                                <span className="text-rose-300">
-                                                    {' '}
-                                                    · {item.error}
+                                                        maxLength={150}
+                                                        className="input-glass h-10 w-full min-w-0 rounded-lg px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
+                                                    />
+                                                    <input
+                                                        value={item.artist}
+                                                        onChange={(event) =>
+                                                            update(item.id, {
+                                                                artist: event
+                                                                    .target
+                                                                    .value,
+                                                            })
+                                                        }
+                                                        disabled={
+                                                            item.status ===
+                                                                'done' || busy
+                                                        }
+                                                        placeholder={tr(
+                                                            'Виконавець',
+                                                        )}
+                                                        maxLength={150}
+                                                        className="input-glass h-10 w-full min-w-0 rounded-lg px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
+                                                    />
+                                                </div>
+                                                <span className="flex size-11 shrink-0 items-center justify-center">
+                                                    {item.status ===
+                                                    'uploading' ? (
+                                                        <ProgressRing
+                                                            value={
+                                                                item.progress
+                                                            }
+                                                        />
+                                                    ) : item.status ===
+                                                      'done' ? (
+                                                        <SuccessCheck />
+                                                    ) : item.status ===
+                                                      'error' ? (
+                                                        <AlertCircle className="size-5 text-rose-300" />
+                                                    ) : (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setItems(
+                                                                    (all) =>
+                                                                        all.filter(
+                                                                            (
+                                                                                i,
+                                                                            ) =>
+                                                                                i.id !==
+                                                                                item.id,
+                                                                        ),
+                                                                )
+                                                            }
+                                                            className="rounded-full p-1.5 text-white/40 hover:bg-white/10 hover:text-white"
+                                                            aria-label={tr(
+                                                                'Прибрати',
+                                                            )}
+                                                        >
+                                                            <X className="size-4" />
+                                                        </button>
+                                                    )}
                                                 </span>
+                                            </div>
+                                            <p className="mt-1.5 truncate text-xs leading-4 text-white/40">
+                                                {item.file.name} ·{' '}
+                                                {formatBytes(item.file.size)}
+                                                {item.duration > 0 &&
+                                                    ` · ${formatDuration(item.duration)}`}
+                                                {item.album &&
+                                                    ` · ${item.album}`}
+                                                {item.error && (
+                                                    <span className="text-rose-300">
+                                                        {' '}
+                                                        · {item.error}
+                                                    </span>
+                                                )}
+                                            </p>
+                                            {item.status === 'uploading' && (
+                                                <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10">
+                                                    <div
+                                                        className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
+                                                        style={{
+                                                            width: `${item.progress}%`,
+                                                        }}
+                                                    />
+                                                </div>
                                             )}
-                                        </p>
+                                        </div>
                                     </div>
-                                </div>
-                            </li>
-                        ))}
+                                </motion.li>
+                            ))}
+                        </AnimatePresence>
                     </ul>
                 )}
 
@@ -361,7 +430,7 @@ export function UploadTracksDialog({
                         type="button"
                         onClick={() => close(false)}
                         disabled={busy}
-                        className="rounded-xl px-4 py-2.5 text-sm text-white/60 hover:bg-white/5 hover:text-white disabled:opacity-50"
+                        className="h-11 rounded-full border border-white/15 px-6 text-sm font-semibold text-white/80 transition-colors hover:border-white/30 hover:text-white disabled:opacity-50"
                     >
                         {pending === 0 && items.length > 0
                             ? tr('Готово')
@@ -371,7 +440,7 @@ export function UploadTracksDialog({
                         type="button"
                         onClick={uploadAll}
                         disabled={busy || pending === 0}
-                        className="btn-glow inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
+                        className="btn-glow inline-flex h-11 items-center gap-2 rounded-full px-6 text-sm font-semibold disabled:opacity-50"
                     >
                         {busy && <Loader2 className="size-4 animate-spin" />}
                         {tr('Завантажити')}

@@ -102,10 +102,18 @@ export function readDuration(file: File): Promise<number> {
     return new Promise((resolve) => {
         const url = URL.createObjectURL(file);
         const audio = new Audio();
+        let settled = false;
         const done = (value: number) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
             URL.revokeObjectURL(url);
+            audio.removeAttribute('src');
             resolve(Number.isFinite(value) ? Math.round(value) : 0);
         };
+        // Деякі браузери не шлють ні loadedmetadata, ні error (незнайомий кодек, обмежене медіа) —
+        // без запасного таймера файл ніколи б не з’явився в списку. Тоді тривалість 0, а плеєр візьме її з файлу.
+        const timer = setTimeout(() => done(0), 4000);
         audio.preload = 'metadata';
         audio.onloadedmetadata = () => done(audio.duration);
         audio.onerror = () => done(0);
