@@ -23,7 +23,7 @@ import {
     ShieldCheck,
     UsersRound,
 } from 'lucide-react';
-import { Fragment, useRef, type ReactNode } from 'react';
+import { Fragment, useEffect, useRef, type ReactNode } from 'react';
 import { FriendButton } from '@/components/gc/friend-button';
 import { PostCard } from '@/components/gc/post-card';
 import { PostComposer } from '@/components/gc/post-composer';
@@ -54,6 +54,7 @@ import { tr } from '@/lib/i18n';
 import { LiveBadge, ProfileStream } from '@/components/streams/stream';
 import type { StreamInfo } from '@/components/streams/stream';
 import { usePlugin } from '@/lib/plugins';
+import { setPageBackgroundVideo } from '@/lib/backgrounds';
 
 const PROFILE_BLOCKS = [
     'platforms',
@@ -86,6 +87,8 @@ type Profile = UserCard & {
     accent?: string[] | null;
     /** GameCon+: ефект шапки — сяйво внизу обкладинки або жива рамка. */
     header_fx?: 'aurora' | 'rim' | null;
+    /** GameCon+: відеофон власника (ID YouTube) — фон сторінки й для гостей. */
+    background_video?: string | null;
     about: string | null;
     city: string | null;
     birthday: string | null;
@@ -260,6 +263,12 @@ export default function ProfileShow({
           ? [...profile.plus.name, '#a855f7']
           : ['#6366f1', '#a855f7', '#22d3ee'];
     const nameProps = plusNameProps(profile.plus);
+    // Відеофон учасника GameCon+ замінює фон сайту, поки відкрита його сторінка.
+    useEffect(() => {
+        setPageBackgroundVideo(profile.background_video ?? null);
+
+        return () => setPageBackgroundVideo(null);
+    }, [profile.background_video]);
     const charactersOn = usePlugin('rp_characters');
     const roleBadge =
         profile.role === 'admin'
@@ -326,7 +335,13 @@ export default function ProfileShow({
 
                 <div className="relative px-5 pb-5 sm:px-8">
                     <div className="-mt-20 flex flex-col gap-5 sm:-mt-24 sm:flex-row sm:items-end">
-                        <div className="group relative w-fit">
+                        {/* Світний обідок аватара (стиль Dune); з рамкою GameCon+ — лише рамка. */}
+                        <div
+                            className={cn(
+                                'group relative isolate w-fit rounded-full',
+                                !profile.plus?.frame && 'glow-ring',
+                            )}
+                        >
                             <UserAvatar
                                 user={profile}
                                 size="hero"

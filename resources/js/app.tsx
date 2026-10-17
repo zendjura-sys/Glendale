@@ -4,6 +4,7 @@ import { SkipLink } from '@/components/gc/skip-link';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { installKeyboardGuard } from '@/lib/keyboard';
+import { startSmoothScroll } from '@/lib/smooth-scroll';
 import { LazyMotion } from 'motion/react';
 import { lazy, Suspense } from 'react';
 
@@ -37,6 +38,7 @@ const motionFeatures = () =>
     import('@/lib/motion-features').then((module) => module.default);
 
 installKeyboardGuard();
+startSmoothScroll();
 
 const appName = import.meta.env.VITE_APP_NAME || 'GameCon';
 

@@ -343,7 +343,7 @@ export default function Appearance({
                                     e.target.checked,
                                 )
                             }
-                            className="size-4 accent-gc-lilac-400"
+                            className="gc-switch"
                         />
                         {tr('Рухомий фон')}
                         <span className="text-xs text-white/40">
@@ -529,7 +529,7 @@ export default function Appearance({
                                         e.target.checked,
                                     )
                                 }
-                                className="size-4 accent-gc-lilac-400"
+                                className="gc-switch"
                             />
                             <Moon className="size-4 text-white/50" />
                             {tr('Не турбувати вночі')}
@@ -586,7 +586,7 @@ export default function Appearance({
                                                 [item.key]: e.target.checked,
                                             })
                                         }
-                                        className="size-4 accent-gc-lilac-400"
+                                        className="gc-switch"
                                     />
                                     {tr(item.label)}
                                 </label>
@@ -611,7 +611,7 @@ export default function Appearance({
                                                 [item.key]: e.target.checked,
                                             })
                                         }
-                                        className="size-4 accent-gc-lilac-400"
+                                        className="gc-switch"
                                     />
                                     {tr(item.label)}
                                 </label>
@@ -638,7 +638,7 @@ export default function Appearance({
                                             event.target.checked,
                                         )
                                     }
-                                    className="size-4 accent-gc-lilac-400"
+                                    className="gc-switch"
                                 />
                                 {tr('Ховати спойлери на всьому сайті')}
                             </label>
@@ -744,7 +744,7 @@ export default function Appearance({
                                             e.target.checked,
                                         )
                                     }
-                                    className="size-4 accent-gc-lilac-400"
+                                    className="gc-switch"
                                 />
                                 <UsersRound className="size-4 text-white/50" />
                                 {tr('Шукаю групу')}
@@ -761,7 +761,7 @@ export default function Appearance({
                                             e.target.checked,
                                         )
                                     }
-                                    className="size-4 accent-gc-lilac-400"
+                                    className="gc-switch"
                                 />
                                 <Eye className="size-4 text-white/50" />
                                 {tr('Хто заходив')}

@@ -24,6 +24,7 @@ use App\Services\PostCards;
 use App\Services\PostPresenter;
 use App\Services\Presence\SteamPresence;
 use App\Services\Streams\LiveStreams;
+use App\Support\Backgrounds;
 use App\Support\Modules\ModuleManager;
 use App\Support\Palette;
 use App\Support\PlusStyle;
@@ -127,6 +128,8 @@ class ProfileController extends Controller
                 // GameCon+: власні кольори сторінки (з палітр сайту).
                 'accent' => $user->isPlus() ? Palette::colors((string) ($user->plus_style['accent'] ?? '')) : null,
                 'header_fx' => $user->isPlus() ? PlusStyle::header($user->plus_style) : null,
+                // GameCon+: власний відеофон власника видно й гостям його сторінки.
+                'background_video' => $canSeeContent ? Backgrounds::for($user)['video'] : null,
                 'about' => $canSeeContent ? $user->about : null,
                 'city' => $user->city,
                 'birthday' => $canSeeContent ? $user->birthday?->toDateString() : null,

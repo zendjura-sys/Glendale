@@ -84,4 +84,18 @@ class BackgroundSettingsTest extends TestCase
             ->assertSessionHasNoErrors();
         $this->assertNull($user->refresh()->pref('background_video'));
     }
+
+    public function test_plus_members_video_background_is_shown_on_their_profile(): void
+    {
+        $owner = User::factory()->create(['plus_until' => now()->addMonth()]);
+        $owner->mergePref(['background_video' => 'dQw4w9WgXcQ']);
+        $guest = User::factory()->create();
+
+        $this->actingAs($guest)->get('/'.$owner->username)
+            ->assertInertia(fn ($page) => $page->where('profile.background_video', 'dQw4w9WgXcQ'));
+
+        $owner->forceFill(['plus_until' => null])->save();
+        $this->actingAs($guest)->get('/'.$owner->username)
+            ->assertInertia(fn ($page) => $page->where('profile.background_video', null));
+    }
 }

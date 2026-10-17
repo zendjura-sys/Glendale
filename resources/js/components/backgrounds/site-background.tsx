@@ -2,7 +2,11 @@ import { usePage } from '@inertiajs/react';
 import { useReducedMotion } from 'motion/react';
 import { useMemo, useSyncExternalStore } from 'react';
 import { Aurora } from '@/components/gc/aurora';
-import { DEFAULT_BACKGROUND, useBackgroundPreview } from '@/lib/backgrounds';
+import {
+    DEFAULT_BACKGROUND,
+    useBackgroundPreview,
+    usePageBackgroundVideo,
+} from '@/lib/backgrounds';
 import { cn } from '@/lib/utils';
 import type { SiteBackgroundPreset } from '@/types';
 
@@ -283,7 +287,10 @@ const SCENES: Record<
 export function SiteBackground({ className }: { className?: string }) {
     const saved = usePage().props.auth.user?.background ?? DEFAULT_BACKGROUND;
     const preview = useBackgroundPreview();
-    const prefs = preview ?? saved;
+    const pageVideo = usePageBackgroundVideo();
+    // Порядок: перегляд у налаштуваннях → відеофон сторінки (профіль) → власний вибір.
+    const prefs =
+        preview ?? (pageVideo ? { ...saved, video: pageVideo } : saved);
     const reduce = useReducedMotion();
     const saveData = useSaveData();
     const still = !prefs.motion || Boolean(reduce) || saveData;

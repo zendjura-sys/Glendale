@@ -37,21 +37,38 @@ export const DEFAULT_BACKGROUND: SiteBackgroundPrefs = {
  * null — показувати збережене з профілю.
  */
 let preview: SiteBackgroundPrefs | null = null;
+/** Відеофон сторінки (профіль учасника GameCon+): показується поверх власного вибору гостя. */
+let pageVideo: string | null = null;
 const listeners = new Set<() => void>();
+const notify = () => listeners.forEach((listener) => listener());
+const subscribe = (listener: () => void) => {
+    listeners.add(listener);
+
+    return () => listeners.delete(listener);
+};
 
 export function setBackgroundPreview(value: SiteBackgroundPrefs | null) {
     preview = value;
-    listeners.forEach((listener) => listener());
+    notify();
 }
 
 export function useBackgroundPreview(): SiteBackgroundPrefs | null {
     return useSyncExternalStore(
-        (listener) => {
-            listeners.add(listener);
-
-            return () => listeners.delete(listener);
-        },
+        subscribe,
         () => preview,
+        () => null,
+    );
+}
+
+export function setPageBackgroundVideo(id: string | null) {
+    pageVideo = id;
+    notify();
+}
+
+export function usePageBackgroundVideo(): string | null {
+    return useSyncExternalStore(
+        subscribe,
+        () => pageVideo,
         () => null,
     );
 }
