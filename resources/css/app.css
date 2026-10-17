@@ -1118,8 +1118,13 @@ label:has(
  * світлим кантом-відблиском по краю й м’яким відблиском, що йде за курсором (--lx/--ly).
  * Використання: <div class="liquid-glass"><span class="liquid-glass__glare" aria-hidden />…</div>
  */
+/* Позиція — у шарі components, щоб утиліти (fixed, absolute) її перекривали. */
+@layer components {
+    .liquid-glass {
+        position: relative;
+    }
+}
 .liquid-glass {
-    position: relative;
     isolation: isolate;
     background:
         linear-gradient(
