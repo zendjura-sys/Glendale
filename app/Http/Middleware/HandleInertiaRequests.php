@@ -17,6 +17,7 @@ use App\Services\Spotify\SpotifyClient;
 use App\Support\Backgrounds;
 use App\Support\I18n\Locales;
 use App\Support\Modules\ModuleManager;
+use App\Support\NetworkModes;
 use App\Support\NotifyPrefs;
 use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
@@ -100,7 +101,8 @@ class HandleInertiaRequests extends Middleware
                     'role' => $user->role,
                     'is_admin' => $user->isAdmin(),
                     'cover_url' => $user->cover_url,
-                    'nav_tabs' => $this->modules->navTabsFor($user),
+                    'nav_tabs' => array_values(array_intersect($this->modules->navTabsFor($user), app(NetworkModes::class)->modulesFor($user))),
+                    'network_mode' => app(NetworkModes::class)->for($user)['id'],
                     'palette' => $user->palette(),
                     'background' => Backgrounds::for($user),
                     'hide_spoilers' => app(Plugins::class)->on('spoiler_switch') && (bool) $user->pref('hide_spoilers'),
@@ -119,9 +121,11 @@ class HandleInertiaRequests extends Middleware
                 'badges' => app(Catalog::class)->rules()['badges'],
                 'google_pay' => $user ? app(GooglePay::class)->clientConfig() : null,
             ],
-            'nav' => $user ? fn () => $this->modules->navigation() : [],
-            'modules' => fn () => $this->modules->enabledKeys(),
-            'plugins' => fn () => app(Plugins::class)->flags(),
+            // Режим соцмережі ховає частину розділів і функцій (лише в інтерфейсі цієї людини).
+            'nav' => $user ? fn () => $this->visibleNav($user) : [],
+            'modules' => fn () => app(NetworkModes::class)->modulesFor($user),
+            'plugins' => fn () => app(NetworkModes::class)->pluginsFor($user),
+            'features' => fn () => app(NetworkModes::class)->featuresFor($user),
             'music' => $user ? fn () => $this->musicProps($user) : null,
             'counters' => $user ? fn () => [
                 'friend_requests' => $this->friendships->incomingCount($user),
@@ -147,5 +151,20 @@ class HandleInertiaRequests extends Middleware
             'premium' => (bool) $account?->isPremium(),
             'configured' => app(SpotifyClient::class)->configured(),
         ]];
+    }
+
+    /**
+     * Пункти меню, які людина бачить у своєму режимі.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function visibleNav(User $user): array
+    {
+        $visible = app(NetworkModes::class)->modulesFor($user);
+
+        return array_values(array_filter(
+            $this->modules->navigation(),
+            fn (array $item) => in_array($item['key'], $visible, true),
+        ));
     }
 }

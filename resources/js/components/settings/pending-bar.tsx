@@ -14,12 +14,15 @@ export function PendingBar({
     processing,
     onDiscard,
     form,
+    onSave,
 }: {
     count: number;
     processing: boolean;
     onDiscard: () => void;
     /** id форми, яку надсилає «Зберегти». */
-    form: string;
+    form?: string;
+    /** Або власне збереження (коли форми немає, як в Адмінка → Режими). */
+    onSave?: () => void;
 }) {
     const reduce = useReducedMotion();
     if (typeof document === 'undefined') return null;
@@ -67,8 +70,9 @@ export function PendingBar({
                             {tr('Скасувати')}
                         </button>
                         <button
-                            type="submit"
-                            form={form}
+                            type={onSave ? 'button' : 'submit'}
+                            form={onSave ? undefined : form}
+                            onClick={onSave}
                             disabled={processing}
                             className="h-9 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
                         >

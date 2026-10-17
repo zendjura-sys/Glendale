@@ -18,6 +18,7 @@ import type { SocialConnection } from '@/types/auth';
 import { StreamSettings } from '@/components/streams/stream';
 import type { StreamInfo } from '@/components/streams/stream';
 import { tr } from '@/lib/i18n';
+import { useFeature } from '@/lib/plugins';
 
 type ProfileForm = {
     first_name: string;
@@ -58,6 +59,7 @@ export default function Profile({
 }: Props) {
     const { auth } = usePage().props;
     const playing = usePlayer().current !== null;
+    const playingOn = useFeature('playing');
     const form = useForm<ProfileForm>({
         first_name: profile.first_name ?? '',
         last_name: profile.last_name ?? '',
@@ -456,7 +458,7 @@ export default function Profile({
                 </div>
             </form>
 
-            <PlayingSettingsCard />
+            {playingOn && <PlayingSettingsCard />}
 
             <div className="mt-5">
                 <ConnectedAccounts connections={connections} />

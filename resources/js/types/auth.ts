@@ -20,6 +20,8 @@ export type User = {
     /** Ключі розділів нижньої панелі на телефоні (без «Меню»). */
     nav_tabs: string[];
     palette?: string;
+    /** Режим соцмережі (id), див. NetworkModes на сервері. */
+    network_mode?: string;
     /** Фон сайту: сцена, чи рухається вона, і відео YouTube (лише з GameCon+). */
     background?: SiteBackgroundPrefs;
     hide_spoilers?: boolean;

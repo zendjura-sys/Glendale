@@ -53,7 +53,7 @@ import type {
 import { tr } from '@/lib/i18n';
 import { LiveBadge, ProfileStream } from '@/components/streams/stream';
 import type { StreamInfo } from '@/components/streams/stream';
-import { usePlugin } from '@/lib/plugins';
+import { useFeature, usePlugin } from '@/lib/plugins';
 import { setPageBackgroundVideo } from '@/lib/backgrounds';
 
 const PROFILE_BLOCKS = [
@@ -270,6 +270,8 @@ export default function ProfileShow({
         return () => setPageBackgroundVideo(null);
     }, [profile.background_video]);
     const charactersOn = usePlugin('rp_characters');
+    const liveOn = useFeature('live');
+    const playingOn = useFeature('playing');
     const roleBadge =
         profile.role === 'admin'
             ? tr('Адміністратор')
@@ -369,7 +371,7 @@ export default function ProfileShow({
                                 >
                                     {profile.alias || profile.name}
                                 </h1>
-                                {stream?.live && <LiveBadge />}
+                                {liveOn && stream?.live && <LiveBadge />}
                                 {profile.is_verified && (
                                     <VerifiedBadge className="size-6" />
                                 )}
@@ -432,7 +434,11 @@ export default function ProfileShow({
                             )}
                             {profile.playing && (
                                 <div className="mt-2">
-                                    <PlayingBadge playing={profile.playing} />
+                                    {playingOn && (
+                                        <PlayingBadge
+                                            playing={profile.playing}
+                                        />
+                                    )}
                                 </div>
                             )}
                             <WatchedTogether
@@ -668,7 +674,7 @@ export default function ProfileShow({
                                 )}
                             </Widget>
                         )}
-                        {stream && <ProfileStream stream={stream} />}
+                        {liveOn && stream && <ProfileStream stream={stream} />}
                         {blockSequence(blockOrder).map((key) => {
                             const widgets: Record<string, ReactNode> = {
                                 platforms: profile.platforms &&

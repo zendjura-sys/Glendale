@@ -7,6 +7,7 @@ use App\Services\FriendshipService;
 use App\Support\Backgrounds;
 use App\Support\I18n\Locales;
 use App\Support\MutedWords;
+use App\Support\NetworkModes;
 use App\Support\NotifyPrefs;
 use App\Support\Palette;
 use App\Support\Plugins\Plugins;
@@ -32,6 +33,9 @@ class AppearanceController extends Controller
                 'video' => Backgrounds::youtubeId($user->pref('background_video')),
             ],
             'backgrounds' => Backgrounds::PRESETS,
+            'modes' => app(NetworkModes::class)->available(),
+            'networkMode' => app(NetworkModes::class)->for($user)['id'],
+            'moduleNames' => app(NetworkModes::class)->moduleNames(),
             'isPlus' => $user->isPlus(),
             'quiet' => [
                 'enabled' => (bool) $user->pref('quiet_enabled'),
@@ -81,6 +85,7 @@ class AppearanceController extends Controller
             'background' => ['sometimes', 'string', 'in:'.implode(',', Backgrounds::PRESETS)],
             'background_motion' => ['sometimes', 'boolean'],
             'background_video' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'network_mode' => ['sometimes', 'string', 'in:'.implode(',', array_column(app(NetworkModes::class)->available(), 'id'))],
         ]);
 
         $enabled = app(Locales::class)->enabled();
@@ -130,6 +135,9 @@ class AppearanceController extends Controller
                     : NotifyPrefs::enabled($request->user(), $key);
             }
             $patch['notify'] = $notify;
+        }
+        if (array_key_exists('network_mode', $data)) {
+            $patch['network_mode'] = $data['network_mode'];
         }
         if (array_key_exists('background', $data)) {
             $patch['background'] = $data['background'];

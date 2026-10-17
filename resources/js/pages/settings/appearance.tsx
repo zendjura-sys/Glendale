@@ -15,6 +15,7 @@ import { type FormEvent, useEffect, useState } from 'react';
 import AppearanceController from '@/actions/App/Http/Controllers/Settings/AppearanceController';
 import { PlusBadge } from '@/components/gc/plus';
 import { UserAvatar } from '@/components/gc/user-avatar';
+import { ModeCard } from '@/components/modes/mode-card';
 import { countChanges, PendingBar } from '@/components/settings/pending-bar';
 import { SettingsCard } from '@/layouts/settings/layout';
 import {
@@ -30,6 +31,7 @@ import {
     youtubeId,
 } from '@/lib/backgrounds';
 import { tr } from '@/lib/i18n';
+import type { NetworkMode } from '@/lib/modes';
 import { motionOr, POP, SNAP } from '@/lib/motion';
 import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
@@ -93,6 +95,7 @@ type Form = {
     background: SiteBackgroundPreset;
     background_motion: boolean;
     background_video: string;
+    network_mode: string;
 };
 
 export default function Appearance({
@@ -111,6 +114,9 @@ export default function Appearance({
     hideSpoilers,
     background,
     isPlus,
+    modes,
+    networkMode,
+    moduleNames,
 }: {
     palette: string;
     palettes: PaletteOption[];
@@ -127,6 +133,9 @@ export default function Appearance({
     hideSpoilers: boolean;
     background: SiteBackgroundPrefs;
     isPlus: boolean;
+    modes: NetworkMode[];
+    networkMode: string;
+    moduleNames: Record<string, string>;
 }) {
     const palettesOn = usePlugin('palettes');
     const quietOn = usePlugin('quiet_hours');
@@ -155,6 +164,7 @@ export default function Appearance({
         background_video: background.video
             ? `https://youtu.be/${background.video}`
             : '',
+        network_mode: networkMode,
     });
     const [phrase, setPhrase] = useState('');
     const reduce = useReducedMotion();
@@ -256,6 +266,34 @@ export default function Appearance({
                         </div>
                     </div>
                 </div>
+
+                <SettingsCard
+                    title={tr('Режим соцмережі')}
+                    description={tr(
+                        'Які розділи бачити в меню й стрічці. Нічого не видаляється — змініть будь-коли.',
+                    )}
+                >
+                    <div
+                        role="radiogroup"
+                        aria-label={tr('Режим соцмережі')}
+                        className="grid gap-2.5 sm:grid-cols-2"
+                    >
+                        {modes.map((mode) => (
+                            <ModeCard
+                                key={mode.id}
+                                mode={mode}
+                                compact
+                                active={form.data.network_mode === mode.id}
+                                onSelect={() =>
+                                    form.setData('network_mode', mode.id)
+                                }
+                                moduleNames={moduleNames}
+                                allModules={Object.keys(moduleNames)}
+                                layoutId="settings-mode"
+                            />
+                        ))}
+                    </div>
+                </SettingsCard>
 
                 <SettingsCard
                     title={tr('Фон')}

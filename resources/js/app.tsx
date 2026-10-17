@@ -27,7 +27,12 @@ if (typeof document !== 'undefined') {
         : '';
     if (name.startsWith('auth/')) void authLayout();
     else if (name.startsWith('admin/')) void adminLayout();
-    else if (name && name !== 'welcome' && !name.startsWith('legal/')) {
+    else if (
+        name &&
+        name !== 'welcome' &&
+        name !== 'start/mode' &&
+        !name.startsWith('legal/')
+    ) {
         void socialLayout();
         if (name.startsWith('settings/')) void settingsLayout();
     }
@@ -90,6 +95,7 @@ void createInertiaApp({
     layout: (name) => {
         switch (true) {
             case name === 'welcome':
+            case name === 'start/mode':
             case name.startsWith('legal/'):
                 return null;
             case name.startsWith('auth/'):

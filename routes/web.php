@@ -117,6 +117,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::get('start', [StartController::class, 'index'])->name('start');
     Route::post('start', [StartController::class, 'store'])->name('start.store');
     Route::post('start/skip', [StartController::class, 'skip'])->name('start.skip');
+    Route::get('start/mode', [StartController::class, 'mode'])->name('start.mode');
+    Route::post('start/mode', [StartController::class, 'chooseMode'])->name('start.mode.store');
     Route::get('cards/search', [FollowController::class, 'cards'])->middleware('throttle:120,1')->name('cards.search');
     Route::post('follows', [FollowController::class, 'toggle'])->middleware('throttle:60,1')->name('follows.toggle');
 
@@ -663,6 +665,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::delete('stickers/{pack}', [Admin\StickerController::class, 'destroy'])->name('stickers.destroy');
         Route::post('stickers/{pack}/items', [Admin\StickerController::class, 'upload'])->name('stickers.upload');
         Route::delete('stickers/{pack}/items/{sticker}', [Admin\StickerController::class, 'destroySticker'])->scopeBindings()->name('stickers.items.destroy');
+        Route::get('modes', [Admin\ModesController::class, 'index'])->name('modes.index');
+        Route::put('modes', [Admin\ModesController::class, 'update'])->name('modes.update');
+        Route::post('modes/reset', [Admin\ModesController::class, 'reset'])->name('modes.reset');
         Route::prefix('design')->name('design.')->controller(Admin\DesignController::class)->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('template', 'template')->name('template');

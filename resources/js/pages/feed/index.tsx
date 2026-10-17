@@ -34,6 +34,7 @@ import type { StreamInfo } from '@/components/streams/stream';
 import { FeedQuests } from '@/components/quests/quest-list';
 import type { Quest } from '@/components/quests/quest-list';
 import { tr } from '@/lib/i18n';
+import { useFeature } from '@/lib/plugins';
 
 type Props = {
     tab: 'friends' | 'discover' | 'country';
@@ -137,14 +138,17 @@ export default function Feed({
     birthdays,
 }: Props) {
     const { auth } = usePage().props;
+    // Режим соцмережі може ховати історії й трансляції друзів.
+    const storiesOn = useFeature('stories');
+    const liveOn = useFeature('live');
 
     return (
         <>
             <Head title={tr('Новини')} />
             <div className="flex gap-5">
                 <div className="min-w-0 flex-1 space-y-4 xl:max-w-[640px]">
-                    <StoriesBar />
-                    <FriendsLive streams={streaming ?? []} />
+                    {storiesOn && <StoriesBar />}
+                    {liveOn && <FriendsLive streams={streaming ?? []} />}
                     <FeedQuests quests={quests ?? []} />
                     <TomorrowCard events={tomorrow ?? []} />
                     {(picks?.length ?? 0) > 0 && (

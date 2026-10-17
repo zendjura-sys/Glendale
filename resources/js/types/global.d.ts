@@ -48,6 +48,8 @@ declare module '@inertiajs/core' {
             nav: NavEntry[];
             modules: string[];
             plugins: Record<string, boolean>;
+            /** Можливості інтерфейсу за режимом соцмережі: stories, live, playing. */
+            features?: Record<string, boolean>;
             music: SharedMusic;
             counters: {
                 friend_requests: number;

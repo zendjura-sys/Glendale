@@ -19,6 +19,7 @@ import {
     Puzzle,
     Server,
     Settings2,
+    SlidersHorizontal,
     Shield,
     ShieldAlert,
     Languages,
@@ -122,6 +123,11 @@ function groups(): { title: string; items: Item[] }[] {
                 },
                 { label: tr('Країни'), href: '/admin/geo', icon: Globe2 },
                 { label: tr('Дизайн'), href: '/admin/design', icon: Palette },
+                {
+                    label: tr('Режими'),
+                    href: '/admin/modes',
+                    icon: SlidersHorizontal,
+                },
                 { label: tr('Модулі'), href: '/admin/modules', icon: Blocks },
                 { label: tr('Плагіни'), href: '/admin/plugins', icon: Puzzle },
                 {
