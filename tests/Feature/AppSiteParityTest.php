@@ -85,4 +85,16 @@ class AppSiteParityTest extends TestCase
         $this->withToken($readerToken)->postJson("/api/v1/site/posts/{$post->id}/hide")->assertOk();
         $this->assertDatabaseHas('post_hides', ['user_id' => $reader->id, 'post_id' => $post->id]);
     }
+
+    public function test_app_reads_and_switches_the_site_theme(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->app_token($user);
+
+        $this->withToken($token)->getJson('/api/v1/me')->assertOk()->assertJsonPath('user.theme', 'system');
+        $this->withToken($token)->putJson('/api/v1/site/settings/theme', ['theme' => 'light'])->assertOk()->assertJsonPath('ok', true);
+        $this->assertSame('light', $user->fresh()->pref('theme'));
+        $this->withToken($token)->getJson('/api/v1/me')->assertJsonPath('user.theme', 'light');
+        $this->withToken($token)->putJson('/api/v1/site/settings/theme', ['theme' => 'neon'])->assertStatus(422);
+    }
 }

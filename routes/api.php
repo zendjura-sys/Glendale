@@ -42,6 +42,7 @@ use App\Http\Controllers\QuestController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\SavedController;
 use App\Http\Controllers\ServerController;
+use App\Http\Controllers\Settings\AppearanceController;
 use App\Http\Controllers\Settings\NavigationController;
 use App\Http\Controllers\Settings\ProfileController as SettingsProfileController;
 use App\Http\Controllers\Settings\StreamController;
@@ -314,6 +315,7 @@ Route::prefix('v1')->group(function () {
             Route::post('me/cover', [ProfileController::class, 'updateCover']);
             Route::delete('settings/profile', [SettingsProfileController::class, 'destroy']);
             Route::put('settings/navigation', [NavigationController::class, 'update']);
+            Route::put('settings/theme', [AppearanceController::class, 'theme']);
             // Свій канал Twitch/YouTube і позначка LIVE у профілі.
             Route::put('settings/stream', [StreamController::class, 'update'])->middleware('throttle:10,1');
             Route::delete('settings/stream', [StreamController::class, 'destroy']);

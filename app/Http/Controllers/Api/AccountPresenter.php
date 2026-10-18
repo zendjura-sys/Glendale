@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\User;
 use App\Services\Moderation\ContentFilter;
 use App\Support\Modules\ModuleManager;
+use App\Support\Skins;
 
 class AccountPresenter
 {
@@ -36,6 +37,8 @@ class AccountPresenter
             'message_privacy' => $user->message_privacy,
             'role' => $user->role,
             'nav_tabs' => app(ModuleManager::class)->navTabsFor($user),
+            // Тема, як на сайті: system (як на пристрої), dark («Неоновий синій») або light («Крижана Арктика»).
+            'theme' => Skins::theme($user),
             'two_factor' => $user->two_factor_confirmed_at !== null,
             'discord' => filled($user->discord_id),
             'discord_username' => $user->discord_username,
