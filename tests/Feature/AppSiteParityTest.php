@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Movie;
 use App\Models\MovieSource;
 use App\Models\Post;
+use App\Models\Track;
 use App\Models\User;
 use App\Services\Auth\ApiTokens;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -96,5 +97,23 @@ class AppSiteParityTest extends TestCase
         $this->assertSame('light', $user->fresh()->pref('theme'));
         $this->withToken($token)->getJson('/api/v1/me')->assertJsonPath('user.theme', 'light');
         $this->withToken($token)->putJson('/api/v1/site/settings/theme', ['theme' => 'neon'])->assertStatus(422);
+    }
+
+    public function test_app_player_reads_lyrics_like_the_site(): void
+    {
+        $user = User::factory()->create();
+        $track = Track::query()->create([
+            'user_id' => $user->id,
+            'title' => 'Neon Skyline',
+            'artist' => 'Nightdrive Kyiv',
+            'duration' => 180,
+            'path' => 'music/test.mp3',
+            'mime' => 'audio/mpeg',
+            'size' => 1000,
+            'lyrics' => "[00:01.00]перший\n[00:05.00]другий\n[00:09.00]третій",
+        ]);
+
+        $this->withToken($this->app_token($user))->getJson("/api/v1/site/music/tracks/{$track->id}/lyrics")
+            ->assertOk()->assertJsonPath('lyrics', "[00:01.00]перший\n[00:05.00]другий\n[00:09.00]третій");
     }
 }
