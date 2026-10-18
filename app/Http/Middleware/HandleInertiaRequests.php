@@ -109,6 +109,7 @@ class HandleInertiaRequests extends Middleware
                     'palette' => $user->palette(),
                     'background' => Backgrounds::for($user),
                     'skin' => Skins::for($user),
+                    'theme' => Skins::theme($user),
                     'hide_spoilers' => app(Plugins::class)->on('spoiler_switch') && (bool) $user->pref('hide_spoilers'),
                     'profanity_mask' => $user->pref('hide_profanity') ? app(ContentFilter::class)->clientPattern() : null,
                     // До коли діє GameCon+ (оплата — карткою через monobank, без балансу).

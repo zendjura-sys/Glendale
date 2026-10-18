@@ -24,6 +24,7 @@ export type User = {
     network_mode?: string;
     /** Стиль інтерфейсу: flat (основний), hero, material, flex. */
     skin?: string;
+    theme?: 'system' | 'dark' | 'light';
     /** Фон сайту: сцена, чи рухається вона, і відео YouTube (лише з GameCon+). */
     background?: SiteBackgroundPrefs;
     hide_spoilers?: boolean;

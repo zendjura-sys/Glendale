@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Storage;
  */
 class Backgrounds
 {
-    public const DEFAULT = 'dune';
+    public const DEFAULT = 'aurora';
 
     /** Сцени в порядку показу в налаштуваннях; `none` — однотонне тло без сцени. */
     public const PRESETS = ['dune', 'aurora', 'night', 'ocean', 'mesh', 'none'];

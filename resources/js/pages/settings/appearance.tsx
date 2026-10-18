@@ -32,7 +32,9 @@ import {
 } from '@/lib/backgrounds';
 import { tr } from '@/lib/i18n';
 import type { NetworkMode } from '@/lib/modes';
-import { SKINS } from '@/lib/skins';
+import { SKINS, THEMES } from '@/lib/skins';
+import { applyTheme } from '@/lib/theme';
+import type { ThemePref } from '@/lib/theme';
 import { motionOr, POP, SNAP } from '@/lib/motion';
 import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
@@ -98,6 +100,7 @@ type Form = {
     background_video: string;
     network_mode: string;
     skin: string;
+    theme: ThemePref;
     seasonal: boolean;
 };
 
@@ -121,6 +124,7 @@ export default function Appearance({
     networkMode,
     moduleNames,
     skin,
+    theme,
     seasonal,
 }: {
     palette: string;
@@ -142,6 +146,7 @@ export default function Appearance({
     networkMode: string;
     moduleNames: Record<string, string>;
     skin: string;
+    theme: ThemePref;
     seasonal: boolean;
 }) {
     const palettesOn = usePlugin('palettes');
@@ -173,6 +178,7 @@ export default function Appearance({
             : '',
         network_mode: networkMode,
         skin,
+        theme,
         seasonal,
     });
     const [phrase, setPhrase] = useState('');
@@ -180,6 +186,7 @@ export default function Appearance({
     const user = usePage().props.auth.user;
     const siteBackground = usePage().props.siteBackground ?? null;
     const savedSkin = useRef(skin);
+    const savedTheme = useRef<ThemePref>(theme);
     // Збережений стан: від нього рахуються незбережені зміни й до нього повертає «Скасувати».
     const [saved, setSaved] = useState(form.data);
     const [textSize, setTextSize] = useState<TextSize>(readTextSize);
@@ -208,12 +215,19 @@ export default function Appearance({
     useEffect(
         () => () => {
             document.documentElement.dataset.skin = savedSkin.current;
+            applyTheme(savedTheme.current, savedSkin.current);
         },
         [],
     );
 
+    const pickTheme = (id: ThemePref) => {
+        applyTheme(id, form.data.skin);
+        form.setData('theme', id);
+    };
+
     const pickSkin = (id: string) => {
         document.documentElement.dataset.skin = id;
+        applyTheme(form.data.theme, id);
         form.setData((data) => ({
             ...data,
             skin: id,
@@ -242,6 +256,7 @@ export default function Appearance({
             onSuccess: () => {
                 setSaved(form.data);
                 savedSkin.current = form.data.skin;
+                savedTheme.current = form.data.theme;
             },
         });
     };
@@ -251,6 +266,7 @@ export default function Appearance({
         form.clearErrors();
         document.documentElement.dataset.palette = saved.palette;
         document.documentElement.dataset.skin = saved.skin;
+        applyTheme(saved.theme, saved.skin);
         previewText(savedText);
     };
 
@@ -301,6 +317,65 @@ export default function Appearance({
                         </div>
                     </div>
                 </div>
+
+                <SettingsCard
+                    title={tr('Тема')}
+                    description={
+                        form.data.skin === 'gamecon'
+                            ? tr(
+                                  'Темна «Неоновий синій» чи світла «Крижана Арктика». Фон сайту підлаштовується під тему.',
+                              )
+                            : tr(
+                                  'Світла тема є в стилі GameCon. Цей стиль завжди темний.',
+                              )
+                    }
+                >
+                    <div
+                        role="radiogroup"
+                        aria-label={tr('Тема')}
+                        className="grid grid-cols-3 gap-2.5"
+                    >
+                        {THEMES().map((item) => {
+                            const active = form.data.theme === item.id;
+
+                            return (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={active}
+                                    onClick={() => pickTheme(item.id)}
+                                    className="group flex flex-col justify-start text-left"
+                                >
+                                    <span
+                                        className={cn(
+                                            'theme-thumb relative block aspect-[4/3] overflow-hidden rounded-2xl ring-1 transition',
+                                            `theme-thumb--${item.id}`,
+                                            active
+                                                ? 'ring-2 ring-primary'
+                                                : 'ring-white/10 group-hover:ring-white/30',
+                                        )}
+                                    >
+                                        <span className="theme-thumb__card" />
+                                        <span className="theme-thumb__line" />
+                                        <span className="theme-thumb__button" />
+                                        {active && (
+                                            <span className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                                <Check className="size-3.5" />
+                                            </span>
+                                        )}
+                                    </span>
+                                    <span className="mt-2 block text-sm font-medium text-white">
+                                        {item.name}
+                                    </span>
+                                    <span className="block text-xs text-white/45">
+                                        {item.hint}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </SettingsCard>
 
                 <SettingsCard
                     title={tr('Стиль інтерфейсу')}

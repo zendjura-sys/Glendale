@@ -1,10 +1,33 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark" data-palette="{{ auth()->user()?->palette() ?? 'aurora' }}" data-skin="{{ \App\Support\Skins::for(auth()->user()) }}" style="color-scheme: dark">
+@php
+    $gcUser = auth()->user();
+    $gcTheme = \App\Support\Skins::initialTheme($gcUser);
+@endphp
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="{{ $gcTheme === 'dark' ? 'dark' : 'light' }}" data-palette="{{ $gcUser?->palette() ?? 'aurora' }}" data-skin="{{ \App\Support\Skins::for($gcUser) }}" data-theme="{{ $gcTheme }}" data-theme-pref="{{ $gcUser ? \App\Support\Skins::theme($gcUser) : 'guest' }}" style="color-scheme: {{ $gcTheme }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+        {{-- Тема до першого кадру: «як на пристрої» і вибір гостя (localStorage) уточнюються тут, тож сторінка не блимає. --}}
+        <script>
+            (function () {
+                var d = document.documentElement, pref = d.dataset.themePref;
+                if (pref === 'guest') {
+                    try { pref = localStorage.getItem('gc-theme') || 'system'; } catch (e) { pref = 'system'; }
+                }
+                var light = d.dataset.skin === 'gamecon' && (pref === 'light' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: light)').matches));
+                var t = light ? 'light' : 'dark';
+                d.dataset.theme = t;
+                d.classList.toggle('dark', !light);
+                d.classList.toggle('light', light);
+                d.style.colorScheme = t;
+                document.addEventListener('DOMContentLoaded', function () {
+                    var m = document.querySelector('meta[name=theme-color]');
+                    if (m) m.content = light ? '#e9f1f8' : '#05070f';
+                });
+            })();
+        </script>
         <meta name="theme-color" content="#05070f">
-        <meta name="color-scheme" content="dark">
+        <meta name="color-scheme" content="dark light">
 
         @php
             $seo = app(\App\Support\Settings\SiteSettings::class);
@@ -47,6 +70,7 @@
 
         <style>
             html { background-color: #05070f; }
+            html[data-theme='light'] { background-color: #e9f1f8; }
         </style>
 
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -57,7 +81,9 @@
 
         {{-- Розмір тексту пристрою (lib/device-prefs.ts) — до першого кадру, щоб сторінка не «стрибала». --}}
         <script>try{var t=localStorage.getItem('gc.text-size');if(t==='s'||t==='l'||t==='xl')document.documentElement.dataset.text=t}catch(e){}</script>
-        @php($locale = app()->getLocale())
+        @php
+            $locale = app()->getLocale();
+        @endphp
         @if ($locale === 'uk')
             <script>window.__I18N__={locale:'uk',dict:{}};</script>
         @else
@@ -66,7 +92,9 @@
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         {{-- Стиль сайту з Адмінка → Дизайн: після app.css, щоб перевизначати змінні теми. --}}
-        @php($designTheme = app(\App\Services\Design\SiteThemes::class)->urlFor(request()))
+        @php
+            $designTheme = app(\App\Services\Design\SiteThemes::class)->urlFor(request());
+        @endphp
         @if ($designTheme)
             <link rel="stylesheet" href="{{ $designTheme }}" data-site-theme>
         @endif
