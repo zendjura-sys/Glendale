@@ -112,10 +112,14 @@ class PhoneNumbers
 
     /**
      * Випадковий безкоштовний номер (+555): рівень — за шансами, далі вільний номер цього рівня.
-     * Попередній номер звільняється. Змінити випадковий можна раз на random_cooldown_days.
+     * Попередній номер звільняється. Змінити випадковий можна раз на random_cooldown_days;
+     * куплений номер на випадковий не міняється (лише на інший куплений).
      */
     public function random(User $user): PhoneNumber
     {
+        if ($this->current($user)?->kind === PhoneNumber::PURCHASED) {
+            throw ValidationException::withMessages(['phone' => 'Куплений номер не можна змінити на випадковий — лише на інший куплений.']);
+        }
         if (($next = $this->nextRandomAt($user)) !== null) {
             throw ValidationException::withMessages(['phone' => 'Безкоштовно змінити номер можна '.$next->timezone('Europe/Kyiv')->format('d.m о H:i').'. Купити номер можна будь-коли.']);
         }

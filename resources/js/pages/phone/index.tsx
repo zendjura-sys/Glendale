@@ -293,8 +293,6 @@ export default function PhonePage(props: Props) {
                         )}
                     </section>
 
-                    {changing && <NumberPicker props={props} />}
-
                     {/* Приватність */}
                     <Widget
                         title={tr('Хто може дзвонити й писати за номером')}
@@ -347,6 +345,9 @@ export default function PhonePage(props: Props) {
                     </Widget>
                 </div>
             </div>
+
+            {/* Вибір чи зміна номера — на всю ширину, щоб обидві картки мали місце. */}
+            {changing && <NumberPicker props={props} className="mt-4" />}
 
             {/* Історія дзвінків */}
             <Widget title={tr('Останні дзвінки')} icon={Phone} className="mt-4">

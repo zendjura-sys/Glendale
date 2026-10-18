@@ -142,6 +142,11 @@ class PhoneNumbersTest extends TestCase
         $this->assertSame('purchased', $number->kind);
         $this->assertSame(1, PhoneNumber::query()->where('user_id', $buyer->id)->count());
 
+        // Куплений номер на випадковий не міняється.
+        $this->travel(8)->days();
+        $this->actingAs($buyer)->postJson('/phone/random')->assertUnprocessable()->assertJsonValidationErrors('phone');
+        $this->assertSame('purchased', app(PhoneNumbers::class)->current($buyer)?->kind);
+
         // Купити ще один можна будь-коли, без тижневого обмеження.
         $this->actingAs($buyer)->postJson('/plus/billing/purchase', ['product' => 'phone_regular', 'phone_operator' => '12', 'phone_digits' => '9182736'])->assertOk();
 

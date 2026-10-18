@@ -60,18 +60,10 @@ function RandomCard({
     );
 
     const locked = next !== null && new Date(next).getTime() > Date.now();
-    const replacesPurchased = props.phone?.kind === 'purchased';
+    // Куплений номер не міняється на випадковий — лише на інший куплений.
+    const purchased = props.phone?.kind === 'purchased';
 
     const roll = async () => {
-        if (
-            replacesPurchased &&
-            !window.confirm(
-                tr(
-                    'Куплений номер буде замінено випадковим і більше не повернеться. Продовжити?',
-                ),
-            )
-        )
-            return;
         setRolling(true);
         setResult(null);
         // «Барабан»: цифри перебираються, поки сервер обирає номер.
@@ -190,7 +182,7 @@ function RandomCard({
                 <button
                     type="button"
                     onClick={() => void roll()}
-                    disabled={rolling || locked}
+                    disabled={rolling || locked || purchased}
                     className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white/[0.08] text-[15px] font-semibold text-white transition hover:bg-white/[0.12] disabled:opacity-50"
                 >
                     {rolling ? (
@@ -203,22 +195,26 @@ function RandomCard({
                         : tr('Отримати номер')}
                 </button>
                 <p className="mt-2 text-center text-xs text-white/40">
-                    {locked
-                        ? tr('Наступна безкоштовна зміна — {date}', {
-                              date: new Date(next as string).toLocaleString(
-                                  'uk-UA',
-                                  {
-                                      day: '2-digit',
-                                      month: '2-digit',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                  },
-                              ),
-                          })
-                        : tr(
-                              'Змінювати випадковий номер можна безкоштовно раз на {n} дн.',
-                              { n: props.cooldownDays },
-                          )}
+                    {purchased
+                        ? tr(
+                              'У вас куплений номер — змінити його можна лише на інший куплений.',
+                          )
+                        : locked
+                          ? tr('Наступна безкоштовна зміна — {date}', {
+                                date: new Date(next as string).toLocaleString(
+                                    'uk-UA',
+                                    {
+                                        day: '2-digit',
+                                        month: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                    },
+                                ),
+                            })
+                          : tr(
+                                'Змінювати випадковий номер можна безкоштовно раз на {n} дн.',
+                                { n: props.cooldownDays },
+                            )}
                 </p>
             </div>
         </section>
