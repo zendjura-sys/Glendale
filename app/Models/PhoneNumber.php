@@ -6,6 +6,7 @@ use App\Services\Phones\PhoneNumbers;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -21,15 +22,19 @@ use Illuminate\Support\Carbon;
  * @property string $status
  * @property Carbon|null $hold_until
  * @property int|null $payment_id
+ * @property int|null $gift_to
  * @property Carbon $created_at
  * @property-read User $user
  */
-#[Fillable(['user_id', 'country', 'operator', 'digits', 'tier', 'kind', 'status', 'hold_until', 'payment_id'])]
+#[Fillable(['user_id', 'country', 'operator', 'digits', 'tier', 'kind', 'status', 'hold_until', 'payment_id', 'gift_to'])]
 class PhoneNumber extends Model
 {
     public const ACTIVE = 'active';
 
     public const PENDING = 'pending';
+
+    /** Оплачений подарунок: чекає, доки друг прийме, або лежить у дарувальника невикористаним. */
+    public const GIFT = 'gift';
 
     public const RANDOM = 'random';
 
@@ -46,6 +51,14 @@ class PhoneNumber extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * @return HasMany<PhoneOffer, $this>
+     */
+    public function offers(): HasMany
+    {
+        return $this->hasMany(PhoneOffer::class);
     }
 
     /** «+777 (05) 123-45-67». */

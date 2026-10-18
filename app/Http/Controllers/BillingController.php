@@ -65,6 +65,7 @@ class BillingController extends Controller
             'server_id' => ['nullable', 'integer'],
             'phone_operator' => ['nullable', 'string', 'size:2'],
             'phone_digits' => ['nullable', 'string', 'size:7'],
+            'gift_to' => ['nullable', 'integer'],
             'renew' => ['boolean'],
             'save_card' => ['boolean'],
         ]);

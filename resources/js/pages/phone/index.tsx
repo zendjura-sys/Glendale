@@ -15,6 +15,15 @@ import { toast } from 'sonner';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { EmptyState, Widget } from '@/components/gc/widget';
 import { NumberPicker } from '@/components/phone/number-picker';
+import {
+    IncomingOffers,
+    OutgoingOffers,
+    TransferForm,
+} from '@/components/phone/phone-offers';
+import type {
+    PhoneOfferCard,
+    UnusedGift,
+} from '@/components/phone/phone-offers';
 import { PhoneBadge } from '@/components/phone/phone-badge';
 import { api, ApiError } from '@/lib/api';
 import { tr } from '@/lib/i18n';
@@ -37,6 +46,10 @@ type Props = PickerProps & {
     privacy: 'everyone' | 'friends' | 'nobody';
     visible: boolean;
     history: HistoryItem[];
+    incoming: PhoneOfferCard[];
+    outgoing: PhoneOfferCard[];
+    gifts: UnusedGift[];
+    friends: UserCard[];
 };
 
 type Lookup =
@@ -148,7 +161,7 @@ export default function PhonePage(props: Props) {
     return (
         <>
             <Head title={tr('Телефон')} />
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+            <div className="grid gap-4 *:min-w-0 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
                 {/* Набирач */}
                 <section className="glass rounded-3xl p-5">
                     <div className="flex min-h-[4.5rem] flex-col items-center justify-center text-center">
@@ -291,7 +304,26 @@ export default function PhonePage(props: Props) {
                                 )}
                             </p>
                         )}
+                        {props.phone?.kind === 'purchased' &&
+                            !props.outgoing.some(
+                                (o) => o.kind === 'transfer',
+                            ) && (
+                                <TransferForm
+                                    phone={props.phone}
+                                    friends={props.friends}
+                                />
+                            )}
                     </section>
+
+                    <IncomingOffers
+                        offers={props.incoming}
+                        mine={props.phone}
+                    />
+                    <OutgoingOffers
+                        offers={props.outgoing}
+                        gifts={props.gifts}
+                        friends={props.friends}
+                    />
 
                     {/* Приватність */}
                     <Widget
@@ -347,7 +379,13 @@ export default function PhonePage(props: Props) {
             </div>
 
             {/* Вибір чи зміна номера — на всю ширину, щоб обидві картки мали місце. */}
-            {changing && <NumberPicker props={props} className="mt-4" />}
+            {changing && (
+                <NumberPicker
+                    props={props}
+                    friends={props.friends}
+                    className="mt-4"
+                />
+            )}
 
             {/* Історія дзвінків */}
             <Widget title={tr('Останні дзвінки')} icon={Phone} className="mt-4">

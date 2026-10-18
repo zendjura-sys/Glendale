@@ -133,6 +133,13 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('dial', 'dial')->middleware('throttle:30,1')->name('dial');
         Route::put('settings', 'settings')->name('settings');
         Route::post('dismiss', 'dismiss')->name('dismiss');
+        // Подарунки й передача номера друзям.
+        Route::post('transfer', 'transfer')->middleware('throttle:20,1')->name('transfer');
+        Route::post('offers/{offer}/accept', 'accept')->whereNumber('offer')->name('offers.accept');
+        Route::post('offers/{offer}/decline', 'decline')->whereNumber('offer')->name('offers.decline');
+        Route::delete('offers/{offer}', 'cancel')->whereNumber('offer')->name('offers.cancel');
+        Route::post('gifts/{number}/give', 'regift')->whereNumber('number')->middleware('throttle:20,1')->name('gifts.give');
+        Route::post('gifts/{number}/claim', 'claim')->whereNumber('number')->name('gifts.claim');
     });
     Route::post('start/mode', [StartController::class, 'chooseMode'])->name('start.mode.store');
     Route::get('cards/search', [FollowController::class, 'cards'])->middleware('throttle:120,1')->name('cards.search');

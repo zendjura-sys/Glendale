@@ -3132,6 +3132,9 @@ html[data-text='xl'] {
 .phone-badge {
     color: var(--tier);
 }
+.phone-badge__number {
+    white-space: nowrap;
+}
 .phone-badge__label {
     color: var(--tier);
     background: color-mix(in srgb, var(--tier) 16%, transparent);

@@ -4,7 +4,9 @@ namespace App\Services\Phones;
 
 use App\Models\PhoneNumber;
 use App\Models\PhoneNumberRule;
+use App\Models\PhoneOffer;
 use App\Models\User;
+use App\Notifications\BillingNotice;
 use App\Services\Billing\Catalog;
 use App\Services\FriendshipService;
 use App\Support\Settings\SiteSettings;
@@ -115,12 +117,12 @@ class PhoneNumbers
      * Попередній номер звільняється. Змінити випадковий можна раз на random_cooldown_days;
      * куплений номер на випадковий не міняється (лише на інший куплений).
      */
-    public function random(User $user): PhoneNumber
+    public function random(User $user, bool $force = false): PhoneNumber
     {
-        if ($this->current($user)?->kind === PhoneNumber::PURCHASED) {
+        if (! $force && $this->current($user)?->kind === PhoneNumber::PURCHASED) {
             throw ValidationException::withMessages(['phone' => 'Куплений номер не можна змінити на випадковий — лише на інший куплений.']);
         }
-        if (($next = $this->nextRandomAt($user)) !== null) {
+        if (! $force && ($next = $this->nextRandomAt($user)) !== null) {
             throw ValidationException::withMessages(['phone' => 'Безкоштовно змінити номер можна '.$next->timezone('Europe/Kyiv')->format('d.m о H:i').'. Купити номер можна будь-коли.']);
         }
         $config = $this->config();
@@ -155,7 +157,8 @@ class PhoneNumbers
 
                 continue;
             }
-            $user->mergePref(['phone_random_at' => now()->toIso8601String(), 'phone_prompt' => false]);
+            // Випадковий замість переданого номера не забирає тижневу безкоштовну зміну.
+            $user->mergePref($force ? ['phone_prompt' => false] : ['phone_random_at' => now()->toIso8601String(), 'phone_prompt' => false]);
 
             return $number;
         }
@@ -221,8 +224,11 @@ class PhoneNumbers
     /**
      * Тримати номер на час оплати (одна бронь на людину). Ціну визначає рівень номера — товар має збігатися.
      */
-    public function hold(User $user, string $operator, string $digits, string $product): PhoneNumber
+    public function hold(User $user, string $operator, string $digits, string $product, ?User $giftTo = null): PhoneNumber
     {
+        if ($giftTo !== null) {
+            $this->assertFriend($user, $giftTo);
+        }
         $check = $this->check($user, $operator, $digits);
         if (! $check['available']) {
             throw ValidationException::withMessages(['phone' => (string) $check['reason']]);
@@ -233,7 +239,7 @@ class PhoneNumbers
         $country = $this->config()['premium_code'];
 
         try {
-            return DB::transaction(function () use ($user, $country, $operator, $digits, $check) {
+            return DB::transaction(function () use ($user, $country, $operator, $digits, $check, $giftTo) {
                 PhoneNumber::query()->where('user_id', $user->id)->where('status', PhoneNumber::PENDING)->delete();
                 $this->purgeExpired($operator, $digits);
 
@@ -246,6 +252,7 @@ class PhoneNumbers
                     'kind' => PhoneNumber::PURCHASED,
                     'status' => PhoneNumber::PENDING,
                     'hold_until' => now()->addHours(max(1, $this->catalog->rules()['order_hours'])),
+                    'gift_to' => $giftTo?->id,
                 ]);
             });
         } catch (UniqueConstraintViolationException) {
@@ -253,9 +260,21 @@ class PhoneNumbers
         }
     }
 
-    /** Оплачено: заброньований номер стає номером людини, попередній звільняється. */
+    /**
+     * Оплачено: заброньований номер стає номером людини, попередній звільняється.
+     * Подарунок — чекає, доки друг прийме (номер тримається за дарувальником).
+     */
     public function activate(PhoneNumber $number, ?int $paymentId): void
     {
+        if ($number->gift_to !== null) {
+            $number->update(['status' => PhoneNumber::GIFT, 'hold_until' => null, 'payment_id' => $paymentId]);
+            $friend = User::query()->find($number->gift_to);
+            if ($friend !== null) {
+                $this->offer($number, $number->user, $friend, PhoneOffer::GIFT);
+            }
+
+            return;
+        }
         DB::transaction(function () use ($number, $paymentId) {
             $user = $number->user;
             $this->releaseActive($user, $number->id);
@@ -359,8 +378,10 @@ class PhoneNumbers
     private function taken(string $operator, string $digits, ?User $except): bool
     {
         return PhoneNumber::query()->where(['operator' => $operator, 'digits' => $digits])
-            ->where(fn ($q) => $q->where('status', PhoneNumber::ACTIVE)->orWhere('hold_until', '>', now()))
-            ->when($except !== null, fn ($q) => $q->where('user_id', '!=', $except?->id))
+            // Подарунок, що чекає, зайнятий для всіх (і для дарувальника).
+            ->where(fn ($q) => $q->where('status', PhoneNumber::GIFT)->orWhere(fn ($q) => $q
+                ->where(fn ($q) => $q->where('status', PhoneNumber::ACTIVE)->orWhere('hold_until', '>', now()))
+                ->when($except !== null, fn ($q) => $q->where('user_id', '!=', $except?->id))))
             ->exists();
     }
 
@@ -389,6 +410,130 @@ class PhoneNumbers
         }
         if (preg_match('/^\d{7}$/', $digits) !== 1) {
             throw ValidationException::withMessages(['digits' => 'Номер — 7 цифр.']);
+        }
+    }
+
+    /**
+     * Передати свій куплений номер другові. Номер лишається в власника, доки друг не прийме.
+     */
+    public function transfer(User $owner, User $to): PhoneOffer
+    {
+        $number = $this->current($owner);
+        if ($number === null || $number->kind !== PhoneNumber::PURCHASED) {
+            throw ValidationException::withMessages(['phone' => 'Передати можна лише куплений номер.']);
+        }
+
+        return $this->offer($number, $owner, $to, PhoneOffer::TRANSFER);
+    }
+
+    /** Подарувати невикористаний подарунок (друг відмовився) іншому другові. */
+    public function regift(PhoneNumber $gift, User $owner, User $to): PhoneOffer
+    {
+        $this->assertUnusedGift($gift, $owner);
+
+        return $this->offer($gift, $owner, $to, PhoneOffer::GIFT);
+    }
+
+    /** Залишити невикористаний подарунок собі (замість свого номера). */
+    public function claim(PhoneNumber $gift, User $owner): void
+    {
+        $this->assertUnusedGift($gift, $owner);
+        DB::transaction(function () use ($gift, $owner) {
+            $this->releaseActive($owner, $gift->id);
+            $gift->update(['status' => PhoneNumber::ACTIVE, 'gift_to' => null]);
+        });
+        $owner->mergePref(['phone_prompt' => false]);
+    }
+
+    /**
+     * Друг приймає номер: він стає його номером (попередній звільняється). Хто передав свій номер —
+     * одразу отримує безкоштовний випадковий +555, щоб не лишитися без номера.
+     */
+    public function accept(PhoneOffer $offer, User $to): PhoneNumber
+    {
+        $number = DB::transaction(function () use ($offer, $to) {
+            $offer = PhoneOffer::query()->lockForUpdate()->findOrFail($offer->id);
+            $number = PhoneNumber::query()->lockForUpdate()->find($offer->phone_number_id);
+            $expected = $offer->kind === PhoneOffer::GIFT ? PhoneNumber::GIFT : PhoneNumber::ACTIVE;
+            if ($offer->to_user_id !== $to->id || $offer->status !== PhoneOffer::PENDING || $number === null
+                || $number->user_id !== $offer->from_user_id || $number->status !== $expected) {
+                throw ValidationException::withMessages(['offer' => 'Пропозиція вже неактуальна.']);
+            }
+            $this->releaseActive($to, $number->id);
+            $number->update(['user_id' => $to->id, 'status' => PhoneNumber::ACTIVE, 'kind' => PhoneNumber::PURCHASED, 'gift_to' => null, 'hold_until' => null]);
+            $offer->update(['status' => 'accepted']);
+
+            return $number;
+        });
+        $from = $offer->from;
+        if ($offer->kind === PhoneOffer::TRANSFER && $this->current($from) === null) {
+            $this->random($from, force: true);
+        }
+        $to->mergePref(['phone_prompt' => false]);
+        $from->notify(new BillingNotice('phone_offer_result', $to->name.' прийняв(-ла) номер '.$number->formatted().'.', '/phone'));
+
+        return $number;
+    }
+
+    /** Друг відмовився: подарунок лишається в дарувальника (можна подарувати іншому або взяти собі). */
+    public function decline(PhoneOffer $offer, User $to): void
+    {
+        $this->close($offer, $to->id, 'to_user_id', 'declined');
+        $offer->number->update(['gift_to' => null]);
+        $offer->from->notify(new BillingNotice('phone_offer_result', $to->name.' відмовився(-лась) від номера '.$offer->number->formatted().'.', '/phone'));
+    }
+
+    /** Дарувальник чи власник скасовує свою пропозицію. */
+    public function cancel(PhoneOffer $offer, User $from): void
+    {
+        $this->close($offer, $from->id, 'from_user_id', 'cancelled');
+        $offer->number->update(['gift_to' => null]);
+    }
+
+    private function close(PhoneOffer $offer, int $userId, string $column, string $status): void
+    {
+        $changed = PhoneOffer::query()->whereKey($offer->id)->where($column, $userId)->where('status', PhoneOffer::PENDING)
+            ->update(['status' => $status]);
+        if ($changed === 0) {
+            throw ValidationException::withMessages(['offer' => 'Пропозиція вже неактуальна.']);
+        }
+    }
+
+    private function offer(PhoneNumber $number, User $from, User $to, string $kind): PhoneOffer
+    {
+        $this->assertFriend($from, $to);
+        if (PhoneOffer::query()->where('phone_number_id', $number->id)->where('status', PhoneOffer::PENDING)->exists()) {
+            throw ValidationException::withMessages(['offer' => 'Цей номер уже запропоновано — дочекайтеся відповіді або скасуйте.']);
+        }
+        $number->update(['gift_to' => $to->id]);
+        $offer = PhoneOffer::query()->create([
+            'phone_number_id' => $number->id,
+            'from_user_id' => $from->id,
+            'to_user_id' => $to->id,
+            'kind' => $kind,
+            'status' => PhoneOffer::PENDING,
+        ]);
+        $to->notify(new BillingNotice(
+            'phone_offer',
+            ($kind === PhoneOffer::GIFT ? $from->name.' дарує вам номер ' : $from->name.' передає вам свій номер ').$number->formatted().'. Прийміть його в розділі «Телефон».',
+            '/phone',
+        ));
+
+        return $offer;
+    }
+
+    private function assertFriend(User $from, User $to): void
+    {
+        if ($from->is($to) || app(FriendshipService::class)->status($from, $to) !== FriendshipService::FRIENDS) {
+            throw ValidationException::withMessages(['friend' => 'Дарувати й передавати номер можна лише друзям.']);
+        }
+    }
+
+    private function assertUnusedGift(PhoneNumber $gift, User $owner): void
+    {
+        $pending = PhoneOffer::query()->where('phone_number_id', $gift->id)->where('status', PhoneOffer::PENDING)->exists();
+        if ($gift->user_id !== $owner->id || $gift->status !== PhoneNumber::GIFT || $pending) {
+            throw ValidationException::withMessages(['offer' => 'Цей подарунок зараз недоступний.']);
         }
     }
 }

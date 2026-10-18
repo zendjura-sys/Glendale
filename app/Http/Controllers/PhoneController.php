@@ -6,7 +6,9 @@ use App\Models\Call;
 use App\Models\CallParticipant;
 use App\Models\Conversation;
 use App\Models\PhoneNumber;
+use App\Models\PhoneOffer;
 use App\Models\User;
+use App\Services\FriendshipService;
 use App\Services\Messenger;
 use App\Services\Phones\PhoneNumbers;
 use App\Services\Phones\PhoneTiers;
@@ -14,6 +16,7 @@ use App\Services\Voice\Calls;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -34,7 +37,61 @@ class PhoneController extends Controller
             'privacy' => (string) $user->pref('phone_privacy', 'everyone'),
             'visible' => $this->phones->visibleOnProfile($user),
             'history' => $this->history($user),
+            ...$this->offersProps($user),
         ]);
+    }
+
+    /** Передати свій куплений номер другові (друг має прийняти). */
+    public function transfer(Request $request): RedirectResponse
+    {
+        $to = $this->friend($request);
+        $this->phones->transfer($request->user(), $to);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Пропозицію надіслано — номер перейде, щойно '.$to->first_name.' прийме.']);
+
+        return back();
+    }
+
+    public function accept(Request $request, PhoneOffer $offer): RedirectResponse
+    {
+        $number = $this->phones->accept($offer, $request->user());
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Тепер ваш номер — '.$number->formatted().'.']);
+
+        return back();
+    }
+
+    public function decline(Request $request, PhoneOffer $offer): RedirectResponse
+    {
+        $this->phones->decline($offer, $request->user());
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Ви відмовилися від номера.']);
+
+        return back();
+    }
+
+    public function cancel(Request $request, PhoneOffer $offer): RedirectResponse
+    {
+        $this->phones->cancel($offer, $request->user());
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Пропозицію скасовано.']);
+
+        return back();
+    }
+
+    /** Невикористаний подарунок (друг відмовився): подарувати іншому другові. */
+    public function regift(Request $request, PhoneNumber $number): RedirectResponse
+    {
+        $to = $this->friend($request);
+        $this->phones->regift($number, $request->user(), $to);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Подарунок надіслано '.$to->first_name.'.']);
+
+        return back();
+    }
+
+    /** Невикористаний подарунок — залишити собі. */
+    public function claim(Request $request, PhoneNumber $number): RedirectResponse
+    {
+        $this->phones->claim($number, $request->user());
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Тепер ваш номер — '.$number->formatted().'.']);
+
+        return back();
     }
 
     /** Дані вибору номера для вікна «Отримайте номер». */
@@ -134,6 +191,32 @@ class PhoneController extends Controller
         $request->user()->mergePref(['phone_prompt' => false]);
 
         return response()->json(['ok' => true]);
+    }
+
+    private function friend(Request $request): User
+    {
+        $data = $request->validate(['user_id' => ['required', 'integer']]);
+
+        return User::query()->whereKey((int) $data['user_id'])->first() ?? throw ValidationException::withMessages(['friend' => 'Друга не знайдено.']);
+    }
+
+    /**
+     * Подарунки й передачі: вхідні пропозиції, мої надіслані, невикористані подарунки, друзі для вибору.
+     *
+     * @return array<string, mixed>
+     */
+    private function offersProps(User $user): array
+    {
+        $with = ['number', 'from', 'to'];
+
+        return [
+            'incoming' => PhoneOffer::query()->with($with)->where('to_user_id', $user->id)->where('status', PhoneOffer::PENDING)->latest('id')->get()->map->toCard()->values(),
+            'outgoing' => PhoneOffer::query()->with($with)->where('from_user_id', $user->id)->where('status', PhoneOffer::PENDING)->latest('id')->get()->map->toCard()->values(),
+            'gifts' => PhoneNumber::query()->where('user_id', $user->id)->where('status', PhoneNumber::GIFT)
+                ->whereDoesntHave('offers', fn ($q) => $q->where('status', PhoneOffer::PENDING))
+                ->get()->map(fn (PhoneNumber $n) => ['id' => $n->id, ...$n->toCard()])->values(),
+            'friends' => app(FriendshipService::class)->friendsQuery($user)->orderBy('name')->limit(300)->get()->map->toCard()->values(),
+        ];
     }
 
     /**
