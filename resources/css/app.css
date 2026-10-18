@@ -3209,3 +3209,19 @@ html[data-text='xl'] {
     ) {
     --color-white: #0d1b2e;
 }
+/* Напівпрозорий градієнт — це лише підсвітка світлої картки (from-indigo-500/[0.16] тощо): текст на ньому — чорнилом. */
+:root[data-theme='light']
+    :is(
+        [class*='from-'][class*='/[0.'],
+        [class*='from-'][class*='/5 '],
+        [class*='from-'][class*='/10 '],
+        [class*='from-'][class*='/15 '],
+        [class*='from-'][class*='/20 '],
+        [class*='from-'][class*='/25 ']
+    ) {
+    --color-white: #0d1b2e;
+}
+/* Розгорнутий острів-меню — суцільний: стрічка під ним не просвічує. */
+.gc-island[data-open] {
+    background: var(--matte-solid, var(--popover));
+}
