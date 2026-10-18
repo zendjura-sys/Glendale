@@ -91,7 +91,14 @@ class Shop
                 ?? throw ValidationException::withMessages(['family_id' => 'Підключити GameCon+ для сім’ї може лише її лідер.']),
             'promo' => $this->ownServer($payer, (int) ($input['server_id'] ?? 0)),
             // Номер тримається за покупцем, поки триває оплата (без дублікатів — PhoneNumbers::hold).
-            'phone' => app(PhoneNumbers::class)->hold($payer, (string) ($input['phone_operator'] ?? ''), (string) ($input['phone_digits'] ?? ''), $product),
+            'phone' => app(PhoneNumbers::class)->hold(
+                $payer,
+                (string) ($input['phone_operator'] ?? ''),
+                (string) ($input['phone_digits'] ?? ''),
+                $product,
+                // Подарунок другові (оплачує дарувальник, друг приймає).
+                filled($input['gift_to'] ?? null) ? (User::query()->find((int) $input['gift_to']) ?? throw ValidationException::withMessages(['friend' => 'Друга не знайдено.'])) : null,
+            ),
             default => throw ValidationException::withMessages(['product' => 'Невідомий товар.']),
         };
     }

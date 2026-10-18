@@ -10,6 +10,7 @@ import {
     Gavel,
     Heart,
     Package,
+    Phone,
     Wallet,
     ImageIcon,
     MessageSquare,
@@ -58,6 +59,8 @@ const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
     wallet_topup: { icon: Wallet, className: 'bg-emerald-500' },
     plus_renewed: { icon: RefreshCw, className: 'bg-indigo-500' },
     plus_renewal_failed: { icon: Wallet, className: 'bg-amber-500' },
+    phone_offer: { icon: Gift, className: 'bg-pink-500' },
+    phone_offer_result: { icon: Phone, className: 'bg-indigo-500' },
 };
 
 const familyIcon = { icon: Crown, className: 'bg-amber-500' };

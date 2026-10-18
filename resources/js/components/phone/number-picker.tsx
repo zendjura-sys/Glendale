@@ -1,8 +1,16 @@
 import { router } from '@inertiajs/react';
-import { Dices, Loader2, ShoppingBag, Sparkles, Wand2 } from 'lucide-react';
+import {
+    Dices,
+    Gift,
+    Loader2,
+    ShoppingBag,
+    Sparkles,
+    Wand2,
+} from 'lucide-react';
 import { useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { FriendSelect } from '@/components/phone/friend-select';
 import { PhoneBadge } from '@/components/phone/phone-badge';
 import { PlusBadge } from '@/components/gc/plus';
 import { api, ApiError } from '@/lib/api';
@@ -11,7 +19,7 @@ import { tr } from '@/lib/i18n';
 import { PHONE_TIERS, percent, TIER_HINTS, TIER_LABELS } from '@/lib/phones';
 import type { PhoneCheck, PickerProps } from '@/lib/phones';
 import { cn } from '@/lib/utils';
-import type { PhoneCard, PhoneTier } from '@/types';
+import type { PhoneCard, PhoneTier, UserCard } from '@/types';
 
 /**
  * Вибір внутрішнього номера: «Випадковий» (безкоштовно, +555, з шансом на рідкісний) або «Купити» (+777:
@@ -20,16 +28,19 @@ import type { PhoneCard, PhoneTier } from '@/types';
 export function NumberPicker({
     props,
     onPhone,
+    friends,
     className,
 }: {
     props: PickerProps;
     onPhone?: (phone: PhoneCard) => void;
+    /** Друзі — тоді номер можна купити в подарунок. */
+    friends?: UserCard[];
     className?: string;
 }) {
     return (
         <div className={cn('grid gap-3 lg:grid-cols-2', className)}>
             <RandomCard props={props} onPhone={onPhone} />
-            <BuyCard props={props} />
+            <BuyCard props={props} friends={friends} />
         </div>
     );
 }
@@ -221,8 +232,16 @@ function RandomCard({
     );
 }
 
-function BuyCard({ props }: { props: PickerProps }) {
+function BuyCard({
+    props,
+    friends,
+}: {
+    props: PickerProps;
+    friends?: UserCard[];
+}) {
     const labels = TIER_LABELS();
+    const [gift, setGift] = useState(false);
+    const [giftTo, setGiftTo] = useState<number | null>(null);
     const hints = TIER_HINTS();
     const [operator, setOperator] = useState('');
     const [digits, setDigits] = useState('');
@@ -279,12 +298,13 @@ function BuyCard({ props }: { props: PickerProps }) {
     };
 
     const buy = () => {
-        if (!check?.available) return;
+        if (!check?.available || (gift && !giftTo)) return;
         openPurchase({
             product: check.product,
             extra: {
                 phone_operator: check.operator,
                 phone_digits: check.digits,
+                ...(gift && giftTo ? { gift_to: giftTo } : {}),
             },
         });
     };
@@ -445,16 +465,56 @@ function BuyCard({ props }: { props: PickerProps }) {
                 </div>
             )}
 
+            {friends && (
+                <div className="mt-4 rounded-2xl bg-white/[0.03] p-3">
+                    <label className="flex min-h-9 items-center gap-3 text-sm text-white">
+                        <input
+                            type="checkbox"
+                            checked={gift}
+                            onChange={(e) => setGift(e.target.checked)}
+                            className="gc-switch"
+                        />
+                        <Gift className="size-4 text-pink-300" />
+                        {tr('Подарувати другові')}
+                    </label>
+                    {gift && (
+                        <>
+                            <FriendSelect
+                                friends={friends}
+                                value={giftTo}
+                                onChange={setGiftTo}
+                                className="mt-2"
+                            />
+                            <p className="mt-2 text-xs text-white/40">
+                                {tr(
+                                    'Друг отримає сповіщення й сам прийме подарунок. Якщо відмовиться — номер лишиться у вас: подаруєте іншому або візьмете собі.',
+                                )}
+                            </p>
+                        </>
+                    )}
+                </div>
+            )}
+
             <div className="mt-auto pt-5">
                 <button
                     type="button"
                     onClick={buy}
-                    disabled={!check?.available}
+                    disabled={!check?.available || (gift && !giftTo)}
                     className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--btn-primary,#6366f1)] text-[15px] font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
                 >
-                    <ShoppingBag className="size-4" />
+                    {gift ? (
+                        <Gift className="size-4" />
+                    ) : (
+                        <ShoppingBag className="size-4" />
+                    )}
                     {check?.available
-                        ? tr('Купити за {price}', { price: money(check.price) })
+                        ? gift
+                            ? tr('Подарувати за {price}', {
+                                  price: money(check.price),
+                              })
+                            : tr('Купити за {price}', {
+                                  price: money(check.price),
+                              })
                         : tr('Купити номер')}
                 </button>
                 <p className="mt-2 text-center text-xs text-white/40">

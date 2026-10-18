@@ -5,9 +5,11 @@ namespace Tests\Feature;
 use App\Models\PaymentOrder;
 use App\Models\PhoneNumber;
 use App\Models\PhoneNumberRule;
+use App\Models\PhoneOffer;
 use App\Models\PlusPayment;
 use App\Models\User;
 use App\Services\Billing\Shop;
+use App\Services\FriendshipService;
 use App\Services\Phones\PhoneNumbers;
 use App\Services\Phones\PhoneTiers;
 use App\Support\Settings\SiteSettings;
@@ -225,5 +227,105 @@ class PhoneNumbersTest extends TestCase
         $number = PhoneNumber::query()->sole();
         $this->actingAs($admin)->delete('/admin/phones/numbers/'.$number->id)->assertRedirect();
         $this->assertSame(0, PhoneNumber::query()->count());
+    }
+
+    private function befriend(User $a, User $b): void
+    {
+        app(FriendshipService::class)->request($a, $b);
+        app(FriendshipService::class)->accept($b, $a);
+    }
+
+    public function test_gift_a_number_to_a_friend_who_accepts_or_declines(): void
+    {
+        $giver = User::factory()->create(['plus_until' => now()->addMonth()]);
+        $friend = User::factory()->create();
+        $other = User::factory()->create();
+        $stranger = User::factory()->create();
+        $this->befriend($giver, $friend);
+        $this->befriend($giver, $other);
+        $this->actingAs($giver)->postJson('/phone/random')->assertOk();
+        $this->actingAs($friend)->postJson('/phone/random')->assertOk();
+        $giverNumber = app(PhoneNumbers::class)->current($giver);
+        $friendOld = app(PhoneNumbers::class)->current($friend);
+
+        // Лише друзям.
+        $this->actingAs($giver)->postJson('/plus/billing/purchase', ['product' => 'phone_gold', 'phone_operator' => '77', 'phone_digits' => '1234567', 'gift_to' => $stranger->id])
+            ->assertUnprocessable()->assertJsonValidationErrors('friend');
+
+        // Оплата подарунка (зі знижкою GameCon+ дарувальника).
+        $response = $this->actingAs($giver)->postJson('/plus/billing/purchase', ['product' => 'phone_gold', 'phone_operator' => '77', 'phone_digits' => '1234567', 'gift_to' => $friend->id])->assertOk();
+        $order = PaymentOrder::query()->findOrFail($response->json('order.id'));
+        $this->assertSame(15900, $order->amount);
+        $this->paid($order);
+
+        $gift = PhoneNumber::query()->where('digits', '1234567')->sole();
+        $this->assertSame(PhoneNumber::GIFT, $gift->status);
+        $this->assertSame($giverNumber?->id, app(PhoneNumbers::class)->current($giver)?->id); // власний номер дарувальника не змінився
+        $offer = PhoneOffer::query()->sole();
+        $this->assertSame(PhoneOffer::GIFT, $offer->kind);
+        $this->assertSame(1, $friend->notifications()->where('data->kind', 'phone_offer')->count());
+        // Поки подарунок чекає — номер зайнятий для всіх, і для дарувальника теж.
+        $this->actingAs($other)->getJson('/phone/check?operator=77&digits=1234567')->assertJsonPath('available', false);
+        $this->actingAs($giver)->getJson('/phone/check?operator=77&digits=1234567')->assertJsonPath('available', false);
+
+        // Друг відмовився — подарунок лишився в дарувальника; він дарує іншому.
+        $this->actingAs($other)->post("/phone/offers/{$offer->id}/accept")->assertSessionHasErrors('offer');
+        $this->actingAs($friend)->post("/phone/offers/{$offer->id}/decline")->assertSessionHasNoErrors();
+        $this->actingAs($giver)->get('/phone')->assertInertia(fn (Assert $page) => $page->has('gifts', 1)->has('outgoing', 0));
+        $this->actingAs($giver)->post("/phone/gifts/{$gift->id}/give", ['user_id' => $other->id])->assertSessionHasNoErrors();
+        $second = PhoneOffer::query()->where('to_user_id', $other->id)->sole();
+
+        // Інший друг приймає: номер його, старий звільняється (тут у нього номера не було).
+        $this->actingAs($other)->get('/phone')->assertInertia(fn (Assert $page) => $page->has('incoming', 1));
+        $this->actingAs($other)->post("/phone/offers/{$second->id}/accept")->assertSessionHasNoErrors();
+        $this->assertSame('+777 (77) 123-45-67', app(PhoneNumbers::class)->current($other)?->formatted());
+        $this->assertSame('purchased', app(PhoneNumbers::class)->current($other)?->kind);
+        $this->assertGreaterThanOrEqual(1, $giver->notifications()->where('data->kind', 'phone_offer_result')->count());
+        $this->assertNotNull(PhoneNumber::query()->find($friendOld?->id)); // відмовник лишився зі своїм
+    }
+
+    public function test_unused_gift_can_be_claimed_by_the_giver(): void
+    {
+        $giver = User::factory()->create();
+        $friend = User::factory()->create();
+        $this->befriend($giver, $friend);
+        $this->actingAs($giver)->postJson('/phone/random')->assertOk();
+        $response = $this->actingAs($giver)->postJson('/plus/billing/purchase', ['product' => 'phone_regular', 'phone_operator' => '12', 'phone_digits' => '9182736', 'gift_to' => $friend->id])->assertOk();
+        $this->paid(PaymentOrder::query()->findOrFail($response->json('order.id')));
+        $offer = PhoneOffer::query()->sole();
+
+        // Скасувати пропозицію й залишити собі.
+        $this->actingAs($giver)->delete("/phone/offers/{$offer->id}")->assertSessionHasNoErrors();
+        $this->actingAs($friend)->post("/phone/offers/{$offer->id}/accept")->assertSessionHasErrors('offer');
+        $gift = PhoneNumber::query()->where('digits', '9182736')->sole();
+        $this->actingAs($giver)->post("/phone/gifts/{$gift->id}/claim")->assertSessionHasNoErrors();
+        $this->assertSame('+777 (12) 918-27-36', app(PhoneNumbers::class)->current($giver)?->formatted());
+        $this->assertSame(1, PhoneNumber::query()->where('user_id', $giver->id)->count());
+    }
+
+    public function test_transfer_own_bought_number_to_a_friend(): void
+    {
+        $owner = User::factory()->create();
+        $friend = User::factory()->create();
+        $stranger = User::factory()->create();
+        $this->befriend($owner, $friend);
+        PhoneNumber::query()->create(['user_id' => $owner->id, 'country' => '777', 'operator' => '05', 'digits' => '7777777', 'tier' => 'platinum', 'kind' => 'purchased']);
+        $this->actingAs($friend)->postJson('/phone/random')->assertOk();
+
+        $this->actingAs($owner)->post('/phone/transfer', ['user_id' => $stranger->id])->assertSessionHasErrors('friend');
+        $this->actingAs($friend)->post('/phone/transfer', ['user_id' => $owner->id])->assertSessionHasErrors('phone'); // випадковий не передається
+        $this->actingAs($owner)->post('/phone/transfer', ['user_id' => $friend->id])->assertSessionHasNoErrors();
+        $this->actingAs($owner)->post('/phone/transfer', ['user_id' => $friend->id])->assertSessionHasErrors('offer'); // без дублів пропозицій
+        // До згоди номер лишається власника.
+        $this->assertSame('+777 (05) 777-77-77', app(PhoneNumbers::class)->current($owner)?->formatted());
+
+        $offer = PhoneOffer::query()->sole();
+        $this->actingAs($friend)->post("/phone/offers/{$offer->id}/accept")->assertSessionHasNoErrors();
+        $this->assertSame('+777 (05) 777-77-77', app(PhoneNumbers::class)->current($friend)?->formatted());
+        // Власник отримав безкоштовний випадковий +555 і не втратив тижневу зміну.
+        $mine = app(PhoneNumbers::class)->current($owner);
+        $this->assertSame('555', $mine?->country);
+        $this->assertNull(app(PhoneNumbers::class)->nextRandomAt($owner->refresh()));
+        $this->assertSame(1, PhoneNumber::query()->where('user_id', $friend->id)->count());
     }
 }
