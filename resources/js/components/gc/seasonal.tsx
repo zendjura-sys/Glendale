@@ -9,6 +9,7 @@ import type { CSSProperties, ReactNode } from 'react';
  *  easter       — писанки в кутах і пелюстки;
  *  independence — синьо-жовта стрічка під шапкою;
  *  halloween    — гарбузи в кутах, кажани й осіннє листя.
+ * Фон теж «святкує»: шар .season-bg підфарбовує будь-який фон під сезон.
  * Лише CSS і SVG; не перехоплюють натискання; за «зменшити рух» стоять нерухомо.
  */
 
@@ -168,50 +169,66 @@ export function Seasonal() {
     if (!season) return null;
 
     return (
-        <div aria-hidden className={`season season--${season}`}>
-            {season === 'newyear' && (
-                <>
-                    <Garland />
-                    <Particles count={36} seed={7} className="season-snow" />
-                </>
-            )}
-            {season === 'valentine' && (
-                <Particles count={14} seed={19} className="season-heart">
-                    {() => (
-                        <svg viewBox="0 0 24 24">
-                            <path d={HEART} />
-                        </svg>
-                    )}
-                </Particles>
-            )}
-            {season === 'easter' && (
-                <>
-                    <Particles count={16} seed={31} className="season-petal" />
-                    <Egg
-                        colors={['#fde68a', '#f472b6']}
-                        className="season-corner season-corner--left"
-                    />
-                    <Egg
-                        colors={['#a5f3fc', '#a78bfa']}
-                        className="season-corner season-corner--right"
-                    />
-                </>
-            )}
-            {season === 'independence' && <div className="season-ribbon" />}
-            {season === 'halloween' && (
-                <>
-                    <Particles count={14} seed={53} className="season-leaf" />
-                    <Pumpkin className="season-corner season-corner--left" />
-                    <Pumpkin className="season-corner season-corner--right" />
-                    <Particles count={4} seed={43} className="season-bat">
+        <>
+            {/* Святковий відтінок фону: лягає на будь-яку сцену, фірмову картинку чи відео. */}
+            <div aria-hidden className={`season-bg season-bg--${season}`} />
+            <div aria-hidden className={`season season--${season}`}>
+                {season === 'newyear' && (
+                    <>
+                        <Garland />
+                        <Particles
+                            count={36}
+                            seed={7}
+                            className="season-snow"
+                        />
+                    </>
+                )}
+                {season === 'valentine' && (
+                    <Particles count={14} seed={19} className="season-heart">
                         {() => (
-                            <svg viewBox="0 0 64 28">
-                                <path d="M32 10c-3-6-7-8-10-6 2 2 2 5 0 7-4-4-10-6-15-3 4 1 6 4 6 8 4-3 9-3 12 0 2-3 5-4 7-3 2-1 5 0 7 3 3-3 8-3 12 0 0-4 2-7 6-8-5-3-11-1-15 3-2-2-2-5 0-7-3-2-7 0-10 6z" />
+                            <svg viewBox="0 0 24 24">
+                                <path d={HEART} />
                             </svg>
                         )}
                     </Particles>
-                </>
-            )}
-        </div>
+                )}
+                {season === 'easter' && (
+                    <>
+                        <Particles
+                            count={16}
+                            seed={31}
+                            className="season-petal"
+                        />
+                        <Egg
+                            colors={['#fde68a', '#f472b6']}
+                            className="season-corner season-corner--left"
+                        />
+                        <Egg
+                            colors={['#a5f3fc', '#a78bfa']}
+                            className="season-corner season-corner--right"
+                        />
+                    </>
+                )}
+                {season === 'independence' && <div className="season-ribbon" />}
+                {season === 'halloween' && (
+                    <>
+                        <Particles
+                            count={14}
+                            seed={53}
+                            className="season-leaf"
+                        />
+                        <Pumpkin className="season-corner season-corner--left" />
+                        <Pumpkin className="season-corner season-corner--right" />
+                        <Particles count={4} seed={43} className="season-bat">
+                            {() => (
+                                <svg viewBox="0 0 64 28">
+                                    <path d="M32 10c-3-6-7-8-10-6 2 2 2 5 0 7-4-4-10-6-15-3 4 1 6 4 6 8 4-3 9-3 12 0 2-3 5-4 7-3 2-1 5 0 7 3 3-3 8-3 12 0 0-4 2-7 6-8-5-3-11-1-15 3-2-2-2-5 0-7-3-2-7 0-10 6z" />
+                                </svg>
+                            )}
+                        </Particles>
+                    </>
+                )}
+            </div>
+        </>
     );
 }

@@ -3,14 +3,17 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Support\Backgrounds;
 use App\Support\Seasons;
 use App\Support\Settings\SiteSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
-/** Стилі інтерфейсу (flat / Hero / Material / Flex) і сезонні прикраси. */
+/** Стилі інтерфейсу (flat / Hero / Material / Flex), сезонні прикраси й фірмовий фон з адмінки. */
 class SkinsAndSeasonsTest extends TestCase
 {
     use RefreshDatabase;
@@ -80,5 +83,43 @@ class SkinsAndSeasonsTest extends TestCase
 
         $this->actingAs($admin)->post('/admin/design/seasonal', ['seasonal' => 'off']);
         $this->actingAs($admin)->get('/feed')->assertInertia(fn (Assert $page) => $page->where('season', null));
+    }
+
+    public function test_admin_uploads_desktop_and_mobile_background(): void
+    {
+        Storage::fake('public');
+        $admin = User::factory()->admin()->create();
+        $member = User::factory()->create();
+
+        $this->actingAs($member)->post('/admin/design/background', ['desktop' => UploadedFile::fake()->image('bg.jpg', 1920, 1080)])->assertForbidden();
+        $this->actingAs($admin)->post('/admin/design/background', ['desktop' => UploadedFile::fake()->create('bg.pdf', 10, 'application/pdf')])->assertSessionHasErrors('desktop');
+        // Без картинки «Фірмовий» не можна обрати.
+        $this->actingAs($member)->put('/settings/appearance', $this->appearance(['background' => 'custom']))->assertSessionHasErrors('background');
+
+        $this->actingAs($admin)->post('/admin/design/background', [
+            'desktop' => UploadedFile::fake()->image('bg.jpg', 1920, 1080),
+            'mobile' => UploadedFile::fake()->image('bg-m.png', 1080, 2340),
+        ])->assertSessionHasNoErrors();
+        $stored = Backgrounds::stored();
+        Storage::disk('public')->assertExists([$stored['desktop'], $stored['mobile']]);
+        $this->assertFalse($stored['default']);
+
+        // Учасник обирає «Фірмовий» сам.
+        $this->actingAs($member)->put('/settings/appearance', $this->appearance(['background' => 'custom']))->assertSessionHasNoErrors();
+        $this->actingAs($member)->get('/feed')->assertInertia(fn (Assert $page) => $page
+            ->where('auth.user.background.preset', 'custom')
+            ->where('siteBackground.mobile', Storage::disk('public')->url($stored['mobile'])));
+
+        // Типовий фон для всіх: той, хто не обирав, бачить фірмовий.
+        $this->actingAs($admin)->post('/admin/design/background', ['default' => true])->assertSessionHasNoErrors();
+        $this->actingAs(User::factory()->create())->get('/feed')->assertInertia(fn (Assert $page) => $page->where('auth.user.background.preset', 'custom'));
+
+        // Нова картинка замінює стару; видалення обох вимикає фірмовий фон.
+        $this->actingAs($admin)->post('/admin/design/background', ['desktop' => UploadedFile::fake()->image('new.jpg', 2560, 1440)]);
+        Storage::disk('public')->assertMissing($stored['desktop']);
+        $this->actingAs($admin)->delete('/admin/design/background/desktop')->assertRedirect();
+        $this->actingAs($admin)->delete('/admin/design/background/mobile')->assertRedirect();
+        $this->assertNull(Backgrounds::image());
+        $this->actingAs($member)->get('/feed')->assertInertia(fn (Assert $page) => $page->where('auth.user.background.preset', 'dune')->where('siteBackground', null));
     }
 }

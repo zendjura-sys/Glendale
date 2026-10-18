@@ -674,6 +674,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('/', 'store')->middleware('throttle:30,1')->name('store');
             Route::post('reset', 'reset')->name('reset');
             Route::post('seasonal', 'seasonal')->name('seasonal');
+            Route::post('background', 'background')->middleware('throttle:30,1')->name('background');
+            Route::delete('background/{kind}', 'deleteBackground')->whereIn('kind', ['desktop', 'mobile'])->name('background.destroy');
             Route::whereNumber('theme')->group(function () {
                 Route::post('{theme}', 'update')->middleware('throttle:30,1')->name('update');
                 Route::post('{theme}/activate', 'activate')->name('activate');

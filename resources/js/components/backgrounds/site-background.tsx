@@ -248,6 +248,33 @@ function MeshScene() {
     );
 }
 
+/** Фірмовий фон з адмінки: окрема картинка для телефона (вертикальна) і для комп'ютера. */
+function ImageScene({
+    desktop,
+    mobile,
+}: {
+    desktop: string | null;
+    mobile: string | null;
+}) {
+    return (
+        <div className="bg-scene bg-image">
+            <picture>
+                {mobile && desktop && (
+                    <source media="(max-width: 767px)" srcSet={mobile} />
+                )}
+                <img
+                    src={desktop ?? mobile ?? ''}
+                    alt=""
+                    decoding="async"
+                    fetchPriority="high"
+                    className="bg-image__frame"
+                />
+            </picture>
+            <div className="bg-image__shade" />
+        </div>
+    );
+}
+
 function YouTubeScene({ id, still }: { id: string; still: boolean }) {
     return (
         <div className="bg-scene bg-video">
@@ -275,7 +302,7 @@ function YouTubeScene({ id, still }: { id: string; still: boolean }) {
 }
 
 const SCENES: Record<
-    Exclude<SiteBackgroundPreset, 'aurora' | 'none'>,
+    Exclude<SiteBackgroundPreset, 'aurora' | 'none' | 'custom'>,
     () => React.ReactNode
 > = {
     dune: DuneScene,
@@ -285,7 +312,11 @@ const SCENES: Record<
 };
 
 export function SiteBackground({ className }: { className?: string }) {
-    const saved = usePage().props.auth.user?.background ?? DEFAULT_BACKGROUND;
+    const { auth, siteBackground } = usePage().props;
+    const saved = auth.user?.background ?? {
+        ...DEFAULT_BACKGROUND,
+        preset: siteBackground?.default ? 'custom' : DEFAULT_BACKGROUND.preset,
+    };
     const preview = useBackgroundPreview();
     const pageVideo = usePageBackgroundVideo();
     // Порядок: перегляд у налаштуваннях → відеофон сторінки (профіль) → власний вибір.
@@ -302,6 +333,19 @@ export function SiteBackground({ className }: { className?: string }) {
             </div>
         );
     }
+    if (prefs.preset === 'custom' && siteBackground) {
+        return (
+            <div
+                aria-hidden
+                className={cn('site-bg', still && 'bg-still', className)}
+            >
+                <ImageScene
+                    desktop={siteBackground.desktop}
+                    mobile={siteBackground.mobile}
+                />
+            </div>
+        );
+    }
     if (prefs.preset === 'aurora') {
         return <Aurora className={cn(still && 'bg-still', className)} />;
     }
@@ -313,7 +357,7 @@ export function SiteBackground({ className }: { className?: string }) {
             />
         );
     }
-    const Scene = SCENES[prefs.preset] ?? DuneScene;
+    const Scene = SCENES[prefs.preset as keyof typeof SCENES] ?? DuneScene;
 
     return (
         <div

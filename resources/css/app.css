@@ -1654,6 +1654,31 @@ html[data-text='xl'] {
     transform: translate(-50%, -50%);
     border: 0;
 }
+/* Фірмовий фон з адмінки: картинка на весь екран; з рухом — ледь помітне повільне наближення. */
+.bg-image__frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    animation: bg-image-drift 60s ease-in-out infinite alternate;
+}
+.bg-still .bg-image__frame {
+    animation: none;
+}
+@keyframes bg-image-drift {
+    to {
+        transform: scale(1.06);
+    }
+}
+.bg-image__shade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgb(0 0 0 / 0.15), rgb(0 0 0 / 0.4));
+}
+.bg-thumb--custom {
+    background: #1a1a1f center / cover no-repeat;
+}
 .bg-video__shade {
     background: linear-gradient(180deg, rgb(0 0 0 / 0.25), rgb(0 0 0 / 0.45));
 }
@@ -2128,6 +2153,106 @@ html[data-text='xl'] {
 .skin-thumb--flex .skin-thumb__button {
     border-radius: 999px;
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5);
+}
+
+/* ── Святковий фон: шар між фоном сайту (z −10) і інтерфейсом; пласкі градієнти, без 3D. ── */
+.season-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -9;
+    pointer-events: none;
+}
+.season-bg::before,
+.season-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+}
+/* ::before — відтінок усього фону; ::after — «земля» чи світло сезону. */
+.season-bg::before {
+    mix-blend-mode: color;
+    opacity: 0.38;
+}
+.season-bg--newyear::before {
+    background: linear-gradient(180deg, #1e3a8a, #0e7490);
+}
+.season-bg--newyear::after {
+    background:
+        radial-gradient(
+            120% 22% at 20% 104%,
+            rgb(241 245 255 / 0.55),
+            transparent 70%
+        ),
+        radial-gradient(
+            110% 20% at 85% 106%,
+            rgb(241 245 255 / 0.5),
+            transparent 70%
+        ),
+        linear-gradient(180deg, rgb(10 20 50 / 0.25), transparent 40%);
+}
+.season-bg--valentine::before {
+    background: linear-gradient(180deg, #be185d, #f472b6);
+}
+.season-bg--valentine::after {
+    background: radial-gradient(
+        80% 45% at 50% 100%,
+        rgb(251 113 133 / 0.3),
+        transparent 70%
+    );
+}
+.season-bg--easter::before {
+    background: linear-gradient(180deg, #7dd3fc, #86efac);
+    opacity: 0.3;
+}
+.season-bg--easter::after {
+    background:
+        radial-gradient(
+            130% 24% at 50% 104%,
+            rgb(134 239 172 / 0.4),
+            transparent 70%
+        ),
+        radial-gradient(
+            50% 30% at 80% 0%,
+            rgb(254 240 138 / 0.25),
+            transparent 70%
+        );
+}
+/* Небо й пшеничне поле — кольори прапора. */
+.season-bg--independence::before {
+    background: linear-gradient(
+        180deg,
+        #0057b7 0%,
+        #0057b7 35%,
+        #ffd700 75%,
+        #ffd700 100%
+    );
+    opacity: 0.3;
+}
+.season-bg--independence::after {
+    background: linear-gradient(
+        180deg,
+        transparent 40%,
+        rgb(255 215 0 / 0.12) 60%,
+        rgb(255 215 0 / 0.22)
+    );
+}
+.season-bg--halloween::before {
+    background: linear-gradient(180deg, #4c1d95, #c2410c);
+    opacity: 0.45;
+}
+.season-bg--halloween::after {
+    background:
+        radial-gradient(
+            60% 40% at 85% 0%,
+            rgb(254 215 170 / 0.18),
+            transparent 70%
+        ),
+        radial-gradient(
+            90% 30% at 50% 100%,
+            rgb(234 88 12 / 0.22),
+            transparent 70%
+        ),
+        linear-gradient(180deg, rgb(20 8 40 / 0.35), transparent 45%);
 }
 
 /* ── Сезонні прикраси (components/gc/seasonal.tsx). Плаский 2D-рух, лише transform/opacity. ── */

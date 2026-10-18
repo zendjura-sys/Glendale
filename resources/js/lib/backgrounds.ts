@@ -2,13 +2,22 @@ import { useSyncExternalStore } from 'react';
 import { tr } from '@/lib/i18n';
 import type { SiteBackgroundPrefs, SiteBackgroundPreset } from '@/types';
 
-/** Сцени фону в порядку показу (як Backgrounds::PRESETS на сервері). */
-export function BACKGROUNDS(): {
+/** Сцени фону в порядку показу (як Backgrounds::presets() на сервері); фірмовий — якщо завантажений. */
+export function BACKGROUNDS(custom = false): {
     id: SiteBackgroundPreset;
     name: string;
     hint: string;
 }[] {
     return [
+        ...(custom
+            ? [
+                  {
+                      id: 'custom' as const,
+                      name: tr('Фірмовий'),
+                      hint: tr('Фон від команди GameCon'),
+                  },
+              ]
+            : []),
         {
             id: 'dune',
             name: tr('Дюна'),

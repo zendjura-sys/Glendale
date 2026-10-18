@@ -52,6 +52,12 @@ declare module '@inertiajs/core' {
             features?: Record<string, boolean>;
             /** Сезонні прикраси (App\\Support\\Seasons): newyear, valentine, easter, independence, halloween. */
             season?: string | null;
+            /** Фірмовий фон з адмінки: картинки для ПК і телефона; default — типовий фон сайту. */
+            siteBackground?: {
+                desktop: string | null;
+                mobile: string | null;
+                default: boolean;
+            } | null;
             music: SharedMusic;
             counters: {
                 friend_requests: number;

@@ -75,6 +75,7 @@ export type TwoFactorSecretKey = {
 };
 
 export type SiteBackgroundPreset =
+    | 'custom'
     | 'dune'
     | 'aurora'
     | 'night'

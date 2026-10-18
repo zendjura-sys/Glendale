@@ -4,7 +4,10 @@ import {
     Download,
     Eye,
     FileCode2,
+    ImagePlus,
+    Monitor,
     Palette,
+    Smartphone,
     RotateCcw,
     Snowflake,
     Trash2,
@@ -36,6 +39,13 @@ type Props = {
     limits: { max_kb: number };
     seasonal: string;
     seasons: string[];
+    background: SiteImage | null;
+};
+
+type SiteImage = {
+    desktop: string | null;
+    mobile: string | null;
+    default: boolean;
 };
 
 // Попередній перегляд — повне завантаження сторінки: стиль підключається в <head> лише при першому відкритті.
@@ -49,6 +59,7 @@ export default function AdminDesign({
     limits,
     seasonal,
     seasons,
+    background,
 }: Props) {
     const active = themes.find((theme) => theme.is_active) ?? null;
     const fileRef = useRef<HTMLInputElement>(null);
@@ -90,6 +101,8 @@ export default function AdminDesign({
                     </a>
                 }
             />
+
+            <BackgroundCard image={background} />
 
             <SeasonalCard value={seasonal} seasons={seasons} />
 
@@ -511,6 +524,154 @@ function SeasonalCard({
                     </button>
                 ))}
             </div>
+        </section>
+    );
+}
+
+/** Фірмовий фон сайту: окремі картинки для комп'ютера й телефона, вимикач «для всіх». */
+function BackgroundCard({ image }: { image: SiteImage | null }) {
+    const [sending, setSending] = useState(false);
+    const upload = (kind: 'desktop' | 'mobile', file: File | undefined) => {
+        if (!file) return;
+        setSending(true);
+        router.post(
+            '/admin/design/background',
+            { [kind]: file },
+            {
+                forceFormData: true,
+                preserveScroll: true,
+                onFinish: () => setSending(false),
+            },
+        );
+    };
+    const remove = (kind: 'desktop' | 'mobile') =>
+        router.delete(`/admin/design/background/${kind}`, {
+            preserveScroll: true,
+        });
+    const setDefault = (value: boolean) =>
+        router.post(
+            '/admin/design/background',
+            { default: value },
+            { preserveScroll: true },
+        );
+    const slots = [
+        {
+            kind: 'desktop' as const,
+            icon: Monitor,
+            title: tr('Для комп’ютера'),
+            hint: tr('Горизонтальна, 16:9, від 1920×1080'),
+            url: image?.desktop ?? null,
+            ratio: 'aspect-video',
+        },
+        {
+            kind: 'mobile' as const,
+            icon: Smartphone,
+            title: tr('Для телефона'),
+            hint: tr('Вертикальна, 9:19, від 1080×2340'),
+            url: image?.mobile ?? null,
+            ratio: 'aspect-[9/19] max-h-64',
+        },
+    ];
+
+    return (
+        <section className="glass mb-5 rounded-2xl p-4">
+            <div className="flex items-center gap-3">
+                <span className="flex size-11 items-center justify-center rounded-2xl bg-white/[0.06] text-white">
+                    <ImagePlus className="size-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                    <h3 className="font-display text-base font-bold text-white">
+                        {tr('Фон сайту')}
+                    </h3>
+                    <p className="text-xs text-white/45">
+                        {tr(
+                            'Своя картинка за інтерфейсом. На телефоні показується вертикальна, на комп’ютері — горизонтальна; якщо є лише одна, вона буде всюди. JPG, PNG або WebP до 12 МБ.',
+                        )}
+                    </p>
+                </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-start gap-4">
+                {slots.map((slot) => (
+                    <div key={slot.kind} className="flex flex-col gap-2">
+                        <label
+                            className={cn(
+                                'group relative flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-dashed border-white/15 bg-white/[0.03] bg-cover bg-center transition hover:border-white/35',
+                                slot.ratio,
+                                slot.kind === 'desktop' ? 'w-72' : 'w-[7.5rem]',
+                                sending && 'pointer-events-none opacity-60',
+                            )}
+                            style={
+                                slot.url
+                                    ? { backgroundImage: `url(${slot.url})` }
+                                    : undefined
+                            }
+                        >
+                            <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                className="sr-only"
+                                onChange={(e) => {
+                                    upload(slot.kind, e.target.files?.[0]);
+                                    e.target.value = '';
+                                }}
+                            />
+                            <span
+                                className={cn(
+                                    'flex flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-center text-xs font-medium text-white/70 transition',
+                                    slot.url &&
+                                        'bg-black/55 opacity-0 group-hover:opacity-100',
+                                )}
+                            >
+                                <Upload className="size-4" />
+                                {slot.url ? tr('Замінити') : tr('Завантажити')}
+                            </span>
+                        </label>
+                        <div className="flex items-start gap-1">
+                            <div className="min-w-0 flex-1">
+                                <p className="flex items-center gap-1.5 text-sm font-medium text-white">
+                                    <slot.icon className="size-4 text-white/50" />
+                                    {slot.title}
+                                </p>
+                                <p className="text-xs text-white/40">
+                                    {slot.hint}
+                                </p>
+                            </div>
+                            {slot.url && (
+                                <button
+                                    type="button"
+                                    onClick={() => remove(slot.kind)}
+                                    aria-label={tr('Видалити')}
+                                    className="flex size-8 items-center justify-center rounded-lg text-white/50 transition hover:bg-white/[0.06] hover:text-red-300"
+                                >
+                                    <Trash2 className="size-4" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <label
+                className={cn(
+                    'mt-4 flex min-h-11 items-center gap-3 text-sm text-white',
+                    !image && 'pointer-events-none opacity-50',
+                )}
+            >
+                <input
+                    type="checkbox"
+                    checked={image?.default ?? false}
+                    disabled={!image}
+                    onChange={(e) => setDefault(e.target.checked)}
+                    className="gc-switch"
+                />
+                {tr('Типовий фон для всіх')}
+                <span className="text-xs text-white/40">
+                    {tr(
+                        'гості й ті, хто не обирав свій; у налаштуваннях він — «Фірмовий»',
+                    )}
+                </span>
+            </label>
         </section>
     );
 }

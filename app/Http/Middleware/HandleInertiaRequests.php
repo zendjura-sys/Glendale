@@ -131,6 +131,8 @@ class HandleInertiaRequests extends Middleware
             'features' => fn () => app(NetworkModes::class)->featuresFor($user),
             // Сезонні прикраси (Новий рік, Великдень…) або null.
             'season' => fn () => app(Seasons::class)->for($user),
+            // Фірмовий фон з адмінки (картинки для ПК і телефона) або null.
+            'siteBackground' => fn () => Backgrounds::image(),
             'music' => $user ? fn () => $this->musicProps($user) : null,
             'counters' => $user ? fn () => [
                 'friend_requests' => $this->friendships->incomingCount($user),

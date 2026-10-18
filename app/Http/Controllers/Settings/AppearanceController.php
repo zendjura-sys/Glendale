@@ -33,7 +33,7 @@ class AppearanceController extends Controller
                 // Поле вводу показує збережене відео навіть після закінчення GameCon+.
                 'video' => Backgrounds::youtubeId($user->pref('background_video')),
             ],
-            'backgrounds' => Backgrounds::PRESETS,
+            'backgrounds' => Backgrounds::presets(),
             'skin' => Skins::for($user),
             'seasonal' => $user->pref('seasonal') !== false,
             'modes' => app(NetworkModes::class)->available(),
@@ -85,7 +85,7 @@ class AppearanceController extends Controller
             'mute_words' => ['sometimes', 'array', 'max:20'],
             'mute_words.*' => ['string', 'max:40'],
             'hide_spoilers' => ['sometimes', 'boolean'],
-            'background' => ['sometimes', 'string', 'in:'.implode(',', Backgrounds::PRESETS)],
+            'background' => ['sometimes', 'string', 'in:'.implode(',', Backgrounds::presets())],
             'background_motion' => ['sometimes', 'boolean'],
             'background_video' => ['sometimes', 'nullable', 'string', 'max:200'],
             'skin' => ['sometimes', 'string', 'in:'.implode(',', Skins::ALL)],

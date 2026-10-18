@@ -178,6 +178,7 @@ export default function Appearance({
     const [phrase, setPhrase] = useState('');
     const reduce = useReducedMotion();
     const user = usePage().props.auth.user;
+    const siteBackground = usePage().props.siteBackground ?? null;
     const savedSkin = useRef(skin);
     // Збережений стан: від нього рахуються незбережені зміни й до нього повертає «Скасувати».
     const [saved, setSaved] = useState(form.data);
@@ -410,7 +411,7 @@ export default function Appearance({
                         role="radiogroup"
                         aria-label={tr('Фон')}
                     >
-                        {BACKGROUNDS().map((item) => {
+                        {BACKGROUNDS(Boolean(siteBackground)).map((item) => {
                             const active =
                                 form.data.background === item.id &&
                                 !youtubeId(form.data.background_video);
@@ -439,6 +440,13 @@ export default function Appearance({
                                                 ? 'ring-2 ring-primary'
                                                 : 'ring-white/10 group-hover:ring-white/30',
                                         )}
+                                        style={
+                                            item.id === 'custom'
+                                                ? {
+                                                      backgroundImage: `url(${siteBackground?.desktop ?? siteBackground?.mobile})`,
+                                                  }
+                                                : undefined
+                                        }
                                     >
                                         {active && (
                                             <m.span

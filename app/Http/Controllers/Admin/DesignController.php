@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\SiteTheme;
 use App\Services\Design\SiteThemes;
+use App\Services\ImageStorage;
+use App\Support\Backgrounds;
 use App\Support\Seasons;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\RedirectResponse;
@@ -41,6 +43,7 @@ class DesignController extends Controller
             'limits' => ['max_kb' => intdiv(SiteThemes::MAX_BYTES, 1024)],
             'seasonal' => app(Seasons::class)->setting(),
             'seasons' => Seasons::ALL,
+            'background' => Backgrounds::image(),
         ]);
     }
 
@@ -115,6 +118,54 @@ class DesignController extends Controller
         app(SiteSettings::class)->put([Seasons::SETTING => $data['seasonal']]);
         Log::info('design: seasonal decorations', ['value' => $data['seasonal'], 'by' => $request->user()->id]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Сезонні прикраси збережено.']);
+
+        return back();
+    }
+
+    /**
+     * Фірмовий фон: картинка для комп'ютера та/або для телефона, і чи показувати її всім за замовчуванням.
+     * Нова картинка замінює стару того ж формату (стару видаляємо з диска).
+     */
+    public function background(Request $request, ImageStorage $images): RedirectResponse
+    {
+        $image = ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:12288', 'dimensions:min_width=600,min_height=600'];
+        $data = $request->validate([
+            'desktop' => $image,
+            'mobile' => $image,
+            'default' => ['sometimes', 'boolean'],
+        ]);
+        $stored = Backgrounds::stored();
+        foreach (['desktop', 'mobile'] as $kind) {
+            $file = $request->file($kind);
+            if ($file !== null) {
+                $path = $images->store($file, 'backgrounds', $kind === 'desktop' ? 3200 : 2400)['path'];
+                $images->delete($stored[$kind]);
+                $stored[$kind] = $path;
+            }
+        }
+        if (array_key_exists('default', $data)) {
+            $stored['default'] = (bool) $data['default'];
+        }
+        app(SiteSettings::class)->put([Backgrounds::SETTING => $stored]);
+        Log::info('design: background updated', ['desktop' => $request->hasFile('desktop'), 'mobile' => $request->hasFile('mobile'), 'default' => $stored['default'], 'by' => $request->user()->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Фон сайту збережено.']);
+
+        return back();
+    }
+
+    /** Прибрати картинку фону для комп'ютера чи для телефона. */
+    public function deleteBackground(Request $request, ImageStorage $images, string $kind): RedirectResponse
+    {
+        $stored = Backgrounds::stored();
+        $kind = $kind === 'mobile' ? 'mobile' : 'desktop';
+        $images->delete($stored[$kind]);
+        $stored[$kind] = null;
+        if ($stored['desktop'] === null && $stored['mobile'] === null) {
+            $stored['default'] = false;
+        }
+        app(SiteSettings::class)->put([Backgrounds::SETTING => $stored]);
+        Log::info('design: background removed', ['kind' => $kind, 'by' => $request->user()->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Картинку фону видалено.']);
 
         return back();
     }
