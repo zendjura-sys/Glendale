@@ -164,7 +164,7 @@ class _QueueRow extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(track.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: on ? const Color(0xFF9AA6FF) : ink, weight: FontWeight.w600)),
+                Text(track.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: on ? accent : ink, weight: FontWeight.w600)),
                 Text(artistOf(track.artist), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
               ]),
             ),

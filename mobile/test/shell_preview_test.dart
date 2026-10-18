@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gamecon/account.dart';
+import 'package:gamecon/settings.dart';
 import 'package:gamecon/shell.dart';
 import 'package:gamecon/state.dart';
 import 'package:gamecon/theme.dart';
@@ -102,4 +103,51 @@ void main() {
       }
     }
   }
+
+  testWidgets('налаштування: тема видно одразу, зберігається панеллю змін', (tester) async {
+    SharedPreferences.setMockInitialValues({'whats_new': whatsNewVersion});
+    final session = Session(await SharedPreferences.getInstance())..me = {'id': 1, 'name': 'Тоні Старк', 'first_name': 'Тоні', 'username': 'tonny'};
+    palette = neonPalette;
+    addTearDown(() => palette = neonPalette);
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+    final router = GoRouter(initialLocation: '/settings', routes: [
+      ShellRoute(
+        builder: (_, _, child) => AppShell(session: session, player: TrackPlayer(), child: child),
+        routes: [GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen(initialTab: 'appearance'))],
+      ),
+    ]);
+    final key = GlobalKey();
+    await tester.pumpWidget(RepaintBoundary(key: key, child: MaterialApp.router(debugShowCheckedModeBanner: false, theme: gameConTheme(), routerConfig: router)));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Неоновий синій'), findsOneWidget);
+    expect(find.text('Скасувати'), findsOneWidget);
+    expect(tester.widget<PendingBar>(find.byType(PendingBar)).count, 0);
+
+    await tester.tap(find.text('Крижана Арктика'));
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(palette.isLight, isTrue);
+    expect(find.text('1 зміна'), findsOneWidget);
+    if (out != null) {
+      await tester.runAsync(() async {
+        final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+        final image = await boundary.toImage(pixelRatio: 1);
+        final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+        File('$out/settings-appearance.png').writeAsBytesSync(bytes!.buffer.asUint8List());
+      });
+    }
+
+    await tester.tap(find.text('Скасувати'));
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(palette.isLight, isFalse);
+    expect(tester.widget<PendingBar>(find.byType(PendingBar)).count, 0);
+    await tester.pumpWidget(const SizedBox());
+  });
 }

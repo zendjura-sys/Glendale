@@ -33,9 +33,6 @@ const _rose = Color(0xFFF43F5E);
 
 Duration _motion(BuildContext context, Duration value) => MediaQuery.disableAnimationsOf(context) ? Duration.zero : value;
 
-/// Акцентний колір іконок (`text-gc-lilac-400` на сайті): у світлій темі темніший, щоб читався на білому.
-Color get _accentIcon => palette.isLight ? Color.lerp(primary, ink, 0.12)! : Color(0xFF8DB4FF);
-
 bool _isActive(String tab, String path, String? username) => navIndexFor([tab], path, username: username) == 0;
 
 class _Badge extends StatelessWidget {
@@ -690,7 +687,7 @@ class MenuContent extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Stack(clipBehavior: Clip.none, children: [
-                        Icon(active ? item.activeIcon : item.icon, size: 24, color: active ? primary : _accentIcon),
+                        Icon(active ? item.activeIcon : item.icon, size: 24, color: active ? primary : accent),
                         if (badge > 0) Positioned(right: -10, top: -4, child: _Badge(badge)),
                       ]),
                       SizedBox(height: 6),

@@ -384,7 +384,7 @@ class _TypeOption extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(children: [
-            Icon(icon, color: selected ? const Color(0xFF9AA6FF) : muted),
+            Icon(icon, color: selected ? accent : muted),
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

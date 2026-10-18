@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -186,7 +188,7 @@ class CardTitle extends StatelessWidget {
       padding: EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          if (icon != null) ...[Icon(icon, size: 16, color: Color(0xFF9AA6FF)), SizedBox(width: 8)],
+          if (icon != null) ...[Icon(icon, size: 16, color: accent), SizedBox(width: 8)],
           Expanded(
             child: Text(
               caps ? title.toUpperCase() : title,
@@ -596,7 +598,7 @@ class Segmented extends StatelessWidget {
   final bool scroll;
 
   static const _motion = Duration(milliseconds: 260);
-  static final _pill = BoxDecoration(color: fg.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(14), border: Border.all(color: lineStrong));
+  static BoxDecoration get _pill => BoxDecoration(color: palette.isLight ? card : fg.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(14), boxShadow: palette.isLight ? const [BoxShadow(color: Color(0x1A102A50), blurRadius: 8, offset: Offset(0, 2))] : null);
 
   @override
   Widget build(BuildContext context) {
@@ -606,7 +608,7 @@ class Segmented extends StatelessWidget {
         children: [
           if (option.icon != null) ...[
             TweenAnimationBuilder<Color?>(
-              tween: ColorTween(end: on ? Color(0xFF9AA6FF) : muted),
+              tween: ColorTween(end: on ? accent : muted),
               duration: _motion,
               builder: (_, color, _) => Icon(option.icon, size: 16, color: color),
             ),
@@ -629,7 +631,7 @@ class Segmented extends StatelessWidget {
       );
     }
 
-    final frame = BoxDecoration(color: fg.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(18), border: Border.all(color: line));
+    final frame = BoxDecoration(color: fg.withValues(alpha: palette.isLight ? 0.05 : 0.04), borderRadius: BorderRadius.circular(18));
 
     if (scroll) {
       return Container(
@@ -651,7 +653,7 @@ class Segmented extends StatelessWidget {
                     duration: _motion,
                     curve: Curves.easeOutCubic,
                     padding: EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                    decoration: option.id == selected ? _pill : _pill.copyWith(color: Colors.transparent, border: Border.all(color: Colors.transparent)),
+                    decoration: option.id == selected ? _pill : _pill.copyWith(color: Colors.transparent, boxShadow: const []),
                     child: content(option, option.id == selected),
                   ),
                 ),
@@ -978,7 +980,7 @@ class EmptyState extends StatelessWidget {
           width: 56,
           height: 56,
           decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
-          child: Icon(icon, color: Color(0xFF9AA6FF), size: 26),
+          child: Icon(icon, color: accent, size: 26),
         ),
         SizedBox(height: 16),
         Text(title, textAlign: TextAlign.center, style: display(17)),
@@ -1555,3 +1557,129 @@ String languageName(String code) => switch (code) {
       'ja' => '日本語',
       _ => code,
     };
+
+/// Панель незбережених змін, як на сайті (settings/pending-bar.tsx): «3 зміни · Скасувати · Зберегти».
+/// Зміни видно одразу як попередній перегляд, але записуються лише після «Зберегти».
+/// Стоїть над нижнім островом і міні-плеєром; з'являється знизу (RISE).
+class PendingBar extends StatelessWidget {
+  const PendingBar({required this.count, required this.busy, required this.onDiscard, required this.onSave, super.key});
+  final int count;
+  final bool busy;
+  final VoidCallback onDiscard;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    final reduce = MediaQuery.disableAnimationsOf(context);
+    final shown = count > 0;
+    return IgnorePointer(
+      ignoring: !shown,
+      child: AnimatedSlide(
+        offset: shown || reduce ? Offset.zero : const Offset(0, 0.4),
+        duration: reduce ? Duration.zero : const Duration(milliseconds: 380),
+        curve: shown ? Curves.easeOutBack : Curves.easeInCubic,
+        child: AnimatedScale(
+          scale: shown || reduce ? 1 : 0.98,
+          duration: reduce ? Duration.zero : const Duration(milliseconds: 380),
+          child: AnimatedOpacity(
+            opacity: shown ? 1 : 0,
+            duration: reduce ? Duration.zero : const Duration(milliseconds: 220),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 560),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [palette.isLight ? const BoxShadow(color: Color(0x33102A50), blurRadius: 28, offset: Offset(0, 10), spreadRadius: -12) : const BoxShadow(color: Color(0xB3000000), blurRadius: 30, offset: Offset(0, 10), spreadRadius: -12)],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+                      child: Container(
+                        color: bar.withValues(alpha: 0.95),
+                        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+                        child: Row(children: [
+                          _PulseDot(animate: !reduce),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: AnimatedSwitcher(
+                              duration: reduce ? Duration.zero : const Duration(milliseconds: 200),
+                              transitionBuilder: (child, animation) => FadeTransition(
+                                opacity: animation,
+                                child: SlideTransition(position: Tween(begin: const Offset(0, -0.3), end: Offset.zero).animate(animation), child: child),
+                              ),
+                              layoutBuilder: (current, previous) => Stack(alignment: Alignment.centerLeft, children: [...previous, ?current]),
+                              child: Text(
+                                '$count ${plural(count, tr('зміна'), tr('зміни'), tr('змін'))}',
+                                key: ValueKey(count),
+                                maxLines: 1,
+                                style: body(14, color: ink.withValues(alpha: 0.8)).copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: busy ? null : onDiscard,
+                            style: TextButton.styleFrom(foregroundColor: ink.withValues(alpha: 0.6), minimumSize: const Size(0, 38), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                            child: Text(tr('Скасувати'), style: body(14, weight: FontWeight.w500)),
+                          ),
+                          const SizedBox(width: 4),
+                          FilledButton(
+                            onPressed: busy ? null : onSave,
+                            style: FilledButton.styleFrom(backgroundColor: primary, foregroundColor: Colors.white, minimumSize: const Size(0, 38), padding: const EdgeInsets.symmetric(horizontal: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                            child: Text(busy ? tr('Зберігаємо…') : tr('Зберегти'), style: body(14, color: Colors.white, weight: FontWeight.w600)),
+                          ),
+                        ]),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PulseDot extends StatefulWidget {
+  const _PulseDot({required this.animate});
+  final bool animate;
+
+  @override
+  State<_PulseDot> createState() => _PulseDotState();
+}
+
+class _PulseDotState extends State<_PulseDot> with SingleTickerProviderStateMixin {
+  late final pulse = AnimationController(vsync: this, duration: const Duration(seconds: 1));
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.animate) pulse.repeat();
+  }
+
+  @override
+  void dispose() {
+    pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: 8,
+      child: AnimatedBuilder(
+        animation: pulse,
+        builder: (_, _) => Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [
+          Transform.scale(
+            scale: 1 + pulse.value * 1.5,
+            child: Container(decoration: BoxDecoration(shape: BoxShape.circle, color: primary.withValues(alpha: 0.6 * (1 - pulse.value)))),
+          ),
+          Container(decoration: BoxDecoration(shape: BoxShape.circle, color: primary)),
+        ]),
+      ),
+    );
+  }
+}

@@ -724,7 +724,7 @@ class _SectionTab extends StatelessWidget {
           ),
           child: Row(children: [
             TweenAnimationBuilder<Color?>(
-              tween: ColorTween(end: selected ? const Color(0xFF9AA6FF) : muted),
+              tween: ColorTween(end: selected ? accent : muted),
               duration: motion,
               builder: (_, color, _) => Icon(icon, size: 16, color: color),
             ),
@@ -1025,7 +1025,7 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
             child: Row(children: [
               SizedBox(width: 22, child: Text('${l['place']}', style: body(13, color: intOf(l['place']) <= 3 ? gold : muted, weight: FontWeight.w800))),
               Expanded(child: Text(text(l['display']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13.5).copyWith(fontFamily: 'monospace'))),
-              Text(tr('{v} балів', {'v': l['points']}), style: body(12.5, color: const Color(0xFF9AA6FF), weight: FontWeight.w700)),
+              Text(tr('{v} балів', {'v': l['points']}), style: body(12.5, color: accent, weight: FontWeight.w700)),
             ]),
           ),
       ],
@@ -1051,7 +1051,7 @@ List<Widget> overviewTab(FamilyContext ctx, {required VoidCallback onReport, req
           ListTile(
             contentPadding: EdgeInsets.zero,
             dense: true,
-            leading: const Icon(LucideIcons.calendarDays, color: Color(0xFF9AA6FF)),
+            leading: Icon(LucideIcons.calendarDays, color: accent),
             title: Text(text(e['title']) ?? '', style: body(14, weight: FontWeight.w600)),
             subtitle: Text('${e['type_label']} · ${shortStamp(e['starts_at'])} ${clock(e['starts_at'])}', style: body(12, color: muted)),
           ),
@@ -1198,7 +1198,7 @@ class ReportCard extends StatelessWidget {
           if (report['for_friend'] == true) Text(tr('За: {v}', {'v': mapOf(report['beneficiary'])['display']}), style: body(12, color: muted)),
           if (report['for_friend'] == true) Text(tr('Подав: {v}', {'v': mapOf(report['submitter'])['display']}), style: body(12, color: muted)),
           if (intOf(report['reward']) > 0) Text(hryvnia(report['reward']), style: body(12.5, color: green, weight: FontWeight.w700)),
-          if (intOf(report['points']) > 0) Text(tr('{v} балів', {'v': report['points']}), style: body(12, color: const Color(0xFF9AA6FF))),
+          if (intOf(report['points']) > 0) Text(tr('{v} балів', {'v': report['points']}), style: body(12, color: accent)),
         ]),
         if (flags['similar_reports'] != null) Padding(padding: const EdgeInsets.only(top: 6), child: Pill(label: tr('Скріншот схожий на попередні'), icon: LucideIcons.triangleAlert, color: gold)),
         if (paths.isNotEmpty) ...[
@@ -1488,7 +1488,7 @@ class _Choice extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         onTap: onTap,
         child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(icon, size: 18, color: selected ? const Color(0xFF9AA6FF) : muted),
+          Icon(icon, size: 18, color: selected ? accent : muted),
           const SizedBox(width: 8),
           Text(label, style: body(13.5, color: selected ? ink : soft, weight: FontWeight.w600)),
         ]),

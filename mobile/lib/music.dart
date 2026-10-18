@@ -430,7 +430,7 @@ class _LibraryTrackState extends State<LibraryTrack> {
               visualDensity: VisualDensity.compact,
               tooltip: track['in_library'] == true ? tr('У ваших аудіозаписах') : tr('Додати до моїх'),
               onPressed: _toggleLibrary,
-              icon: Icon(track['in_library'] == true ? LucideIcons.check : LucideIcons.plus, size: 18, color: track['in_library'] == true ? const Color(0xFF9AA6FF) : muted),
+              icon: Icon(track['in_library'] == true ? LucideIcons.check : LucideIcons.plus, size: 18, color: track['in_library'] == true ? accent : muted),
             ),
           IconButton(visualDensity: VisualDensity.compact, onPressed: _menu, icon: Icon(LucideIcons.ellipsis, color: muted, size: 20)),
         ]),

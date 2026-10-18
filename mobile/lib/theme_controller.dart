@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -50,7 +48,7 @@ class ThemeController with WidgetsBindingObserver {
   String _valid(String? value) => values.contains(value) ? value! : 'system';
 
   void _resolve({required bool rebuild}) {
-    final light = pref == 'light' || (pref == 'system' && PlatformDispatcher.instance.platformBrightness == Brightness.light);
+    final light = pref == 'light' || (pref == 'system' && WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.light);
     final next = light ? arcticPalette : neonPalette;
     final changed = !identical(next, palette);
     palette = next;

@@ -1070,7 +1070,7 @@ class _ComposerState extends State<Composer> {
                   onTap: () => setState(() => asCommunity = !asCommunity),
                   child: Padding(
                     padding: const EdgeInsets.only(left: 6),
-                    child: Pill(label: asCommunity ? tr('Від спільноти') : tr('Від себе'), icon: LucideIcons.arrowLeftRight, color: const Color(0xFF9AA6FF)),
+                    child: Pill(label: asCommunity ? tr('Від спільноти') : tr('Від себе'), icon: LucideIcons.arrowLeftRight, color: accent),
                   ),
                 ),
               const Spacer(),
@@ -1095,7 +1095,7 @@ class _ToolIcon extends StatelessWidget {
       tooltip: tooltip,
       onPressed: onTap,
       visualDensity: VisualDensity.compact,
-      icon: Icon(icon, color: const Color(0xFF9AA6FF), size: 21),
+      icon: Icon(icon, color: accent, size: 21),
     );
   }
 }
@@ -1300,7 +1300,7 @@ class TrackRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(text(track['title']) ?? tr('Без назви'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, color: playing ? const Color(0xFF9AA6FF) : ink, weight: FontWeight.w600)),
+                  Text(text(track['title']) ?? tr('Без назви'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, color: playing ? accent : ink, weight: FontWeight.w600)),
                   Text(artistOf(track['artist'], '—'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted)),
                 ],
               ),

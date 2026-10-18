@@ -192,7 +192,7 @@ class _CinemaScreenState extends State<CinemaScreen> {
                 Padding(
                   padding: const EdgeInsets.only(right: 14),
                   child: Row(children: [
-                    if (row['key'] == 'continue') const Padding(padding: EdgeInsets.only(right: 6), child: Icon(LucideIcons.play, color: Color(0xFF9AA6FF))),
+                    if (row['key'] == 'continue') Padding(padding: EdgeInsets.only(right: 6), child: Icon(LucideIcons.play, color: accent)),
                     Expanded(child: Text('${row['title']}', style: display(17))),
                     if (row['key'] == 'continue') GestureDetector(onTap: () => context.push('/cinema/my?status=watching'), child: Text(tr('Усі'), style: body(13, color: primary, weight: FontWeight.w600))),
                   ]),

@@ -96,6 +96,9 @@ Color get ink => palette.ink;
 Color get soft => palette.soft;
 Color get muted => palette.muted;
 Color get faint => palette.faint;
+
+/// Акцентний текст та іконки (`text-gc-lilac-400` на сайті): у світлій темі темніший, щоб читався на білому.
+Color get accent => palette.isLight ? Color.lerp(palette.primary, palette.ink, 0.12)! : const Color(0xFF8DB4FF);
 Color get primary => palette.primary;
 Color get fg => palette.fg;
 Color get fgSoft => palette.fg.withValues(alpha: 0.7);
