@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'api.dart';
 import 'nav_items.dart';
 import 'subscription.dart';
+import 'theme_controller.dart';
 import 'i18n.dart';
 
 class Session extends ChangeNotifier {
@@ -78,6 +79,7 @@ class Session extends ChangeNotifier {
     if (_token != null) {
       try {
         me = await api.me();
+        _syncTheme();
         _startPolling();
         unawaited(subscription.refreshSubscriptionStatus());
       } catch (_) {
@@ -92,6 +94,7 @@ class Session extends ChangeNotifier {
     _token = value;
     await prefs.setString('token', value);
     me = user ?? await api.me();
+    _syncTheme();
     _startPolling();
     unawaited(subscription.refreshSubscriptionStatus());
     notifyListeners();
@@ -99,6 +102,7 @@ class Session extends ChangeNotifier {
 
   Future<void> refreshMe() async {
     me = await api.me();
+    _syncTheme();
     notifyListeners();
   }
 
@@ -111,6 +115,24 @@ class Session extends ChangeNotifier {
     await prefs.remove('token');
     await subscription.reset();
     notifyListeners();
+  }
+
+  /// Тема з акаунта (та сама, що на сайті).
+  void _syncTheme() {
+    final theme = me?['theme'];
+    if (theme is String && theme != ThemeController.instance.pref) ThemeController.instance.setPref(theme);
+  }
+
+  /// Змінити тему: одразу тут і в акаунті (сайт підхопить при наступному відкритті).
+  Future<void> setTheme(String value) async {
+    ThemeController.instance.setPref(value);
+    if (me != null) me!['theme'] = value;
+    if (_token == null) return;
+    try {
+      await api.put(Api.site('/settings/theme'), {'theme': value});
+    } catch (_) {
+      // Немає мережі — вибір лишається на телефоні й піде на сервер наступного разу.
+    }
   }
 
   void _startPolling() {

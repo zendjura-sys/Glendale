@@ -243,7 +243,7 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
               IconButton(
                 tooltip: tr('Прибрати'),
                 onPressed: () => _act(() => api.delete(Api.site('/me/playing'))),
-                icon: const Icon(LucideIcons.x, size: 18, color: muted),
+                icon: Icon(LucideIcons.x, size: 18, color: muted),
               ),
             ]),
           ),
@@ -259,7 +259,7 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
             const SizedBox(height: 12),
             if (Platform.isAndroid) ...[
               Row(children: [
-                const Icon(LucideIcons.smartphone, size: 18, color: primary),
+                Icon(LucideIcons.smartphone, size: 18, color: primary),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -269,10 +269,10 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
                 ),
                 GcSwitch(value: mobile && usageAccess, onChanged: _setMobile),
               ]),
-              const Divider(height: 24, color: line),
+              Divider(height: 24, color: line),
             ],
             Row(children: [
-              const Icon(LucideIcons.messageCircle, size: 18, color: primary),
+              Icon(LucideIcons.messageCircle, size: 18, color: primary),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -292,9 +292,9 @@ class _PlayingSettingsScreenState extends State<PlayingSettingsScreen> with Widg
                 ),
             ]),
             if (steamInfo['available'] == true) ...[
-              const Divider(height: 24, color: line),
+              Divider(height: 24, color: line),
               Row(children: [
-                const Icon(LucideIcons.monitor, size: 18, color: primary),
+                Icon(LucideIcons.monitor, size: 18, color: primary),
                 const SizedBox(width: 10),
                 Expanded(child: Text(tr('Steam (ігри на ПК)'), style: body(14, weight: FontWeight.w600))),
                 if (steamInfo['linked'] == true)

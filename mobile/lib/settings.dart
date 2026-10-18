@@ -200,7 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           id: tab,
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: switch (tab) {
             'security' => _security(),
-            'account' => const [AccountSettings()],
+            'account' => [AccountSettings()],
             'app' => const [NavEditor(), SizedBox(height: 12), FamilyWidgetSettings()],
             _ => _profile(),
           }),
@@ -416,11 +416,11 @@ class NavEditor extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Container(
                     padding: const EdgeInsets.fromLTRB(4, 2, 4, 2),
-                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
+                    decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
                     child: Row(children: [
                       ReorderableDragStartListener(
                         index: i,
-                        child: const Padding(padding: EdgeInsets.all(10), child: Icon(LucideIcons.gripVertical, size: 18, color: faint)),
+                        child: Padding(padding: EdgeInsets.all(10), child: Icon(LucideIcons.gripVertical, size: 18, color: faint)),
                       ),
                       Icon(item.icon, size: 20, color: const Color(0xFF9AA6FF)),
                       const SizedBox(width: 12),

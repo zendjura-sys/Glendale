@@ -378,10 +378,10 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
         padding: const EdgeInsets.fromLTRB(14, 12, 8, 10),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
-            const Icon(LucideIcons.volume2, size: 18, color: primary),
+            Icon(LucideIcons.volume2, size: 18, color: primary),
             const SizedBox(width: 8),
             Expanded(child: Text(tr('Голосові кімнати'), style: body(15, weight: FontWeight.w700))),
-            if (manage) IconButton(onPressed: _create, icon: const Icon(LucideIcons.plus, size: 20, color: muted), tooltip: tr('Нова кімната')),
+            if (manage) IconButton(onPressed: _create, icon: Icon(LucideIcons.plus, size: 20, color: muted), tooltip: tr('Нова кімната')),
           ]),
           if (!enabled)
             Padding(
@@ -431,7 +431,7 @@ class _VoiceRoomsPanelState extends State<VoiceRoomsPanel> {
               if (count > 0) Text('$count', style: body(12.5, color: muted)),
               if (manage) ...[
                 const SizedBox(width: 4),
-                InkResponse(onTap: () => _roomMenu(room), radius: 18, child: const Icon(LucideIcons.ellipsis, size: 18, color: faint)),
+                InkResponse(onTap: () => _roomMenu(room), radius: 18, child: Icon(LucideIcons.ellipsis, size: 18, color: faint)),
               ],
             ]),
           ),
@@ -580,7 +580,7 @@ class _BarButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = leave ? danger : (active ? Colors.white.withValues(alpha: 0.06) : danger.withValues(alpha: 0.16));
+    final bg = leave ? danger : (active ? palette.fg.withValues(alpha: 0.06) : danger.withValues(alpha: 0.16));
     final fg = leave ? Colors.white : (active ? ink : dangerSoft);
     return Padding(
       padding: const EdgeInsets.only(left: 6),

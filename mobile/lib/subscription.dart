@@ -178,7 +178,7 @@ class _ProFeatures extends StatelessWidget {
               const SizedBox(height: 14),
               Container(
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(16), border: Border.all(color: line)),
+                decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(16), border: Border.all(color: line)),
                 child: Text(
                   tr('GameCon+ прив’язаний до вашого акаунта GameCon. Якщо GameCon+ уже активний у вашому акаунті, просто увійдіть у нього в застосунку — усі функції відкриються автоматично.'),
                   style: body(13, color: muted).copyWith(height: 1.45),

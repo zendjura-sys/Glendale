@@ -38,9 +38,9 @@ class MiniPlayer extends StatelessWidget {
     final track = player.current!;
     final total = player.duration.inMilliseconds;
     final progress = total == 0 ? 0.0 : (player.position.inMilliseconds / total).clamp(0.0, 1.0);
-    Widget control(IconData icon, VoidCallback onPressed, {Color color = soft, double size = 24}) => SizedBox.square(
+    Widget control(IconData icon, VoidCallback onPressed, {Color? color, double size = 24}) => SizedBox.square(
           dimension: 40,
-          child: IconButton(padding: EdgeInsets.zero, onPressed: onPressed, icon: Icon(icon, color: color, size: size)),
+          child: IconButton(padding: EdgeInsets.zero, onPressed: onPressed, icon: Icon(icon, color: color ?? soft, size: size)),
         );
     return SizedBox(
       height: miniPlayerExtent,
@@ -61,7 +61,7 @@ class MiniPlayer extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: const Color(0xB30F1426),
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+                    border: Border.all(color: fg.withValues(alpha: 0.10)),
                   ),
                   child: Stack(
                     children: [
@@ -95,7 +95,7 @@ class MiniPlayer extends StatelessWidget {
                         left: 0,
                         right: 0,
                         top: 0,
-                        child: LinearProgressIndicator(value: progress, minHeight: 2.5, backgroundColor: Colors.white.withValues(alpha: 0.06), color: primary),
+                        child: LinearProgressIndicator(value: progress, minHeight: 2.5, backgroundColor: fg.withValues(alpha: 0.06), color: primary),
                       ),
                     ],
                   ),
@@ -141,7 +141,7 @@ Future<void> showFullPlayer(BuildContext context, TrackPlayer player) {
                               Navigator.pop(sheet);
                               startListening(context, trackId: track.id);
                             },
-                            icon: const Icon(LucideIcons.headphones, size: 20, color: soft),
+                            icon: Icon(LucideIcons.headphones, size: 20, color: soft),
                           )
                         : null,
                   ),
@@ -165,7 +165,7 @@ Future<void> showFullPlayer(BuildContext context, TrackPlayer player) {
                               final card = await editTrackSheet(context, track.toCard());
                               if (card != null) player.updateMeta(card);
                             },
-                            icon: const Icon(LucideIcons.pencil, size: 20, color: soft),
+                            icon: Icon(LucideIcons.pencil, size: 20, color: soft),
                           )
                         : null,
                   ),
@@ -192,9 +192,9 @@ Future<void> showFullPlayer(BuildContext context, TrackPlayer player) {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   IconButton(tooltip: tr('Перемішати'), onPressed: player.toggleShuffle, icon: Icon(LucideIcons.shuffle, color: player.shuffle ? primary : muted)),
-                  IconButton(onPressed: player.prev, icon: const Icon(LucideIcons.skipBack, size: 32, color: ink)),
+                  IconButton(onPressed: player.prev, icon: Icon(LucideIcons.skipBack, size: 32, color: ink)),
                   RoundIcon(icon: player.playing ? LucideIcons.pause : LucideIcons.play, onTap: player.toggle, filled: true, size: 68),
-                  IconButton(onPressed: player.next, icon: const Icon(LucideIcons.skipForward, size: 32, color: ink)),
+                  IconButton(onPressed: player.next, icon: Icon(LucideIcons.skipForward, size: 32, color: ink)),
                   IconButton(tooltip: tr('Повтор треку'), onPressed: player.toggleRepeat, icon: Icon(player.repeat ? LucideIcons.repeat1 : LucideIcons.repeat, color: player.repeat ? primary : muted)),
                 ],
               ),
@@ -303,10 +303,10 @@ class _QueueRow extends StatelessWidget {
                 Text(artistOf(track.artist), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
               ]),
             ),
-            IconButton(tooltip: tr('Прибрати з черги'), visualDensity: VisualDensity.compact, onPressed: () => player.removeAt(i), icon: const Icon(LucideIcons.x, size: 18, color: faint)),
+            IconButton(tooltip: tr('Прибрати з черги'), visualDensity: VisualDensity.compact, onPressed: () => player.removeAt(i), icon: Icon(LucideIcons.x, size: 18, color: faint)),
             ReorderableDragStartListener(
               index: i,
-              child: const Padding(padding: EdgeInsets.symmetric(horizontal: 6, vertical: 8), child: Icon(LucideIcons.gripVertical, size: 18, color: muted)),
+              child: Padding(padding: EdgeInsets.symmetric(horizontal: 6, vertical: 8), child: Icon(LucideIcons.gripVertical, size: 18, color: muted)),
             ),
           ]),
         ),

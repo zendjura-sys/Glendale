@@ -36,20 +36,15 @@ import 'state.dart';
 import 'theme.dart';
 import 'track_edit.dart';
 import 'watch_party.dart';
+import 'theme_controller.dart';
 import 'widgets.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-    statusBarBrightness: Brightness.dark,
-    systemNavigationBarColor: Colors.transparent,
-    systemNavigationBarIconBrightness: Brightness.light,
-    systemNavigationBarContrastEnforced: false,
-  ));
   final prefs = await SharedPreferences.getInstance();
+  // Тема до першого кадру (збережена на телефоні); з акаунта — після входу (Session).
+  ThemeController.instance.init(prefs);
   // Словник мови — до першого кадру (збережений на телефоні), свіжий — із сервера у фоні.
   await I18n.restore(prefs);
   final session = Session(prefs);

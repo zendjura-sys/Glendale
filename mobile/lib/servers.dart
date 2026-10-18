@@ -276,7 +276,7 @@ class ServerCard extends StatelessWidget {
           ]),
           if (progress != null) ...[
             const SizedBox(height: 6),
-            ClipRRect(borderRadius: BorderRadius.circular(4), child: LinearProgressIndicator(value: progress, minHeight: 4, color: primary, backgroundColor: Colors.white.withValues(alpha: 0.06))),
+            ClipRRect(borderRadius: BorderRadius.circular(4), child: LinearProgressIndicator(value: progress, minHeight: 4, color: primary, backgroundColor: fg.withValues(alpha: 0.06))),
           ],
         ] else if (server['discord_members'] != null)
           Text(tr('{v} у Discord · {v2} в мережі', {'v': compact(server['discord_members']), 'v2': compact(server['discord_online'])}), style: body(12.5, color: muted)),
@@ -291,9 +291,9 @@ class ServerCard extends StatelessWidget {
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(10), border: Border.all(color: line)),
+                  decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(10), border: Border.all(color: line)),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(LucideIcons.copy, size: 13, color: muted),
+                    Icon(LucideIcons.copy, size: 13, color: muted),
                     const SizedBox(width: 6),
                     Flexible(child: Text(text(server['connect'])!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: soft).copyWith(fontFamily: 'monospace'))),
                   ]),

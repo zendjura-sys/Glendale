@@ -162,7 +162,7 @@ class _ListenScreenState extends State<ListenScreen> {
             contentPadding: EdgeInsets.zero,
             leading: Avatar(url: text(f['avatar_url']), name: text(f['name']) ?? '?', size: 38),
             title: Text(text(f['name']) ?? '', style: body(14)),
-            trailing: const Icon(LucideIcons.userPlus, color: muted, size: 18),
+            trailing: Icon(LucideIcons.userPlus, color: muted, size: 18),
             onTap: () => attempt(context, () => api.post('$base/invite', {'user_ids': [f['id']]}), success: tr('Запрошення надіслано: {v}', {'v': f['name']})),
           ),
       ]),
@@ -203,7 +203,7 @@ class _ListenScreenState extends State<ListenScreen> {
               borderRadius: BorderRadius.circular(20),
               child: text(track['cover_url']) != null
                   ? NetImage(text(track['cover_url']), width: 190, height: 190)
-                  : Container(width: 190, height: 190, color: raised, child: const Icon(LucideIcons.headphones, color: faint, size: 56)),
+                  : Container(width: 190, height: 190, color: raised, child: Icon(LucideIcons.headphones, color: faint, size: 56)),
             ),
             const SizedBox(height: 14),
             Text(ended ? tr('СЛУХАЄМО РАЗОМ · ЗАВЕРШЕНО') : tr('СЛУХАЄМО РАЗОМ'), style: body(11.5, color: primary, weight: FontWeight.w700)),
@@ -283,7 +283,7 @@ class _ListenScreenState extends State<ListenScreen> {
                 ),
                 if (!ended && (canControl || mapOf(queue[i]['by'])['id'] == me?['id']))
                   IconButton(
-                    icon: const Icon(LucideIcons.trash2, size: 17, color: faint),
+                    icon: Icon(LucideIcons.trash2, size: 17, color: faint),
                     onPressed: () => _act(() => api.delete('$base/queue/${queue[i]['index']}')),
                   ),
               ]),
@@ -307,10 +307,10 @@ class _ListenScreenState extends State<ListenScreen> {
               contentPadding: EdgeInsets.zero,
               leading: text(t['cover_url']) != null
                   ? NetImage(text(t['cover_url']), width: 42, height: 42, radius: 10)
-                  : Container(width: 42, height: 42, decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(10)), child: const Icon(LucideIcons.music2, color: faint, size: 18)),
+                  : Container(width: 42, height: 42, decoration: BoxDecoration(color: raised, borderRadius: BorderRadius.circular(10)), child: Icon(LucideIcons.music2, color: faint, size: 18)),
               title: Text(text(t['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14)),
               subtitle: Text('${t['artist'] ?? ''} · ${_clock(intOf(t['duration']))}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
-              trailing: const Icon(LucideIcons.plus, color: primary),
+              trailing: Icon(LucideIcons.plus, color: primary),
               onTap: () async {
                 await _act(() => api.post('$base/queue', {'track_id': t['id']}));
                 if (context.mounted) toast(context, tr('«{v}» у черзі', {'v': t['title']}));

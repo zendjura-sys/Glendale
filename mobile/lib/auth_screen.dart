@@ -121,9 +121,9 @@ class _AuthScreenState extends State<AuthScreen> {
         body: ListView(
           padding: EdgeInsets.fromLTRB(18, top + 40, 18, 32),
           children: [
-            const Center(child: LogoMark(size: 64)),
+            Center(child: LogoMark(size: 64)),
             const SizedBox(height: 14),
-            const Center(child: Wordmark(size: 26)),
+            Center(child: Wordmark(size: 26)),
             const SizedBox(height: 8),
             Text(tr('Соцмережа українського гейм-ком’юніті'), textAlign: TextAlign.center, style: body(13.5, color: muted)),
             const SizedBox(height: 26),
@@ -180,9 +180,9 @@ class _AuthScreenState extends State<AuthScreen> {
                     PrimaryButton(label: register ? tr('Створити акаунт') : tr('Увійти'), busy: busy, onPressed: _submit),
                     const SizedBox(height: 18),
                     Row(children: [
-                      const Expanded(child: Divider(color: lineStrong)),
+                      Expanded(child: Divider(color: lineStrong)),
                       Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text(tr('або'), style: body(12, color: muted))),
-                      const Expanded(child: Divider(color: lineStrong)),
+                      Expanded(child: Divider(color: lineStrong)),
                     ]),
                     const SizedBox(height: 14),
                     GhostButton(label: tr('Продовжити з Google'), icon: Icons.g_mobiledata_rounded, onPressed: busy ? null : _google),

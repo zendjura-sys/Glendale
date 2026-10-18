@@ -98,7 +98,7 @@ class _PhotosScreenState extends State<PhotosScreen> {
             GestureDetector(
               onTap: () => context.push(appPathFor(text(owner['href']))),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(LucideIcons.arrowLeft, size: 14, color: muted),
+                Icon(LucideIcons.arrowLeft, size: 14, color: muted),
                 const SizedBox(width: 4),
                 Text(owner['type'] == 'community' ? tr('До спільноти') : tr('До профілю'), style: body(12, color: muted)),
               ]),
@@ -434,7 +434,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
               Avatar(url: text(owner['avatar_url']), name: text(owner['name']) ?? '?', size: 28, square: owner['type'] == 'community'),
               const SizedBox(width: 8),
               Expanded(child: Text(text(owner['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, color: muted))),
-              if (can['manage'] == true) IconButton(onPressed: _menu, icon: const Icon(LucideIcons.ellipsis, color: muted)),
+              if (can['manage'] == true) IconButton(onPressed: _menu, icon: Icon(LucideIcons.ellipsis, color: muted)),
             ]),
             const SizedBox(height: 10),
             Text(text(album['title']) ?? '', style: display(20)),
@@ -607,15 +607,15 @@ class _PhotoScreenState extends State<PhotoScreen> {
                   },
                   child: Stack(children: [
                     Positioned.fill(child: InteractiveViewer(maxScale: 4, child: Center(child: NetImage(text(photo['url']), fit: BoxFit.contain)))),
-                    if (prev != null) Positioned(left: 4, top: 0, bottom: 0, child: Center(child: IconButton(onPressed: () => _go(prev), icon: const Icon(LucideIcons.chevronLeft, size: 34, color: Colors.white70)))),
-                    if (next != null) Positioned(right: 4, top: 0, bottom: 0, child: Center(child: IconButton(onPressed: () => _go(next), icon: const Icon(LucideIcons.chevronRight, size: 34, color: Colors.white70)))),
+                    if (prev != null) Positioned(left: 4, top: 0, bottom: 0, child: Center(child: IconButton(onPressed: () => _go(prev), icon: Icon(LucideIcons.chevronLeft, size: 34, color: fgSoft)))),
+                    if (next != null) Positioned(right: 4, top: 0, bottom: 0, child: Center(child: IconButton(onPressed: () => _go(next), icon: Icon(LucideIcons.chevronRight, size: 34, color: fgSoft)))),
                   ]),
                 ),
               ),
               if (showInfo)
                 Container(
                   constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.45),
-                  decoration: const BoxDecoration(color: popover, border: Border(top: BorderSide(color: lineStrong))),
+                  decoration: BoxDecoration(color: popover, border: Border(top: BorderSide(color: lineStrong))),
                   child: ListView(
                     shrinkWrap: true,
                     padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
@@ -637,7 +637,7 @@ class _PhotoScreenState extends State<PhotoScreen> {
                         ),
                         Text(compact(photo['likes_count']), style: body(13, color: soft)),
                         const SizedBox(width: 10),
-                        const Icon(LucideIcons.eye, size: 16, color: faint),
+                        Icon(LucideIcons.eye, size: 16, color: faint),
                         const SizedBox(width: 4),
                         Text(compact(photo['views_count']), style: body(12, color: faint)),
                       ]),

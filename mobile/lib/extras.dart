@@ -220,7 +220,7 @@ class _MomentCard extends StatelessWidget {
                 icon: Icon(LucideIcons.heart, size: 18, color: moment['liked'] == true ? pink : muted),
                 label: Text(compact(moment['likes']), style: body(13, color: moment['liked'] == true ? pink : muted, weight: FontWeight.w600)),
               ),
-              if (onDelete != null) IconButton(onPressed: onDelete, icon: const Icon(LucideIcons.trash2, size: 18, color: faint)),
+              if (onDelete != null) IconButton(onPressed: onDelete, icon: Icon(LucideIcons.trash2, size: 18, color: faint)),
             ]),
           ]),
         ),
@@ -449,7 +449,7 @@ class _QuestTile extends StatelessWidget {
             const SizedBox(height: 6),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(value: progress / target, minHeight: 5, color: claimed ? green : primary, backgroundColor: Colors.white.withValues(alpha: 0.07)),
+              child: LinearProgressIndicator(value: progress / target, minHeight: 5, color: claimed ? green : primary, backgroundColor: fg.withValues(alpha: 0.07)),
             ),
             const SizedBox(height: 4),
             Text('$progress / $target · +${quest['xp']} XP', style: body(12, color: muted)),
@@ -519,7 +519,7 @@ class _SavedScreenState extends State<SavedScreen> with _SitePage {
                           Text(switch (item['kind']) { 'movie' => tr('Кіно'), 'game' => tr('Гра'), _ => tr('Сервер') }, style: body(12.5, color: muted)),
                         ]),
                       ),
-                      const Icon(LucideIcons.chevronRight, color: muted),
+                      Icon(LucideIcons.chevronRight, color: muted),
                     ]),
                   ),
           ),
@@ -929,7 +929,7 @@ class _ServerCompareScreenState extends State<ServerCompareScreen> with _SitePag
               for (final row in _rows())
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 9),
-                  decoration: const BoxDecoration(border: Border(top: BorderSide(color: line))),
+                  decoration: BoxDecoration(border: Border(top: BorderSide(color: line))),
                   child: Row(children: [
                     Expanded(flex: 4, child: Text(row.$2, style: body(13, color: muted))),
                     Expanded(flex: 3, child: Text(cell(left, row.$1), textAlign: TextAlign.center, style: body(13.5, weight: FontWeight.w600))),
@@ -973,7 +973,7 @@ class StreamBadge extends StatelessWidget {
           border: Border.all(color: live ? danger.withValues(alpha: 0.4) : line),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          if (live) ...[const LiveBadge(), const SizedBox(width: 8)] else ...[const Icon(LucideIcons.radio, size: 15, color: muted), const SizedBox(width: 6)],
+          if (live) ...[const LiveBadge(), const SizedBox(width: 8)] else ...[Icon(LucideIcons.radio, size: 15, color: muted), const SizedBox(width: 6)],
           Flexible(
             child: Text(
               live ? (text(stream['title']) ?? tr('В ефірі на {platform}', {'platform': text(stream['platform_label']) ?? ''})) : tr('Стрімить на {platform}', {'platform': text(stream['platform_label']) ?? ''}),
@@ -1067,7 +1067,7 @@ class _StreamSettingsCardState extends State<StreamSettingsCard> {
         Text(tr('Позначка LIVE з’являється сама, коли почнеться ефір. Друзі отримають сповіщення.'), style: body(12.5, color: muted)),
         const SizedBox(height: 12),
         Segmented(
-          options: const [SegmentOption('twitch', 'Twitch'), SegmentOption('youtube', 'YouTube')],
+          options: [SegmentOption('twitch', 'Twitch'), SegmentOption('youtube', 'YouTube')],
           selected: platform,
           onSelect: (v) => setState(() => platform = v),
         ),
@@ -1256,7 +1256,7 @@ class _JoinInviteScreenState extends State<JoinInviteScreen> with _SitePage {
         Glass(
           padding: const EdgeInsets.all(20),
           child: Column(children: [
-            const Icon(LucideIcons.mailOpen, size: 40, color: primary),
+            Icon(LucideIcons.mailOpen, size: 40, color: primary),
             const SizedBox(height: 10),
             Text(tr('Запрошення'), style: display(22)),
             const SizedBox(height: 4),

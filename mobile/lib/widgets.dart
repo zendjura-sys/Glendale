@@ -12,20 +12,22 @@ import 'i18n.dart';
 
 // ───────────────────────── Тло й логотип ─────────────────────────
 
-/// Тло всіх екранів: глибокий синій з «авророю», як `<Aurora />` на сайті.
+/// Тло всіх екранів — як `<Aurora />` на сайті: тихе сяйво під поточну тему
+/// (нічне синє у «Неоновому синьому», крижане блакитне у «Крижаній Арктиці»).
 class Stage extends StatelessWidget {
   const Stage({required this.child, super.key});
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
+    final light = palette.isLight;
     return DecoratedBox(
-      decoration: const BoxDecoration(color: voidColor),
+      decoration: BoxDecoration(color: voidColor),
       child: Stack(
         children: [
-          const Positioned(left: -120, top: -80, child: _Glow(color: indigo, size: 360, alpha: 0.30)),
-          const Positioned(right: -120, top: -40, child: _Glow(color: violet, size: 300, alpha: 0.20)),
-          const Positioned(left: -60, bottom: 120, child: _Glow(color: neonBlue, size: 260, alpha: 0.10)),
+          Positioned(left: -120, top: -80, child: _Glow(color: light ? Color(0xFF8CC4FF) : neonBlue, size: 380, alpha: light ? 0.38 : 0.22)),
+          Positioned(right: -120, top: -40, child: _Glow(color: light ? Color(0xFFB9E4FF) : indigo, size: 320, alpha: light ? 0.42 : 0.16)),
+          Positioned(left: -60, bottom: 120, child: _Glow(color: light ? Color(0xFFA9D8F5) : cyan, size: 260, alpha: light ? 0.30 : 0.07)),
           child,
         ],
       ),
@@ -71,7 +73,7 @@ class LogoMark extends StatelessWidget {
       ),
       padding: EdgeInsets.all(size * 0.05),
       child: DecoratedBox(
-        decoration: BoxDecoration(color: const Color(0xFF0B0F22), borderRadius: BorderRadius.circular(size * 0.26)),
+        decoration: BoxDecoration(color: Color(0xFF0B0F22), borderRadius: BorderRadius.circular(size * 0.26)),
         child: CustomPaint(painter: _PlayPainter()),
       ),
     );
@@ -87,7 +89,7 @@ class _PlayPainter extends CustomPainter {
       ..lineTo(size.width * 0.74, size.height * 0.5)
       ..close();
     final paint = Paint()
-      ..shader = const LinearGradient(colors: [Color(0xFF7DA6FF), Color(0xFF8B6BFF), pink]).createShader(Offset.zero & size)
+      ..shader = LinearGradient(colors: [Color(0xFF7DA6FF), Color(0xFF8B6BFF), pink]).createShader(Offset.zero & size)
       ..strokeJoin = StrokeJoin.round;
     canvas.drawPath(path, paint);
   }
@@ -115,7 +117,7 @@ class Wordmark extends StatelessWidget {
 }
 
 class GradientText extends StatelessWidget {
-  const GradientText(this.value, {required this.style, this.gradient = brand, super.key});
+  GradientText(this.value, {required this.style, Gradient? gradient, super.key}) : gradient = gradient ?? brand;
   final String value;
   final TextStyle style;
   final Gradient gradient;
@@ -132,7 +134,7 @@ class GradientText extends StatelessWidget {
 
 // ───────────────────────── Поверхні ─────────────────────────
 
-/// Скляна картка `.glass`.
+/// Картка `.glass`: матове скло без рамки.
 class Glass extends StatelessWidget {
   const Glass({required this.child, this.padding = const EdgeInsets.all(16), this.radius = 22, this.onTap, this.gradient, this.border, this.overlay, super.key});
   final Widget child;
@@ -153,8 +155,9 @@ class Glass extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: gradient ?? glassGradient,
         borderRadius: shape,
-        border: Border.all(color: border ?? line),
-        boxShadow: const [BoxShadow(color: Color(0x66000000), blurRadius: 30, offset: Offset(0, 14), spreadRadius: -16)],
+        // Матове скло без рамки, як на сайті: межу картки дає лише м'яка тінь.
+        border: border == null ? null : Border.all(color: border!),
+        boxShadow: [palette.isLight ? BoxShadow(color: Color(0x1F102A50), blurRadius: 28, offset: Offset(0, 10), spreadRadius: -14) : BoxShadow(color: Color(0x99000000), blurRadius: 32, offset: Offset(0, 12), spreadRadius: -18)],
       ),
       child: child,
     );
@@ -180,10 +183,10 @@ class CardTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          if (icon != null) ...[Icon(icon, size: 16, color: const Color(0xFF9AA6FF)), const SizedBox(width: 8)],
+          if (icon != null) ...[Icon(icon, size: 16, color: Color(0xFF9AA6FF)), SizedBox(width: 8)],
           Expanded(
             child: Text(
               caps ? title.toUpperCase() : title,
@@ -208,7 +211,7 @@ class PageTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: EdgeInsets.only(bottom: 14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -217,7 +220,7 @@ class PageTitle extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: display(24)),
-                if (subtitle != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(subtitle!, style: body(13.5, color: muted).copyWith(height: 1.35))),
+                if (subtitle != null) Padding(padding: EdgeInsets.only(top: 6), child: Text(subtitle!, style: body(13.5, color: muted).copyWith(height: 1.35))),
               ],
             ),
           ),
@@ -230,7 +233,7 @@ class PageTitle extends StatelessWidget {
 
 /// Героїчна картка розділу: бейдж, заголовок з градієнтним словом, опис, дія.
 class HeroCard extends StatelessWidget {
-  const HeroCard({required this.title, this.accent, this.after, this.badge, this.badgeIcon, this.text, this.children = const [], this.tint = indigo, this.accentGradient = brand, super.key});
+  HeroCard({required this.title, this.accent, this.after, this.badge, this.badgeIcon, this.text, this.children = const [], this.tint = indigo, Gradient? accentGradient, super.key}) : accentGradient = accentGradient ?? brand;
   final String title;
   final String? accent;
   final String? after;
@@ -244,10 +247,10 @@ class HeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Glass(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      padding: EdgeInsets.fromLTRB(18, 18, 18, 18),
       gradient: LinearGradient(
-        colors: [tint.withValues(alpha: 0.22), cardTop, const Color(0xFF1A1230)],
-        stops: const [0, 0.55, 1],
+        colors: [tint.withValues(alpha: 0.22), cardTop, Color(0xFF1A1230)],
+        stops: [0, 0.55, 1],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
@@ -255,8 +258,8 @@ class HeroCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (badge != null) ...[
-            Pill(label: badge!, icon: badgeIcon, color: tint == gold ? gold : const Color(0xFFC7CCF0)),
-            const SizedBox(height: 12),
+            Pill(label: badge!, icon: badgeIcon, color: tint == gold ? gold : Color(0xFFC7CCF0)),
+            SizedBox(height: 12),
           ],
           Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
@@ -266,8 +269,8 @@ class HeroCard extends StatelessWidget {
               if (after != null) Text(' $after', style: display(26)),
             ],
           ),
-          if (text != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(text!, style: body(14, color: soft.withValues(alpha: 0.8)).copyWith(height: 1.45))),
-          if (children.isNotEmpty) const SizedBox(height: 16),
+          if (text != null) Padding(padding: EdgeInsets.only(top: 10), child: Text(text!, style: body(14, color: soft.withValues(alpha: 0.8)).copyWith(height: 1.45))),
+          if (children.isNotEmpty) SizedBox(height: 16),
           ...children,
         ],
       ),
@@ -296,10 +299,10 @@ class PrimaryButton extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (busy)
-          const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+          SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
         else if (icon != null)
           Icon(icon, color: Colors.white, size: compact ? 16 : 18),
-        if (busy || icon != null) const SizedBox(width: 8),
+        if (busy || icon != null) SizedBox(width: 8),
         // Довгий підпис чи великий системний шрифт — текст трохи зменшується, а не обрізається «…».
         Flexible(child: FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1, style: body(compact ? 13.5 : 15, color: Colors.white, weight: FontWeight.w600)))),
       ],
@@ -317,7 +320,7 @@ class PrimaryButton extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: buttonGradient,
               borderRadius: BorderRadius.circular(14),
-              boxShadow: [BoxShadow(color: indigo.withValues(alpha: 0.55), blurRadius: 24, offset: const Offset(0, 10), spreadRadius: -10)],
+              boxShadow: [BoxShadow(color: indigo.withValues(alpha: 0.55), blurRadius: 24, offset: Offset(0, 10), spreadRadius: -10)],
             ),
             child: content,
           ),
@@ -329,7 +332,7 @@ class PrimaryButton extends StatelessWidget {
 
 /// Скляна другорядна кнопка («Редагувати профіль», «Написати»).
 class GhostButton extends StatelessWidget {
-  const GhostButton({required this.label, required this.onPressed, this.icon, this.expand = true, this.compact = false, this.color = ink, this.iconColor, super.key});
+  GhostButton({required this.label, required this.onPressed, this.icon, this.expand = true, this.compact = false, Color? color, this.iconColor, super.key}) : color = color ?? ink;
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
@@ -350,12 +353,12 @@ class GhostButton extends StatelessWidget {
           child: Ink(
             height: compact ? 40 : 48,
             padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 14),
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: lineStrong)),
+            decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: lineStrong)),
             child: Row(
               mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (icon != null) ...[Icon(icon, size: compact ? 16 : 18, color: iconColor ?? color), const SizedBox(width: 8)],
+                if (icon != null) ...[Icon(icon, size: compact ? 16 : 18, color: iconColor ?? color), SizedBox(width: 8)],
                 Flexible(child: FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1, style: body(compact ? 13 : 14.5, color: color, weight: FontWeight.w600)))),
               ],
             ),
@@ -382,13 +385,13 @@ class DangerButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         child: Ink(
           height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(color: danger, borderRadius: BorderRadius.circular(14), boxShadow: [BoxShadow(color: danger.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 8), spreadRadius: -10)]),
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(color: danger, borderRadius: BorderRadius.circular(14), boxShadow: [BoxShadow(color: danger.withValues(alpha: 0.4), blurRadius: 20, offset: Offset(0, 8), spreadRadius: -10)]),
           child: Row(
             mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (icon != null) ...[Icon(icon, size: 16, color: Colors.white), const SizedBox(width: 8)],
+              if (icon != null) ...[Icon(icon, size: 16, color: Colors.white), SizedBox(width: 8)],
               Text(label, style: body(14, color: Colors.white, weight: FontWeight.w600)),
             ],
           ),
@@ -400,7 +403,7 @@ class DangerButton extends StatelessWidget {
 
 /// Кругла іконка-кнопка (скріпка, мікрофон, ⋯).
 class RoundIcon extends StatelessWidget {
-  const RoundIcon({required this.icon, required this.onTap, this.size = 40, this.color = muted, this.filled = false, this.tooltip, super.key});
+  RoundIcon({required this.icon, required this.onTap, this.size = 40, Color? color, this.filled = false, this.tooltip, super.key}) : color = color ?? muted;
   final IconData icon;
   final VoidCallback? onTap;
   final double size;
@@ -412,17 +415,17 @@ class RoundIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final button = Material(
       color: Colors.transparent,
-      shape: const CircleBorder(),
+      shape: CircleBorder(),
       child: InkWell(
         onTap: onTap,
-        customBorder: const CircleBorder(),
+        customBorder: CircleBorder(),
         child: Ink(
           width: size,
           height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: filled ? buttonGradient : null,
-            color: filled ? null : Colors.white.withValues(alpha: 0.05),
+            color: filled ? null : fg.withValues(alpha: 0.05),
             border: filled ? null : Border.all(color: line),
           ),
           child: Icon(icon, size: size * 0.48, color: filled ? Colors.white : color),
@@ -490,9 +493,9 @@ class GcField extends StatelessWidget {
         fillColor: field.withValues(alpha: enabled ? 1 : 0.5),
         isDense: true,
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: dense ? 11 : 15),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: lineStrong)),
-        disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: line)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: primary, width: 1.4)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: lineStrong)),
+        disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: line)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: primary, width: 1.4)),
       ),
     );
   }
@@ -508,14 +511,14 @@ class LabeledField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: EdgeInsets.only(bottom: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label, style: body(13, color: soft, weight: FontWeight.w500)),
-          const SizedBox(height: 7),
+          SizedBox(height: 7),
           child,
-          if (hint != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(hint!, style: body(11.5, color: faint))),
+          if (hint != null) Padding(padding: EdgeInsets.only(top: 6), child: Text(hint!, style: body(11.5, color: faint))),
         ],
       ),
     );
@@ -555,7 +558,7 @@ class GcSelect<T> extends StatelessWidget {
     return Container(
       height: 46,
       width: expand ? double.infinity : null,
-      padding: const EdgeInsets.only(left: 14, right: 8),
+      padding: EdgeInsets.only(left: 14, right: 8),
       decoration: BoxDecoration(color: field, borderRadius: BorderRadius.circular(14), border: Border.all(color: lineStrong)),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
@@ -564,7 +567,7 @@ class GcSelect<T> extends StatelessWidget {
           hint: hint == null ? null : Text(hint!, style: body(14.5, color: faint)),
           dropdownColor: popover,
           borderRadius: BorderRadius.circular(14),
-          icon: const Icon(LucideIcons.chevronDown, color: muted),
+          icon: Icon(LucideIcons.chevronDown, color: muted),
           style: body(14.5),
           items: [for (final item in items) DropdownMenuItem<T>(value: item.$1, child: Text(item.$2, overflow: TextOverflow.ellipsis))],
           onChanged: onChanged,
@@ -577,7 +580,7 @@ class GcSelect<T> extends StatelessWidget {
 // ───────────────────────── Перемикачі ─────────────────────────
 
 class SegmentOption {
-  const SegmentOption(this.id, this.label, {this.icon, this.count});
+  SegmentOption(this.id, this.label, {this.icon, this.count});
   final String id;
   final String label;
   final IconData? icon;
@@ -593,7 +596,7 @@ class Segmented extends StatelessWidget {
   final bool scroll;
 
   static const _motion = Duration(milliseconds: 260);
-  static final _pill = BoxDecoration(color: Colors.white.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(14), border: Border.all(color: lineStrong));
+  static final _pill = BoxDecoration(color: fg.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(14), border: Border.all(color: lineStrong));
 
   @override
   Widget build(BuildContext context) {
@@ -603,11 +606,11 @@ class Segmented extends StatelessWidget {
         children: [
           if (option.icon != null) ...[
             TweenAnimationBuilder<Color?>(
-              tween: ColorTween(end: on ? const Color(0xFF9AA6FF) : muted),
+              tween: ColorTween(end: on ? Color(0xFF9AA6FF) : muted),
               duration: _motion,
               builder: (_, color, _) => Icon(option.icon, size: 16, color: color),
             ),
-            const SizedBox(width: 7),
+            SizedBox(width: 7),
           ],
           AnimatedDefaultTextStyle(
             duration: _motion,
@@ -615,10 +618,10 @@ class Segmented extends StatelessWidget {
             child: Text(option.label, maxLines: 1, softWrap: false),
           ),
           if (option.count != null) ...[
-            const SizedBox(width: 6),
+            SizedBox(width: 6),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
+              padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(color: fg.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
               child: Text('${option.count}', maxLines: 1, softWrap: false, style: body(11, color: muted, weight: FontWeight.w600)),
             ),
           ],
@@ -626,11 +629,11 @@ class Segmented extends StatelessWidget {
       );
     }
 
-    final frame = BoxDecoration(color: Colors.white.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(18), border: Border.all(color: line));
+    final frame = BoxDecoration(color: fg.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(18), border: Border.all(color: line));
 
     if (scroll) {
       return Container(
-        padding: const EdgeInsets.all(4),
+        padding: EdgeInsets.all(4),
         decoration: frame,
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -647,7 +650,7 @@ class Segmented extends StatelessWidget {
                   child: AnimatedContainer(
                     duration: _motion,
                     curve: Curves.easeOutCubic,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                    padding: EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                     decoration: option.id == selected ? _pill : _pill.copyWith(color: Colors.transparent, border: Border.all(color: Colors.transparent)),
                     child: content(option, option.id == selected),
                   ),
@@ -660,7 +663,7 @@ class Segmented extends StatelessWidget {
 
     final index = options.indexWhere((o) => o.id == selected);
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: EdgeInsets.all(4),
       decoration: frame,
       child: LayoutBuilder(builder: (context, constraints) {
         final width = constraints.maxWidth / options.length;
@@ -682,7 +685,7 @@ class Segmented extends StatelessWidget {
                   behavior: HitTestBehavior.opaque,
                   onTap: () => onSelect(option.id),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 11),
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 11),
                     child: Center(child: FittedBox(fit: BoxFit.scaleDown, child: content(option, option.id == selected))),
                   ),
                 ),
@@ -703,13 +706,13 @@ class Swap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 280),
+      duration: Duration(milliseconds: 280),
       switchInCurve: Curves.easeOutCubic,
       switchOutCurve: Curves.easeInCubic,
       layoutBuilder: (current, previous) => Stack(alignment: Alignment.topCenter, children: [...previous, ?current]),
       transitionBuilder: (child, animation) => FadeTransition(
         opacity: animation,
-        child: SlideTransition(position: Tween(begin: const Offset(0, 0.02), end: Offset.zero).animate(animation), child: child),
+        child: SlideTransition(position: Tween(begin: Offset(0, 0.02), end: Offset.zero).animate(animation), child: child),
       ),
       child: KeyedSubtree(key: ValueKey(id), child: child),
     );
@@ -731,7 +734,7 @@ class ChipRow extends StatelessWidget {
         children: [
           for (final option in options)
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: EdgeInsets.only(right: 8),
               child: SelectPill(label: option.$2, selected: selected == option.$1, onTap: () => onSelect(option.$1)),
             ),
         ],
@@ -752,18 +755,18 @@ class SelectPill extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        duration: Duration(milliseconds: 180),
+        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           gradient: selected ? buttonGradient : null,
-          color: selected ? null : Colors.white.withValues(alpha: 0.04),
+          color: selected ? null : fg.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: selected ? Colors.transparent : lineStrong),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (icon != null) ...[Icon(icon, size: 14, color: selected ? Colors.white : muted), const SizedBox(width: 6)],
+            if (icon != null) ...[Icon(icon, size: 14, color: selected ? Colors.white : muted), SizedBox(width: 6)],
             Text(label, style: body(13, color: selected ? Colors.white : soft, weight: FontWeight.w600)),
           ],
         ),
@@ -774,7 +777,7 @@ class SelectPill extends StatelessWidget {
 
 /// Маленький бейдж («Адміністратор», «ПК», «RAGE:MP», «Набір відкрито»).
 class Pill extends StatelessWidget {
-  const Pill({required this.label, this.icon, this.color = soft, this.background, this.border, super.key});
+  Pill({required this.label, this.icon, Color? color, this.background, this.border, super.key}) : color = color ?? soft;
   final String label;
   final IconData? icon;
   final Color color;
@@ -784,7 +787,7 @@ class Pill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
         color: background ?? color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(10),
@@ -793,7 +796,7 @@ class Pill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[Icon(icon, size: 12, color: color), const SizedBox(width: 4)],
+          if (icon != null) ...[Icon(icon, size: 12, color: color), SizedBox(width: 4)],
           Text(label, style: body(11, color: color, weight: FontWeight.w700)),
         ],
       ),
@@ -823,7 +826,7 @@ class Avatar extends StatelessWidget {
   final bool ring;
   final bool square;
 
-  static const _palette = [
+  static final _palette = [
     [Color(0xFF6D5DFC), Color(0xFFA855F7)],
     [Color(0xFF4F8BFF), Color(0xFF38E1FF)],
     [Color(0xFFF04FD8), Color(0xFFA855F7)],
@@ -927,11 +930,11 @@ class UserTile extends StatelessWidget {
             if (username != null) context.push('/u/$username');
           },
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         child: Row(
           children: [
             Avatar(url: text(user['avatar_url']), name: name, size: size, online: user['is_online'] == true, frame: PlusMark.of(user)?.frame),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -974,20 +977,20 @@ class EmptyState extends StatelessWidget {
         Container(
           width: 56,
           height: 56,
-          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
-          child: Icon(icon, color: const Color(0xFF9AA6FF), size: 26),
+          decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
+          child: Icon(icon, color: Color(0xFF9AA6FF), size: 26),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         Text(title, textAlign: TextAlign.center, style: display(17)),
-        if (text != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(text!, textAlign: TextAlign.center, style: body(13.5, color: muted).copyWith(height: 1.45))),
+        if (text != null) Padding(padding: EdgeInsets.only(top: 8), child: Text(text!, textAlign: TextAlign.center, style: body(13.5, color: muted).copyWith(height: 1.45))),
         if (action != null) ...[
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
           PrimaryButton(label: action!, icon: actionIcon, onPressed: onAction, expand: false, compact: true),
         ],
       ],
     );
-    if (!boxed) return Padding(padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 12), child: content);
-    return Glass(padding: const EdgeInsets.fromLTRB(20, 32, 20, 28), child: content);
+    if (!boxed) return Padding(padding: EdgeInsets.symmetric(vertical: 22, horizontal: 12), child: content);
+    return Glass(padding: EdgeInsets.fromLTRB(20, 32, 20, 28), child: content);
   }
 }
 
@@ -1000,12 +1003,12 @@ class QuietEmpty extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 22),
+      padding: EdgeInsets.symmetric(vertical: 22),
       child: Center(
         child: Column(
           children: [
             Icon(icon, color: faint, size: 30),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             Text(text, textAlign: TextAlign.center, style: body(13.5, color: muted)),
           ],
         ),
@@ -1028,11 +1031,11 @@ class StatColumn extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: EdgeInsets.symmetric(vertical: 6),
           child: Column(
             children: [
               Text(value, style: display(20)),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(label, style: body(12, color: muted)),
             ],
           ),
@@ -1044,7 +1047,7 @@ class StatColumn extends StatelessWidget {
 
 /// Плитка-метрика («1457 / Гравців онлайн», «ЗАРОБИВ ЗА ТИЖДЕНЬ / 0 ₴»).
 class MetricTile extends StatelessWidget {
-  const MetricTile({required this.label, required this.value, this.color = ink, this.icon, this.caps = false, this.gradient, super.key});
+  MetricTile({required this.label, required this.value, Color? color, this.icon, this.caps = false, this.gradient, super.key}) : color = color ?? ink;
   final String label;
   final String value;
   final Color color;
@@ -1056,7 +1059,7 @@ class MetricTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
+      decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1128,7 +1131,7 @@ class NetImage extends StatelessWidget {
             width: width,
             height: height,
             placeholder: (_, _) => Container(color: raised),
-            errorWidget: (_, _, _) => Container(color: raised, child: const Icon(LucideIcons.imageOff, color: faint)),
+            errorWidget: (_, _, _) => Container(color: raised, child: Icon(LucideIcons.imageOff, color: faint)),
           );
     return radius == 0 ? image : ClipRRect(borderRadius: BorderRadius.circular(radius), child: image);
   }
@@ -1209,8 +1212,8 @@ class _RemoteState extends State<Remote> {
 /// Висота прозорої шапки поверх контенту, без системного відступу.
 const siteBarHeight = 58.0;
 
-/// Нижнє меню без системного відступу.
-const navBarHeight = 64.0;
+/// Нижній острів-меню на телефоні разом із відступом знизу, без системного відступу.
+const islandExtent = 76.0;
 
 /// Плаваючий плеєр разом із відступом над меню.
 const miniPlayerExtent = 76.0;
@@ -1242,7 +1245,7 @@ class ShellChrome extends InheritedWidget {
 /// а прокрутка йшла вже під прозорими кнопками.
 double siteHeaderInset(BuildContext context) {
   final top = MediaQuery.viewPaddingOf(context).top;
-  return (top == 0 ? 24.0 : top) + siteBarHeight;
+  return top + siteBarHeight + 6;
 }
 
 /// Прокрутка екрана: контент їде під прозору шапку і під скляне меню.
@@ -1338,7 +1341,7 @@ Future<T?> showGcSheet<T>(BuildContext context, {String? title, String? subtitle
               margin: EdgeInsets.only(top: 10, bottom: 6),
               width: 40,
               height: 4,
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(4)),
+              decoration: BoxDecoration(color: fg.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(4)),
             ),
           ),
           if (title != null)

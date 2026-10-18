@@ -396,13 +396,13 @@ class _PeopleScreenState extends State<PeopleScreen> {
             ),
             const SizedBox(height: 10),
             Material(
-              color: Colors.white.withValues(alpha: 0.04),
+              color: fg.withValues(alpha: 0.04),
               borderRadius: BorderRadius.circular(14),
               child: SwitchListTile(
                 value: online,
                 dense: true,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                secondary: const Icon(LucideIcons.radio, color: muted, size: 20),
+                secondary: Icon(LucideIcons.radio, color: muted, size: 20),
                 title: Text(tr('Зараз онлайн'), style: body(14, color: soft)),
                 onChanged: (value) {
                   setState(() => online = value);
@@ -641,7 +641,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     Row(children: [
                       Flexible(child: PlusName(fullName, plus: plus, style: display(24), animate: true, maxLines: 2)),
-                      if (profile['is_verified'] == true) ...[const SizedBox(width: 6), const Icon(LucideIcons.badgeCheck, color: primary, size: 20)],
+                      if (profile['is_verified'] == true) ...[const SizedBox(width: 6), Icon(LucideIcons.badgeCheck, color: primary, size: 20)],
                       if (plus != null) ...[const SizedBox(width: 6), const PlusBadge(size: 20)],
                     ]),
                     if (text(profile['status']) != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(text(profile['status'])!, style: body(14, color: soft))),

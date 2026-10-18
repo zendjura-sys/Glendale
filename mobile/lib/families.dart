@@ -102,7 +102,7 @@ class _AuthImageState extends State<AuthImage> {
           return Container(
             color: raised,
             alignment: Alignment.center,
-            child: snapshot.hasError ? const Icon(LucideIcons.imageOff, color: faint) : const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+            child: snapshot.hasError ? Icon(LucideIcons.imageOff, color: faint) : const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
           );
         },
       ),
@@ -335,7 +335,7 @@ class FamilyCard extends StatelessWidget {
                 Text(text(server['name']) ?? '', style: body(12, color: muted)),
                 const SizedBox(width: 10),
               ],
-              const Icon(LucideIcons.usersRound, size: 14, color: muted),
+              Icon(LucideIcons.usersRound, size: 14, color: muted),
               const SizedBox(width: 4),
               Text(compact(family['members_count']), style: body(12, color: muted)),
               const Spacer(),
@@ -449,7 +449,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                   height: 76,
                   child: logo == null
                       ? Container(
-                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
+                          decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(18), border: Border.all(color: line)),
                           child: Icon(LucideIcons.imagePlus, color: muted),
                         )
                       : ClipRRect(borderRadius: BorderRadius.circular(18), child: Image(image: XFileImage(logo!), fit: BoxFit.cover)),
@@ -641,7 +641,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
               ],
             ),
           ),
-          if (loading) const LinearProgressIndicator(minHeight: 2, color: primary, backgroundColor: Colors.transparent) else const SizedBox(height: 2),
+          if (loading) LinearProgressIndicator(minHeight: 2, color: primary, backgroundColor: Colors.transparent) else const SizedBox(height: 2),
           const SizedBox(height: 10),
           if (family['status'] == 'pending') ...[
             Glass(
@@ -718,7 +718,7 @@ class _SectionTab extends StatelessWidget {
           curve: Curves.easeOutCubic,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: selected ? Colors.white.withValues(alpha: 0.09) : Colors.white.withValues(alpha: 0),
+            color: selected ? fg.withValues(alpha: 0.09) : fg.withValues(alpha: 0),
             borderRadius: BorderRadius.circular(14),
             border: Border(bottom: BorderSide(color: selected ? primary : primary.withValues(alpha: 0), width: 2)),
           ),
@@ -788,7 +788,7 @@ class _FamilyHeader extends StatelessWidget {
                           ]),
                         ),
                       Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(LucideIcons.usersRound, size: 13, color: muted),
+                        Icon(LucideIcons.usersRound, size: 13, color: muted),
                         const SizedBox(width: 3),
                         Text(compact(family['members_count']), style: body(12, color: muted)),
                       ]),
@@ -804,7 +804,7 @@ class _FamilyHeader extends StatelessWidget {
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
+                    decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
                     child: Row(children: [
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1181,7 +1181,7 @@ class ReportCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(16), border: Border.all(color: line)),
+      decoration: BoxDecoration(color: fg.withValues(alpha: 0.035), borderRadius: BorderRadius.circular(16), border: Border.all(color: line)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Text('#${report['id']} ', style: body(12, color: faint)),
@@ -1454,8 +1454,8 @@ class _ReportFormState extends State<_ReportForm> {
                 child: Container(
                   width: 72,
                   height: 72,
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: line)),
-                  child: const Icon(LucideIcons.imagePlus, color: muted),
+                  decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: line)),
+                  child: Icon(LucideIcons.imagePlus, color: muted),
                 ),
               ),
           ]),
@@ -1482,7 +1482,7 @@ class _Choice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? primary.withValues(alpha: 0.14) : Colors.white.withValues(alpha: 0.04),
+      color: selected ? primary.withValues(alpha: 0.14) : fg.withValues(alpha: 0.04),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: selected ? primary.withValues(alpha: 0.6) : line)),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
@@ -1510,11 +1510,11 @@ class _Stepper extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget step(IconData icon, VoidCallback? onPressed) => SizedBox.square(
           dimension: 34,
-          child: IconButton(padding: EdgeInsets.zero, onPressed: onPressed, icon: Icon(icon, size: 18), style: IconButton.styleFrom(backgroundColor: Colors.white.withValues(alpha: 0.05))),
+          child: IconButton(padding: EdgeInsets.zero, onPressed: onPressed, icon: Icon(icon, size: 18), style: IconButton.styleFrom(backgroundColor: fg.withValues(alpha: 0.05))),
         );
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
+      decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label, maxLines: 1, softWrap: false, overflow: TextOverflow.fade, style: body(12.5, color: muted)),
         const SizedBox(height: 4),

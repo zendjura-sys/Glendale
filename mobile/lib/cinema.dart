@@ -316,7 +316,7 @@ class _FeaturedState extends State<_Featured> {
                   margin: const EdgeInsets.only(left: 4),
                   width: i == index ? 18 : 6,
                   height: 6,
-                  decoration: BoxDecoration(color: i == index ? Colors.white : Colors.white38, borderRadius: BorderRadius.circular(4)),
+                  decoration: BoxDecoration(color: i == index ? Colors.white : fg.withValues(alpha: 0.38), borderRadius: BorderRadius.circular(4)),
                 ),
             ]),
           ),

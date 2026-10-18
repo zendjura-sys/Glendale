@@ -39,7 +39,7 @@ class _LanguagePickerState extends State<LanguagePicker> {
     final locales = I18n.locales;
     if (locales.length < 2) return const SizedBox.shrink();
     return Row(children: [
-      const Icon(LucideIcons.languages, size: 18, color: muted),
+      Icon(LucideIcons.languages, size: 18, color: muted),
       const SizedBox(width: 10),
       Expanded(
         child: GcSelect<String>(
@@ -107,7 +107,7 @@ class _TranslatableState extends State<Translatable> {
         child: Padding(
           padding: const EdgeInsets.only(top: 6),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            busy ? const SizedBox(width: 13, height: 13, child: CircularProgressIndicator(strokeWidth: 1.6)) : const Icon(LucideIcons.languages, size: 13, color: muted),
+            busy ? const SizedBox(width: 13, height: 13, child: CircularProgressIndicator(strokeWidth: 1.6)) : Icon(LucideIcons.languages, size: 13, color: muted),
             const SizedBox(width: 5),
             Text(shown ? tr('Показати оригінал') : tr('Перекласти'), style: body(12, color: muted, weight: FontWeight.w600)),
           ]),

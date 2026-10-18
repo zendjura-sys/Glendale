@@ -19,14 +19,14 @@ class AccountSettings extends StatelessWidget {
       load: () => session.api.get('/api/v1/me/security'),
       builder: (data, reload) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         _Devices(data: data, reload: reload),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         _Logins(logins: maps(data['logins'])),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         _Profanity(initial: data['hide_profanity'] == true),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         _Appeals(data: data, reload: reload),
-        const SizedBox(height: 12),
-        const _Freeze(),
+        SizedBox(height: 12),
+        _Freeze(),
       ]),
     );
   }
@@ -51,7 +51,7 @@ String _method(String? method) => switch (method) {
     };
 
 class _Row extends StatelessWidget {
-  const _Row({required this.icon, required this.title, required this.subtitle, this.trailing, this.iconColor = muted});
+  _Row({required this.icon, required this.title, required this.subtitle, this.trailing, Color? iconColor}) : iconColor = iconColor ?? muted;
   final IconData icon;
   final String title;
   final String subtitle;
@@ -63,7 +63,7 @@ class _Row extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(color: fg.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(16)),
       child: Row(children: [
         Icon(icon, size: 20, color: iconColor),
         const SizedBox(width: 12),
@@ -108,14 +108,14 @@ class _Devices extends StatelessWidget {
             subtitle: t['current'] == true ? tr('цей пристрій') : ago(t['last_used_at']),
             trailing: t['current'] == true
                 ? Pill(label: tr('Зараз'), color: green)
-                : IconButton(tooltip: tr('Вийти'), icon: const Icon(LucideIcons.logOut, size: 18, color: soft), onPressed: () => run('/api/v1/me/tokens/${t['id']}')),
+                : IconButton(tooltip: tr('Вийти'), icon: Icon(LucideIcons.logOut, size: 18, color: soft), onPressed: () => run('/api/v1/me/tokens/${t['id']}')),
           ),
         for (final s in sessions)
           _Row(
             icon: LucideIcons.monitor,
             title: text(s['device']) ?? tr('Браузер'),
             subtitle: '${text(s['ip']) ?? '—'} · ${ago(s['last_active_at'])}',
-            trailing: IconButton(tooltip: tr('Завершити'), icon: const Icon(LucideIcons.logOut, size: 18, color: soft), onPressed: () => run('/api/v1/me/sessions/${s['id']}')),
+            trailing: IconButton(tooltip: tr('Завершити'), icon: Icon(LucideIcons.logOut, size: 18, color: soft), onPressed: () => run('/api/v1/me/sessions/${s['id']}')),
           ),
         if (others > 0) ...[
           const SizedBox(height: 4),
@@ -251,7 +251,7 @@ class _AppealsState extends State<_Appeals> {
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(16)),
+            decoration: BoxDecoration(color: fg.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(16)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('${tr('${kinds[a['kind']] ?? a['kind']}')} · ${ago(a['created_at'])} · ${_status(text(a['status']))}', style: body(12, color: muted)),
               const SizedBox(height: 4),
@@ -438,7 +438,7 @@ Future<void> showWhatsNew(BuildContext context, SharedPreferences prefs) async {
             Container(
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14)),
+              decoration: BoxDecoration(color: fg.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(14)),
               child: Text(item, style: body(14, color: soft).copyWith(height: 1.4)),
             ),
           const SizedBox(height: 6),

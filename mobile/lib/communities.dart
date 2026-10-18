@@ -204,7 +204,7 @@ class CommunityCard extends StatelessWidget {
               children: [
                 Row(children: [
                   Flexible(child: Text(text(community['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w700))),
-                  if (community['is_verified'] == true) ...[const SizedBox(width: 4), const Icon(LucideIcons.badgeCheck, size: 15, color: primary)],
+                  if (community['is_verified'] == true) ...[const SizedBox(width: 4), Icon(LucideIcons.badgeCheck, size: 15, color: primary)],
                 ]),
                 const SizedBox(height: 2),
                 Text([text(community['category_label']), communityKind(community)].whereType<String>().join(' · '), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
@@ -376,7 +376,7 @@ class _TypeOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? primary.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.04),
+      color: selected ? primary.withValues(alpha: 0.12) : fg.withValues(alpha: 0.04),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: selected ? primary.withValues(alpha: 0.6) : line)),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -526,7 +526,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   children: [
                     Row(children: [
                       Flexible(child: Text(text(c['name']) ?? '', style: display(22))),
-                      if (c['is_verified'] == true) ...[const SizedBox(width: 6), const Icon(LucideIcons.badgeCheck, color: primary, size: 20)],
+                      if (c['is_verified'] == true) ...[const SizedBox(width: 6), Icon(LucideIcons.badgeCheck, color: primary, size: 20)],
                     ]),
                     if (text(c['status']) != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(text(c['status'])!, style: body(14, color: soft))),
                     const SizedBox(height: 8),
@@ -597,13 +597,13 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 CardTitle(tr('Інформація'), icon: LucideIcons.info),
                 const SizedBox(height: 10),
                 if (text(c['description']) != null) Text(text(c['description'])!, style: body(14, color: soft).copyWith(height: 1.5)),
-                if (text(c['city']) != null) Padding(padding: const EdgeInsets.only(top: 8), child: Row(children: [const Icon(LucideIcons.mapPin, size: 16, color: muted), const SizedBox(width: 8), Text(text(c['city'])!, style: body(13.5, color: soft))])),
+                if (text(c['city']) != null) Padding(padding: const EdgeInsets.only(top: 8), child: Row(children: [Icon(LucideIcons.mapPin, size: 16, color: muted), const SizedBox(width: 8), Text(text(c['city'])!, style: body(13.5, color: soft))])),
                 if (text(c['website']) != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: GestureDetector(
                       onTap: () => launchUrl(Uri.parse(text(c['website'])!), mode: LaunchMode.externalApplication),
-                      child: Row(children: [const Icon(LucideIcons.link, size: 16, color: muted), const SizedBox(width: 8), Flexible(child: Text(text(c['website'])!.replaceFirst(RegExp(r'^https?://'), ''), style: body(13.5, color: const Color(0xFF9AA8FF))))]),
+                      child: Row(children: [Icon(LucideIcons.link, size: 16, color: muted), const SizedBox(width: 8), Flexible(child: Text(text(c['website'])!.replaceFirst(RegExp(r'^https?://'), ''), style: body(13.5, color: const Color(0xFF9AA8FF))))]),
                     ),
                   ),
               ]),
@@ -860,7 +860,7 @@ class _CommunityMembersScreenState extends State<CommunityMembersScreen> {
                           IconButton(tooltip: tr('Відхилити'), onPressed: () => _act(() => api.delete(Api.site('/c/${widget.slug}/members/${member['username']}/request'))), icon: const Icon(LucideIcons.circleX, color: dangerSoft)),
                         ])
                       : admin && member['role'] != 'owner' && intOf(member['id']) != AppScope.of(context).session.myId
-                          ? IconButton(onPressed: () => _memberMenu(member), icon: const Icon(LucideIcons.ellipsis, color: muted))
+                          ? IconButton(onPressed: () => _memberMenu(member), icon: Icon(LucideIcons.ellipsis, color: muted))
                           : null,
                 ),
             ]),

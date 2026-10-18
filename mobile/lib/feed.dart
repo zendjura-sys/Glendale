@@ -138,7 +138,7 @@ class _FeedScreenState extends State<FeedScreen> {
         if (languages.isNotEmpty) ...[
           const SizedBox(height: 10),
           Row(children: [
-            const Icon(LucideIcons.languages, size: 16, color: muted),
+            Icon(LucideIcons.languages, size: 16, color: muted),
             const SizedBox(width: 8),
             Text(tr('Мова записів'), style: body(12.5, color: muted)),
             const SizedBox(width: 10),

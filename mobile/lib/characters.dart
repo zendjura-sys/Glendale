@@ -343,13 +343,13 @@ class _CharacterEditScreenState extends State<CharacterEditScreen> {
                   child: Container(
                     width: 140,
                     height: 175,
-                    color: Colors.white.withValues(alpha: 0.05),
+                    color: fg.withValues(alpha: 0.05),
                     child: portrait != null
                         ? Image.file(File(portrait!.path), fit: BoxFit.cover)
                         : text(current['portrait_url']) != null
                             ? Image.network(text(current['portrait_url'])!, fit: BoxFit.cover)
                             : Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                                const Icon(LucideIcons.imagePlus, color: muted),
+                                Icon(LucideIcons.imagePlus, color: muted),
                                 const SizedBox(height: 6),
                                 Text(tr('Портрет персонажа'), textAlign: TextAlign.center, style: body(12, color: muted)),
                               ]),

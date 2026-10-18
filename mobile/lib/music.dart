@@ -126,8 +126,8 @@ class _MusicScreenState extends State<MusicScreen> {
     final done = await showGcSheet<bool>(
       context,
       title: tr('Завантажити трек'),
-      subtitle: tr('До {v} МБ · {v2}', {'v': limits['max_mb'] ?? 20, 'v2': (limits['formats'] as List? ?? const ['mp3']).join(', ')}),
-      builder: (sheet) => _UploadTrack(formats: [for (final f in (limits['formats'] as List? ?? const ['mp3', 'm4a', 'ogg', 'wav', 'flac'])) '$f'], onDone: () => Navigator.pop(sheet, true)),
+      subtitle: tr('До {v} МБ · {v2}', {'v': limits['max_mb'] ?? 20, 'v2': (limits['formats'] as List? ?? ['mp3']).join(', ')}),
+      builder: (sheet) => _UploadTrack(formats: [for (final f in (limits['formats'] as List? ?? ['mp3', 'm4a', 'ogg', 'wav', 'flac'])) '$f'], onDone: () => Navigator.pop(sheet, true)),
     );
     if (done == true) _load(reset: true);
   }
@@ -143,7 +143,7 @@ class _MusicScreenState extends State<MusicScreen> {
   @override
   Widget build(BuildContext context) {
     final data = page;
-    if (data == null) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (data == null) return Center(child: CircularProgressIndicator(strokeWidth: 2.4));
     if (other) return _otherUser(data);
 
     final stats = mapOf(data['stats']);
@@ -166,19 +166,19 @@ class _MusicScreenState extends State<MusicScreen> {
               Pill(label: '${stats['tracks'] ?? 0} ${plural(intOf(stats['tracks']), 'трек', 'треки', 'треків')}'),
               Pill(label: tr('{v} музики', {'v': minutesLabel(stats['duration'])})),
               Pill(label: '${stats['playlists'] ?? 0} ${plural(intOf(stats['playlists']), 'плейлист', 'плейлисти', 'плейлистів')}'),
-              if (account != null) Pill(label: text(account['display_name']) ?? 'Spotify', icon: LucideIcons.audioLines, color: const Color(0xFF1ED760)),
+              if (account != null) Pill(label: text(account['display_name']) ?? 'Spotify', icon: LucideIcons.audioLines, color: Color(0xFF1ED760)),
             ]),
-            const SizedBox(height: 14),
+            SizedBox(height: 14),
             Row(children: [
               Expanded(child: GhostButton(label: tr('Плейлист'), icon: LucideIcons.listPlus, onPressed: _newPlaylist)),
-              const SizedBox(width: 10),
+              SizedBox(width: 10),
               Expanded(child: PrimaryButton(label: tr('Завантажити'), icon: LucideIcons.upload, onPressed: _upload)),
             ]),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Glass(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(12),
           child: Column(children: [
             Segmented(
               scroll: true,
@@ -186,7 +186,7 @@ class _MusicScreenState extends State<MusicScreen> {
                 SegmentOption('mine', tr('Мої аудіозаписи'), icon: LucideIcons.headphones),
                 SegmentOption('discover', tr('Огляд'), icon: LucideIcons.compass),
                 SegmentOption('playlists', tr('Плейлисти'), icon: LucideIcons.listMusic, count: playlists.isEmpty ? null : playlists.length),
-                const SegmentOption('spotify', 'Spotify', icon: LucideIcons.audioLines),
+                SegmentOption('spotify', 'Spotify', icon: LucideIcons.audioLines),
               ],
               selected: tab,
               onSelect: (value) {
@@ -432,7 +432,7 @@ class _LibraryTrackState extends State<LibraryTrack> {
               onPressed: _toggleLibrary,
               icon: Icon(track['in_library'] == true ? LucideIcons.check : LucideIcons.plus, size: 18, color: track['in_library'] == true ? const Color(0xFF9AA6FF) : muted),
             ),
-          IconButton(visualDensity: VisualDensity.compact, onPressed: _menu, icon: const Icon(LucideIcons.ellipsis, color: muted, size: 20)),
+          IconButton(visualDensity: VisualDensity.compact, onPressed: _menu, icon: Icon(LucideIcons.ellipsis, color: muted, size: 20)),
         ]),
       ),
     );
@@ -610,7 +610,7 @@ class PlaylistGrid extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Row(children: [
                   Expanded(child: Text(text(p['title']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w700))),
-                  if (p['is_public'] == false) const Icon(LucideIcons.lock, size: 14, color: muted),
+                  if (p['is_public'] == false) Icon(LucideIcons.lock, size: 14, color: muted),
                 ]),
               ),
               Padding(
@@ -805,7 +805,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
                       if (await attempt(context, () => api.delete(Api.site('/music/playlists/${widget.id}'))) && context.mounted) context.pop();
                     }
                   },
-                  icon: const Icon(LucideIcons.ellipsis, color: muted),
+                  icon: Icon(LucideIcons.ellipsis, color: muted),
                 ),
             ]),
             const SizedBox(height: 8),

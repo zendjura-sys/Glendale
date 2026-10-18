@@ -441,8 +441,8 @@ class _CatalogSearchState extends State<CatalogSearch> {
                 child: SizedBox.square(
                   dimension: 40,
                   child: tags.cover == null
-                      ? Container(color: Colors.white.withValues(alpha: 0.06), child: const Icon(LucideIcons.music, size: 18, color: muted))
-                      : Image.network(tags.cover!, fit: BoxFit.cover, errorBuilder: (_, _, _) => Container(color: Colors.white.withValues(alpha: 0.06))),
+                      ? Container(color: fg.withValues(alpha: 0.06), child: Icon(LucideIcons.music, size: 18, color: muted))
+                      : Image.network(tags.cover!, fit: BoxFit.cover, errorBuilder: (_, _, _) => Container(color: fg.withValues(alpha: 0.06))),
                 ),
               ),
               const SizedBox(width: 10),
@@ -452,7 +452,7 @@ class _CatalogSearchState extends State<CatalogSearch> {
                   Text([tags.artist, tags.album].whereType<String>().join(' · '), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
                 ]),
               ),
-              if (identical(tags, picked)) const Icon(LucideIcons.check, size: 18, color: primary),
+              if (identical(tags, picked)) Icon(LucideIcons.check, size: 18, color: primary),
             ]),
           ),
         ),
@@ -475,8 +475,8 @@ class CoverPreview extends StatelessWidget {
       height: size,
       child: provider == null
           ? Container(
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
-              child: const Icon(LucideIcons.imagePlus, color: muted),
+              decoration: BoxDecoration(color: fg.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: line)),
+              child: Icon(LucideIcons.imagePlus, color: muted),
             )
           : ClipRRect(borderRadius: BorderRadius.circular(14), child: Image(image: provider, fit: BoxFit.cover, errorBuilder: (_, _, _) => const SizedBox())),
     );
@@ -599,7 +599,7 @@ class _TrackEditorState extends State<_TrackEditor> {
               style: body(12.5, color: muted),
             ),
           ),
-          if (coverUrl != null) IconButton(tooltip: tr('Не змінювати обкладинку'), onPressed: () => setState(() => coverUrl = null), icon: const Icon(LucideIcons.x, size: 18, color: muted)),
+          if (coverUrl != null) IconButton(tooltip: tr('Не змінювати обкладинку'), onPressed: () => setState(() => coverUrl = null), icon: Icon(LucideIcons.x, size: 18, color: muted)),
         ]),
         const SizedBox(height: 12),
         LabeledField(label: tr('Назва'), child: GcField(controller: title, label: tr('Назва'), onChanged: (_) => setState(() {}))),
