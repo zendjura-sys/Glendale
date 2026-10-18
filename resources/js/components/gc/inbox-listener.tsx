@@ -1,5 +1,6 @@
 import { router, usePage } from '@inertiajs/react';
 import { useEffect } from 'react';
+import { X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRealtime } from '@/hooks/use-realtime';
 import { inbox } from '@/lib/inbox';
@@ -25,27 +26,38 @@ function notify(message: ChatMessage) {
     if (!message.user) return;
     const author = message.user;
 
+    // Той самий вигляд, що й решта тостів (.gc-toast): аватар замість іконки, ім'я, текст і хрестик.
     toast.custom(
         (id) => (
-            <button
-                type="button"
-                onClick={() => {
-                    toast.dismiss(id);
-                    router.visit(`/messages/${message.conversation_id}`);
-                }}
-                className="glass-strong flex w-[356px] max-w-[92vw] items-center gap-3 rounded-2xl p-3 text-left shadow-[0_20px_50px_-20px_rgb(109_93_252/0.8)]"
-            >
-                <UserAvatar user={author} size="md" showOnline={false} />
-                <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-white">
-                        {author.name}
+            <>
+                <button
+                    type="button"
+                    onClick={() => {
+                        toast.dismiss(id);
+                        router.visit(`/messages/${message.conversation_id}`);
+                    }}
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                >
+                    <UserAvatar user={author} size="sm" showOnline={false} />
+                    <span className="gc-toast__content">
+                        <span className="gc-toast__title truncate">
+                            {author.name}
+                        </span>
+                        <span className="gc-toast__description truncate">
+                            {messagePreview(message)}
+                        </span>
                     </span>
-                    <span className="block truncate text-[13px] text-white/60">
-                        {messagePreview(message)}
-                    </span>
-                </span>
-                <span className="size-2 shrink-0 rounded-full bg-gradient-brand shadow-[0_0_10px_rgb(124_140_255)]" />
-            </button>
+                </button>
+                <button
+                    type="button"
+                    aria-label={tr('Закрити')}
+                    onClick={() => toast.dismiss(id)}
+                    data-close-button
+                    className="gc-toast__close"
+                >
+                    <X />
+                </button>
+            </>
         ),
         { duration: 5000 },
     );

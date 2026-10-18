@@ -3228,3 +3228,177 @@ html[data-text='xl'] {
 .gc-island[data-open] {
     background: var(--matte-solid, var(--popover));
 }
+
+/* ==============================================================================
+ * Тости (components/ui/sonner.tsx): угорі під шапкою, щільне матове скло без рамки.
+ * Іконка в кольорі типу, текст, хрестик і смужка часу внизу (завмирає, поки курсор над тостами).
+ * ============================================================================== */
+[data-sonner-toaster] {
+    --width: 380px;
+}
+:root [data-sonner-toaster] [data-sonner-toast].gc-toast {
+    --gc-toast-tone: var(--primary);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: var(--width);
+    padding: 14px 44px 16px 14px;
+    overflow: hidden;
+    border-radius: 18px;
+    background: color-mix(in oklab, var(--popover) 94%, transparent);
+    color: var(--foreground);
+    box-shadow: var(--gc-island-shadow, 0 12px 32px -14px rgb(0 0 0 / 0.6));
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+    font-size: 14px;
+    line-height: 1.4;
+}
+@media (max-width: 600px) {
+    /* На телефоні — на всю ширину між відступами, без виходу за край. */
+    :root [data-sonner-toaster][data-sonner-toaster] {
+        left: 12px;
+        right: 12px;
+        width: auto;
+        transform: none;
+    }
+    :root [data-sonner-toaster] [data-sonner-toast].gc-toast {
+        width: 100%;
+    }
+}
+:root [data-sonner-toaster] [data-sonner-toast].gc-toast[data-type='success'] {
+    --gc-toast-tone: #22c55e;
+}
+:root [data-sonner-toaster] [data-sonner-toast].gc-toast[data-type='error'] {
+    --gc-toast-tone: #f43f5e;
+}
+:root [data-sonner-toaster] [data-sonner-toast].gc-toast[data-type='warning'] {
+    --gc-toast-tone: #f59e0b;
+}
+.gc-toast .gc-toast__icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    margin: 0;
+    border-radius: 999px;
+    background: var(--gc-toast-tone);
+    color: #fff;
+}
+.gc-toast .gc-toast__icon svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 3;
+}
+/* «!» та «i» — лише знак у кружку: контур власної іконки ховаємо, знак робимо більшим. */
+.gc-toast .gc-toast__icon svg[data-mark] {
+    width: 26px;
+    height: 26px;
+}
+.gc-toast .gc-toast__icon svg[data-mark] circle {
+    display: none;
+}
+.gc-toast .gc-toast__content {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    align-self: center;
+}
+.gc-toast .gc-toast__title {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+.gc-toast .gc-toast__description {
+    color: color-mix(in oklab, var(--foreground) 62%, transparent);
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+:root
+    [data-sonner-toaster]
+    [data-sonner-toast].gc-toast
+    [data-close-button].gc-toast__close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: color-mix(in oklab, var(--foreground) 50%, transparent);
+    transform: none;
+    cursor: pointer;
+    transition:
+        background 0.15s,
+        color 0.15s;
+}
+:root
+    [data-sonner-toaster]
+    [data-sonner-toast].gc-toast
+    [data-close-button].gc-toast__close:hover {
+    background: var(--gc-hover, rgb(255 255 255 / 0.06));
+    color: var(--foreground);
+}
+.gc-toast .gc-toast__close svg {
+    width: 16px;
+    height: 16px;
+}
+.gc-toast .gc-toast__action,
+.gc-toast .gc-toast__cancel {
+    align-self: center;
+    flex-shrink: 0;
+    height: 32px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.gc-toast .gc-toast__action {
+    background: var(--primary);
+    color: var(--primary-foreground);
+}
+.gc-toast .gc-toast__cancel {
+    background: var(--gc-hover, rgb(255 255 255 / 0.06));
+    color: var(--foreground);
+}
+/* Смужка часу: зменшується за час показу тосту. */
+.gc-toast::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 3px;
+    width: 100%;
+    background: var(--gc-toast-tone);
+    transform-origin: left;
+    animation: gc-toast-time var(--gc-toast-duration, 4.5s) linear forwards;
+}
+.gc-toast[data-type='loading']::after {
+    display: none;
+}
+[data-sonner-toaster]:hover .gc-toast::after {
+    animation-play-state: paused;
+}
+@keyframes gc-toast-time {
+    from {
+        transform: scaleX(1);
+    }
+    to {
+        transform: scaleX(0);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .gc-toast::after {
+        display: none;
+    }
+}
