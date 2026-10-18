@@ -456,8 +456,8 @@ html[data-palette='copper'] {
         box-shadow:
             inset 0 1px 0 rgb(255 255 255 / 0.14),
             0 24px 60px -30px rgb(0 0 0 / 0.55);
-        backdrop-filter: blur(30px) saturate(150%);
         -webkit-backdrop-filter: blur(30px) saturate(150%);
+        backdrop-filter: blur(30px) saturate(150%);
     }
 
     /* Матова плита (як «Charging Stats»): майже непрозора, тепла, без яскравої рамки. */
@@ -473,8 +473,8 @@ html[data-palette='copper'] {
         box-shadow:
             inset 0 1px 0 rgb(255 255 255 / 0.08),
             0 30px 80px -30px rgb(0 0 0 / 0.75);
-        backdrop-filter: blur(24px) saturate(130%);
         -webkit-backdrop-filter: blur(24px) saturate(130%);
+        backdrop-filter: blur(24px) saturate(130%);
     }
 
     /* Градієнтна рамка через маску */
@@ -1139,8 +1139,8 @@ label:has(
         inset 0 1px 0 rgb(255 255 255 / 0.16),
         inset 0 -24px 48px -36px rgb(255 255 255 / 0.12),
         0 40px 90px -40px rgb(0 0 0 / 0.95);
-    backdrop-filter: blur(26px) saturate(170%) brightness(1.05);
     -webkit-backdrop-filter: blur(26px) saturate(170%) brightness(1.05);
+    backdrop-filter: blur(26px) saturate(170%) brightness(1.05);
 }
 .liquid-glass::after {
     content: '';
@@ -1180,8 +1180,8 @@ label:has(
 @media (hover: none) and (pointer: coarse) {
     .liquid-glass {
         background-color: var(--matte);
-        backdrop-filter: none;
         -webkit-backdrop-filter: none;
+        backdrop-filter: none;
     }
     .liquid-glass__glare {
         display: none;
@@ -2058,23 +2058,23 @@ html[data-text='xl'] {
 @media not ((hover: none) and (pointer: coarse)) {
     :root[data-skin='flat'] .glass,
     :root[data-skin='flat'] .liquid-glass {
-        backdrop-filter: blur(30px) saturate(180%);
         -webkit-backdrop-filter: blur(30px) saturate(180%);
+        backdrop-filter: blur(30px) saturate(180%);
     }
     :root[data-skin='hero'] .glass,
     :root[data-skin='hero'] .liquid-glass {
-        backdrop-filter: blur(16px) saturate(160%);
         -webkit-backdrop-filter: blur(16px) saturate(160%);
+        backdrop-filter: blur(16px) saturate(160%);
     }
     :root[data-skin='material'] .glass,
     :root[data-skin='material'] .liquid-glass {
-        backdrop-filter: blur(40px) saturate(120%);
         -webkit-backdrop-filter: blur(40px) saturate(120%);
+        backdrop-filter: blur(40px) saturate(120%);
     }
     :root[data-skin='flex'] .glass,
     :root[data-skin='flex'] .liquid-glass {
-        backdrop-filter: blur(12px) saturate(190%) brightness(1.06);
         -webkit-backdrop-filter: blur(12px) saturate(190%) brightness(1.06);
+        backdrop-filter: blur(12px) saturate(190%) brightness(1.06);
     }
 }
 /* На телефонах без розмиття поверхні щільні — текст читається на будь-якому фоні. */
@@ -2431,6 +2431,8 @@ html[data-text='xl'] {
 /* Змінні каркаса за замовчуванням (стилі без власних значень — темні). */
 :root {
     --gc-bar: rgb(8 12 24 / 0.78);
+    --gc-island: rgb(14 19 34 / 0.94);
+    --gc-island-shadow: 0 10px 30px -14px rgb(0 0 0 / 0.65);
     --gc-hover: rgb(255 255 255 / 0.06);
     --gc-active: color-mix(in oklab, var(--primary) 18%, transparent);
     --gc-glow: transparent;
@@ -2468,6 +2470,8 @@ html[data-text='xl'] {
     --gc-float: 0 18px 48px -20px rgb(0 0 0 / 0.7);
     --gc-glow: transparent;
     --gc-bar: rgb(9 14 30 / 0.9);
+    --gc-island: rgb(16 25 50 / 0.93);
+    --gc-island-shadow: 0 10px 30px -14px rgb(0 0 0 / 0.7);
     --gc-hover: rgb(255 255 255 / 0.06);
     --gc-active: color-mix(in oklab, var(--primary) 18%, transparent);
 }
@@ -2528,6 +2532,9 @@ html[data-text='xl'] {
     --gc-shadow: 0 1px 2px rgb(16 42 80 / 0.04);
     --gc-float: 0 16px 40px -18px rgb(16 42 80 / 0.25);
     --gc-bar: rgb(246 250 254 / 0.9);
+    --gc-island: rgb(252 254 255 / 0.93);
+    --gc-island-shadow:
+        0 1px 2px rgb(16 42 80 / 0.06), 0 10px 28px -14px rgb(16 42 80 / 0.2);
     --gc-hover: rgb(13 27 46 / 0.05);
     --gc-active: color-mix(in oklab, var(--primary) 12%, transparent);
     --gc-glow: transparent;
@@ -2765,8 +2772,8 @@ html[data-text='xl'] {
     :root[data-skin='gamecon'] .glass,
     :root[data-skin='gamecon'] .liquid-glass,
     :root[data-skin='gamecon'] .glass-strong {
-        backdrop-filter: blur(28px) saturate(180%);
         -webkit-backdrop-filter: blur(28px) saturate(180%);
+        backdrop-filter: blur(28px) saturate(180%);
     }
 }
 @media (hover: none) and (pointer: coarse) {
@@ -2775,17 +2782,25 @@ html[data-text='xl'] {
             :has(input, textarea, select, [contenteditable='true'])
         ) {
         background: var(--glass);
-        backdrop-filter: blur(22px) saturate(170%);
         -webkit-backdrop-filter: blur(22px) saturate(170%);
+        backdrop-filter: blur(22px) saturate(170%);
     }
 }
 
 /* ---------- Каркас: шапка, бічне меню, нижня панель (layouts/social-layout.tsx) ---------- */
+/* Шапка на всю ширину: матове скло. */
 .gc-bar {
     background: var(--gc-bar);
     box-shadow: 0 1px 0 color-mix(in oklab, var(--foreground) 6%, transparent);
-    backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+}
+/* Нижня панель-острів на телефоні: щільне матове скло (майже непрозоре, фон за ним лише ледь розмитий), без рамки. */
+.gc-island {
+    background: var(--gc-island);
+    box-shadow: var(--gc-island-shadow);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    backdrop-filter: blur(30px) saturate(180%);
 }
 .gc-icon-button {
     color: color-mix(in oklab, var(--foreground) 72%, transparent);
@@ -2954,7 +2969,7 @@ html[data-text='xl'] {
 :root[data-theme='light'] .season-bg::before {
     opacity: 0.18;
 }
-/* Гірлянда й стрічка — під суцільною шапкою (56 px), а не під островом. */
+/* Гірлянда й стрічка — під суцільною шапкою (56 px). */
 :root[data-skin='gamecon'] .season-garland {
     top: calc(env(safe-area-inset-top) + 3.25rem);
 }

@@ -445,9 +445,9 @@ function MobileNav() {
 
     return (
         <>
-            {/* Нижня панель на всю ширину, як у мобільних соцмережах: матове скло, підписи під іконками. */}
-            <nav className="gc-bar fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)] [view-transition-name:gc-tabbar] lg:hidden">
-                <div className="mx-auto flex max-w-[560px] items-stretch px-1">
+            {/* Нижня панель-острів: матове щільне скло, підписи під іконками. */}
+            <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] [view-transition-name:gc-tabbar] lg:hidden">
+                <div className="gc-island pointer-events-auto mx-auto flex max-w-[560px] items-stretch rounded-2xl px-1 py-0.5">
                     {primary.map((item) => (
                         <TabItem
                             key={item.key}
