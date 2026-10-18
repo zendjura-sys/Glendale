@@ -3175,3 +3175,22 @@ html[data-text='xl'] {
 :root[data-theme='light'] .phone-tier--diamond {
     --tier: #7c3aed;
 }
+/*
+ * Світла панель усередині темної підкладки (діалог на затемненні bg-black/60) знову пише чорнилом:
+ * «білий» острів діє лише до першої світлої поверхні.
+ */
+:root[data-theme='light']
+    :is([class~='bg-black'], [class*='bg-black/'], [class~='bg-gc-ink'])
+    :is(
+        .glass,
+        .glass-strong,
+        .liquid-glass,
+        [class*='bg-[var(--matte'],
+        [class*='bg-[var(--glass'],
+        [class~='bg-popover'],
+        [class~='bg-card'],
+        [class~='bg-background'],
+        [class~='bg-sidebar']
+    ) {
+    --color-white: #0d1b2e;
+}
