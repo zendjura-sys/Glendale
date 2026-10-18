@@ -566,65 +566,93 @@ class ThemePicker extends StatelessWidget {
       ('system', tr('Як на пристрої'), tr('Вдень світла, вночі темна — як у системі')),
     ];
     final reduce = MediaQuery.disableAnimationsOf(context);
+    Widget thumb((String, String, String) item) => AnimatedContainer(
+          duration: reduce ? Duration.zero : const Duration(milliseconds: 220),
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            color: selected == item.$1 ? primary : fg.withValues(alpha: 0.1),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: AspectRatio(
+              aspectRatio: 4 / 3,
+              child: Stack(fit: StackFit.expand, children: [
+                CustomPaint(painter: _ThemeThumb(item.$1)),
+                Positioned(
+                  top: 6,
+                  right: 6,
+                  child: AnimatedScale(
+                    scale: selected == item.$1 ? 1 : 0,
+                    duration: reduce ? Duration.zero : const Duration(milliseconds: 260),
+                    curve: Curves.easeOutBack,
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(shape: BoxShape.circle, color: primary),
+                      child: const Icon(LucideIcons.check, size: 13, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ]),
+            ),
+          ),
+        );
+    Widget option((String, String, String) item, Widget child) => Semantics(
+          inMutuallyExclusiveGroup: true,
+          checked: selected == item.$1,
+          button: true,
+          label: item.$2,
+          child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: () => onSelect(item.$1), child: child),
+        );
+
     return Glass(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Text(tr('Тема'), style: body(16, weight: FontWeight.w600)),
         const SizedBox(height: 4),
         Text(tr('Темна «Неоновий синій» чи світла «Крижана Арктика». Фон застосунку підлаштовується під тему.'), style: body(13, color: muted)),
         const SizedBox(height: 14),
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          for (final (i, item) in themes.indexed) ...[
-            if (i > 0) const SizedBox(width: 10),
-            Expanded(
-              child: Semantics(
-                inMutuallyExclusiveGroup: true,
-                checked: selected == item.$1,
-                button: true,
-                label: item.$2,
-                child: GestureDetector(
-                  onTap: () => onSelect(item.$1),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    AnimatedContainer(
-                      duration: reduce ? Duration.zero : const Duration(milliseconds: 220),
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(18),
-                        color: selected == item.$1 ? primary : fg.withValues(alpha: 0.1),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: AspectRatio(
-                          aspectRatio: 4 / 3,
-                          child: Stack(fit: StackFit.expand, children: [
-                            CustomPaint(painter: _ThemeThumb(item.$1)),
-                            Positioned(
-                              top: 6,
-                              right: 6,
-                              child: AnimatedScale(
-                                scale: selected == item.$1 ? 1 : 0,
-                                duration: reduce ? Duration.zero : const Duration(milliseconds: 260),
-                                curve: Curves.easeOutBack,
-                                child: Container(
-                                  width: 22,
-                                  height: 22,
-                                  decoration: BoxDecoration(shape: BoxShape.circle, color: primary),
-                                  child: const Icon(LucideIcons.check, size: 13, color: Colors.white),
-                                ),
-                              ),
-                            ),
-                          ]),
-                        ),
-                      ),
+        LayoutBuilder(builder: (context, box) {
+          // Вузький екран (телефон): теми списком — мініатюра ліворуч, назва й опис повністю праворуч.
+          if (box.maxWidth < 480) {
+            return Column(children: [
+              for (final (i, item) in themes.indexed) ...[
+                if (i > 0) const SizedBox(height: 10),
+                option(
+                  item,
+                  Row(children: [
+                    SizedBox(width: 112, child: thumb(item)),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(item.$2, style: body(15, weight: FontWeight.w600)),
+                        const SizedBox(height: 2),
+                        Text(item.$3, style: body(12.5, color: muted).copyWith(height: 1.35)),
+                      ]),
                     ),
+                  ]),
+                ),
+              ],
+            ]);
+          }
+          // Ширше (планшет): три мініатюри в ряд, як на сайті.
+          return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            for (final (i, item) in themes.indexed) ...[
+              if (i > 0) const SizedBox(width: 10),
+              Expanded(
+                child: option(
+                  item,
+                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    thumb(item),
                     const SizedBox(height: 8),
-                    Text(item.$2, maxLines: 2, style: body(13.5, weight: FontWeight.w600).copyWith(height: 1.25)),
-                    Text(item.$3, maxLines: 3, style: body(11.5, color: muted).copyWith(height: 1.3)),
+                    Text(item.$2, style: body(13.5, weight: FontWeight.w600).copyWith(height: 1.25)),
+                    Text(item.$3, style: body(11.5, color: muted).copyWith(height: 1.3)),
                   ]),
                 ),
               ),
-            ),
-          ],
-        ]),
+            ],
+          ]);
+        }),
       ]),
     );
   }
