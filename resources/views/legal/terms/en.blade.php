@@ -2,6 +2,16 @@
 <p>This document is a <strong>public offer</strong> (an offer to enter into a contract) within the meaning of Articles 633, 641 and 642 of the Civil Code of Ukraine and, at the same time, the terms of use of {{ $legal['name'] }} at <a href="{{ $legal['site'] }}">{{ $legal['site'] }}</a>, in its mobile apps, bots and related services (together, the "Service"). The contract is concluded electronically under the Law of Ukraine "On Electronic Commerce" and has the same force as a written contract.</p>
 <p>The Service is provided by <strong>{{ $legal['operator'] }}</strong> (the "Provider", "we"), whose details are listed in section 15. A person using the Service is the "User" or "you".</p>
 
+<h2>Contact details</h2>
+{{-- At the top of the offer so buyers see right away how to reach us (Law "On Electronic Commerce", Art. 7). --}}
+<ul class="legal-requisites">
+    <li>Provider: <strong>{{ $legal['operator'] }}</strong></li>
+    <li>E-mail: <a href="mailto:{{ $legal['email'] }}">{{ $legal['email'] }}</a> — account, payments, refunds and complaints</li>
+    @if($legal['address'])<li>Postal address: {{ $legal['address'] }}</li>@endif
+    <li>Website: <a href="{{ $legal['site'] }}">{{ $legal['site'] }}</a></li>
+</ul>
+<p>We reply to payment questions within 3 business days and to other requests within 14 days. The Provider's full details are in section 15.</p>
+
 <h2>1. Acceptance</h2>
 <ul>
     <li>You accept the free part of the contract (use of the Service) by creating an account or using the Service.</li>

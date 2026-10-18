@@ -76,6 +76,7 @@ Route::get('terms', [LegalController::class, 'terms'])->name('legal.terms');
 Route::get('privacy', [LegalController::class, 'privacy'])->name('legal.privacy');
 Route::get('refund-policy', [LegalController::class, 'refund'])->name('legal.refund');
 Route::get('pricing', [LegalController::class, 'pricing'])->name('legal.pricing');
+Route::get('contacts', [LegalController::class, 'contacts'])->name('legal.contacts');
 
 Route::redirect('dashboard', '/feed')->name('dashboard');
 

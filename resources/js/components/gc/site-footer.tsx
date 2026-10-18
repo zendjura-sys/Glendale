@@ -14,7 +14,10 @@ export function SiteFooter({
     className?: string;
     /** На юридичних сторінках — підписи мовою документа. */
     labels?: Partial<
-        Record<'terms' | 'privacy' | 'refund' | 'pricing' | 'rights', string>
+        Record<
+            'terms' | 'privacy' | 'refund' | 'pricing' | 'contacts' | 'rights',
+            string
+        >
     >;
     /** Мова документа: посилання ведуть на ту саму мову. */
     lang?: string;
@@ -27,6 +30,7 @@ export function SiteFooter({
         { href: `/privacy${q}`, label: t.privacy },
         { href: `/refund-policy${q}`, label: t.refund },
         { href: `/pricing${q}`, label: t.pricing },
+        { href: `/contacts${q}`, label: t.contacts },
     ];
 
     return (

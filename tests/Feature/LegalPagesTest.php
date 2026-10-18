@@ -20,7 +20,7 @@ class LegalPagesTest extends TestCase
 
     public function test_documents_are_public_and_rendered_in_every_base_language(): void
     {
-        foreach (['/terms' => 'terms', '/privacy' => 'privacy', '/refund-policy' => 'refund'] as $url => $doc) {
+        foreach (['/terms' => 'terms', '/privacy' => 'privacy', '/refund-policy' => 'refund', '/contacts' => 'contacts'] as $url => $doc) {
             foreach ((array) config('legal.languages') as $lang) {
                 $this->get("{$url}?lang={$lang}")->assertOk()->assertInertia(fn (Assert $page) => $page
                     ->component('legal/show')
@@ -99,6 +99,7 @@ class LegalPagesTest extends TestCase
             ->missing('footer.paddle')
             ->has('footer.terms')
             ->has('footer.refund')
+            ->has('footer.contacts')
         );
     }
 
@@ -130,17 +131,38 @@ class LegalPagesTest extends TestCase
         $this->get('/refund-policy?lang=uk')->assertInertia(fn (Assert $page) => $page
             ->where('updated', '2026-11-01')
             ->where('html', fn (string $html) => str_contains($html, 'ФОП Коваленко Олена') && str_contains($html, 'billing@example.com')
-                && str_contains($html, 'РНОКПП: 1234567890') && str_contains($html, '2010350000000123456') && str_contains($html, 'tel:+380671234567')
+                && str_contains($html, 'РНОКПП: 1234567890') && str_contains($html, '2010350000000123456')
+                // Телефон зберігається, але на сайті не показується.
+                && ! str_contains($html, '123 45 67') && ! str_contains($html, 'tel:')
                 && str_contains($html, 'єдиного податку 3 групи'))
         );
         $this->get('/terms?lang=en')->assertInertia(fn (Assert $page) => $page
             ->where('html', fn (string $html) => str_contains($html, 'Taxpayer ID (RNOKPP): 1234567890'))
         );
+        $this->assertSame('+380 67 123 45 67', app(SiteSettings::class)->get('legal_phone'));
+        $this->get('/contacts')->assertInertia(fn (Assert $page) => $page->where('html', fn (string $html) => ! str_contains($html, '123 45 67')));
 
         $this->actingAs($admin)->put('/admin/settings', [...$payload, 'legal_tax_id' => '12ab'])
             ->assertSessionHasErrors('legal_tax_id');
 
         $this->actingAs($admin)->put('/admin/settings', [...$payload, 'legal_email' => 'not-an-email'])
             ->assertSessionHasErrors('legal_email');
+    }
+
+    public function test_contacts_page_and_offer_show_email_for_customers(): void
+    {
+        app(SiteSettings::class)->put(['legal_email' => 'help@gamecon.test']);
+
+        $this->get('/contacts')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('document', 'contacts')
+            ->where('title', 'Контакти')
+            ->where('html', fn (string $html) => str_contains($html, 'mailto:help@gamecon.test') && ! str_contains($html, 'tel:'))
+        );
+        // У оферті контакти — на самому початку, до розділу 1.
+        $this->get('/terms?lang=uk')->assertInertia(fn (Assert $page) => $page->where('html', function (string $html) {
+            $contacts = strpos($html, 'Контактні дані для зв’язку');
+
+            return $contacts !== false && $contacts < strpos($html, '1. Акцепт оферти') && str_contains($html, 'mailto:help@gamecon.test');
+        }));
     }
 }

@@ -4,7 +4,7 @@ import { LegalShell } from '@/components/legal/legal-shell';
 import type { LegalLabels } from '@/components/legal/legal-shell';
 
 type Props = {
-    document: 'terms' | 'privacy' | 'refund';
+    document: 'terms' | 'privacy' | 'refund' | 'contacts';
     title: string;
     html: string;
     locale: string;
@@ -20,6 +20,7 @@ const PATHS = {
     terms: '/terms',
     privacy: '/privacy',
     refund: '/refund-policy',
+    contacts: '/contacts',
 } as const;
 
 /**

@@ -22,6 +22,7 @@ declare module '@inertiajs/core' {
                 privacy: string;
                 refund: string;
                 pricing: string;
+                contacts: string;
                 rights: string;
             };
             auth: Auth;

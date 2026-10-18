@@ -11,7 +11,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Юридичні документи: Terms of Service, Privacy Policy, Refund & Cancellation Policy, а також публічна сторінка цін.
+ * Юридичні документи: Terms of Service, Privacy Policy, Refund & Cancellation Policy, контакти, а також публічна сторінка цін.
  *
  * Мова документа: ?lang= → мова сесії / інтерфейсу (App::getLocale()) → українська (майстер-версія).
  * Шаблон: resources/views/legal/{document}/{locale}.blade.php, якщо перекладу немає — майстер (uk).
@@ -34,6 +34,12 @@ class LegalController extends Controller
     public function refund(Request $request): Response
     {
         return $this->document($request, 'refund');
+    }
+
+    /** Контакти для зв’язку з клієнтами (окремий розділ — вимога еквайрингу monobank). */
+    public function contacts(Request $request): Response
+    {
+        return $this->document($request, 'contacts');
     }
 
     /** Публічні тарифи GameCon+ (для гостей і перевірки платіжними сервісами). */
@@ -122,6 +128,7 @@ class LegalController extends Controller
                 'privacy' => $t('privacy'),
                 'refund' => $t('refund'),
                 'pricing' => $t('pricing'),
+                'contacts' => $t('contacts'),
                 'view_original' => $t('view_original'),
                 'prevail' => $t('prevail'),
                 // Застереження мовою майстер-версії (українською) — показується завжди.

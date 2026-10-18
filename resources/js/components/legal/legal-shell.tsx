@@ -10,6 +10,7 @@ export type LegalLabels = {
     privacy: string;
     refund: string;
     pricing: string;
+    contacts: string;
     view_original: string;
     prevail: string;
     prevail_en: string;
@@ -77,6 +78,7 @@ export function LegalShell({
                         privacy: labels.privacy,
                         refund: labels.refund,
                         pricing: labels.pricing,
+                        contacts: labels.contacts,
                         rights: labels.rights,
                     }}
                 />

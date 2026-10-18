@@ -76,6 +76,7 @@ class HandleInertiaRequests extends Middleware
                 'privacy' => __('ui.privacy'),
                 'refund' => __('ui.refund'),
                 'pricing' => __('ui.pricing'),
+                'contacts' => __('ui.contacts'),
                 'rights' => __('ui.all_rights_reserved'),
             ],
             'site' => [

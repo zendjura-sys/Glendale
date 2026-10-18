@@ -6,6 +6,6 @@
     @if($legal['tax_status'])<li>Податковий статус: {{ $legal['tax_status'] }}</li>@endif
     @if($legal['address'])<li>Місцезнаходження: {{ $legal['address'] }}</li>@endif
     <li>E-mail: <a href="mailto:{{ $legal['email'] }}">{{ $legal['email'] }}</a></li>
-    @if($legal['phone'])<li>Телефон: <a href="tel:{{ preg_replace('/[^+\d]/', '', $legal['phone']) }}">{{ $legal['phone'] }}</a></li>@endif
+    {{-- Телефон не показуємо на сайті: для зв’язку — лише e-mail. Номер лишається в Адмінка → Налаштування → Юридичні дані. --}}
     <li>Сайт: <a href="{{ $legal['site'] }}">{{ $legal['site'] }}</a></li>
 </ul>

@@ -8,6 +8,7 @@ return [
     'privacy' => 'Política de privacidad',
     'refund' => 'Política de reembolsos y cancelaciones',
     'pricing' => 'Precios',
+    'contacts' => 'Contacto',
     'view_original' => 'Ver original (ucraniano)',
     'prevail' => 'En caso de conflicto, discrepancia o incoherencia entre la versión en ucraniano y cualquier versión traducida, prevalecerá la versión en ucraniano.',
     'last_updated' => 'Última actualización',
