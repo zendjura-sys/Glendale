@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -21,6 +22,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $aliases
  * @property array<string, mixed>|null $details
  * @property list<array{store: string, url: string}>|null $links
+ * @property list<string>|null $collections
  * @property string|null $cover
  * @property Carbon|null $released
  * @property float|null $rating
@@ -131,6 +133,7 @@ class Game extends Model
             'modes' => 'array',
             'details' => 'array',
             'links' => 'array',
+            'collections' => 'array',
             'released' => 'date',
             'rating' => 'float',
             'links_checked_at' => 'datetime',
@@ -152,6 +155,14 @@ class Game extends Model
     }
 
     /** Літера для покажчика A–Z: латинська велика або «#» для цифр та інших символів. */
+    /**
+     * @return HasMany<GameGuide, $this>
+     */
+    public function guides(): HasMany
+    {
+        return $this->hasMany(GameGuide::class);
+    }
+
     public static function letterOf(string $name): string
     {
         $first = strtoupper(mb_substr(ltrim($name), 0, 1));
@@ -177,6 +188,18 @@ class Game extends Model
             'rating' => $this->rating,
             'modes' => array_values(array_intersect(array_keys(self::MODES), $this->modes ?? [])),
         ];
+    }
+
+    /** Steam appid із посилання каталогу на store.steampowered.com/app/{id}. */
+    public function steamAppId(): ?string
+    {
+        foreach ($this->links ?? [] as $link) {
+            if ($link['store'] === 'steam' && preg_match('#/app/(\d+)#', $link['url'], $match) === 1) {
+                return $match[1];
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -29,13 +29,32 @@ export type StickerPackItem = {
     id: number;
     slug: string;
     name: string;
+    /** Набір GameCon+ */
+    is_plus?: boolean;
+    /** Без підписки — видно, але надіслати не можна */
+    locked?: boolean;
     stickers: StickerItem[];
 };
 
 export type ContactCard = UserCard & { is_friend?: boolean };
 
 export type OutgoingMessage =
-    | { kind: 'text'; body: string; images: File[]; files: File[] }
+    | {
+          kind: 'text';
+          body: string;
+          images: File[];
+          files: File[];
+          publishAt?: string | null;
+          vanish?: boolean;
+          card?: {
+              kind: string;
+              id: number;
+              title: string;
+              hint: string;
+              href: string;
+              image: string | null;
+          } | null;
+      }
     | { kind: 'sticker'; sticker: StickerItem }
     | { kind: 'voice'; blob: Blob; duration: number; waveform: number[] }
     | { kind: 'contact'; contact: ContactCard };
@@ -59,7 +78,19 @@ export type ChatMessage = {
     } | null;
     attachments: ChatAttachment[];
     edited_at: string | null;
+    publish_at?: string | null;
+    expires_at?: string | null;
     created_at: string;
+    starred?: boolean;
+    forward?: { name: string; username: string | null } | null;
+    card?: {
+        kind: string;
+        id: number;
+        title: string;
+        hint: string;
+        href: string;
+        image: string | null;
+    } | null;
     /** Локальний стан оптимістичної відправки. */
     pending?: 'sending' | 'failed';
     local_id?: string;
@@ -74,6 +105,8 @@ export type ConversationSummary = {
     members_count: number;
     unread: number;
     is_muted: boolean;
+    pinned?: boolean;
+    folder?: string | null;
     last_message: {
         id: number;
         type: MessageType;
@@ -98,6 +131,10 @@ export type ConversationDetails = {
         | null;
     can_write: boolean;
     is_muted: boolean;
+    share_receipts?: boolean;
+    slow_seconds?: number;
+    pinned?: boolean;
+    folder?: string | null;
     my_role: MemberRole;
     read_up_to: number;
     members: ConversationMember[];

@@ -62,7 +62,7 @@ export default function AdminModules({ modules }: { modules: ModuleItem[] }) {
                 {groups.map((group) => (
                     <section key={group.title}>
                         <div className="mb-3 flex items-baseline gap-3">
-                            <h2 className="font-display text-sm font-semibold tracking-wide text-white/90 uppercase">
+                            <h2 className="font-display text-sm font-semibold text-white/90">
                                 {group.title}
                             </h2>
                             <span className="text-xs text-white/35">

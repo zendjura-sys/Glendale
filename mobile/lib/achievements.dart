@@ -25,6 +25,10 @@ const _icons = <String, IconData>{
   'clapperboard': LucideIcons.clapperboard,
   'badge-check': LucideIcons.badgeCheck,
   'rocket': LucideIcons.rocket,
+  'vote': LucideIcons.vote,
+  'target': LucideIcons.target,
+  'user-plus': LucideIcons.userPlus,
+  'megaphone': LucideIcons.megaphone,
 };
 
 /// Рівень (досвід до наступного) і бейджі за активність — у профілі.
@@ -115,7 +119,7 @@ class _AchievementsPanelState extends State<AchievementsPanel> {
                       child: Icon(_icons[b['icon']] ?? LucideIcons.award, size: 21, color: b['earned'] == true ? gold : faint),
                     ),
                     const SizedBox(height: 5),
-                    Text(text(b['title']) ?? '', textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(10.5, color: b['earned'] == true ? soft : faint)),
+                    Text(text(b['title']) ?? '', textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(11, color: b['earned'] == true ? soft : faint)),
                   ]),
                 ),
             ],

@@ -1,3 +1,4 @@
+import { shortNumber } from '@/lib/format';
 import { LOCALE } from '@/lib/i18n';
 const whole = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 0 });
 
@@ -15,6 +16,18 @@ export function uah(minor: number | null | undefined, signed = false): string {
     }
 
     return signed && value > 0 ? `+${text}` : text;
+}
+
+/**
+ * Коротко для плиток: 1 000 000 ₴ → «1M ₴», дрібні суми як є.
+ */
+export function uahShort(minor: number | null | undefined): string {
+    const value = Math.trunc((minor ?? 0) / 100);
+    if (Math.abs(value) < 1000) {
+        return uah(minor);
+    }
+
+    return `${shortNumber(value)} ₴`;
 }
 
 /**

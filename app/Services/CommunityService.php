@@ -65,15 +65,21 @@ class CommunityService
     /**
      * Вступ або заявка. Повертає статус участі.
      */
-    public function join(Community $community, User $user): string
+    public function join(Community $community, User $user, bool $invited = false): string
     {
         $existing = $community->membershipFor($user);
 
         if ($existing) {
-            return $existing->status;
+            if ($invited && $existing->status === CommunityMember::STATUS_PENDING) {
+                $existing->update(['status' => CommunityMember::STATUS_ACTIVE]);
+                $this->recount($community);
+                app(CommunityWall::class)->welcome($community, $user);
+            }
+
+            return $existing->fresh()->status;
         }
 
-        $status = $community->isClosed() ? CommunityMember::STATUS_PENDING : CommunityMember::STATUS_ACTIVE;
+        $status = $invited || ! $community->isClosed() ? CommunityMember::STATUS_ACTIVE : CommunityMember::STATUS_PENDING;
 
         $community->memberships()->create([
             'user_id' => $user->id,
@@ -83,6 +89,8 @@ class CommunityService
 
         if ($status === CommunityMember::STATUS_PENDING) {
             Notification::send($this->admins($community), new CommunityActivity(CommunityActivity::REQUEST, $user, $community));
+        } else {
+            app(CommunityWall::class)->welcome($community, $user);
         }
 
         $this->recount($community);
@@ -116,6 +124,7 @@ class CommunityService
         if ($updated) {
             $user->notify(new CommunityActivity(CommunityActivity::APPROVED, null, $community));
             $this->recount($community);
+            app(CommunityWall::class)->welcome($community, $user);
         }
     }
 

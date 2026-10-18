@@ -8,8 +8,10 @@ import {
     Clock,
     Eye,
     MessageCircle,
+    Pause,
     Pencil,
     Play,
+    Plus,
     Share2,
     Star,
     Tv,
@@ -18,9 +20,18 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import {
+    EpisodePicker,
+    episodeLink,
+    firstPick,
+    supportsEpisodes,
+} from '@/components/cinema/episode-picker';
+import type { EpisodePick, Season } from '@/components/cinema/episode-picker';
 import { MoviePoster, PosterRow } from '@/components/cinema/movie-tile';
 import { ShareMovieDialog } from '@/components/cinema/share-movie-dialog';
 import { Comments } from '@/components/gc/comments';
+import { PinButton } from '@/components/gc/pin-button';
+import { SaveButton } from '@/components/gc/save-button';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import {
     DropdownMenu,
@@ -29,10 +40,14 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { api, ApiError } from '@/lib/api';
-import { compactNumber, plural } from '@/lib/format';
+import { compactNumber, formatDuration, plural } from '@/lib/format';
+import { playQueue, toggle, usePlayer } from '@/lib/player';
+import { Equalizer, TrackCover } from '@/components/music/track-cover';
 import { cn } from '@/lib/utils';
+import { usePlugin } from '@/lib/plugins';
 import type {
     CommentItem,
+    LocalTrack,
     MovieCard,
     MovieDetail,
     MovieFriend,
@@ -49,9 +64,18 @@ type Props = {
     state: MovieState;
     statuses: MovieOption<MovieStatus>[];
     friends: { users: MovieFriend[]; total: number };
+    seen: MovieFriend[];
+    taste: (MovieFriend & { shared: number })[];
+    episodeMarks: string[];
+    /** Посерійний режим (вмикається в адмінці); приходить окремим запитом. */
+    episodes?: Season[] | null;
     similar: MovieCard[];
     comments: CommentItem[];
     can: { manage: boolean };
+    soundtrack: LocalTrack[];
+    saved: boolean;
+    pinned: boolean;
+    inTopTen: boolean;
 };
 
 type StateResponse = {
@@ -157,25 +181,41 @@ export default function CinemaShow({
     state: initialState,
     statuses,
     friends,
+    seen,
+    taste,
+    episodeMarks,
+    episodes,
     similar,
     comments,
     can,
+    soundtrack,
+    saved,
+    pinned,
+    inTopTen,
 }: Props) {
     const [state, setState] = useState(initialState);
+    const tenOn = usePlugin('top_ten');
     const [stats, setStats] = useState({
         user_rating: movie.user_rating,
         ratings_count: movie.ratings_count,
         watchers_count: movie.watchers_count,
     });
     const [commentsCount, setCommentsCount] = useState(movie.comments_count);
+    const marks = episodeMarks;
     const [sharing, setSharing] = useState(false);
     const providers = useMemo(
         () => [...new Set(players.map((p) => p.provider))],
         [players],
     );
-    const [provider, setProvider] = useState<string | null>(
+    const [chosen, setProvider] = useState<string | null>(
         providers[0] ?? (movie.trailer_url ? 'trailer' : null),
     );
+    // Після оновлення сторінки обраного провайдера може вже не бути — тоді беремо перший наявний.
+    const provider =
+        chosen === 'trailer' ||
+        (chosen !== null && (providers as string[]).includes(chosen))
+            ? chosen
+            : (providers[0] ?? (movie.trailer_url ? 'trailer' : null));
     const providerPlayers = players.filter((p) => p.provider === provider);
     const [playerKey, setPlayerKey] = useState<string | null>(
         providerPlayers[0]?.key ?? null,
@@ -183,6 +223,31 @@ export default function CinemaShow({
     const player =
         providerPlayers.find((p) => p.key === playerKey) ?? providerPlayers[0];
     const startedRef = useRef(false);
+    const frameRef = useRef<HTMLIFrameElement>(null);
+    // Серія обирається під плеєром (сам плеєр — без перемикачів): одразу наступна непереглянута.
+    const [pick, setPick] = useState<EpisodePick | null>(() =>
+        episodes?.length ? firstPick(episodes, episodeMarks) : null,
+    );
+    // Список серій приходить окремим запитом (defer): тоді й обираємо серію.
+    const [picked, setPicked] = useState(false);
+    useEffect(() => {
+        if (picked || !episodes?.length) return;
+        setPicked(true);
+        setPick((current) => current ?? firstPick(episodes, episodeMarks));
+    }, [episodes, episodeMarks, picked]);
+    // Поки список серій вантажиться, плеєр не показуємо, щоб він не перезапускався.
+    const waitingEpisodes =
+        episodes === undefined &&
+        player !== undefined &&
+        supportsEpisodes(player.provider) &&
+        (movie.episodes_count ?? 0) > 1;
+    // Фільм (або серіал без списку серій у посерійному режимі вимкнено): Kodik без перемикачів лише для фільмів.
+    const bare = !((movie.episodes_count ?? 0) > 1);
+    const episodeMode =
+        provider !== 'trailer' &&
+        pick !== null &&
+        player !== undefined &&
+        supportsEpisodes(player.provider);
 
     const apply = (response: StateResponse) => {
         setState(response.state);
@@ -241,6 +306,8 @@ export default function CinemaShow({
     useEffect(() => {
         const onMessage = (event: MessageEvent) => {
             if (startedRef.current) return;
+            // Лише події нашого плеєра, а не інших вкладок чи вбудованого вмісту.
+            if (event.source !== frameRef.current?.contentWindow) return;
             const data = event.data as { key?: string; event?: string } | null;
             const key =
                 typeof data === 'object' && data
@@ -287,6 +354,8 @@ export default function CinemaShow({
                 <section className="relative isolate overflow-hidden rounded-3xl border border-white/[0.08] bg-gc-ink">
                     {(movie.backdrop || movie.poster) && (
                         <img
+                            decoding="async"
+                            fetchPriority="high"
                             src={movie.backdrop ?? movie.poster ?? ''}
                             alt=""
                             className={cn(
@@ -295,8 +364,8 @@ export default function CinemaShow({
                             )}
                         />
                     )}
-                    <div className="absolute inset-0 -z-10 bg-gradient-to-r from-gc-ink via-gc-ink/85 to-gc-ink/30" />
-                    <div className="absolute inset-0 -z-10 bg-gradient-to-t from-gc-ink via-gc-ink/40 to-transparent" />
+                    <div className="scrim scrim-side absolute inset-0 -z-10" />
+                    <div className="scrim absolute inset-0 -z-10" />
 
                     <div className="p-5 sm:p-7">
                         <div className="mb-5 flex items-center gap-2">
@@ -456,6 +525,31 @@ export default function CinemaShow({
                                             {tr('Дивитися разом')}
                                         </button>
                                     )}
+                                    <SaveButton
+                                        kind="movie"
+                                        id={movie.id}
+                                        saved={saved}
+                                    />
+                                    {tenOn && (
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                router.post('/cinema/ten', {
+                                                    movie_id: movie.id,
+                                                })
+                                            }
+                                            className="inline-flex h-11 items-center rounded-xl border border-white/15 px-3 text-sm text-white"
+                                        >
+                                            {inTopTen
+                                                ? tr('У десятці')
+                                                : tr('У десятку')}
+                                        </button>
+                                    )}
+                                    <PinButton
+                                        kind="movie"
+                                        id={movie.id}
+                                        pinned={pinned}
+                                    />
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <button
@@ -568,7 +662,7 @@ export default function CinemaShow({
                     ) : (
                         <>
                             <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.06] p-3">
-                                <div className="flex gap-1">
+                                <div className="scrollbar-none flex max-w-full gap-1 overflow-x-auto">
                                     {tabs.map((tab) => (
                                         <button
                                             key={tab.key}
@@ -585,9 +679,16 @@ export default function CinemaShow({
                                         </button>
                                     ))}
                                 </div>
+                                {providerPlayers.length === 1 &&
+                                    provider !== 'trailer' &&
+                                    player?.translation && (
+                                        <span className="ml-auto max-w-full truncate rounded-xl border border-white/[0.06] px-3 py-2 text-sm text-white/60">
+                                            {player.translation}
+                                        </span>
+                                    )}
                                 {providerPlayers.length > 1 && (
                                     <select
-                                        value={player?.key}
+                                        value={player?.key ?? ''}
                                         onChange={(e) =>
                                             setPlayerKey(e.target.value)
                                         }
@@ -605,26 +706,28 @@ export default function CinemaShow({
                                         ))}
                                     </select>
                                 )}
-                                {providerPlayers.length === 1 &&
-                                    player?.translation && (
-                                        <span className="ml-auto text-xs text-white/45">
-                                            {player.translation}
-                                            {player.quality &&
-                                                ` · ${player.quality}`}
-                                        </span>
-                                    )}
                             </div>
                             <div className="relative aspect-video bg-black">
                                 <iframe
+                                    ref={frameRef}
                                     key={
                                         provider === 'trailer'
                                             ? 'trailer'
-                                            : player?.key
+                                            : episodeMode
+                                              ? `${player.key}:${pick.season}:${pick.episode}`
+                                              : player?.key
                                     }
                                     src={
                                         provider === 'trailer'
                                             ? (movie.trailer_url ?? '')
-                                            : player?.link
+                                            : player && !waitingEpisodes
+                                              ? episodeLink(
+                                                    player.provider,
+                                                    player.link,
+                                                    episodeMode ? pick : null,
+                                                    episodeMode || bare,
+                                                )
+                                              : undefined
                                     }
                                     title={movie.title}
                                     className="absolute inset-0 size-full"
@@ -633,6 +736,19 @@ export default function CinemaShow({
                                     referrerPolicy="origin"
                                 />
                             </div>
+                            {episodes &&
+                                episodes.length > 0 &&
+                                provider !== 'trailer' && (
+                                    <EpisodePicker
+                                        seasons={episodes}
+                                        value={pick}
+                                        onChange={setPick}
+                                        supported={supportsEpisodes(
+                                            player?.provider,
+                                        )}
+                                        watched={marks}
+                                    />
+                                )}
                         </>
                     )}
                 </section>
@@ -649,6 +765,11 @@ export default function CinemaShow({
                                 </p>
                             </section>
                         )}
+                        <Soundtrack
+                            tracks={soundtrack}
+                            slug={movie.slug}
+                            canAdd={can.manage}
+                        />
                         <section className="glass rounded-3xl p-5">
                             <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
                                 <MessageCircle className="size-5 text-gc-lilac-400" />
@@ -675,8 +796,63 @@ export default function CinemaShow({
                         </section>
                     </div>
                     <aside className="space-y-5">
+                        {seen.length > 0 && (
+                            <section className="glass rounded-3xl p-5">
+                                <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
+                                    {tr('Уже бачили')}
+                                </h2>
+                                <ul className="space-y-2">
+                                    {seen.map((friend) => (
+                                        <li key={friend.id}>
+                                            <Link
+                                                href={`/${friend.username}`}
+                                                className="flex items-center gap-2 text-sm text-white"
+                                            >
+                                                <UserAvatar
+                                                    user={friend}
+                                                    size="sm"
+                                                />
+                                                <span className="truncate">
+                                                    {friend.name}
+                                                </span>
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </section>
+                        )}
+                        {taste.length > 0 && (
+                            <section className="glass rounded-3xl p-5">
+                                <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
+                                    {tr('Схожий смак')}
+                                </h2>
+                                <ul className="space-y-2">
+                                    {taste.map((friend) => (
+                                        <li key={friend.id}>
+                                            <Link
+                                                href={`/${friend.username}`}
+                                                className="flex items-center justify-between gap-2 text-sm text-white"
+                                            >
+                                                <span className="flex min-w-0 items-center gap-2">
+                                                    <UserAvatar
+                                                        user={friend}
+                                                        size="sm"
+                                                    />
+                                                    <span className="truncate">
+                                                        {friend.name}
+                                                    </span>
+                                                </span>
+                                                <span className="shrink-0 text-xs text-white/45">
+                                                    {friend.shared}
+                                                </span>
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </section>
+                        )}
                         <section className="glass rounded-3xl p-5">
-                            <h2 className="mb-3 font-display text-sm font-semibold tracking-wide text-white/70 uppercase">
+                            <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
                                 {tr('Друзі та цей фільм')}
                             </h2>
                             {friends.users.length === 0 ? (
@@ -745,5 +921,183 @@ export default function CinemaShow({
                 onOpenChange={setSharing}
             />
         </>
+    );
+}
+
+/** Саундтрек як список у плеєрі: обкладинка з «Слухати», назва, виконавець, тривалість. */
+function Soundtrack({
+    tracks,
+    slug,
+    canAdd,
+}: {
+    tracks: LocalTrack[];
+    slug: string;
+    canAdd: boolean;
+}) {
+    const player = usePlayer();
+    const [adding, setAdding] = useState(false);
+
+    return (
+        <section className="glass rounded-3xl p-5">
+            <div className="mb-3 flex items-center justify-between gap-3">
+                <h2 className="font-display text-lg font-semibold text-white">
+                    {tr('Саундтрек')}
+                </h2>
+                {canAdd && (
+                    <button
+                        type="button"
+                        onClick={() => setAdding((v) => !v)}
+                        aria-label={tr('Додати трек')}
+                        title={tr('Додати трек')}
+                        className={cn(
+                            'flex size-9 items-center justify-center rounded-full transition',
+                            adding
+                                ? 'bg-[var(--btn-primary,#6366f1)] text-white'
+                                : 'bg-white/[0.06] text-white/70 hover:bg-white/10 hover:text-white',
+                        )}
+                    >
+                        <Plus
+                            className={cn(
+                                'size-5 transition-transform',
+                                adding && 'rotate-45',
+                            )}
+                        />
+                    </button>
+                )}
+            </div>
+            {adding && <SoundtrackForm slug={slug} />}
+            <ol className="space-y-0.5">
+                {tracks.map((track, index) => {
+                    const isCurrent = player.current?.key === track.key;
+                    const playing = isCurrent && player.playing;
+
+                    return (
+                        <li
+                            key={track.key}
+                            className={cn(
+                                'group flex items-center gap-3 rounded-2xl p-2 pr-3 transition hover:bg-white/[0.045]',
+                                isCurrent &&
+                                    'bg-gradient-to-r from-gc-indigo/15 to-transparent',
+                            )}
+                        >
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    isCurrent
+                                        ? toggle()
+                                        : playQueue(tracks, index)
+                                }
+                                className="relative shrink-0"
+                                aria-label={
+                                    playing ? tr('Пауза') : tr('Слухати')
+                                }
+                            >
+                                <TrackCover
+                                    url={track.cover_url}
+                                    seed={track.key}
+                                    className="size-12 rounded-xl"
+                                />
+                                <span className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40">
+                                    {playing ? (
+                                        <Pause className="size-4 fill-white text-white" />
+                                    ) : (
+                                        <Play className="ml-0.5 size-4 fill-white text-white" />
+                                    )}
+                                </span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    isCurrent
+                                        ? toggle()
+                                        : playQueue(tracks, index)
+                                }
+                                className="min-w-0 flex-1 text-left"
+                            >
+                                <p
+                                    className={cn(
+                                        'flex items-center gap-2 text-[15px] font-medium',
+                                        isCurrent
+                                            ? 'text-[#c3caff]'
+                                            : 'text-white',
+                                    )}
+                                >
+                                    {isCurrent && (
+                                        <Equalizer paused={!playing} />
+                                    )}
+                                    <span className="truncate">
+                                        {track.title}
+                                    </span>
+                                </p>
+                                <p className="truncate text-xs text-white/50">
+                                    {track.artist}
+                                </p>
+                            </button>
+                            {track.duration ? (
+                                <span className="shrink-0 text-xs text-white/40 tabular-nums">
+                                    {formatDuration(track.duration)}
+                                </span>
+                            ) : null}
+                        </li>
+                    );
+                })}
+            </ol>
+            {tracks.length === 0 && (
+                <p className="text-sm text-white/45">
+                    {tr('Треків ще немає.')}
+                </p>
+            )}
+        </section>
+    );
+}
+
+function SoundtrackForm({ slug }: { slug: string }) {
+    const [query, setQuery] = useState('');
+    const [hits, setHits] = useState<
+        { id: number; title: string; artist: string }[]
+    >([]);
+
+    return (
+        <form
+            className="mb-3 space-y-2"
+            onSubmit={(event) => {
+                event.preventDefault();
+                void api<{
+                    tracks: { id: number; title: string; artist: string }[];
+                }>(
+                    'GET',
+                    `/music/search?q=${encodeURIComponent(query)}&scope=all`,
+                ).then((response) => setHits(response.tracks));
+            }}
+        >
+            <div className="flex gap-2">
+                <input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder={tr('Знайти трек')}
+                    className="h-11 min-w-0 flex-1 rounded-xl bg-white/10 px-3 text-sm text-white placeholder:text-white/40"
+                />
+                <button
+                    type="submit"
+                    className="h-11 rounded-xl bg-white/10 px-4 text-sm font-semibold text-white"
+                >
+                    {tr('Шукати')}
+                </button>
+            </div>
+            {hits.map((track) => (
+                <button
+                    key={track.id}
+                    type="button"
+                    className="block w-full rounded-xl bg-white/[0.04] px-3 py-2 text-left text-sm text-white hover:bg-white/10"
+                    onClick={() =>
+                        router.post(`/cinema/${slug}/soundtrack`, {
+                            track_id: track.id,
+                        })
+                    }
+                >
+                    {track.artist} — {track.title}
+                </button>
+            ))}
+        </form>
     );
 }

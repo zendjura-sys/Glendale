@@ -1,8 +1,16 @@
 import { Link } from '@inertiajs/react';
-import { BellOff, MessagesSquare, PenSquare, Search } from 'lucide-react';
+import {
+    BellOff,
+    MessagesSquare,
+    PenSquare,
+    Pin,
+    Search,
+    Star,
+} from 'lucide-react';
 import { useState } from 'react';
 import { messagePreview } from '@/components/gc/inbox-listener';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
+import { PlusBadge } from '@/components/gc/plus';
 import { shortTime } from '@/lib/format';
 import { usePlayer } from '@/lib/player';
 import { cn, dockedAboveNav } from '@/lib/utils';
@@ -63,15 +71,25 @@ export function ConversationList({
                 <h1 className="font-display text-lg font-semibold text-white">
                     {tr('Повідомлення')}
                 </h1>
-                <button
-                    type="button"
-                    onClick={onCompose}
-                    className="flex size-9 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.07] hover:text-white"
-                    aria-label={tr('Нове повідомлення')}
-                    title={tr('Нове повідомлення')}
-                >
-                    <PenSquare className="size-[18px]" />
-                </button>
+                <div className="flex items-center">
+                    <Link
+                        href="/messages/saved"
+                        className="flex size-9 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.07] hover:text-white"
+                        aria-label={tr('Обрані')}
+                        title={tr('Обрані')}
+                    >
+                        <Star className="size-[18px]" />
+                    </Link>
+                    <button
+                        type="button"
+                        onClick={onCompose}
+                        className="flex size-9 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.07] hover:text-white"
+                        aria-label={tr('Нове повідомлення')}
+                        title={tr('Нове повідомлення')}
+                    >
+                        <PenSquare className="size-[18px]" />
+                    </button>
+                </div>
             </div>
             <div className="px-3 pb-2">
                 <label className="input-glass flex h-10 items-center gap-2 rounded-xl px-3">
@@ -139,6 +157,12 @@ export function ConversationList({
                                         {conversation.peer?.is_verified && (
                                             <VerifiedBadge className="size-3.5 shrink-0" />
                                         )}
+                                        {conversation.peer?.plus && (
+                                            <PlusBadge className="size-3.5" />
+                                        )}
+                                        {conversation.pinned && (
+                                            <Pin className="size-3.5 shrink-0 fill-current text-white/70" />
+                                        )}
                                         {conversation.is_muted && (
                                             <BellOff className="size-3.5 shrink-0 text-white/35" />
                                         )}
@@ -153,6 +177,11 @@ export function ConversationList({
                                     </span>
                                     <span className="mt-0.5 flex items-center gap-2">
                                         <span className="min-w-0 flex-1 truncate text-[13px] text-white/50">
+                                            {conversation.folder && (
+                                                <span className="text-white/35">
+                                                    {conversation.folder} ·{' '}
+                                                </span>
+                                            )}
                                             {typingName ? (
                                                 <span className="text-[#8fd8ff]">
                                                     {conversation.type ===

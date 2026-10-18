@@ -1,4 +1,5 @@
 import type { Auth, FirebaseConfig } from '@/types/auth';
+import type { SharedBilling } from '@/types/billing';
 import type { SharedMusic } from '@/types/music';
 import type { NavEntry } from '@/types/social';
 
@@ -14,6 +15,15 @@ declare module '@inertiajs/core' {
             name: string;
             locale: string;
             locales: { code: string; native: string }[];
+            /** Підписи футера мовою інтерфейсу (lang/{locale}/ui.php). */
+            footer: {
+                year: number;
+                terms: string;
+                privacy: string;
+                refund: string;
+                pricing: string;
+                rights: string;
+            };
             auth: Auth;
             site: {
                 name: string;
@@ -33,8 +43,21 @@ declare module '@inertiajs/core' {
                     google: FirebaseConfig | null;
                 };
             };
+            /** Оплата карткою (monobank): тарифи з адмінки, Google Pay. */
+            billing: SharedBilling;
             nav: NavEntry[];
             modules: string[];
+            plugins: Record<string, boolean>;
+            /** Можливості інтерфейсу за режимом соцмережі: stories, live, playing. */
+            features?: Record<string, boolean>;
+            /** Сезонні прикраси (App\\Support\\Seasons): newyear, valentine, easter, independence, halloween. */
+            season?: string | null;
+            /** Фірмовий фон з адмінки: картинки для ПК і телефона; default — типовий фон сайту. */
+            siteBackground?: {
+                desktop: string | null;
+                mobile: string | null;
+                default: boolean;
+            } | null;
             music: SharedMusic;
             counters: {
                 friend_requests: number;

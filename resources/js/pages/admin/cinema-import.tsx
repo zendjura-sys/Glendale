@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 import type { MovieOption, MovieType } from '@/types';
 import { tr } from '@/lib/i18n';
 
-type Provider = 'kodik' | 'flixcdn';
+type Provider = 'kodik' | 'videoseed' | 'flixcdn';
 
 type Candidate = {
     key: string;
@@ -51,10 +51,15 @@ type Props = {
     types: MovieOption<MovieType>[];
 };
 
-const searchBy = [
+const SEARCH_BY = (provider: Provider) => [
     { key: 'title', label: tr('За назвою') },
     { key: 'imdb_id', label: 'IMDb ID' },
-    { key: 'shikimori_id', label: 'Shikimori ID' },
+    ...(provider === 'videoseed'
+        ? [
+              { key: 'kinopoisk_id', label: 'Kinopoisk ID' },
+              { key: 'tmdb_id', label: 'TMDB ID' },
+          ]
+        : [{ key: 'shikimori_id', label: 'Shikimori ID' }]),
 ];
 
 export default function AdminCinemaImport({ providers }: Props) {
@@ -160,18 +165,19 @@ export default function AdminCinemaImport({ providers }: Props) {
             <PageHeader
                 title={tr('Імпорт тайтлів')}
                 description={tr(
-                    'Знайдіть фільм, серіал чи аніме в Kodik або FlixCDN — усі озвучки стануть плеєрами, а метадані підтягнуться з TMDB, Shikimori та IMDb.',
+                    'Знайдіть фільм, серіал чи аніме в Kodik, Videoseed або FlixCDN — усі озвучки стануть плеєрами, а метадані підтягнуться з TMDB, Shikimori та IMDb.',
                 )}
             />
 
             <div className="glass mb-5 space-y-3 rounded-3xl p-4">
                 <div className="flex flex-wrap items-center gap-2">
-                    {(['kodik', 'flixcdn'] as const).map((p) => (
+                    {(['kodik', 'videoseed', 'flixcdn'] as const).map((p) => (
                         <button
                             key={p}
                             type="button"
                             onClick={() => {
                                 setProvider(p);
+                                setBy('title');
                                 setResults(null);
                             }}
                             className={cn(
@@ -181,7 +187,11 @@ export default function AdminCinemaImport({ providers }: Props) {
                                     : 'text-white/55 hover:bg-white/[0.05] hover:text-white',
                             )}
                         >
-                            {p === 'kodik' ? 'Kodik' : 'FlixCDN'}
+                            {p === 'kodik'
+                                ? 'Kodik'
+                                : p === 'videoseed'
+                                  ? 'Videoseed'
+                                  : 'FlixCDN'}
                             {!providers[p].configured && (
                                 <Pill tone="gold">{tr('немає ключів')}</Pill>
                             )}
@@ -230,7 +240,7 @@ export default function AdminCinemaImport({ providers }: Props) {
                             className={selectClass}
                             disabled={!caps.search}
                         >
-                            {searchBy.map((s) => (
+                            {SEARCH_BY(provider).map((s) => (
                                 <option key={s.key} value={s.key}>
                                     {s.label}
                                 </option>

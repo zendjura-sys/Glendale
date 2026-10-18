@@ -168,6 +168,17 @@ class ContentFilter
         return $host === '' ? $body : (string) preg_replace('#https?://(www\.)?'.preg_quote($host, '#').'\S*#iu', '', $body);
     }
 
+    /**
+     * Той самий шаблон для браузера (RegExp з прапорцями giu): \b у JS не бачить кирилицю.
+     */
+    public function clientPattern(): string
+    {
+        $pattern = $this->pattern();
+        $body = substr($pattern, 1, (int) strrpos($pattern, '/') - 1);
+
+        return str_replace(['\\b', '\\/'], ['(?![\\p{L}\\p{N}])', '/'], $body);
+    }
+
     private function pattern(): string
     {
         $extra = array_map(fn (string $w) => preg_quote($w, '/'), $this->config()['extra_words']);

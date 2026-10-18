@@ -24,6 +24,7 @@ type AdminPack = {
     name: string;
     author: string | null;
     is_active: boolean;
+    is_plus: boolean;
     position: number;
     stickers: StickerItem[];
 };
@@ -143,7 +144,11 @@ function PackCard({
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const patch = (data: { move?: 'up' | 'down'; is_active?: boolean }) =>
+    const patch = (data: {
+        move?: 'up' | 'down';
+        is_active?: boolean;
+        is_plus?: boolean;
+    }) =>
         router.patch(`/admin/stickers/${pack.id}`, data, {
             preserveScroll: true,
         });
@@ -181,6 +186,8 @@ function PackCard({
                 <span className="flex size-12 items-center justify-center rounded-2xl bg-white/[0.05] p-1.5">
                     {pack.stickers[0] ? (
                         <img
+                            loading="lazy"
+                            decoding="async"
                             src={pack.stickers[0].url}
                             alt=""
                             className="size-full object-contain"
@@ -197,6 +204,7 @@ function PackCard({
                         <Pill tone={pack.is_active ? 'green' : 'default'}>
                             {pack.is_active ? tr('Активний') : tr('Вимкнено')}
                         </Pill>
+                        {pack.is_plus && <Pill tone="violet">GameCon+</Pill>}
                         <Pill>
                             {pack.stickers.length} / {limit}
                         </Pill>
@@ -231,6 +239,13 @@ function PackCard({
                             checked={pack.is_active}
                             onChange={(value) => patch({ is_active: value })}
                             label={tr('Активний')}
+                        />
+                    </span>
+                    <span className="mr-1.5">
+                        <Toggle
+                            checked={pack.is_plus}
+                            onChange={(value) => patch({ is_plus: value })}
+                            label={tr('Лише GameCon+')}
                         />
                     </span>
                     <button

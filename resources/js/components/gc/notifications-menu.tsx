@@ -1,5 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    Radio,
+    UserRoundSearch,
     AlarmClock,
     Bell,
     CalendarDays,
@@ -16,6 +18,8 @@ import {
     ShieldCheck,
     UserCheck,
     UserPlus,
+    Gift,
+    RefreshCw,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
@@ -23,6 +27,7 @@ import { timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { NotificationItem } from '@/types';
 import { UserAvatar } from './user-avatar';
+import { WebPushButton } from './web-push-toggle';
 import { tr } from '@/lib/i18n';
 
 const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
@@ -46,6 +51,13 @@ const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
     family_warehouse: { icon: Package, className: 'bg-rose-500' },
     family_event: { icon: CalendarDays, className: 'bg-gc-indigo' },
     event_reminder: { icon: AlarmClock, className: 'bg-amber-500' },
+    party_join: { icon: UserRoundSearch, className: 'bg-gc-indigo' },
+    stream_live: { icon: Radio, className: 'bg-rose-500' },
+    referral_joined: { icon: UserPlus, className: 'bg-emerald-500' },
+    plus_gifted: { icon: Gift, className: 'bg-indigo-500' },
+    wallet_topup: { icon: Wallet, className: 'bg-emerald-500' },
+    plus_renewed: { icon: RefreshCw, className: 'bg-indigo-500' },
+    plus_renewal_failed: { icon: Wallet, className: 'bg-amber-500' },
 };
 
 const familyIcon = { icon: Crown, className: 'bg-amber-500' };
@@ -99,7 +111,7 @@ export function NotificationsMenu() {
                 type="button"
                 onClick={toggle}
                 className={cn(
-                    'relative flex size-11 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white',
+                    'relative flex size-10 items-center justify-center rounded-full bg-black/25 text-white/75 ring-1 ring-white/[0.06] transition hover:bg-black/40 hover:text-white',
                     open && 'bg-white/[0.07] text-white',
                 )}
                 aria-label={
@@ -132,6 +144,7 @@ export function NotificationsMenu() {
                             <span className="font-display text-sm font-semibold">
                                 {tr('Сповіщення')}
                             </span>
+                            <WebPushButton />
                         </div>
                         <div className="min-h-0 overflow-y-auto overscroll-contain p-1.5">
                             {items === null ? (

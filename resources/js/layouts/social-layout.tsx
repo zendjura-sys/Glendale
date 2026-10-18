@@ -1,12 +1,16 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
+    Bookmark,
+    UserPlus,
     ChevronDown,
+    Keyboard,
     LayoutDashboard,
     LayoutGrid,
     LogOut,
     Megaphone,
     PanelBottom,
     MessageCircle,
+    MessageSquareHeart,
     Settings,
     ShieldCheck,
     UserRound,
@@ -14,8 +18,10 @@ import {
     X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import type { PropsWithChildren } from 'react';
-import { Aurora } from '@/components/gc/aurora';
+import type { PropsWithChildren, ReactNode } from 'react';
+import { LayoutGroup, m, useReducedMotion } from 'motion/react';
+import { SiteBackground } from '@/components/backgrounds/site-background';
+import { Seasonal } from '@/components/gc/seasonal';
 import { IncomingCall } from '@/components/gc/incoming-call';
 import { InboxListener } from '@/components/gc/inbox-listener';
 import { Logo, LogoMark } from '@/components/gc/logo';
@@ -25,6 +31,9 @@ import { QuickSearch } from '@/components/gc/quick-search';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VoiceBar } from '@/components/gc/voice-bar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
+import { BillingHost } from '@/components/billing/billing-host';
+import { PlusMenuCard } from '@/components/gc/plus-card';
+import { PlusBadge, plusNameProps, plusNameStyle } from '@/components/gc/plus';
 import { PlayerBar } from '@/components/music/player-bar';
 import {
     DropdownMenu,
@@ -37,6 +46,7 @@ import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useUnreadMessages } from '@/lib/inbox';
 import { usePlayer } from '@/lib/player';
 import { MOBILE_LABEL } from '@/lib/nav';
+import { motionOr, SNAP } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { PageTransition } from '@/components/gc/page-transition';
 import { PlayStoreLink } from '@/components/gc/play-store';
@@ -45,6 +55,16 @@ import {
     LanguageSelect,
 } from '@/components/gc/language-switcher';
 import { tr } from '@/lib/i18n';
+import { PaletteSync } from '@/components/gc/palette-sync';
+import {
+    FeedbackDialog,
+    KeyboardHint,
+    KeyboardShortcuts,
+    WhatsNewButton,
+    openFeedback,
+    openShortcuts,
+} from '@/components/gc/site-extras';
+import { SiteFooter } from '@/components/gc/site-footer';
 
 function useIsActive() {
     const { currentUrl } = useCurrentUrl();
@@ -78,10 +98,13 @@ function Sidebar() {
                 <UserAvatar user={user} size="md" ring />
                 <span className="min-w-0">
                     <span className="flex items-center gap-1 truncate text-sm font-semibold text-white">
-                        {user.first_name}
+                        <span style={plusNameStyle(user.plus)}>
+                            {user.first_name}
+                        </span>
                         {user.is_verified && (
                             <VerifiedBadge className="size-3.5" />
                         )}
+                        {user.plus && <PlusBadge className="size-3.5" />}
                     </span>
                     <span className="block truncate text-xs text-white/45">
                         @{user.username}
@@ -148,6 +171,8 @@ function Sidebar() {
 
             <PlayStoreLink compact className="mt-3 self-center" />
 
+            <KeyboardHint />
+
             <div className="mt-auto px-3 pt-4 text-xs leading-relaxed text-white/30">
                 © {new Date().getFullYear()}{' '}
                 {tr('GameCon · Соціальна мережа нового покоління')}
@@ -212,6 +237,14 @@ function UserMenu() {
                     asChild
                     className="rounded-lg focus:bg-white/[0.06]"
                 >
+                    <Link href="/saved">
+                        <Bookmark /> {tr('Збережене')}
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    asChild
+                    className="rounded-lg focus:bg-white/[0.06]"
+                >
                     <Link href="/settings/profile">
                         <Settings /> {tr('Налаштування')}
                     </Link>
@@ -226,6 +259,18 @@ function UserMenu() {
                         </Link>
                     </DropdownMenuItem>
                 )}
+                <DropdownMenuItem
+                    className="rounded-lg focus:bg-white/[0.06]"
+                    onSelect={openFeedback}
+                >
+                    <MessageSquareHeart /> {tr('Відгук адмінам')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    className="hidden rounded-lg focus:bg-white/[0.06] lg:flex"
+                    onSelect={openShortcuts}
+                >
+                    <Keyboard /> {tr('Гарячі клавіші')}
+                </DropdownMenuItem>
                 <LanguageMenu />
                 <DropdownMenuSeparator className="bg-white/5" />
                 <DropdownMenuItem
@@ -245,12 +290,8 @@ function Topbar() {
 
     return (
         <header className="pointer-events-none fixed inset-x-0 top-0 z-40 bg-transparent pt-[env(safe-area-inset-top)] [view-transition-name:gc-topbar]">
-            {/* Підкладка: контент, що прокручується під шапку, не накладається на пошук і кнопки. */}
-            <div
-                aria-hidden
-                className="absolute inset-x-0 top-0 h-[calc(5rem+env(safe-area-inset-top))] bg-gradient-to-b from-background/95 via-background/80 to-transparent [mask-image:linear-gradient(to_bottom,black_65%,transparent)] backdrop-blur-xl"
-            />
-            <div className="pointer-events-auto relative mx-auto flex h-16 max-w-[1320px] items-center gap-2 px-3 sm:gap-4 sm:px-5">
+            {/* Шапка — острів: плаваюча матова плита з відступом від країв (стиль Dune). */}
+            <div className="liquid-glass liquid-glass--dense pointer-events-auto relative mx-2 mt-2 flex h-14 items-center gap-2 rounded-[22px] px-2 sm:mx-3 sm:gap-4 sm:px-3 xl:mx-auto xl:max-w-[1320px]">
                 <Link href="/feed" className="shrink-0 lg:w-[232px]">
                     <Logo className="hidden sm:inline-flex" />
                     <LogoMark className="sm:hidden" />
@@ -259,7 +300,7 @@ function Topbar() {
                 <div className="ml-auto flex items-center gap-1">
                     <Link
                         href="/friends?tab=requests"
-                        className="relative hidden size-11 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white sm:flex"
+                        className="relative hidden size-10 items-center justify-center rounded-full bg-black/25 text-white/75 ring-1 ring-white/[0.06] transition hover:bg-black/40 hover:text-white sm:flex"
                         aria-label={tr('Заявки в друзі')}
                     >
                         <UsersRound className="size-[19px]" />
@@ -272,7 +313,7 @@ function Topbar() {
                     {modules.includes('messages') && (
                         <Link
                             href="/messages"
-                            className="relative hidden size-11 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white sm:flex"
+                            className="relative hidden size-10 items-center justify-center rounded-full bg-black/25 text-white/75 ring-1 ring-white/[0.06] transition hover:bg-black/40 hover:text-white sm:flex"
                             aria-label={
                                 unreadMessages > 0
                                     ? tr('Повідомлення: {count} непрочитаних', {
@@ -294,6 +335,7 @@ function Topbar() {
                             )}
                         </Link>
                     )}
+                    <WhatsNewButton />
                     <NotificationsMenu />
                     <span className="mx-1 hidden h-6 w-px bg-white/10 sm:block" />
                     <UserMenu />
@@ -330,6 +372,88 @@ function useMobileSplit<T extends { key: string }>(items: T[]) {
     return { primary, rest: items.filter((i) => !primary.includes(i)) };
 }
 
+/** Пункт острова: іконка; вибраний — пігулка акценту з підписом, що «перетікає» між пунктами. */
+function IslandTab({
+    href,
+    onClick,
+    expanded,
+    active,
+    badge,
+    label,
+    icon,
+}: {
+    href?: string;
+    onClick?: () => void;
+    expanded?: boolean;
+    active: boolean;
+    badge: number;
+    label: string;
+    icon: ReactNode;
+}) {
+    const reduce = useReducedMotion();
+    const className = cn(
+        'relative flex h-11 min-w-11 items-center justify-center rounded-2xl text-sm font-semibold transition-colors active:scale-95',
+        active
+            ? 'max-w-[45%] flex-none px-2 text-primary-foreground'
+            : 'flex-1 bg-black/25 text-white/60 ring-1 ring-white/[0.05]',
+    );
+    const body = (
+        <>
+            {active && (
+                <m.span
+                    layoutId="tabbar-active"
+                    transition={motionOr(reduce, SNAP)}
+                    className="absolute inset-0 rounded-2xl bg-primary"
+                />
+            )}
+            <span className="relative flex min-w-0 items-center gap-2 px-2">
+                <span className="relative shrink-0">
+                    {icon}
+                    {badge > 0 && (
+                        <span className="absolute -top-1.5 -right-2 min-w-4 rounded-full bg-gc-pink px-1 text-center text-[10px] leading-4 font-bold text-white ring-2 ring-popover">
+                            {badge > 99 ? '99+' : badge}
+                        </span>
+                    )}
+                </span>
+                {active && (
+                    <m.span
+                        initial={reduce ? false : { opacity: 0, x: -4 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.25, delay: 0.08 }}
+                        className="truncate"
+                    >
+                        {label}
+                    </m.span>
+                )}
+            </span>
+        </>
+    );
+
+    return href ? (
+        <Link
+            href={href}
+            // На телефоні наведення немає: сторінку підтягуємо вже на дотику, до відпускання пальця.
+            prefetch={['hover', 'click']}
+            aria-current={active ? 'page' : undefined}
+            aria-label={label}
+            className={className}
+        >
+            {body}
+        </Link>
+    ) : (
+        <button
+            type="button"
+            onClick={onClick}
+            aria-expanded={expanded}
+            aria-label={label}
+            data-test="mobile-menu"
+            className={className}
+        >
+            {body}
+        </button>
+    );
+}
+
 function MobileNav() {
     const isActive = useIsActive();
     const items = useNavItems();
@@ -341,65 +465,35 @@ function MobileNav() {
 
     return (
         <>
-            <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-sidebar/70 pb-[env(safe-area-inset-bottom)] backdrop-blur-md [view-transition-name:gc-tabbar] lg:hidden">
-                <div className="flex items-stretch justify-around">
-                    {primary.map((item) => {
-                        const active = isActive(item.href, item.key);
-
-                        return (
-                            <Link
+            {/* Острів: плаваюча пігулка над краєм екрана; вибраний пункт розкривається з підписом. */}
+            <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(env(safe-area-inset-bottom)+0.625rem)] [view-transition-name:gc-tabbar] lg:hidden">
+                <LayoutGroup id="tabbar">
+                    <div className="liquid-glass liquid-glass--dense pointer-events-auto flex w-full max-w-[440px] items-center justify-between gap-1 rounded-[22px] p-1.5">
+                        {primary.map((item) => (
+                            <IslandTab
                                 key={item.key}
                                 href={item.href}
-                                aria-current={active ? 'page' : undefined}
-                                className={cn(
-                                    'relative flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition active:scale-95',
-                                    active ? 'text-white' : 'text-white/45',
-                                )}
-                            >
-                                {item.badge > 0 && (
-                                    <span className="absolute top-1 left-1/2 ml-1.5 min-w-4 rounded-full bg-gradient-brand px-1 text-center text-[11px] leading-4 font-bold text-white">
-                                        {item.badge > 99 ? '99+' : item.badge}
-                                    </span>
-                                )}
-                                <ModuleIcon
-                                    name={item.icon}
-                                    className={cn(
-                                        'size-5',
-                                        active &&
-                                            'text-gc-lilac-400 drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]',
-                                    )}
-                                />
-                                <span className="max-w-full truncate px-0.5">
-                                    {MOBILE_LABEL[item.key] ?? item.label}
-                                </span>
-                            </Link>
-                        );
-                    })}
-                    <button
-                        type="button"
-                        onClick={() => setOpen(true)}
-                        aria-expanded={open}
-                        data-test="mobile-menu"
-                        className={cn(
-                            'relative flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition active:scale-95',
-                            open || restActive ? 'text-white' : 'text-white/45',
-                        )}
-                    >
-                        {restBadge > 0 && (
-                            <span className="absolute top-1 left-1/2 ml-1.5 min-w-4 rounded-full bg-gradient-brand px-1 text-center text-[11px] leading-4 font-bold text-white">
-                                {restBadge}
-                            </span>
-                        )}
-                        <LayoutGrid
-                            className={cn(
-                                'size-5',
-                                (open || restActive) &&
-                                    'text-gc-lilac-400 drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]',
-                            )}
+                                active={isActive(item.href, item.key)}
+                                badge={item.badge}
+                                label={MOBILE_LABEL[item.key] ?? item.label}
+                                icon={
+                                    <ModuleIcon
+                                        name={item.icon}
+                                        className="size-5"
+                                    />
+                                }
+                            />
+                        ))}
+                        <IslandTab
+                            onClick={() => setOpen(true)}
+                            expanded={open}
+                            active={open || restActive}
+                            badge={restBadge}
+                            label={tr('Меню')}
+                            icon={<LayoutGrid className="size-5" />}
                         />
-                        {tr('Меню')}
-                    </button>
-                </div>
+                    </div>
+                </LayoutGroup>
             </nav>
             {open && <MobileMenu onClose={() => setOpen(false)} />}
         </>
@@ -427,6 +521,16 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
     }, [onClose]);
 
     const extra = [
+        {
+            href: '/invite',
+            label: tr('Запросити друзів'),
+            icon: UserPlus,
+        },
+        {
+            href: '/saved',
+            label: tr('Збережене'),
+            icon: Bookmark,
+        },
         {
             href: '/settings/navigation',
             label: tr('Налаштувати нижню панель'),
@@ -461,9 +565,14 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                         <UserAvatar user={user} size="md" ring />
                         <span className="min-w-0">
                             <span className="flex items-center gap-1 truncate text-sm font-semibold text-white">
-                                {user.name}
+                                <span {...plusNameProps(user.plus)}>
+                                    {user.name}
+                                </span>
                                 {user.is_verified && (
                                     <VerifiedBadge className="size-3.5" />
+                                )}
+                                {user.plus && (
+                                    <PlusBadge className="size-3.5" />
                                 )}
                             </span>
                             <span className="block truncate text-xs text-white/45">
@@ -480,6 +589,8 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                         <X className="size-5" />
                     </button>
                 </div>
+
+                <PlusMenuCard until={user.plus_until} className="mb-4" />
 
                 <div className="grid grid-cols-3 gap-2 min-[420px]:grid-cols-4">
                     {items.map((item) => {
@@ -534,6 +645,17 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                     <LanguageSelect className="mx-3 my-1.5" />
                     <button
                         type="button"
+                        onClick={() => {
+                            onClose();
+                            openFeedback();
+                        }}
+                        className="flex items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-white/80 active:bg-white/[0.06]"
+                    >
+                        <MessageSquareHeart className="size-[18px] text-white/50" />
+                        {tr('Відгук адмінам')}
+                    </button>
+                    <button
+                        type="button"
                         onClick={() => router.post('/logout')}
                         className="flex items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-rose-300 active:bg-rose-500/10"
                     >
@@ -572,13 +694,15 @@ export default function SocialLayout({ children }: PropsWithChildren) {
 
     return (
         <div className="relative min-h-dvh">
+            <PaletteSync />
             {modules.includes('messages') && (
                 <>
                     <InboxListener userId={auth.user.id} />
                     <IncomingCall userId={auth.user.id} />
                 </>
             )}
-            <Aurora />
+            <SiteBackground />
+            <Seasonal />
             <Topbar />
             <div
                 className={cn(
@@ -593,11 +717,15 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 >
                     <Announcement />
                     <PageTransition>{children}</PageTransition>
+                    <SiteFooter />
                 </main>
             </div>
             <VoiceBar />
             {modules.includes('music') && <PlayerBar />}
+            <BillingHost />
             <MobileNav />
+            <FeedbackDialog />
+            <KeyboardShortcuts username={auth.user.username} />
         </div>
     );
 }

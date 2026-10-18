@@ -21,6 +21,7 @@ import type { ConversationDetails, UserCard } from '@/types';
 import { ContactPicker } from './contact-picker';
 import { ConversationAvatar } from './conversation-avatar';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 const reload = { preserveScroll: true, preserveState: true } as const;
 
@@ -34,6 +35,8 @@ export function GroupInfoDialog({
     conversation: ConversationDetails;
 }) {
     const { auth } = usePage().props;
+    const slowOn = usePlugin('slow_mode');
+    const rolesOn = usePlugin('chat_roles');
     const [adding, setAdding] = useState(false);
     const [picked, setPicked] = useState<UserCard[]>([]);
     const [renaming, setRenaming] = useState(false);
@@ -227,6 +230,39 @@ export function GroupInfoDialog({
                         </>
                     ) : (
                         <>
+                            {canManage && slowOn && (
+                                <label className="mb-1 flex items-center justify-between gap-3 rounded-xl p-2 text-sm text-white/70">
+                                    <span>{tr('Повільний режим')}</span>
+                                    <select
+                                        value={conversation.slow_seconds ?? 0}
+                                        onChange={(event) =>
+                                            router.post(
+                                                `${base}/slow`,
+                                                {
+                                                    seconds: Number(
+                                                        event.target.value,
+                                                    ),
+                                                },
+                                                reload,
+                                            )
+                                        }
+                                        className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-sm text-white"
+                                    >
+                                        <option value={0}>
+                                            {tr('Вимкнено')}
+                                        </option>
+                                        <option value={10}>
+                                            {tr('10 секунд')}
+                                        </option>
+                                        <option value={30}>
+                                            {tr('30 секунд')}
+                                        </option>
+                                        <option value={60}>
+                                            {tr('60 секунд')}
+                                        </option>
+                                    </select>
+                                </label>
+                            )}
                             <button
                                 type="button"
                                 onClick={() => setAdding(true)}
@@ -281,6 +317,32 @@ export function GroupInfoDialog({
                                                 {tr('Адмін')}
                                             </span>
                                         ) : null}
+                                        {rolesOn &&
+                                            conversation.my_role === 'owner' &&
+                                            member.role !== 'owner' &&
+                                            member.id !== auth.user.id && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        router.post(
+                                                            `/messages/${conversation.id}/members/${member.username}/role`,
+                                                            {
+                                                                role:
+                                                                    member.role ===
+                                                                    'admin'
+                                                                        ? 'member'
+                                                                        : 'admin',
+                                                            },
+                                                            reload,
+                                                        )
+                                                    }
+                                                    className="rounded-lg px-2 py-1 text-xs text-white/70 hover:bg-white/[0.06]"
+                                                >
+                                                    {member.role === 'admin'
+                                                        ? tr('Зняти адміна')
+                                                        : tr('Зробити адміном')}
+                                                </button>
+                                            )}
                                         {canManage &&
                                             member.role !== 'owner' &&
                                             member.id !== auth.user.id && (

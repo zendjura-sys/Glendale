@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Support\Palette;
+use App\Support\Plugins\Plugins;
+use App\Support\PlusStyle;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Translation\HasLocalePreference;
@@ -30,6 +33,10 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $email
  * @property string|null $discord_id
  * @property string|null $discord_username
+ * @property string|null $telegram_id
+ * @property string|null $invite_code
+ * @property int|null $invited_by
+ * @property string|null $telegram_username
  * @property string|null $google_id
  * @property string|null $google_email
  * @property Carbon|null $email_verified_at
@@ -40,6 +47,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $status
  * @property string|null $about
  * @property string|null $city
+ * @property string|null $country
  * @property Carbon|null $birthday
  * @property string|null $gender
  * @property string|null $website
@@ -67,14 +75,19 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $muted_until Тимчасовий мут на всьому сайті
  * @property string|null $mute_reason
  * @property string|null $locale
+ * @property Carbon|null $frozen_at Заморожено власником: сторінку не видно, вхід розморожує
+ * @property array<string, mixed>|null $preferences
+ * @property Carbon|null $plus_until GameCon+ активний до (кеш plus_grants)
+ * @property int $balance Особистий рахунок, копійок (журнал — wallet_transactions)
+ * @property array<string, string>|null $plus_style Колір ніку, рамка, акцент профілю
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
 #[Fillable([
     'username', 'first_name', 'last_name', 'email', 'password',
-    'status', 'about', 'city', 'birthday', 'gender', 'website', 'is_private', 'message_privacy', 'email_social',
+    'status', 'about', 'city', 'country', 'birthday', 'gender', 'website', 'is_private', 'message_privacy', 'email_social',
 ])]
-#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'email', 'ban_reason', 'google_email'])]
+#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'email', 'ban_reason', 'google_email', 'telegram_id', 'invite_code', 'invited_by', 'balance'])]
 class User extends Authenticatable implements HasLocalePreference, MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
@@ -120,11 +133,16 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'playing_until' => 'datetime',
             'playing_auto' => 'boolean',
             'muted_until' => 'datetime',
+            'frozen_at' => 'datetime',
             'banned_at' => 'datetime',
             'is_verified' => 'boolean',
             'is_private' => 'boolean',
             'email_social' => 'boolean',
             'nav_tabs' => 'array',
+            'preferences' => 'array',
+            'plus_until' => 'datetime',
+            'plus_style' => 'array',
+            'balance' => 'integer',
         ];
     }
 
@@ -231,6 +249,11 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
         return in_array($this->role, [self::ROLE_ADMIN, self::ROLE_MODERATOR], true);
     }
 
+    public function isFrozen(): bool
+    {
+        return $this->frozen_at !== null;
+    }
+
     public function isBanned(): bool
     {
         return $this->banned_at !== null;
@@ -277,7 +300,42 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'is_verified' => $this->is_verified,
             'status' => $this->status,
             'playing' => $this->playing(),
+            'plus' => $this->plusCard(),
         ];
+    }
+
+    public function isPlus(): bool
+    {
+        return $this->plus_until !== null && $this->plus_until->isFuture();
+    }
+
+    /**
+     * is_premium / premium_until — синоніми GameCon+ (джерело — plus_until, яке ведуть оплачені замовлення,
+     * Google Play, подарунки, промокоди й видача адміністратором).
+     *
+     * @return Attribute<bool, never>
+     */
+    protected function isPremium(): Attribute
+    {
+        return Attribute::get(fn () => $this->isPlus());
+    }
+
+    /**
+     * @return Attribute<Carbon|null, never>
+     */
+    protected function premiumUntil(): Attribute
+    {
+        return Attribute::get(fn () => $this->plus_until);
+    }
+
+    /**
+     * Позначка й оформлення GameCon+ для карток (null — без підписки).
+     *
+     * @return array{name: list<string>|null, frame: list<string>|null}|null
+     */
+    public function plusCard(): ?array
+    {
+        return $this->isPlus() ? PlusStyle::card($this->plus_style) : null;
     }
 
     /** Мова листів і сповіщень (Laravel бере її автоматично). */
@@ -312,5 +370,49 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'until' => $this->playing_until->toIso8601String(),
             'auto' => $this->playing_source !== null && $this->playing_source !== 'manual',
         ];
+    }
+
+    public function pref(string $key, mixed $default = null): mixed
+    {
+        $all = $this->preferences ?? [];
+
+        return $all[$key] ?? $default;
+    }
+
+    /**
+     * @param  array<string, mixed>  $patch
+     */
+    public function mergePref(array $patch): void
+    {
+        $this->preferences = array_merge($this->preferences ?? [], $patch);
+        $this->save();
+    }
+
+    public function palette(): string
+    {
+        if (! app(Plugins::class)->on('palettes')) {
+            return Palette::DEFAULT;
+        }
+        $id = (string) $this->pref('palette', Palette::DEFAULT);
+
+        return Palette::exists($id) ? $id : Palette::DEFAULT;
+    }
+
+    /** Соціальні сповіщення мовчать у цьому вікні (може переходити через північ). */
+    public function inQuietHours(): bool
+    {
+        if (! app(Plugins::class)->on('quiet_hours') || ! $this->pref('quiet_enabled')) {
+            return false;
+        }
+        $from = (string) $this->pref('quiet_from', '23:00');
+        $to = (string) $this->pref('quiet_to', '08:00');
+        $now = now()->format('H:i');
+        if ($from === $to) {
+            return true;
+        }
+
+        return $from < $to
+            ? $now >= $from && $now < $to
+            : $now >= $from || $now < $to;
     }
 }

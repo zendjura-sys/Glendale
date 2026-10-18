@@ -36,6 +36,7 @@ class StickerController extends Controller
                     'name' => $pack->name,
                     'author' => $pack->author,
                     'is_active' => $pack->is_active,
+                    'is_plus' => $pack->is_plus,
                     'position' => $pack->position,
                     'stickers' => $pack->stickers->map->toCard()->all(),
                 ]),
@@ -78,6 +79,7 @@ class StickerController extends Controller
             'name' => ['sometimes', 'required', 'string', 'min:2', 'max:80'],
             'author' => ['sometimes', 'nullable', 'string', 'max:80'],
             'is_active' => ['sometimes', 'boolean'],
+            'is_plus' => ['sometimes', 'boolean'],
             'move' => ['sometimes', Rule::in(['up', 'down'])],
         ]);
 

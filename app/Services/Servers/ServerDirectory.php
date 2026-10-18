@@ -5,6 +5,7 @@ namespace App\Services\Servers;
 use App\Models\GtaServer;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Throwable;
@@ -49,6 +50,7 @@ class ServerDirectory
             }
 
             $server->forceFill([...$stats, 'stats_updated_at' => now()])->saveQuietly();
+            $this->rememberOnline($server);
             $updated++;
         }
 
@@ -137,6 +139,23 @@ class ServerDirectory
 
             return $response->successful() && is_array($response->json()) ? $response->json() : [];
         });
+    }
+
+    private function rememberOnline(GtaServer $server): void
+    {
+        if ($server->players_online === null) {
+            return;
+        }
+
+        DB::table('server_online_samples')->upsert([
+            [
+                'gta_server_id' => $server->id,
+                'sampled_on' => now()->toDateString(),
+                'players_online' => $server->players_online,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ], ['gta_server_id', 'sampled_on'], ['players_online', 'updated_at']);
     }
 
     /**

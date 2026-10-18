@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Jobs\CheckImage;
+use App\Jobs\RelayToBots;
+use App\Models\ClanEvent;
 use App\Models\Comment;
 use App\Models\Community;
 use App\Models\Family;
@@ -13,11 +16,15 @@ use App\Models\FamilyReport;
 use App\Models\Movie;
 use App\Models\Photo;
 use App\Models\Post;
+use App\Models\PostAttachment;
 use App\Models\User;
+use App\Services\Auth\AccountSecurity;
 use App\Services\CommunityService;
 use App\Services\Families\FamilyGate;
 use App\Services\FriendshipService;
+use App\Services\Moderation\NsfwCheck;
 use App\Services\Push\PushNotifier;
+use App\Services\Referrals;
 use App\Support\I18n\CatalogLoader;
 use App\Support\I18n\Locales;
 use App\Support\I18n\Translations;
@@ -26,8 +33,12 @@ use App\Support\Mail\MailBrand;
 use App\Support\Mail\MailCategory;
 use App\Support\Mail\SocialMailer;
 use App\Support\Modules\ModuleManager;
+use App\Support\NotifyPrefs;
 use App\Support\Settings\SiteSettings;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Events\Failed;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
 use Illuminate\Contracts\Translation\Loader;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -88,6 +99,28 @@ class AppServiceProvider extends ServiceProvider
             app(SsrState::class)->setPage($page);
         });
 
+        // Новий акаунт за посиланням /r/{код}: друзі з запрошувачем, бонуси йому.
+        User::created(function (User $user) {
+            $code = request()->cookie(Referrals::COOKIE);
+            app(Referrals::class)->attach($user, is_string($code) ? $code : null);
+        });
+
+        // Автоперевірка фото на відвертий вміст (лише коли в адмінці є ключі Sightengine).
+        Photo::created(function (Photo $photo) {
+            if (app(NsfwCheck::class)->configured()) {
+                CheckImage::dispatch('photo', $photo->id);
+            }
+        });
+        PostAttachment::created(function (PostAttachment $attachment) {
+            if ($attachment->type === PostAttachment::TYPE_IMAGE && app(NsfwCheck::class)->configured()) {
+                CheckImage::dispatch('post_image', $attachment->id);
+            }
+        });
+
+        // Нова подія сім’ї чи клану — картка з кнопками в підключені чати Telegram / Discord.
+        FamilyEvent::created(fn (FamilyEvent $event) => RelayToBots::maybe('family', $event->family_id, 'family_event', $event->id));
+        ClanEvent::created(fn (ClanEvent $event) => RelayToBots::maybe('clan', $event->clan_id, 'clan_event', $event->id));
+
         Relation::enforceMorphMap([
             'user' => User::class,
             'post' => Post::class,
@@ -107,6 +140,23 @@ class AppServiceProvider extends ServiceProvider
 
         AccountMail::register();
 
+        // Журнал входів і список відкритих сесій.
+        Event::listen(Login::class, function (Login $event) {
+            if ($event->guard === 'web' && $event->user instanceof User) {
+                app(AccountSecurity::class)->logLogin($event->user, AccountSecurity::methodFromRoute(request()->route()?->getName()), true);
+            }
+        });
+        Event::listen(Failed::class, function (Failed $event) {
+            if ($event->user instanceof User) {
+                app(AccountSecurity::class)->logLogin($event->user, 'password', false);
+            }
+        });
+        Event::listen(Logout::class, function () {
+            if (request()->hasSession()) {
+                app(AccountSecurity::class)->forget(request()->session()->getId());
+            }
+        });
+
         // Тип листа визначає адресу: no-reply@ — «Оповіщення», social@ — «Соцмережі».
         Event::listen(MessageSending::class, function (MessageSending $event) {
             MailCategory::apply($event->message);
@@ -115,8 +165,24 @@ class AppServiceProvider extends ServiceProvider
 
         // Кожне сповіщення дзвіночка сайту також іде push-ом у застосунок і листом у «Соцмережі».
         Event::listen(NotificationSent::class, function (NotificationSent $event) {
-            if ($event->channel === 'database' && $event->response instanceof DatabaseNotification) {
+            if ($event->channel !== 'database' || ! $event->response instanceof DatabaseNotification) {
+                return;
+            }
+
+            $user = $event->notifiable;
+            $data = $event->response->data;
+            $kind = (string) ($data['kind'] ?? '');
+            if ($user instanceof User && ! NotifyPrefs::allowsKind($user, $kind)) {
+                return;
+            }
+            if ($user instanceof User && ! NotifyPrefs::enabled($user, 'site')) {
+                $data['hidden'] = true;
+                $event->response->forceFill(['data' => $data])->save();
+            }
+            if (! $user instanceof User || NotifyPrefs::enabled($user, 'push')) {
                 rescue(fn () => app(PushNotifier::class)->notification($event->notifiable, $event->response), report: true);
+            }
+            if (! $user instanceof User || NotifyPrefs::enabled($user, 'email')) {
                 rescue(fn () => app(SocialMailer::class)->notification($event->notifiable, $event->response), report: true);
             }
         });

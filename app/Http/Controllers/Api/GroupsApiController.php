@@ -31,7 +31,9 @@ use App\Services\Families\MemberStats;
 use App\Services\Families\ReportService;
 use App\Services\Families\WeeklyDigest;
 use App\Services\PostPresenter;
+use App\Services\Servers\ServerVotes;
 use App\Support\Money;
+use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
@@ -113,6 +115,11 @@ class GroupsApiController extends ApiController
                 'description' => $community->description,
                 'membership' => $membership?->status,
                 'managed' => $membership?->isManager() ?? false,
+                'rules' => $community->rules,
+                'handbook' => $community->handbook,
+                'tags' => $community->post_tags ?? [],
+                'premoderation' => $community->premoderation,
+                'slow_mode' => $community->slow_mode,
             ],
             'posts' => $this->page($posts, $this->presenter->many(new Collection($posts->items()), $user)),
         ]);
@@ -448,7 +455,7 @@ class GroupsApiController extends ApiController
     public function rating(Request $request, Family $family, FamilyRating $rating): JsonResponse
     {
         $this->active($request, $family);
-        $period = in_array($request->query('period'), ['week', 'month', 'all'], true) ? (string) $request->query('period') : 'week';
+        $period = in_array($request->query('period'), ['week', 'month', 'season', 'all'], true) ? (string) $request->query('period') : 'week';
 
         return response()->json(['period' => $period, 'rows' => $rating->leaderboard($family, $period)]);
     }
@@ -731,6 +738,8 @@ class GroupsApiController extends ApiController
     {
         $q = trim((string) $request->query('q', ''));
         $platform = $request->query('platform');
+        $votesOn = app(Plugins::class)->on('server_votes');
+        $monthVotes = $votesOn ? app(ServerVotes::class)->monthCounts() : [];
         $servers = GtaServer::query()->published()
             ->withCount(['families' => fn (Builder $query) => $query->where('status', Family::STATUS_VERIFIED)])
             ->when(is_string($platform) && $platform !== '', fn (Builder $query) => $query->where('platform', $platform))
@@ -738,10 +747,16 @@ class GroupsApiController extends ApiController
             ->get()
             ->sortBy(fn (GtaServer $s) => [$s->is_featured ? 0 : 1, -1 * ($s->players_online ?? -1)])
             ->values()
-            ->map(fn (GtaServer $s) => $s->toCard());
+            ->map(fn (GtaServer $s) => [...$s->toCard(), 'votes_month' => $monthVotes[$s->id] ?? 0]);
+        $votes = app(ServerVotes::class);
 
         return response()->json([
             'servers' => $servers,
+            'votes' => $votesOn ? [
+                'voted_today' => $votes->votedToday($this->user($request)),
+                'day' => $votes->top('day'),
+                'month' => $votes->top('month'),
+            ] : null,
             'platforms' => GtaServer::PLATFORMS,
         ]);
     }
@@ -758,7 +773,16 @@ class GroupsApiController extends ApiController
                 'description' => $server->description,
             ],
             'families' => $families,
+            'votes' => app(Plugins::class)->on('server_votes') ? app(ServerVotes::class)->forServer($server, $this->user($request)) : null,
         ]);
+    }
+
+    public function voteServer(Request $request, GtaServer $server, ServerVotes $votes): JsonResponse
+    {
+        app(Plugins::class)->ensure('server_votes');
+        $votes->vote($this->user($request), $server);
+
+        return response()->json(['votes' => $votes->forServer($server, $this->user($request))]);
     }
 
     public function suggestServer(Request $request): JsonResponse

@@ -93,7 +93,7 @@ class SocialApiController extends ApiController
         $city = trim((string) $request->query('city', ''));
 
         $users = User::query()
-            ->whereNull('banned_at')
+            ->whereNull('banned_at')->whereNull('frozen_at')
             ->whereKeyNot($viewer->id)
             ->when($q !== '', fn (Builder $query) => $query->where(fn (Builder $w) => $w->where('name', 'like', "%{$q}%")->orWhere('username', 'like', "%{$q}%")))
             ->when($city !== '', fn (Builder $query) => $query->where('city', 'like', "%{$city}%"))
@@ -124,7 +124,7 @@ class SocialApiController extends ApiController
 
         $viewer = $this->user($request);
         $users = User::query()
-            ->whereNull('banned_at')
+            ->whereNull('banned_at')->whereNull('frozen_at')
             ->whereKeyNot($viewer->id)
             ->where(fn (Builder $w) => $w->where('name', 'like', "%{$q}%")->orWhere('username', 'like', "%{$q}%"))
             ->orderByDesc('last_seen_at')

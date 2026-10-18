@@ -4,6 +4,7 @@ namespace App\Services\Cinema\Metadata;
 
 use App\Models\Movie;
 use App\Services\Cinema\CinemaException;
+use App\Services\Cinema\TmdbAutoParse;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 
@@ -26,6 +27,7 @@ class MetadataEnricher
         private readonly OmdbProvider $omdb,
         private readonly ShikimoriProvider $shikimori,
         private readonly TmdbProvider $tmdb,
+        private readonly TmdbAutoParse $tmdbRules,
     ) {}
 
     /**
@@ -55,6 +57,10 @@ class MetadataEnricher
             if (! $provider->configured() || Cache::has('cinema.meta.down.'.$provider->key())) {
                 continue;
             }
+            // TMDB можна вимкнути або обмежити полями в адмінці (Кіно → «Автопарсинг TMDB»).
+            if ($provider instanceof TmdbProvider && ! $this->tmdbRules->config()['enabled']) {
+                continue;
+            }
 
             try {
                 $data = $provider->lookup($movie);
@@ -74,13 +80,17 @@ class MetadataEnricher
             $isTmdb = $provider instanceof TmdbProvider;
             $localizedTitle = (bool) ($data['title_localized'] ?? false);
             unset($data['title_localized']);
+            $tmdbFillOnly = $isTmdb && $this->tmdbRules->fillOnly();
 
             foreach ($data as $field => $value) {
+                if ($isTmdb && ! $this->tmdbRules->allows($field)) {
+                    continue;
+                }
                 $current = $movie->getAttribute($field);
                 $overwrite = match (true) {
                     in_array($field, self::ALWAYS, true) => true,
                     in_array($field, self::IDS, true) => blank($current),
-                    $manual => blank($current),
+                    $manual, $tmdbFillOnly => blank($current),
                     $isTmdb && $field === 'title' => $localizedTitle && preg_match('/\p{Cyrillic}/u', (string) $value) === 1,
                     $isTmdb && in_array($field, self::TMDB_PREFERRED, true) => true,
                     default => blank($current),

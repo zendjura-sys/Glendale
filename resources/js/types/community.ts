@@ -35,6 +35,8 @@ export type CommunityDetails = CommunityCard & {
 
 export type CommunityMemberItem = UserCard & {
     role: CommunityRole;
+    title?: string | null;
+    color?: string | null;
     status: MembershipStatus;
     joined_at: string | null;
     is_friend: boolean;

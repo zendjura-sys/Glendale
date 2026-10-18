@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
+use App\Models\UserStream;
 use App\Services\Auth\DiscordOAuth;
 use App\Services\Auth\FirebaseAuth;
 use App\Services\Auth\SocialLogin;
+use App\Services\Streams\LiveStreams;
+use App\Support\Countries;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,7 +27,10 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
+        $stream = UserStream::query()->where('user_id', $user->id)->first();
+
         return Inertia::render('settings/profile', [
+            'stream' => $stream ? app(LiveStreams::class)->card($stream, $request->getHost()) : null,
             'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
             'profile' => [
@@ -35,6 +41,7 @@ class ProfileController extends Controller
                 'status' => $user->status,
                 'about' => $user->about,
                 'city' => $user->city,
+                'country' => $user->country,
                 'birthday' => $user->birthday?->toDateString(),
                 'gender' => $user->gender,
                 'website' => $user->website,
@@ -42,6 +49,7 @@ class ProfileController extends Controller
                 'message_privacy' => $user->message_privacy,
                 'email_social' => $user->email_social,
             ],
+            'countries' => Countries::options(),
             'connections' => $social->connections($user, [
                 'discord' => $discord->configured(),
                 'google' => $firebase->configured(),

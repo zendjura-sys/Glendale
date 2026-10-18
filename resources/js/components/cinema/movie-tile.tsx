@@ -93,7 +93,7 @@ export function MovieTile({
                     movie={movie}
                     className="size-full transition duration-500 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 transition group-hover:opacity-100" />
+                <div className="scrim scrim-dark absolute inset-0 opacity-0 transition group-hover:opacity-100" />
                 <div className="absolute top-2 left-2 flex flex-col items-start gap-1">
                     <RatingBadge value={movie.rating} />
                 </div>
@@ -110,7 +110,21 @@ export function MovieTile({
                 {movie.title}
             </p>
             <p className="mt-0.5 truncate text-xs text-white/40">
-                {[movie.year, movie.type_label, movie.genres[0]]
+                {[
+                    movie.progress
+                        ? movie.progress.season
+                            ? tr('Сезон {season}, серія {episode}', {
+                                  season: movie.progress.season,
+                                  episode: movie.progress.episode,
+                              })
+                            : tr('Серія {episode}', {
+                                  episode: movie.progress.episode,
+                              })
+                        : null,
+                    movie.year,
+                    movie.type_label,
+                    movie.genres[0],
+                ]
                     .filter(Boolean)
                     .join(' · ')}
             </p>

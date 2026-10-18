@@ -16,6 +16,7 @@ export type LocalTrack = BaseTrack & {
     id: number;
     url: string;
     genre: string | null;
+    has_lyrics?: boolean;
     plays_count: number;
     user_id: number | null;
     in_library: boolean;

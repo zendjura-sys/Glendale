@@ -15,6 +15,8 @@ use App\Models\Story;
 use App\Models\Track;
 use App\Models\User;
 use App\Models\WatchParty;
+use App\Services\Quests\DailyQuests;
+use App\Services\Servers\ServerVotes;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -27,6 +29,9 @@ class Achievements
     private const XP = [
         'posts' => 10, 'comments' => 2, 'likes' => 1, 'friends' => 5, 'days' => 1,
         'photos' => 3, 'tracks' => 8, 'stories' => 4, 'events' => 15, 'parties' => 10,
+        'votes' => ServerVotes::XP,
+        'quest_xp' => 1,
+        'referrals' => Referrals::XP,
     ];
 
     /** Назви рівнів: з якого рівня яка. */
@@ -57,6 +62,11 @@ class Achievements
         ['key' => 'stories', 'stat' => 'stories', 'target' => 10, 'title' => 'Сторісмейкер', 'text' => 'Опублікувати 10 сторіс.', 'icon' => 'circle-play'],
         ['key' => 'host', 'stat' => 'parties', 'target' => 1, 'title' => 'Ведучий', 'text' => 'Влаштувати спільний перегляд або прослуховування.', 'icon' => 'clapperboard'],
         ['key' => 'verified', 'stat' => 'verified', 'target' => 1, 'title' => 'Верифікований', 'text' => 'Мати підтверджений профіль.', 'icon' => 'badge-check'],
+        ['key' => 'voter', 'stat' => 'votes', 'target' => 30, 'title' => 'Голос спільноти', 'text' => 'Проголосувати за сервери 30 разів.', 'icon' => 'vote'],
+        ['key' => 'quests_30', 'stat' => 'quests', 'target' => 30, 'title' => 'Сезонний гравець', 'text' => 'Виконати 30 щоденних завдань.', 'icon' => 'target'],
+        ['key' => 'invite_1', 'stat' => 'referrals', 'target' => 1, 'title' => 'Запросив друга', 'text' => 'Запросити друга, який підтвердив пошту.', 'icon' => 'user-plus'],
+        ['key' => 'invite_5', 'stat' => 'referrals', 'target' => 5, 'title' => 'Збирач команди', 'text' => 'Запросити 5 друзів.', 'icon' => 'users-round'],
+        ['key' => 'invite_25', 'stat' => 'referrals', 'target' => 25, 'title' => 'Амбасадор GameCon', 'text' => 'Запросити 25 друзів.', 'icon' => 'megaphone'],
         ['key' => 'pioneer', 'stat' => 'pioneer', 'target' => 1, 'title' => 'Перші 100', 'text' => 'Бути серед перших ста користувачів.', 'icon' => 'rocket'],
     ];
 
@@ -134,7 +144,7 @@ class Achievements
         $memberIds = FamilyMember::query()->where('user_id', $user->id)->pluck('id')->all();
 
         return [
-            'posts' => Post::query()->where('author_id', $user->id)->count(),
+            'posts' => Post::query()->where('author_id', $user->id)->where('is_draft', false)->where(fn ($query) => $query->whereNull('publish_at')->orWhere('publish_at', '<=', now()))->count(),
             'comments' => Comment::query()->where('user_id', $user->id)->count(),
             'likes' => Like::query()->where('likeable_type', 'post')
                 ->whereIn('likeable_id', Post::query()->where('author_id', $user->id)->select('id'))
@@ -151,6 +161,10 @@ class Achievements
             'clan_founder' => Clan::query()->where('owner_id', $user->id)->exists() ? 1 : 0,
             'verified' => $user->is_verified ? 1 : 0,
             'pioneer' => $user->id <= 100 ? 1 : 0,
+            'votes' => app(ServerVotes::class)->countFor($user),
+            'quest_xp' => app(DailyQuests::class)->totalXp($user),
+            'quests' => app(DailyQuests::class)->completed($user),
+            'referrals' => app(Referrals::class)->active($user),
         ];
     }
 }

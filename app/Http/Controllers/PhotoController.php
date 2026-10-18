@@ -11,10 +11,14 @@ use App\Models\User;
 use App\Notifications\PhotoInteraction;
 use App\Services\PhotoService;
 use App\Services\PostPresenter;
+use App\Services\ReactionDigest;
+use App\Support\CommentOrder;
+use App\Support\Stickers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -69,6 +73,8 @@ class PhotoController extends Controller
             'photo' => [
                 ...$photo->toThumb(),
                 'caption' => $photo->caption,
+                'alt' => $photo->alt,
+                'is_sensitive' => $photo->is_sensitive,
                 'views_count' => $photo->views_count,
                 'created_at' => $photo->created_at->toIso8601String(),
                 'user' => $photo->user?->toCard(),
@@ -81,6 +87,7 @@ class PhotoController extends Controller
                 ],
                 'prev_id' => $album->photos()->where('id', '>', $photo->id)->orderBy('id')->value('id'),
                 'next_id' => $album->photos()->where('id', '<', $photo->id)->orderByDesc('id')->value('id'),
+                'tags' => $photo->tags()->get()->map->toCard()->values(),
                 'can' => [
                     'edit' => $this->photos->canManage($album, $viewer) || $photo->user_id === $viewer->id,
                     'delete' => $this->photos->canDeletePhoto($photo, $viewer),
@@ -97,10 +104,28 @@ class PhotoController extends Controller
         $user = $request->user();
         abort_unless($this->photos->canManage($photo->album, $user) || $photo->user_id === $user->id, 403);
 
-        $data = $request->validate(['caption' => ['nullable', 'string', 'max:500']]);
-        $photo->update(['caption' => isset($data['caption']) ? trim($data['caption']) ?: null : null]);
+        $data = $request->validate([
+            'caption' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'alt' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'is_sensitive' => ['sometimes', 'boolean'],
+        ]);
+        $changes = [];
+        if (array_key_exists('caption', $data)) {
+            $changes['caption'] = trim((string) $data['caption']) ?: null;
+        }
+        if (array_key_exists('alt', $data)) {
+            $changes['alt'] = trim((string) $data['alt']) ?: null;
+        }
+        if (array_key_exists('is_sensitive', $data)) {
+            $changes['is_sensitive'] = (bool) $data['is_sensitive'];
+        }
+        $photo->update($changes);
 
-        return response()->json(['caption' => $photo->caption]);
+        return response()->json([
+            'caption' => $photo->caption,
+            'alt' => $photo->alt,
+            'is_sensitive' => $photo->is_sensitive,
+        ]);
     }
 
     public function cover(Request $request, Photo $photo): JsonResponse
@@ -122,6 +147,28 @@ class PhotoController extends Controller
         return response()->json(['deleted' => true]);
     }
 
+    public function tag(Request $request, Photo $photo): JsonResponse
+    {
+        $actor = $request->user();
+        $data = $request->validate(['username' => ['required', 'string']]);
+        $friend = User::query()->where('username', $data['username'])->first();
+        abort_unless($friend instanceof User, 422, 'Людину не знайдено.');
+        $already = $photo->tags()->whereKey($friend->id)->exists();
+        $this->photos->tag($photo, $actor, $friend);
+        if (! $already && $friend->isNot($actor)) {
+            $friend->notify(new PhotoInteraction(PhotoInteraction::TAG, $actor, $photo));
+        }
+
+        return response()->json(['user' => $friend->toCard()]);
+    }
+
+    public function untag(Request $request, Photo $photo, User $user): JsonResponse
+    {
+        $this->photos->untag($photo, $request->user(), $user);
+
+        return response()->json(['ok' => true]);
+    }
+
     public function like(Request $request, Photo $photo): JsonResponse
     {
         $user = $request->user();
@@ -130,7 +177,7 @@ class PhotoController extends Controller
         $liked = $this->photos->toggleLike($photo, $user);
 
         if ($liked && $photo->user && $photo->user_id !== $user->id) {
-            $photo->user->notify(new PhotoInteraction(PhotoInteraction::LIKE, $user, $photo));
+            app(ReactionDigest::class)->record($photo->user, new PhotoInteraction(PhotoInteraction::LIKE, $user, $photo));
         }
 
         return response()->json(['liked' => $liked, 'likes_count' => $photo->fresh()->likes_count]);
@@ -141,7 +188,9 @@ class PhotoController extends Controller
         $viewer = $request->user();
         abort_unless($this->photos->canView($photo->album, $viewer), 404);
 
-        $comments = $photo->comments()->with('user')->orderBy('id')->limit(500)->get();
+        $comments = $photo->comments()->with('user');
+        CommentOrder::apply($comments, $request->query('sort'));
+        $comments = $comments->limit(500)->get();
         $liked = Like::query()
             ->where('user_id', $viewer->id)
             ->where('likeable_type', (new Comment)->getMorphClass())
@@ -162,19 +211,22 @@ class PhotoController extends Controller
         abort_unless($album->comments_enabled, 403, 'Коментарі до цього альбому вимкнено.');
 
         $data = $request->validate([
-            'body' => ['required', 'string', 'max:2000'],
+            'body' => ['nullable', 'string', 'max:2000', 'required_without:sticker'],
             'parent_id' => ['nullable', 'integer'],
+            'sticker' => ['nullable', 'string', Rule::in(array_keys(Stickers::ITEMS))],
         ]);
 
         $comment = $photo->comments()->create([
             'user_id' => $user->id,
             'parent_id' => isset($data['parent_id']) ? $photo->comments()->whereKey($data['parent_id'])->value('id') : null,
-            'body' => trim($data['body']),
+            'body' => trim((string) ($data['body'] ?? '')),
+            'sticker' => $data['sticker'] ?? null,
         ]);
         $photo->increment('comments_count');
 
         if ($photo->user && $photo->user_id !== $user->id) {
-            $photo->user->notify(new PhotoInteraction(PhotoInteraction::COMMENT, $user, $photo, Str::limit($comment->body, 80)));
+            $excerpt = $comment->body !== '' ? Str::limit($comment->body, 80) : Stickers::emoji($comment->sticker);
+            $photo->user->notify(new PhotoInteraction(PhotoInteraction::COMMENT, $user, $photo, $excerpt));
         }
 
         return response()->json([

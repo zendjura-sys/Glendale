@@ -10,6 +10,8 @@ import java.security.MessageDigest
 class MainActivity : AudioServiceActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        // Скрипт плеєра в iframe балансера (див. FrameScriptPlugin).
+        flutterEngine.plugins.add(FrameScriptPlugin())
         // SHA-1 підпису встановленого застосунку — для діагностики входу через Google (DEVELOPER_ERROR).
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "gamecon/app").setMethodCallHandler { call, result ->
             when (call.method) {

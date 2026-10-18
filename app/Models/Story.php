@@ -37,9 +37,11 @@ class Story extends Model
 
     public const PRIVACY_FRIENDS = 'friends';
 
+    public const PRIVACY_CLOSE = 'close';
+
     public const PRIVACY_EVERYONE = 'everyone';
 
-    public const PRIVACIES = [self::PRIVACY_FRIENDS, self::PRIVACY_EVERYONE];
+    public const PRIVACIES = [self::PRIVACY_FRIENDS, self::PRIVACY_CLOSE, self::PRIVACY_EVERYONE];
 
     /** Скільки годин живе історія. */
     public const LIFETIME_HOURS = 24;

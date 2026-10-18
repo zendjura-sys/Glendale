@@ -12,8 +12,9 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property int $user_id
  * @property string $likeable_type
  * @property int $likeable_id
+ * @property string $reaction
  */
-#[Fillable(['user_id', 'likeable_type', 'likeable_id'])]
+#[Fillable(['user_id', 'likeable_type', 'likeable_id', 'reaction'])]
 class Like extends Model
 {
     public const UPDATED_AT = null;

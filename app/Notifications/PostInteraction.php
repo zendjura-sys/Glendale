@@ -4,6 +4,8 @@ namespace App\Notifications;
 
 use App\Models\Post;
 use App\Models\User;
+use App\Notifications\Concerns\QuietHours;
+use App\Support\MutedWords;
 use Illuminate\Notifications\Notification;
 
 class PostInteraction extends Notification
@@ -13,6 +15,10 @@ class PostInteraction extends Notification
     public const COMMENT = 'post_comment';
 
     public const WALL = 'wall_post';
+
+    public const SHARE = 'post_share';
+
+    public const QUOTE = 'post_quote';
 
     public function __construct(
         public readonly string $kind,
@@ -26,7 +32,11 @@ class PostInteraction extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        if ($notifiable instanceof User && MutedWords::blocks($notifiable, $this->post->body, $this->excerpt)) {
+            return [];
+        }
+
+        return QuietHours::channels($notifiable, $this->kind);
     }
 
     /**
@@ -41,6 +51,8 @@ class PostInteraction extends Notification
             'text' => match ($this->kind) {
                 self::LIKE => 'оцінив(-ла) ваш запис',
                 self::COMMENT => 'прокоментував(-ла) ваш запис',
+                self::SHARE => 'поділив(-ла)ся вашим записом',
+                self::QUOTE => 'процитував(-ла) ваш запис',
                 default => 'залишив(-ла) запис на вашій стіні',
             },
             'excerpt' => $this->excerpt,

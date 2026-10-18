@@ -29,10 +29,17 @@ class SiteSettings
         'spotify_client_id' => null,
         'spotify_client_secret' => null,
         'kodik_token' => null,
+        'kodik_links_key' => null,
+        'videoseed_token' => null,
+        // Порядок, назви й фільтри плеєрів (CinemaPlayers) і автопарсинг TMDB (TmdbAutoParse).
+        'cinema_players' => [],
+        'cinema_tmdb' => [],
         'flixcdn_token' => null,
         'flixcdn_template' => null,
         'flixcdn_api_search' => null,
         'flixcdn_api_updates' => null,
+        // Параметр адреси плеєра FlixCDN, що вибирає озвучку (кожна озвучка — окремий плеєр).
+        'flixcdn_translation_param' => null,
         'tmdb_token' => null,
         'tmdb_language' => 'uk-UA',
         'omdb_key' => null,
@@ -63,6 +70,7 @@ class SiteSettings
         'cinema_sync_last' => null,
         'maintenance_message' => null,
         'servers_auto_publish' => false,
+        'plugins' => [],
         'discord_client_id' => null,
         'discord_client_secret' => null,
         'firebase_api_key' => null,
@@ -73,10 +81,47 @@ class SiteSettings
         'livekit_url' => null,
         'livekit_api_key' => null,
         'livekit_api_secret' => null,
+        'vapid_public' => null,
+        'telegram_bot_token' => null,
+        'telegram_bot_username' => null,
+        'telegram_webhook_secret' => null,
+        'discord_public_key' => null,
+        'twitch_client_id' => null,
+        'twitch_client_secret' => null,
+        'sightengine_user' => null,
+        'sightengine_secret' => null,
+        'vapid_private' => null,
+        // Реквізити продавця на /terms, /privacy, /refund-policy (порожнє — значення з config/legal.php / .env).
+        'legal_operator' => null,
+        'legal_email' => null,
+        'legal_address' => null,
+        'legal_country' => null,
+        'legal_updated' => null,
+        // Реквізити ФОП для документів і підвалу (Закон «Про електронну комерцію», ст. 7).
+        'legal_tax_id' => null,
+        'legal_registry' => null,
+        'legal_phone' => null,
+        'legal_tax_status' => null,
+        // Старі способи поповнення рахунку й токен Donatello (баланс прибрано; лишаються для історії).
+        'plus_methods' => [],
+        // Товари, зняті з продажу (ключі config('plus.products')): зникають зі сторінок цін і GameCon+.
+        'plus_disabled' => [],
+        'donatello_token' => null,
+        // Оплата карткою: токен еквайрингу monobank, тарифи й правила підписок (Catalog), Google Pay.
+        'monobank_acquiring_token' => null,
+        'billing_products' => [],
+        'billing_rules' => [],
+        'google_pay' => [],
+        // Підписки GameCon+ у застосунку через Google Play Billing (GooglePlay).
+        'google_play_enabled' => false,
+        'google_play_package' => null,
+        'google_play_products' => null,
+        'google_play_service_account' => null,
+        'google_play_rtdn_token' => null,
     ];
 
     /** Ключі, які не можна віддавати у фронтенд. */
-    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key', 'deepl_key', 'maxmind_license_key'];
+    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'kodik_links_key', 'videoseed_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key', 'deepl_key', 'maxmind_license_key', 'vapid_private', 'telegram_bot_token', 'telegram_webhook_secret', 'twitch_client_secret', 'sightengine_secret', 'donatello_token', 'monobank_acquiring_token', 'google_play_service_account', 'google_play_rtdn_token'];
 
     /** @var array<string, mixed>|null */
     private ?array $values = null;

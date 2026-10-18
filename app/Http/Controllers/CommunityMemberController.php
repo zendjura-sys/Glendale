@@ -49,6 +49,8 @@ class CommunityMemberController extends Controller
         $members->setCollection($members->getCollection()->map(fn (CommunityMember $m) => [
             ...$m->user->toCard(),
             'role' => $m->role,
+            'title' => $m->title,
+            'color' => $m->color,
             'status' => $m->status,
             'joined_at' => $m->created_at?->toIso8601String(),
             'is_friend' => in_array($m->user_id, $friendIds),
@@ -97,6 +99,27 @@ class CommunityMemberController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => $data['role'] === CommunityMember::ROLE_OWNER
             ? "Права власника передано {$user->name}."
             : 'Роль оновлено.']);
+
+        return back();
+    }
+
+    /**
+     * Підпис ролі з кольором: «Модератор», «Ветеран», «Стример» тощо.
+     */
+    public function title(Request $request, Community $community, User $user): RedirectResponse
+    {
+        $this->authorizeAdmin($request, $community);
+        $data = $request->validate([
+            'title' => ['nullable', 'string', 'max:32'],
+            'color' => ['nullable', Rule::in(CommunityMember::COLORS)],
+        ]);
+        $member = $community->activeMembers()->where('user_id', $user->id)->firstOrFail();
+        $title = trim((string) ($data['title'] ?? ''));
+        $member->update([
+            'title' => $title === '' ? null : $title,
+            'color' => $title === '' ? null : ($data['color'] ?? CommunityMember::COLORS[0]),
+        ]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Підпис збережено.']);
 
         return back();
     }

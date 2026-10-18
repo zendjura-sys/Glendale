@@ -64,7 +64,7 @@ export default function PhotosIndex({
                                 <UserAvatar user={owner.user} size="lg" />
                             ) : null}
                         </Link>
-                        <div className="min-w-0 flex-1">
+                        <div className="min-w-0 flex-1 basis-48">
                             <Link
                                 href={owner.href}
                                 className="inline-flex items-center gap-1.5 text-xs text-white/45 hover:text-white"
@@ -74,7 +74,7 @@ export default function PhotosIndex({
                                     ? tr('До спільноти')
                                     : tr('До профілю')}
                             </Link>
-                            <h1 className="mt-0.5 truncate font-display text-2xl font-bold text-white">
+                            <h1 className="mt-0.5 font-display text-xl leading-tight font-bold break-words text-white sm:text-2xl">
                                 <span className="text-gradient">
                                     {tr('Фотографії')}
                                 </span>{' '}
@@ -99,7 +99,7 @@ export default function PhotosIndex({
                             <button
                                 type="button"
                                 onClick={() => setCreating(true)}
-                                className="btn-glow inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold"
+                                className="btn-glow inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold sm:w-auto"
                             >
                                 <FolderPlus className="size-4" />{' '}
                                 {tr('Створити альбом')}
@@ -136,7 +136,7 @@ export default function PhotosIndex({
                 ) : (
                     <>
                         <section>
-                            <h2 className="mb-3 px-1 font-display text-[13px] font-semibold tracking-wide text-white/70 uppercase">
+                            <h2 className="mb-3 px-1 font-display text-[13px] font-semibold text-white/70">
                                 {tr('Альбоми')}
                             </h2>
                             <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
@@ -148,7 +148,7 @@ export default function PhotosIndex({
 
                         {photos.data.length > 0 && (
                             <section className="glass rounded-3xl p-3 sm:p-4">
-                                <h2 className="mb-3 flex items-center gap-2 px-1 font-display text-[13px] font-semibold tracking-wide text-white/70 uppercase">
+                                <h2 className="mb-3 flex items-center gap-2 px-1 font-display text-[13px] font-semibold text-white/70">
                                     <Images className="size-4 text-gc-lilac-400" />
                                     {tr('Усі фотографії')}
                                 </h2>

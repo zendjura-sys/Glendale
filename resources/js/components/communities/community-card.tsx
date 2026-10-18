@@ -34,7 +34,7 @@ export function CommunityTile({ community }: { community: CommunityListItem }) {
                 ) : (
                     <div className="size-full bg-[radial-gradient(circle_at_15%_20%,#4f8bff_0%,transparent_55%),radial-gradient(circle_at_85%_40%,#a855f7_0%,transparent_55%)] opacity-70" />
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0b1020] to-transparent" />
+                <div className="scrim absolute inset-0" />
             </Link>
 
             <div className="relative -mt-9 flex flex-1 flex-col px-4 pb-4">

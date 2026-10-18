@@ -5,16 +5,23 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Jobs\SyncCinemaCatalog;
 use App\Models\Movie;
+use App\Models\MovieRequest;
 use App\Models\MovieSource;
+use App\Services\Cinema\BulkPlayers;
 use App\Services\Cinema\CinemaAutoImport;
 use App\Services\Cinema\CinemaException;
+use App\Services\Cinema\CinemaPlayers;
 use App\Services\Cinema\CinemaService;
 use App\Services\Cinema\FlixcdnClient;
 use App\Services\Cinema\FlixcdnPlayer;
 use App\Services\Cinema\KodikClient;
 use App\Services\Cinema\Metadata\MetadataEnricher;
 use App\Services\Cinema\Metadata\MetadataProvider;
+use App\Services\Cinema\Metadata\TmdbProvider;
+use App\Services\Cinema\TmdbAutoParse;
+use App\Services\Cinema\VideoseedClient;
 use App\Services\ImageStorage;
+use App\Support\Settings\SiteSettings;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -38,6 +45,9 @@ class CinemaController extends Controller
         private readonly ImageStorage $images,
         private readonly MetadataEnricher $enricher,
         private readonly CinemaAutoImport $autoImport,
+        private readonly VideoseedClient $videoseed,
+        private readonly CinemaPlayers $players,
+        private readonly TmdbAutoParse $tmdb,
     ) {}
 
     public function index(Request $request): Response
@@ -98,6 +108,7 @@ class CinemaController extends Controller
                 'auto' => Movie::query()->where('origin', '!=', 'manual')->count(),
             ],
             'providers' => $this->providers(),
+            'requests' => $this->movieRequests(),
             'auto' => [
                 'config' => $this->autoImport->config(),
                 'last' => $this->autoImport->lastRun(),
@@ -105,7 +116,59 @@ class CinemaController extends Controller
                 'kodik_types' => collect(CinemaAutoImport::KODIK_TYPES)->map(fn ($label, $key) => ['key' => $key, 'label' => $label])->values(),
                 'intervals' => CinemaAutoImport::INTERVALS,
             ],
+            'bulk' => [
+                'state' => app(BulkPlayers::class)->state(),
+                'running' => app(BulkPlayers::class)->running(),
+            ],
+            'players' => [
+                'config' => $this->players->config(),
+                'providers' => $this->playerProviders(),
+            ],
+            'tmdb' => [
+                'config' => $this->tmdb->config(),
+                'configured' => app(TmdbProvider::class)->configured(),
+                'language' => app(TmdbProvider::class)->language(),
+                'fields' => collect(TmdbAutoParse::FIELDS)->map(fn ($label, $key) => ['key' => $key, 'label' => $label])->values(),
+                'lists' => collect(TmdbAutoParse::LIST_LABELS)->map(fn ($label, $key) => ['key' => $key, 'label' => $label])->values(),
+                'tmdb_count' => Movie::query()->whereNotNull('tmdb_id')->count(),
+            ],
         ]);
+    }
+
+    /**
+     * Запити глядачів на фільми, яких немає в каталозі: однакові назви разом, найчастіші вгорі.
+     *
+     * @return list<array{title: string, year: int|null, count: int, last_at: string, people: list<string>}>
+     */
+    private function movieRequests(): array
+    {
+        $rows = MovieRequest::query()->with('user')->latest('id')->limit(300)->get();
+
+        return array_values($rows->groupBy(fn (MovieRequest $r) => mb_strtolower(trim($r->title)))
+            ->map(fn ($group) => [
+                'title' => $group->first()->title,
+                'year' => $group->pluck('year')->filter()->first(),
+                'count' => $group->count(),
+                'last_at' => $group->first()->created_at->toIso8601String(),
+                'people' => array_values($group->take(3)->map(fn (MovieRequest $r) => $r->user->name)->all()),
+            ])
+            ->sortByDesc('count')
+            ->take(20)
+            ->values()
+            ->all());
+    }
+
+    /** Закрити запит: фільм додали або він не підходить. Прибирає всі запити з цією назвою. */
+    public function closeRequest(Request $request): RedirectResponse
+    {
+        $title = mb_strtolower(trim((string) $request->validate(['title' => ['required', 'string', 'max:160']])['title']));
+        $ids = MovieRequest::query()->get(['id', 'title'])
+            ->filter(fn (MovieRequest $r) => mb_strtolower(trim($r->title)) === $title)
+            ->pluck('id');
+        MovieRequest::query()->whereKey($ids)->delete();
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Запит закрито.']);
+
+        return back();
     }
 
     public function updateAuto(Request $request): RedirectResponse
@@ -116,6 +179,8 @@ class CinemaController extends Controller
             'providers.*' => [Rule::in(CinemaService::PROVIDERS)],
             'kodik_types' => ['array'],
             'kodik_types.*' => [Rule::in(array_keys(CinemaAutoImport::KODIK_TYPES))],
+            'videoseed_lists' => ['array'],
+            'videoseed_lists.*' => [Rule::in(['movie', 'serial'])],
             'pages' => ['required', 'integer', 'between:1,20'],
             'interval' => ['required', Rule::in(CinemaAutoImport::INTERVALS)],
             'publish' => ['required', 'boolean'],
@@ -125,7 +190,12 @@ class CinemaController extends Controller
             'only_with_ids' => ['required', 'boolean'],
         ]);
 
-        $this->autoImport->save([...$data, 'providers' => array_values($data['providers'] ?? []), 'kodik_types' => array_values($data['kodik_types'] ?? [])]);
+        $this->autoImport->save([
+            ...$data,
+            'providers' => array_values($data['providers'] ?? []),
+            'kodik_types' => array_values($data['kodik_types'] ?? []),
+            'videoseed_lists' => array_values($data['videoseed_lists'] ?? ['movie', 'serial']),
+        ]);
         Inertia::flash('toast', ['type' => 'success', 'message' => $data['enabled'] ? 'Автонаповнення увімкнено.' : 'Налаштування збережено.']);
 
         return back();
@@ -141,6 +211,126 @@ class CinemaController extends Controller
             : 'Синхронізацію запущено у фоні — нові тайтли з’являться за кілька хвилин.']);
 
         return back();
+    }
+
+    /**
+     * Масова проставка плеєрів на всі тайтли. replace — замінювати наявні плеєри; без нього лише
+     * додаються нові озвучки. Що саме змінено — у звіті проставки.
+     */
+    public function bulkPlayers(Request $request, BulkPlayers $bulk): RedirectResponse
+    {
+        $data = $request->validate([
+            'replace' => ['required', 'boolean'],
+            'type' => ['nullable', Rule::in(array_keys(Movie::TYPES))],
+            'providers' => ['nullable', 'array'],
+            'providers.*' => [Rule::in(['kodik', 'videoseed', 'flixcdn'])],
+        ]);
+        $started = $bulk->start((bool) $data['replace'], $data['type'] ?? null, array_values($data['providers'] ?? []));
+        Inertia::flash('toast', $started
+            ? ['type' => 'success', 'message' => $data['replace']
+                ? 'Проставку запущено у фоні: плеєри замінюються, нові озвучки додаються.'
+                : 'Проставку запущено у фоні: додаються лише нові озвучки.']
+            : ['type' => 'error', 'message' => 'Проставка вже виконується.']);
+
+        return back();
+    }
+
+    public function cancelBulkPlayers(BulkPlayers $bulk): RedirectResponse
+    {
+        $bulk->cancel();
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Проставку зупинено.']);
+
+        return back();
+    }
+
+    /** Плеєри: порядок вкладок, увімкнення, власні назви, улюблені й заборонені озвучки. */
+    public function updatePlayers(Request $request): RedirectResponse
+    {
+        $providers = CinemaPlayers::PROVIDERS;
+        $data = $request->validate([
+            'order' => ['required', 'array', 'size:'.count($providers)],
+            'order.*' => ['distinct', Rule::in($providers)],
+            'disabled' => ['array'],
+            'disabled.*' => [Rule::in($providers)],
+            'labels' => ['array'],
+            'labels.*' => ['nullable', 'string', 'max:40'],
+            'voice_prefer' => ['array', 'max:30'],
+            'voice_prefer.*' => ['string', 'max:60'],
+            'voice_block' => ['array', 'max:50'],
+            'voice_block.*' => ['string', 'max:60'],
+            'episodes' => ['sometimes', 'boolean'],
+        ]);
+
+        $this->players->save([
+            'order' => array_values($data['order']),
+            'disabled' => array_values($data['disabled'] ?? []),
+            'labels' => array_filter(array_intersect_key($data['labels'] ?? [], array_flip($providers)), fn ($v) => filled($v)),
+            'voice_prefer' => array_values(array_filter(array_map('trim', $data['voice_prefer'] ?? []))),
+            'voice_block' => array_values(array_filter(array_map('trim', $data['voice_block'] ?? []))),
+            'episodes' => (bool) ($data['episodes'] ?? false),
+        ]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Налаштування плеєрів збережено.']);
+
+        return back();
+    }
+
+    /** Автопарсинг TMDB: поля, режим, оновлення старих і автододавання зі списків. */
+    public function updateTmdb(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'enabled' => ['required', 'boolean'],
+            'fields' => ['array'],
+            'fields.*' => [Rule::in(array_keys(TmdbAutoParse::FIELDS))],
+            'mode' => ['required', Rule::in(['prefer', 'fill'])],
+            'refresh_days' => ['required', 'integer', 'between:0,365'],
+            'discover' => ['required', 'boolean'],
+            'lists' => ['array'],
+            'lists.*' => [Rule::in(array_keys(TmdbAutoParse::LIST_LABELS))],
+            'pages' => ['required', 'integer', 'between:1,5'],
+            'discover_limit' => ['required', 'integer', 'between:1,100'],
+            'min_votes' => ['required', 'integer', 'between:0,100000'],
+            'min_year' => ['nullable', 'integer', 'between:1900,2100'],
+            'publish' => ['required', 'boolean'],
+            'search_import' => ['sometimes', 'boolean'],
+            'language' => ['required', 'string', 'regex:/^[a-z]{2}-[A-Z]{2}$/'],
+        ], ['language.regex' => 'Мова у форматі uk-UA.']);
+
+        app(SiteSettings::class)->put(['tmdb_language' => $data['language']]);
+        unset($data['language']);
+        $this->tmdb->save([...$data, 'fields' => array_values($data['fields'] ?? []), 'lists' => array_values($data['lists'] ?? [])]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Налаштування TMDB збережено.']);
+
+        return back();
+    }
+
+    /** Сховати чи показати окрему озвучку фільму. */
+    public function toggleSource(Request $request, int $movie, MovieSource $source): RedirectResponse
+    {
+        abort_unless($source->movie_id === $movie, 404);
+        $source->update(['is_hidden' => $request->boolean('is_hidden')]);
+
+        return back();
+    }
+
+    /**
+     * @return list<array{key: string, label: string, configured: bool, sources: int}>
+     */
+    private function playerProviders(): array
+    {
+        $counts = MovieSource::query()->selectRaw('provider, count(*) as total')->groupBy('provider')->pluck('total', 'provider');
+        $configured = [
+            'kodik' => $this->kodik->configured(),
+            'videoseed' => $this->videoseed->configured(),
+            'flixcdn' => $this->flixcdn->configured() || $this->flixcdnApi->configured(),
+            'custom' => true,
+        ];
+
+        return array_map(fn (string $key) => [
+            'key' => $key,
+            'label' => MovieSource::PROVIDERS[$key],
+            'configured' => $configured[$key],
+            'sources' => (int) ($counts[$key] ?? 0),
+        ], CinemaPlayers::PROVIDERS);
     }
 
     public function enrich(int $movie): RedirectResponse
@@ -266,7 +456,7 @@ class CinemaController extends Controller
     public function refresh(int $movie): RedirectResponse
     {
         $result = $this->cinema->refresh(Movie::withTrashed()->findOrFail($movie));
-        $summary = collect($result)->map(fn (int $n, string $p) => ($p === 'kodik' ? 'Kodik' : 'FlixCDN').": {$n}")->implode(', ');
+        $summary = collect($result)->map(fn (int $n, string $p) => (MovieSource::PROVIDERS[$p] ?? $p).": {$n}")->implode(', ');
         Inertia::flash('toast', ['type' => 'success', 'message' => "Плеєри оновлено ({$summary})."]);
 
         return back();
@@ -278,6 +468,7 @@ class CinemaController extends Controller
             'providers' => [
                 'kodik' => ['configured' => $this->kodik->configured(), 'search' => $this->kodik->configured(), 'latest' => $this->kodik->configured()],
                 'flixcdn' => ['configured' => $this->flixcdnApi->configured(), 'search' => filled($this->flixcdnApi->searchTemplate()), 'latest' => filled($this->flixcdnApi->updatesTemplate())],
+                'videoseed' => ['configured' => $this->videoseed->configured(), 'search' => $this->videoseed->configured(), 'latest' => $this->videoseed->configured()],
             ],
             'types' => $this->typeOptions(),
         ]);
@@ -287,11 +478,11 @@ class CinemaController extends Controller
     {
         $data = $request->validate([
             'q' => ['required', 'string', 'max:150'],
-            'by' => ['nullable', Rule::in(['title', 'imdb_id', 'shikimori_id'])],
+            'by' => ['nullable', Rule::in(['title', 'imdb_id', 'shikimori_id', 'kinopoisk_id', 'tmdb_id'])],
         ]);
         $criteria = [($data['by'] ?? 'title') => trim($data['q'])];
 
-        return $this->candidatesResponse($provider === 'kodik' ? $this->kodik->search($criteria) : $this->flixcdnApi->search($criteria));
+        return $this->candidatesResponse($this->searchProvider($provider, $criteria));
     }
 
     public function remoteLatest(Request $request, string $provider): JsonResponse
@@ -301,9 +492,11 @@ class CinemaController extends Controller
             'page' => ['nullable', 'integer', 'between:1,50'],
         ]);
 
-        return $this->candidatesResponse($provider === 'kodik'
-            ? $this->kodik->latest($data['types'] ?? null, 60)
-            : $this->flixcdnApi->updates((int) ($data['page'] ?? 1))['candidates']);
+        return $this->candidatesResponse(match ($provider) {
+            'kodik' => $this->kodik->latest($data['types'] ?? null, 60),
+            'videoseed' => $this->videoseed->latest((int) ($data['page'] ?? 1)),
+            default => $this->flixcdnApi->updates((int) ($data['page'] ?? 1))['candidates'],
+        });
     }
 
     public function remoteImport(Request $request): JsonResponse
@@ -325,7 +518,7 @@ class CinemaController extends Controller
             default => ['title' => (string) ($data['q'] ?? '')],
         };
 
-        $results = $data['provider'] === 'kodik' ? $this->kodik->search($criteria) : $this->flixcdnApi->search($criteria);
+        $results = $this->searchProvider($data['provider'], $criteria);
         $candidate = collect($results)->firstWhere('key', $data['key']);
         if (! $candidate) {
             throw new CinemaException('Провайдер більше не віддає цей матеріал. Оновіть пошук.', 404);
@@ -346,6 +539,19 @@ class CinemaController extends Controller
             'sources' => $movie->sources()->count(),
             'message' => "«{$movie->title}» імпортовано: озвучок — ".count($candidate['sources']).($enriched ? '; метадані: '.implode(', ', $enriched) : '').'.',
         ]);
+    }
+
+    /**
+     * @param  array<string, string>  $criteria
+     * @return list<array<string, mixed>>
+     */
+    private function searchProvider(string $provider, array $criteria): array
+    {
+        return match ($provider) {
+            'kodik' => $this->kodik->search($criteria),
+            'videoseed' => $this->videoseed->search($criteria),
+            default => $this->flixcdnApi->search($criteria),
+        };
     }
 
     /**
@@ -548,12 +754,13 @@ class CinemaController extends Controller
     }
 
     /**
-     * @return array{kodik: bool, flixcdn: bool, flixcdn_api: bool, metadata: bool}
+     * @return array{kodik: bool, videoseed: bool, flixcdn: bool, flixcdn_api: bool, metadata: bool}
      */
     private function providers(): array
     {
         return [
             'kodik' => $this->kodik->configured(),
+            'videoseed' => $this->videoseed->configured(),
             'flixcdn' => $this->flixcdn->configured() || $this->flixcdnApi->configured(),
             'flixcdn_api' => $this->flixcdnApi->configured(),
             'metadata' => $this->enricher->available(),

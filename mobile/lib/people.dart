@@ -9,13 +9,18 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'achievements.dart';
 import 'playing.dart';
+import 'plus.dart';
+import 'subscription.dart';
+import 'account.dart';
 import 'api.dart';
+import 'characters.dart';
 import 'feed.dart';
 import 'posts.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'extras.dart';
 
 // ───────────────────────── Дружба ─────────────────────────
 
@@ -552,6 +557,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final audio = data['audio'] is Map ? mapOf(data['audio']) : null;
     final open = data['canSeeContent'] != false;
     final fullName = text(profile['name']) ?? name;
+    final plus = PlusMark.of(profile);
+    final headerFx = plus == null ? null : text(profile['header_fx']);
+    final headerColors = plusHeaderColors(profile);
 
     return ScreenScroll(
       onRefresh: _load,
@@ -559,6 +567,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Glass(
           padding: EdgeInsets.zero,
           radius: 26,
+          overlay: headerFx == 'rim' ? PlusHeaderGlow(effect: 'rim', colors: headerColors) : null,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -580,6 +589,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                       ),
                     ),
+                    if (headerFx == 'aurora')
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 70,
+                        height: 107,
+                        child: PlusHeaderGlow(effect: 'aurora', colors: headerColors),
+                      ),
                     if (self)
                       Positioned(
                         top: 12,
@@ -608,7 +625,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onTap: self ? () => _avatarMenu(text(profile['avatar_url']) != null) : null,
                         child: Stack(
                           children: [
-                            Avatar(url: text(profile['avatar_url']), name: fullName, size: 128, ring: true, online: profile['is_online'] == true),
+                            Avatar(url: text(profile['avatar_url']), name: fullName, size: 128, ring: true, online: profile['is_online'] == true, frame: plus?.frame),
                             if (uploading) const Positioned.fill(child: Center(child: CircularProgressIndicator(strokeWidth: 2.4))),
                           ],
                         ),
@@ -623,33 +640,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(children: [
-                      Flexible(child: Text(fullName, style: display(24))),
+                      Flexible(child: PlusName(fullName, plus: plus, style: display(24), animate: true, maxLines: 2)),
                       if (profile['is_verified'] == true) ...[const SizedBox(width: 6), const Icon(LucideIcons.badgeCheck, color: primary, size: 20)],
+                      if (plus != null) ...[const SizedBox(width: 6), const PlusBadge(size: 20)],
                     ]),
                     if (text(profile['status']) != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(text(profile['status'])!, style: body(14, color: soft))),
-                    if (profile['playing'] is Map || self)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Wrap(spacing: 8, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                          if (profile['playing'] is Map) PlayingBadge(mapOf(profile['playing'])),
-                          if (self)
-                            GestureDetector(
-                              onTap: () async {
-                                await context.push('/playing');
-                                _load();
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(20)),
-                                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                  const Icon(LucideIcons.gamepad2, size: 14, color: muted),
-                                  const SizedBox(width: 5),
-                                  Text(profile['playing'] is Map ? tr('Змінити') : tr('Граю в…'), style: body(12.5, color: soft)),
-                                ]),
-                              ),
-                            ),
-                        ]),
-                      ),
+                    if (profile['playing'] is Map) Padding(padding: const EdgeInsets.only(top: 8), child: PlayingBadge(mapOf(profile['playing']))),
+                    if (data['stream'] is Map) Padding(padding: const EdgeInsets.only(top: 8), child: StreamBadge(mapOf(data['stream']))),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
@@ -658,6 +655,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         if (profile['role'] == 'admin') Pill(label: tr('Адміністратор'), icon: LucideIcons.shield, color: gold),
                         if (profile['role'] == 'moderator') Pill(label: tr('Модератор'), icon: LucideIcons.shield, color: cyan),
+                        // Лише інформація про перевагу — без цін і посилань на оплату (правила Google Play).
+                        if (plus != null) GestureDetector(onTap: () => showProFeatures(context), child: Pill(label: 'GameCon+', icon: LucideIcons.sparkles, color: primary)),
                         _Presence(profile: profile),
                       ],
                     ),
@@ -668,6 +667,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Wrap(spacing: 10, runSpacing: 10, children: [
                         FriendAction(username: name, relation: relation, compact: true, onChanged: (_) => _load()),
                         if (data['canMessage'] == true) GhostButton(label: tr('Написати'), icon: LucideIcons.messageCircle, compact: true, expand: false, onPressed: _message),
+                        GhostButton(label: tr('Поскаржитися'), icon: LucideIcons.flag, compact: true, expand: false, color: muted, onPressed: () => showReportSheet(context, name, text(profile['name']) ?? name)),
                       ]),
                     const SizedBox(height: 16),
                     Divider(color: line, height: 1),
@@ -719,6 +719,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (data['achievements'] is Map) ...[
           const SizedBox(height: 12),
           AchievementsPanel(data: mapOf(data['achievements']), isSelf: data['relation'] == 'self'),
+        ],
+        if (maps(data['characters']).isNotEmpty || data['relation'] == 'self') ...[
+          const SizedBox(height: 12),
+          CharactersPanel(characters: maps(data['characters']), createPath: data['relation'] == 'self' ? '/characters/create' : null),
         ],
         if (open && photos.isNotEmpty) ...[
           const SizedBox(height: 12),

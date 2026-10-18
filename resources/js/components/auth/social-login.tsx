@@ -1,10 +1,13 @@
 import { router, usePage } from '@inertiajs/react';
+import { usePasskeyVerify } from '@laravel/passkeys/react';
+import { KeyRound } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { DiscordIcon, GoogleIcon } from '@/components/auth/brand-icons';
+import { AuthDivider } from '@/components/auth/auth-divider';
+import InputError from '@/components/input-error';
 import { Spinner } from '@/components/ui/spinner';
 import { GoogleSignInCancelled, googleIdToken } from '@/lib/google-sign-in';
-import { cn } from '@/lib/utils';
 import { tr } from '@/lib/i18n';
 
 export function useGoogleSignIn() {
@@ -37,9 +40,15 @@ export function useGoogleSignIn() {
     return { available: config !== null, pending, start };
 }
 
-const buttonBase =
-    'flex h-11 w-full items-center justify-center gap-2.5 rounded-xl text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none disabled:opacity-60';
+/** Плитка іншого способу входу: скло, кольорова іконка сервісу, однакова для всіх сервісів. */
+const tile =
+    'group flex h-12 w-full items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm font-semibold text-white transition-colors hover:border-white/20 hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60';
 
+/**
+ * Вхід через інші сервіси (Google, Discord) і ключ доступу — одним блоком плиток над формою пошти.
+ * Дві плитки в ряд; непарна остання тягнеться на всю ширину. Ключ доступу — лише для входу
+ * (зареєструватися ним не можна).
+ */
 export function SocialLogin({
     mode,
     divider = true,
@@ -49,62 +58,77 @@ export function SocialLogin({
 }) {
     const discord = usePage().props.site.social?.discord ?? false;
     const google = useGoogleSignIn();
+    const passkey = usePasskeyVerify({
+        onSuccess: (response) => router.visit(response.redirect ?? '/feed'),
+    });
+    const withPasskey = mode === 'login' && passkey.isSupported;
 
-    if (!discord && !google.available) {
+    if (!discord && !google.available && !withPasskey) {
         return null;
     }
 
     const verb = mode === 'login' ? tr('Увійти') : tr('Продовжити');
 
     return (
-        <div className="grid gap-3">
-            <div
-                className={cn(
-                    'grid gap-2.5',
-                    discord && google.available && 'sm:grid-cols-2',
-                )}
-            >
+        <div className="grid gap-6">
+            <div className="grid grid-cols-2 gap-2.5 [&>*:last-child:nth-child(odd)]:col-span-full">
                 {google.available && (
                     <button
                         type="button"
                         onClick={google.start}
                         disabled={google.pending}
-                        className={cn(
-                            buttonBase,
-                            'bg-white text-[#1f1f1f] shadow-[0_8px_24px_-12px_rgb(255_255_255/0.5)] hover:bg-white/90',
-                        )}
+                        aria-label={`${verb} ${tr('з Google')}`}
+                        className={tile}
                         data-test="google-login"
                     >
                         {google.pending ? (
-                            <Spinner className="text-[#1f1f1f]" />
+                            <Spinner />
                         ) : (
-                            <GoogleIcon className="size-[18px]" />
+                            <GoogleIcon className="size-[18px] shrink-0" />
                         )}
-                        {verb} {tr('з Google')}
+                        Google
                     </button>
                 )}
                 {discord && (
                     <a
                         href="/auth/discord"
-                        className={cn(
-                            buttonBase,
-                            'bg-[#5865F2] text-white shadow-[0_8px_24px_-12px_rgb(88_101_242/0.9)] hover:bg-[#4752c4]',
-                        )}
+                        aria-label={`${verb} ${tr('з Discord')}`}
+                        className={tile}
                         data-test="discord-login"
                     >
-                        <DiscordIcon className="size-5" />
-                        {verb} {tr('з Discord')}
+                        <DiscordIcon className="size-5 shrink-0 text-[#7983f5]" />
+                        Discord
                     </a>
                 )}
+                {withPasskey && (
+                    <button
+                        type="button"
+                        onClick={passkey.verify}
+                        disabled={passkey.isLoading}
+                        className={tile}
+                        data-test="passkey-login"
+                    >
+                        {passkey.isLoading ? (
+                            <Spinner />
+                        ) : (
+                            <KeyRound className="size-[18px] shrink-0 text-primary" />
+                        )}
+                        <span className="truncate">
+                            {passkey.isLoading
+                                ? tr('Перевірка…')
+                                : tr('Ключ доступу')}
+                        </span>
+                    </button>
+                )}
             </div>
-
-            {divider && (
-                <div className="flex items-center gap-3 text-xs font-medium tracking-[0.2em] text-white/30 uppercase">
-                    <span className="h-px flex-1 bg-white/10" />
-                    {tr('або поштою')}
-                    <span className="h-px flex-1 bg-white/10" />
-                </div>
+            {withPasskey && passkey.error && (
+                <InputError
+                    message={passkey.error}
+                    className="-mt-3 text-center"
+                />
             )}
+
+            {divider && <AuthDivider>{tr('або поштою')}</AuthDivider>}
         </div>
     );
 }

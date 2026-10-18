@@ -337,7 +337,7 @@ class FamilyCard extends StatelessWidget {
               ],
               const Icon(LucideIcons.usersRound, size: 14, color: muted),
               const SizedBox(width: 4),
-              Text('${family['members_count'] ?? 0}', style: body(12, color: muted)),
+              Text(compact(family['members_count']), style: body(12, color: muted)),
               const Spacer(),
               if (family['is_recruiting'] == true) Pill(label: tr('Набір відкрито'), color: green),
             ]),
@@ -790,7 +790,7 @@ class _FamilyHeader extends StatelessWidget {
                       Row(mainAxisSize: MainAxisSize.min, children: [
                         const Icon(LucideIcons.usersRound, size: 13, color: muted),
                         const SizedBox(width: 3),
-                        Text('${family['members_count'] ?? 0}', style: body(12, color: muted)),
+                        Text(compact(family['members_count']), style: body(12, color: muted)),
                       ]),
                       Text(tr('Скарбниця: {v}', {'v': hryvnia(family['treasury'])}), style: body(12, color: muted)),
                     ]),
@@ -815,7 +815,7 @@ class _FamilyHeader extends StatelessWidget {
                       ),
                       Container(width: 1, height: 32, color: line, margin: const EdgeInsets.symmetric(horizontal: 10)),
                       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(tr('БАЛАНС'), style: body(10, color: muted, weight: FontWeight.w700)),
+                        Text(tr('БАЛАНС'), style: body(11, color: muted, weight: FontWeight.w700)),
                         Text(hryvniaShort(me['balance']), maxLines: 1, softWrap: false, style: body(15, color: green, weight: FontWeight.w800)),
                       ]),
                     ]),

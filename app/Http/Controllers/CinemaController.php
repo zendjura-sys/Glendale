@@ -2,22 +2,40 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\RefreshMoviePlayers;
 use App\Models\Comment;
 use App\Models\Like;
 use App\Models\Movie;
+use App\Models\MovieRequest;
 use App\Models\MovieSource;
+use App\Models\Track;
 use App\Models\User;
+use App\Services\Cinema\CinemaException;
+use App\Services\Cinema\CinemaPlayers;
 use App\Services\Cinema\CinemaService;
+use App\Services\Cinema\EpisodeGuide;
+use App\Services\Cinema\EpisodeMarks;
 use App\Services\Cinema\FlixcdnPlayer;
+use App\Services\Cinema\KodikClient;
+use App\Services\Cinema\Metadata\MetadataEnricher;
+use App\Services\Cinema\Metadata\TmdbProvider;
+use App\Services\Cinema\TmdbAutoParse;
+use App\Services\Cinema\VideoseedClient;
 use App\Services\FriendshipService;
 use App\Services\PostPresenter;
+use App\Services\SavedItems;
+use App\Support\CommentOrder;
+use App\Support\Plugins\Plugins;
+use App\Support\Stickers;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -46,6 +64,7 @@ class CinemaController extends Controller
             'q' => ['nullable', 'string', 'max:100'],
         ]);
         $sort = $filters['sort'] ?? 'new';
+        $plugins = app(Plugins::class);
         $filtered = filled($filters['type'] ?? null) || filled($filters['genre'] ?? null) || filled($filters['year'] ?? null) || filled($filters['q'] ?? null);
 
         $catalog = Movie::query()->published()
@@ -74,18 +93,219 @@ class CinemaController extends Controller
             'filtered' => $filtered,
             'movies' => Inertia::scroll(fn () => $page),
             'total' => $page->total(),
+            // Порожній пошук — сторінка сама спитає TMDB (/cinema/lookup) і покаже додане.
+            'lookup' => filled($filters['q'] ?? null) && $page->total() === 0 && app(TmdbAutoParse::class)->config()['search_import']
+                && app(TmdbProvider::class)->configured(),
             'featured' => $filtered ? [] : $this->featured(),
-            'rows' => $filtered ? [] : [
-                ['key' => 'continue', 'title' => 'Продовжити перегляд', 'movies' => $this->cards($this->listQuery($user, 'watching')->limit(12)->get())],
+            'rows' => $filtered ? [] : array_values(array_filter([
+                ['key' => 'continue', 'title' => 'Продовжити перегляд', 'movies' => $this->watching($user)],
+                $plugins->on('watch_later') ? ['key' => 'later', 'title' => 'Буду дивитися', 'movies' => $this->cards($this->listQuery($user, 'planned')->limit(12)->get())] : null,
                 ['key' => 'popular', 'title' => 'Популярне зараз', 'movies' => $this->cards(Movie::query()->published()->orderByDesc('views_count')->orderByDesc('id')->limit(16)->get())],
                 ['key' => 'top', 'title' => 'Найвищий рейтинг', 'movies' => $this->cards(Movie::query()->published()->orderByRaw('coalesce(rating_imdb, rating_tmdb, rating_shikimori, 0) desc')->limit(16)->get())],
-            ],
+            ])),
             'types' => collect(Movie::TYPES)->map(fn (string $label, string $key) => ['key' => $key, 'label' => $label])->values(),
             'typeCounts' => Movie::query()->published()->selectRaw('type, count(*) as aggregate')->groupBy('type')->pluck('aggregate', 'type')->map(fn ($v) => (int) $v),
             'genres' => $this->genres(),
             'years' => Movie::query()->published()->whereNotNull('year')->distinct()->orderByDesc('year')->limit(60)->pluck('year')->map(fn ($y) => (int) $y)->values(),
             'myCounts' => $this->myCounts($user),
+            'requests' => $plugins->on('movie_request') ? MovieRequest::query()->where('user_id', $user->id)->latest('id')->limit(5)->pluck('title')->all() : [],
+            'playback' => $this->playbackPrefs($user),
         ]);
+    }
+
+    public function ten(User $user): Response
+    {
+        app(Plugins::class)->ensure('top_ten');
+        $ids = array_slice(array_map('intval', (array) $user->pref('top_ten', [])), 0, 10);
+        $movies = Movie::query()->published()->whereIn('id', $ids)->get()->sortBy(fn (Movie $movie) => array_search($movie->id, $ids, true))->values();
+
+        return Inertia::render('cinema/ten', [
+            'owner' => $user->toCard(),
+            'movies' => $this->cards($movies),
+            'mine' => $user->is(request()->user()),
+            'following' => DB::table('rating_follows')->where('user_id', request()->user()->id)->where('author_id', $user->id)->exists(),
+        ]);
+    }
+
+    public function toggleTen(Request $request): RedirectResponse
+    {
+        app(Plugins::class)->ensure('top_ten');
+        $data = $request->validate(['movie_id' => ['required', 'integer']]);
+        $movie = Movie::query()->published()->find($data['movie_id']);
+        abort_unless($movie instanceof Movie, 404);
+        $ids = array_values(array_map('intval', (array) $request->user()->pref('top_ten', [])));
+        if (in_array($movie->id, $ids, true)) {
+            $ids = array_values(array_filter($ids, fn (int $id) => $id !== $movie->id));
+        } elseif (count($ids) < 10) {
+            $ids[] = $movie->id;
+        }
+        $request->user()->mergePref(['top_ten' => $ids]);
+
+        return back();
+    }
+
+    public function followRatings(Request $request, User $user): RedirectResponse
+    {
+        app(Plugins::class)->ensure('rating_follow');
+        $viewer = $request->user();
+        abort_if($viewer->is($user), 422);
+        $exists = DB::table('rating_follows')->where('user_id', $viewer->id)->where('author_id', $user->id)->exists();
+        if ($exists) {
+            DB::table('rating_follows')->where('user_id', $viewer->id)->where('author_id', $user->id)->delete();
+        } else {
+            DB::table('rating_follows')->insert([
+                'user_id' => $viewer->id,
+                'author_id' => $user->id,
+                'created_at' => now(),
+            ]);
+        }
+
+        return back();
+    }
+
+    public function requestMovie(Request $request): RedirectResponse
+    {
+        app(Plugins::class)->ensure('movie_request');
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:160'],
+            'year' => ['nullable', 'integer', 'min:1900', 'max:2100'],
+        ]);
+        MovieRequest::query()->updateOrCreate(
+            ['user_id' => $request->user()->id, 'title' => trim($data['title'])],
+            ['year' => $data['year'] ?? null],
+        );
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Запит збережено.']);
+
+        return back();
+    }
+
+    public function playback(Request $request): RedirectResponse
+    {
+        $plugins = app(Plugins::class);
+        abort_unless($plugins->on('preferred_player') || $plugins->on('subtitle_language'), 404);
+        $data = $request->validate([
+            'player' => ['nullable', Rule::in(['kodik', 'videoseed', 'flixcdn', 'youtube'])],
+            'subs' => ['nullable', Rule::in(['uk', 'en', 'ru'])],
+        ]);
+        $patch = [];
+        if ($plugins->on('preferred_player')) {
+            $patch['cinema_player'] = (string) ($data['player'] ?? '');
+        }
+        if ($plugins->on('subtitle_language')) {
+            $patch['cinema_subs'] = (string) ($data['subs'] ?? '');
+        }
+        $request->user()->mergePref($patch);
+
+        return back();
+    }
+
+    /**
+     * @return array{player: string, subs: string}
+     */
+    private function playbackPrefs(User $user): array
+    {
+        $plugins = app(Plugins::class);
+
+        return [
+            'player' => $plugins->on('preferred_player') ? (string) $user->pref('cinema_player', '') : '',
+            'subs' => $plugins->on('subtitle_language') ? (string) $user->pref('cinema_subs', '') : '',
+        ];
+    }
+
+    /**
+     * Сезони й серії для застосунку (на сайті це відкладений prop сторінки, який міст не віддає).
+     * episodes: null — посерійний режим вимкнено; [] — серій немає (фільм).
+     */
+    public function episodeList(Request $request, Movie $movie): JsonResponse
+    {
+        $viewer = $request->user();
+        abort_unless($movie->is_published || $viewer->isStaff(), 404);
+        // Застосунок чекає цей запит окремо від сторінки — тут можна дотягнути нові озвучки одразу,
+        // навіть якщо черга на сервері не запущена.
+        if (RefreshMoviePlayers::due($movie)) {
+            RefreshMoviePlayers::dispatchSync($movie->id);
+            $movie->refresh();
+        }
+        $movie->load('sources');
+
+        return response()->json([
+            'players' => $this->cinema->players($movie, $viewer),
+            // Застосунок завжди обирає серію сам (плеєр без власних перемикачів), тож список — незалежно від посерійного режиму сайту.
+            'episodes' => $movie->sources->contains(fn ($s) => in_array($s->provider, ['kodik', 'videoseed'], true)) ? app(EpisodeGuide::class)->seasons($movie) : null,
+            'marks' => app(Plugins::class)->on('episode_marks') ? app(EpisodeMarks::class)->keys($viewer, $movie) : [],
+        ]);
+    }
+
+    /**
+     * Розподіл оцінок (1–10) і скільки людей має тайтл у кожному списку — для блоків «Рейтинг»
+     * і «У списках у людей».
+     *
+     * @return array{ratings: array<int, int>, statuses: array<string, int>}
+     */
+    private function audience(Movie $movie): array
+    {
+        $ratings = array_fill(1, 10, 0);
+        foreach (DB::table('movie_user')->where('movie_id', $movie->id)->whereNotNull('rating')
+            ->selectRaw('rating, count(*) as total')->groupBy('rating')->pluck('total', 'rating') as $rating => $total) {
+            if (isset($ratings[(int) $rating])) {
+                $ratings[(int) $rating] = (int) $total;
+            }
+        }
+        $statuses = array_fill_keys(array_keys(Movie::STATUSES), 0);
+        foreach (DB::table('movie_user')->where('movie_id', $movie->id)->whereNotNull('status')
+            ->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status') as $status => $total) {
+            if (isset($statuses[(string) $status])) {
+                $statuses[(string) $status] = (int) $total;
+            }
+        }
+
+        return ['ratings' => $ratings, 'statuses' => $statuses];
+    }
+
+    /**
+     * Прямі потоки серії для власного плеєра застосунку (Kodik video-links, ключ партнера в адмінці).
+     * available=false — ключа немає чи озвучка не Kodik: застосунок відкриває веб-плеєр.
+     */
+    public function stream(Request $request, Movie $movie): JsonResponse
+    {
+        $viewer = $request->user();
+        abort_unless($movie->is_published || $viewer->isStaff(), 404);
+        $data = $request->validate([
+            'source' => ['required', 'integer'],
+            'season' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'episode' => ['nullable', 'integer', 'min:1', 'max:5000'],
+        ]);
+        $source = $movie->sources()->whereKey((int) $data['source'])->where('is_hidden', false)->first();
+        $kodik = app(KodikClient::class);
+        if ($source === null || $source->provider !== 'kodik' || ! $kodik->streamsAvailable()) {
+            return response()->json(['available' => false, 'qualities' => []]);
+        }
+        $season = isset($data['season']) ? (int) $data['season'] : null;
+        $episode = isset($data['episode']) ? (int) $data['episode'] : null;
+
+        try {
+            // Посилання живуть недовго — кешуємо на 10 хвилин.
+            $qualities = Cache::remember("cinema.stream.{$source->id}.{$season}.{$episode}", 600, function () use ($kodik, $source, $season, $episode) {
+                $link = $kodik->episodeLink($source->external_id, $season, $episode) ?? ($episode === null ? $source->link : null);
+
+                return $link === null ? [] : $kodik->streams($link);
+            });
+        } catch (CinemaException $e) {
+            report($e);
+            $qualities = [];
+        }
+
+        return response()->json([
+            'available' => $qualities !== [],
+            'qualities' => collect($qualities)->map(fn (string $url, string $label) => ['label' => $label, 'url' => $url])->values(),
+        ]);
+    }
+
+    /** Посерійний режим (Адмінка → Кіно → Плеєри) і є плеєр, що відкриває окрему серію. */
+    private function episodeMode(Movie $movie): bool
+    {
+        return app(CinemaPlayers::class)->config()['episodes']
+            && $movie->sources->contains(fn ($s) => in_array($s->provider, ['kodik', 'videoseed'], true));
     }
 
     public function show(Request $request, Movie $movie): Response
@@ -95,8 +315,15 @@ class CinemaController extends Controller
 
         $this->cinema->recordView($movie, $request);
         $movie->load('sources');
+        // Давно не оновлені плеєри — у фоні дотягуємо нові озвучки (сторінка не чекає).
+        if (RefreshMoviePlayers::due($movie) && config('queue.default') !== 'sync') {
+            RefreshMoviePlayers::dispatch($movie->id);
+        }
 
-        $comments = $movie->comments()->with('user')->latest('id')->limit(self::PREVIEW_COMMENTS)->get()->reverse()->values();
+        $pinned = $movie->comments()->with('user')->where('is_pinned', true)->get();
+        $comments = $pinned->concat(
+            $movie->comments()->with('user')->where('is_pinned', false)->latest('id')->limit(self::PREVIEW_COMMENTS)->get()->reverse()->values(),
+        )->unique('id')->values();
         $liked = $this->likedComments($viewer, $comments);
 
         $genres = $movie->genres ?? [];
@@ -137,13 +364,27 @@ class CinemaController extends Controller
                 'shikimori_id' => $movie->shikimori_id,
                 'tmdb_id' => $movie->tmdb_id,
             ],
-            'players' => $this->cinema->players($movie),
+            'players' => $this->cinema->players($movie, $viewer),
+            // Посерійний режим (Адмінка → Кіно → Плеєри): сезони й серії — окремим запитом, бо це звернення до API.
+            'episodes' => $this->episodeMode($movie)
+                ? Inertia::defer(fn () => app(EpisodeGuide::class)->seasons($movie))
+                : null,
             'state' => $this->cinema->stateFor($movie, $viewer),
+            'audience' => $this->audience($movie),
             'statuses' => $this->statusOptions(),
             'friends' => $this->friendsWatching($viewer, $movie),
+            'seen' => app(Plugins::class)->on('friends_seen') ? $this->friendsSeen($viewer, $movie) : [],
+            'taste' => app(Plugins::class)->on('similar_taste') ? $this->similarTaste($viewer) : [],
+            'episodeMarks' => app(Plugins::class)->on('episode_marks') ? app(EpisodeMarks::class)->keys($viewer, $movie) : [],
             'similar' => $this->cards($similar),
-            'comments' => $comments->map(fn (Comment $c) => $this->presenter->comment($c, $viewer, $liked->has($c->id)))->values(),
+            'comments' => $comments->map(fn (Comment $c) => $this->presenter->comment($c, $viewer, $liked->has($c->id), $viewer->isStaff()))->values(),
             'can' => ['manage' => $viewer->isStaff()],
+            // Картки як у музиці: обкладинка, тривалість — грають у плеєрі сайту.
+            'soundtrack' => $movie->tracks()->get()->map(fn (Track $track) => $track->toCard())->all(),
+            'saved' => app(SavedItems::class)->has($viewer, 'movie', $movie->id),
+            'pinned' => is_array($pin = $viewer->pref('pin')) && ($pin['kind'] ?? null) === 'movie' && (int) ($pin['id'] ?? 0) === $movie->id,
+            'playback' => $this->playbackPrefs($viewer),
+            'inTopTen' => app(Plugins::class)->on('top_ten') && in_array($movie->id, array_map('intval', (array) $viewer->pref('top_ten', [])), true),
         ]);
     }
 
@@ -166,6 +407,23 @@ class CinemaController extends Controller
             'statuses' => $this->statusOptions(),
             'counts' => $this->myCounts($user),
         ]);
+    }
+
+    /**
+     * Пошук у каталозі нічого не дав — шукаємо в TMDB і додаємо знайдене з плеєром (див. TmdbAutoParse::searchImport).
+     */
+    public function lookup(Request $request): JsonResponse
+    {
+        $data = $request->validate(['q' => ['required', 'string', 'min:2', 'max:100']]);
+        $movies = app(TmdbAutoParse::class)->searchImport(
+            $data['q'],
+            $this->cinema,
+            app(VideoseedClient::class),
+            app(KodikClient::class),
+            app(MetadataEnricher::class),
+        );
+
+        return response()->json(['movies' => array_map(fn (Movie $m) => $m->toCard(), $movies)]);
     }
 
     public function search(Request $request): JsonResponse
@@ -209,16 +467,74 @@ class CinemaController extends Controller
         return $this->stateResponse($request->user(), $movie);
     }
 
+    public function episode(Request $request, Movie $movie): JsonResponse
+    {
+        app(Plugins::class)->ensure('episode_marks');
+        $data = $request->validate([
+            'season' => ['required', 'integer', 'min:1', 'max:50'],
+            'episode' => ['required', 'integer', 'min:1', 'max:500'],
+        ]);
+
+        return response()->json([
+            'marks' => app(EpisodeMarks::class)->toggle(
+                $request->user(),
+                $movie,
+                (int) $data['season'],
+                (int) $data['episode'],
+            ),
+        ]);
+    }
+
+    public function progress(Request $request, Movie $movie): JsonResponse
+    {
+        abort_unless($movie->is_published || $request->user()->isStaff(), 404);
+        $data = $request->validate([
+            'season' => ['nullable', 'integer', 'min:1', 'max:50'],
+            'episode' => ['required', 'integer', 'min:1', 'max:5000'],
+            'position' => ['nullable', 'integer', 'min:0', 'max:86400'],
+            'player_key' => ['nullable', 'string', 'max:60'],
+        ]);
+        $episode = (int) $data['episode'];
+        if ($movie->episodes_count !== null && $episode > $movie->episodes_count) {
+            throw ValidationException::withMessages(['episode' => 'Такої серії в каталозі немає.']);
+        }
+        $this->cinema->progress(
+            $request->user(),
+            $movie,
+            isset($data['season']) ? (int) $data['season'] : null,
+            $episode,
+            isset($data['position']) ? (int) $data['position'] : null,
+            $data['player_key'] ?? null,
+        );
+
+        return $this->stateResponse($request->user(), $movie);
+    }
+
+    public function soundtrack(Request $request, Movie $movie): RedirectResponse
+    {
+        abort_unless($request->user()->isStaff(), 403);
+        $data = $request->validate(['track_id' => ['required', 'integer', 'exists:tracks,id']]);
+        $trackId = (int) $data['track_id'];
+        if (! $movie->tracks()->whereKey($trackId)->exists()) {
+            $movie->tracks()->attach($trackId, ['position' => $movie->tracks()->count()]);
+        }
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Трек додано до саундтреку.']);
+
+        return back();
+    }
+
     public function comments(Request $request, Movie $movie): JsonResponse
     {
         $viewer = $request->user();
         abort_unless($movie->is_published || $viewer->isStaff(), 404);
 
-        $comments = $movie->comments()->with('user')->orderBy('id')->limit(500)->get();
+        $comments = $movie->comments()->with('user');
+        CommentOrder::apply($comments, $request->query('sort'));
+        $comments = $comments->limit(500)->get();
         $liked = $this->likedComments($viewer, $comments);
 
         return response()->json([
-            'comments' => $comments->map(fn (Comment $c) => $this->presenter->comment($c, $viewer, $liked->has($c->id)))->values(),
+            'comments' => $comments->map(fn (Comment $c) => $this->presenter->comment($c, $viewer, $liked->has($c->id), $viewer->isStaff()))->values(),
         ]);
     }
 
@@ -229,15 +545,19 @@ class CinemaController extends Controller
         abort_unless($movie->comments_enabled, 403, 'Коментарі до цього фільму вимкнено.');
 
         $data = $request->validate([
-            'body' => ['required', 'string', 'max:2000'],
+            'body' => ['nullable', 'string', 'max:2000', 'required_without:sticker'],
             'parent_id' => ['nullable', 'integer'],
+            'spoiler' => ['sometimes', 'boolean'],
+            'sticker' => ['nullable', 'string', Rule::in(array_keys(Stickers::ITEMS))],
         ]);
 
         $comment = DB::transaction(function () use ($movie, $user, $data) {
             $comment = $movie->comments()->create([
                 'user_id' => $user->id,
                 'parent_id' => isset($data['parent_id']) ? $movie->comments()->whereKey($data['parent_id'])->value('id') : null,
-                'body' => trim($data['body']),
+                'body' => trim((string) ($data['body'] ?? '')),
+                'spoiler' => (bool) ($data['spoiler'] ?? false),
+                'sticker' => $data['sticker'] ?? null,
             ]);
             $movie->increment('comments_count');
 
@@ -245,7 +565,7 @@ class CinemaController extends Controller
         });
 
         return response()->json([
-            'comment' => $this->presenter->comment($comment->load('user'), $user),
+            'comment' => $this->presenter->comment($comment->load('user'), $user, false, $user->isStaff()),
             'comments_count' => $movie->fresh()->comments_count,
         ], 201);
     }
@@ -262,7 +582,7 @@ class CinemaController extends Controller
             ->where('movie_user.user_id', $user->id)
             ->when($status === 'rated', fn (Builder $q) => $q->whereNotNull('movie_user.rating'))
             ->when(! in_array($status, ['all', 'rated'], true), fn (Builder $q) => $q->where('movie_user.status', $status))
-            ->select('movies.*', 'movie_user.status as my_status', 'movie_user.rating as my_rating')
+            ->select('movies.*', 'movie_user.status as my_status', 'movie_user.rating as my_rating', 'movie_user.season as my_season', 'movie_user.episode as my_episode')
             ->orderByDesc('movie_user.updated_at')
             ->orderByDesc('movies.id');
     }
@@ -332,6 +652,64 @@ class CinemaController extends Controller
     /**
      * @return array{users: list<array<string, mixed>>, total: int}
      */
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function friendsSeen(User $viewer, Movie $movie): array
+    {
+        $ids = $this->friendships->friendIds($viewer);
+        if ($ids === []) {
+            return [];
+        }
+
+        $rows = DB::table('movie_user')
+            ->where('movie_id', $movie->id)
+            ->whereIn('user_id', $ids)
+            ->where('status', 'watched')
+            ->orderByDesc('updated_at')
+            ->limit(8)
+            ->get(['user_id', 'rating']);
+        $users = User::query()->whereIn('id', $rows->pluck('user_id'))->get()->keyBy('id');
+
+        return array_values($rows->filter(fn ($row) => $users->has($row->user_id))->map(fn ($row) => [
+            ...$users[$row->user_id]->toCard(),
+            'movie_rating' => $row->rating !== null ? (int) $row->rating : null,
+        ])->all());
+    }
+
+    /**
+     * Друзі, з якими збігаються оцінки 8 і вище.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function similarTaste(User $viewer): array
+    {
+        $mine = DB::table('movie_user')->where('user_id', $viewer->id)->where('rating', '>=', 8)->pluck('movie_id');
+        $friendIds = $this->friendships->friendIds($viewer);
+        if ($mine->isEmpty() || $friendIds === []) {
+            return [];
+        }
+
+        $rows = DB::table('movie_user')
+            ->select('user_id', DB::raw('count(*) as shared'))
+            ->whereIn('user_id', $friendIds)
+            ->where('rating', '>=', 8)
+            ->whereIn('movie_id', $mine)
+            ->groupBy('user_id')
+            ->orderByDesc('shared')
+            ->limit(6)
+            ->get();
+        $users = User::query()->whereIn('id', $rows->pluck('user_id'))->get()->keyBy('id');
+
+        return array_values($rows->filter(fn ($row) => $users->has($row->user_id))->map(fn ($row) => [
+            ...$users[$row->user_id]->toCard(),
+            'shared' => (int) $row->shared,
+        ])->all());
+    }
+
+    /**
+     * @return array{users: list<array<string, mixed>>, total: int}
+     */
     private function friendsWatching(User $viewer, Movie $movie): array
     {
         $ids = $this->friendships->friendIds($viewer);
@@ -360,6 +738,25 @@ class CinemaController extends Controller
     private function cards(Collection $movies): array
     {
         return array_values($movies->map(fn (Movie $m) => $m->toCard())->all());
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function watching(User $user): array
+    {
+        return array_values($this->listQuery($user, 'watching')->limit(12)->get()->map(function (Movie $movie) {
+            $episode = $movie->getAttribute('my_episode');
+            $season = $movie->getAttribute('my_season');
+
+            return [
+                ...$movie->toCard(),
+                'progress' => $episode !== null ? [
+                    'season' => $season !== null ? (int) $season : null,
+                    'episode' => (int) $episode,
+                ] : null,
+            ];
+        })->all());
     }
 
     /**
@@ -417,11 +814,12 @@ class CinemaController extends Controller
             return false;
         }
 
-        if (MovieSource::query()->where('link', $url)->exists()) {
+        $host = strtolower((string) $parts['host']);
+        // Посилання плеєра з каталогу — і з параметрами серії/озвучки (Videoseed video=s1v3, default_audio_id).
+        if (MovieSource::query()->where('link', $url)->orWhere('link', 'like', 'https://'.$host.'/%')->exists()) {
             return true;
         }
 
-        $host = strtolower((string) $parts['host']);
         foreach (['kodik.info', 'kodik.cc', 'kodik.biz', 'kodikplayer.com', 'youtube.com', 'youtube-nocookie.com', 'youtu.be'] as $suffix) {
             if ($host === $suffix || str_ends_with($host, '.'.$suffix)) {
                 return true;

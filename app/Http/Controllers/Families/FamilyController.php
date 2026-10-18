@@ -9,13 +9,17 @@ use App\Models\FamilyItem;
 use App\Models\FamilyMember;
 use App\Models\FamilyTransaction;
 use App\Models\GtaServer;
+use App\Models\User;
+use App\Services\Donations\MonobankJar;
 use App\Services\Families\FamilyRating;
 use App\Services\Families\FamilyService;
 use App\Services\Families\MemberStats;
 use App\Services\ImageStorage;
+use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -119,6 +123,7 @@ class FamilyController extends FamilyBaseController
         $can = $this->gate->abilities($member, $family);
 
         return $this->page($family, $member, 'families/overview', 'overview', [
+            'donation' => Inertia::defer(fn () => app(MonobankJar::class)->card($family->donation_jar, $family->donation_note)),
             'stats' => $stats->overview($family, $member),
             'leaders' => array_slice($rating->leaderboard($family, 'week'), 0, 5),
             'events' => FamilyEvent::query()->where('family_id', $family->id)
@@ -147,6 +152,33 @@ class FamilyController extends FamilyBaseController
 
         $families->apply($family, $request->user(), $data);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Заявку надіслано! Офіцери сім’ї розглянуть її найближчим часом.']);
+
+        return back();
+    }
+
+    public function block(Request $request, Family $family): RedirectResponse
+    {
+        app(Plugins::class)->ensure('family_blacklist');
+        $this->ensureLeader($request, $family);
+        $data = $request->validate(['username' => ['required', 'string', 'max:32']]);
+        $person = User::query()->where('username', $data['username'])->first();
+        abort_unless($person instanceof User && $person->id !== $request->user()->id, 422);
+        DB::table('family_blocks')->insertOrIgnore([
+            'family_id' => $family->id,
+            'user_id' => $person->id,
+            'created_at' => now(),
+        ]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Людину додано до чорного списку.']);
+
+        return back();
+    }
+
+    public function unblock(Request $request, Family $family, User $user): RedirectResponse
+    {
+        app(Plugins::class)->ensure('family_blacklist');
+        $this->ensureLeader($request, $family);
+        DB::table('family_blocks')->where('family_id', $family->id)->where('user_id', $user->id)->delete();
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Людину прибрано з чорного списку.']);
 
         return back();
     }
@@ -189,15 +221,31 @@ class FamilyController extends FamilyBaseController
             ->where('rank', '>=', 8)->orderByDesc('rank')->limit(6)->get()
             ->map(fn (FamilyMember $m) => $m->toCard($family));
 
+        $viewer = $request->user();
+        $isLeader = FamilyMember::query()->where('family_id', $family->id)->where('user_id', $viewer->id)
+            ->where('status', FamilyMember::STATUS_ACTIVE)->where('rank', '>=', Family::LEADER_RANK)->exists();
+
         return Inertia::render('families/public', [
             'family' => [...$family->toCard(), 'description' => $family->description, 'created_at' => $family->created_at->toIso8601String()],
             'leaders' => $leaders,
+            'donation' => $family->isVerified() ? Inertia::defer(fn () => app(MonobankJar::class)->card($family->donation_jar, $family->donation_note)) : null,
+            'can_block' => $isLeader && app(Plugins::class)->on('family_blacklist'),
+            'blocked' => $isLeader && app(Plugins::class)->on('family_blacklist')
+                ? User::query()->whereIn('id', DB::table('family_blocks')->where('family_id', $family->id)->pluck('user_id'))->get()->map(fn (User $user) => $user->toCard())->values()
+                : [],
             'application' => $application ? [
                 'status' => $application->status,
                 'display' => $application->displayName(),
                 'left_at' => $application->left_at?->toIso8601String(),
             ] : null,
         ]);
+    }
+
+    private function ensureLeader(Request $request, Family $family): void
+    {
+        $leader = FamilyMember::query()->where('family_id', $family->id)->where('user_id', $request->user()->id)
+            ->where('status', FamilyMember::STATUS_ACTIVE)->where('rank', '>=', Family::LEADER_RANK)->exists();
+        abort_unless($leader, 403);
     }
 
     /**

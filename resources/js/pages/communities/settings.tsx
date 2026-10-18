@@ -1,17 +1,33 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import { toast } from 'sonner';
 import { ArrowLeft, Globe2, Lock, Megaphone, UsersRound } from 'lucide-react';
+import { DonationJarForm } from '@/components/gc/donation-jar';
 import type { FormEvent } from 'react';
 import { selectClass } from '@/components/gc/admin';
+import {
+    RulesForm,
+    StatsCard,
+} from '@/components/communities/community-extras';
+import type {
+    CommunityExtras,
+    CommunityStats,
+} from '@/components/communities/community-extras';
 import { CommunityAvatar } from '@/components/gc/community-avatar';
 import { SettingsCard } from '@/layouts/settings/layout';
 import { cn } from '@/lib/utils';
 import type { CommunityDetails } from '@/types';
+import { BotsCard } from '@/components/bots/bots-card';
 import { tr } from '@/lib/i18n';
 
 type Props = {
     community: CommunityDetails;
     categories: Record<string, string>;
     isOwner: boolean;
+    widget: string | null;
+    extras: CommunityExtras;
+    slowModes: number[];
+    stats?: CommunityStats;
+    jar: { url: string | null; note: string | null };
 };
 
 const field =
@@ -72,6 +88,11 @@ export default function CommunitySettings({
     community,
     categories,
     isOwner,
+    widget,
+    extras,
+    slowModes,
+    stats,
+    jar,
 }: Props) {
     const form = useForm({
         name: community.name,
@@ -121,7 +142,7 @@ export default function CommunitySettings({
                         title={tr('Основна інформація')}
                         description={tr('Назва, адреса та опис спільноти')}
                     >
-                        <div className="grid gap-4">
+                        <div className="grid grid-cols-1 gap-4">
                             <label className="text-sm font-medium text-white/80">
                                 {tr('Назва')}
                                 <input
@@ -137,8 +158,11 @@ export default function CommunitySettings({
                             <label className="text-sm font-medium text-white/80">
                                 {tr('Адреса сторінки')}
                                 <div className="input-glass mt-1.5 flex h-11 items-center rounded-xl pl-3.5 text-sm">
-                                    <span className="text-white/35">
-                                        gamecon.online/c/
+                                    <span className="shrink-0 text-white/35">
+                                        <span className="hidden sm:inline">
+                                            gamecon.online
+                                        </span>
+                                        /c/
                                     </span>
                                     <input
                                         value={data.slug}
@@ -149,7 +173,7 @@ export default function CommunitySettings({
                                             )
                                         }
                                         maxLength={32}
-                                        className="h-full min-w-0 flex-1 bg-transparent pr-3.5 text-white focus:outline-none"
+                                        className="h-full w-0 min-w-0 flex-1 bg-transparent pr-3.5 text-white focus:outline-none"
                                     />
                                 </div>
                                 <Error message={errors.slug} />
@@ -311,6 +335,44 @@ export default function CommunitySettings({
                         </div>
                     </SettingsCard>
 
+                    <SettingsCard
+                        title={tr('Віджет для сайту')}
+                        description={
+                            widget
+                                ? tr(
+                                      'Вставте код на сайт сервера — там з’являться назва, кількість учасників і останні записи.',
+                                  )
+                                : tr(
+                                      'Віджет доступний для відкритої спільноти.',
+                                  )
+                        }
+                    >
+                        {widget && (
+                            <div className="flex flex-col gap-2 sm:flex-row">
+                                <input
+                                    readOnly
+                                    value={`<script src="${widget}" async></script>`}
+                                    className={cn(
+                                        field,
+                                        'h-11 font-mono text-xs',
+                                    )}
+                                />
+                                <button
+                                    type="button"
+                                    className="h-11 shrink-0 rounded-xl bg-white/10 px-4 text-sm font-semibold text-white"
+                                    onClick={() => {
+                                        void navigator.clipboard.writeText(
+                                            `<script src="${widget}" async></script>`,
+                                        );
+                                        toast(tr('Код скопійовано'));
+                                    }}
+                                >
+                                    {tr('Копіювати')}
+                                </button>
+                            </div>
+                        )}
+                    </SettingsCard>
+
                     <div className="flex justify-end">
                         <button
                             type="submit"
@@ -321,6 +383,22 @@ export default function CommunitySettings({
                         </button>
                     </div>
                 </form>
+
+                <RulesForm
+                    slug={community.slug}
+                    extras={extras}
+                    slowModes={slowModes}
+                />
+
+                <DonationJarForm
+                    action={`/c/${community.slug}/settings/jar`}
+                    initial={jar}
+                    hint={tr(
+                        'Вставте посилання на банку Monobank — на сторінці спільноти з’явиться картка «Підтримати» з прогресом збору. Порожнє поле — прибрати картку.',
+                    )}
+                />
+
+                <StatsCard stats={stats} />
 
                 {isOwner && (
                     <SettingsCard
@@ -361,6 +439,7 @@ export default function CommunitySettings({
                         <Error message={remove.errors.confirm} />
                     </SettingsCard>
                 )}
+                <BotsCard type="community" id={community.id} />
             </div>
         </>
     );

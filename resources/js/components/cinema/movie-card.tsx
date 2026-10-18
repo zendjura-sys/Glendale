@@ -23,6 +23,8 @@ export function MovieCardEmbed({
         <>
             {(movie.backdrop || movie.poster) && (
                 <img
+                    loading="lazy"
+                    decoding="async"
                     src={movie.backdrop ?? movie.poster ?? ''}
                     alt=""
                     className="pointer-events-none absolute inset-0 size-full object-cover opacity-30 blur-[2px] transition duration-700 group-hover:scale-105"

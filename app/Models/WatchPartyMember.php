@@ -31,4 +31,12 @@ class WatchPartyMember extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * @return BelongsTo<WatchParty, $this>
+     */
+    public function party(): BelongsTo
+    {
+        return $this->belongsTo(WatchParty::class, 'watch_party_id');
+    }
 }

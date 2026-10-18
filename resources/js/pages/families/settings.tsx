@@ -7,6 +7,7 @@ import {
     Settings as SettingsIcon,
     SlidersHorizontal,
 } from 'lucide-react';
+import { DonationJarForm } from '@/components/gc/donation-jar';
 import { useRef } from 'react';
 import type { ReactNode } from 'react';
 import { FamilyLogo } from '@/components/families/family-logo';
@@ -26,6 +27,7 @@ import {
 import { uah } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type { FamilyShellProps } from '@/types';
+import { BotsCard } from '@/components/bots/bots-card';
 import { tr } from '@/lib/i18n';
 
 type Settings = {
@@ -40,6 +42,7 @@ type Settings = {
 
 type Props = FamilyShellProps & {
     settings: Settings;
+    jar: { url: string | null; note: string | null };
     profile: {
         name: string;
         tag: string;
@@ -118,7 +121,7 @@ const groups: { key: keyof Settings; title: string }[] = [
 ];
 
 export default function FamilySettings(props: Props) {
-    const { family, settings, profile, webhooks, digest } = props;
+    const { family, settings, profile, webhooks, digest, jar } = props;
     const base = `/f/${family.slug}`;
 
     return (
@@ -129,7 +132,15 @@ export default function FamilySettings(props: Props) {
                 profile={profile}
             />
             <SettingsPanel action={`${base}/settings`} settings={settings} />
+            <DonationJarForm
+                action={`${base}/settings/jar`}
+                initial={jar}
+                hint={tr(
+                    'Вставте посилання на банку Monobank — на сторінці сім’ї з’явиться картка «Підтримати» з прогресом збору. Порожнє поле — прибрати картку.',
+                )}
+            />
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <BotsCard type="family" id={family.id} />
                 <WebhooksPanel base={base} webhooks={webhooks} />
                 <Panel
                     title={tr('Тижневий звіт')}

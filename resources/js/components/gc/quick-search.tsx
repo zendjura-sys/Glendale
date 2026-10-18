@@ -9,13 +9,18 @@ import { UserAvatar } from './user-avatar';
 import { VerifiedBadge } from './verified-badge';
 import { tr } from '@/lib/i18n';
 
+type Hit = { kind: string; title: string; hint: string; href: string };
+
 type Result =
     | { kind: 'user'; href: string; item: UserCard }
-    | { kind: 'community'; href: string; item: CommunityCard };
+    | { kind: 'community'; href: string; item: CommunityCard }
+    | { kind: 'hit'; href: string; item: Hit };
 
 export function QuickSearch({ className }: { className?: string }) {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<Result[]>([]);
+    const [recent, setRecent] = useState<string[]>([]);
+    const [popular, setPopular] = useState<Hit[]>([]);
     const [open, setOpen] = useState(false);
     const [active, setActive] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -47,6 +52,31 @@ export function QuickSearch({ className }: { className?: string }) {
         };
     }, []);
 
+    const remember = (value: string) => {
+        const text = value.trim();
+        if (text.length < 2) {
+            return;
+        }
+        api<{ recent: string[] }>('POST', '/search/recent', { q: text })
+            .then((response) => setRecent(response.recent))
+            .catch(() => undefined);
+    };
+
+    useEffect(() => {
+        if (!open || query.trim().length >= 2) {
+            return;
+        }
+        api<{ recent?: string[]; popular?: Hit[] }>('GET', '/search/quick?q=')
+            .then((response) => {
+                setRecent(response.recent ?? []);
+                setPopular(response.popular ?? []);
+            })
+            .catch(() => {
+                setRecent([]);
+                setPopular([]);
+            });
+    }, [open, query]);
+
     useEffect(() => {
         if (query.trim().length < 2) {
             setResults([]);
@@ -55,23 +85,35 @@ export function QuickSearch({ className }: { className?: string }) {
         }
 
         const timer = setTimeout(() => {
-            api<{ users: UserCard[]; communities: CommunityCard[] }>(
-                'GET',
-                `/search/quick?q=${encodeURIComponent(query.trim())}`,
-            )
+            api<{
+                users: UserCard[];
+                communities: CommunityCard[];
+                hits?: Hit[];
+            }>('GET', `/search/quick?q=${encodeURIComponent(query.trim())}`)
                 .then((response) => {
-                    setResults([
-                        ...response.users.map((item) => ({
-                            kind: 'user' as const,
-                            href: `/${item.username}`,
-                            item,
-                        })),
-                        ...(response.communities ?? []).map((item) => ({
-                            kind: 'community' as const,
-                            href: `/c/${item.slug}`,
-                            item,
-                        })),
-                    ]);
+                    const hits = response.hits ?? [];
+                    setResults(
+                        hits.length > 0
+                            ? hits.map((item) => ({
+                                  kind: 'hit' as const,
+                                  href: item.href,
+                                  item,
+                              }))
+                            : [
+                                  ...response.users.map((item) => ({
+                                      kind: 'user' as const,
+                                      href: `/${item.username}`,
+                                      item,
+                                  })),
+                                  ...(response.communities ?? []).map(
+                                      (item) => ({
+                                          kind: 'community' as const,
+                                          href: `/c/${item.slug}`,
+                                          item,
+                                      }),
+                                  ),
+                              ],
+                    );
                     setActive(0);
                 })
                 .catch(() => setResults([]));
@@ -84,6 +126,7 @@ export function QuickSearch({ className }: { className?: string }) {
         const target = results[active];
         setOpen(false);
 
+        remember(query);
         if (target) {
             router.visit(target.href);
         } else if (query.trim()) {
@@ -119,7 +162,7 @@ export function QuickSearch({ className }: { className?: string }) {
                             inputRef.current?.blur();
                         }
                     }}
-                    placeholder={tr('Пошук людей і спільнот…')}
+                    placeholder={tr('Пошук людей, ігор, кіно, серверів…')}
                     className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none"
                 />
                 {query ? (
@@ -137,6 +180,48 @@ export function QuickSearch({ className }: { className?: string }) {
                 )}
             </label>
 
+            {open &&
+                query.trim().length < 2 &&
+                (recent.length > 0 || popular.length > 0) && (
+                    <div className="glass-strong absolute top-12 right-0 left-0 z-50 animate-rise overflow-hidden rounded-2xl p-1.5">
+                        {recent.length > 0 && (
+                            <p className="px-2.5 py-1.5 text-xs text-white/40">
+                                {tr('Недавні запити')}
+                            </p>
+                        )}
+                        {recent.map((item) => (
+                            <button
+                                key={item}
+                                type="button"
+                                onClick={() => {
+                                    setQuery(item);
+                                    setOpen(true);
+                                }}
+                                className="flex w-full rounded-xl px-2.5 py-2 text-left text-sm text-white/80 hover:bg-white/5"
+                            >
+                                {item}
+                            </button>
+                        ))}
+                        {popular.length > 0 && (
+                            <p className="px-2.5 py-1.5 text-xs text-white/40">
+                                {tr('Зараз популярне')}
+                            </p>
+                        )}
+                        {popular.map((item) => (
+                            <Link
+                                key={`${item.kind}-${item.href}`}
+                                href={item.href}
+                                className="flex w-full items-center justify-between gap-3 rounded-xl px-2.5 py-2 text-left text-sm text-white/80 hover:bg-white/5"
+                            >
+                                <span className="truncate">{item.title}</span>
+                                <span className="shrink-0 text-xs text-white/40">
+                                    {tr(item.hint)}
+                                </span>
+                            </Link>
+                        ))}
+                    </div>
+                )}
+
             {open && query.trim().length >= 2 && (
                 <div className="glass-strong absolute top-12 right-0 left-0 z-50 animate-rise overflow-hidden rounded-2xl p-1.5">
                     {results.length === 0 ? (
@@ -146,9 +231,12 @@ export function QuickSearch({ className }: { className?: string }) {
                     ) : (
                         results.map((result, index) => (
                             <Link
-                                key={`${result.kind}-${result.item.id}`}
+                                key={`${result.kind}-${result.href}`}
                                 href={result.href}
-                                onClick={() => setOpen(false)}
+                                onClick={() => {
+                                    remember(query);
+                                    setOpen(false);
+                                }}
                                 onMouseEnter={() => setActive(index)}
                                 className={cn(
                                     'flex items-center gap-3 rounded-xl px-2.5 py-2 transition',
@@ -159,37 +247,48 @@ export function QuickSearch({ className }: { className?: string }) {
                             >
                                 {result.kind === 'user' ? (
                                     <UserAvatar user={result.item} size="sm" />
-                                ) : (
+                                ) : result.kind === 'community' ? (
                                     <CommunityAvatar
                                         community={result.item}
                                         size="sm"
                                     />
+                                ) : (
+                                    <span className="flex size-8 items-center justify-center rounded-full bg-white/10 text-[10px] font-semibold text-white/70 uppercase">
+                                        {result.item.kind.slice(0, 2)}
+                                    </span>
                                 )}
                                 <span className="min-w-0 flex-1">
                                     <span className="flex items-center gap-1 truncate text-sm font-medium text-white">
-                                        {result.item.name}
-                                        {result.item.is_verified && (
-                                            <VerifiedBadge className="size-3.5" />
-                                        )}
+                                        {result.kind === 'hit'
+                                            ? result.item.title
+                                            : result.item.name}
+                                        {result.kind !== 'hit' &&
+                                            result.item.is_verified && (
+                                                <VerifiedBadge className="size-3.5" />
+                                            )}
                                     </span>
                                     <span className="block truncate text-xs text-white/45">
-                                        {result.kind === 'user'
-                                            ? `@${result.item.username}`
-                                            : tr(
-                                                  '{v} · {members_count} учасн.',
-                                                  {
-                                                      v:
-                                                          result.item.type ===
-                                                          'public'
-                                                              ? tr(
-                                                                    'Публічна сторінка',
-                                                                )
-                                                              : tr('Спільнота'),
-                                                      members_count:
-                                                          result.item
-                                                              .members_count,
-                                                  },
-                                              )}
+                                        {result.kind === 'hit'
+                                            ? result.item.hint
+                                            : result.kind === 'user'
+                                              ? `@${result.item.username}`
+                                              : tr(
+                                                    '{v} · {members_count} учасн.',
+                                                    {
+                                                        v:
+                                                            result.item.type ===
+                                                            'public'
+                                                                ? tr(
+                                                                      'Публічна сторінка',
+                                                                  )
+                                                                : tr(
+                                                                      'Спільнота',
+                                                                  ),
+                                                        members_count:
+                                                            result.item
+                                                                .members_count,
+                                                    },
+                                                )}
                                     </span>
                                 </span>
                             </Link>
@@ -197,7 +296,10 @@ export function QuickSearch({ className }: { className?: string }) {
                     )}
                     <Link
                         href={`/people?q=${encodeURIComponent(query.trim())}`}
-                        onClick={() => setOpen(false)}
+                        onClick={() => {
+                            remember(query);
+                            setOpen(false);
+                        }}
                         className="mt-1 block rounded-xl border-t border-white/5 px-3 py-2.5 text-center text-xs font-medium text-gc-lilac-300 hover:bg-white/5"
                     >
                         {tr('Показати всі результати')}

@@ -22,6 +22,8 @@ export function PlaylistCover({
         >
             {playlist.cover_url ? (
                 <img
+                    loading="lazy"
+                    decoding="async"
                     src={playlist.cover_url}
                     alt=""
                     className="size-full object-cover"
@@ -30,6 +32,8 @@ export function PlaylistCover({
                 <div className="grid size-full grid-cols-2 grid-rows-2">
                     {covers.map((url, i) => (
                         <img
+                            loading="lazy"
+                            decoding="async"
                             key={i}
                             src={url}
                             alt=""
@@ -39,6 +43,8 @@ export function PlaylistCover({
                 </div>
             ) : covers.length > 0 ? (
                 <img
+                    loading="lazy"
+                    decoding="async"
                     src={covers[0]}
                     alt=""
                     className="size-full object-cover"
@@ -61,7 +67,7 @@ export function PlaylistTile({ playlist }: { playlist: Playlist }) {
                     playlist={playlist}
                     className="transition duration-500 group-hover:scale-105"
                 />
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition group-hover:opacity-100" />
+                <div className="scrim scrim-dark pointer-events-none absolute inset-0 opacity-0 transition group-hover:opacity-100" />
                 {!playlist.is_public && (
                     <span className="absolute top-2 right-2 flex size-7 items-center justify-center rounded-full bg-black/50 backdrop-blur">
                         <Lock className="size-3.5 text-white/80" />

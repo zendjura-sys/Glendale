@@ -1,4 +1,5 @@
-import { Clock3, Smile, Sticker as StickerIcon } from 'lucide-react';
+import { Link } from '@inertiajs/react';
+import { Clock3, Lock, Smile, Sticker as StickerIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { EMOJI_CATEGORIES, recentEmoji, rememberEmoji } from '@/lib/emoji';
@@ -162,7 +163,7 @@ function EmojiGrid({ onPick }: { onPick: (emoji: string) => void }) {
             >
                 {sections.map((section) => (
                     <section key={section.key} data-section={section.key}>
-                        <h4 className="sticky top-0 z-10 bg-[#11162a]/95 px-1.5 pt-2 pb-1 text-xs font-semibold tracking-wide text-white/45 uppercase backdrop-blur">
+                        <h4 className="sticky top-0 z-10 bg-[#11162a]/95 px-1.5 pt-2 pb-1 text-xs font-semibold text-white/45 backdrop-blur">
                             {section.label}
                         </h4>
                         <div className="grid grid-cols-8 gap-0.5">
@@ -204,10 +205,12 @@ function StickerGrid({ onPick }: { onPick: (sticker: StickerItem) => void }) {
         };
     }, []);
 
-    const current =
+    const currentPack =
         active === 'recent'
-            ? recent
-            : (packs?.find((p) => p.slug === active) ?? packs?.[0])?.stickers;
+            ? null
+            : (packs?.find((p) => p.slug === active) ?? packs?.[0]);
+    const current = active === 'recent' ? recent : currentPack?.stickers;
+    const locked = currentPack?.locked === true;
     const activeKey =
         active === 'recent' ? 'recent' : ((active || packs?.[0]?.slug) ?? '');
 
@@ -243,6 +246,8 @@ function StickerGrid({ onPick }: { onPick: (sticker: StickerItem) => void }) {
                         )}
                     >
                         <img
+                            loading="lazy"
+                            decoding="async"
                             src={pack.stickers[0]?.url}
                             alt={pack.name}
                             className="size-full object-contain"
@@ -272,16 +277,28 @@ function StickerGrid({ onPick }: { onPick: (sticker: StickerItem) => void }) {
                     </p>
                 ) : (
                     <div className="grid grid-cols-4 gap-1.5">
+                        {locked && (
+                            <Link
+                                href="/plus"
+                                className="col-span-4 mb-1 flex items-center justify-center gap-1.5 rounded-xl bg-indigo-500/15 px-3 py-2 text-xs font-medium text-indigo-200 transition hover:bg-indigo-500/25"
+                            >
+                                <Lock className="size-3.5" />
+                                {tr(
+                                    'Набір GameCon+ — надсилати можна з підпискою',
+                                )}
+                            </Link>
+                        )}
                         {current.map((sticker) => (
                             <button
                                 key={sticker.id}
                                 type="button"
+                                disabled={locked}
                                 onClick={() => {
                                     rememberSticker(sticker);
                                     onPick(sticker);
                                 }}
                                 title={sticker.emoji ?? undefined}
-                                className="aspect-square rounded-xl p-1 transition hover:scale-105 hover:bg-white/[0.07]"
+                                className="aspect-square rounded-xl p-1 transition hover:scale-105 hover:bg-white/[0.07] disabled:opacity-40 disabled:hover:scale-100 disabled:hover:bg-transparent"
                             >
                                 <img
                                     src={sticker.url}

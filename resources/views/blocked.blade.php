@@ -20,5 +20,6 @@
         <p>{{ $t('Доступ із вашого регіону обмежено адміністрацією сайту.') }}</p>
         <small><a href="https://db-ip.com" rel="noopener">IP Geolocation by DB-IP</a></small>
     </div>
+    <x-footer />
 </body>
 </html>

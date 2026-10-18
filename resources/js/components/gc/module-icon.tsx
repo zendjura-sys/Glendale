@@ -1,6 +1,9 @@
 import {
     Box,
     CalendarDays,
+    Clapperboard,
+    Target,
+    UserRoundSearch,
     Crown,
     Film,
     Gamepad2,
@@ -32,6 +35,9 @@ const icons: Record<string, LucideIcon> = {
     'gamepad-2': Gamepad2,
     swords: Swords,
     'calendar-days': CalendarDays,
+    clapperboard: Clapperboard,
+    target: Target,
+    'user-round-search': UserRoundSearch,
 };
 
 export function ModuleIcon({ name, ...props }: { name: string } & LucideProps) {

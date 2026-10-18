@@ -81,7 +81,7 @@ export function Metric({
 }) {
     return (
         <div className="glass relative overflow-hidden rounded-2xl px-4 py-3.5">
-            <div className="flex items-center justify-between gap-2 text-xs font-medium tracking-wide text-white/45 uppercase">
+            <div className="flex items-center justify-between gap-2 text-xs font-medium text-white/45">
                 {label}
                 {Icon && <Icon className="size-4 text-white/30" />}
             </div>

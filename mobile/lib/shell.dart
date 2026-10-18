@@ -6,11 +6,14 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'account.dart';
 import 'api.dart';
 import 'family_widget.dart';
 import 'nav_items.dart';
 import 'player_view.dart';
+import 'plus.dart';
 import 'state.dart';
+import 'subscription.dart';
 import 'theme.dart';
 import 'voice_room.dart';
 import 'widgets.dart';
@@ -35,9 +38,17 @@ String appPathFor(String? sitePath) {
       final sub = rest(2);
       return '/communities/${rest(1)}${['members', 'settings', 'photos'].contains(sub) ? '/$sub' : ''}${sub == 'members' ? query : ''}';
     case 'messages':
+      if (rest(1) == 'saved') return '/starred';
       return parts.length > 1 && int.tryParse(rest(1)) != null ? '/messages/${rest(1)}' : '/messages';
     case 'posts':
-      return '/posts/${rest(1)}';
+      return rest(1) == 'drafts' ? '/drafts' : '/posts/${rest(1)}';
+    case 'moments':
+    case 'quests':
+    case 'saved':
+    case 'invite':
+      return '/$head';
+    case 'join':
+      return '/join/${rest(1)}';
     case 'albums':
       return '/albums/${rest(1)}$query';
     case 'photos':
@@ -55,10 +66,13 @@ String appPathFor(String? sitePath) {
     case 'listen':
       return '/listen/${rest(1)}';
     case 'events':
-      return '/events';
+      return rest(1) == 'releases' ? '/events/releases' : '/events';
     case 'games':
     case 'clans':
       return parts.length > 2 && rest(1) != 'create' ? '/$head/${rest(1)}' : '$path$query';
+    case 'party':
+    case 'characters':
+      return path;
     case 'servers':
     case 'communities':
     case 'friends':
@@ -90,7 +104,10 @@ class _AppShellState extends State<AppShell> {
   void initState() {
     super.initState();
     widget.session.addListener(_onSession);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _onSession());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _onSession();
+      if (mounted && widget.session.me != null) showWhatsNew(context, widget.session.prefs);
+    });
   }
 
   @override
@@ -246,13 +263,13 @@ class _AppShellState extends State<AppShell> {
                   },
                   child: Row(
                     children: [
-                      Avatar(url: text(me['avatar_url']), name: text(me['name']) ?? tr('Я'), size: 44, online: true),
+                      Avatar(url: text(me['avatar_url']), name: text(me['name']) ?? tr('Я'), size: 44, online: true, frame: PlusMark.from(widget.session.subscription.style)?.frame),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(text(me['name']) ?? 'GameCon', style: body(15, weight: FontWeight.w700)),
+                            PlusNameRow(user: {...me, 'plus': widget.session.subscription.style}, style: body(15, weight: FontWeight.w700), animate: true),
                             Text('@${text(me['username']) ?? ''}', style: body(12.5, color: muted)),
                           ],
                         ),
@@ -287,6 +304,31 @@ class _AppShellState extends State<AppShell> {
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Column(
                     children: [
+                      // GameCon+ — лише статус і перелік переваг (без цін і оплати, див. subscription.dart).
+                      _MenuLink(
+                        icon: LucideIcons.sparkles,
+                        label: AppScope.read(context).session.subscription.isPro ? tr('GameCon+ · активний') : 'GameCon+',
+                        onTap: () {
+                          Navigator.pop(sheet);
+                          showProFeatures(context);
+                        },
+                      ),
+                      _MenuLink(icon: LucideIcons.userPlus, label: tr('Запросити друзів'), onTap: () {
+                        Navigator.pop(sheet);
+                        context.go('/invite');
+                      }),
+                      _MenuLink(icon: LucideIcons.filePen, label: tr('Чернетки'), onTap: () {
+                        Navigator.pop(sheet);
+                        context.go('/drafts');
+                      }),
+                      _MenuLink(icon: LucideIcons.star, label: tr('Обрані повідомлення'), onTap: () {
+                        Navigator.pop(sheet);
+                        context.go('/starred');
+                      }),
+                      _MenuLink(icon: LucideIcons.calendarClock, label: tr('Релізи і сезони'), onTap: () {
+                        Navigator.pop(sheet);
+                        context.go('/events/releases');
+                      }),
                       _MenuLink(icon: LucideIcons.panelBottom, label: tr('Налаштувати нижню панель'), onTap: () {
                         Navigator.pop(sheet);
                         context.go('/settings?tab=app');
@@ -294,6 +336,10 @@ class _AppShellState extends State<AppShell> {
                       _MenuLink(icon: LucideIcons.settings, label: tr('Налаштування'), onTap: () {
                         Navigator.pop(sheet);
                         context.go('/settings');
+                      }),
+                      _MenuLink(icon: LucideIcons.messageSquareHeart, label: tr('Відгук адмінам'), onTap: () {
+                        Navigator.pop(sheet);
+                        showFeedbackSheet(context);
                       }),
                       if (widget.session.isAdmin)
                         _MenuLink(
@@ -393,11 +439,11 @@ class CountBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
+      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
       padding: const EdgeInsets.symmetric(horizontal: 5),
       alignment: Alignment.center,
       decoration: BoxDecoration(color: pink, borderRadius: BorderRadius.circular(10), border: Border.all(color: voidColor, width: 2)),
-      child: Text(count > 99 ? '99+' : '$count', style: body(9.5, color: Colors.white, weight: FontWeight.w700)),
+      child: Text(count > 99 ? '99+' : '$count', style: body(11, color: Colors.white, weight: FontWeight.w700).copyWith(height: 1)),
     );
   }
 }

@@ -11,6 +11,7 @@ export type MovieStatus = 'planned' | 'watching' | 'watched' | 'dropped';
 
 export type MovieCard = {
     id: number;
+    progress?: { season: number | null; episode: number } | null;
     slug: string;
     href: string;
     type: MovieType;
@@ -53,15 +54,22 @@ export type MovieDetail = MovieCard & {
 export type MoviePlayer = {
     key: string;
     id: number | null;
-    provider: 'kodik' | 'flixcdn' | 'custom';
+    provider: 'kodik' | 'videoseed' | 'flixcdn' | 'custom';
     provider_label: string;
     translation: string | null;
     translation_type: string | null;
     quality: string | null;
     link: string;
+    /** Схована адміністратором (лише в адмінці). */
+    is_hidden?: boolean;
 };
 
-export type MovieState = { status: MovieStatus | null; rating: number | null };
+export type MovieState = {
+    status: MovieStatus | null;
+    rating: number | null;
+    season: number | null;
+    episode: number | null;
+};
 
 export type MovieOption<K extends string = string> = { key: K; label: string };
 

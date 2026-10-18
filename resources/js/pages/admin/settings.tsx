@@ -2,6 +2,7 @@ import { Head, router, useForm, usePage } from '@inertiajs/react';
 import {
     FileText,
     Globe,
+    Scale,
     Mail,
     Search,
     ShieldCheck,
@@ -36,7 +37,93 @@ type Settings = {
     max_message_file_mb: number;
     music_max_track_mb: number;
     maintenance_message: string;
+    legal_operator: string;
+    legal_email: string;
+    legal_address: string;
+    legal_country: string;
+    legal_updated: string;
+    legal_tax_id: string;
+    legal_registry: string;
+    legal_phone: string;
+    legal_tax_status: string;
 };
+
+type LegalKey =
+    | 'legal_operator'
+    | 'legal_email'
+    | 'legal_address'
+    | 'legal_country'
+    | 'legal_updated'
+    | 'legal_tax_id'
+    | 'legal_registry'
+    | 'legal_phone'
+    | 'legal_tax_status';
+
+/** Поля реквізитів: порожнє поле — значення з .env (LEGAL_*), воно показане підказкою. */
+const LEGAL_FIELDS = (): {
+    key: LegalKey;
+    label: string;
+    hint: string;
+    type?: string;
+}[] => [
+    {
+        key: 'legal_operator',
+        label: tr('Продавець'),
+        hint: tr('Як у виписці з ЄДР, напр. «ФОП Іваненко Іван Іванович».'),
+    },
+    {
+        key: 'legal_tax_id',
+        label: tr('РНОКПП (ІПН)'),
+        hint: tr(
+            '10 цифр; для ФОП закон вимагає показувати його покупцям. Є у виписці з ЄДР.',
+        ),
+    },
+    {
+        key: 'legal_registry',
+        label: tr('Запис в ЄДР'),
+        hint: tr(
+            'Номер і дата запису про реєстрацію ФОП (виписка з ЄДР у Дії або на usr.minjust.gov.ua).',
+        ),
+    },
+    {
+        key: 'legal_phone',
+        label: tr('Телефон'),
+        hint: tr('Для звернень покупців, напр. +380 67 123 45 67.'),
+    },
+    {
+        key: 'legal_tax_status',
+        label: tr('Податковий статус'),
+        hint: tr(
+            'Напр. «платник єдиного податку 3 групи, не є платником ПДВ».',
+        ),
+    },
+    {
+        key: 'legal_email',
+        label: tr('E-mail для звернень'),
+        hint: tr(
+            'Сюди пишуть покупці й платіжні сервіси; скринька має приймати листи.',
+        ),
+        type: 'email',
+    },
+    {
+        key: 'legal_address',
+        label: tr('Адреса'),
+        hint: tr(
+            'Місцезнаходження ФОП (адреса реєстрації з виписки ЄДР) — обовʼязково для інтернет-продажу.',
+        ),
+    },
+    {
+        key: 'legal_country',
+        label: tr('Країна (право якої застосовується)'),
+        hint: tr('Англійською, напр. Ukraine — підставляється в усі мови.'),
+    },
+    {
+        key: 'legal_updated',
+        label: tr('Дата редакції документів'),
+        hint: tr('Показується як «Оновлено»; змінюйте, коли правите тексти.'),
+        type: 'date',
+    },
+];
 
 function Section({
     icon: Icon,
@@ -174,9 +261,11 @@ function MailSection({ mail }: { mail: MailStatus }) {
 export default function AdminSettings({
     settings,
     mail,
+    legal_defaults,
 }: {
     settings: Settings;
     mail: MailStatus;
+    legal_defaults: Record<LegalKey, string>;
 }) {
     const form = useForm<Settings>({
         ...settings,
@@ -187,6 +276,15 @@ export default function AdminSettings({
         play_store_badge:
             settings.play_store_badge === 'preregister' ? 'preregister' : 'get',
         maintenance_message: settings.maintenance_message ?? '',
+        legal_operator: settings.legal_operator ?? '',
+        legal_email: settings.legal_email ?? '',
+        legal_address: settings.legal_address ?? '',
+        legal_country: settings.legal_country ?? '',
+        legal_updated: settings.legal_updated ?? '',
+        legal_tax_id: settings.legal_tax_id ?? '',
+        legal_registry: settings.legal_registry ?? '',
+        legal_phone: settings.legal_phone ?? '',
+        legal_tax_status: settings.legal_tax_status ?? '',
     });
     const { data, setData, errors, processing } = form;
 
@@ -262,10 +360,67 @@ export default function AdminSettings({
                         <InputError message={errors.seo_description} />
                     </div>
                     <img
+                        loading="lazy"
+                        decoding="async"
                         src="/og.jpg"
                         alt={tr('Превʼю посилання GameCon')}
                         className="aspect-[1200/630] w-full max-w-md rounded-2xl border border-white/10"
                     />
+                </Section>
+
+                <Section
+                    icon={Scale}
+                    title={tr('Юридичні дані')}
+                    description={tr(
+                        'Реквізити продавця в умовах використання, політиці конфіденційності й політиці повернення коштів. Їх бачать покупці й платіжні сервіси під час перевірки сайту.',
+                    )}
+                >
+                    {LEGAL_FIELDS().map((field) => (
+                        <div key={field.key} className="grid gap-2">
+                            <Label htmlFor={field.key}>{field.label}</Label>
+                            <Input
+                                id={field.key}
+                                type={field.type ?? 'text'}
+                                value={data[field.key]}
+                                onChange={(e) =>
+                                    setData(field.key, e.target.value)
+                                }
+                                placeholder={legal_defaults[field.key]}
+                                maxLength={250}
+                            />
+                            <p className="text-xs text-white/45">
+                                {field.hint}
+                                {field.type === 'date' &&
+                                    !data[field.key] &&
+                                    legal_defaults[field.key] &&
+                                    ` ${tr('Зараз')}: ${legal_defaults[field.key]}.`}
+                            </p>
+                            <InputError message={errors[field.key]} />
+                        </div>
+                    ))}
+                    <p className="text-xs text-white/45">
+                        {tr(
+                            'Порожнє поле — значення з .env (показане сірим). Сторінки:',
+                        )}{' '}
+                        {[
+                            '/terms',
+                            '/privacy',
+                            '/refund-policy',
+                            '/pricing',
+                        ].map((href, i) => (
+                            <span key={href}>
+                                {i > 0 && ' · '}
+                                <a
+                                    href={href}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-gc-lilac-300 hover:underline"
+                                >
+                                    {href}
+                                </a>
+                            </span>
+                        ))}
+                    </p>
                 </Section>
 
                 <Section
@@ -321,6 +476,8 @@ export default function AdminSettings({
                                     )}
                                 >
                                     <img
+                                        loading="lazy"
+                                        decoding="async"
                                         src={badge.src}
                                         alt={badge.title}
                                         className="h-11 w-auto self-start"

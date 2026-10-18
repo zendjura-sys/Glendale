@@ -1,3 +1,5 @@
+import type { PlusMark } from './social';
+
 export type User = {
     id: number;
     username: string;
@@ -9,6 +11,7 @@ export type User = {
     cover_url: string | null;
     is_online: boolean;
     is_verified: boolean;
+    plus?: PlusMark | null;
     status: string | null;
     role: 'user' | 'moderator' | 'admin';
     is_admin: boolean;
@@ -16,6 +19,17 @@ export type User = {
     two_factor_enabled?: boolean;
     /** Ключі розділів нижньої панелі на телефоні (без «Меню»). */
     nav_tabs: string[];
+    palette?: string;
+    /** Режим соцмережі (id), див. NetworkModes на сервері. */
+    network_mode?: string;
+    /** Стиль інтерфейсу: flat (основний), hero, material, flex. */
+    skin?: string;
+    /** Фон сайту: сцена, чи рухається вона, і відео YouTube (лише з GameCon+). */
+    background?: SiteBackgroundPrefs;
+    hide_spoilers?: boolean;
+    /** GameCon+ активний до (ISO), null — немає. */
+    plus_until?: string | null;
+    profanity_mask?: string | null;
     created_at: string;
     updated_at: string;
     /** Сумісність зі стартовими компонентами Laravel. */
@@ -58,4 +72,19 @@ export type TwoFactorSetupData = {
 
 export type TwoFactorSecretKey = {
     secretKey: string;
+};
+
+export type SiteBackgroundPreset =
+    | 'custom'
+    | 'dune'
+    | 'aurora'
+    | 'night'
+    | 'ocean'
+    | 'mesh'
+    | 'none';
+
+export type SiteBackgroundPrefs = {
+    preset: SiteBackgroundPreset;
+    motion: boolean;
+    video: string | null;
 };

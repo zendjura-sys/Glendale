@@ -2,41 +2,63 @@
 
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Auth\SocialAuthController;
+use App\Http\Controllers\BillingController;
+use App\Http\Controllers\Bots;
 use App\Http\Controllers\CallController;
+use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\CinemaController;
 use App\Http\Controllers\ClanController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityMemberController;
+use App\Http\Controllers\CommunityWidgetController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\Families;
+use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\FeedController;
+use App\Http\Controllers\FollowController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\GooglePlayRtdnController;
+use App\Http\Controllers\InviteLinkController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\ListenPartyController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\Mail\UnsubscribeController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
+use App\Http\Controllers\MomentController;
+use App\Http\Controllers\MonobankWebhookController;
 use App\Http\Controllers\MusicController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NowPlayingController;
+use App\Http\Controllers\OAuth;
+use App\Http\Controllers\PartyController;
 use App\Http\Controllers\PeopleController;
 use App\Http\Controllers\PhotoAlbumController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PlayingController;
 use App\Http\Controllers\PlaylistController;
+use App\Http\Controllers\PlusController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\QuestController;
+use App\Http\Controllers\ReferralController;
+use App\Http\Controllers\SavedController;
+use App\Http\Controllers\ServerAppController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\SpotifyController;
+use App\Http\Controllers\StartController;
 use App\Http\Controllers\StoryController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\TranslateController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Controllers\WatchPartyController;
+use App\Http\Controllers\WebPushController;
 use App\Http\Controllers\WelcomeController;
+use App\Models\BotLink;
 use App\Models\VoiceRoom;
+use App\Services\Servers\ServerOAuth;
 use Illuminate\Support\Facades\Route;
 
 // Мова інтерфейсу: ручний вибір і словник сайту.
@@ -45,7 +67,20 @@ Route::get('i18n/{locale}.js', [LocaleController::class, 'script'])->where('loca
 
 Route::get('/', WelcomeController::class)->name('home');
 
+// Вебхук еквайрингу monobank (без входу й CSRF; підпис X-Sign перевіряє контролер).
+Route::post('billing/monobank/webhook', MonobankWebhookController::class)->middleware('throttle:120,1')->name('billing.monobank.webhook');
+Route::post('billing/google-play/rtdn', GooglePlayRtdnController::class)->middleware('throttle:240,1')->name('billing.google-play.rtdn');
+
+// Юридичні документи й тарифи — відкриті без входу (їх читають гості й платіжні сервіси). Мова: ?lang=en|uk|de|…
+Route::get('terms', [LegalController::class, 'terms'])->name('legal.terms');
+Route::get('privacy', [LegalController::class, 'privacy'])->name('legal.privacy');
+Route::get('refund-policy', [LegalController::class, 'refund'])->name('legal.refund');
+Route::get('pricing', [LegalController::class, 'pricing'])->name('legal.pricing');
+
 Route::redirect('dashboard', '/feed')->name('dashboard');
+
+// Особисте посилання-запрошення: запам’ятовуємо запрошувача й ведемо на реєстрацію.
+Route::get('r/{code}', [ReferralController::class, 'visit'])->where('code', '[a-z0-9]{8}')->middleware('throttle:60,1')->name('referrals.visit');
 
 Route::prefix('auth')->name('auth.')->group(function () {
     Route::get('discord', [SocialAuthController::class, 'discordRedirect'])->middleware('throttle:20,1')->name('discord');
@@ -55,23 +90,87 @@ Route::prefix('auth')->name('auth.')->group(function () {
 });
 
 Route::middleware(['auth', 'verified.site'])->group(function () {
+    Route::get('join/{token}', [InviteLinkController::class, 'show'])->name('invites.show');
+    Route::post('join/{token}', [InviteLinkController::class, 'accept'])->middleware('throttle:20,1')->name('invites.accept');
+
     Route::get('feed', [FeedController::class, 'index'])->middleware('module:feed')->name('feed');
+    Route::get('invite', [ReferralController::class, 'index'])->name('referrals.index');
+    // Оплата (лише сайт, усередині GameCon+): покупка карткою через monobank, картки, автопродовження, історія.
+    Route::prefix('plus/billing')->name('billing.')->controller(BillingController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('purchase', 'purchase')->middleware('throttle:20,1')->name('purchase');
+        Route::post('promo', 'promo')->middleware('throttle:10,1')->name('promo');
+        Route::get('quote', 'quote')->middleware('throttle:60,1')->name('quote');
+        Route::get('orders/{order}', 'showOrder')->whereNumber('order')->middleware('throttle:60,1')->name('orders.show');
+        Route::get('orders/{order}/return', 'returned')->whereNumber('order')->name('orders.return');
+        Route::delete('orders/{order}', 'cancelOrder')->whereNumber('order')->middleware('throttle:20,1')->name('orders.cancel');
+        Route::post('orders/{order}/google-pay', 'googlePay')->whereNumber('order')->middleware('throttle:10,1')->name('orders.google-pay');
+        Route::delete('cards/{card}', 'forgetCard')->whereNumber('card')->middleware('throttle:20,1')->name('cards.destroy');
+        Route::post('renewals', 'renewal')->middleware('throttle:20,1')->name('renewals');
+    });
+    Route::prefix('plus')->name('plus.')->group(function () {
+        Route::get('/', [PlusController::class, 'index'])->name('index');
+        Route::post('redeem', [PlusController::class, 'redeem'])->middleware('throttle:10,1')->name('redeem');
+        Route::put('style', [PlusController::class, 'style'])->name('style');
+        Route::put('families/{family:id}/style', [PlusController::class, 'familyStyle'])->whereNumber('family')->name('families.style');
+    });
+    Route::get('start', [StartController::class, 'index'])->name('start');
+    Route::post('start', [StartController::class, 'store'])->name('start.store');
+    Route::post('start/skip', [StartController::class, 'skip'])->name('start.skip');
+    Route::get('start/mode', [StartController::class, 'mode'])->name('start.mode');
+    Route::post('start/mode', [StartController::class, 'chooseMode'])->name('start.mode.store');
+    Route::get('cards/search', [FollowController::class, 'cards'])->middleware('throttle:120,1')->name('cards.search');
+    Route::post('follows', [FollowController::class, 'toggle'])->middleware('throttle:60,1')->name('follows.toggle');
 
     Route::post('posts', [PostController::class, 'store'])->middleware('throttle:30,1')->name('posts.store');
+    Route::get('posts/drafts', [PostController::class, 'drafts'])->name('posts.drafts');
     Route::get('posts/{post}', [PostController::class, 'show'])->name('posts.show');
+    Route::patch('posts/{post}', [PostController::class, 'update'])->name('posts.update');
+    Route::post('posts/{post}/publish', [PostController::class, 'release'])->name('posts.publish');
     Route::delete('posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
     Route::post('posts/{post}/pin', [PostController::class, 'pin'])->name('posts.pin');
+    Route::post('posts/{post}/hide', [PostController::class, 'hide'])->name('posts.hide');
+    Route::post('posts/{post}/mute', [PostController::class, 'mute'])->name('posts.mute');
+    Route::post('posts/{post}/share', [PostController::class, 'share'])->middleware('throttle:30,1')->name('posts.share');
+    Route::post('posts/{post}/quote', [PostController::class, 'quote'])->middleware('throttle:30,1')->name('posts.quote');
     Route::post('posts/{post}/like', [PostController::class, 'like'])->middleware('throttle:120,1')->name('posts.like');
+    Route::post('posts/{post}/poll', [PostController::class, 'vote'])->middleware('throttle:60,1')->name('posts.poll');
+    Route::get('saved', [SavedController::class, 'index'])->name('saved.index');
+    Route::post('saved', [SavedController::class, 'toggle'])->middleware('throttle:60,1')->name('saved.toggle');
 
     Route::get('posts/{post}/comments', [CommentController::class, 'index'])->name('comments.index');
     Route::post('posts/{post}/comments', [CommentController::class, 'store'])->middleware('throttle:30,1')->name('comments.store');
     Route::delete('comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
     Route::post('comments/{comment}/like', [CommentController::class, 'like'])->middleware('throttle:120,1')->name('comments.like');
+    Route::post('comments/{comment}/pin', [CommentController::class, 'pin'])->name('comments.pin');
+
+    Route::post('block/{user}', [ProfileController::class, 'block'])->name('blocks.toggle');
+    Route::post('report/{user}', [ProfileController::class, 'report'])->middleware('throttle:10,10')->name('users.report');
+    Route::post('feedback', [FeedbackController::class, 'store'])->middleware('throttle:5,10')->name('feedback.store');
+    Route::get('oauth/authorize', [OAuth\AuthorizeController::class, 'show'])->name('oauth.authorize');
+    Route::post('oauth/authorize', [OAuth\AuthorizeController::class, 'decide'])->middleware('throttle:30,1')->name('oauth.decide');
+    Route::get('developers', fn () => Inertia\Inertia::render('developers/oauth', ['scopes' => ServerOAuth::SCOPES, 'base' => url('/')]))->name('developers');
+    Route::prefix('bots')->name('bots.')->group(function () {
+        Route::get('{type}/{id}', [Bots\BotLinkController::class, 'state'])->whereIn('type', BotLink::OWNERS)->whereNumber('id')->middleware('throttle:30,1')->name('state');
+        Route::post('{type}/{id}/telegram', [Bots\BotLinkController::class, 'telegram'])->whereIn('type', BotLink::OWNERS)->whereNumber('id')->middleware('throttle:20,1')->name('telegram');
+        Route::post('{type}/{id}/discord', [Bots\BotLinkController::class, 'discord'])->whereIn('type', BotLink::OWNERS)->whereNumber('id')->middleware('throttle:20,1')->name('discord');
+        Route::get('discord/callback', [Bots\BotLinkController::class, 'discordCallback'])->name('discord.callback');
+        Route::patch('links/{link}', [Bots\BotLinkController::class, 'update'])->whereNumber('link')->name('update');
+        Route::post('links/{link}/panel', [Bots\BotLinkController::class, 'panel'])->whereNumber('link')->middleware('throttle:10,1')->name('panel');
+        Route::post('links/{link}/roles', [Bots\BotLinkController::class, 'roles'])->whereNumber('link')->middleware('throttle:6,1')->name('roles');
+        Route::delete('links/{link}', [Bots\BotLinkController::class, 'destroy'])->whereNumber('link')->name('destroy');
+        Route::post('telegram/account', [Bots\BotLinkController::class, 'telegramAccount'])->middleware('throttle:10,1')->name('telegram.account');
+        Route::delete('telegram/account', [Bots\BotLinkController::class, 'telegramUnlink'])->name('telegram.unlink');
+    });
+    Route::get('push/web/key', [WebPushController::class, 'key'])->name('web-push.key');
+    Route::post('push/web', [WebPushController::class, 'store'])->middleware('throttle:20,1')->name('web-push.store');
+    Route::delete('push/web', [WebPushController::class, 'destroy'])->name('web-push.destroy');
 
     Route::middleware('module:friends')->group(function () {
         Route::get('friends', [FriendController::class, 'index'])->name('friends.index');
         Route::post('friends/{user}', [FriendController::class, 'store'])->middleware('throttle:60,1')->name('friends.store');
         Route::post('friends/{user}/accept', [FriendController::class, 'accept'])->name('friends.accept');
+        Route::put('friends/{user}/mark', [FriendController::class, 'mark'])->name('friends.mark');
         Route::delete('friends/{user}', [FriendController::class, 'destroy'])->name('friends.destroy');
     });
 
@@ -107,6 +206,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('/', [MessengerController::class, 'index'])->name('index');
         Route::get('contacts', [MessengerController::class, 'contacts'])->name('contacts');
         Route::get('stickers', [MessageController::class, 'stickers'])->name('stickers');
+        Route::get('saved', [MessengerController::class, 'saved'])->name('saved');
+        Route::get('cards', [MessageController::class, 'cards'])->middleware('throttle:60,1')->name('cards');
         Route::get('attachments/{attachment}', [MessageController::class, 'download'])->whereNumber('attachment')->name('attachments.download');
         Route::get('with/{user}', [MessengerController::class, 'direct'])->name('direct');
         Route::post('groups', [MessengerController::class, 'storeGroup'])->middleware('throttle:10,1')->name('groups.store');
@@ -118,11 +219,19 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('{conversation}/settings', [MessengerController::class, 'update'])->name('update');
             Route::post('{conversation}/read', [MessengerController::class, 'read'])->name('read');
             Route::post('{conversation}/mute', [MessengerController::class, 'mute'])->name('mute');
+            Route::post('{conversation}/pin', [MessengerController::class, 'pin'])->name('pin');
+            Route::post('{conversation}/unread', [MessengerController::class, 'markUnread'])->name('unread');
+            Route::post('{conversation}/slow', [MessengerController::class, 'slow'])->name('slow');
+            Route::post('{conversation}/members/{user}/role', [MessengerController::class, 'memberRole'])->name('members.role');
+            Route::post('{conversation}/receipts', [MessengerController::class, 'receipts'])->name('receipts');
+            Route::put('{conversation}/folder', [MessengerController::class, 'folder'])->name('folder');
             Route::post('{conversation}/members', [MessengerController::class, 'addMembers'])->name('members.store');
             Route::delete('{conversation}/members/{user}', [MessengerController::class, 'removeMember'])->name('members.destroy');
             Route::patch('{conversation}/messages/{message}', [MessageController::class, 'update'])->name('messages.update');
             Route::delete('{conversation}/messages/{message}', [MessageController::class, 'destroy'])->name('messages.destroy');
             Route::post('{conversation}/messages/{message}/report', [MessageController::class, 'report'])->middleware('throttle:20,1')->name('messages.report');
+            Route::post('{conversation}/messages/{message}/forward', [MessageController::class, 'forward'])->middleware('throttle:30,1')->name('messages.forward');
+            Route::post('{conversation}/messages/{message}/favorite', [MessageController::class, 'favorite'])->name('messages.favorite');
             // Дзвінки в бесіді (звук — через LiveKit).
             Route::get('{conversation}/call', [CallController::class, 'show'])->name('call.show');
             Route::post('{conversation}/call', [CallController::class, 'start'])->middleware('throttle:20,1')->name('call.start');
@@ -138,8 +247,16 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::delete('/', [CommunityController::class, 'destroy'])->name('destroy');
             Route::get('settings', [CommunityController::class, 'edit'])->name('edit');
             Route::patch('settings', [CommunityController::class, 'update'])->name('update');
+            Route::patch('settings/rules', [CommunityController::class, 'updateRules'])->name('rules.update');
+            Route::put('settings/jar', [CommunityController::class, 'updateJar'])->name('jar.update');
+            Route::get('rules', [CommunityController::class, 'page'])->defaults('page', 'rules')->name('rules');
+            Route::get('handbook', [CommunityController::class, 'page'])->defaults('page', 'handbook')->name('handbook');
+            Route::post('queue/{post}', [CommunityController::class, 'approvePost'])->whereNumber('post')->name('queue.approve');
+            Route::delete('queue/{post}', [CommunityController::class, 'rejectPost'])->whereNumber('post')->name('queue.reject');
+            Route::patch('members/{user}/title', [CommunityMemberController::class, 'title'])->name('members.title');
             Route::post('images/{field}', [CommunityController::class, 'updateImage'])->whereIn('field', ['avatar', 'cover'])->name('image');
             Route::post('join', [CommunityController::class, 'join'])->middleware('throttle:60,1')->name('join');
+            Route::post('invite-link', [InviteLinkController::class, 'community'])->middleware('throttle:20,1')->name('invite-link');
             Route::delete('join', [CommunityController::class, 'leave'])->name('leave');
 
             Route::get('photos', [PhotoController::class, 'community'])->middleware('module:photos')->name('photos');
@@ -161,8 +278,12 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::patch('albums/{album}', [PhotoAlbumController::class, 'update'])->name('albums.update');
             Route::delete('albums/{album}', [PhotoAlbumController::class, 'destroy'])->name('albums.destroy');
             Route::post('albums/{album}/photos', [PhotoAlbumController::class, 'upload'])->middleware('throttle:30,1')->name('albums.upload');
+            Route::post('albums/{album}/contributors', [PhotoAlbumController::class, 'storeContributor'])->middleware('throttle:30,1')->name('albums.contributors.store');
+            Route::delete('albums/{album}/contributors/{user}', [PhotoAlbumController::class, 'destroyContributor'])->name('albums.contributors.destroy');
 
             Route::get('photos/{photo}', [PhotoController::class, 'show'])->name('photos.show');
+            Route::post('photos/{photo}/tags', [PhotoController::class, 'tag'])->middleware('throttle:30,1')->name('photos.tags.store');
+            Route::delete('photos/{photo}/tags/{user}', [PhotoController::class, 'untag'])->name('photos.tags.destroy');
             Route::patch('photos/{photo}', [PhotoController::class, 'update'])->name('photos.update');
             Route::delete('photos/{photo}', [PhotoController::class, 'destroy'])->name('photos.destroy');
             Route::post('photos/{photo}/cover', [PhotoController::class, 'cover'])->name('photos.cover');
@@ -187,6 +308,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::patch('tracks/{track}', [TrackController::class, 'update'])->name('tracks.update');
             Route::delete('tracks/{track}', [TrackController::class, 'destroy'])->name('tracks.destroy');
             Route::get('tracks/{track}/download', [TrackController::class, 'download'])->name('tracks.download');
+            Route::get('tracks/{track}/lyrics', [TrackController::class, 'lyrics'])->name('tracks.lyrics');
             Route::post('tracks/{track}/library', [TrackController::class, 'add'])->name('tracks.add');
             Route::delete('tracks/{track}/library', [TrackController::class, 'remove'])->name('tracks.remove');
 
@@ -195,6 +317,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::delete('playlists/{playlist}', [PlaylistController::class, 'destroy'])->name('playlists.destroy');
             Route::post('playlists/{playlist}/tracks/{track}', [PlaylistController::class, 'attach'])->name('playlists.attach');
             Route::delete('playlists/{playlist}/tracks/{track}', [PlaylistController::class, 'detach'])->name('playlists.detach');
+            Route::post('playlists/{playlist}/share', [PlaylistController::class, 'share'])->name('playlists.share');
+            Route::post('playlists/{playlist}/spotify', [PlaylistController::class, 'importSpotify'])->name('playlists.spotify');
+            Route::get('tracks/{track}/similar', [PlaylistController::class, 'similar'])->name('tracks.similar');
         });
 
         Route::prefix('spotify')->name('spotify.')->group(function () {
@@ -214,11 +339,22 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::prefix('cinema')->name('cinema.')->middleware('module:cinema')->group(function () {
         Route::get('/', [CinemaController::class, 'index'])->name('index');
         Route::get('my', [CinemaController::class, 'my'])->name('my');
+        Route::get('ten/{user:username}', [CinemaController::class, 'ten'])->name('ten');
+        Route::post('ten', [CinemaController::class, 'toggleTen'])->name('ten.store');
+        Route::post('ratings/{user:username}', [CinemaController::class, 'followRatings'])->name('ratings.follow');
+        Route::put('playback', [CinemaController::class, 'playback'])->name('playback');
+        Route::post('requests', [CinemaController::class, 'requestMovie'])->middleware('throttle:10,1')->name('requests.store');
         Route::get('search', [CinemaController::class, 'search'])->middleware('throttle:120,1')->name('search');
+        Route::get('lookup', [CinemaController::class, 'lookup'])->middleware('throttle:10,1')->name('lookup');
         Route::get('{movie}', [CinemaController::class, 'show'])->name('show');
         Route::patch('{movie}/status', [CinemaController::class, 'status'])->middleware('throttle:60,1')->name('status');
         Route::put('{movie}/rating', [CinemaController::class, 'rate'])->middleware('throttle:60,1')->name('rate');
         Route::post('{movie}/started', [CinemaController::class, 'started'])->middleware('throttle:30,1')->name('started');
+        Route::put('{movie}/progress', [CinemaController::class, 'progress'])->middleware('throttle:60,1')->name('progress');
+        Route::get('{movie}/stream', [CinemaController::class, 'stream'])->middleware('throttle:60,1')->name('stream');
+        Route::get('{movie}/episodes', [CinemaController::class, 'episodeList'])->middleware('throttle:60,1')->name('episodes.index');
+        Route::post('{movie}/episodes', [CinemaController::class, 'episode'])->middleware('throttle:60,1')->name('episodes');
+        Route::post('{movie}/soundtrack', [CinemaController::class, 'soundtrack'])->middleware('throttle:30,1')->name('soundtrack.store');
         Route::get('{movie}/comments', [CinemaController::class, 'comments'])->name('comments.index');
         Route::post('{movie}/comments', [CinemaController::class, 'comment'])->middleware('throttle:30,1')->name('comments.store');
         Route::post('{movie}/watch', [WatchPartyController::class, 'store'])->middleware('throttle:10,1')->name('watch.store');
@@ -229,6 +365,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('/', [GameController::class, 'index'])->name('index');
         Route::get('search', [GameController::class, 'search'])->middleware('throttle:120,1')->name('search');
         Route::get('{game}', [GameController::class, 'show'])->name('show');
+        Route::post('{game}/collections', [GameController::class, 'collections'])->name('collections');
+        Route::post('{game}/guides', [GameController::class, 'guide'])->middleware('throttle:20,1')->name('guides.store');
+        Route::delete('{game}/guides/{guide}', [GameController::class, 'deleteGuide'])->whereNumber('guide')->name('guides.destroy');
     });
 
     // Клани й гільдії мультиплеєрних ігор.
@@ -239,12 +378,18 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::prefix('{clan}')->group(function () {
             Route::get('/', [ClanController::class, 'show'])->name('show');
             Route::post('join', [ClanController::class, 'join'])->middleware('throttle:20,1')->name('join');
+            Route::post('invite-link', [InviteLinkController::class, 'clan'])->middleware('throttle:20,1')->name('invite-link');
             Route::post('leave', [ClanController::class, 'leave'])->name('leave');
             Route::post('members/{member}', [ClanController::class, 'member'])->whereNumber('member')->name('members.update');
+            Route::post('members/{member}/nudge', [ClanController::class, 'nudge'])->whereNumber('member')->middleware('throttle:20,1')->name('members.nudge');
             Route::post('settings', [ClanController::class, 'update'])->name('update');
+            Route::post('allies', [ClanController::class, 'ally'])->name('allies.store');
+            Route::post('allies/{alliance}/accept', [ClanController::class, 'acceptAlly'])->whereNumber('alliance')->name('allies.accept');
+            Route::post('matches', [ClanController::class, 'match'])->name('matches.store');
             Route::post('news', [ClanController::class, 'news'])->middleware('throttle:20,1')->name('news.store');
             Route::delete('news/{news}', [ClanController::class, 'deleteNews'])->whereNumber('news')->name('news.destroy');
             Route::post('events', [ClanController::class, 'event'])->middleware('throttle:20,1')->name('events.store');
+            Route::post('events/{event}/bracket', [ClanController::class, 'bracket'])->whereNumber('event')->middleware('throttle:30,1')->name('events.bracket');
             Route::post('events/{event}/rsvp', [ClanController::class, 'rsvp'])->whereNumber('event')->name('events.rsvp');
             Route::delete('events/{event}', [ClanController::class, 'deleteEvent'])->whereNumber('event')->name('events.destroy');
             Route::post('contributions', [ClanController::class, 'contribute'])->middleware('throttle:30,1')->name('contributions.store');
@@ -272,6 +417,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     // Календар подій: сім’ї, клани, сервери, ігри.
     Route::prefix('events')->name('events.')->middleware('module:events')->group(function () {
         Route::get('/', [EventController::class, 'index'])->name('index');
+        Route::get('releases', [EventController::class, 'releases'])->name('releases');
+        Route::put('reminder', [EventController::class, 'reminder'])->name('reminder');
+        Route::get('{kind}/{id}.ics', [EventController::class, 'calendarFile'])->whereIn('kind', ['family', 'clan', 'server', 'game'])->whereNumber('id')->name('ics');
         Route::post('server/{server}', [EventController::class, 'storeServer'])->middleware('throttle:20,1')->name('server.store');
         Route::post('server/{event}/rsvp', [EventController::class, 'rsvpServer'])->whereNumber('event')->name('server.rsvp');
         Route::delete('server/{event}', [EventController::class, 'destroyServer'])->whereNumber('event')->name('server.destroy');
@@ -288,6 +436,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('queue', [ListenPartyController::class, 'enqueue'])->middleware('throttle:60,1')->name('queue');
         Route::delete('queue/{index}', [ListenPartyController::class, 'dequeue'])->whereNumber('index')->name('dequeue');
         Route::post('next', [ListenPartyController::class, 'next'])->middleware('throttle:60,1')->name('next');
+        Route::post('repeat', [ListenPartyController::class, 'repeat'])->name('repeat');
         Route::post('shared', [ListenPartyController::class, 'shared'])->name('shared');
         Route::post('invite', [ListenPartyController::class, 'invite'])->middleware('throttle:10,1')->name('invite');
         Route::post('share', [ListenPartyController::class, 'share'])->middleware('throttle:10,1')->name('share');
@@ -296,8 +445,54 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
 
     Route::prefix('servers')->name('servers.')->middleware('module:servers')->group(function () {
         Route::get('/', [ServerController::class, 'index'])->name('index');
+        Route::get('compare', [ServerController::class, 'compare'])->name('compare');
         Route::post('suggest', [ServerController::class, 'suggest'])->middleware('throttle:5,10')->name('suggest');
         Route::get('{server}', [ServerController::class, 'show'])->name('show');
+        Route::post('{server}/invite', [ServerController::class, 'invite'])->middleware('throttle:20,1')->name('invite');
+        Route::post('{server}/claim', [ServerController::class, 'claim'])->middleware('throttle:10,1')->name('claim');
+        Route::post('{server}/claims/{claim}', [ServerController::class, 'decideClaim'])->name('claims.decide');
+        Route::post('{server}/news', [ServerController::class, 'news'])->middleware('throttle:20,1')->name('news.store');
+        Route::post('{server}/tags', [ServerController::class, 'tags'])->name('tags');
+        Route::post('{server}/reviews', [ServerController::class, 'review'])->middleware('throttle:20,1')->name('reviews.store');
+        Route::post('{server}/vote', [ServerController::class, 'vote'])->middleware('throttle:10,1')->name('vote');
+        Route::post('{server}/click', [ServerController::class, 'click'])->middleware('throttle:60,1')->name('click');
+        Route::post('{server}/apps', [ServerAppController::class, 'store'])->middleware('throttle:10,1')->name('apps.store');
+        Route::patch('{server}/apps/{app}', [ServerAppController::class, 'update'])->name('apps.update');
+        Route::post('{server}/apps/{app}/secret', [ServerAppController::class, 'secret'])->middleware('throttle:10,1')->name('apps.secret');
+        Route::delete('{server}/apps/{app}', [ServerAppController::class, 'destroy'])->name('apps.destroy');
+    });
+
+    Route::prefix('quests')->name('quests.')->middleware('module:quests')->group(function () {
+        Route::get('/', [QuestController::class, 'index'])->name('index');
+        Route::post('{quest}/claim', [QuestController::class, 'claim'])->where('quest', '[a-z]{2,24}')->middleware('throttle:30,1')->name('claim');
+    });
+
+    Route::prefix('moments')->name('moments.')->middleware('module:moments')->whereNumber('moment')->group(function () {
+        Route::get('/', [MomentController::class, 'index'])->name('index');
+        Route::post('/', [MomentController::class, 'store'])->middleware('throttle:10,60')->name('store');
+        Route::post('{moment}/like', [MomentController::class, 'like'])->middleware('throttle:120,1')->name('like');
+        Route::delete('{moment}', [MomentController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('party')->name('party.')->middleware('module:party')->whereNumber('party')->group(function () {
+        Route::get('/', [PartyController::class, 'index'])->name('index');
+        Route::post('/', [PartyController::class, 'store'])->middleware('throttle:10,10')->name('store');
+        Route::get('{party}', [PartyController::class, 'show'])->name('show');
+        Route::post('{party}/join', [PartyController::class, 'join'])->middleware('throttle:20,1')->name('join');
+        Route::delete('{party}/join', [PartyController::class, 'leave'])->name('leave');
+        Route::post('{party}/bump', [PartyController::class, 'bump'])->middleware('throttle:10,1')->name('bump');
+        Route::delete('{party}', [PartyController::class, 'close'])->name('close');
+    });
+
+    Route::prefix('characters')->name('characters.')->middleware('module:servers')->whereNumber('character')->group(function () {
+        Route::get('create', [CharacterController::class, 'create'])->name('create');
+        Route::post('/', [CharacterController::class, 'store'])->middleware('throttle:10,1')->name('store');
+        Route::get('{character}', [CharacterController::class, 'show'])->name('show');
+        Route::get('{character}/edit', [CharacterController::class, 'edit'])->name('edit');
+        Route::post('{character}', [CharacterController::class, 'update'])->middleware('throttle:20,1')->name('update');
+        Route::delete('{character}', [CharacterController::class, 'destroy'])->name('destroy');
+        Route::post('{character}/photos', [CharacterController::class, 'addPhoto'])->middleware('throttle:20,1')->name('photos.store');
+        Route::delete('{character}/photos/{index}', [CharacterController::class, 'removePhoto'])->whereNumber('index')->name('photos.destroy');
     });
 
     Route::middleware('module:families')->group(function () {
@@ -308,6 +503,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::prefix('f/{family}')->name('families.')->scopeBindings()->group(function () {
             Route::get('/', [Families\FamilyController::class, 'show'])->name('show');
             Route::post('apply', [Families\FamilyController::class, 'apply'])->middleware('throttle:10,10')->name('apply');
+            Route::post('block', [Families\FamilyController::class, 'block'])->middleware('throttle:20,1')->name('block');
+            Route::delete('block/{user}', [Families\FamilyController::class, 'unblock'])->withoutScopedBindings()->name('unblock');
+            Route::post('invite-link', [InviteLinkController::class, 'family'])->middleware('throttle:20,1')->name('invite-link');
             Route::delete('apply', [Families\FamilyController::class, 'withdraw'])->name('withdraw');
             Route::post('leave', [Families\FamilyController::class, 'leave'])->name('leave');
             Route::get('chat', [Families\FamilyController::class, 'chat'])->name('chat');
@@ -342,6 +540,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
                 Route::patch('members/{member}', [Families\FamilyMemberController::class, 'update'])->name('members.update');
                 Route::post('members/{member}/kick', [Families\FamilyMemberController::class, 'kick'])->name('members.kick');
                 Route::post('members/{member}/transfer', [Families\FamilyMemberController::class, 'transfer'])->name('members.transfer');
+                Route::post('members/{member}/nudge', [Families\FamilyMemberController::class, 'nudge'])->middleware('throttle:20,1')->name('members.nudge');
             });
 
             Route::get('discipline', [Families\FamilyDisciplineController::class, 'index'])->name('discipline');
@@ -352,7 +551,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('events', [Families\FamilyEventController::class, 'store'])->middleware('throttle:20,1')->name('events.store');
             Route::post('events/{event}/rsvp', [Families\FamilyEventController::class, 'rsvp'])->whereNumber('event')->name('events.rsvp');
             Route::post('events/{event}/close', [Families\FamilyEventController::class, 'close'])->whereNumber('event')->name('events.close');
+            Route::post('events/{event}/checkin', [Families\FamilyEventController::class, 'checkIn'])->whereNumber('event')->middleware('throttle:10,1')->name('events.checkin');
+            Route::post('events/{event}/album', [Families\FamilyEventController::class, 'album'])->whereNumber('event')->middleware('throttle:10,1')->name('events.album');
             Route::get('rating', [Families\FamilyEventController::class, 'rating'])->name('rating');
+            Route::post('rating/season', [Families\FamilyEventController::class, 'endSeason'])->middleware('throttle:5,1')->name('rating.season');
 
             Route::get('audit', [Families\FamilyAuditController::class, 'index'])->name('audit');
 
@@ -360,13 +562,16 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('settings/profile', [Families\FamilySettingsController::class, 'profile'])->name('settings.profile');
             Route::put('settings', [Families\FamilySettingsController::class, 'update'])->name('settings.update');
             Route::put('settings/webhooks', [Families\FamilySettingsController::class, 'webhooks'])->name('settings.webhooks');
+            Route::put('settings/jar', [Families\FamilySettingsController::class, 'jar'])->name('settings.jar');
             Route::post('settings/webhooks/test', [Families\FamilySettingsController::class, 'test'])->middleware('throttle:6,1')->name('settings.webhooks.test');
             Route::post('settings/digest', [Families\FamilySettingsController::class, 'digest'])->middleware('throttle:3,10')->name('settings.digest');
         });
     });
 
     Route::get('people', [PeopleController::class, 'index'])->middleware('module:people')->name('people.index');
+    Route::post('people/saved', [PeopleController::class, 'saveSearch'])->name('people.saved');
     Route::get('search/quick', [PeopleController::class, 'quick'])->middleware('throttle:120,1')->name('search.quick');
+    Route::post('search/recent', [PeopleController::class, 'remember'])->middleware('throttle:60,1')->name('search.recent');
 
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('notifications/read', [NotificationController::class, 'markAllRead'])->name('notifications.read');
@@ -380,11 +585,14 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::delete('/', [PlayingController::class, 'destroy'])->name('destroy');
         Route::put('auto', [PlayingController::class, 'auto'])->name('auto');
         Route::post('steam', [PlayingController::class, 'linkSteam'])->middleware('throttle:10,1')->name('steam');
+        Route::put('consoles', [PlayingController::class, 'consoles'])->middleware('throttle:20,1')->name('consoles');
         Route::delete('steam', [PlayingController::class, 'unlinkSteam'])->name('steam.destroy');
     });
     Route::post('me/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
     Route::delete('me/avatar', [ProfileController::class, 'destroyAvatar'])->name('profile.avatar.destroy');
     Route::post('me/cover', [ProfileController::class, 'updateCover'])->name('profile.cover');
+    Route::post('me/pin', [ProfileController::class, 'pin'])->name('profile.pin');
+    Route::post('me/together', [ProfileController::class, 'together'])->middleware('throttle:30,1')->name('profile.together');
 
     Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
         Route::get('/', Admin\DashboardController::class)->name('dashboard');
@@ -406,10 +614,15 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::post('/', [Admin\CinemaController::class, 'store'])->name('store');
             Route::get('import', [Admin\CinemaController::class, 'import'])->name('import');
             Route::put('auto', [Admin\CinemaController::class, 'updateAuto'])->name('auto.update');
+            Route::put('players', [Admin\CinemaController::class, 'updatePlayers'])->name('players.update');
+            Route::post('players/bulk', [Admin\CinemaController::class, 'bulkPlayers'])->middleware('throttle:10,1')->name('players.bulk');
+            Route::delete('players/bulk', [Admin\CinemaController::class, 'cancelBulkPlayers'])->name('players.bulk.cancel');
+            Route::put('tmdb', [Admin\CinemaController::class, 'updateTmdb'])->name('tmdb.update');
+            Route::delete('requests', [Admin\CinemaController::class, 'closeRequest'])->name('requests.close');
             Route::post('auto/run', [Admin\CinemaController::class, 'runAuto'])->middleware('throttle:10,1')->name('auto.run');
             Route::middleware('throttle:60,1')->group(function () {
-                Route::get('remote/{provider}/search', [Admin\CinemaController::class, 'remoteSearch'])->whereIn('provider', ['kodik', 'flixcdn'])->name('remote.search');
-                Route::get('remote/{provider}/latest', [Admin\CinemaController::class, 'remoteLatest'])->whereIn('provider', ['kodik', 'flixcdn'])->name('remote.latest');
+                Route::get('remote/{provider}/search', [Admin\CinemaController::class, 'remoteSearch'])->whereIn('provider', ['kodik', 'flixcdn', 'videoseed'])->name('remote.search');
+                Route::get('remote/{provider}/latest', [Admin\CinemaController::class, 'remoteLatest'])->whereIn('provider', ['kodik', 'flixcdn', 'videoseed'])->name('remote.latest');
                 Route::post('remote/import', [Admin\CinemaController::class, 'remoteImport'])->name('remote.import');
             });
             Route::whereNumber(['movie', 'source'])->group(function () {
@@ -422,6 +635,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
                 Route::post('{movie}/enrich', [Admin\CinemaController::class, 'enrich'])->middleware('throttle:30,1')->name('enrich');
                 Route::post('{movie}/sources', [Admin\CinemaController::class, 'storeSource'])->name('sources.store');
                 Route::delete('{movie}/sources/{source}', [Admin\CinemaController::class, 'destroySource'])->name('sources.destroy');
+                Route::patch('{movie}/sources/{source}', [Admin\CinemaController::class, 'toggleSource'])->name('sources.toggle');
             });
         });
         Route::get('integrations', [Admin\IntegrationController::class, 'index'])->name('integrations.index');
@@ -429,12 +643,45 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('integrations/cinema/{provider}/test', [Admin\IntegrationController::class, 'testCinema'])->middleware('throttle:20,1')->name('integrations.cinema.test');
         Route::put('integrations/spotify', [Admin\IntegrationController::class, 'updateSpotify'])->name('integrations.spotify');
         Route::post('integrations/spotify/test', [Admin\IntegrationController::class, 'testSpotify'])->middleware('throttle:10,1')->name('integrations.spotify.test');
+        Route::prefix('plus')->name('plus.')->group(function () {
+            Route::get('/', [Admin\PlusController::class, 'index'])->name('index');
+            Route::post('grants', [Admin\PlusController::class, 'grant'])->name('grant');
+            Route::delete('grants/{grant}', [Admin\PlusController::class, 'revoke'])->whereNumber('grant')->name('revoke');
+            Route::post('codes', [Admin\PlusController::class, 'storeCode'])->name('codes.store');
+            Route::delete('codes/{code}', [Admin\PlusController::class, 'destroyCode'])->whereNumber('code')->name('codes.destroy');
+        });
+        Route::prefix('billing')->name('billing.')->controller(Admin\BillingController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('orders/{order}/refund', 'refundOrder')->whereNumber('order')->name('orders.refund');
+            Route::post('payments/{payment}/refund', 'refund')->whereNumber('payment')->name('payments.refund');
+            Route::post('adjust', 'adjust')->name('adjust');
+            Route::put('products', 'products')->name('products');
+            Route::put('rules', 'rules')->name('rules');
+            Route::put('google-pay', 'googlePay')->name('google-pay');
+        });
         Route::get('stickers', [Admin\StickerController::class, 'index'])->name('stickers.index');
         Route::post('stickers', [Admin\StickerController::class, 'store'])->name('stickers.store');
         Route::patch('stickers/{pack}', [Admin\StickerController::class, 'update'])->name('stickers.update');
         Route::delete('stickers/{pack}', [Admin\StickerController::class, 'destroy'])->name('stickers.destroy');
         Route::post('stickers/{pack}/items', [Admin\StickerController::class, 'upload'])->name('stickers.upload');
         Route::delete('stickers/{pack}/items/{sticker}', [Admin\StickerController::class, 'destroySticker'])->scopeBindings()->name('stickers.items.destroy');
+        Route::get('modes', [Admin\ModesController::class, 'index'])->name('modes.index');
+        Route::put('modes', [Admin\ModesController::class, 'update'])->name('modes.update');
+        Route::post('modes/reset', [Admin\ModesController::class, 'reset'])->name('modes.reset');
+        Route::prefix('design')->name('design.')->controller(Admin\DesignController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('template', 'template')->name('template');
+            Route::post('/', 'store')->middleware('throttle:30,1')->name('store');
+            Route::post('reset', 'reset')->name('reset');
+            Route::post('seasonal', 'seasonal')->name('seasonal');
+            Route::post('background', 'background')->middleware('throttle:30,1')->name('background');
+            Route::delete('background/{kind}', 'deleteBackground')->whereIn('kind', ['desktop', 'mobile'])->name('background.destroy');
+            Route::whereNumber('theme')->group(function () {
+                Route::post('{theme}', 'update')->middleware('throttle:30,1')->name('update');
+                Route::post('{theme}/activate', 'activate')->name('activate');
+                Route::delete('{theme}', 'destroy')->name('destroy');
+            });
+        });
         Route::get('communities', [Admin\CommunityController::class, 'index'])->name('communities.index');
         Route::patch('communities/{community:id}', [Admin\CommunityController::class, 'update'])->name('communities.update');
         Route::delete('communities/{community}', [Admin\CommunityController::class, 'destroy'])->whereNumber('community')->name('communities.destroy');
@@ -481,12 +728,18 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::put('settings', [Admin\ModerationController::class, 'settings'])->name('settings');
             Route::post('reports/{report}', [Admin\ModerationController::class, 'resolve'])->whereNumber('report')->name('resolve');
             Route::post('users/{user:id}/unmute', [Admin\ModerationController::class, 'unmute'])->whereNumber('user')->name('unmute');
+            Route::post('people/{user:id}', [Admin\ModerationController::class, 'resolvePerson'])->whereNumber('user')->name('people.resolve');
+            Route::post('appeals/{appeal}', [Admin\ModerationController::class, 'answerAppeal'])->whereNumber('appeal')->name('appeals.answer');
+            Route::post('feedback/{feedback}', [Admin\ModerationController::class, 'readFeedback'])->whereNumber('feedback')->name('feedback.read');
+            Route::post('images/{flag}', [Admin\ModerationController::class, 'resolveImage'])->whereNumber('flag')->name('images.resolve');
         });
         Route::get('families', [Admin\FamilyController::class, 'index'])->name('families.index');
         Route::patch('families/{family:id}', [Admin\FamilyController::class, 'update'])->whereNumber('family')->name('families.update');
         Route::post('families/voice-rooms', [Admin\VoiceTemplateController::class, 'store'])->name('voice-templates.store');
         Route::patch('families/voice-rooms/{template}', [Admin\VoiceTemplateController::class, 'update'])->name('voice-templates.update');
         Route::delete('families/voice-rooms/{template}', [Admin\VoiceTemplateController::class, 'destroy'])->name('voice-templates.destroy');
+        Route::get('plugins', [Admin\PluginController::class, 'index'])->name('plugins.index');
+        Route::patch('plugins/{plugin}', [Admin\PluginController::class, 'update'])->name('plugins.update');
         Route::get('modules', [Admin\ModuleController::class, 'index'])->name('modules.index');
         Route::patch('modules/{module}', [Admin\ModuleController::class, 'update'])->name('modules.update');
         Route::get('settings', [Admin\SettingsController::class, 'edit'])->name('settings.edit');
@@ -510,6 +763,14 @@ Route::get('play/embed', [CinemaController::class, 'embed'])
     ->middleware('throttle:120,1')
     ->name('cinema.embed');
 
+Route::middleware('module:communities')->group(function () {
+    Route::get('widget/{community}', [CommunityWidgetController::class, 'show'])->name('communities.widget');
+    Route::get('widget/{community}/card.js', [CommunityWidgetController::class, 'script'])->name('communities.widget.script');
+});
+
+Route::get('{user}/card', [ProfileController::class, 'card'])
+    ->where('user', '[A-Za-z][A-Za-z0-9_.]{1,30}[A-Za-z0-9]')
+    ->name('profile.card');
 Route::get('id{id}', [ProfileController::class, 'byId'])->whereNumber('id')->name('profile.id');
 Route::get('{user}', [ProfileController::class, 'show'])
     ->where('user', '[A-Za-z][A-Za-z0-9_.]{1,30}[A-Za-z0-9]')

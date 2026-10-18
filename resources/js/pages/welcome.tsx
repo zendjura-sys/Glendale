@@ -13,7 +13,8 @@ import {
     Sparkles,
     UsersRound,
 } from 'lucide-react';
-import { Aurora } from '@/components/gc/aurora';
+import { SiteBackground } from '@/components/backgrounds/site-background';
+import { Seasonal } from '@/components/gc/seasonal';
 import { Logo } from '@/components/gc/logo';
 import { PlayStoreLink } from '@/components/gc/play-store';
 import { UserAvatar } from '@/components/gc/user-avatar';
@@ -21,6 +22,7 @@ import { compactNumber, plural } from '@/lib/format';
 import { login, register } from '@/routes';
 import type { UserCard } from '@/types';
 import { tr } from '@/lib/i18n';
+import { SiteFooter } from '@/components/gc/site-footer';
 
 type Props = {
     stats: { users: number; online: number; posts: number };
@@ -76,11 +78,13 @@ function MockPost() {
     return (
         <div className="glass-strong w-[340px] animate-float rounded-3xl p-4 shadow-[0_30px_80px_-30px_rgb(79_70_229/0.7)]">
             <div className="flex items-center gap-3">
-                <img
-                    src="https://randomuser.me/api/portraits/women/44.jpg"
-                    alt=""
-                    className="size-10 rounded-full object-cover ring-2 ring-gc-indigo/60"
-                />
+                {/* Макет без сторонніх картинок: перша сторінка не ходить на чужі сервери. */}
+                <span
+                    aria-hidden
+                    className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-gc-pink to-gc-purple text-sm font-bold text-white ring-2 ring-gc-indigo/60"
+                >
+                    СМ
+                </span>
                 <div className="leading-tight">
                     <div className="text-sm font-semibold text-white">
                         {tr('Софія Мельник')}
@@ -95,11 +99,13 @@ function MockPost() {
                     "Нарешті пройшли рейд усією командою! Хто з нами в п'ятницю? 🔥",
                 )}
             </p>
-            <img
-                src="https://picsum.photos/seed/gc-raid/680/400"
-                alt=""
-                className="mt-3 aspect-[17/10] w-full rounded-2xl object-cover"
-            />
+            <div
+                aria-hidden
+                className="relative mt-3 aspect-[17/10] w-full overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_70%_30%,#ff9d5c_0,#c2417a_32%,#3b1d6e_62%,#0d1030_100%)]"
+            >
+                <div className="absolute inset-x-0 bottom-0 h-1/2 bg-[linear-gradient(170deg,transparent_40%,#0b0d24_41%)] opacity-90" />
+                <div className="absolute bottom-[38%] left-[18%] size-10 rounded-full bg-[#ffd9a8] shadow-[0_0_40px_#ffb36b]" />
+            </div>
             <div className="mt-3 flex items-center gap-4 text-xs text-white/50">
                 <span className="flex items-center gap-1.5 text-[#ff7ad9]">
                     <Heart className="size-4 fill-current" /> 248
@@ -137,25 +143,27 @@ function MockChat() {
 function MockMovie() {
     return (
         <div className="glass-strong flex w-[250px] animate-float items-center gap-3 rounded-2xl p-3 [animation-delay:-5s]">
-            <img
-                src="https://picsum.photos/seed/gc-movie/120/170"
-                alt=""
-                className="h-[72px] w-[52px] rounded-lg object-cover"
+            <span
+                aria-hidden
+                className="h-[72px] w-[52px] shrink-0 rounded-lg bg-[linear-gradient(160deg,#1d2b64_0%,#7a1fa2_55%,#ff6b3d_100%)]"
             />
             <div className="min-w-0">
-                <div className="text-xs font-medium tracking-wider text-[#ff9de6] uppercase">
+                <div className="text-xs font-medium text-[#ff9de6]">
                     {tr('Дивляться зараз')}
                 </div>
                 <div className="truncate text-sm font-semibold text-white">
                     {tr('Нічне місто')}
                 </div>
                 <div className="mt-1 flex -space-x-1.5">
-                    {[21, 33, 47].map((n) => (
-                        <img
-                            key={n}
-                            src={`https://randomuser.me/api/portraits/thumb/men/${n}.jpg`}
-                            alt=""
-                            className="size-5 rounded-full border border-[#0c1024]"
+                    {[
+                        'from-gc-blue to-gc-cyan',
+                        'from-gc-mint to-gc-blue',
+                        'from-gc-purple to-gc-pink',
+                    ].map((tone) => (
+                        <span
+                            key={tone}
+                            aria-hidden
+                            className={`size-5 rounded-full border border-[#0c1024] bg-gradient-to-br ${tone}`}
                         />
                     ))}
                     <span className="pl-3 text-xs text-white/45">
@@ -176,22 +184,25 @@ export default function Welcome({
     return (
         <>
             <Head title={tr('Соціальна мережа для геймерів і кіноманів')} />
-            <Aurora intense />
+            <SiteBackground />
+            <Seasonal />
 
-            <header className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.05] bg-background/50 pt-[env(safe-area-inset-top)] backdrop-blur-2xl">
-                <div className="mx-auto flex h-16 max-w-[1240px] items-center gap-4 px-5">
-                    <Logo />
-                    <nav className="ml-auto flex items-center gap-2">
+            <header className="fixed inset-x-0 top-0 z-40 pt-[env(safe-area-inset-top)]">
+                <div className="liquid-glass liquid-glass--dense mx-2 mt-2 flex h-14 items-center gap-3 rounded-[22px] px-3 sm:mx-3 sm:px-4 xl:mx-auto xl:max-w-[1240px]">
+                    {/* На вузьких екранах (чи з великим системним шрифтом) — лише знак, щоб кнопки не вилазили за край. */}
+                    <Logo compact className="min-[400px]:hidden" />
+                    <Logo className="max-[399px]:hidden" />
+                    <nav className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
                         <Link
                             href={login()}
-                            className="rounded-xl px-4 py-2 text-sm font-medium text-white/75 transition hover:bg-white/[0.06] hover:text-white"
+                            className="rounded-xl px-3 py-2 text-sm font-medium whitespace-nowrap text-white/75 transition hover:bg-white/[0.06] hover:text-white sm:px-4"
                         >
                             {tr('Увійти')}
                         </Link>
                         {canRegister && (
                             <Link
                                 href={register()}
-                                className="btn-glow rounded-xl px-4 py-2 text-sm font-semibold text-white"
+                                className="btn-glow rounded-xl px-3.5 py-2 text-sm font-semibold whitespace-nowrap sm:px-4"
                             >
                                 {tr('Реєстрація')}
                             </Link>
@@ -220,11 +231,12 @@ export default function Welcome({
                             )}
                         </p>
 
-                        <div className="mt-9 flex flex-wrap items-center gap-3">
+                        {/* Телефон: кнопки однакової ширини одна під одною, значок Google Play по центру. */}
+                        <div className="mt-9 grid gap-3 sm:flex sm:flex-wrap sm:items-center">
                             {canRegister && (
                                 <Link
                                     href={register()}
-                                    className="btn-glow group inline-flex h-13 items-center gap-2 rounded-2xl px-7 text-[15px] font-semibold text-white"
+                                    className="btn-glow group inline-flex h-13 items-center justify-center gap-2 rounded-2xl px-7 text-[15px] font-semibold"
                                 >
                                     {tr('Створити акаунт')}
                                     <ArrowRight className="size-4 transition group-hover:translate-x-1" />
@@ -232,11 +244,11 @@ export default function Welcome({
                             )}
                             <Link
                                 href={login()}
-                                className="glass inline-flex h-13 items-center rounded-2xl px-7 text-[15px] font-semibold text-white/85 transition hover:border-white/20 hover:text-white"
+                                className="glass inline-flex h-13 items-center justify-center rounded-2xl px-7 text-[15px] font-semibold text-white/85 transition hover:border-white/20 hover:text-white"
                             >
                                 {tr('У мене вже є акаунт')}
                             </Link>
-                            <PlayStoreLink />
+                            <PlayStoreLink className="mt-1 justify-self-center sm:mt-0" />
                         </div>
 
                         <div className="mt-10 flex items-center gap-4">
@@ -302,7 +314,7 @@ export default function Welcome({
                                 <div className="text-gradient font-display text-3xl font-bold sm:text-4xl">
                                     {s.value}
                                 </div>
-                                <div className="mt-1 text-xs tracking-wider text-white/40 uppercase">
+                                <div className="mt-1 text-xs text-white/40">
                                     {s.label}
                                 </div>
                             </div>
@@ -393,10 +405,7 @@ export default function Welcome({
                 </section>
             </main>
 
-            <footer className="border-t border-white/[0.05] py-8 text-center text-xs text-white/30">
-                © {new Date().getFullYear()}{' '}
-                {tr('GameCon · Соціальна мережа нового покоління')}
-            </footer>
+            <SiteFooter className="py-8" />
         </>
     );
 }

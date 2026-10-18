@@ -14,6 +14,7 @@ import { EmptyState } from '@/components/gc/widget';
 import { cn } from '@/lib/utils';
 import type { GameCard, Paginated } from '@/types';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 type Category = GameCard['category'];
 
@@ -26,6 +27,7 @@ type Props = {
         letter: string | null;
         genre: string | null;
         mode: string | null;
+        collection: string | null;
         sort: string;
     };
     categories: Record<Category, string>;
@@ -110,6 +112,7 @@ export default function GamesIndex({
     total,
 }: Props) {
     const [q, setQ] = useState(filters.q);
+    const collectionsOn = usePlugin('game_collections');
 
     const visit = (patch: Partial<Props['filters']>) =>
         router.get(
@@ -182,6 +185,39 @@ export default function GamesIndex({
                         );
                     })}
                 </div>
+
+                {collectionsOn && (
+                    <div className="-mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1">
+                        <Chip
+                            small
+                            active={filters.collection === 'duo'}
+                            onClick={() =>
+                                visit({
+                                    collection:
+                                        filters.collection === 'duo'
+                                            ? null
+                                            : 'duo',
+                                })
+                            }
+                        >
+                            {tr('На двох')}
+                        </Chip>
+                        <Chip
+                            small
+                            active={filters.collection === 'evening'}
+                            onClick={() =>
+                                visit({
+                                    collection:
+                                        filters.collection === 'evening'
+                                            ? null
+                                            : 'evening',
+                                })
+                            }
+                        >
+                            {tr('На вечір')}
+                        </Chip>
+                    </div>
+                )}
 
                 {Object.keys(modes).length > 0 && (
                     <div className="-mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1">
@@ -303,24 +339,25 @@ export default function GamesIndex({
                             <Link
                                 key={g.id}
                                 href={`/games/${g.slug}`}
-                                className="glass group overflow-hidden rounded-2xl transition hover:border-white/15"
+                                className="group relative block aspect-[4/5] overflow-hidden rounded-2xl border border-white/[0.08] bg-black/30 transition hover:border-white/20 sm:aspect-[4/3]"
                             >
-                                <div className="aspect-[16/9] overflow-hidden bg-black/30">
-                                    <GameCover
-                                        game={g}
-                                        className="transition duration-300 group-hover:opacity-90"
-                                    />
-                                </div>
-                                <div className="p-3">
-                                    <p className="truncate text-sm font-semibold text-white">
+                                <GameCover
+                                    game={g}
+                                    className="absolute inset-0 transition duration-300 group-hover:opacity-90"
+                                />
+                                <div className="absolute inset-x-1.5 bottom-1.5 rounded-xl border border-white/15 bg-black/35 px-2.5 py-2 backdrop-blur-xl backdrop-saturate-150">
+                                    <p className="line-clamp-2 text-[13px] leading-tight font-semibold text-white sm:text-sm">
                                         {g.name}
                                     </p>
-                                    <p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-white/45">
+                                    <p className="mt-1 flex items-center gap-1.5 text-[11px] text-white/70">
                                         <Icon className="size-3.5 shrink-0" />
-                                        {g.platforms
-                                            .map((p) => p.label)
-                                            .slice(0, 3)
-                                            .join(' · ') || g.category_label}
+                                        <span className="truncate">
+                                            {g.platforms
+                                                .map((p) => p.label)
+                                                .slice(0, 3)
+                                                .join(' · ') ||
+                                                g.category_label}
+                                        </span>
                                     </p>
                                 </div>
                             </Link>

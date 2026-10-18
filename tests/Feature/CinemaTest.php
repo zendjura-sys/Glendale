@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Movie;
+use App\Models\MovieSource;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\Cinema\CinemaAutoImport;
@@ -222,9 +223,35 @@ class CinemaTest extends TestCase
         $this->assertSame('https://kodik.info/video/movie-1/hash/720p', $movie->sources->first()->link);
         $this->assertSame('16+', $movie->age_rating);
 
+        // Провайдер перестав віддавати «Дубляж»: озвучка лишається, доки не зникне на RETIRE_DAYS днів.
         $results = [$this->kodikItem('movie-2', 'LostFilm')];
         $this->actingAs($admin)->post("/admin/cinema/{$movie->id}/refresh")->assertRedirect();
+        $this->assertSame(['Дубляж', 'LostFilm'], $movie->sources()->orderBy('position')->pluck('translation')->all());
+        $this->assertNotNull($movie->sources()->where('translation', 'Дубляж')->value('missing_since'));
+
+        $this->travel(MovieSource::RETIRE_DAYS + 1)->days();
+        $this->actingAs($admin)->post("/admin/cinema/{$movie->id}/refresh")->assertRedirect();
         $this->assertSame(['LostFilm'], $movie->sources()->pluck('translation')->all());
+    }
+
+    public function test_catalog_import_keeps_other_voices_and_custom_players(): void
+    {
+        $movie = Movie::query()->create(['slug' => 'matrix', 'type' => 'movie', 'title' => 'Матриця', 'kinopoisk_id' => '301', 'is_published' => true]);
+        foreach ([['kodik', 'movie-1', 'Дубляж', 'https://kodik.info/video/movie-1/hash/720p'], ['kodik', 'movie-2', 'LostFilm', 'https://kodik.info/video/movie-2/hash/720p'], ['custom', 'own-1', 'Свій', 'https://example.com/embed/1']] as $i => [$provider, $id, $voice, $link]) {
+            $source = new MovieSource(['provider' => $provider, 'external_id' => $id, 'translation' => $voice, 'link' => $link, 'position' => $i]);
+            $source->movie()->associate($movie)->save();
+        }
+        $movie->sources()->where('external_id', 'movie-2')->update(['is_hidden' => true]);
+
+        // Автозаповнення каталогу приносить лише одну озвучку цього тайтлу.
+        app(CinemaService::class)->import([
+            'type' => 'movie', 'title' => 'Матриця', 'kinopoisk_id' => '301',
+            'sources' => [['external_id' => 'movie-3', 'translation' => 'AniDUB', 'link' => 'https://kodik.info/video/movie-3/hash/720p']],
+        ], null, 'kodik', true, false);
+
+        $this->assertSame(['Дубляж', 'LostFilm', 'Свій', 'AniDUB'], $movie->sources()->orderBy('position')->pluck('translation')->all());
+        $this->assertTrue((bool) $movie->sources()->where('external_id', 'movie-2')->value('is_hidden'));
+        $this->assertSame(0, $movie->sources()->whereNotNull('missing_since')->count());
     }
 
     public function test_kodik_token_error_is_reported_to_admin(): void
@@ -317,6 +344,41 @@ class CinemaTest extends TestCase
         $this->assertSame('flixcdn', $movie->sources()->value('provider'));
     }
 
+    public function test_flixcdn_voices_become_separate_players(): void
+    {
+        $item = [
+            'id' => 77, 'kp_id' => 301, 'ru_title' => 'Матрица', 'year' => 1999,
+            'iframe_url' => 'https://flixcdn.test/embed/77?token=abc#start',
+            'translations' => [['id' => 10, 'title' => 'Дубляж'], ['id' => 11, 'title' => 'LostFilm', 'type' => 'voice'], ['id' => 12, 'title' => 'Субтитри', 'type' => 'subtitles']],
+        ];
+
+        $sources = FlixcdnClient::group([$item])[0]['sources'];
+        $this->assertCount(3, $sources);
+        $this->assertSame(['Дубляж', 'LostFilm', 'Субтитри'], array_column($sources, 'translation'));
+        $this->assertSame('https://flixcdn.test/embed/77?token=abc&translation=11#start', $sources[1]['link']);
+        $this->assertSame('77:12', $sources[2]['external_id']);
+        $this->assertSame('subtitles', $sources[2]['translation_type']);
+
+        // Старий плеєр «Усі озвучки» замінюється окремими озвучками, інші плеєри не чіпаються.
+        $movie = $this->movie(['kinopoisk_id' => '301']);
+        $movie->sources()->create(['provider' => 'flixcdn', 'external_id' => '77', 'translation' => 'Усі озвучки', 'link' => 'https://flixcdn.test/embed/77', 'position' => 0]);
+        $movie->sources()->create(['provider' => 'kodik', 'external_id' => 'movie-1', 'translation' => 'Дубляж', 'link' => 'https://kodik.test/1', 'position' => 1]);
+        app(CinemaService::class)->mergeSources($movie, 'flixcdn', $sources, false);
+        $this->assertSame(['77:10', '77:11', '77:12'], $movie->sources()->where('provider', 'flixcdn')->orderBy('external_id')->pluck('external_id')->all());
+        $this->assertTrue($movie->sources()->where('provider', 'kodik')->exists());
+
+        // Карта {id: назва} і власний параметр.
+        $map = FlixcdnClient::group([[...$item, 'translations' => ['610' => 'AniLibria', '609' => 'AniDub']]], 'voice')[0]['sources'];
+        $this->assertSame('https://flixcdn.test/embed/77?token=abc&voice=609#start', $map[1]['link']);
+
+        // Розбиття вимкнено («-») — один плеєр з усіма озвучками.
+        app(SiteSettings::class)->put(['flixcdn_translation_param' => '-']);
+        $this->assertSame('', app(FlixcdnClient::class)->translationParam());
+        $single = FlixcdnClient::group([$item], '')[0]['sources'];
+        $this->assertCount(1, $single);
+        $this->assertSame('https://flixcdn.test/embed/77?token=abc#start', $single[0]['link']);
+    }
+
     public function test_flixcdn_template_player_is_offered_when_no_api_sources(): void
     {
         $user = User::factory()->create();
@@ -347,13 +409,17 @@ class CinemaTest extends TestCase
         $this->assertStringNotContainsString('КіноПошук', $response->getContent());
         $response->assertInertia(fn (Assert $page) => $page
             ->component('admin/integrations')
-            ->has('cinema', 13)
+            ->has('cinema', 20)
             ->where('cinema.2.key', 'push')
-            ->where('cinema.3.key', 'voice')
-            ->where('cinema.4.key', 'igdb')
-            ->where('cinema.5.key', 'rawg')
-            ->where('cinema.6.key', 'kodik')
-            ->where('cinema.6.configured', true));
+            ->where('cinema.3.key', 'telegram_bot')
+            ->where('cinema.4.key', 'discord_bot')
+            ->where('cinema.5.key', 'twitch')
+            ->where('cinema.6.key', 'sightengine')
+            ->where('cinema.7.key', 'voice')
+            ->where('cinema.8.key', 'igdb')
+            ->where('cinema.9.key', 'rawg')
+            ->where('cinema.10.key', 'kodik')
+            ->where('cinema.10.configured', true));
 
         Http::fake(['kodik-api.com/*' => Http::response(['results' => []])]);
         $this->actingAs($admin)->post('/admin/integrations/cinema/kodik/test')->assertRedirect();

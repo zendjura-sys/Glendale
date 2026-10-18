@@ -2,12 +2,10 @@ import { Form, Head } from '@inertiajs/react';
 import { SocialLogin } from '@/components/auth/social-login';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
-import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { login } from '@/routes';
 import { store } from '@/routes/register';
 import { tr } from '@/lib/i18n';
 
@@ -19,7 +17,7 @@ export default function Register({ passwordRules }: Props) {
     return (
         <>
             <Head title={tr('Реєстрація')} />
-            <div className="mb-6">
+            <div className="mb-6 empty:hidden">
                 <SocialLogin mode="register" />
             </div>
             <Form
@@ -121,13 +119,6 @@ export default function Register({ passwordRules }: Props) {
                                 {processing && <Spinner />}
                                 {tr('Створити акаунт')}
                             </Button>
-                        </div>
-
-                        <div className="text-center text-sm text-white/45">
-                            {tr('Вже є акаунт?')}{' '}
-                            <TextLink href={login()} tabIndex={7}>
-                                {tr('Увійти')}
-                            </TextLink>
                         </div>
                     </>
                 )}

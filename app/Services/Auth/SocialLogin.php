@@ -117,6 +117,8 @@ class SocialLogin
                 'role' => $isFirstUser ? User::ROLE_ADMIN : User::ROLE_USER,
             ])->save();
             $this->link($user, $profile);
+            // Як і при реєстрації поштою: спершу вибір режиму й знайомство з сайтом.
+            $user->mergePref(['onboarded' => false]);
 
             return $user;
         });

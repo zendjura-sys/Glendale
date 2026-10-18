@@ -18,9 +18,11 @@ use Illuminate\Support\Carbon;
  * @property int|null $reply_to_id
  * @property array<string, mixed>|null $meta
  * @property Carbon|null $edited_at
+ * @property Carbon|null $publish_at
+ * @property Carbon|null $expires_at
  * @property Carbon $created_at
  */
-#[Fillable(['conversation_id', 'user_id', 'type', 'body', 'reply_to_id', 'meta', 'edited_at'])]
+#[Fillable(['conversation_id', 'user_id', 'type', 'body', 'reply_to_id', 'meta', 'edited_at', 'publish_at', 'expires_at'])]
 class Message extends Model
 {
     use SoftDeletes;
@@ -42,6 +44,8 @@ class Message extends Model
         return [
             'meta' => 'array',
             'edited_at' => 'datetime',
+            'publish_at' => 'datetime',
+            'expires_at' => 'datetime',
         ];
     }
 

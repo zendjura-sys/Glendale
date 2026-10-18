@@ -48,6 +48,32 @@ return [
         'maxmind_url' => env('GEOIP_MAXMIND_URL', 'https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz'),
     ],
 
+    // Банка Monobank для донатів сім’ям і спільнотам: публічні ендпоінти віджетів (перевизначаються для тестів).
+    'monobank_jar' => [
+        'send_url' => env('MONOBANK_JAR_SEND_URL', 'https://send.monobank.ua'),
+        'api_url' => env('MONOBANK_JAR_API_URL', 'https://api.monobank.ua'),
+    ],
+
+    // Інтернет-еквайринг monobank: оплата карткою, Apple Pay, Google Pay, збережені картки для автопродовження.
+    // Токен (X-Token) задають в адмінці (Інтеграції → monobank); тут — запасний варіант і адреса API (для тестів).
+    // Google Play Billing (підписки в застосунку): пакет, адреса API (для тестів) і запасний ключ сервісного акаунта.
+    'google_play' => [
+        'package' => env('GOOGLE_PLAY_PACKAGE', 'online.gamecon.app'),
+        'url' => env('GOOGLE_PLAY_API_URL', 'https://androidpublisher.googleapis.com'),
+        'credentials' => env('GOOGLE_PLAY_CREDENTIALS'),
+    ],
+
+    'monobank_acquiring' => [
+        'url' => env('MONOBANK_ACQUIRING_URL', 'https://api.monobank.ua'),
+        'token' => env('MONOBANK_ACQUIRING_TOKEN'),
+    ],
+
+    // Donatello: донати для поповнення рахунку. Токен зазвичай задають в адмінці (Інтеграції → Donatello).
+    'donatello' => [
+        'token' => env('DONATELLO_TOKEN'),
+        'url' => env('DONATELLO_URL', 'https://donatello.to/api/v1'),
+    ],
+
     'deepl' => [
         'key' => env('DEEPL_KEY'),
         'url' => env('DEEPL_URL'),
@@ -87,6 +113,14 @@ return [
     'kodik' => [
         'token' => env('KODIK_TOKEN'),
         'api_url' => env('KODIK_API_URL', 'https://kodik-api.com'),
+        // Партнерський метод прямих посилань (ключ видає Kodik на запит; задається в адмінці).
+        'links_key' => env('KODIK_LINKS_KEY'),
+        'links_url' => env('KODIK_LINKS_URL', 'https://kodik.biz/api/video-links'),
+    ],
+
+    'videoseed' => [
+        'token' => env('VIDEOSEED_TOKEN'),
+        'api_url' => env('VIDEOSEED_API_URL', 'https://api.videoseed.tv/apiv2.php'),
     ],
 
     'flixcdn' => [

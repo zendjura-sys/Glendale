@@ -3,11 +3,25 @@ import {
     Ban,
     Check,
     Flag,
+    Gavel,
     MessageSquareWarning,
     Trash2,
+    UserX,
     VolumeX,
 } from 'lucide-react';
 import { useState } from 'react';
+import {
+    Appeals,
+    FeedbackList,
+    PeopleReports,
+} from '@/components/admin/people-moderation';
+import type {
+    AppealItem,
+    FeedbackItem,
+    PersonReport,
+} from '@/components/admin/people-moderation';
+import { ImageFlags } from '@/components/admin/image-flags';
+import type { ImageFlagItem } from '@/components/admin/image-flags';
 import { PageHeader, StatCard } from '@/components/gc/admin';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { timeAgo } from '@/lib/format';
@@ -46,7 +60,17 @@ type Props = {
     muted: (UserCard & { muted_until: string; mute_reason: string | null })[];
     settings: Settings;
     mute_hours: number[];
-    stats: { pending: number; resolved_week: number };
+    stats: {
+        pending: number;
+        resolved_week: number;
+        people: number;
+        appeals: number;
+        feedback: number;
+    };
+    people: PersonReport[];
+    appeals: AppealItem[];
+    feedback: FeedbackItem[];
+    images?: ImageFlagItem[];
 };
 
 const PROFANITY = {
@@ -78,6 +102,10 @@ export default function AdminModeration({
     settings,
     mute_hours,
     stats,
+    people,
+    appeals,
+    feedback,
+    images = [],
 }: Props) {
     const form = useForm({
         ...settings,
@@ -105,7 +133,7 @@ export default function AdminModeration({
                 )}
             />
 
-            <div className="mb-6 grid grid-cols-2 gap-3">
+            <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <StatCard
                     label={tr('Скарг на розгляді')}
                     value={stats.pending}
@@ -116,6 +144,18 @@ export default function AdminModeration({
                     value={stats.resolved_week}
                     icon={Check}
                     delay={50}
+                />
+                <StatCard
+                    label={tr('Скарг на людей')}
+                    value={stats.people}
+                    icon={UserX}
+                    delay={100}
+                />
+                <StatCard
+                    label={tr('Оскаржень')}
+                    value={stats.appeals}
+                    icon={Gavel}
+                    delay={150}
                 />
             </div>
 
@@ -249,6 +289,18 @@ export default function AdminModeration({
                     </div>
                 )}
             </section>
+
+            <PeopleReports
+                people={people}
+                muteHours={mute_hours}
+                hoursLabel={hoursLabel}
+            />
+
+            <ImageFlags flags={images} />
+
+            <Appeals appeals={appeals} />
+
+            <FeedbackList feedback={feedback} />
 
             {muted.length > 0 && (
                 <section className="glass mb-6 rounded-3xl p-4 sm:p-5">

@@ -16,6 +16,10 @@ import {
     PartyPopper,
     PenLine,
     Rocket,
+    Target,
+    UserPlus,
+    Megaphone,
+    Vote,
     Star,
     Swords,
     UsersRound,
@@ -65,6 +69,10 @@ const ICONS: Record<string, LucideIcon> = {
     clapperboard: Clapperboard,
     'badge-check': BadgeCheck,
     rocket: Rocket,
+    vote: Vote,
+    target: Target,
+    'user-plus': UserPlus,
+    megaphone: Megaphone,
 };
 
 /** Рівень (досвід до наступного) і бейджі за активність у профілі. */

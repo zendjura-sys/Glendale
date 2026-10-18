@@ -1,15 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 import 'api.dart';
 import 'feed.dart';
-import 'posts.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -125,11 +121,26 @@ class _CinemaScreenState extends State<CinemaScreen> {
               },
             ),
             const SizedBox(height: 10),
-            GhostButton(
-              label: intOf(myCounts['all']) > 0 ? tr('Мої списки · {v}', {'v': myCounts['all']}) : tr('Мої списки'),
-              icon: LucideIcons.bookmark,
-              onPressed: () => context.push('/cinema/my'),
-            ),
+            Row(children: [
+              Expanded(
+                child: GhostButton(
+                  label: intOf(myCounts['all']) > 0 ? tr('Мої списки · {v}', {'v': myCounts['all']}) : tr('Мої списки'),
+                  icon: LucideIcons.bookmark,
+                  onPressed: () => context.push('/cinema/my'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: GhostButton(
+                  label: tr('Мої десять'),
+                  icon: LucideIcons.trophy,
+                  onPressed: () {
+                    final me = text(AppScope.read(context).session.me?['username']);
+                    if (me != null) context.push('/cinema/ten/$me');
+                  },
+                ),
+              ),
+            ]),
             const SizedBox(height: 10),
             Segmented(
               scroll: true,
@@ -284,7 +295,7 @@ class _FeaturedState extends State<_Featured> {
                       Padding(padding: const EdgeInsets.only(top: 8), child: Text(text(movie['description'])!, maxLines: 3, overflow: TextOverflow.ellipsis, style: body(13.5, color: soft).copyWith(height: 1.4))),
                     const SizedBox(height: 14),
                     Row(children: [
-                      Expanded(child: PrimaryButton(label: tr('Дивитися'), icon: LucideIcons.play, onPressed: () => context.push('/cinema/${movie['slug']}?play=1'))),
+                      Expanded(child: PrimaryButton(label: tr('Дивитися'), icon: LucideIcons.play, onPressed: () => context.push('/cinema/${movie['slug']}'))),
                       const SizedBox(width: 10),
                       Expanded(child: GhostButton(label: tr('Детальніше'), icon: LucideIcons.info, onPressed: () => context.push('/cinema/${movie['slug']}'))),
                     ]),
@@ -359,7 +370,7 @@ class PosterCard extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
-                  child: Text(text(movie['age_rating'])!, style: body(10.5, weight: FontWeight.w700)),
+                  child: Text(text(movie['age_rating'])!, style: body(11, weight: FontWeight.w700)),
                 ),
               ),
           ]),
@@ -487,361 +498,3 @@ class _MyCinemaScreenState extends State<MyCinemaScreen> {
 }
 
 // ───────────────────────── Фільм ─────────────────────────
-
-class MovieScreen extends StatefulWidget {
-  const MovieScreen({required this.slug, this.autoplay = false, super.key});
-  final String slug;
-  final bool autoplay;
-
-  @override
-  State<MovieScreen> createState() => _MovieScreenState();
-}
-
-class _MovieScreenState extends State<MovieScreen> {
-  Map<String, dynamic>? data;
-  Object? error;
-  String? playerKey;
-  WebViewController? web;
-  bool started = false;
-  final playerCard = GlobalKey();
-
-  Api get api => AppScope.read(context).session.api;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
-  }
-
-  @override
-  void dispose() {
-    SystemChrome.setPreferredOrientations(const []);
-    super.dispose();
-  }
-
-  Future<void> _load() async {
-    try {
-      final result = await api.get(Api.site('/cinema/${widget.slug}'));
-      if (!mounted) return;
-      setState(() {
-        data = result;
-        error = null;
-      });
-      final players = maps(result['players']);
-      if (widget.autoplay && players.isNotEmpty && web == null) _play(players.first);
-    } catch (e) {
-      if (mounted) setState(() => error = e);
-    }
-  }
-
-  /// Спільний перегляд: створюємо кімнату й відкриваємо її; посилання — друзям.
-  Future<void> _watchTogether() async {
-    try {
-      final result = await api.post('/api/v1/cinema/${widget.slug}/watch', {'player_key': playerKey});
-      final code = text(result['code']);
-      if (code != null && mounted) context.push('/watch/$code');
-    } catch (e) {
-      if (mounted) toast(context, e);
-    }
-  }
-
-  void _play(Map<String, dynamic> source) {
-    final raw = text(source['link']);
-    if (raw == null) return;
-    final iframe = RegExp('src=["\']([^"\']+)').firstMatch(raw);
-    final url = absolute(iframe?.group(1) ?? raw);
-    if (url == null) return;
-    setState(() {
-      playerKey = text(source['key']);
-      web = WebViewController()
-        ..setJavaScriptMode(JavaScriptMode.unrestricted)
-        ..setBackgroundColor(Colors.black)
-        ..setUserAgent('Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36')
-        ..loadRequest(Uri.parse('${Api.root}/play/embed').replace(queryParameters: {'src': url}));
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final card = playerCard.currentContext;
-      if (card != null && card.mounted) unawaited(Scrollable.ensureVisible(card, alignment: 0.1, duration: const Duration(milliseconds: 350), curve: Curves.easeOutCubic));
-    });
-    if (!started) {
-      started = true;
-      unawaited(api.post(Api.site('/cinema/${widget.slug}/started')).then(_applyState).catchError((_) {}));
-    }
-  }
-
-  void _applyState(Map<String, dynamic> result) {
-    if (!mounted || data == null) return;
-    setState(() {
-      data!['state'] = mapOf(result['state']);
-      final movie = mapOf(data!['movie']);
-      movie['user_rating'] = result['user_rating'];
-      movie['ratings_count'] = result['ratings_count'];
-      movie['watchers_count'] = result['watchers_count'];
-      data!['movie'] = movie;
-    });
-  }
-
-  Future<void> _status(String? status) async {
-    try {
-      _applyState(await api.patch(Api.site('/cinema/${widget.slug}/status'), {'status': status}));
-    } catch (e) {
-      if (mounted) toast(context, e);
-    }
-  }
-
-  Future<void> _rate(int? rating) async {
-    try {
-      _applyState(await api.put(Api.site('/cinema/${widget.slug}/rating'), {'rating': rating}));
-    } catch (e) {
-      if (mounted) toast(context, e);
-    }
-  }
-
-  Future<void> _fullscreen() async {
-    final controller = web;
-    if (controller == null) return;
-    await SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    if (!mounted) return;
-    await Navigator.of(context).push(MaterialPageRoute<void>(
-      fullscreenDialog: true,
-      builder: (page) => Scaffold(
-        backgroundColor: Colors.black,
-        body: Stack(children: [
-          Positioned.fill(child: WebViewWidget(controller: controller)),
-          Positioned(top: 8, left: 8, child: SafeArea(child: RoundIcon(icon: LucideIcons.minimize, color: Colors.white, onTap: () => Navigator.pop(page)))),
-        ]),
-      ),
-    ));
-    await SystemChrome.setPreferredOrientations(const []);
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final page = data;
-    if (page == null) {
-      return error == null
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
-          : Center(child: Padding(padding: const EdgeInsets.all(20), child: EmptyState(icon: LucideIcons.film, title: tr('Фільм недоступний'), text: '$error')));
-    }
-    final movie = mapOf(page['movie']);
-    final players = maps(page['players']);
-    final state = mapOf(page['state']);
-    final statuses = maps(page['statuses']);
-    final friends = mapOf(page['friends']);
-    final similar = maps(page['similar']);
-    final ratings = mapOf(movie['ratings']);
-    final genres = [for (final g in (movie['genres'] as List? ?? const [])) '$g'];
-    final countries = [for (final c in (movie['countries'] as List? ?? const [])) '$c'];
-
-    return ScreenScroll(
-      onRefresh: _load,
-      children: [
-        Glass(
-          padding: EdgeInsets.zero,
-          radius: 26,
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            SizedBox(
-              height: 170,
-              child: Stack(children: [
-                Positioned.fill(child: ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(26)), child: NetImage(text(movie['backdrop']) ?? text(movie['poster'])))),
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: const BoxDecoration(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-                      gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x22050712), Color(0xEE0D1222)]),
-                    ),
-                  ),
-                ),
-                Positioned(left: 8, top: 8, child: RoundIcon(icon: LucideIcons.arrowLeft, color: Colors.white, onTap: () => context.canPop() ? context.pop() : context.go('/cinema'))),
-              ]),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  SizedBox(width: 86, child: AspectRatio(aspectRatio: 2 / 3, child: NetImage(text(movie['poster']), radius: 12))),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(text(movie['title']) ?? '', style: display(21)),
-                      if (text(movie['title_original']) != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(text(movie['title_original'])!, style: body(13, color: muted))),
-                      const SizedBox(height: 8),
-                      Wrap(spacing: 8, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                        if (movie['year'] != null) Text('${movie['year']}', style: body(12.5, color: soft)),
-                        if (text(movie['type_label']) != null) Text(text(movie['type_label'])!, style: body(12.5, color: soft)),
-                        if (intOf(movie['duration']) > 0) Text(tr('{v} хв', {'v': movie['duration']}), style: body(12.5, color: soft)),
-                        if (intOf(movie['episodes_count']) > 0) Text(tr('{v} еп.', {'v': movie['episodes_count']}), style: body(12.5, color: soft)),
-                        if (text(movie['age_rating']) != null) Pill(label: text(movie['age_rating'])!),
-                      ]),
-                    ]),
-                  ),
-                ]),
-                const SizedBox(height: 12),
-                Wrap(spacing: 8, runSpacing: 8, children: [
-                  for (final entry in ratings.entries) Pill(label: '${entry.key.toUpperCase()} ${_ratingLabel(entry.value) ?? '—'}', icon: LucideIcons.star, color: gold),
-                  if (_ratingLabel(movie['user_rating']) != null) Pill(label: 'GameCon ${_ratingLabel(movie['user_rating'])} · ${movie['ratings_count']}', icon: LucideIcons.usersRound, color: const Color(0xFF9AA6FF)),
-                  Pill(label: tr('{v} переглядів', {'v': compact(movie['views_count'])}), icon: LucideIcons.eye),
-                ]),
-                if (text(movie['tagline']) != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text('«${text(movie['tagline'])}»', style: body(14, color: soft).copyWith(fontStyle: FontStyle.italic))),
-                if (genres.isNotEmpty || countries.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 10), child: Text([...genres, ...countries].join(' · '), style: body(12.5, color: muted))),
-                if (text(movie['description']) != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(text(movie['description'])!, style: body(14, color: soft).copyWith(height: 1.5))),
-                if (text(movie['trailer_url']) != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: GhostButton(label: tr('Трейлер'), icon: LucideIcons.monitorPlay, expand: false, compact: true, onPressed: () => launchUrl(Uri.parse(text(movie['trailer_url'])!), mode: LaunchMode.externalApplication)),
-                  ),
-              ]),
-            ),
-          ]),
-        ),
-        if (players.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Glass(
-            key: playerCard,
-            padding: const EdgeInsets.fromLTRB(12, 14, 12, 8),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Expanded(child: Padding(padding: const EdgeInsets.only(left: 4), child: CardTitle(tr('Дивитися'), icon: LucideIcons.clapperboard))),
-                TextButton.icon(
-                  onPressed: _watchTogether,
-                  icon: const Icon(LucideIcons.popcorn, size: 18, color: primary),
-                  label: Text(tr('Разом'), style: body(13.5, color: primary, weight: FontWeight.w700)),
-                ),
-              ]),
-              const SizedBox(height: 10),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: web != null
-                      ? WebViewWidget(controller: web!)
-                      : GestureDetector(
-                          onTap: () => _play(players.first),
-                          child: Stack(fit: StackFit.expand, children: [
-                            NetImage(text(movie['backdrop']) ?? text(movie['poster'])),
-                            const DecoratedBox(decoration: BoxDecoration(color: Color(0x88050712))),
-                            Center(
-                              child: Container(
-                                width: 62,
-                                height: 62,
-                                decoration: BoxDecoration(gradient: buttonGradient, shape: BoxShape.circle, boxShadow: [BoxShadow(color: primary.withValues(alpha: 0.5), blurRadius: 22)]),
-                                child: const Icon(LucideIcons.play, size: 32, color: Colors.white),
-                              ),
-                            ),
-                          ]),
-                        ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(4, 4, 0, 0),
-                child: Row(children: [
-                  Expanded(child: Text(web != null ? tr('Якщо плеєр не завантажився — оберіть інше джерело нижче.') : tr('Натисніть, щоб почати перегляд.'), style: body(11.5, color: faint))),
-                  IconButton(onPressed: web != null ? _fullscreen : null, tooltip: tr('На весь екран'), icon: Icon(LucideIcons.maximize, color: web != null ? soft : faint)),
-                ]),
-              ),
-            ]),
-          ),
-        ],
-        const SizedBox(height: 12),
-        Glass(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            CardTitle(tr('Мій список'), icon: LucideIcons.bookmark),
-            const SizedBox(height: 10),
-            Wrap(spacing: 8, runSpacing: 8, children: [
-              for (final s in statuses)
-                SelectPill(
-                  label: '${s['label']}',
-                  selected: state['status'] == s['key'],
-                  onTap: () => _status(state['status'] == s['key'] ? null : '${s['key']}'),
-                ),
-            ]),
-            const SizedBox(height: 14),
-            Row(children: [
-              Text(tr('Моя оцінка'), style: body(13, color: muted)),
-              const Spacer(),
-              if (state['rating'] != null) TextButton(onPressed: () => _rate(null), child: Text(tr('Скинути'), style: body(12.5, color: muted))),
-            ]),
-            const SizedBox(height: 4),
-            Row(children: [
-              for (var i = 1; i <= 10; i++)
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _rate(i),
-                    child: Icon(
-                      intOf(state['rating']) >= i ? LucideIcons.star600 : LucideIcons.star,
-                      color: intOf(state['rating']) >= i ? gold : faint,
-                      size: 28,
-                    ),
-                  ),
-                ),
-            ]),
-          ]),
-        ),
-        if (players.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Glass(
-            padding: const EdgeInsets.fromLTRB(12, 14, 12, 8),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Padding(padding: EdgeInsets.only(left: 4), child: CardTitle(tr('Джерела й озвучки'), icon: LucideIcons.languages)),
-              const SizedBox(height: 6),
-              for (final source in players)
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-                  leading: Icon(playerKey == text(source['key']) ? LucideIcons.circlePlay600 : LucideIcons.circlePlay, color: playerKey == text(source['key']) ? primary : muted),
-                  title: Text(text(source['translation']) ?? text(source['provider_label']) ?? tr('Плеєр'), style: body(14, weight: FontWeight.w600)),
-                  subtitle: Text([text(source['provider_label']), text(source['quality'])].whereType<String>().join(' · '), style: body(12, color: muted)),
-                  onTap: () => _play(source),
-                ),
-            ]),
-          ),
-        ],
-        if (maps(friends['users']).isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Glass(
-            padding: const EdgeInsets.fromLTRB(12, 14, 12, 8),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Padding(padding: const EdgeInsets.only(left: 4), child: CardTitle(tr('Друзі дивляться'), icon: LucideIcons.usersRound, trailing: '${friends['total']}')),
-              for (final user in maps(friends['users']))
-                UserTile(
-                  user: user,
-                  subtitle: [
-                    for (final s in statuses)
-                      if (s['key'] == user['movie_status']) '${s['label']}',
-                    if (user['movie_rating'] != null) '★ ${user['movie_rating']}',
-                  ].join(' · '),
-                ),
-            ]),
-          ),
-        ],
-        const SizedBox(height: 12),
-        Glass(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            CardTitle(tr('Обговорення'), icon: LucideIcons.messagesSquare, trailing: intOf(movie['comments_count']) > 0 ? '${movie['comments_count']}' : null),
-            const SizedBox(height: 8),
-            CommentsThread(
-              endpoint: Api.site('/cinema/${widget.slug}/comments'),
-              initial: maps(page['comments']),
-              total: intOf(movie['comments_count']),
-              canComment: movie['comments_enabled'] != false,
-              onCount: (value) => setState(() => movie['comments_count'] = value),
-            ),
-          ]),
-        ),
-        if (similar.isNotEmpty) ...[
-          SectionLabel(tr('Схоже')),
-          SizedBox(
-            height: 250,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: similar.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 10),
-              itemBuilder: (_, i) => SizedBox(width: 132, child: PosterCard(movie: similar[i])),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}

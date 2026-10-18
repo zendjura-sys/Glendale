@@ -135,6 +135,14 @@ class Movie extends Model
     }
 
     /**
+     * @return BelongsToMany<Track, $this>
+     */
+    public function tracks(): BelongsToMany
+    {
+        return $this->belongsToMany(Track::class, 'movie_soundtracks')->withPivot('position')->orderBy('movie_soundtracks.position');
+    }
+
+    /**
      * @return BelongsToMany<User, $this>
      */
     public function viewers(): BelongsToMany

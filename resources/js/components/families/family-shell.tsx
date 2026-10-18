@@ -19,6 +19,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { useRef } from 'react';
 import type { ReactNode } from 'react';
+import { PlusBadge } from '@/components/gc/plus';
 import { ServerIcon } from '@/components/servers/server-icon';
 import { useRealtime } from '@/hooks/use-realtime';
 import { uah } from '@/lib/money';
@@ -155,14 +156,30 @@ export function FamilyShell({
                     <div className="relative h-28 sm:h-36">
                         {family.cover_url ? (
                             <img
+                                decoding="async"
                                 src={family.cover_url}
                                 alt=""
                                 className="size-full object-cover"
                             />
+                        ) : family.plus?.accent ? (
+                            <div
+                                className="size-full opacity-70"
+                                style={{
+                                    backgroundImage: `radial-gradient(120% 120% at 0% 0%, ${family.plus.accent[0]}, transparent 55%), radial-gradient(120% 120% at 100% 0%, ${family.plus.accent[1]}, transparent 60%), linear-gradient(135deg, #0b0f1d, #141a33)`,
+                                }}
+                            />
                         ) : (
                             <div className="size-full bg-[radial-gradient(120%_120%_at_0%_0%,#f59e0b55,transparent_55%),radial-gradient(120%_120%_at_100%_0%,#6d5dfc66,transparent_60%),linear-gradient(135deg,#0b0f1d,#141a33)]" />
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d18] via-[#0a0d18]/30 to-transparent" />
+                        <div className="scrim absolute inset-0" />
+                        {family.plus?.accent && (
+                            <div
+                                className="absolute inset-x-0 bottom-0 h-[3px]"
+                                style={{
+                                    backgroundImage: `linear-gradient(90deg, ${family.plus.accent.join(', ')})`,
+                                }}
+                            />
+                        )}
                     </div>
                     <div className="relative -mt-12 flex flex-wrap items-end gap-4 px-4 pb-4 sm:px-6">
                         <FamilyLogo
@@ -183,6 +200,9 @@ export function FamilyShell({
                                         className="size-5 text-emerald-300"
                                         aria-label={tr('Верифіковано')}
                                     />
+                                )}
+                                {family.plus && (
+                                    <PlusBadge className="size-5 rounded-md" />
                                 )}
                             </div>
                             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-white/50">
@@ -224,7 +244,7 @@ export function FamilyShell({
                                     />
                                 </div>
                                 <div className="ml-auto border-l border-white/10 pl-3 text-right">
-                                    <div className="text-xs tracking-wide text-white/40 uppercase">
+                                    <div className="text-xs text-white/40">
                                         {tr('Баланс')}
                                     </div>
                                     <div

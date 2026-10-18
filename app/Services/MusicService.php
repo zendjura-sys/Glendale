@@ -8,6 +8,7 @@ use App\Models\Track;
 use App\Models\User;
 use App\Services\Spotify\SpotifyClient;
 use App\Services\Spotify\SpotifyException;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
@@ -210,7 +211,42 @@ class MusicService
 
     public function canViewPlaylist(Playlist $playlist, User $viewer): bool
     {
-        return $playlist->is_public || $playlist->user_id === $viewer->id || $viewer->isStaff();
+        return $playlist->is_public
+            || $playlist->user_id === $viewer->id
+            || $viewer->isStaff()
+            || $this->collaborates($playlist, $viewer);
+    }
+
+    public function canManagePlaylist(Playlist $playlist, User $viewer): bool
+    {
+        return $playlist->user_id === $viewer->id || $viewer->isStaff() || $this->collaborates($playlist, $viewer);
+    }
+
+    public function collaborates(Playlist $playlist, User $viewer): bool
+    {
+        return DB::table('playlist_collaborators')->where('playlist_id', $playlist->id)->where('user_id', $viewer->id)->exists();
+    }
+
+    /**
+     * Треки того самого виконавця, потім того самого жанру.
+     *
+     * @return list<Track>
+     */
+    public function similarTracks(Track $track): array
+    {
+        return array_values(Track::query()
+            ->whereKeyNot($track->id)
+            ->where(function (Builder $query) use ($track) {
+                $query->where('artist', $track->artist);
+                if (is_string($track->genre) && $track->genre !== '') {
+                    $query->orWhere('genre', $track->genre);
+                }
+            })
+            ->orderByRaw('case when artist = ? then 0 else 1 end', [$track->artist])
+            ->orderByDesc('plays_count')
+            ->limit(8)
+            ->get()
+            ->all());
     }
 
     /**

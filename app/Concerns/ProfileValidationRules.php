@@ -3,6 +3,7 @@
 namespace App\Concerns;
 
 use App\Models\User;
+use App\Support\Countries;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
 
@@ -34,6 +35,7 @@ trait ProfileValidationRules
             'status' => ['nullable', 'string', 'max:140'],
             'about' => ['nullable', 'string', 'max:2000'],
             'city' => ['nullable', 'string', 'max:80'],
+            'country' => ['nullable', 'string', Rule::in(array_keys(Countries::NAMES))],
             'birthday' => ['nullable', 'date', 'before:today', 'after:1900-01-01'],
             'gender' => ['nullable', Rule::in(['male', 'female'])],
             'website' => ['nullable', 'url:http,https', 'max:255'],

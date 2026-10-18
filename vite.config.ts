@@ -4,7 +4,6 @@ import babel from '@rolldown/plugin-babel';
 import tailwindcss from '@tailwindcss/vite';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
-import { bunny } from 'laravel-vite-plugin/fonts';
 import { defineConfig, lazyPlugins } from 'vite-plus';
 
 export default defineConfig({
@@ -12,17 +11,6 @@ export default defineConfig({
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
             refresh: true,
-            fonts: [
-                bunny('Onest', {
-                    weights: [400, 500, 600, 700],
-                    subsets: ['latin', 'cyrillic'],
-                }),
-                bunny('Unbounded', {
-                    weights: [500, 600, 700, 800],
-                    subsets: ['latin', 'cyrillic'],
-                    preload: [{ weight: 700 }],
-                }),
-            ],
         }),
         inertia(),
         react(),
@@ -47,7 +35,12 @@ export default defineConfig({
     },
     lint: {
         ignorePatterns: [
+            // Скіли Anthropic (.claude/skills) — сторонній код, лишаємо як в оригіналі.
+            '.claude/**',
             'vendor/**',
+            '.claude/**',
+            // Генератор макетів дизайну — разовий скрипт, не код сайту.
+            'docs/design-options/**',
             'node_modules/**',
             'public/**',
             'mobile/**',
@@ -71,7 +64,12 @@ export default defineConfig({
         singleAttributePerLine: false,
         htmlWhitespaceSensitivity: 'css',
         ignorePatterns: [
+            '.claude/**',
             '.github/**',
+            // Скопійовані скіли Anthropic — сторонній текст, не форматуємо.
+            '.claude/**',
+            // Генератор макетів дизайну — разовий скрипт, не код сайту.
+            'docs/design-options/**',
             'composer.json',
             // Flutter-застосунок форматує `dart format`, не vp.
             'mobile/**',

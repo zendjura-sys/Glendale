@@ -27,6 +27,8 @@ export function PlayingBadge({
         <>
             {playing.icon ? (
                 <img
+                    loading="lazy"
+                    decoding="async"
                     src={playing.icon}
                     alt=""
                     className="size-4 shrink-0 rounded object-cover"
@@ -107,6 +109,8 @@ type Settings = {
     auto: boolean;
     discord: { linked: boolean; available: boolean };
     steam: { linked: boolean; available: boolean; profile: string | null };
+    xbox?: string;
+    playstation?: string;
     hours: number[];
 };
 
@@ -125,10 +129,16 @@ export function PlayingDialog({
     const [note, setNote] = useState('');
     const [hours, setHours] = useState(3);
     const [steam, setSteam] = useState('');
+    const [xbox, setXbox] = useState('');
+    const [playstation, setPlaystation] = useState('');
 
     const load = () =>
         void api<Settings>('GET', '/me/playing')
-            .then(setSettings)
+            .then((next) => {
+                setSettings(next);
+                setXbox(next.xbox ?? '');
+                setPlaystation(next.playstation ?? '');
+            })
             .catch(() => undefined);
 
     useEffect(() => {
@@ -282,6 +292,37 @@ export function PlayingDialog({
                                         </button>
                                     </form>
                                 ))}
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    act('put', '/me/playing/consoles', {
+                                        xbox,
+                                        playstation,
+                                    });
+                                }}
+                                className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]"
+                            >
+                                <input
+                                    value={xbox}
+                                    onChange={(e) => setXbox(e.target.value)}
+                                    placeholder={tr('Xbox gamertag')}
+                                    className="input-glass h-9 rounded-lg px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
+                                />
+                                <input
+                                    value={playstation}
+                                    onChange={(e) =>
+                                        setPlaystation(e.target.value)
+                                    }
+                                    placeholder={tr('PlayStation ID')}
+                                    className="input-glass h-9 rounded-lg px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
+                                />
+                                <button
+                                    type="submit"
+                                    className="glass h-9 rounded-lg px-3 text-sm text-white/80 hover:text-white"
+                                >
+                                    {tr('Зберегти')}
+                                </button>
+                            </form>
                         </section>
 
                         <section className="space-y-2">
@@ -314,6 +355,8 @@ export function PlayingDialog({
                                         <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/[0.06]">
                                             {o.icon ? (
                                                 <img
+                                                    loading="lazy"
+                                                    decoding="async"
                                                     src={o.icon}
                                                     alt=""
                                                     className="size-full object-cover"

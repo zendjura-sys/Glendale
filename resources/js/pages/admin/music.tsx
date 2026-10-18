@@ -180,7 +180,7 @@ export default function AdminMusic({ tracks, filters, stats }: Props) {
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[820px] text-sm">
                         <thead>
-                            <tr className="border-b border-white/[0.06] text-left text-xs tracking-wider text-white/40 uppercase">
+                            <tr className="border-b border-white/[0.06] text-left text-xs text-white/40">
                                 <th className="px-4 py-3 font-medium">
                                     {tr('Трек')}
                                 </th>

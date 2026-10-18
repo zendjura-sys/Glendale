@@ -1,13 +1,22 @@
 import { Link } from '@inertiajs/react';
-import { PanelBottom, ShieldCheck, UserRound } from 'lucide-react';
+import {
+    MonitorSmartphone,
+    Palette,
+    PanelBottom,
+    ShieldCheck,
+    UserRound,
+} from 'lucide-react';
+import { m, useReducedMotion } from 'motion/react';
 import type { PropsWithChildren } from 'react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
+import { edit as editAppearance } from '@/routes/appearance';
 import { edit as editNavigation } from '@/routes/navigation';
 import { edit } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import { PageTransition } from '@/components/gc/page-transition';
 import { tr } from '@/lib/i18n';
+import { motionOr, SNAP } from '@/lib/motion';
 
 const items = [
     {
@@ -17,10 +26,22 @@ const items = [
         icon: UserRound,
     },
     {
+        title: tr('Вигляд'),
+        description: tr('Палітра, тиша і сповіщення'),
+        href: editAppearance(),
+        icon: Palette,
+    },
+    {
         title: tr('Безпека'),
         description: tr('Пароль, 2FA, ключі доступу'),
         href: editSecurity(),
         icon: ShieldCheck,
+    },
+    {
+        title: tr('Акаунт'),
+        description: tr('Пристрої, входи, свої дані'),
+        href: '/settings/account',
+        icon: MonitorSmartphone,
     },
     {
         title: tr('Панель'),
@@ -32,6 +53,7 @@ const items = [
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
+    const reduce = useReducedMotion();
 
     return (
         <div className="mx-auto max-w-[980px]">
@@ -47,7 +69,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
             <div className="flex flex-col gap-5 md:flex-row">
                 <aside className="md:w-[250px] md:shrink-0">
                     <nav
-                        className="glass flex gap-1 rounded-2xl p-2 md:sticky md:top-[76px] md:flex-col"
+                        className="glass scrollbar-none flex gap-1 overflow-x-auto rounded-2xl p-2 md:sticky md:top-[76px] md:flex-col md:overflow-visible"
                         aria-label={tr('Налаштування')}
                     >
                         {items.map(
@@ -58,22 +80,38 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                     <Link
                                         key={toUrl(href)}
                                         href={href}
+                                        aria-current={
+                                            active ? 'page' : undefined
+                                        }
                                         className={cn(
-                                            'flex flex-1 items-center gap-3 rounded-xl px-3 py-2.5 transition',
+                                            'relative flex flex-1 shrink-0 items-center gap-3 rounded-xl px-2.5 py-2 whitespace-nowrap transition-colors',
                                             active
-                                                ? 'nav-active text-white'
+                                                ? 'text-white'
                                                 : 'text-white/60 hover:bg-white/[0.045] hover:text-white',
                                         )}
                                     >
-                                        <Icon
+                                        {/* Підсвітка активного розділу «перетікає» між пунктами. */}
+                                        {active && (
+                                            <m.span
+                                                layoutId="settings-nav-active"
+                                                transition={motionOr(
+                                                    reduce,
+                                                    SNAP,
+                                                )}
+                                                className="absolute inset-0 rounded-xl bg-white/[0.07] shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)]"
+                                            />
+                                        )}
+                                        <span
                                             className={cn(
-                                                'size-[18px] shrink-0',
+                                                'relative flex size-8 shrink-0 items-center justify-center rounded-[10px] transition-colors',
                                                 active
-                                                    ? 'text-gc-lilac-400'
-                                                    : 'text-white/40',
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'bg-white/[0.05] text-white/50',
                                             )}
-                                        />
-                                        <span className="min-w-0">
+                                        >
+                                            <Icon className="size-4" />
+                                        </span>
+                                        <span className="relative min-w-0">
                                             <span className="block text-sm font-medium">
                                                 {title}
                                             </span>

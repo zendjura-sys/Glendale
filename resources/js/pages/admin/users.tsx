@@ -173,7 +173,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[860px] text-sm">
                         <thead>
-                            <tr className="border-b border-white/[0.06] text-left text-xs tracking-wider text-white/35 uppercase">
+                            <tr className="border-b border-white/[0.06] text-left text-xs text-white/35">
                                 <th className="px-5 py-3 font-medium">
                                     {tr('Користувач')}
                                 </th>

@@ -7,12 +7,20 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
+import 'characters.dart';
+import 'extras.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
 
-final _serverSorts = [('online', tr('За онлайном')), ('families', tr('За сім’ями')), ('name', tr('За назвою')), ('new', tr('Нові'))];
+List<(String, String)> _serverSorts(bool votes) => [
+      ('online', tr('За онлайном')),
+      if (votes) ('votes', tr('За голосами')),
+      ('families', tr('За сім’ями')),
+      ('name', tr('За назвою')),
+      ('new', tr('Нові')),
+    ];
 
 class ServersScreen extends StatefulWidget {
   const ServersScreen({super.key});
@@ -90,7 +98,7 @@ class _ServersScreenState extends State<ServersScreen> {
               const SizedBox(width: 8),
               Expanded(child: MetricTile(label: tr('Серверів'), value: '${stats['servers'] ?? 0}')),
               const SizedBox(width: 8),
-              Expanded(child: MetricTile(label: tr('Сімей'), value: '${stats['families'] ?? 0}')),
+              Expanded(child: MetricTile(label: tr('Сімей'), value: compact(stats['families']))),
             ]),
             const SizedBox(height: 14),
             Segmented(
@@ -121,7 +129,7 @@ class _ServersScreenState extends State<ServersScreen> {
             GcSelect<String>(
               value: sort,
               expand: true,
-              items: _serverSorts,
+              items: _serverSorts(data['votes'] is Map),
               onChanged: (value) {
                 setState(() => sort = value ?? 'online');
                 _load();
@@ -140,7 +148,11 @@ class _ServersScreenState extends State<ServersScreen> {
               ),
             ],
             const SizedBox(height: 12),
-            PrimaryButton(label: tr('Додати сервер'), icon: LucideIcons.plus, onPressed: _suggest),
+            Row(children: [
+              Expanded(child: PrimaryButton(label: tr('Додати сервер'), icon: LucideIcons.plus, onPressed: _suggest)),
+              const SizedBox(width: 8),
+              Expanded(child: GhostButton(label: tr('Порівняти'), icon: LucideIcons.gitCompareArrows, onPressed: () => context.push('/servers/compare'))),
+            ]),
           ],
         ),
         if (mine.isNotEmpty) ...[
@@ -164,6 +176,10 @@ class _ServersScreenState extends State<ServersScreen> {
                 ),
             ]),
           ),
+        ],
+        if (data['votes'] is Map) ...[
+          const SizedBox(height: 12),
+          VoteTops(votes: mapOf(data['votes'])),
         ],
         const SizedBox(height: 12),
         if (servers.isEmpty)
@@ -411,9 +427,26 @@ class ServerScreen extends StatelessWidget {
               RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.canPop() ? context.pop() : context.go('/servers')),
               const SizedBox(width: 8),
               Text(tr('Сервери'), style: body(14, color: muted)),
+              const Spacer(),
+              if (server['id'] != null)
+                SubjectActions(kind: 'server', id: server['id'], saved: data['saved'] == true, following: data['following'] == true, pinned: data['pinned'] == true, size: 36),
             ]),
             const SizedBox(height: 10),
             ServerCard(server: server),
+            if (data['votes'] is Map) ...[
+              const SizedBox(height: 12),
+              VotePanel(slug: slug, votes: mapOf(data['votes'])),
+            ],
+            if (data['characters'] is List) ...[
+              const SizedBox(height: 12),
+              CharactersPanel(
+                characters: maps(data['characters']),
+                title: tr('Персонажі гравців'),
+                createPath: '/characters/create?server=$slug',
+                showPlayer: true,
+                empty: tr('Тут з’являться персонажі гравців цього сервера: біографії, сім’ї й історії.'),
+              ),
+            ],
             if (text(server['description']) != null) ...[
               const SizedBox(height: 12),
               Glass(
@@ -454,6 +487,158 @@ class ServerScreen extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// Топ серверів за голосами: сьогодні або цього місяця.
+class VoteTops extends StatefulWidget {
+  const VoteTops({required this.votes, super.key});
+  final Map<String, dynamic> votes;
+
+  @override
+  State<VoteTops> createState() => _VoteTopsState();
+}
+
+class _VoteTopsState extends State<VoteTops> {
+  late String period = maps(widget.votes['day']).isNotEmpty ? 'day' : 'month';
+
+  @override
+  Widget build(BuildContext context) {
+    final day = maps(widget.votes['day']);
+    final month = maps(widget.votes['month']);
+    if (day.isEmpty && month.isEmpty) return const SizedBox.shrink();
+    final rows = period == 'day' ? day : month;
+    final voted = widget.votes['voted_today'];
+    return Glass(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        CardTitle(tr('Топ за голосами'), icon: LucideIcons.trophy),
+        const SizedBox(height: 4),
+        Text(
+          voted != null ? tr('Ваш голос на сьогодні вже віддано. Новий — завтра.') : tr('Один голос на день: відкрийте сервер і натисніть «Голосувати».'),
+          style: body(12.5, color: muted),
+        ),
+        const SizedBox(height: 10),
+        Segmented(
+          options: [SegmentOption('day', tr('Сьогодні')), SegmentOption('month', tr('Місяць'))],
+          selected: period,
+          onSelect: (value) => setState(() => period = value),
+        ),
+        const SizedBox(height: 6),
+        if (rows.isEmpty)
+          Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text(tr('Сьогодні ще ніхто не голосував.'), style: body(13, color: muted)))
+        else
+          for (var i = 0; i < rows.length; i++)
+            InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () => context.push('/servers/${rows[i]['slug']}'),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 2),
+                child: Row(children: [
+                  SizedBox(width: 22, child: Text('${i + 1}', style: body(13, color: i < 3 ? gold : muted, weight: FontWeight.w700))),
+                  ServerIcon(server: rows[i], size: 36),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(text(rows[i]['name']) ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600)),
+                      Text(text(rows[i]['platform_label']) ?? '', style: body(11.5, color: muted)),
+                    ]),
+                  ),
+                  Pill(label: '${voted == rows[i]['id'] ? '✓ ' : ''}${compact(rows[i]['votes'])}', icon: LucideIcons.vote),
+                ]),
+              ),
+            ),
+      ]),
+    );
+  }
+}
+
+/// Голосування на сторінці сервера; власник бачить голоси за 30 днів.
+class VotePanel extends StatefulWidget {
+  const VotePanel({required this.slug, required this.votes, super.key});
+  final String slug;
+  final Map<String, dynamic> votes;
+
+  @override
+  State<VotePanel> createState() => _VotePanelState();
+}
+
+class _VotePanelState extends State<VotePanel> {
+  late Map<String, dynamic> votes = widget.votes;
+  bool sending = false;
+
+  Future<void> _vote() async {
+    setState(() => sending = true);
+    try {
+      final result = await AppScope.read(context).session.api.post('/api/v1/servers/${widget.slug}/vote');
+      if (!mounted) return;
+      setState(() => votes = mapOf(result['votes']));
+      toast(context, tr('Голос зараховано. Наступний — завтра.'));
+    } catch (e) {
+      if (mounted) toast(context, e);
+    } finally {
+      if (mounted) setState(() => sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final votedHere = votes['voted_here'] == true;
+    final voted = votes['voted_today'] != null;
+    final daily = maps(votes['daily']);
+    final peak = daily.fold<int>(1, (max, day) => (day['votes'] as num? ?? 0) > max ? (day['votes'] as num).toInt() : max);
+    return Glass(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        CardTitle(tr('Голосування'), icon: LucideIcons.vote),
+        const SizedBox(height: 4),
+        Text(
+          votes['rank'] != null ? tr('{rank} місце в топі місяця', {'rank': votes['rank']}) : tr('Голосуйте щодня — сервер підніметься в топі.'),
+          style: body(13, color: muted),
+        ),
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(child: MetricTile(label: tr('Сьогодні'), value: compact(votes['today']))),
+          const SizedBox(width: 8),
+          Expanded(child: MetricTile(label: tr('За місяць'), value: compact(votes['month']))),
+          const SizedBox(width: 8),
+          Expanded(child: MetricTile(label: tr('Усього'), value: compact(votes['total']))),
+        ]),
+        const SizedBox(height: 12),
+        if (voted)
+          GhostButton(
+            label: votedHere ? tr('Ви вже голосували сьогодні') : tr('Голос віддано іншому серверу'),
+            icon: votedHere ? LucideIcons.check : LucideIcons.vote,
+            onPressed: null,
+          )
+        else
+          PrimaryButton(label: tr('Голосувати'), icon: LucideIcons.vote, busy: sending, onPressed: sending ? null : _vote),
+        if (daily.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          Text(tr('Голоси за 30 днів — бачать власник і модератори'), style: body(12, color: muted)),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 72,
+            child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              for (final day in daily)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 1),
+                    child: FractionallySizedBox(
+                      heightFactor: ((day['votes'] as num? ?? 0) / peak).clamp(0.05, 1.0).toDouble(),
+                      alignment: Alignment.bottomCenter,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: indigo.withValues(alpha: (day['votes'] as num? ?? 0) == 0 ? 0.25 : 0.8),
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ]),
+          ),
+        ],
+      ]),
     );
   }
 }

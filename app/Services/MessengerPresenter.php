@@ -8,6 +8,7 @@ use App\Models\Family;
 use App\Models\FamilyMember;
 use App\Models\Message;
 use App\Models\MessageAttachment;
+use App\Models\MessageFavorite;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -31,9 +32,11 @@ class MessengerPresenter
     /**
      * @return array<string, mixed>
      */
-    public function message(Message $message): array
+    public function message(Message $message, bool $starred = false): array
     {
         $reply = $message->replyTo;
+        $meta = $message->meta ?? [];
+        $forward = is_array($meta['forward'] ?? null) ? $meta['forward'] : null;
 
         return [
             'id' => $message->id,
@@ -69,7 +72,22 @@ class MessengerPresenter
             ] : null,
             'contact' => $message->type === Message::TYPE_CONTACT ? $this->contact($message)?->toCard() : null,
             'edited_at' => $message->edited_at?->toIso8601String(),
+            'publish_at' => $message->publish_at?->isFuture() ? $message->publish_at->toIso8601String() : null,
+            'expires_at' => $message->expires_at?->isFuture() ? $message->expires_at->toIso8601String() : null,
             'created_at' => $message->created_at->toIso8601String(),
+            'starred' => $starred,
+            'card' => is_array($meta['card'] ?? null) && is_string($meta['card']['title'] ?? null) && is_string($meta['card']['href'] ?? null) ? [
+                'kind' => (string) ($meta['card']['kind'] ?? ''),
+                'id' => (int) ($meta['card']['id'] ?? 0),
+                'title' => $meta['card']['title'],
+                'hint' => (string) ($meta['card']['hint'] ?? ''),
+                'href' => $meta['card']['href'],
+                'image' => is_string($meta['card']['image'] ?? null) ? $meta['card']['image'] : null,
+            ] : null,
+            'forward' => is_array($forward) && is_string($forward['name'] ?? null) ? [
+                'name' => $forward['name'],
+                'username' => is_string($forward['username'] ?? null) ? $forward['username'] : null,
+            ] : null,
         ];
     }
 
@@ -136,6 +154,12 @@ class MessengerPresenter
             return $message->body;
         }
 
+        $stored = $message->meta ?? [];
+        $card = $stored['card'] ?? null;
+        if (is_array($card) && is_string($card['title'] ?? null)) {
+            return $card['title'];
+        }
+
         $attachments = $message->attachments;
         $file = $attachments->firstWhere('type', MessageAttachment::TYPE_FILE);
 
@@ -184,20 +208,34 @@ class MessengerPresenter
      *
      * @return array{messages: list<array<string, mixed>>, has_more: bool}
      */
-    public function history(Conversation $conversation, ?int $beforeId = null): array
+    public function history(Conversation $conversation, ?int $beforeId = null, ?User $viewer = null): array
     {
         $messages = $conversation->messages()
             ->with(['user', 'attachments', 'replyTo.user', 'replyTo.attachments'])
+            ->where(function ($query) use ($viewer) {
+                $query->where(fn ($visible) => $visible
+                    ->where(fn ($q) => $q->whereNull('publish_at')->orWhere('publish_at', '<=', now()))
+                    ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now())));
+                if ($viewer) {
+                    $query->orWhere(fn ($own) => $own->where('user_id', $viewer->id)->where('publish_at', '>', now()));
+                }
+            })
             ->when($beforeId, fn ($q, int $id) => $q->where('id', '<', $id))
             ->orderByDesc('id')
             ->limit(self::PAGE + 1)
             ->get();
 
         $hasMore = $messages->count() > self::PAGE;
+        $page = $messages->take(self::PAGE);
         $this->preloadContacts($messages->concat($messages->pluck('replyTo')->filter()));
+        $starred = $viewer === null ? [] : array_map('intval', MessageFavorite::query()
+            ->where('user_id', $viewer->id)
+            ->whereIn('message_id', $page->pluck('id'))
+            ->pluck('message_id')
+            ->all());
 
         return [
-            'messages' => array_values($messages->take(self::PAGE)->reverse()->map(fn (Message $m) => $this->message($m))->all()),
+            'messages' => array_values($page->reverse()->map(fn (Message $m) => $this->message($m, in_array($m->id, $starred, true)))->all()),
             'has_more' => $hasMore,
         ];
     }
@@ -215,11 +253,13 @@ class MessengerPresenter
                     ->where('me.user_id', $viewer->id)
                     ->whereNull('me.left_at');
             })
-            ->select('conversations.*', 'me.is_muted as my_muted', 'me.role as my_role')
+            ->select('conversations.*', 'me.is_muted as my_muted', 'me.role as my_role', 'me.pinned_at as my_pinned_at', 'me.folder as my_folder', 'me.marked_unread as my_marked_unread')
             ->selectSub(fn ($q) => $messenger->unreadMessages($q->selectRaw('count(*)'), $viewer->id, 'me'), 'unread_count')
             ->withCount('activeParticipants as members_count')
             ->with(['lastMessage' => fn ($q) => $q->with(['user', 'attachments'])])
             ->where(fn ($q) => $q->whereNotNull('conversations.last_message_id')->when($includeId, fn ($q, int $id) => $q->orWhere('conversations.id', $id)))
+            ->orderByRaw('case when me.pinned_at is null then 1 else 0 end')
+            ->orderByDesc('me.pinned_at')
             ->orderByDesc('conversations.last_message_at')
             ->orderByDesc('conversations.id')
             ->limit(100)
@@ -245,8 +285,12 @@ class MessengerPresenter
             'avatar_url' => $conversation->isGroup() ? $conversation->avatar_url : $peer?->avatar_url,
             'peer' => $peer?->toCard(),
             'members_count' => (int) ($conversation->members_count ?? 0),
-            'unread' => (int) ($conversation->unread_count ?? 0),
+            'unread' => max((int) ($conversation->unread_count ?? 0), $conversation->getAttribute('my_marked_unread') ? 1 : 0),
             'is_muted' => (bool) ($conversation->my_muted ?? false),
+            'pinned' => $conversation->getAttribute('my_pinned_at') !== null,
+            'folder' => is_string($conversation->getAttribute('my_folder')) && $conversation->getAttribute('my_folder') !== ''
+                ? $conversation->getAttribute('my_folder')
+                : null,
             'last_message' => $last ? [
                 'id' => $last->id,
                 'type' => $last->type,
@@ -280,8 +324,12 @@ class MessengerPresenter
             'peer' => $peer ? [...$peer->toCard(), 'last_seen_at' => $peer->last_seen_at?->toIso8601String(), 'gender' => $peer->gender] : null,
             'can_write' => $conversation->isGroup() || ($peer !== null && $messenger->canMessage($viewer, $peer)),
             'is_muted' => $me->is_muted,
+            'slow_seconds' => (int) $conversation->slow_seconds,
+            'share_receipts' => $me->share_receipts,
+            'pinned' => $me->pinned_at !== null,
+            'folder' => $me->folder,
             'my_role' => $me->role,
-            'read_up_to' => (int) $others->max('last_read_message_id'),
+            'read_up_to' => (int) $others->filter(fn (ConversationParticipant $participant) => $participant->share_receipts)->max('last_read_message_id'),
             'members' => $conversation->isGroup()
                 ? $participants
                     ->sortBy(fn (ConversationParticipant $p) => [$p->role === ConversationParticipant::ROLE_OWNER ? 0 : ($p->role === ConversationParticipant::ROLE_ADMIN ? 1 : 2), $p->user->name])

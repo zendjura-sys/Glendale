@@ -40,6 +40,8 @@ export function ClanLogo({
         >
             {clan.logo_url ? (
                 <img
+                    loading="lazy"
+                    decoding="async"
                     src={clan.logo_url}
                     alt=""
                     className="size-full object-cover"

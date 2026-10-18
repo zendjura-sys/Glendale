@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { CommunityAvatar } from '@/components/gc/community-avatar';
 import { Comments } from '@/components/gc/comments';
 import { LikeButton } from '@/components/gc/like-button';
@@ -58,11 +59,16 @@ export function PhotoViewer({
     } | null>(null);
     const [editing, setEditing] = useState(false);
     const [caption, setCaption] = useState('');
+    const [alt, setAlt] = useState('');
+    const [sensitive, setSensitive] = useState(false);
+    const [revealed, setRevealed] = useState(false);
+    const [tagName, setTagName] = useState('');
 
     useEffect(() => {
         if (photoId === null) return;
         let cancelled = false;
         setEditing(false);
+        setRevealed(false);
 
         api<PhotoShowResponse>('GET', `/photos/${photoId}`)
             .then((response) => {
@@ -122,11 +128,15 @@ export function PhotoViewer({
 
     const saveCaption = async () => {
         if (!photo) return;
-        const response = await api<{ caption: string | null }>(
-            'PATCH',
-            `/photos/${photo.id}`,
-            { caption },
-        );
+        const response = await api<{
+            caption: string | null;
+            alt: string | null;
+            is_sensitive: boolean;
+        }>('PATCH', `/photos/${photo.id}`, {
+            caption,
+            alt,
+            is_sensitive: sensitive,
+        });
         patch(response);
         setEditing(false);
     };
@@ -182,12 +192,29 @@ export function PhotoViewer({
                         }}
                     >
                         {imageUrl ? (
-                            <img
-                                key={imageUrl}
-                                src={imageUrl}
-                                alt={photo?.caption ?? ''}
-                                className="max-h-[calc(55vh-1.5rem)] max-w-full animate-in rounded-xl object-contain shadow-[0_30px_120px_-30px_rgb(124_92_255/0.6)] duration-300 fade-in-0 zoom-in-95 lg:max-h-[calc(100vh-3rem)]"
-                            />
+                            <>
+                                <img
+                                    decoding="async"
+                                    key={imageUrl}
+                                    src={imageUrl}
+                                    alt={photo?.alt ?? ''}
+                                    className={cn(
+                                        'max-h-[calc(55vh-1.5rem)] max-w-full animate-in rounded-xl object-contain shadow-[0_30px_120px_-30px_rgb(124_92_255/0.6)] duration-300 fade-in-0 zoom-in-95 lg:max-h-[calc(100vh-3rem)]',
+                                        photo?.is_sensitive &&
+                                            !revealed &&
+                                            'scale-105 blur-3xl',
+                                    )}
+                                />
+                                {photo?.is_sensitive && !revealed && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setRevealed(true)}
+                                        className="absolute rounded-full bg-black/60 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/15"
+                                    >
+                                        {tr('Показати')}
+                                    </button>
+                                )}
+                            </>
                         ) : (
                             <span className="skeleton size-72 rounded-2xl" />
                         )}
@@ -318,6 +345,10 @@ export function PhotoViewer({
                                                     setCaption(
                                                         photo.caption ?? '',
                                                     );
+                                                    setAlt(photo.alt ?? '');
+                                                    setSensitive(
+                                                        photo.is_sensitive,
+                                                    );
                                                     setEditing(true);
                                                 }}
                                             >
@@ -377,6 +408,30 @@ export function PhotoViewer({
                                                 )}
                                                 className="input-glass w-full resize-none rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none"
                                             />
+                                            <input
+                                                value={alt}
+                                                onChange={(event) =>
+                                                    setAlt(event.target.value)
+                                                }
+                                                maxLength={200}
+                                                placeholder={tr(
+                                                    'Підпис для тих, хто не бачить зображення',
+                                                )}
+                                                className="input-glass mt-2 w-full rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none"
+                                            />
+                                            <label className="mt-2 flex items-center gap-2 text-sm text-white/70">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={sensitive}
+                                                    onChange={(event) =>
+                                                        setSensitive(
+                                                            event.target
+                                                                .checked,
+                                                        )
+                                                    }
+                                                />
+                                                {tr('Чутливе фото')}
+                                            </label>
                                             <div className="mt-2 flex justify-end gap-2">
                                                 <button
                                                     type="button"
@@ -402,6 +457,94 @@ export function PhotoViewer({
                                                 {photo.caption}
                                             </p>
                                         )
+                                    )}
+
+                                    {(photo.tags.length > 0 ||
+                                        photo.can.edit) && (
+                                        <div className="mb-4">
+                                            <p className="mb-2 text-xs text-white/45">
+                                                {tr('На фото')}
+                                            </p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {photo.tags.map((person) => (
+                                                    <span
+                                                        key={person.username}
+                                                        className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2.5 py-1 text-sm text-white"
+                                                    >
+                                                        <Link
+                                                            href={`/${person.username}`}
+                                                        >
+                                                            {person.name}
+                                                        </Link>
+                                                        {photo.can.edit && (
+                                                            <button
+                                                                type="button"
+                                                                className="text-white/40 hover:text-white"
+                                                                onClick={async () => {
+                                                                    await api(
+                                                                        'DELETE',
+                                                                        `/photos/${photo.id}/tags/${person.username}`,
+                                                                    );
+                                                                    patch({
+                                                                        tags: photo.tags.filter(
+                                                                            (
+                                                                                item,
+                                                                            ) =>
+                                                                                item.username !==
+                                                                                person.username,
+                                                                        ),
+                                                                    });
+                                                                }}
+                                                            >
+                                                                ×
+                                                            </button>
+                                                        )}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                            {photo.can.edit && (
+                                                <form
+                                                    className="mt-2 flex gap-2"
+                                                    onSubmit={async (event) => {
+                                                        event.preventDefault();
+                                                        if (!tagName.trim())
+                                                            return;
+                                                        const response =
+                                                            await api<{
+                                                                user: PhotoDetails['tags'][number];
+                                                            }>(
+                                                                'POST',
+                                                                `/photos/${photo.id}/tags`,
+                                                                {
+                                                                    username:
+                                                                        tagName.trim(),
+                                                                },
+                                                            );
+                                                        patch({
+                                                            tags: [
+                                                                ...photo.tags,
+                                                                response.user,
+                                                            ],
+                                                        });
+                                                        setTagName('');
+                                                    }}
+                                                >
+                                                    <input
+                                                        value={tagName}
+                                                        onChange={(event) =>
+                                                            setTagName(
+                                                                event.target
+                                                                    .value,
+                                                            )
+                                                        }
+                                                        placeholder={tr(
+                                                            'Позначити друга',
+                                                        )}
+                                                        className="input-glass h-9 min-w-0 flex-1 rounded-xl px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
+                                                    />
+                                                </form>
+                                            )}
+                                        </div>
                                     )}
 
                                     <div className="mb-4 flex items-center gap-2">

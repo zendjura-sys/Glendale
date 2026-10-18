@@ -9,14 +9,29 @@ import {
     Send,
     Smartphone,
     Sparkles,
+    Vote,
 } from 'lucide-react';
 import { useState } from 'react';
+import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import type { GtaServerCard } from '@/types';
 import { OnlineMeter, ServerIcon } from './server-icon';
+import { shortNumber } from '@/lib/format';
 import { LOCALE, tr } from '@/lib/i18n';
 
-export function ConnectButton({ value }: { value: string }) {
+/** Перехід для аналітики власника (без очікування відповіді). */
+export function trackServerClick(slug: string | undefined, kind: string) {
+    if (!slug) return;
+    void api('POST', `/servers/${slug}/click`, { kind }).catch(() => undefined);
+}
+
+export function ConnectButton({
+    value,
+    slug,
+}: {
+    value: string;
+    slug?: string;
+}) {
     const [copied, setCopied] = useState(false);
 
     return (
@@ -24,6 +39,7 @@ export function ConnectButton({ value }: { value: string }) {
             type="button"
             onClick={(event) => {
                 event.preventDefault();
+                trackServerClick(slug, 'connect');
                 void navigator.clipboard?.writeText(value).then(() => {
                     setCopied(true);
                     setTimeout(() => setCopied(false), 1500);
@@ -46,24 +62,44 @@ export function ServerLinks({
     server,
     className,
 }: {
-    server: Pick<GtaServerCard, 'website' | 'discord' | 'telegram'>;
+    server: Pick<GtaServerCard, 'website' | 'discord' | 'telegram'> & {
+        slug?: string;
+    };
     className?: string;
 }) {
     const links = [
-        { href: server.website, icon: Globe, label: tr('Сайт') },
-        { href: server.discord, icon: MessageCircle, label: 'Discord' },
-        { href: server.telegram, icon: Send, label: 'Telegram' },
+        {
+            href: server.website,
+            icon: Globe,
+            label: tr('Сайт'),
+            kind: 'website',
+        },
+        {
+            href: server.discord,
+            icon: MessageCircle,
+            label: 'Discord',
+            kind: 'discord',
+        },
+        {
+            href: server.telegram,
+            icon: Send,
+            label: 'Telegram',
+            kind: 'telegram',
+        },
     ].filter((link) => link.href);
 
     return (
         <div className={cn('flex gap-1.5', className)}>
-            {links.map(({ href, icon: Icon, label }) => (
+            {links.map(({ href, icon: Icon, label, kind }) => (
                 <a
                     key={label}
                     href={href!}
                     target="_blank"
                     rel="noreferrer noopener"
-                    onClick={(event) => event.stopPropagation()}
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        trackServerClick(server.slug, kind);
+                    }}
                     title={label}
                     className="flex size-8 items-center justify-center rounded-lg bg-white/[0.04] text-white/50 ring-1 ring-white/[0.06] transition hover:bg-white/10 hover:text-white"
                 >
@@ -90,6 +126,8 @@ export function ServerCard({
                 'glass group relative flex animate-rise flex-col gap-4 overflow-hidden rounded-3xl p-5 transition hover:-translate-y-0.5 hover:border-white/15',
                 server.is_featured &&
                     'shadow-[0_20px_60px_-30px_rgb(124_92_255/0.9)] ring-1 ring-gc-lilac-500/30',
+                server.promo?.includes('highlight') &&
+                    'border-indigo-400/50 ring-1 ring-indigo-400/40',
             )}
             style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}
         >
@@ -108,6 +146,15 @@ export function ServerCard({
                         {server.is_featured && (
                             <Sparkles className="size-4 shrink-0 text-amber-300" />
                         )}
+                        {(server.promo?.includes('top') ||
+                            server.promo?.includes('highlight')) && (
+                            <span
+                                title={tr('Платне просування')}
+                                className="ml-auto shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold text-white/55"
+                            >
+                                {tr('Реклама')}
+                            </span>
+                        )}
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium">
                         <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2 py-0.5 text-white/65">
@@ -122,6 +169,15 @@ export function ServerCard({
                                 ? '🇺🇦 UA'
                                 : server.language.toUpperCase()}
                         </span>
+                        {(server.votes_month ?? 0) > 0 && (
+                            <span
+                                title={tr('Голосів за місяць')}
+                                className="inline-flex items-center gap-1 rounded-full bg-emerald-400/10 px-2 py-0.5 text-emerald-200"
+                            >
+                                <Vote className="size-3" />
+                                {shortNumber(server.votes_month ?? 0)}
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>
@@ -156,7 +212,10 @@ export function ServerCard({
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2">
                         {server.connect ? (
-                            <ConnectButton value={server.connect} />
+                            <ConnectButton
+                                value={server.connect}
+                                slug={server.slug}
+                            />
                         ) : (
                             <span className="inline-flex items-center gap-1 text-xs text-white/40">
                                 <Crown className="size-3.5" />

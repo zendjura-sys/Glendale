@@ -1,0 +1,72 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\ListenPartyMember;
+use App\Models\User;
+use App\Models\WatchPartyMember;
+
+/**
+ * Люди, з якими цей профіль дивився кіно чи слухав музику разом («together» — назва фільму чи треку).
+ *
+ * Власник профілю може приховати окремих людей (pref together_hidden) або весь блок (pref together_off).
+ */
+class PlayedTogether
+{
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function cards(User $user, int $limit = 8, bool $owner = false): array
+    {
+        if (! $owner && $user->pref('together_off')) {
+            return [];
+        }
+        $hidden = array_map('intval', (array) $user->pref('together_hidden', []));
+        $rows = array_fill_keys($hidden, null);
+
+        $watchIds = WatchPartyMember::query()->where('user_id', $user->id)->pluck('watch_party_id');
+        if ($watchIds->isNotEmpty()) {
+            $mates = WatchPartyMember::query()
+                ->whereIn('watch_party_id', $watchIds)
+                ->where('user_id', '!=', $user->id)
+                ->with(['user', 'party.movie'])
+                ->orderByDesc('last_seen_at')
+                ->limit(40)
+                ->get();
+            foreach ($mates as $mate) {
+                if ($mate->user === null || array_key_exists($mate->user_id, $rows)) {
+                    continue;
+                }
+                $rows[$mate->user_id] = [
+                    ...$mate->user->toCard(),
+                    'kind' => 'cinema',
+                    'together' => $mate->party->movie->title ?? 'Кіно',
+                ];
+            }
+        }
+
+        $listenIds = ListenPartyMember::query()->where('user_id', $user->id)->pluck('listen_party_id');
+        if ($listenIds->isNotEmpty()) {
+            $mates = ListenPartyMember::query()
+                ->whereIn('listen_party_id', $listenIds)
+                ->where('user_id', '!=', $user->id)
+                ->with(['user', 'party.track'])
+                ->orderByDesc('last_seen_at')
+                ->limit(40)
+                ->get();
+            foreach ($mates as $mate) {
+                if ($mate->user === null || array_key_exists($mate->user_id, $rows)) {
+                    continue;
+                }
+                $title = $mate->party?->track?->title;
+                $rows[$mate->user_id] = [
+                    ...$mate->user->toCard(),
+                    'kind' => 'music',
+                    'together' => $title ?? 'Музика',
+                ];
+            }
+        }
+
+        return array_slice(array_values(array_filter($rows)), 0, $limit);
+    }
+}

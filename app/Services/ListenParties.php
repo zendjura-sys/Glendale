@@ -9,6 +9,7 @@ use App\Models\ListenParty;
 use App\Models\ListenPartyMember;
 use App\Models\Track;
 use App\Models\User;
+use App\Support\Plugins\Plugins;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -106,6 +107,12 @@ class ListenParties
     {
         $finished = $party->track === null || $party->currentPosition() >= max(0, $party->track->duration - 2);
         abort_unless($party->canControl($user) || $finished, 403, 'Перемикає ведучий.');
+        if ($party->repeat && $finished && $party->track_id !== null && app(Plugins::class)->on('listen_repeat')) {
+            $party->update(['playing' => true, 'position' => 0, 'state_ms' => $this->now()]);
+            $this->broadcast($party, ['state' => $this->playback($party), 'by' => $user->id]);
+
+            return;
+        }
         $queue = $party->queue ?? [];
         $nextItem = array_shift($queue);
         $party->update([
@@ -117,6 +124,14 @@ class ListenParties
         ]);
         $party->unsetRelation('track');
         $this->broadcast($party, ['state' => $this->playback($party), 'queue' => $this->queue($party), 'by' => $user->id]);
+    }
+
+    public function setRepeat(ListenParty $party, User $user, bool $repeat): void
+    {
+        app(Plugins::class)->ensure('listen_repeat');
+        abort_unless($user->id === $party->host_id, 403, 'Лише ведучий вмикає повтор.');
+        $party->update(['repeat' => $repeat]);
+        $this->broadcast($party, ['state' => $this->playback($party)]);
     }
 
     public function setSharedControl(ListenParty $party, User $user, bool $shared): void
@@ -199,6 +214,7 @@ class ListenParties
             'state_ms' => $party->state_ms,
             'server_ms' => $this->now(),
             'shared_control' => $party->shared_control,
+            'repeat' => $party->repeat && app(Plugins::class)->on('listen_repeat'),
         ];
     }
 

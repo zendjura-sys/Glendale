@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\RelayToBots;
 use App\Models\Clan;
 use App\Models\ClanEvent;
 use App\Models\ClanMember;
@@ -22,7 +23,10 @@ use App\Support\Settings\SiteSettings;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Календар подій: сім’ї, клани, сервери GTA й ігри в одній стрічці, «піду / не піду»,
@@ -33,6 +37,9 @@ class EventCalendar
 {
     /** За скільки хвилин до початку нагадуємо. */
     public const REMIND_MINUTES = 30;
+
+    /** За скільки хвилин до початку можна попросити нагадування. */
+    public const REMIND_LEADS = [10, 30, 60, 1440];
 
     /** Скільки днів уперед показуємо. */
     public const DAYS = 60;
@@ -64,12 +71,17 @@ class EventCalendar
                         return;
                     }
                     $mine = $e->attendance->firstWhere('member_id', $member->id);
-                    $items->push($this->item('family', $e->id, $e->title, FamilyEvent::TYPES[$e->type] ?? $e->type, $e->description, $e->starts_at, [
+                    $items->push([...$this->item('family', $e->id, $e->title, FamilyEvent::TYPES[$e->type] ?? $e->type, $e->description, $e->starts_at, [
                         'name' => "[{$family->tag}] {$family->name}",
                         'url' => '/f/'.$family->slug.'/events',
-                    ], $mine?->status === FamilyEventAttendance::STATUS_DECLINED ? 'declined' : ($mine ? 'going' : null),
-                        $e->attendance->where('status', '!=', FamilyEventAttendance::STATUS_DECLINED)->count(),
-                        '/f/'.$family->slug.'/events/'.$e->id.'/rsvp'));
+                    ], match ($mine?->status) {
+                        null => null,
+                        FamilyEventAttendance::STATUS_DECLINED => 'declined',
+                        FamilyEventAttendance::STATUS_WAITLIST => 'waitlist',
+                        default => 'going',
+                    },
+                        $e->attendance->whereIn('status', [FamilyEventAttendance::STATUS_GOING, FamilyEventAttendance::STATUS_ATTENDED])->count(),
+                        '/f/'.$family->slug.'/events/'.$e->id.'/rsvp'), 'image' => $this->cover($e->cover_path), 'capacity' => $e->capacity]);
                 });
         }
 
@@ -86,10 +98,10 @@ class EventCalendar
                     if (! $clan instanceof Clan) {
                         return;
                     }
-                    $items->push($this->item('clan', $e->id, $e->title, Clan::TYPES[$clan->type] ?? 'Клан', $e->description, $e->starts_at, [
+                    $items->push([...$this->item('clan', $e->id, $e->title, Clan::TYPES[$clan->type] ?? 'Клан', $e->description, $e->starts_at, [
                         'name' => $clan->display_name,
                         'url' => '/clans/'.$clan->slug,
-                    ], $e->going->isNotEmpty() ? 'going' : null, (int) $e->getAttribute('going_count'), '/clans/'.$clan->slug.'/events/'.$e->id.'/rsvp'));
+                    ], $e->going->isNotEmpty() ? 'going' : null, (int) $e->getAttribute('going_count'), '/clans/'.$clan->slug.'/events/'.$e->id.'/rsvp'), 'image' => $this->cover($e->cover_path)]);
                 });
         }
 
@@ -117,6 +129,22 @@ class EventCalendar
         }
 
         return array_values($items->sortBy('starts_at')->values()->all());
+    }
+
+    /**
+     * Найближчі виходи ігор і сезони (оновлення). «Нагадати» — це запис «піду».
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function releases(User $user): array
+    {
+        return array_values($this->gameEvents($user)
+            ->whereIn('type', ['release', 'update'])
+            ->whereBetween('starts_at', [now()->subDay(), now()->addDays(120)])
+            ->limit(80)
+            ->get()
+            ->map(fn (GameEvent $event) => [...$this->gameItem($event, $user), 'remind' => true])
+            ->all());
     }
 
     /**
@@ -169,7 +197,10 @@ class EventCalendar
 
     public function rsvpGame(GameEvent $event, User $user, bool $going): void
     {
-        abort_if(($event->ends_at ?? $event->starts_at)->lt(now()->subHours(3)), 422, 'Подія вже минула.');
+        $ended = $event->all_day
+            ? $event->starts_at->timezone('Europe/Kyiv')->toDateString() < now('Europe/Kyiv')->toDateString()
+            : ($event->ends_at ?? $event->starts_at)->lt(now()->subHours(3));
+        abort_if($ended, 422, 'Подія вже минула.');
         GameEventRsvp::query()->updateOrCreate(
             ['game_event_id' => $event->id, 'user_id' => $user->id],
             ['status' => $going ? GameEventRsvp::GOING : GameEventRsvp::DECLINED],
@@ -203,7 +234,7 @@ class EventCalendar
     }
 
     /**
-     * @param  array{title: string, type: string, description: string|null, starts_at: CarbonInterface, family_id: int|null}  $data
+     * @param  array{title: string, type: string, description: string|null, starts_at: CarbonInterface, family_id: int|null, repeat?: string|null}  $data
      */
     public function createServerEvent(GtaServer $server, User $user, array $data): ServerEvent
     {
@@ -219,6 +250,7 @@ class EventCalendar
             'description' => $data['description'],
             'starts_at' => $data['starts_at'],
             'is_official' => $data['family_id'] === null,
+            'repeat' => ($data['repeat'] ?? null) === 'weekly' ? 'weekly' : null,
         ]);
         ServerEventRsvp::query()->create(['server_event_id' => $event->id, 'user_id' => $user->id, 'status' => ServerEventRsvp::GOING]);
 
@@ -241,53 +273,66 @@ class EventCalendar
     }
 
     /**
-     * Нагадування за пів години: учасникам, які не відмовилися (сім’ї), записалися (клани, сервери).
+     * Нагадування перед подіями сімей, кланів, серверів та ігор. Кожен сам обирає запас
+     * (Налаштування подій: 10 хв, пів години, година чи доба), журнал не дає надіслати двічі.
      *
      * @return int скільки подій нагадали
      */
     public function remind(): int
     {
-        $window = [now(), now()->addMinutes(self::REMIND_MINUTES)];
+        $horizon = [now(), now()->addMinutes(max(self::REMIND_LEADS))];
         $count = 0;
 
-        FamilyEvent::query()->with('attendance')->where('status', FamilyEvent::STATUS_PLANNED)->whereNull('reminded_at')
-            ->whereBetween('starts_at', $window)->get()
+        FamilyEvent::query()->with('attendance')->where('status', FamilyEvent::STATUS_PLANNED)
+            ->whereBetween('starts_at', $horizon)->get()
             ->each(function (FamilyEvent $e) use (&$count) {
                 $family = Family::query()->find($e->family_id);
-                $e->update(['reminded_at' => now()]);
                 if (! $family instanceof Family) {
                     return;
                 }
                 $declined = $e->attendance->where('status', FamilyEventAttendance::STATUS_DECLINED)->pluck('member_id')->all();
-                $users = User::query()->whereIn('id', $family->activeMembers()->whereNotIn('id', $declined ?: [0])->select('user_id'))->get();
-                $this->send($users, "⏰ За {$this->minutesLeft($e->starts_at)} хв: «{$e->title}»", '/f/'.$family->slug.'/events', $family->id);
-                $count++;
+                $count += $this->remindEach($e, 'family',
+                    fn () => User::query()->whereIn('id', $family->activeMembers()->whereNotIn('id', $declined ?: [0])->select('user_id'))->get(),
+                    fn (string $left) => "⏰ {$left}: «{$e->title}»", '/f/'.$family->slug.'/events', $family->id);
+                $this->remindBots('family', $family->id, $e->id, $e->starts_at);
             });
 
-        ClanEvent::query()->whereNull('reminded_at')->whereBetween('starts_at', $window)->get()
+        ClanEvent::query()->whereBetween('starts_at', $horizon)->get()
             ->each(function (ClanEvent $e) use (&$count) {
-                $e->update(['reminded_at' => now()]);
                 $clan = Clan::query()->find($e->clan_id);
                 if ($clan instanceof Clan) {
-                    $this->send($e->going()->get(), "⏰ {$clan->display_name}: за {$this->minutesLeft($e->starts_at)} хв «{$e->title}»", '/clans/'.$clan->slug);
-                    $count++;
+                    $count += $this->remindEach($e, 'clan', fn () => $e->going()->get(),
+                        fn (string $left) => "⏰ {$clan->display_name}: {$left} «{$e->title}»", '/clans/'.$clan->slug);
+                    $this->remindBots('clan', $clan->id, $e->id, $e->starts_at);
                 }
             });
 
-        ServerEvent::query()->with('server')->whereNull('reminded_at')->whereBetween('starts_at', $window)->get()
+        ServerEvent::query()->with('server')->whereBetween('starts_at', $horizon)->get()
             ->each(function (ServerEvent $e) use (&$count) {
-                $e->update(['reminded_at' => now()]);
-                $users = User::query()->whereIn('id', $e->rsvps()->where('status', ServerEventRsvp::GOING)->select('user_id'))->get();
-                $this->send($users, "⏰ {$e->server?->name}: за {$this->minutesLeft($e->starts_at)} хв «{$e->title}»", '/events');
-                $count++;
+                $count += $this->remindEach($e, 'server',
+                    fn () => User::query()->whereIn('id', $e->rsvps()->where('status', ServerEventRsvp::GOING)->select('user_id'))->get(),
+                    fn (string $left) => "⏰ {$e->server?->name}: {$left} «{$e->title}»", '/events');
             });
 
-        // Події ігор «на весь день» (виходи) не нагадуємо — лише шоукейси, трансляції, турніри.
-        GameEvent::query()->whereNull('reminded_at')->where('all_day', false)->whereBetween('starts_at', $window)->get()
+        // Шоукейси, трансляції й турніри — тим, хто записався.
+        GameEvent::query()->where('all_day', false)->whereBetween('starts_at', $horizon)->get()
             ->each(function (GameEvent $e) use (&$count) {
+                $count += $this->remindEach($e, 'game',
+                    fn () => User::query()->whereIn('id', $e->rsvps()->where('status', GameEventRsvp::GOING)->select('user_id'))->get(),
+                    fn (string $left) => "⏰ {$left}: «{$e->title}»", '/events?kind=game');
+            });
+
+        // Виходи і сезони — на весь день: нагадуємо в день старту тим, хто натиснув «Нагадати».
+        $today = now('Europe/Kyiv')->toDateString();
+        GameEvent::query()->whereNull('reminded_at')->where('all_day', true)->whereIn('type', ['release', 'update'])
+            ->whereBetween('starts_at', [now()->subHours(36), now()->addHours(36)])->get()
+            ->each(function (GameEvent $e) use (&$count, $today) {
+                if ($e->starts_at->timezone('Europe/Kyiv')->toDateString() !== $today) {
+                    return;
+                }
                 $e->update(['reminded_at' => now()]);
                 $users = User::query()->whereIn('id', $e->rsvps()->where('status', GameEventRsvp::GOING)->select('user_id'))->get();
-                $this->send($users, "⏰ За {$this->minutesLeft($e->starts_at)} хв: «{$e->title}»", '/events?kind=game');
+                $this->send($users, "Сьогодні: «{$e->title}»", '/events/releases');
                 $count++;
             });
 
@@ -421,12 +466,163 @@ class EventCalendar
             // Клани приймають лише перемикач «піду», сім’ї й сервери — «піду / не піду».
             'can_decline' => $kind !== 'clan',
             'rsvp_url' => $rsvpUrl,
+            'ics_url' => '/events/'.$kind.'/'.$id.'.ics',
             'all_day' => false,
             'ends_at' => null,
             'url' => null,
             'image' => null,
             'source' => null,
         ];
+    }
+
+    /**
+     * Подія для файлу календаря (.ics), якщо людина її бачить: сім’ї й клани — лише учасникам.
+     *
+     * @return array{uid: string, title: string, description: string|null, starts_at: CarbonInterface, ends_at: CarbonInterface|null, all_day: bool, url: string}|null
+     */
+    public function calendarEntry(string $kind, int $id, User $user): ?array
+    {
+        $base = rtrim((string) config('app.url'), '/');
+        switch ($kind) {
+            case 'family':
+                $e = FamilyEvent::query()->find($id);
+                $family = $e ? Family::query()->find($e->family_id) : null;
+                if (! $e || ! $family || ! FamilyMember::query()->where('family_id', $family->id)->where('user_id', $user->id)->where('status', FamilyMember::STATUS_ACTIVE)->exists()) {
+                    return null;
+                }
+
+                return ['uid' => "family-{$e->id}", 'title' => "[{$family->tag}] {$e->title}", 'description' => $e->description, 'starts_at' => $e->starts_at, 'ends_at' => null, 'all_day' => false, 'url' => $base.'/f/'.$family->slug.'/events'];
+            case 'clan':
+                $e = ClanEvent::query()->find($id);
+                $clan = $e ? Clan::query()->find($e->clan_id) : null;
+                if (! $e || ! $clan || ! ClanMember::query()->where('clan_id', $clan->id)->where('user_id', $user->id)->where('status', ClanMember::STATUS_ACTIVE)->exists()) {
+                    return null;
+                }
+
+                return ['uid' => "clan-{$e->id}", 'title' => "{$clan->display_name}: {$e->title}", 'description' => $e->description, 'starts_at' => $e->starts_at, 'ends_at' => null, 'all_day' => false, 'url' => $base.'/clans/'.$clan->slug];
+            case 'server':
+                $e = ServerEvent::query()->with('server')->find($id);
+
+                return $e ? ['uid' => "server-{$e->id}", 'title' => ($e->server ? $e->server->name.': ' : '').$e->title, 'description' => $e->description, 'starts_at' => $e->starts_at, 'ends_at' => $e->ends_at, 'all_day' => false, 'url' => $base.'/events?kind=server'] : null;
+            case 'game':
+                $e = GameEvent::query()->find($id);
+
+                return $e ? ['uid' => "game-{$e->id}", 'title' => $e->title, 'description' => $e->description, 'starts_at' => $e->starts_at, 'ends_at' => $e->ends_at, 'all_day' => $e->all_day, 'url' => $e->url ?? $base.'/events?kind=game'] : null;
+        }
+
+        return null;
+    }
+
+    /**
+     * Текст файлу .ics (RFC 5545): час у UTC, без опису — дві години.
+     *
+     * @param  array{uid: string, title: string, description: string|null, starts_at: CarbonInterface, ends_at: CarbonInterface|null, all_day: bool, url: string}  $entry
+     */
+    public static function ics(array $entry): string
+    {
+        $escape = fn (string $text): string => str_replace(['\\', ';', ',', "\r\n", "\n"], ['\\\\', '\\;', '\\,', '\\n', '\\n'], $text);
+        $start = $entry['starts_at']->copy()->utc();
+        $end = $entry['ends_at']?->copy()->utc() ?? $start->copy()->addHours(2);
+        $lines = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//GameCon//Events//UK',
+            'CALSCALE:GREGORIAN',
+            'BEGIN:VEVENT',
+            'UID:'.$entry['uid'].'@gamecon.online',
+            'DTSTAMP:'.now()->utc()->format('Ymd\THis\Z'),
+            $entry['all_day'] ? 'DTSTART;VALUE=DATE:'.$entry['starts_at']->copy()->setTimezone('Europe/Kyiv')->format('Ymd') : 'DTSTART:'.$start->format('Ymd\THis\Z'),
+            $entry['all_day'] ? 'DTEND;VALUE=DATE:'.$entry['starts_at']->copy()->setTimezone('Europe/Kyiv')->addDay()->format('Ymd') : 'DTEND:'.$end->format('Ymd\THis\Z'),
+            'SUMMARY:'.$escape($entry['title']),
+            'URL:'.$entry['url'],
+        ];
+        if ($entry['description'] !== null && $entry['description'] !== '') {
+            $lines[] = 'DESCRIPTION:'.$escape($entry['description']);
+        }
+        $lines[] = 'BEGIN:VALARM';
+        $lines[] = 'TRIGGER:-PT30M';
+        $lines[] = 'ACTION:DISPLAY';
+        $lines[] = 'DESCRIPTION:'.$escape($entry['title']);
+        $lines[] = 'END:VALARM';
+        $lines[] = 'END:VEVENT';
+        $lines[] = 'END:VCALENDAR';
+
+        // Рядки довші за 75 байтів переносимо з пробілом на початку (складання рядків RFC 5545).
+        $folded = array_map(function (string $line): string {
+            $out = '';
+            while (strlen($line) > 75) {
+                $cut = 75;
+                while ($cut > 0 && (ord($line[$cut]) & 0xC0) === 0x80) {
+                    $cut--;
+                }
+                $out .= substr($line, 0, $cut)."\r\n ";
+                $line = substr($line, $cut);
+            }
+
+            return $out.$line;
+        }, $lines);
+
+        return implode("\r\n", $folded)."\r\n";
+    }
+
+    /** Запас нагадування людини (налаштування подій), типово пів години. */
+    public static function leadOf(User $user): int
+    {
+        $lead = $user->pref('event_lead', self::REMIND_MINUTES);
+
+        return is_numeric($lead) && in_array((int) $lead, self::REMIND_LEADS, true) ? (int) $lead : self::REMIND_MINUTES;
+    }
+
+    /**
+     * Надіслати нагадування тим, чий запас уже настав і кому ще не нагадували про цю подію.
+     *
+     * @param  callable(): Collection<int, User>  $recipients
+     * @param  callable(string): string  $text
+     */
+    private function remindEach(FamilyEvent|ClanEvent|ServerEvent|GameEvent $event, string $kind, callable $recipients, callable $text, string $url, ?int $familyId = null): int
+    {
+        $minutes = now()->diffInMinutes($event->starts_at, false);
+        $due = array_values(array_filter(self::REMIND_LEADS, fn (int $lead) => $minutes <= $lead));
+        if ($minutes < 0 || $due === []) {
+            return 0;
+        }
+        $sent = DB::table('event_reminder_log')->where('kind', $kind)->where('event_id', $event->id)->pluck('lead_minutes')
+            ->map(fn ($lead) => (int) $lead)->all();
+        $fresh = array_values(array_diff($due, $sent));
+        if ($fresh === []) {
+            return 0;
+        }
+        DB::table('event_reminder_log')->insertOrIgnore(array_map(
+            fn (int $lead) => ['kind' => $kind, 'event_id' => $event->id, 'lead_minutes' => $lead, 'created_at' => now()],
+            $fresh,
+        ));
+
+        $users = $recipients()->filter(fn (User $user) => in_array(self::leadOf($user), $fresh, true))->values();
+        if ($users->isEmpty()) {
+            return 0;
+        }
+        $this->send($users, $text($this->leftLabel($event->starts_at)), $url, $familyId);
+        if ($event->reminded_at === null) {
+            $event->update(['reminded_at' => now()]);
+        }
+
+        return 1;
+    }
+
+    /** «За 25 хв», «За 2 год» чи «Завтра о 19:00» (за Києвом). */
+    private function leftLabel(CarbonInterface $startsAt): string
+    {
+        $minutes = $this->minutesLeft($startsAt);
+        if ($minutes < 90) {
+            return "За {$minutes} хв";
+        }
+        if ($minutes < 12 * 60) {
+            return 'За '.(int) round($minutes / 60).' год';
+        }
+
+        $local = $startsAt->copy()->setTimezone('Europe/Kyiv');
+
+        return ($local->isSameDay(now('Europe/Kyiv')) ? 'Сьогодні о ' : 'Завтра о ').$local->format('H:i');
     }
 
     /**
@@ -439,8 +635,22 @@ class EventCalendar
         }
     }
 
+    private function cover(?string $path): ?string
+    {
+        return $path !== null ? Storage::disk('public')->url($path) : null;
+    }
+
     private function minutesLeft(CarbonInterface $startsAt): int
     {
         return max(1, (int) ceil(now()->diffInMinutes($startsAt, true)));
+    }
+
+    /** Нагадування в чати групи — один раз, за пів години до старту. */
+    private function remindBots(string $type, int $ownerId, int $eventId, CarbonInterface $startsAt): void
+    {
+        if ($startsAt->gt(now()->addMinutes(30)) || ! Cache::add("bots-remind:{$type}:{$eventId}", 1, now()->addHours(6))) {
+            return;
+        }
+        RelayToBots::maybe($type, $ownerId, $type.'_reminder', $eventId);
     }
 }

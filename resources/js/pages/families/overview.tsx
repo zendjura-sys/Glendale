@@ -10,7 +10,10 @@ import {
     TrendingUp,
     Wallet,
 } from 'lucide-react';
+import { DonationJarCard } from '@/components/gc/donation-jar';
+import type { DonationJar } from '@/components/gc/donation-jar';
 import { FamilyShell } from '@/components/families/family-shell';
+import { InviteLinkButton } from '@/components/gc/invite-link';
 import { VoiceRooms } from '@/components/gc/voice-rooms';
 import {
     Amount,
@@ -20,7 +23,7 @@ import {
     kyivDateTime,
 } from '@/components/families/ui';
 import { timeAgo } from '@/lib/format';
-import { uah } from '@/lib/money';
+import { uah, uahShort } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type {
     AuditEntry,
@@ -55,6 +58,8 @@ type Props = FamilyShellProps & {
         unit: string | null;
     }[];
     activity: AuditEntry[];
+    /** Банка Monobank сім’ї (відкладений проп). */
+    donation?: DonationJar | null;
 };
 
 const medals = ['🥇', '🥈', '🥉'];
@@ -69,13 +74,13 @@ export default function FamilyOverview(props: Props) {
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <Metric
                     label={tr('Заробив за тиждень')}
-                    value={uah(stats.week_earned)}
+                    value={uahShort(stats.week_earned)}
                     tone="text-emerald-300"
                     icon={TrendingUp}
                 />
                 <Metric
                     label={tr('Виплати сім’ї (тиждень)')}
-                    value={uah(stats.week_total)}
+                    value={uahShort(stats.week_total)}
                     icon={Wallet}
                 />
                 <Metric
@@ -91,6 +96,18 @@ export default function FamilyOverview(props: Props) {
                     icon={AlertTriangle}
                 />
             </div>
+
+            {props.can['members.manage'] && (
+                <InviteLinkButton
+                    url={`${base}/invite-link`}
+                    className="glass inline-flex h-10 w-fit items-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white"
+                />
+            )}
+
+            <DonationJarCard
+                jar={props.donation}
+                title={tr('Підтримати сім’ю')}
+            />
 
             {/* Голосові кімнати — одразу під показниками, щоб на телефоні не губились унизу. */}
             <VoiceRooms

@@ -1,101 +1,98 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
-    Clapperboard,
-    Gamepad2,
-    MessageCircle,
-    Sparkles,
-    UsersRound,
-} from 'lucide-react';
-import type { ReactNode } from 'react';
-import { Aurora } from '@/components/gc/aurora';
-import { Logo } from '@/components/gc/logo';
+    AnimatePresence,
+    LayoutGroup,
+    m,
+    useReducedMotion,
+} from 'motion/react';
+import { useRef } from 'react';
+import type { PointerEvent, ReactNode } from 'react';
+import { AuthBackdrop } from '@/components/auth/auth-backdrop';
 import { LanguageSelect } from '@/components/gc/language-switcher';
+import { Logo } from '@/components/gc/logo';
+import { PaletteSync } from '@/components/gc/palette-sync';
+import { SiteFooter } from '@/components/gc/site-footer';
 import { tr } from '@/lib/i18n';
+import { blurSwap, EASE_OUT, motionOr, SWAP } from '@/lib/motion';
+import { cn } from '@/lib/utils';
 
-const FEATURES = [
-    {
-        icon: UsersRound,
-        title: tr('Друзі та спільноти'),
-        text: tr('Знаходь своїх людей за інтересами'),
-    },
-    {
-        icon: MessageCircle,
-        title: tr('Стрічка й обговорення'),
-        text: tr('Пости, фото, коментарі та реакції'),
-    },
-    {
-        icon: Gamepad2,
-        title: tr('Ігри'),
-        text: tr('Команди, турніри та ігрові клани'),
-    },
-    {
-        icon: Clapperboard,
-        title: tr('Кіно й серіали'),
-        text: tr('Дивись разом з друзями'),
-    },
-];
+/**
+ * Макет входу й реєстрації: одна скляна картка, розділена навскіс на форму й «запрошення».
+ * Макет постійний (Inertia зберігає його між /login і /register), тож при переході половини
+ * міняються місцями анімацією layout, а вміст розмивається й проявляється знову.
+ * Інші сторінки (відновлення пароля, 2FA, оскарження) — та сама картка з коротким запрошенням.
+ */
 
-function Showcase() {
+type Mode = 'login' | 'register' | 'other';
+
+function useMode(): Mode {
+    const component = usePage().component;
+
+    return component === 'auth/login'
+        ? 'login'
+        : component === 'auth/register'
+          ? 'register'
+          : 'other';
+}
+
+/** Ліва/права «запрошувальна» половина: що сказати й куди вести. */
+function Invite({ mode }: { mode: Mode }) {
+    const registrationOpen = usePage().props.site?.registration_open !== false;
+
+    const content =
+        mode === 'login'
+            ? registrationOpen
+                ? {
+                      title: tr('Вперше тут?'),
+                      text: tr(
+                          'Акаунт — за хвилину. Друзі, кіно разом і ваші ігрові сервери вже чекають.',
+                      ),
+                      href: '/register',
+                      action: tr('Створити акаунт'),
+                  }
+                : {
+                      title: tr('Раді бачити'),
+                      text: tr(
+                          'Реєстрація зараз закрита, але вхід працює як завжди.',
+                      ),
+                      href: null,
+                      action: null,
+                  }
+            : mode === 'register'
+              ? {
+                    title: tr('Уже з нами?'),
+                    text: tr(
+                        'Увійдіть — і продовжимо з того місця, де ви зупинилися.',
+                    ),
+                    href: '/login',
+                    action: tr('Увійти'),
+                }
+              : {
+                    title: tr('GameCon'),
+                    text: tr('Соцмережа для гравців і кіноманів.'),
+                    href: '/login',
+                    action: tr('До входу'),
+                };
+
     return (
-        <div className="relative hidden flex-1 flex-col justify-between overflow-hidden p-12 lg:flex xl:p-16">
-            <Link href="/" className="relative z-10 w-fit">
-                <Logo />
-            </Link>
-
-            <div className="relative z-10 max-w-xl">
-                <span className="glass mb-6 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium text-white/75">
-                    <Sparkles className="size-3.5 text-gc-violet-300" />
-                    {tr('Соціальна мережа нового покоління')}
-                </span>
-                <h2 className="font-display text-[clamp(2.4rem,4.2vw,4rem)] leading-[1.05] font-bold tracking-tight text-white">
-                    {tr('Твій всесвіт')}{' '}
-                    <span className="text-gradient">{tr('ігор, кіно')}</span>{' '}
-                    {tr('та друзів')}
+        <div className="flex h-full flex-col justify-end">
+            {/* На телефоні — компактний рядок під формою: питання й кнопка. */}
+            <div className="flex items-center justify-between gap-4 lg:block">
+                <h2 className="font-display text-base font-semibold tracking-tight text-balance text-white lg:text-[clamp(1.9rem,3vw,2.6rem)] lg:leading-[1.05] lg:font-bold">
+                    {content.title}
                 </h2>
-                <p className="mt-5 max-w-md text-[15px] leading-relaxed text-white/55">
-                    {tr(
-                        'Спілкуйся, діліться моментами, збирай команду і відкривай нове — все в одному місці.',
-                    )}
+                <p className="mt-3 hidden max-w-[30ch] text-[15px] leading-relaxed text-white/55 lg:block">
+                    {content.text}
                 </p>
-
-                <div className="mt-10 grid grid-cols-2 gap-3">
-                    {FEATURES.map(({ icon: Icon, title, text }, i) => (
-                        <div
-                            key={title}
-                            className="glass animate-rise rounded-2xl p-4"
-                            style={{ animationDelay: `${120 + i * 90}ms` }}
-                        >
-                            <span className="mb-3 flex size-9 items-center justify-center rounded-xl bg-gradient-brand shadow-[0_8px_24px_-8px_rgb(109_93_252/0.9)]">
-                                <Icon className="size-[18px] text-white" />
-                            </span>
-                            <div className="text-sm font-semibold text-white">
-                                {title}
-                            </div>
-                            <div className="mt-0.5 text-xs leading-snug text-white/45">
-                                {text}
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                {content.href && (
+                    <Link
+                        href={content.href}
+                        className="inline-flex h-10 shrink-0 items-center rounded-full border border-white/20 px-5 text-sm font-semibold text-white transition-colors hover:border-white/40 hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:mt-7 lg:h-11 lg:px-6"
+                    >
+                        {content.action}
+                    </Link>
+                )}
             </div>
-
-            <div className="relative z-10 flex items-center gap-4 text-xs text-white/35">
-                <div className="flex -space-x-2">
-                    {[12, 32, 45, 64, 68].map((n, i) => (
-                        <img
-                            key={n}
-                            src={`https://randomuser.me/api/portraits/thumb/${i % 2 ? 'women' : 'men'}/${n}.jpg`}
-                            alt=""
-                            className="size-8 rounded-full border-2 border-background object-cover"
-                            loading="lazy"
-                        />
-                    ))}
-                </div>
-                {tr('Приєднуйся до спільноти GameCon')}
-            </div>
-
-            <div className="pointer-events-none absolute top-1/2 right-[-12%] size-[520px] -translate-y-1/2 animate-float rounded-full border border-white/[0.06]" />
-            <div className="pointer-events-none absolute top-1/2 right-[-4%] size-[360px] -translate-y-1/2 animate-float rounded-full border border-white/[0.05] [animation-delay:-3s]" />
         </div>
     );
 }
@@ -109,46 +106,111 @@ export default function AuthLayout({
     description?: string;
     children: ReactNode;
 }) {
-    const { site } = usePage().props;
+    const mode = useMode();
+    const component = usePage().component;
+    const reduce = useReducedMotion();
+    const card = useRef<HTMLDivElement>(null);
+    // «Рідке скло»: відблиск іде за курсором. Пишемо CSS-змінні напряму — без перерендеру React.
+    const glare = (e: PointerEvent<HTMLDivElement>) => {
+        const el = card.current;
+        if (!el || reduce || e.pointerType !== 'mouse') return;
+        const box = el.getBoundingClientRect();
+        el.style.setProperty('--lx', `${e.clientX - box.left}px`);
+        el.style.setProperty('--ly', `${e.clientY - box.top}px`);
+    };
+    // Вхід: форма ліворуч, запрошення праворуч; реєстрація — навпаки (як у референсі).
+    const inviteFirst = mode === 'register';
+    const spring = motionOr(reduce, SWAP);
+    const fade = blurSwap(reduce);
 
     return (
-        <div className="relative flex min-h-dvh">
-            <Aurora intense />
-            <Showcase />
+        <div className="relative flex min-h-dvh flex-col items-center justify-center px-4 py-8 sm:px-6">
+            <PaletteSync />
+            <AuthBackdrop />
 
             <main
                 id="main-content"
-                className="flex w-full items-center justify-center p-5 sm:p-8 lg:w-[540px] lg:shrink-0 xl:w-[600px]"
+                className="relative z-10 w-full max-w-[440px] lg:max-w-[960px]"
             >
-                <div className="w-full max-w-[420px]">
-                    <Link
-                        href="/"
-                        className="mb-8 flex justify-center lg:hidden"
-                    >
-                        <Logo />
-                    </Link>
+                <Link
+                    href="/"
+                    className="mb-6 flex justify-center lg:hidden"
+                    aria-label="GameCon"
+                >
+                    <Logo />
+                </Link>
+                <m.div
+                    initial={reduce ? false : { opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, ease: EASE_OUT }}
+                    ref={card}
+                    onPointerMove={glare}
+                    className="auth-card liquid-glass overflow-hidden rounded-[30px]"
+                >
+                    <span aria-hidden className="liquid-glass__glare" />
+                    <LayoutGroup>
+                        <div className="relative flex flex-col lg:grid lg:min-h-[600px] lg:grid-cols-2">
+                            {/* Запрошення: на ПК — половина зі скошеним краєм, на телефоні — рядок над формою. */}
+                            <m.section
+                                layout
+                                transition={spring}
+                                className={cn(
+                                    'auth-invite relative order-2 px-7 py-5 sm:px-9 lg:px-12 lg:py-12',
+                                    inviteFirst ? 'lg:order-1' : 'lg:order-2',
+                                    inviteFirst
+                                        ? 'auth-invite--left'
+                                        : 'auth-invite--right',
+                                )}
+                            >
+                                <AnimatePresence mode="wait" initial={false}>
+                                    <m.div
+                                        key={`invite-${mode}`}
+                                        className="h-full"
+                                        {...fade}
+                                    >
+                                        <Invite mode={mode} />
+                                    </m.div>
+                                </AnimatePresence>
+                            </m.section>
 
-                    <div className="gradient-border glass-strong animate-rise rounded-[28px] p-7 shadow-[0_30px_80px_-30px_rgb(79_70_229/0.55)] sm:p-9">
-                        <div className="mb-7">
-                            <h1 className="font-display text-2xl font-bold tracking-tight text-white">
-                                {title}
-                            </h1>
-                            {description && (
-                                <p className="mt-2 text-sm leading-relaxed text-white/50">
-                                    {description}
-                                </p>
-                            )}
+                            <m.section
+                                layout
+                                transition={spring}
+                                className={cn(
+                                    'auth-form relative order-1 px-7 pt-8 pb-8 sm:px-9 lg:px-12 lg:py-12',
+                                    inviteFirst ? 'lg:order-2' : 'lg:order-1',
+                                )}
+                            >
+                                {/* Логотип над формою: їде разом із нею на інший бік. */}
+                                <Link
+                                    href="/"
+                                    className="mb-10 hidden w-fit lg:block"
+                                    aria-label="GameCon"
+                                >
+                                    <Logo />
+                                </Link>
+                                <AnimatePresence mode="wait" initial={false}>
+                                    <m.div key={component} {...fade}>
+                                        <h1 className="font-display text-xl font-semibold tracking-tight text-white">
+                                            {title}
+                                        </h1>
+                                        {description && (
+                                            <p className="mt-1.5 text-sm leading-relaxed text-white/50">
+                                                {description}
+                                            </p>
+                                        )}
+                                        <div className="mt-7">{children}</div>
+                                    </m.div>
+                                </AnimatePresence>
+                            </m.section>
                         </div>
-                        {children}
-                    </div>
-                    <div className="mt-5 flex justify-center">
-                        <LanguageSelect />
-                    </div>
+                    </LayoutGroup>
+                </m.div>
 
-                    <p className="mt-6 text-center text-xs text-white/30">
-                        © {new Date().getFullYear()} {site?.name ?? 'GameCon'}
-                    </p>
+                <div className="mt-5 flex justify-center">
+                    <LanguageSelect />
                 </div>
+                <SiteFooter className="mt-4 border-t-0 px-0" />
             </main>
         </div>
     );

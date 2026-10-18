@@ -1,26 +1,36 @@
 import { Head, InfiniteScroll, Link, router } from '@inertiajs/react';
 import {
+    BookOpen,
     CalendarDays,
     Camera,
+    Check,
+    ClipboardCheck,
     Crown,
     Globe,
+    Hash,
     ImageIcon,
     Info,
     Lock,
     MapPin,
     Megaphone,
     PenLine,
+    ScrollText,
     Settings,
     ShieldCheck,
     Tag,
+    Timer,
     UserPlus,
     UsersRound,
+    X,
 } from 'lucide-react';
+import { DonationJarCard } from '@/components/gc/donation-jar';
+import type { DonationJar } from '@/components/gc/donation-jar';
 import { useRef } from 'react';
 import { membersLabel } from '@/components/communities/community-card';
 import { JoinButton } from '@/components/communities/join-button';
 import { roleLabels } from '@/components/communities/roles';
 import { CommunityAvatar } from '@/components/gc/community-avatar';
+import { InviteLinkButton } from '@/components/gc/invite-link';
 import { PostCard } from '@/components/gc/post-card';
 import { PostComposer } from '@/components/gc/post-composer';
 import { PostSkeleton } from '@/components/gc/post-skeleton';
@@ -29,6 +39,7 @@ import { UserAvatar } from '@/components/gc/user-avatar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { EmptyState, Widget } from '@/components/gc/widget';
 import { compactNumber, formatDate, plural } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import type {
     CommunityDetails,
     CommunityRole,
@@ -41,12 +52,25 @@ import { tr } from '@/lib/i18n';
 
 type Props = {
     community: CommunityDetails;
+    /** Банка Monobank спільноти (відкладений проп). */
+    donation?: DonationJar | null;
     membership: { status: MembershipStatus; role: CommunityRole } | null;
     can: {
         view: boolean;
         post: boolean;
         post_as_community: boolean;
         manage: boolean;
+        moderate: boolean;
+    };
+    tags: string[];
+    tag: string | null;
+    queue: PostItem[];
+    my_pending: number;
+    rules: {
+        rules: boolean;
+        handbook: boolean;
+        premoderation: boolean;
+        slow_mode: number;
     };
     stats: {
         members: number;
@@ -58,7 +82,13 @@ type Props = {
     managers: (UserCard & { role: CommunityRole })[];
     photos: {
         count: number;
-        items: { id: number; url: string; href: string }[];
+        items: {
+            id: number;
+            url: string;
+            href: string;
+            alt?: string | null;
+            is_sensitive?: boolean;
+        }[];
         can_create: boolean;
     } | null;
     posts: ScrollData<PostItem>;
@@ -116,8 +146,23 @@ export default function CommunityShow({
     managers,
     photos,
     posts,
+    tags,
+    tag,
+    queue,
+    my_pending,
+    rules,
+    donation,
 }: Props) {
     const isPublic = community.type === 'public';
+    const moderate = (postId: number, approve: boolean) => {
+        const url = `/c/${community.slug}/queue/${postId}`;
+        const options = { preserveScroll: true };
+        if (approve) {
+            router.post(url, {}, options);
+        } else {
+            router.delete(url, options);
+        }
+    };
 
     return (
         <>
@@ -127,6 +172,8 @@ export default function CommunityShow({
                 <div className="relative h-48 overflow-hidden sm:h-64">
                     {community.cover_url ? (
                         <img
+                            decoding="async"
+                            fetchPriority="high"
                             src={community.cover_url}
                             alt=""
                             className="size-full object-cover"
@@ -134,7 +181,7 @@ export default function CommunityShow({
                     ) : (
                         <div className="size-full bg-[radial-gradient(circle_at_15%_30%,#4f8bff_0%,transparent_45%),radial-gradient(circle_at_70%_20%,#a855f7_0%,transparent_45%),radial-gradient(circle_at_95%_100%,#38e1ff_0%,transparent_45%)] opacity-80" />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#070a16] via-[#070a16]/30 to-transparent" />
+                    <div className="scrim absolute inset-0" />
                     <div className="grid-lines absolute inset-0 opacity-40" />
                     {can.manage && (
                         <ImageUpload
@@ -211,6 +258,10 @@ export default function CommunityShow({
                             />
                             {can.manage && (
                                 <>
+                                    <InviteLinkButton
+                                        url={`/c/${community.slug}/invite-link`}
+                                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"
+                                    />
                                     <Link
                                         href={`/c/${community.slug}/members${stats.requests ? '?tab=requests' : ''}`}
                                         className="relative inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"
@@ -336,11 +387,46 @@ export default function CommunityShow({
                                 href={`/c/${community.slug}`}
                             />
                         )}
-                        {community.description && (
+                        <DonationJarCard
+                            jar={donation}
+                            title={tr('Підтримати спільноту')}
+                        />
+                        {(community.description ||
+                            rules.rules ||
+                            rules.handbook) && (
                             <Widget title={tr('Інформація')} icon={Info}>
-                                <p className="px-1 text-sm leading-relaxed whitespace-pre-line text-white/75">
-                                    {community.description}
-                                </p>
+                                {community.description && (
+                                    <p className="px-1 text-sm leading-relaxed whitespace-pre-line text-white/75">
+                                        {community.description}
+                                    </p>
+                                )}
+                                {(rules.rules || rules.handbook) && (
+                                    <div
+                                        className={cn(
+                                            'flex flex-wrap gap-2 px-1',
+                                            community.description && 'mt-3',
+                                        )}
+                                    >
+                                        {rules.rules && (
+                                            <Link
+                                                href={`/c/${community.slug}/rules`}
+                                                className="inline-flex h-9 items-center gap-2 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white transition hover:bg-white/[0.1]"
+                                            >
+                                                <ScrollText className="size-4" />
+                                                {tr('Правила')}
+                                            </Link>
+                                        )}
+                                        {rules.handbook && (
+                                            <Link
+                                                href={`/c/${community.slug}/handbook`}
+                                                className="inline-flex h-9 items-center gap-2 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white transition hover:bg-white/[0.1]"
+                                            >
+                                                <BookOpen className="size-4" />
+                                                {tr('Довідник')}
+                                            </Link>
+                                        )}
+                                    </div>
+                                )}
                             </Widget>
                         )}
 
@@ -371,9 +457,14 @@ export default function CommunityShow({
                                             >
                                                 <img
                                                     src={photo.url}
-                                                    alt=""
+                                                    alt={photo.alt ?? ''}
                                                     loading="lazy"
-                                                    className="size-full object-cover transition duration-500 group-hover:scale-110"
+                                                    className={cn(
+                                                        'size-full object-cover transition duration-500',
+                                                        photo.is_sensitive
+                                                            ? 'scale-110 blur-2xl'
+                                                            : 'group-hover:scale-110',
+                                                    )}
                                                 />
                                             </Link>
                                         ))}
@@ -458,6 +549,48 @@ export default function CommunityShow({
                     </aside>
 
                     <div className="min-w-0 flex-1 space-y-4">
+                        {can.moderate && queue.length > 0 && (
+                            <section
+                                id="queue"
+                                className="glass space-y-3 rounded-3xl p-4 sm:p-5"
+                            >
+                                <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
+                                    <ClipboardCheck className="size-4 text-gc-amber" />
+                                    {tr('Черга на перевірку')}
+                                    <span className="rounded-full bg-gc-amber/15 px-2 text-xs leading-5 text-gc-amber">
+                                        {queue.length}
+                                    </span>
+                                </h2>
+                                {queue.map((post) => (
+                                    <div key={post.id} className="space-y-2">
+                                        <PostCard post={post} />
+                                        <div className="flex flex-wrap justify-end gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    moderate(post.id, false)
+                                                }
+                                                className="inline-flex h-9 items-center gap-2 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white/80 transition hover:bg-white/[0.1] hover:text-white"
+                                            >
+                                                <X className="size-4" />
+                                                {tr('Відхилити')}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    moderate(post.id, true)
+                                                }
+                                                className="inline-flex h-9 items-center gap-2 rounded-xl bg-gc-indigo px-3 text-sm font-semibold text-white transition hover:bg-gc-indigo/85"
+                                            >
+                                                <Check className="size-4" />
+                                                {tr('Опублікувати')}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </section>
+                        )}
+
                         {can.post && (
                             <PostComposer
                                 community={{
@@ -467,8 +600,79 @@ export default function CommunityShow({
                                     avatar_url: community.avatar_url,
                                     type: community.type,
                                     canPostAsCommunity: can.post_as_community,
+                                    tags,
                                 }}
                             />
+                        )}
+
+                        {can.post &&
+                            !can.moderate &&
+                            (rules.premoderation ||
+                                rules.slow_mode > 0 ||
+                                my_pending > 0) && (
+                                <p className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-xs text-white/50">
+                                    {rules.premoderation && (
+                                        <span className="inline-flex items-center gap-1">
+                                            <ClipboardCheck className="size-3.5" />
+                                            {tr(
+                                                'Записи з’являються після перевірки керівниками',
+                                            )}
+                                        </span>
+                                    )}
+                                    {rules.slow_mode > 0 && (
+                                        <span className="inline-flex items-center gap-1">
+                                            <Timer className="size-3.5" />
+                                            {tr(
+                                                'Повільний режим: один запис на {minutes} хв',
+                                                {
+                                                    minutes: Math.round(
+                                                        rules.slow_mode / 60,
+                                                    ),
+                                                },
+                                            )}
+                                        </span>
+                                    )}
+                                    {my_pending > 0 && (
+                                        <span className="text-gc-amber">
+                                            {tr(
+                                                'Ваших записів на перевірці: {count}',
+                                                {
+                                                    count: my_pending,
+                                                },
+                                            )}
+                                        </span>
+                                    )}
+                                </p>
+                            )}
+
+                        {tags.length > 0 && (
+                            <nav
+                                aria-label={tr('Мітки')}
+                                className="flex gap-2 overflow-x-auto pb-1"
+                            >
+                                {[null, ...tags].map((item) => (
+                                    <Link
+                                        key={item ?? '*'}
+                                        href={`/c/${community.slug}${item ? `?tag=${encodeURIComponent(item)}` : ''}`}
+                                        preserveScroll
+                                        className={cn(
+                                            'inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-3 text-xs font-medium transition',
+                                            tag === item
+                                                ? 'bg-gc-indigo text-white'
+                                                : 'bg-white/[0.05] text-white/65 hover:text-white',
+                                        )}
+                                    >
+                                        {item ? (
+                                            <>
+                                                <Hash className="size-3" />
+                                                {item}
+                                            </>
+                                        ) : (
+                                            tr('Усі записи')
+                                        )}
+                                    </Link>
+                                ))}
+                            </nav>
                         )}
 
                         {posts.data.length === 0 ? (

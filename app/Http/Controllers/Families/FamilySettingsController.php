@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Families;
 
 use App\Models\Family;
+use App\Services\Donations\MonobankJar;
 use App\Services\Families\FamilyAudit;
 use App\Services\Families\FamilyBot;
 use App\Services\Families\FamilyChat;
@@ -37,6 +38,7 @@ class FamilySettingsController extends FamilyBaseController
                 'telegram_token' => $family->webhook('telegram_token') ? Str::mask((string) $family->webhook('telegram_token'), '•', 4, -4) : null,
                 'telegram_chat' => $family->webhook('telegram_chat'),
             ],
+            'jar' => ['url' => $family->donation_jar, 'note' => $family->donation_note],
             'digest' => [
                 'text' => $digest->format($family, $preview),
                 'members' => count($preview['lines']),
@@ -44,6 +46,29 @@ class FamilySettingsController extends FamilyBaseController
                 'last' => $family->settings['digest_last'] ?? null,
             ],
         ]);
+    }
+
+    /** Банка Monobank для донатів сім’ї (картка «Підтримати» на сторінці; лише сайт). */
+    public function jar(Request $request, Family $family, FamilyAudit $audit, MonobankJar $jars): RedirectResponse
+    {
+        $member = $this->member($request, $family, 'settings.manage', write: true);
+        $data = $request->validate([
+            'url' => ['nullable', 'string', 'max:200'],
+            'note' => ['nullable', 'string', 'max:200'],
+        ]);
+        $id = MonobankJar::clientId($data['url'] ?? null);
+        abort_if(filled($data['url'] ?? null) && $id === null, 422, 'Вставте посилання на банку Monobank: https://send.monobank.ua/jar/…');
+
+        $jars->forget($family->donation_jar);
+        $family->forceFill([
+            'donation_jar' => $id !== null ? MonobankJar::url($id) : null,
+            'donation_note' => filled($data['note'] ?? null) ? trim((string) $data['note']) : null,
+        ])->save();
+        $audit->log($family, 'FAMILY_UPDATE', $member, null, ['jar' => $family->donation_jar !== null]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => $family->donation_jar ? 'Банку збережено — картка «Підтримати» з’явилася на сторінці сім’ї.' : 'Банку прибрано.']);
+
+        return back();
     }
 
     public function profile(Request $request, Family $family, FamilyAudit $audit, ImageStorage $images, FamilyChat $chat): RedirectResponse

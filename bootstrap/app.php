@@ -39,7 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->encryptCookies(except: ['locale']);
 
         // «Відписатися одним натисканням» з Gmail надсилає POST без CSRF-токена; посилання підписане.
-        $middleware->validateCsrfTokens(except: ['mail/unsubscribe/*']);
+        $middleware->validateCsrfTokens(except: ['mail/unsubscribe/*', 'billing/monobank/webhook', 'billing/google-play/rtdn']);
 
         $middleware->alias([
             'module' => EnsureModuleEnabled::class,

@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
+use App\Models\MessageFavorite;
 use App\Models\User;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
 use App\Services\Messenger;
 use App\Services\MessengerPresenter;
 use App\Services\Voice\Calls;
+use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -31,6 +33,7 @@ class MessengerController extends Controller
             'conversations' => $this->presenter->inbox($request->user(), $this->messenger),
             'active' => null,
             'history' => null,
+            'draft' => null,
         ]);
     }
 
@@ -39,10 +42,13 @@ class MessengerController extends Controller
         $user = $request->user();
         $me = $this->participant($conversation, $user);
 
+        $draft = trim((string) $request->query('text', ''));
+
         return Inertia::render('messages/index', [
             'conversations' => $this->presenter->inbox($user, $this->messenger, $conversation->id),
             'active' => [...$this->presenter->details($conversation, $user, $me, $this->messenger), ...$calls->forViewer($conversation, $user)],
-            'history' => $this->presenter->history($conversation),
+            'history' => $this->presenter->history($conversation, viewer: $user),
+            'draft' => $draft === '' ? null : mb_substr($draft, 0, 120),
         ]);
     }
 
@@ -51,7 +57,39 @@ class MessengerController extends Controller
         $this->participant($conversation, $request->user());
         $before = $request->integer('before') ?: null;
 
-        return response()->json($this->presenter->history($conversation, $before));
+        return response()->json($this->presenter->history($conversation, $before, $request->user()));
+    }
+
+    public function saved(Request $request): Response
+    {
+        $user = $request->user();
+        $items = MessageFavorite::query()
+            ->where('user_id', $user->id)
+            ->latest('id')
+            ->limit(50)
+            ->with(['message.user', 'message.attachments', 'message.conversation'])
+            ->get()
+            ->map(function (MessageFavorite $row) use ($user): ?array {
+                $message = $row->message;
+                if ($message === null || $message->trashed() || $message->conversation?->participantFor($user) === null) {
+                    return null;
+                }
+                $card = $this->presenter->message($message, true);
+
+                return [
+                    'id' => $message->id,
+                    'body' => $card['body'],
+                    'preview' => $card['preview'],
+                    'author' => $message->user?->first_name,
+                    'created_at' => $card['created_at'],
+                    'href' => '/messages/'.$message->conversation_id,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+
+        return Inertia::render('messages/saved', ['items' => $items]);
     }
 
     public function direct(Request $request, User $user): RedirectResponse
@@ -67,7 +105,16 @@ class MessengerController extends Controller
             return back();
         }
 
-        return to_route('messages.show', $existing ?? $this->messenger->direct($viewer, $user));
+        $conversation = $existing ?? $this->messenger->direct($viewer, $user);
+        $text = trim((string) $request->query('text', ''));
+        if ($text === '') {
+            return to_route('messages.show', $conversation);
+        }
+
+        return to_route('messages.show', [
+            'conversation' => $conversation,
+            'text' => mb_substr($text, 0, 120),
+        ]);
     }
 
     public function storeGroup(Request $request): RedirectResponse
@@ -131,6 +178,61 @@ class MessengerController extends Controller
         return back();
     }
 
+    public function slow(Request $request, Conversation $conversation): RedirectResponse
+    {
+        app(Plugins::class)->ensure('slow_mode');
+        $data = $request->validate(['seconds' => ['required', 'integer', 'in:0,10,30,60']]);
+        $this->messenger->setSlow($conversation, $request->user(), (int) $data['seconds']);
+
+        return back();
+    }
+
+    public function memberRole(Request $request, Conversation $conversation, User $user): RedirectResponse
+    {
+        app(Plugins::class)->ensure('chat_roles');
+        $data = $request->validate(['role' => ['required', 'in:admin,member']]);
+        $this->messenger->setMemberRole($conversation, $request->user(), $user, $data['role']);
+
+        return back();
+    }
+
+    public function markUnread(Request $request, Conversation $conversation): RedirectResponse
+    {
+        app(Plugins::class)->ensure('mark_unread');
+        $this->participant($conversation, $request->user());
+        $this->messenger->markUnread($conversation, $request->user());
+
+        return to_route('messages.index');
+    }
+
+    public function receipts(Request $request, Conversation $conversation): RedirectResponse
+    {
+        app(Plugins::class)->ensure('read_receipts');
+        $me = $this->participant($conversation, $request->user());
+        $me->forceFill(['share_receipts' => ! $me->share_receipts])->save();
+
+        return back();
+    }
+
+    public function pin(Request $request, Conversation $conversation): RedirectResponse
+    {
+        $me = $this->participant($conversation, $request->user());
+        $me->forceFill(['pinned_at' => $me->pinned_at ? null : now()])->save();
+
+        return back();
+    }
+
+    public function folder(Request $request, Conversation $conversation): RedirectResponse
+    {
+        app(Plugins::class)->ensure('chat_folders');
+        $me = $this->participant($conversation, $request->user());
+        $data = $request->validate(['folder' => ['nullable', 'string', 'max:24']]);
+        $name = trim((string) ($data['folder'] ?? ''));
+        $me->forceFill(['folder' => $name === '' ? null : $name])->save();
+
+        return back();
+    }
+
     public function read(Request $request, Conversation $conversation): JsonResponse
     {
         $this->participant($conversation, $request->user());
@@ -151,7 +253,7 @@ class MessengerController extends Controller
         $site = $request->query('scope') === 'site' && mb_strlen($term) >= 2;
         $friendIds = $this->friendships->friendIds($viewer);
 
-        $users = ($site ? User::query()->whereNull('banned_at')->whereKeyNot($viewer->id) : $this->friendships->friendsQuery($viewer))
+        $users = ($site ? User::query()->whereNull('banned_at')->whereNull('frozen_at')->whereKeyNot($viewer->id) : $this->friendships->friendsQuery($viewer))
             ->when($term !== '', fn (Builder $q) => $q->where(fn (Builder $w) => $w
                 ->where('name', 'like', "%{$term}%")
                 ->orWhere('username', 'like', "%{$term}%")))

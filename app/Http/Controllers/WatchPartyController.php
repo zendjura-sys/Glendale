@@ -50,7 +50,7 @@ class WatchPartyController extends Controller
 
         $props = [
             'movie' => $movie->toCard(),
-            'players' => $this->cinema->players($movie),
+            'players' => $this->cinema->players($movie, $user),
             'party' => $this->parties->state($party, $user),
             'friends' => $friendships->friendsQuery($user)->orderBy('first_name')->limit(100)->get()->map(fn (User $f) => $f->toCard())->values(),
         ];

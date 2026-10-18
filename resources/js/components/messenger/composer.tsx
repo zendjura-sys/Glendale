@@ -1,7 +1,9 @@
 import { usePage } from '@inertiajs/react';
 import {
+    Clock,
     FileUp,
     ImagePlus,
+    LayoutGrid,
     Lock,
     Mic,
     Paperclip,
@@ -9,6 +11,7 @@ import {
     Reply,
     SendHorizonal,
     Smile,
+    Timer,
     Trash2,
     UserRound,
     X,
@@ -16,6 +19,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useVoiceRecorder } from '@/hooks/use-voice-recorder';
+import { api } from '@/lib/api';
 import { formatBytes, formatDuration } from '@/lib/format';
 import { usePlayer } from '@/lib/player';
 import { fitTextarea } from '@/lib/textarea';
@@ -23,7 +27,8 @@ import { cn, dockedAboveNav } from '@/lib/utils';
 import type { ChatMessage, OutgoingMessage } from '@/types';
 import { ContactShareDialog } from './contact-share-dialog';
 import { EmojiPanel } from './emoji-panel';
-import { tr } from '@/lib/i18n';
+import { LOCALE, tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 const MAX_ATTACHMENTS = 10;
 const MAX_LENGTH = 4096;
@@ -37,6 +42,7 @@ type Props = {
     onEdit: (message: ChatMessage, body: string) => void;
     onTyping: () => void;
     onEditLast: () => void;
+    draft?: string | null;
 };
 
 function useOutsideClose(
@@ -64,13 +70,33 @@ export function Composer({
     onEdit,
     onTyping,
     onEditLast,
+    draft = null,
 }: Props) {
     const { site } = usePage().props;
-    const [body, setBody] = useState('');
+    const vanishOn = usePlugin('disappearing_messages');
+    const scheduleOn = usePlugin('scheduled_messages');
+    const [body, setBody] = useState(draft ?? '');
+    const [publishAt, setPublishAt] = useState('');
+    const [vanish, setVanish] = useState(false);
+    const [card, setCard] = useState<{
+        kind: string;
+        id: number;
+        title: string;
+        hint: string;
+        href: string;
+        image: string | null;
+    } | null>(null);
+    const [cardQuery, setCardQuery] = useState('');
+    const [cardHits, setCardHits] = useState<NonNullable<typeof card>[]>([]);
+    const [pickingCard, setPickingCard] = useState(false);
     const [images, setImages] = useState<File[]>([]);
     const [docs, setDocs] = useState<File[]>([]);
     const [emojiOpen, setEmojiOpen] = useState(false);
     const [attachOpen, setAttachOpen] = useState(false);
+    const [sendMenu, setSendMenu] = useState(false);
+    const sendRef = useRef<HTMLDivElement>(null);
+    const sendTimer = useRef<number | null>(null);
+    const sendHeld = useRef(false);
     const [contactOpen, setContactOpen] = useState(false);
     const textRef = useRef<HTMLTextAreaElement>(null);
     const imageRef = useRef<HTMLInputElement>(null);
@@ -102,6 +128,15 @@ export function Composer({
         if (el) fitTextarea(el, 180);
     };
 
+    useEffect(() => {
+        if (!draft) return;
+        const el = textRef.current;
+        if (!el) return;
+        fitTextarea(el, 180);
+        el.focus();
+        el.setSelectionRange(el.value.length, el.value.length);
+    }, [draft]);
+
     const editingId = editing?.id;
     useEffect(() => {
         if (editingId === undefined) return;
@@ -122,6 +157,11 @@ export function Composer({
 
     useOutsideClose(emojiOpen, emojiRef, () => setEmojiOpen(false));
     useOutsideClose(attachOpen, attachRef, () => setAttachOpen(false));
+    useOutsideClose(sendMenu, sendRef, () => setSendMenu(false));
+    const stopSendHold = () => {
+        if (sendTimer.current) window.clearTimeout(sendTimer.current);
+        sendTimer.current = null;
+    };
 
     const addFiles = (
         list: FileList | File[] | null,
@@ -164,13 +204,18 @@ export function Composer({
     const hasAttachments = images.length > 0 || docs.length > 0;
     const canSubmit = editing
         ? trimmed.length > 0 && trimmed !== editing.body
-        : trimmed.length > 0 || hasAttachments;
+        : trimmed.length > 0 || hasAttachments || card !== null;
     const showMic = !editing && !canSubmit && voice.supported;
 
     const reset = () => {
         setBody('');
         setImages([]);
         setDocs([]);
+        setPublishAt('');
+        setVanish(false);
+        setCard(null);
+        setPickingCard(false);
+        setCardQuery('');
         requestAnimationFrame(resize);
     };
 
@@ -187,7 +232,15 @@ export function Composer({
         if (editing) {
             onEdit(editing, trimmed);
         } else {
-            onSend({ kind: 'text', body: trimmed, images, files: docs });
+            onSend({
+                kind: 'text',
+                body: trimmed,
+                images,
+                files: docs,
+                publishAt: publishAt || null,
+                vanish,
+                card,
+            });
         }
 
         reset();
@@ -262,6 +315,97 @@ export function Composer({
                 addFiles(event.dataTransfer.files);
             }}
         >
+            {!editing && card && (
+                <div className="mb-2 flex items-center justify-between gap-2 rounded-xl bg-white/[0.04] px-3 py-2">
+                    <span className="min-w-0">
+                        <span className="block text-[11px] text-white/40">
+                            {tr(card.hint)}
+                        </span>
+                        <span className="block truncate text-sm text-white">
+                            {card.title}
+                        </span>
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => setCard(null)}
+                        className="text-xs text-white/50"
+                    >
+                        {tr('Прибрати')}
+                    </button>
+                </div>
+            )}
+            {!editing && pickingCard && !card && (
+                <div className="mb-2 rounded-xl bg-white/[0.04] p-2">
+                    <input
+                        value={cardQuery}
+                        onChange={(event) => {
+                            const value = event.target.value;
+                            setCardQuery(value);
+                            if (value.trim().length < 2) {
+                                setCardHits([]);
+                                return;
+                            }
+                            void api<{ cards: NonNullable<typeof card>[] }>(
+                                'GET',
+                                `/messages/cards?q=${encodeURIComponent(value.trim())}`,
+                            ).then((response) => setCardHits(response.cards));
+                        }}
+                        placeholder={tr('Гра, фільм або сервер')}
+                        className="input-glass h-10 w-full rounded-xl px-3 text-sm text-white"
+                    />
+                    <div className="mt-1 max-h-36 overflow-y-auto">
+                        {cardHits.map((hit) => (
+                            <button
+                                key={`${hit.kind}-${hit.id}`}
+                                type="button"
+                                onClick={() => {
+                                    setCard(hit);
+                                    setPickingCard(false);
+                                }}
+                                className="flex min-h-10 w-full items-center rounded-lg px-2 text-left text-sm text-white hover:bg-white/[0.06]"
+                            >
+                                {hit.title}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+            {!editing && (vanish || publishAt) && (
+                <div className="mb-2 flex flex-wrap items-center gap-2 px-1 text-xs">
+                    {vanish && (
+                        <button
+                            type="button"
+                            onClick={() => setVanish(false)}
+                            className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-gc-indigo/15 px-3 text-gc-lilac-200"
+                        >
+                            <Timer className="size-3.5" />
+                            {tr('Зникне за добу')}
+                            <X className="size-3.5 opacity-70" />
+                        </button>
+                    )}
+                    {publishAt && (
+                        <button
+                            type="button"
+                            onClick={() => setPublishAt('')}
+                            className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-gc-indigo/15 px-3 text-gc-lilac-200"
+                        >
+                            <Clock className="size-3.5" />
+                            {tr('Надішлеться {date}', {
+                                date: new Date(publishAt).toLocaleString(
+                                    LOCALE,
+                                    {
+                                        day: 'numeric',
+                                        month: 'short',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                    },
+                                ),
+                            })}
+                            <X className="size-3.5 opacity-70" />
+                        </button>
+                    )}
+                </div>
+            )}
             {context && (
                 <div className="mb-2 flex animate-in items-center gap-3 rounded-xl bg-white/[0.04] px-3 py-2 fade-in slide-in-from-bottom-1">
                     {editing ? (
@@ -306,6 +450,8 @@ export function Composer({
                             className="relative size-[72px] shrink-0 animate-in overflow-hidden rounded-xl ring-1 ring-white/10 zoom-in-90"
                         >
                             <img
+                                loading="lazy"
+                                decoding="async"
                                 src={url}
                                 alt=""
                                 className="size-full object-cover"
@@ -467,6 +613,13 @@ export function Composer({
                                             tone: 'from-gc-mint to-gc-cyan',
                                             run: () => setContactOpen(true),
                                         },
+                                        {
+                                            label: tr('Картка'),
+                                            hint: tr('Гра, фільм, сервер'),
+                                            icon: LayoutGrid,
+                                            tone: 'from-gc-amber to-gc-coral',
+                                            run: () => setPickingCard(true),
+                                        },
                                     ].map((item) => (
                                         <button
                                             key={item.label}
@@ -584,22 +737,125 @@ export function Composer({
                             <Mic className="size-5" />
                         </button>
                     ) : (
-                        <button
-                            type="button"
-                            onClick={submit}
-                            disabled={!canSubmit}
-                            className={cn(
-                                'mb-0.5 flex size-11 shrink-0 items-center justify-center rounded-full text-white transition duration-300',
-                                canSubmit
-                                    ? 'scale-100 bg-gradient-brand shadow-[0_0_24px_-2px_rgb(124_92_255/0.9)] hover:brightness-110'
-                                    : 'scale-95 bg-white/[0.06] text-white/35',
+                        <div ref={sendRef} className="relative mb-0.5">
+                            {sendMenu && (
+                                <div className="glass-strong absolute right-0 bottom-12 z-30 w-64 animate-rise space-y-1 rounded-2xl p-1.5">
+                                    {vanishOn && (
+                                        <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-2.5 text-sm text-white hover:bg-white/[0.06]">
+                                            <Timer className="size-4 text-gc-lilac-300" />
+                                            <span className="flex-1">
+                                                {tr('Зникне за добу')}
+                                            </span>
+                                            <input
+                                                type="checkbox"
+                                                checked={vanish}
+                                                onChange={(event) =>
+                                                    setVanish(
+                                                        event.target.checked,
+                                                    )
+                                                }
+                                                className="size-4 accent-gc-lilac-400"
+                                            />
+                                        </label>
+                                    )}
+                                    {scheduleOn && (
+                                        <div className="space-y-2 rounded-xl px-2.5 py-2">
+                                            <span className="flex items-center gap-3 text-sm text-white">
+                                                <Clock className="size-4 text-gc-lilac-300" />
+                                                {tr('Відкласти')}
+                                            </span>
+                                            <input
+                                                type="datetime-local"
+                                                value={publishAt}
+                                                onChange={(event) =>
+                                                    setPublishAt(
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                aria-label={tr(
+                                                    'Час надсилання',
+                                                )}
+                                                className="input-glass h-10 w-full rounded-lg px-2 text-sm text-white"
+                                            />
+                                        </div>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSendMenu(false);
+                                            submit();
+                                        }}
+                                        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-brand text-sm font-semibold text-white"
+                                    >
+                                        <SendHorizonal className="size-4" />
+                                        {publishAt
+                                            ? tr('Надіслати пізніше')
+                                            : tr('Надіслати')}
+                                    </button>
+                                </div>
                             )}
-                            aria-label={
-                                editing ? tr('Зберегти') : tr('Надіслати')
-                            }
-                        >
-                            <SendHorizonal className="size-5" />
-                        </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (sendHeld.current) {
+                                        sendHeld.current = false;
+
+                                        return;
+                                    }
+                                    submit();
+                                }}
+                                onPointerDown={() => {
+                                    sendHeld.current = false;
+                                    if (
+                                        editing ||
+                                        !canSubmit ||
+                                        (!vanishOn && !scheduleOn)
+                                    ) {
+                                        return;
+                                    }
+                                    sendTimer.current = window.setTimeout(
+                                        () => {
+                                            sendHeld.current = true;
+                                            setSendMenu(true);
+                                            navigator.vibrate?.(10);
+                                        },
+                                        420,
+                                    );
+                                }}
+                                onPointerUp={stopSendHold}
+                                onPointerLeave={stopSendHold}
+                                onPointerCancel={stopSendHold}
+                                onContextMenu={(event) => {
+                                    event.preventDefault();
+                                    if (
+                                        !editing &&
+                                        canSubmit &&
+                                        (vanishOn || scheduleOn)
+                                    ) {
+                                        setSendMenu(true);
+                                    }
+                                }}
+                                disabled={!canSubmit}
+                                className={cn(
+                                    'flex size-11 shrink-0 items-center justify-center rounded-full text-white transition duration-300 select-none [-webkit-touch-callout:none]',
+                                    canSubmit
+                                        ? 'scale-100 bg-gradient-brand shadow-[0_0_24px_-2px_rgb(124_92_255/0.9)] hover:brightness-110'
+                                        : 'scale-95 bg-white/[0.06] text-white/35',
+                                )}
+                                aria-label={
+                                    editing ? tr('Зберегти') : tr('Надіслати')
+                                }
+                                title={
+                                    !editing && (vanishOn || scheduleOn)
+                                        ? tr(
+                                              'Утримуйте, щоб відкласти або зробити зникаючим',
+                                          )
+                                        : undefined
+                                }
+                            >
+                                <SendHorizonal className="size-5" />
+                            </button>
+                        </div>
                     )}
                 </div>
             )}

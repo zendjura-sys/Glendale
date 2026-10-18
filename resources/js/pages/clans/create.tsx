@@ -84,6 +84,8 @@ function GamePicker({
                         <span className="size-10 shrink-0 overflow-hidden rounded-lg bg-white/10">
                             {g.cover ? (
                                 <img
+                                    loading="lazy"
+                                    decoding="async"
                                     src={g.cover}
                                     alt=""
                                     className="size-full object-cover"

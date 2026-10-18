@@ -53,6 +53,8 @@ export function ConversationAvatar({
         >
             {conversation.avatar_url ? (
                 <img
+                    loading="lazy"
+                    decoding="async"
                     src={conversation.avatar_url}
                     alt={conversation.title}
                     className="size-full object-cover"
