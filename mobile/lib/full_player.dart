@@ -750,7 +750,11 @@ class _PlayButtonState extends State<_PlayButton> {
             decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
             child: Padding(
               padding: EdgeInsets.only(left: playing ? 0 : 3),
-              child: Icon(playing ? Icons.pause_rounded : Icons.play_arrow_rounded, size: 34, color: const Color(0xFF0B0D1D)),
+              child: AnimatedSwitcher(
+                duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 180),
+                transitionBuilder: (child, animation) => ScaleTransition(scale: Tween(begin: 0.6, end: 1.0).animate(animation), child: FadeTransition(opacity: animation, child: child)),
+                child: CustomPaint(key: ValueKey(playing), size: const Size.square(26), painter: _PlayGlyph(playing)),
+              ),
             ),
           ),
         ),
@@ -869,4 +873,40 @@ class _UpNext extends StatelessWidget {
         ),
     ]);
   }
+}
+
+/// Знак «грати» / «пауза» на білій кнопці — залитий, з м'якими кутами (як fill-current на сайті).
+class _PlayGlyph extends CustomPainter {
+  _PlayGlyph(this.playing);
+  final bool playing;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF0B0D1D)
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true;
+    if (playing) {
+      final w = size.width * 0.26;
+      final r = Radius.circular(w * 0.35);
+      canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(size.width * 0.18, size.height * 0.12, w, size.height * 0.76), r), paint);
+      canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(size.width * 0.56, size.height * 0.12, w, size.height * 0.76), r), paint);
+      return;
+    }
+    final path = Path()
+      ..moveTo(size.width * 0.16, size.height * 0.1)
+      ..lineTo(size.width * 0.9, size.height * 0.5)
+      ..lineTo(size.width * 0.16, size.height * 0.9)
+      ..close();
+    canvas.drawPath(path, paint);
+    // Округлені кути — обведенням тим самим кольором.
+    canvas.drawPath(path, Paint()
+      ..color = const Color(0xFF0B0D1D)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = size.width * 0.12
+      ..strokeJoin = StrokeJoin.round);
+  }
+
+  @override
+  bool shouldRepaint(_PlayGlyph old) => old.playing != playing;
 }

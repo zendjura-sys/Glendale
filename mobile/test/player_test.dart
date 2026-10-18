@@ -75,6 +75,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
       player.duration = const Duration(minutes: 3, seconds: 20);
       player.position = const Duration(minutes: 1, seconds: 4);
+      // На планшеті — стан «грає» (кнопка паузи).
+      player.playing = name == 'tablet';
       player.notifyListeners();
       for (var i = 0; i < 8; i++) {
         await tester.pump(const Duration(milliseconds: 100));
