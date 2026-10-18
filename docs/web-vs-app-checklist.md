@@ -13,7 +13,8 @@
 - **Никаких кнопок и ссылок на внешнюю оплату:** не открывать `/plus/billing`, `/plus`, `/pricing`,
   страницы донат-сервисов (Donatello, Diaka, Donatik, Buy Me a Coffee, Patreon) ни через браузер,
   ни через WebView, и не писать «купите на сайте».
-- Цифровые покупки внутри приложения — только через Google Play Billing.
+- Цифровые покупки внутри приложения — только через Google Play Billing (`mobile/lib/play_billing.dart`):
+  цены и планы из Google Play, покупку проверяет сервер (`POST /api/v1/google-play/verify`).
 - Показывать уже купленное можно: значок GameCon+, оформление профиля, срок действия.
 
 ## Инструкция для Cursor

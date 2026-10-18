@@ -86,7 +86,7 @@
 <p>Withdrawal and refunds are governed by the <a href="{{ $legal['site'] }}/refund-policy">Refund &amp; Cancellation Policy</a>, which forms an integral part of this offer.</p>
 
 <h3>7.6. Android app</h3>
-<p>Where purchases are available in our Android app, they are made through Google Play Billing under Google Play's rules.</p>
+<p>In our Android app GameCon+ can be bought only through <strong>Google Play Billing</strong>: Google accepts the payment under Google Play's rules, and Google Play shows the price and period before payment. The subscription renews automatically until you cancel it in Google Play (Google Play → Payments &amp; subscriptions); access continues until the end of the paid period. We verify every purchase with Google and enable GameCon+ in your account on both the website and the app. Refunds for such purchases are handled through Google Play (see the Refund Policy).</p>
 
 <h2>8. Provider's intellectual property</h2>
 <p>The Service, its software, design, logos and the {{ $legal['name'] }} name belong to the Provider or its licensors. We grant you a personal, non-exclusive, non-transferable licence to use the Service as intended for the term of the contract. Open-source components are subject to their own licences.</p>

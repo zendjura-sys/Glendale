@@ -222,10 +222,6 @@ flowchart LR
 
 ### 4.4.0. GameCon+ в приложении (Google Play Billing)
 
-> **Сейчас выключено:** покупки из приложения убраны (1.1.45, нет пакета `in_app_purchase`), приложение
-> только показывает статус. Серверная часть ниже готова и выключена (`google_play_enabled = false`);
-> чтобы вернуть, восстановите `mobile/lib/play_billing.dart` из коммита d2878083/f86f58c9.
-
 - Приложение продаёт GameCon+ **только через Google Play Billing** (`mobile/lib/play_billing.dart`, пакет
   `in_app_purchase`): цены и планы — из Google Play, сервер отдаёт лишь ID подписок и `account_id`
   (`GET /api/v1/google-play`, он уходит в obfuscatedAccountId). Никаких ссылок на оплату на сайте (anti-steering).

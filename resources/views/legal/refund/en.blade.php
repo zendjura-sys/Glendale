@@ -45,8 +45,15 @@
 <h2>8. How to request a refund</h2>
 <p>Write to <a href="mailto:{{ $legal['email'] }}">{{ $legal['email'] }}</a> from your account e-mail with your username, order number (GC-…, shown in payment history), date and reason. We reply within 3 business days.</p>
 
-<h2>9. Chargebacks</h2>
+<h2>9. In-app purchases through Google Play</h2>
+<ul>
+    <li>A subscription bought in the Android app is cancelled in Google Play → Payments &amp; subscriptions; access continues until the end of the paid period.</li>
+    <li>Refunds for such purchases are made by Google under Google Play's rules: request one at play.google.com (Order history → "Report a problem") within the periods set by Google. We can also initiate a refund — write to us with the GPA.… order number.</li>
+    <li>When Google refunds a purchase it notifies us, and GameCon+ from that purchase is switched off automatically.</li>
+</ul>
+
+<h2>10. Chargebacks</h2>
 <p>Please contact us before disputing a payment with your bank — it is faster. If the bank reverses a payment, the related access ends.</p>
 
-<h2>10. Details</h2>
+<h2>11. Details</h2>
 @include('legal.partials.seller_en')
