@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { PropsWithChildren, ReactNode } from 'react';
-import { LayoutGroup, m, useReducedMotion } from 'motion/react';
 import { SiteBackground } from '@/components/backgrounds/site-background';
 import { Seasonal } from '@/components/gc/seasonal';
 import { IncomingCall } from '@/components/gc/incoming-call';
@@ -46,7 +45,6 @@ import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useUnreadMessages } from '@/lib/inbox';
 import { usePlayer } from '@/lib/player';
 import { MOBILE_LABEL } from '@/lib/nav';
-import { motionOr, SNAP } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { PageTransition } from '@/components/gc/page-transition';
 import { PlayStoreLink } from '@/components/gc/play-store';
@@ -56,6 +54,11 @@ import {
 } from '@/components/gc/language-switcher';
 import { tr } from '@/lib/i18n';
 import { PaletteSync } from '@/components/gc/palette-sync';
+import {
+    ThemeButton,
+    ThemeMenuItem,
+    ThemeRow,
+} from '@/components/gc/theme-toggle';
 import {
     FeedbackDialog,
     KeyboardHint,
@@ -83,6 +86,7 @@ function useIsActive() {
     };
 }
 
+/** Бічне меню, як у класичній соцмережі: простий список без карток, вибраний пункт підсвічено. */
 function Sidebar() {
     const { nav, auth, counters } = usePage().props;
     const isActive = useIsActive();
@@ -90,12 +94,12 @@ function Sidebar() {
     const user = auth.user;
 
     return (
-        <aside className="sticky top-[76px] hidden h-[calc(100dvh-92px)] w-[232px] shrink-0 flex-col [view-transition-name:gc-sidebar] lg:flex">
+        <aside className="sticky top-[calc(64px+env(safe-area-inset-top))] hidden h-[calc(100dvh-80px)] w-[220px] shrink-0 [scrollbar-width:none] flex-col overflow-y-auto overscroll-contain pb-2 [view-transition-name:gc-sidebar] lg:flex">
             <Link
                 href={`/${user.username}`}
-                className="glass group mb-3 flex items-center gap-3 rounded-2xl p-3 transition hover:border-white/15"
+                className="gc-side-link mb-1 flex items-center gap-2.5 rounded-xl px-2 py-2 transition"
             >
-                <UserAvatar user={user} size="md" ring />
+                <UserAvatar user={user} size="sm" ring />
                 <span className="min-w-0">
                     <span className="flex items-center gap-1 truncate text-sm font-semibold text-white">
                         <span style={plusNameStyle(user.plus)}>
@@ -112,7 +116,7 @@ function Sidebar() {
                 </span>
             </Link>
 
-            <nav className="glass flex flex-col gap-0.5 rounded-2xl p-2">
+            <nav aria-label={tr('Розділи')} className="flex flex-col">
                 {nav.map((item) => {
                     const href =
                         item.key === 'profile'
@@ -132,26 +136,18 @@ function Sidebar() {
                             href={href}
                             prefetch
                             aria-current={active ? 'page' : undefined}
-                            className={cn(
-                                'group relative flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-medium transition',
-                                active
-                                    ? 'nav-active text-white'
-                                    : 'text-white/65 hover:bg-white/[0.045] hover:text-white',
-                            )}
+                            className="gc-side-link relative flex min-h-10 items-center gap-3 rounded-xl px-2.5 text-[14px] font-medium transition"
                         >
                             <ModuleIcon
                                 name={item.icon}
-                                className={cn(
-                                    'size-[19px] transition',
-                                    active
-                                        ? 'text-gc-lilac-400 drop-shadow-[0_0_8px_rgb(124_140_255/0.9)]'
-                                        : 'text-white/45 group-hover:text-white/80',
-                                )}
+                                className="size-[19px] shrink-0"
                             />
-                            <span className="flex-1">{item.label}</span>
+                            <span className="flex-1 truncate">
+                                {item.label}
+                            </span>
                             {!!badge && (
-                                <span className="rounded-full bg-gradient-brand px-1.5 text-[11px] leading-5 font-bold text-white">
-                                    {badge}
+                                <span className="min-w-5 rounded-full bg-primary px-1.5 text-center text-[11px] leading-5 font-bold text-primary-foreground">
+                                    {badge > 99 ? '99+' : badge}
                                 </span>
                             )}
                         </Link>
@@ -160,20 +156,23 @@ function Sidebar() {
             </nav>
 
             {user.is_admin && (
-                <Link
-                    href="/admin"
-                    className="glass mt-3 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-white/70 transition hover:text-white"
-                >
-                    <ShieldCheck className="size-[18px] text-gold" />
-                    {tr('Адмін-панель')}
-                </Link>
+                <>
+                    <div className="mx-2.5 my-2 h-px bg-white/[0.06]" />
+                    <Link
+                        href="/admin"
+                        className="gc-side-link flex min-h-10 items-center gap-3 rounded-xl px-2.5 text-[14px] font-medium transition"
+                    >
+                        <ShieldCheck className="size-[19px] shrink-0 !text-gold" />
+                        {tr('Адмін-панель')}
+                    </Link>
+                </>
             )}
 
-            <PlayStoreLink compact className="mt-3 self-center" />
+            <PlayStoreLink compact className="mt-3 self-start px-2" />
 
             <KeyboardHint />
 
-            <div className="mt-auto px-3 pt-4 text-xs leading-relaxed text-white/30">
+            <div className="mt-auto px-2.5 pt-4 text-xs leading-relaxed text-white/35">
                 © {new Date().getFullYear()}{' '}
                 {tr('GameCon · Соціальна мережа нового покоління')}
             </div>
@@ -271,6 +270,7 @@ function UserMenu() {
                 >
                     <Keyboard /> {tr('Гарячі клавіші')}
                 </DropdownMenuItem>
+                <ThemeMenuItem />
                 <LanguageMenu />
                 <DropdownMenuSeparator className="bg-white/5" />
                 <DropdownMenuItem
@@ -284,28 +284,30 @@ function UserMenu() {
     );
 }
 
+/** Шапка на всю ширину: матове скло, логотип, пошук і кнопки — як у класичній соцмережі. */
 function Topbar() {
     const { counters, modules } = usePage().props;
     const unreadMessages = useUnreadMessages();
+    const iconButton =
+        'gc-icon-button relative hidden size-10 items-center justify-center rounded-xl transition sm:flex';
 
     return (
-        <header className="pointer-events-none fixed inset-x-0 top-0 z-40 bg-transparent pt-[env(safe-area-inset-top)] [view-transition-name:gc-topbar]">
-            {/* Шапка — острів: плаваюча матова плита з відступом від країв (стиль Dune). */}
-            <div className="liquid-glass liquid-glass--dense pointer-events-auto relative mx-2 mt-2 flex h-14 items-center gap-2 rounded-[22px] px-2 sm:mx-3 sm:gap-4 sm:px-3 xl:mx-auto xl:max-w-[1320px]">
-                <Link href="/feed" className="shrink-0 lg:w-[232px]">
+        <header className="gc-bar fixed inset-x-0 top-0 z-40 pt-[env(safe-area-inset-top)] [view-transition-name:gc-topbar]">
+            <div className="mx-auto flex h-14 max-w-[1320px] items-center gap-2 px-3 sm:gap-4 sm:px-5">
+                <Link href="/feed" className="shrink-0 lg:w-[220px]">
                     <Logo className="hidden sm:inline-flex" />
                     <LogoMark className="sm:hidden" />
                 </Link>
                 <QuickSearch className="max-w-[520px] flex-1" />
-                <div className="ml-auto flex items-center gap-1">
+                <div className="ml-auto flex items-center gap-0.5">
                     <Link
                         href="/friends?tab=requests"
-                        className="relative hidden size-10 items-center justify-center rounded-full bg-black/25 text-white/75 ring-1 ring-white/[0.06] transition hover:bg-black/40 hover:text-white sm:flex"
+                        className={iconButton}
                         aria-label={tr('Заявки в друзі')}
                     >
-                        <UsersRound className="size-[19px]" />
+                        <UsersRound className="size-[20px]" />
                         {!!counters?.friend_requests && (
-                            <span className="absolute top-1.5 right-1.5 flex min-w-4 items-center justify-center rounded-full bg-gradient-brand px-1 text-[11px] leading-4 font-bold text-white">
+                            <span className="absolute top-1 right-1 flex min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] leading-4 font-bold text-white">
                                 {counters.friend_requests}
                             </span>
                         )}
@@ -313,7 +315,7 @@ function Topbar() {
                     {modules.includes('messages') && (
                         <Link
                             href="/messages"
-                            className="relative hidden size-10 items-center justify-center rounded-full bg-black/25 text-white/75 ring-1 ring-white/[0.06] transition hover:bg-black/40 hover:text-white sm:flex"
+                            className={iconButton}
                             aria-label={
                                 unreadMessages > 0
                                     ? tr('Повідомлення: {count} непрочитаних', {
@@ -322,11 +324,11 @@ function Topbar() {
                                     : tr('Повідомлення')
                             }
                         >
-                            <MessageCircle className="size-[19px]" />
+                            <MessageCircle className="size-[20px]" />
                             {unreadMessages > 0 && (
                                 <span
                                     aria-hidden
-                                    className="absolute -top-0.5 -right-0.5 flex h-[18px] min-w-[18px] animate-in items-center justify-center rounded-full bg-gradient-brand px-1 text-[11px] leading-none font-bold text-white ring-2 ring-background zoom-in-50"
+                                    className="absolute top-0.5 right-0.5 flex h-[18px] min-w-[18px] animate-in items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] leading-none font-bold text-white zoom-in-50"
                                 >
                                     {unreadMessages > 99
                                         ? '99+'
@@ -335,9 +337,9 @@ function Topbar() {
                             )}
                         </Link>
                     )}
+                    <ThemeButton className="hidden sm:flex" />
                     <WhatsNewButton />
                     <NotificationsMenu />
-                    <span className="mx-1 hidden h-6 w-px bg-white/10 sm:block" />
                     <UserMenu />
                 </div>
             </div>
@@ -372,8 +374,8 @@ function useMobileSplit<T extends { key: string }>(items: T[]) {
     return { primary, rest: items.filter((i) => !primary.includes(i)) };
 }
 
-/** Пункт острова: іконка; вибраний — пігулка акценту з підписом, що «перетікає» між пунктами. */
-function IslandTab({
+/** Пункт нижньої панелі: іконка й підпис; вибраний — кольором акценту, без підкладок. */
+function TabItem({
     href,
     onClick,
     expanded,
@@ -390,42 +392,21 @@ function IslandTab({
     label: string;
     icon: ReactNode;
 }) {
-    const reduce = useReducedMotion();
     const className = cn(
-        'relative flex h-11 min-w-11 items-center justify-center rounded-2xl text-sm font-semibold transition-colors active:scale-95',
-        active
-            ? 'max-w-[45%] flex-none px-2 text-primary-foreground'
-            : 'flex-1 bg-black/25 text-white/60 ring-1 ring-white/[0.05]',
+        'gc-tab relative flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 pt-1 text-[11px] font-medium transition-colors active:opacity-70',
+        active && 'is-active',
     );
     const body = (
         <>
-            {active && (
-                <m.span
-                    layoutId="tabbar-active"
-                    transition={motionOr(reduce, SNAP)}
-                    className="absolute inset-0 rounded-2xl bg-primary"
-                />
-            )}
-            <span className="relative flex min-w-0 items-center gap-2 px-2">
-                <span className="relative shrink-0">
-                    {icon}
-                    {badge > 0 && (
-                        <span className="absolute -top-1.5 -right-2 min-w-4 rounded-full bg-gc-pink px-1 text-center text-[10px] leading-4 font-bold text-white ring-2 ring-popover">
-                            {badge > 99 ? '99+' : badge}
-                        </span>
-                    )}
-                </span>
-                {active && (
-                    <m.span
-                        initial={reduce ? false : { opacity: 0, x: -4 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.25, delay: 0.08 }}
-                        className="truncate"
-                    >
-                        {label}
-                    </m.span>
+            <span className="relative">
+                {icon}
+                {badge > 0 && (
+                    <span className="absolute -top-1 -right-2.5 min-w-4 rounded-full bg-rose-500 px-1 text-center text-[10px] leading-4 font-bold text-white">
+                        {badge > 99 ? '99+' : badge}
+                    </span>
                 )}
             </span>
+            <span className="max-w-full truncate px-0.5">{label}</span>
         </>
     );
 
@@ -435,7 +416,6 @@ function IslandTab({
             // На телефоні наведення немає: сторінку підтягуємо вже на дотику, до відпускання пальця.
             prefetch={['hover', 'click']}
             aria-current={active ? 'page' : undefined}
-            aria-label={label}
             className={className}
         >
             {body}
@@ -445,7 +425,6 @@ function IslandTab({
             type="button"
             onClick={onClick}
             aria-expanded={expanded}
-            aria-label={label}
             data-test="mobile-menu"
             className={className}
         >
@@ -465,35 +444,33 @@ function MobileNav() {
 
     return (
         <>
-            {/* Острів: плаваюча пігулка над краєм екрана; вибраний пункт розкривається з підписом. */}
-            <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(env(safe-area-inset-bottom)+0.625rem)] [view-transition-name:gc-tabbar] lg:hidden">
-                <LayoutGroup id="tabbar">
-                    <div className="liquid-glass liquid-glass--dense pointer-events-auto flex w-full max-w-[440px] items-center justify-between gap-1 rounded-[22px] p-1.5">
-                        {primary.map((item) => (
-                            <IslandTab
-                                key={item.key}
-                                href={item.href}
-                                active={isActive(item.href, item.key)}
-                                badge={item.badge}
-                                label={MOBILE_LABEL[item.key] ?? item.label}
-                                icon={
-                                    <ModuleIcon
-                                        name={item.icon}
-                                        className="size-5"
-                                    />
-                                }
-                            />
-                        ))}
-                        <IslandTab
-                            onClick={() => setOpen(true)}
-                            expanded={open}
-                            active={open || restActive}
-                            badge={restBadge}
-                            label={tr('Меню')}
-                            icon={<LayoutGrid className="size-5" />}
+            {/* Нижня панель на всю ширину, як у мобільних соцмережах: матове скло, підписи під іконками. */}
+            <nav className="gc-bar fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)] [view-transition-name:gc-tabbar] lg:hidden">
+                <div className="mx-auto flex max-w-[560px] items-stretch px-1">
+                    {primary.map((item) => (
+                        <TabItem
+                            key={item.key}
+                            href={item.href}
+                            active={isActive(item.href, item.key)}
+                            badge={item.badge}
+                            label={MOBILE_LABEL[item.key] ?? item.label}
+                            icon={
+                                <ModuleIcon
+                                    name={item.icon}
+                                    className="size-[22px]"
+                                />
+                            }
                         />
-                    </div>
-                </LayoutGroup>
+                    ))}
+                    <TabItem
+                        onClick={() => setOpen(true)}
+                        expanded={open}
+                        active={open || restActive}
+                        badge={restBadge}
+                        label={tr('Меню')}
+                        icon={<LayoutGrid className="size-[22px]" />}
+                    />
+                </div>
             </nav>
             {open && <MobileMenu onClose={() => setOpen(false)} />}
         </>
@@ -642,6 +619,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                         compact
                         className="mx-1.5 my-1.5 justify-self-start"
                     />
+                    <ThemeRow />
                     <LanguageSelect className="mx-3 my-1.5" />
                     <button
                         type="button"
@@ -706,7 +684,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
             <Topbar />
             <div
                 className={cn(
-                    'mx-auto flex max-w-[1320px] gap-5 px-3 pt-[calc(76px+env(safe-area-inset-top))] sm:px-5',
+                    'mx-auto flex max-w-[1320px] gap-5 px-3 pt-[calc(72px+env(safe-area-inset-top))] sm:px-5',
                     current ? 'pb-44 lg:pb-28' : 'pb-24 lg:pb-10',
                 )}
             >

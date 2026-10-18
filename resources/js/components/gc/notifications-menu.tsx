@@ -111,7 +111,7 @@ export function NotificationsMenu() {
                 type="button"
                 onClick={toggle}
                 className={cn(
-                    'relative flex size-10 items-center justify-center rounded-full bg-black/25 text-white/75 ring-1 ring-white/[0.06] transition hover:bg-black/40 hover:text-white',
+                    'gc-icon-button relative flex size-10 items-center justify-center rounded-xl transition',
                     open && 'bg-white/[0.07] text-white',
                 )}
                 aria-label={
@@ -124,7 +124,7 @@ export function NotificationsMenu() {
                 {unread > 0 && (
                     <span
                         aria-hidden
-                        className="absolute -top-0.5 -right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-pink-500 px-1 text-[11px] leading-none font-bold text-white ring-2 ring-background"
+                        className="absolute top-0.5 right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] leading-none font-bold text-white"
                     >
                         {unread > 99 ? '99+' : unread}
                     </span>

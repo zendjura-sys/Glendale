@@ -171,7 +171,7 @@ export function WhatsNewButton() {
                 aria-label={tr('Що нового')}
                 title={tr('Що нового')}
                 className={cn(
-                    'relative size-11 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/[0.06] hover:text-white',
+                    'gc-icon-button relative size-10 items-center justify-center rounded-xl transition',
                     unseen ? 'flex' : 'hidden sm:flex',
                 )}
             >
@@ -179,7 +179,7 @@ export function WhatsNewButton() {
                 {unseen && (
                     <span
                         aria-hidden
-                        className="absolute top-2.5 right-2.5 size-2 rounded-full bg-gc-indigo ring-2 ring-background"
+                        className="absolute top-2 right-2 size-2 rounded-full bg-primary"
                     />
                 )}
             </button>
