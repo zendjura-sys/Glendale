@@ -637,7 +637,8 @@ class Segmented extends StatelessWidget {
       return Container(
         padding: EdgeInsets.all(4),
         decoration: frame,
-        child: SingleChildScrollView(
+        child: EdgeFade(
+          child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(children: [
             for (final option in options)
@@ -659,6 +660,7 @@ class Segmented extends StatelessWidget {
                 ),
               ),
           ]),
+          ),
         ),
       );
     }
@@ -1679,6 +1681,56 @@ class _PulseDotState extends State<_PulseDot> with SingleTickerProviderStateMixi
           ),
           Container(decoration: BoxDecoration(shape: BoxShape.circle, color: primary)),
         ]),
+      ),
+    );
+  }
+}
+
+/// М'яке затухання країв горизонтальної прокрутки: видно, що далі є ще вкладки.
+/// Край, до якого вже докрутили, не затухає.
+class EdgeFade extends StatefulWidget {
+  const EdgeFade({required this.child, this.size = 28, super.key});
+  final Widget child;
+  final double size;
+
+  @override
+  State<EdgeFade> createState() => _EdgeFadeState();
+}
+
+class _EdgeFadeState extends State<EdgeFade> {
+  bool start = false;
+  bool end = false;
+
+  bool _update(ScrollMetrics m) {
+    if (m.axis != Axis.horizontal) return false;
+    final s = m.pixels > m.minScrollExtent + 1;
+    final e = m.pixels < m.maxScrollExtent - 1;
+    if (s != start || e != end) {
+      setState(() {
+        start = s;
+        end = e;
+      });
+    }
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return NotificationListener<ScrollMetricsNotification>(
+      onNotification: (n) => _update(n.metrics),
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (n) => _update(n.metrics),
+        child: ShaderMask(
+          blendMode: BlendMode.dstIn,
+          shaderCallback: (rect) {
+            final f = (widget.size / rect.width).clamp(0.0, 0.5);
+            return LinearGradient(
+              colors: [start ? const Color(0x00000000) : const Color(0xFF000000), const Color(0xFF000000), const Color(0xFF000000), end ? const Color(0x00000000) : const Color(0xFF000000)],
+              stops: [0, f, 1 - f, 1],
+            ).createShader(rect);
+          },
+          child: widget.child,
+        ),
       ),
     );
   }
