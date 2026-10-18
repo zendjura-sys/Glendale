@@ -86,7 +86,7 @@ class PersonalBankDigest
     {
         $sent = 0;
         User::query()->whereIn('id', FamilyMember::query()->where('status', FamilyMember::STATUS_ACTIVE)->select('user_id'))
-            ->whereNull('banned_at')->orderBy('id')
+            ->whereNull('banned_at')->whereNull('frozen_at')->orderBy('id')
             ->chunk(200, function ($users) use (&$sent, $at) {
                 foreach ($users as $user) {
                     $sent += $this->send($user, $at) ? 1 : 0;

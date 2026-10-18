@@ -68,7 +68,7 @@ class _EventsScreenState extends State<EventsScreen> {
     return ScreenScroll(
       onRefresh: _load,
       children: [
-        PageTitle(tr('Календар подій'), subtitle: tr('Події ваших сімей, кланів, серверів та ігор. Події з Discord серверів та ігор з IGDB підтягуються самі. За пів години до початку прийде нагадування.')),
+        PageTitle(tr('Календар подій'), trailing: RoundIcon(icon: LucideIcons.calendarClock, tooltip: tr('Релізи і сезони'), onTap: () => context.push('/events/releases')), subtitle: tr('Події ваших сімей, кланів, серверів та ігор. Події з Discord серверів та ігор з IGDB підтягуються самі. За пів години до початку прийде нагадування.')),
         ChipRow(
           options: [('', tr('Усі')), for (final e in kinds.entries) (e.key, '${e.value}')],
           selected: kind,

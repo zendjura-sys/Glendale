@@ -7,8 +7,13 @@ import {
     Headphones,
     Info,
     Loader2,
+    Eye,
+    EyeOff,
+    Folder,
+    Mail,
     Phone,
     PhoneOff,
+    Pin,
     Sparkles,
 } from 'lucide-react';
 import {
@@ -22,6 +27,7 @@ import {
 import { toast } from 'sonner';
 import { Lightbox } from '@/components/gc/media-grid';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
+import { PlusBadge } from '@/components/gc/plus';
 import { useRealtime } from '@/hooks/use-realtime';
 import { api, ApiError } from '@/lib/api';
 import { dayLabel, lastSeen, plural } from '@/lib/format';
@@ -36,6 +42,7 @@ import type {
     ChatHistory,
     ChatMessage,
     ConversationDetails,
+    ConversationSummary,
     OutgoingMessage,
 } from '@/types';
 import { Composer } from './composer';
@@ -44,6 +51,7 @@ import { MessageBubble, SystemMessage } from './message-bubble';
 import { ReportDialog } from './report-dialog';
 import type { BubbleActions } from './message-bubble';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 const EDIT_WINDOW_MS = 24 * 3600 * 1000;
 const GROUP_GAP_MS = 5 * 60 * 1000;
@@ -52,6 +60,8 @@ const TYPING_TTL_MS = 4000;
 type Props = {
     active: ConversationDetails;
     history: ChatHistory;
+    conversations: ConversationSummary[];
+    draft?: string | null;
     onRead: (conversationId: number) => void;
     onOpenInfo: () => void;
     onTypingChange: (name: string | null) => void;
@@ -76,11 +86,16 @@ function TypingDots() {
 export function ChatView({
     active,
     history,
+    conversations,
+    draft = null,
     onRead,
     onOpenInfo,
     onTypingChange,
 }: Props) {
     const { auth, modules } = usePage().props;
+    const unreadOn = usePlugin('mark_unread');
+    const receiptsOn = usePlugin('read_receipts');
+    const foldersOn = usePlugin('chat_folders');
     const me = auth.user;
     const isGroup = active.type === 'group';
     const canManage = active.my_role === 'owner' || active.my_role === 'admin';
@@ -349,6 +364,13 @@ export function ChatView({
         switch (outgoing.kind) {
             case 'text':
                 if (outgoing.body) form.append('body', outgoing.body);
+                if (outgoing.publishAt)
+                    form.append('publish_at', outgoing.publishAt);
+                if (outgoing.vanish) form.append('disappear', '1');
+                if (outgoing.card) {
+                    form.append('card[kind]', outgoing.card.kind);
+                    form.append('card[id]', String(outgoing.card.id));
+                }
                 outgoing.images.forEach((file) =>
                     form.append('images[]', file),
                 );
@@ -529,6 +551,9 @@ export function ChatView({
         Date.now() - new Date(message.created_at).getTime() < EDIT_WINDOW_MS;
 
     const [reportUrl, setReportUrl] = useState<string | null>(null);
+    const [forwarding, setForwarding] = useState<ChatMessage | null>(null);
+    const [folderOpen, setFolderOpen] = useState(false);
+    const [folderName, setFolderName] = useState(active.folder ?? '');
     const actions: BubbleActions = {
         onReply: (message) => {
             setEditing(null);
@@ -560,6 +585,23 @@ export function ChatView({
             void navigator.clipboard
                 ?.writeText(message.body ?? '')
                 .then(() => toast.success(tr('Скопійовано.')));
+        },
+        onForward: (message) => setForwarding(message),
+        onStar: (message) => {
+            void api<{ starred: boolean }>(
+                'POST',
+                `/messages/${active.id}/messages/${message.id}/favorite`,
+            )
+                .then(({ starred }) =>
+                    setMessages((current) =>
+                        current.map((item) =>
+                            item.id === message.id
+                                ? { ...item, starred }
+                                : item,
+                        ),
+                    ),
+                )
+                .catch(() => toast.error(tr('Не вдалося зберегти.')));
         },
         onJump: (id) => {
             const node = document.getElementById(`message-${id}`);
@@ -636,12 +678,104 @@ export function ChatView({
                             {active.peer?.is_verified && (
                                 <VerifiedBadge className="size-3.5 shrink-0" />
                             )}
+                            {active.peer?.plus && (
+                                <PlusBadge className="size-3.5" />
+                            )}
                         </span>
                         <span className="block truncate text-xs text-white/45">
                             {subtitle}
                         </span>
                     </span>
                 </button>
+                {unreadOn && (
+                    <button
+                        type="button"
+                        onClick={() =>
+                            router.post(`/messages/${active.id}/unread`)
+                        }
+                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
+                        aria-label={tr('Непрочитане')}
+                        title={tr('Позначити непрочитаним')}
+                    >
+                        <Mail className="size-[18px]" />
+                    </button>
+                )}
+                {receiptsOn && (
+                    <button
+                        type="button"
+                        onClick={() =>
+                            router.post(
+                                `/messages/${active.id}/receipts`,
+                                {},
+                                {
+                                    preserveScroll: true,
+                                    preserveState: true,
+                                    only: ['active'],
+                                },
+                            )
+                        }
+                        className={cn(
+                            'flex size-9 items-center justify-center rounded-xl transition',
+                            active.share_receipts === false
+                                ? 'bg-white/10 text-white'
+                                : 'text-white/60 hover:bg-white/[0.07] hover:text-white',
+                        )}
+                        aria-label={tr('Звіти про прочитання')}
+                        title={
+                            active.share_receipts === false
+                                ? tr('Звіти вимкнено')
+                                : tr('Звіти про прочитання')
+                        }
+                    >
+                        {active.share_receipts === false ? (
+                            <EyeOff className="size-[18px]" />
+                        ) : (
+                            <Eye className="size-[18px]" />
+                        )}
+                    </button>
+                )}
+                <button
+                    type="button"
+                    onClick={() =>
+                        router.post(
+                            `/messages/${active.id}/pin`,
+                            {},
+                            {
+                                preserveScroll: true,
+                                preserveState: true,
+                                only: ['active', 'conversations'],
+                            },
+                        )
+                    }
+                    className={cn(
+                        'flex size-9 items-center justify-center rounded-xl transition',
+                        active.pinned
+                            ? 'bg-white/10 text-white'
+                            : 'text-white/60 hover:bg-white/[0.07] hover:text-white',
+                    )}
+                    aria-label={
+                        active.pinned ? tr('Відкріпити') : tr('Закріпити')
+                    }
+                    title={active.pinned ? tr('Відкріпити') : tr('Закріпити')}
+                >
+                    <Pin
+                        className={cn(
+                            'size-[18px]',
+                            active.pinned && 'fill-current',
+                        )}
+                    />
+                </button>
+                {foldersOn && (
+                    <button
+                        type="button"
+                        onClick={() => setFolderOpen((open) => !open)}
+                        className="flex size-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.07] hover:text-white"
+                        aria-label={tr('Папка')}
+                        title={active.folder ? active.folder : tr('Папка')}
+                    >
+                        <Folder className="size-[18px]" />
+                    </button>
+                )}
                 <button
                     type="button"
                     onClick={() =>
@@ -933,8 +1067,94 @@ export function ChatView({
                 )}
             </div>
 
+            {folderOpen && (
+                <form
+                    className="flex items-center gap-2 border-t border-white/[0.06] px-4 py-3"
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        router.put(
+                            `/messages/${active.id}/folder`,
+                            { folder: folderName },
+                            {
+                                preserveScroll: true,
+                                preserveState: true,
+                                only: ['active', 'conversations'],
+                                onSuccess: () => setFolderOpen(false),
+                            },
+                        );
+                    }}
+                >
+                    <input
+                        value={folderName}
+                        onChange={(event) => setFolderName(event.target.value)}
+                        maxLength={24}
+                        placeholder={tr('Назва папки')}
+                        className="input-glass h-10 min-w-0 flex-1 rounded-xl px-3 text-sm text-white"
+                    />
+                    <button
+                        type="submit"
+                        className="h-10 rounded-xl bg-white px-3 text-sm font-semibold text-gc-ink"
+                    >
+                        {tr('Зберегти')}
+                    </button>
+                </form>
+            )}
+            {forwarding && (
+                <div className="border-t border-white/[0.06] bg-[#0b1020]/80 px-4 py-3">
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                        <p className="text-sm font-semibold text-white">
+                            {tr('Переслати')}
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => setForwarding(null)}
+                            className="text-xs text-white/50 hover:text-white"
+                        >
+                            {tr('Скасувати')}
+                        </button>
+                    </div>
+                    <div className="max-h-40 space-y-1 overflow-y-auto">
+                        {conversations.filter((item) => item.id !== active.id)
+                            .length === 0 && (
+                            <p className="text-sm text-white/45">
+                                {tr('Немає інших чатів.')}
+                            </p>
+                        )}
+                        {conversations
+                            .filter((item) => item.id !== active.id)
+                            .map((item) => (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    onClick={() => {
+                                        const source = forwarding;
+                                        setForwarding(null);
+                                        void api(
+                                            'POST',
+                                            `/messages/${active.id}/messages/${source.id}/forward`,
+                                            { conversation_id: item.id },
+                                        )
+                                            .then(() =>
+                                                toast.success(tr('Переслано.')),
+                                            )
+                                            .catch(() =>
+                                                toast.error(
+                                                    tr('Не вдалося переслати.'),
+                                                ),
+                                            );
+                                    }}
+                                    className="flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm text-white hover:bg-white/[0.06]"
+                                >
+                                    {item.title}
+                                </button>
+                            ))}
+                    </div>
+                </div>
+            )}
+
             <Composer
                 canWrite={active.can_write}
+                draft={draft}
                 replyTo={replyTo}
                 editing={editing}
                 onCancel={() => {

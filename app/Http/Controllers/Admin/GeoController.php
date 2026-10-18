@@ -34,8 +34,8 @@ class GeoController extends Controller
     {
         $countries = [];
         foreach (self::codes() as $code) {
-            $name = Locale::getDisplayRegion('-'.$code, app()->getLocale());
-            $countries[] = ['code' => $code, 'name' => is_string($name) && $name !== '' ? $name : $code];
+            $name = Locale::getDisplayRegion('-'.$code, app()->getLocale()) ?: '';
+            $countries[] = ['code' => $code, 'name' => $name !== '' ? $name : $code];
         }
         usort($countries, fn (array $a, array $b) => strcmp($a['name'], $b['name']));
         $blocked = $this->settings->get('geo_blocked');

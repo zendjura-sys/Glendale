@@ -1,0 +1,219 @@
+# Чек-лист функций сайта для сверки с приложением
+
+Снимок на **9 октября 2026**: сайт — коммит `df1e7f4` (ветка `cursor/app-redesign-b6da`),
+приложение — **1.1.29+40** (`mobile/pubspec.yaml`).
+
+Список собран из маршрутов (`routes/web.php`, `routes/settings.php`, Fortify) и страниц
+(`resources/js/pages/**`). У каждого пункта указано, где он на сайте, чтобы его было легко найти.
+
+## ⚠️ Оплата в приложении — правила Google Play (иначе бан)
+
+- **Білінг только на сайте.** Раздела «Рахунок» (`/plus/billing`), пополнения донатом, покупок с рахунку
+  и автопродления в приложении нет — ни экрана, ни запросов к `/plus/billing/*`.
+- **Никаких кнопок и ссылок на внешнюю оплату:** не открывать `/plus/billing`, `/plus`, `/pricing`,
+  страницы донат-сервисов (Donatello, Diaka, Donatik, Buy Me a Coffee, Patreon) ни через браузер,
+  ни через WebView, и не писать «купите на сайте».
+- Цифровые покупки внутри приложения — только через Google Play Billing.
+- Показывать уже купленное можно: значок GameCon+, оформление профиля, срок действия.
+
+## Инструкция для Cursor
+
+1. Для каждого пункта найдите аналог в приложении (`mobile/lib/**`, запросы через `api.dart`
+   к `/api/v1/...` или `Api.site('/...')`) и поставьте отметку:
+    - `[x]` — есть и работает так же;
+    - `[~]` — есть частично (напишите, чего не хватает);
+    - `[ ]` — нет в приложении.
+2. Пункты с пометкой **«только сайт»** в приложении не нужны, их не отмечайте.
+3. В конце заполните таблицу «Итог»: только `[ ]` и `[~]`, с файлом сайта и предложением,
+   куда это добавить в приложении. Код пока не пишите — сначала список.
+4. Не считайте функцию отсутствующей только потому, что маршрут в приложении другой: приложение
+   ходит в `/api/v1/*` (`routes/api.php`), там те же контроллеры.
+
+---
+
+## 1. Вход и аккаунт
+
+- [ ] Вход по email и паролю — `pages/auth/login.tsx`
+- [ ] Регистрация — `pages/auth/register.tsx`
+- [ ] Забыл пароль / сброс пароля — `pages/auth/forgot-password.tsx`, `reset-password.tsx`
+- [ ] Подтверждение email — `pages/auth/verify-email.tsx`
+- [ ] Двухфакторная аутентификация: вход с кодом — `pages/auth/two-factor-challenge.tsx`
+- [ ] Двухфакторная аутентификация: включение и коды восстановления — `components/two-factor-setup-modal.tsx`, `pages/settings/security.tsx`
+- [ ] Ключи доступа (passkeys) — `config/fortify.php` (`Features::passkeys`), `pages/settings/security.tsx`
+- [ ] Вход через Discord — `GET /auth/discord`
+- [ ] Вход через Google (Firebase) — `POST /auth/firebase`
+- [ ] Отвязка Discord / Google — `DELETE /auth/social/{provider}`
+- [ ] Смена пароля — `PUT /settings/password`
+- [ ] Удаление аккаунта — `DELETE /settings/profile`
+- [ ] Выбор языка (uk, en, de, … — список из админки), в т. ч. на экране входа — `components/gc/language-switcher.tsx`, `POST /locale`
+- [ ] Отписка от писем по ссылке — `/mail/unsubscribe/{user}` (**только сайт**)
+
+## 2. Профиль и настройки
+
+- [ ] Своя страница и чужой профиль (`/me`, `/{username}`, `/id{id}`) — `pages/profile/show.tsx`
+- [ ] Аватар: загрузка и удаление — `POST/DELETE /me/avatar`
+- [ ] Обложка профиля — `POST /me/cover`
+- [ ] Редактирование профиля: имя, ник, статус, о себе, город, сайт, пол, день рождения — `pages/settings/profile.tsx`
+- [ ] Приватность: закрытый профиль, кто может писать — `pages/settings/profile.tsx`
+- [ ] «Граю в…»: в профиле только во время игры; настройка в «Налаштування → Профіль» — `components/gc/playing.tsx` (`PlayingSettingsCard`, `PlayingDialog`)
+- [ ] «Граю в…»: автоматически (Discord / Steam / приложение), привязка Steam — `PUT /me/playing/auto`, `POST/DELETE /me/playing/steam`
+- [ ] «Граю в…»: ручной выбор сервера или игры, поиск, срок — `PUT /me/playing`, `GET /me/playing/search`
+- [ ] Достижения и уровень (бейджи, прогресс опыта) — `components/gc/achievements.tsx`
+- [ ] Галочка верификации — `components/gc/verified-badge.tsx`
+- [ ] Нижняя панель: выбор разделов — `pages/settings/navigation.tsx`, `PUT /settings/navigation`
+- [ ] Подключённые аккаунты (список, отвязка) — `pages/settings/security.tsx`
+
+## 3. Лента, посты, комментарии
+
+- [ ] Лента новостей — `pages/feed/index.tsx`, `GET /feed`
+- [ ] Дни рождения друзей в ленте — `FeedController` (блок birthdays)
+- [ ] Создание поста: текст, фото, музыкальный трек — `components/gc/post-composer.tsx`
+- [ ] Видимость поста: «Усім» / «Друзям» / «Тільки мені» — `post-composer.tsx`
+- [ ] Пост от имени сообщества — `post-composer.tsx` («Від імені спільноти»)
+- [ ] Страница поста — `pages/posts/show.tsx`
+- [ ] Лайк поста — `POST /posts/{post}/like`
+- [ ] Закрепление поста — `POST /posts/{post}/pin`
+- [ ] Удаление поста — `DELETE /posts/{post}`
+- [ ] Комментарии: список, добавление, удаление, лайк — `components/gc/comments.tsx`
+- [ ] «Перекласти» для постов и комментариев — `components/gc/translate.tsx`, `POST /translate`
+- [ ] Истории: лента, создание, просмотр, удаление — `components/gc/stories.tsx`, `/stories*`
+- [ ] Истории: реакция, ответ, список просмотревших — `POST /stories/{story}/react`, `/reply`, `GET /viewers`
+
+## 4. Друзья, люди, поиск, уведомления
+
+- [ ] Друзья: список, заявки, принять, добавить, удалить — `pages/friends/index.tsx`, `/friends/{user}*`
+- [ ] Поиск людей с фильтрами — `pages/people/index.tsx`
+- [ ] Быстрый поиск (людей и сообществ) в шапке — `components/gc/quick-search.tsx`, `GET /search/quick`
+- [ ] Уведомления: список, «прочитать все», счётчик — `components/gc/notifications-menu.tsx`, `/notifications`
+- [ ] Push-уведомления (в приложении FCM) — сервер `app/Services/Push`
+- [ ] Объявление администрации (полоса сверху; текст из админки, настройка `maintenance_message`) — `layouts/social-layout.tsx` (`site.announcement`)
+
+## 5. Сообщения и звонки
+
+- [ ] Список бесед, непрочитанные — `components/messenger/conversation-list.tsx`
+- [ ] Личный чат, история, «друкує…», «в мережі» — `chat-view.tsx`
+- [ ] Отправка: текст, эмодзи, стикеры — `composer.tsx`, `emoji-panel.tsx`, `GET /messages/stickers`
+- [ ] Вложения: фото, файл; скачивание вложений — `composer.tsx`, `GET /messages/attachments/{id}`
+- [ ] Голосовые сообщения (запись, отправка, прослушивание) — `composer.tsx`
+- [ ] Отправить контакт — `contact-share-dialog.tsx`
+- [ ] Ответ на сообщение, редактирование, удаление — `message-bubble.tsx`, `PATCH/DELETE .../messages/{message}`
+- [ ] «Перекласти» сообщение — `message-bubble.tsx`
+- [ ] Жалоба на сообщение — `report-dialog.tsx`, `POST .../messages/{message}/report`
+- [ ] Выключить уведомления беседы — `POST /messages/{conversation}/mute`
+- [ ] Групповые чаты: создание, участники (добавить/удалить), название, аватар — `new-chat-dialog.tsx`, `group-info-dialog.tsx`
+- [ ] Написать пользователю из профиля — `GET /messages/with/{user}`
+- [ ] Аудиозвонок в личном и групповом чате, входящий звонок — `components/gc/incoming-call.tsx`, `/messages/{conversation}/call`, `/calls/{call}/*`
+- [ ] «Слухати музику разом» из чата — `chat-view.tsx`
+
+## 6. Сообщества
+
+- [ ] Каталог сообществ, поиск — `pages/communities/index.tsx`
+- [ ] Создание сообщества — `components/communities/create-community-dialog.tsx`
+- [ ] Страница сообщества, стена, вступить / выйти — `pages/communities/show.tsx`
+- [ ] Закрытые группы: заявки, одобрить / отклонить — `pages/communities/members.tsx`
+- [ ] Участники и роли — `PATCH /c/{community}/members/{user}`
+- [ ] Настройки: название, адрес, описание, статус, город, сайт, тип (група / публічна сторінка), открытая / закрытая, стена — `pages/communities/settings.tsx`
+- [ ] Аватар и обложка сообщества — `POST /c/{community}/images/{field}`
+- [ ] Фото сообщества — `GET /c/{community}/photos`
+- [ ] Удаление сообщества — `DELETE /c/{community}`
+- [ ] Голосовые комнаты сообщества — `components/gc/voice-rooms.tsx`
+
+## 7. Фотографии
+
+- [ ] Мои фото и фото пользователя — `pages/photos/*`, `/photos/u/{user}`
+- [ ] Альбомы: создать, переименовать, удалить, загрузить фото — `/albums*`
+- [ ] Просмотр фото: лайк, комментарии, описание, удаление — `components/photos/photo-viewer.tsx`
+- [ ] Сделать фото обложкой альбома — `POST /photos/{photo}/cover`
+
+## 8. Музыка
+
+- [ ] Моя музыка, поиск, музыка пользователя — `pages/music/*`
+- [ ] Загрузка треков с метаданными, редактирование, удаление, скачивание — `upload-dialog.tsx`, `edit-track-dialog.tsx`
+- [ ] Добавить трек себе / убрать — `/music/tracks/{track}/library`
+- [ ] Плейлисты: создать, изменить, удалить, добавить/убрать трек — `/music/playlists*`
+- [ ] Общий плеер и полноэкранный плеер с перемоткой — `components/music/player-bar.tsx`
+- [ ] Поделиться треком — `share-track-dialog.tsx`
+- [ ] Spotify: подключение, библиотека, плейлисты, поиск, воспроизведение — `components/music/spotify-panel.tsx`, `/music/spotify/*`
+- [ ] «Сейчас слушаю» в профиле (Spotify) — `/music/now-playing`, `PATCH /music/spotify` (`show_now_playing`)
+- [ ] Слушать вместе: создать, пригласить, очередь, управление — `/music/together`, `/listen/{party}*`
+
+## 9. Кино
+
+- [ ] Каталог фильмов, поиск — `pages/cinema/index.tsx`
+- [ ] Страница фильма, просмотр (плеер) — `pages/cinema/show.tsx`, `GET /play/embed`
+- [ ] Мои фильмы и статусы (смотрю / посмотрел / …) — `/cinema/my`, `PATCH /cinema/{movie}/status`
+- [ ] Оценка фильма — `PUT /cinema/{movie}/rating`
+- [ ] Комментарии к фильму — `/cinema/{movie}/comments`
+- [ ] Поделиться фильмом — `components/cinema/share-movie-dialog.tsx`
+- [ ] Совместный просмотр: создать, пригласить, синхронизация, чат, голос — `/cinema/{movie}/watch`, `/watch/{party}*`
+
+## 10. Сервера GTA
+
+- [ ] Каталог серверов: ПК / мобильные, поиск, сортировка — `pages/servers/index.tsx`
+- [ ] Фильтр по языку и заголовок по языку («Українські», «Німецькі»…) — `ServerController@index`
+- [ ] Страница сервера — `pages/servers/show.tsx`
+- [ ] Предложить сервер — `POST /servers/suggest`, `components/servers/server-form.tsx`
+- [ ] События сервера: создать, удалить, «піду / не піду» — `/events/server/*`
+
+## 11. Игры и кланы
+
+- [ ] Каталог игр: поиск, разделы, A–Z — `pages/games/index.tsx`
+- [ ] Страница игры, языки игры — `pages/games/show.tsx`
+- [ ] События игры (в т. ч. из Discord): создать, удалить, «піду» — `/events/game/*`
+- [ ] Кланы: каталог, фильтр по игре и типу (клан / гильдия) — `pages/clans/index.tsx`
+- [ ] Создание клана — `pages/clans/create.tsx`
+- [ ] Страница клана: вступить, выйти, участники, роли — `pages/clans/show.tsx`
+- [ ] Новости клана — `/clans/{clan}/news*`
+- [ ] Мероприятия клана, «піду» — `/clans/{clan}/events*`
+- [ ] Взносы: внести, проверить, траты — `/clans/{clan}/contributions*`, `/spend`
+- [ ] Чат клана — `GET /clans/{clan}/chat`
+- [ ] Настройки клана — `POST /clans/{clan}/settings`
+
+## 12. Календарь событий
+
+- [ ] Общий календарь: семьи, кланы, сервера, игры в одной ленте — `pages/events/index.tsx`
+- [ ] «Піду / не піду» и напоминание за полчаса — `EventController`, push
+
+## 13. Семьи
+
+- [ ] Каталог семей, создание семьи — `pages/families/index.tsx`, `create.tsx`
+- [ ] Публичная страница семьи, заявка на вступление и её отзыв — `pages/families/public.tsx`, `/f/{family}/apply`
+- [ ] Обзор семьи — `pages/families/overview.tsx`
+- [ ] Отчёты: подать, мои отчёты — `pages/families/reports.tsx`
+- [ ] Очередь проверки: одобрить / отклонить, массово, история за 30 дней, доказательства — `pages/families/queue.tsx`
+- [ ] Банк: баланс, история, вывод (заявка, оплата, отмена, подтверждение), депозиты, ручная операция — `pages/families/bank.tsx`
+- [ ] Склад: предметы, перемещение, журнал с доказательствами — `pages/families/warehouse.tsx`
+- [ ] Участники: принять / отклонить, исключить, ранги, передать лидерство, баланс — `pages/families/members.tsx`
+- [ ] Дисциплина: предупреждения, наказания, отмена, временный мьют — `pages/families/discipline.tsx`
+- [ ] Мероприятия семьи, «піду», закрытие — `pages/families/events.tsx`
+- [ ] Рейтинг — `pages/families/rating.tsx`
+- [ ] Журнал действий (аудит) — `pages/families/audit.tsx`
+- [ ] Чат семьи — `GET /f/{family}/chat`
+- [ ] Голосовые комнаты семьи — `components/gc/voice-rooms.tsx`
+- [ ] Настройки: профиль семьи, правила и ставки — `pages/families/settings.tsx`
+- [ ] Настройки: боты Discord и Telegram (вебхуки, тест) — `PUT /f/{family}/settings/webhooks`, `/test`
+- [ ] Настройки: еженедельный отчёт по личному счёту — `POST /f/{family}/settings/digest`
+- [ ] Выйти из семьи — `POST /f/{family}/leave`
+- [ ] Виджет семьи на главном экране (в приложении — Android-виджет) — `components/gc/widget.tsx`
+
+## 14. Голосовые комнаты
+
+- [ ] Список комнат, создание, вход — `/voice/{type}/{id}`, `/voice/rooms/{room}/join`
+- [ ] Изменение, удаление комнаты — `PATCH/DELETE /voice/rooms/{room}`
+- [ ] Модерация участников (выключить микрофон, выгнать) — `POST /voice/rooms/{room}/members/{user}`
+- [ ] Панель текущего звонка — `components/gc/voice-bar.tsx`
+
+## 15. Прочее
+
+- [ ] Ссылка на Google Play — `components/gc/play-store.tsx` (**только сайт**)
+- [ ] Установка как PWA — `public/sw.js`, manifest (**только сайт**)
+- [ ] Главная страница для гостей — `pages/welcome.tsx` (**только сайт**)
+- [ ] Админ-панель и модерация — `pages/admin/*` (**только сайт**)
+
+---
+
+## Итог (заполняет Cursor)
+
+| #   | Функция | Статус (`[ ]` / `[~]`) | Где на сайте | Чего не хватает / куда добавить в приложении |
+| --- | ------- | ---------------------- | ------------ | -------------------------------------------- |
+|     |         |                        |              |                                              |

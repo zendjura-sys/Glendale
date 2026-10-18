@@ -420,6 +420,36 @@ class _CommunityScreenState extends State<CommunityScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
+  /// Правила чи довідник спільноти: розділи за рядками «# Заголовок».
+  Future<void> _showPage(BuildContext context, String kind) async {
+    final api = AppScope.read(context).session.api;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheet) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.85,
+        maxChildSize: 0.95,
+        builder: (sheet, controller) => FutureBuilder<Map<String, dynamic>>(
+          future: api.get(Api.site('/c/${widget.slug}/$kind')),
+          builder: (sheet, snap) {
+            if (!snap.hasData) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+            final lines = (text(snap.data!['text']) ?? '').split(RegExp(r'\r?\n'));
+            return ListView(controller: controller, padding: const EdgeInsets.fromLTRB(20, 20, 20, 32), children: [
+              Text(kind == 'rules' ? tr('Правила') : tr('Довідник'), style: display(20)),
+              const SizedBox(height: 14),
+              for (final line in lines)
+                if (RegExp(r'^#{1,3}\s+').hasMatch(line.trim()))
+                  Padding(padding: const EdgeInsets.only(top: 14, bottom: 6), child: Text(line.trim().replaceFirst(RegExp(r'^#{1,3}\s+'), ''), style: display(16)))
+                else
+                  Text(line, style: body(14.5, color: soft).copyWith(height: 1.5)),
+            ]);
+          },
+        ),
+      ),
+    );
+  }
+
   Future<void> _load() async {
     final api = AppScope.read(context).session.api;
     try {
@@ -545,6 +575,20 @@ class _CommunityScreenState extends State<CommunityScreen> {
               label: text(c['name']) ?? '',
               route: '/communities/${widget.slug}',
             ),
+          ],
+          if (mapOf(page?['rules'])['rules'] == true || mapOf(page?['rules'])['handbook'] == true) ...[
+            const SizedBox(height: 12),
+            Row(children: [
+              if (mapOf(page?['rules'])['rules'] == true)
+                Expanded(child: GhostButton(label: tr('Правила'), icon: LucideIcons.scrollText, compact: true, onPressed: () => _showPage(context, 'rules'))),
+              if (mapOf(page?['rules'])['rules'] == true && mapOf(page?['rules'])['handbook'] == true) const SizedBox(width: 10),
+              if (mapOf(page?['rules'])['handbook'] == true)
+                Expanded(child: GhostButton(label: tr('Довідник'), icon: LucideIcons.bookOpen, compact: true, onPressed: () => _showPage(context, 'handbook'))),
+            ]),
+          ],
+          if (intOf(page?['my_pending']) > 0) ...[
+            const SizedBox(height: 10),
+            Text(tr('Ваших записів на перевірці: {count}', {'count': page?['my_pending']}), style: body(12.5, color: gold)),
           ],
           if (text(c['description']) != null || text(c['website']) != null || text(c['city']) != null) ...[
             const SizedBox(height: 12),

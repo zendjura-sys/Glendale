@@ -55,6 +55,55 @@ class KodikClient
     }
 
     /**
+     * Сезони й серії (за всіма озвучками): номер сезону → номери серій.
+     *
+     * @param  array<string, string|null>  $criteria
+     * @return array<int, list<int>>
+     */
+    public function episodes(array $criteria): array
+    {
+        $params = array_filter($criteria, fn ($v) => filled($v));
+        if ($params === []) {
+            return [];
+        }
+
+        $seasons = [];
+        foreach ($this->request('/search', [...$params, 'limit' => 100, 'with_episodes' => 'true'])['results'] ?? [] as $item) {
+            if (! is_array($item) || ! is_array($item['seasons'] ?? null)) {
+                continue;
+            }
+            foreach ($item['seasons'] as $season => $data) {
+                if (! is_numeric($season) || ! is_array($data['episodes'] ?? null)) {
+                    continue;
+                }
+                foreach (array_keys($data['episodes']) as $episode) {
+                    if (is_numeric($episode)) {
+                        $seasons[(int) $season][(int) $episode] = (int) $episode;
+                    }
+                }
+            }
+        }
+
+        return self::sorted($seasons);
+    }
+
+    /**
+     * @param  array<int, array<int, int>>  $seasons
+     * @return array<int, list<int>>
+     */
+    public static function sorted(array $seasons): array
+    {
+        ksort($seasons);
+        $out = [];
+        foreach ($seasons as $season => $episodes) {
+            sort($episodes);
+            $out[$season] = $episodes;
+        }
+
+        return $out;
+    }
+
+    /**
      * Свіжі оновлення каталогу Kodik.
      *
      * @return list<array<string, mixed>>
@@ -97,6 +146,82 @@ class KodikClient
                 return;
             }
         }
+    }
+
+    /** Ключ партнерського методу прямих посилань (video-links). */
+    public function linksKey(): ?string
+    {
+        // Окремий ключ video-links, а якщо його не задано — той самий токен Kodik, що й для плеєра на сайті.
+        return $this->settings->secret('kodik_links_key') ?: config('services.kodik.links_key') ?: $this->token();
+    }
+
+    public function streamsAvailable(): bool
+    {
+        return $this->configured() && filled($this->linksKey());
+    }
+
+    /**
+     * Посилання на плеєр конкретної серії озвучки (з пошуку Kodik with_episodes). Для фільму — посилання самого плеєра.
+     */
+    public function episodeLink(string $externalId, ?int $season, ?int $episode): ?string
+    {
+        $item = $this->request('/search', ['id' => $externalId, 'with_episodes' => 'true'])['results'][0] ?? null;
+        if (! is_array($item)) {
+            return null;
+        }
+        if ($episode === null) {
+            return self::url($item['link'] ?? null);
+        }
+        $seasons = is_array($item['seasons'] ?? null) ? $item['seasons'] : [];
+        $data = $seasons[(string) ($season ?? 1)] ?? ($season === null ? (reset($seasons) ?: null) : null);
+        $link = is_array($data) && is_array($data['episodes'] ?? null) ? ($data['episodes'][(string) $episode] ?? null) : null;
+        if (is_array($link)) {
+            $link = $link['link'] ?? null;
+        }
+
+        return self::url($link);
+    }
+
+    /**
+     * Прямі потоки серії за партнерським методом Kodik video-links (ключ партнера + домен сайту).
+     * Відповідь — якості 360/480/720/1080 з адресами HLS.
+     *
+     * @return array<string, string> якість (720p) → адреса m3u8
+     */
+    public function streams(string $playerLink): array
+    {
+        $key = $this->linksKey();
+        if (! filled($key)) {
+            return [];
+        }
+        $link = preg_replace('#^https?:#', '', $playerLink);
+        $domain = (string) parse_url((string) config('app.url'), PHP_URL_HOST);
+        try {
+            $response = Http::acceptJson()->timeout(15)->get((string) config('services.kodik.links_url'), ['p' => $key, 'link' => $link, 'd' => $domain]);
+        } catch (ConnectionException) {
+            throw new CinemaException('Kodik не відповідає. Спробуйте пізніше.');
+        }
+        if (! $response->successful()) {
+            throw new CinemaException('Kodik не віддав посилання на відео.', $response->status() >= 400 ? $response->status() : 502);
+        }
+        $json = $response->json();
+        $links = is_array($json) && is_array($json['links'] ?? null) ? $json['links'] : (is_array($json) ? $json : []);
+
+        $out = [];
+        foreach (['360', '480', '720', '1080'] as $quality) {
+            $entry = $links[$quality] ?? null;
+            $src = is_array($entry) ? ($entry['src'] ?? $entry['Src'] ?? null) : (is_array($entry[0] ?? null) ? ($entry[0]['src'] ?? null) : null);
+            if (! is_string($src) || $src === '') {
+                continue;
+            }
+            if (str_starts_with($src, '//')) {
+                $src = 'https:'.$src;
+            }
+            // HLS-плеєру потрібен маніфест (:hls:manifest.m3u8), а не адреса першого сегмента.
+            $out[$quality.'p'] = str_replace(':hls:hls.m3u8', ':hls:manifest.m3u8', $src);
+        }
+
+        return $out;
     }
 
     public function test(): bool
@@ -182,7 +307,7 @@ class KodikClient
 
     /**
      * @param  array<string, mixed>  $item
-     * @return array{provider: string, external_id: string, translation: string|null, translation_type: string|null, quality: string|null, link: string}
+     * @return array{provider: string, external_id: string, translation: string|null, translation_type: string|null, quality: string|null, link: string, episodes: int|null}
      */
     private static function source(array $item): array
     {
@@ -195,6 +320,7 @@ class KodikClient
             'translation_type' => self::str($item['translation']['type'] ?? null),
             'quality' => self::str($item['quality'] ?? null),
             'link' => str_starts_with($link, '//') ? 'https:'.$link : $link,
+            'episodes' => ((int) ($item['last_episode'] ?? $item['episodes_count'] ?? 0)) ?: null,
         ];
     }
 
@@ -237,9 +363,14 @@ class KodikClient
         if (! str_contains($url, 'token=')) {
             $params['token'] = $this->token();
         }
+        // Параметри дописуємо в саму адресу: next_page від Kodik уже має рядок запиту (token, next),
+        // а передача окремого масиву query його повністю замінює — друга сторінка йшла без токена.
+        if ($params !== []) {
+            $url .= (str_contains($url, '?') ? '&' : '?').http_build_query($params);
+        }
 
         try {
-            $response = Http::acceptJson()->timeout(20)->get($url, $params);
+            $response = Http::acceptJson()->timeout(20)->get($url);
         } catch (ConnectionException) {
             throw new CinemaException('Kodik не відповідає. Спробуйте пізніше.');
         }

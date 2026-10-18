@@ -139,6 +139,8 @@ function Playlists() {
                 <div className="mb-4 flex items-center gap-4">
                     {open.cover_url && (
                         <img
+                            loading="lazy"
+                            decoding="async"
                             src={open.cover_url}
                             alt=""
                             className="size-20 rounded-2xl object-cover"
@@ -185,6 +187,8 @@ function Playlists() {
                     <span className="relative block aspect-square overflow-hidden rounded-xl bg-white/5">
                         {playlist.cover_url ? (
                             <img
+                                loading="lazy"
+                                decoding="async"
                                 src={playlist.cover_url}
                                 alt=""
                                 className="size-full object-cover transition duration-500 group-hover:scale-105"
@@ -287,6 +291,8 @@ export function SpotifyPanel({
                     <div className="relative flex flex-wrap items-center gap-4">
                         {account.avatar_url ? (
                             <img
+                                loading="lazy"
+                                decoding="async"
                                 src={account.avatar_url}
                                 alt=""
                                 className="size-14 rounded-full object-cover ring-2 ring-spotify/60"

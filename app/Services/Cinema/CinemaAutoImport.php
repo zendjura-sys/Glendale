@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * Автонаповнення каталогу: свіжі оновлення Kodik і FlixCDN → імпорт/оновлення плеєрів → збагачення метаданими.
+ * Автонаповнення каталогу: свіжі оновлення Kodik, Videoseed і FlixCDN, тайтли зі списків TMDB →
+ * імпорт/оновлення плеєрів → збагачення метаданими (і повторне оновлення старих).
  */
 class CinemaAutoImport
 {
@@ -33,8 +34,9 @@ class CinemaAutoImport
 
     public const DEFAULTS = [
         'enabled' => false,
-        'providers' => ['kodik', 'flixcdn'],
+        'providers' => ['kodik', 'videoseed', 'flixcdn'],
         'kodik_types' => [],
+        'videoseed_lists' => ['movie', 'serial'],
         'pages' => 2,
         'interval' => 60,
         'publish' => true,
@@ -50,6 +52,8 @@ class CinemaAutoImport
         private readonly KodikClient $kodik,
         private readonly FlixcdnClient $flixcdn,
         private readonly MetadataEnricher $enricher,
+        private readonly VideoseedClient $videoseed,
+        private readonly TmdbAutoParse $tmdb,
     ) {}
 
     /**
@@ -138,6 +142,13 @@ class CinemaAutoImport
                 }, $config);
             }
 
+            if (in_array('videoseed', $providers, true) && $this->videoseed->configured()) {
+                $this->collect($stats, 'videoseed', fn () => $this->videoseed->updates(
+                    array_values(array_intersect((array) $config['videoseed_lists'], ['movie', 'serial'])) ?: ['movie', 'serial'],
+                    max(1, min(20, (int) $config['pages'])),
+                ), $config);
+            }
+
             if (in_array('flixcdn', $providers, true) && $this->flixcdn->updatesTemplate()) {
                 $this->collect($stats, 'flixcdn', function () use ($config) {
                     for ($page = 1; $page <= max(1, min(20, (int) $config['pages'])); $page++) {
@@ -149,6 +160,10 @@ class CinemaAutoImport
                     }
                 }, $config);
             }
+        }
+
+        if (! $enrichOnly) {
+            $this->tmdb->discover($stats, $this->cinema, $this->videoseed, $this->kodik, $this->enricher);
         }
 
         if ($enrichOnly || $config['enrich']) {
@@ -211,13 +226,20 @@ class CinemaAutoImport
             return 0;
         }
 
+        $limit = max(1, min(500, $limit));
+        $movies = Movie::query()->whereNull('enriched_at')->latest('id')->limit($limit)->get();
+        // Решта ліміту — на повторне оновлення старих тайтлів (якщо ввімкнено в «Автопарсинг TMDB»).
+        $stale = $this->tmdb->staleQuery();
+        if ($stale !== null && $movies->count() < $limit) {
+            $movies = $movies->concat($stale->limit($limit - $movies->count())->get());
+        }
+
         $count = 0;
-        Movie::query()->whereNull('enriched_at')->latest('id')->limit(max(1, min(500, $limit)))->get()
-            ->each(function (Movie $movie) use (&$count, &$errors) {
-                $result = $this->enricher->enrich($movie);
-                array_push($errors, ...$result['errors']);
-                $count += $result['providers'] !== [] ? 1 : 0;
-            });
+        foreach ($movies as $movie) {
+            $result = $this->enricher->enrich($movie);
+            array_push($errors, ...$result['errors']);
+            $count += $result['providers'] !== [] ? 1 : 0;
+        }
 
         return $count;
     }

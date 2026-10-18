@@ -6,11 +6,16 @@ import {
     MoreHorizontal,
     Search,
     ShieldCheck,
+    Tag,
     UserMinus,
     UsersRound,
     X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import {
+    RoleBadge,
+    RoleTitleDialog,
+} from '@/components/communities/role-badge';
 import { roleLabels } from '@/components/communities/roles';
 import { CommunityAvatar } from '@/components/gc/community-avatar';
 import { UserAvatar } from '@/components/gc/user-avatar';
@@ -118,6 +123,16 @@ export default function CommunityMembers({
         ) {
             router.delete(`${base}/${member.username}`, options);
         }
+    };
+
+    const [titling, setTitling] = useState<CommunityMemberItem | null>(null);
+    const saveTitle = (title: string, color: string) => {
+        if (!titling) return;
+        router.patch(
+            `${base}/${titling.username}/title`,
+            { title, color },
+            { ...options, onSuccess: () => setTitling(null) },
+        );
     };
 
     const canManage = (member: CommunityMemberItem) =>
@@ -230,6 +245,13 @@ export default function CommunityMembers({
                                         {member.is_verified && (
                                             <VerifiedBadge className="size-3.5 shrink-0" />
                                         )}
+                                        {member.title && (
+                                            <RoleBadge
+                                                title={member.title}
+                                                color={member.color}
+                                                className="shrink-0"
+                                            />
+                                        )}
                                     </Link>
                                     <p className="flex flex-wrap items-center gap-x-2 text-xs text-white/45">
                                         {member.is_friend && (
@@ -295,7 +317,7 @@ export default function CommunityMembers({
                                         </button>
                                     </div>
                                 ) : (
-                                    canManage(member) && (
+                                    isAdmin && (
                                         <DropdownMenu>
                                             <DropdownMenuTrigger className="rounded-full p-2 text-white/45 transition outline-none hover:bg-white/[0.06] hover:text-white">
                                                 <MoreHorizontal className="size-5" />
@@ -304,67 +326,85 @@ export default function CommunityMembers({
                                                 align="end"
                                                 className="glass-strong w-60 rounded-2xl border-white/10 p-1.5 text-white"
                                             >
-                                                <DropdownMenuLabel className="text-xs text-white/45">
-                                                    {tr('Роль')}
-                                                </DropdownMenuLabel>
-                                                {(
-                                                    [
-                                                        ...(isOwner
-                                                            ? ([
-                                                                  'admin',
-                                                              ] as const)
-                                                            : []),
-                                                        'editor',
-                                                        'member',
-                                                    ] as CommunityRole[]
-                                                ).map((role) => (
-                                                    <DropdownMenuItem
-                                                        key={role}
-                                                        className="rounded-lg focus:bg-white/[0.06]"
-                                                        onSelect={() =>
-                                                            setRole(
-                                                                member,
-                                                                role,
-                                                            )
-                                                        }
-                                                    >
-                                                        <Check
-                                                            className={cn(
-                                                                member.role ===
-                                                                    role
-                                                                    ? 'opacity-100'
-                                                                    : 'opacity-0',
-                                                            )}
-                                                        />
-                                                        {roleLabels[role]}
-                                                    </DropdownMenuItem>
-                                                ))}
-                                                {isOwner && (
-                                                    <DropdownMenuItem
-                                                        className="rounded-lg text-gc-gold focus:bg-gc-gold/10 focus:text-[#ffe39b]"
-                                                        onSelect={() =>
-                                                            setRole(
-                                                                member,
-                                                                'owner',
-                                                            )
-                                                        }
-                                                    >
-                                                        <Crown className="text-gc-gold" />
-                                                        {tr(
-                                                            'Передати права власника',
-                                                        )}
-                                                    </DropdownMenuItem>
-                                                )}
-                                                <DropdownMenuSeparator className="bg-white/5" />
                                                 <DropdownMenuItem
-                                                    className="rounded-lg text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
+                                                    className="rounded-lg focus:bg-white/[0.06]"
                                                     onSelect={() =>
-                                                        remove(member)
+                                                        setTitling(member)
                                                     }
                                                 >
-                                                    <UserMinus className="text-rose-300" />
-                                                    {tr('Виключити')}
+                                                    <Tag />
+                                                    {tr('Підпис ролі')}
                                                 </DropdownMenuItem>
+                                                {canManage(member) && (
+                                                    <>
+                                                        <DropdownMenuSeparator className="bg-white/5" />
+                                                        <DropdownMenuLabel className="text-xs text-white/45">
+                                                            {tr('Роль')}
+                                                        </DropdownMenuLabel>
+                                                        {(
+                                                            [
+                                                                ...(isOwner
+                                                                    ? ([
+                                                                          'admin',
+                                                                      ] as const)
+                                                                    : []),
+                                                                'editor',
+                                                                'member',
+                                                            ] as CommunityRole[]
+                                                        ).map((role) => (
+                                                            <DropdownMenuItem
+                                                                key={role}
+                                                                className="rounded-lg focus:bg-white/[0.06]"
+                                                                onSelect={() =>
+                                                                    setRole(
+                                                                        member,
+                                                                        role,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Check
+                                                                    className={cn(
+                                                                        member.role ===
+                                                                            role
+                                                                            ? 'opacity-100'
+                                                                            : 'opacity-0',
+                                                                    )}
+                                                                />
+                                                                {
+                                                                    roleLabels[
+                                                                        role
+                                                                    ]
+                                                                }
+                                                            </DropdownMenuItem>
+                                                        ))}
+                                                        {isOwner && (
+                                                            <DropdownMenuItem
+                                                                className="rounded-lg text-gc-gold focus:bg-gc-gold/10 focus:text-[#ffe39b]"
+                                                                onSelect={() =>
+                                                                    setRole(
+                                                                        member,
+                                                                        'owner',
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Crown className="text-gc-gold" />
+                                                                {tr(
+                                                                    'Передати права власника',
+                                                                )}
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        <DropdownMenuSeparator className="bg-white/5" />
+                                                        <DropdownMenuItem
+                                                            className="rounded-lg text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
+                                                            onSelect={() =>
+                                                                remove(member)
+                                                            }
+                                                        >
+                                                            <UserMinus className="text-rose-300" />
+                                                            {tr('Виключити')}
+                                                        </DropdownMenuItem>
+                                                    </>
+                                                )}
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     )
@@ -374,6 +414,18 @@ export default function CommunityMembers({
                     </InfiniteScroll>
                 )}
             </div>
+            {titling && (
+                <RoleTitleDialog
+                    open
+                    name={titling.name}
+                    initial={{
+                        title: titling.title ?? '',
+                        color: titling.color ?? null,
+                    }}
+                    onClose={() => setTitling(null)}
+                    onSave={saveTitle}
+                />
+            )}
         </>
     );
 }

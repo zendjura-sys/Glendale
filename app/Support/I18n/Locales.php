@@ -163,24 +163,25 @@ class Locales
     /** Чи відома мова ICU (щоб у налаштуваннях не додали «xx»). */
     public static function exists(string $code): bool
     {
-        $name = Locale::getDisplayLanguage($code, 'en');
+        // ext-intl повертає string|false, а symfony/polyfill-intl-icu типізує як string — нормалізуємо.
+        $name = Locale::getDisplayLanguage($code, 'en') ?: '';
 
-        return is_string($name) && strtolower($name) !== strtolower(self::primary($code));
+        return $name !== '' && strtolower($name) !== strtolower(self::primary($code));
     }
 
     /** «English», «Deutsch», «português (Brasil)» — назва мови нею самою. */
     public static function nativeName(string $code): string
     {
-        $name = Locale::getDisplayName($code, $code);
+        $name = Locale::getDisplayName($code, $code) ?: '';
 
-        return ! is_string($name) || $name === $code ? $code : mb_convert_case(mb_substr($name, 0, 1), MB_CASE_UPPER).mb_substr($name, 1);
+        return $name === '' || $name === $code ? $code : mb_convert_case(mb_substr($name, 0, 1), MB_CASE_UPPER).mb_substr($name, 1);
     }
 
     /** Назва українською — для адмінки. */
     public static function ukrainianName(string $code): string
     {
-        $name = Locale::getDisplayName($code, 'uk');
+        $name = Locale::getDisplayName($code, 'uk') ?: '';
 
-        return is_string($name) ? $name : $code;
+        return $name !== '' ? $name : $code;
     }
 }

@@ -1,7 +1,6 @@
-import { Form, Head, usePage } from '@inertiajs/react';
+import { Form, Head } from '@inertiajs/react';
 import { SocialLogin } from '@/components/auth/social-login';
 import InputError from '@/components/input-error';
-import PasskeyVerify from '@/components/passkey-verify';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 import { tr } from '@/lib/i18n';
@@ -20,8 +18,6 @@ type Props = {
 };
 
 export default function Login({ status, canResetPassword }: Props) {
-    const { site } = usePage().props;
-
     return (
         <>
             <Head title={tr('Вхід')} />
@@ -32,17 +28,9 @@ export default function Login({ status, canResetPassword }: Props) {
                 </div>
             )}
 
-            <div className="mb-2.5 empty:hidden">
-                <SocialLogin
-                    mode="login"
-                    divider={
-                        typeof window === 'undefined' ||
-                        !window.PublicKeyCredential
-                    }
-                />
+            <div className="mb-6 empty:hidden">
+                <SocialLogin mode="login" />
             </div>
-
-            <PasskeyVerify />
 
             <Form
                 {...store.form()}
@@ -67,6 +55,14 @@ export default function Login({ status, canResetPassword }: Props) {
                                     placeholder="you@gamecon.online"
                                 />
                                 <InputError message={errors.email} />
+                                {errors.email && (
+                                    <TextLink
+                                        href="/appeal"
+                                        className="text-xs"
+                                    >
+                                        {tr('Акаунт заблоковано? Оскаржити')}
+                                    </TextLink>
+                                )}
                             </div>
 
                             <div className="grid gap-2">
@@ -121,15 +117,6 @@ export default function Login({ status, canResetPassword }: Props) {
                                 {tr('Увійти')}
                             </Button>
                         </div>
-
-                        {site?.registration_open !== false && (
-                            <div className="text-center text-sm text-white/45">
-                                {tr('Ще немає акаунта?')}{' '}
-                                <TextLink href={register()} tabIndex={5}>
-                                    {tr('Зареєструватися')}
-                                </TextLink>
-                            </div>
-                        )}
                     </>
                 )}
             </Form>

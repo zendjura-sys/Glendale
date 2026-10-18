@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Support\PlusStyle;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -34,12 +36,19 @@ use Illuminate\Support\Facades\Storage;
  * @property bool $is_recruiting
  * @property int $members_count
  * @property Carbon $created_at
+ * @property Carbon|null $season_started_at
+ * @property Carbon|null $plus_until GameCon+ для сім'ї активний до
+ * @property array<string, string>|null $plus_style
  * @property-read string|null $logo_url
  * @property-read string|null $cover_url
+ * @property string|null $donation_jar Банка Monobank (https://send.monobank.ua/jar/…)
+ * @property string|null $donation_note
  */
+// Банка — лише для сторінок сайту (картка «Підтримати»); у застосунок і API не віддається.
+#[Hidden(['donation_jar', 'donation_note'])]
 #[Fillable([
     'server_id', 'owner_id', 'slug', 'name', 'tag', 'description', 'status', 'status_reason', 'verified_at',
-    'settings', 'rank_titles', 'permissions', 'webhooks', 'is_recruiting',
+    'settings', 'rank_titles', 'permissions', 'webhooks', 'is_recruiting', 'season_started_at',
 ])]
 class Family extends Model
 {
@@ -161,6 +170,9 @@ class Family extends Model
             'webhooks' => 'encrypted:array',
             'verified_at' => 'datetime',
             'is_recruiting' => 'boolean',
+            'season_started_at' => 'datetime',
+            'plus_until' => 'datetime',
+            'plus_style' => 'array',
         ];
     }
 
@@ -379,6 +391,11 @@ class Family extends Model
         return Attribute::get(fn () => $this->cover_path ? Storage::disk('public')->url($this->cover_path) : null);
     }
 
+    public function isPlus(): bool
+    {
+        return $this->plus_until !== null && $this->plus_until->isFuture();
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -395,6 +412,7 @@ class Family extends Model
             'status_label' => self::STATUSES[$this->status] ?? $this->status,
             'members_count' => $this->members_count,
             'is_recruiting' => $this->is_recruiting,
+            'plus' => $this->isPlus() ? PlusStyle::familyCard($this->plus_style) : null,
             'server' => $this->relationLoaded('server') && $this->server ? [
                 'slug' => $this->server->slug,
                 'name' => $this->server->name,

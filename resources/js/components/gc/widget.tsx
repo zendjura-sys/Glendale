@@ -26,7 +26,7 @@ export function Widget({
                 {Icon && (
                     <Icon aria-hidden className="size-4 text-gc-lilac-400" />
                 )}
-                <h3 className="font-display text-[13px] font-semibold tracking-wide text-white/90 uppercase">
+                <h3 className="font-display text-[13px] font-semibold text-white/90">
                     {title}
                 </h3>
                 <span className="ml-auto">

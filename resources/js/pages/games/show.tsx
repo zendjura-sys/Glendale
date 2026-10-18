@@ -1,7 +1,8 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     ArrowLeft,
     BookOpen,
+    Clapperboard,
     Building2,
     CalendarDays,
     Check,
@@ -20,14 +21,20 @@ import {
     X,
 } from 'lucide-react';
 import { useState } from 'react';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { EventList, GameEventForm } from '@/components/events/event-card';
 import type { CalendarEvent } from '@/components/events/event-card';
 import { PlayingNow } from '@/components/gc/playing';
+import { FollowButton } from '@/components/gc/follow-button';
+import { PinButton } from '@/components/gc/pin-button';
+import { SaveButton } from '@/components/gc/save-button';
 import { cn } from '@/lib/utils';
 import type { ClanCard, GameCard, UserCard } from '@/types';
 import { GameCover } from './index';
 import { LOCALE, tr } from '@/lib/i18n';
+import { MomentCard } from '@/components/moments/moment-card';
+import type { MomentCardData } from '@/components/moments/moment-card';
+import { usePlugin } from '@/lib/plugins';
 
 type Details = {
     summary?: string;
@@ -75,13 +82,22 @@ type Details = {
     igdb_url?: string;
 };
 
+type PosterPalette = {
+    base: string;
+    accent: string;
+    soft: string;
+    swatches: Record<string, string>;
+} | null;
+
 type Props = {
+    palette?: PosterPalette;
     game: GameCard & {
         genres: string[];
         modes: { key: string; label: string }[];
         released: string | null;
         rating: number | null;
         links: { store: string; label: string; url: string }[];
+        collections: string[];
         details: Details;
     };
     similar: GameCard[];
@@ -92,6 +108,20 @@ type Props = {
     events: CalendarEvent[];
     event_types: Record<string, string>;
     can_add_event: boolean;
+    saved: boolean;
+    following: boolean;
+    pinned: boolean;
+    steam_friends: UserCard[];
+    can_curate: boolean;
+    guides: {
+        id: number;
+        title: string;
+        body: string;
+        created_at: string;
+        user: UserCard | null;
+        mine: boolean;
+    }[];
+    moments?: MomentCardData[];
 };
 
 const STORE_STYLE: Record<string, string> = {
@@ -129,9 +159,7 @@ function Section({
 function Fact({ label, value }: { label: string; value: ReactNode }) {
     return (
         <div className="rounded-2xl bg-white/[0.03] p-3">
-            <p className="text-xs tracking-wide text-white/40 uppercase">
-                {label}
-            </p>
+            <p className="text-xs text-white/40">{label}</p>
             <p className="mt-0.5 text-sm text-white/85">{value}</p>
         </div>
     );
@@ -169,8 +197,75 @@ function Score({
     );
 }
 
+function GuideForm({ slug }: { slug: string }) {
+    const form = useForm({ title: '', body: '' });
+
+    return (
+        <form
+            className="mb-4 space-y-2"
+            onSubmit={(event) => {
+                event.preventDefault();
+                form.post(`/games/${slug}/guides`, {
+                    preserveScroll: true,
+                    onSuccess: () => form.reset(),
+                });
+            }}
+        >
+            <input
+                value={form.data.title}
+                maxLength={80}
+                onChange={(event) => form.setData('title', event.target.value)}
+                placeholder={tr('Назва гіда')}
+                className="input-glass h-10 w-full rounded-xl px-3 text-sm text-white placeholder:text-white/30"
+            />
+            <textarea
+                value={form.data.body}
+                maxLength={5000}
+                rows={4}
+                onChange={(event) => form.setData('body', event.target.value)}
+                placeholder={tr('Коротко: як почати, що зібрати, чого уникати')}
+                className="input-glass w-full rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30"
+            />
+            <button
+                type="submit"
+                disabled={form.processing}
+                className="btn-glow h-10 rounded-xl px-4 text-sm font-semibold disabled:opacity-50"
+            >
+                {tr('Опублікувати гід')}
+            </button>
+        </form>
+    );
+}
+
 /** Сторінка гри: опис, медіа, мультиплеєр, рейтинги, компанії, мови, магазини, спільнота й клани. */
+/**
+ * Акцент сайту на сторінці гри — з постера (свотчі Palette API, порахував сервер).
+ * Змінні перевизначаються лише всередині сторінки, тож кнопки, мітки й посилання беруть колір гри.
+ */
+function paletteStyle(palette: PosterPalette): CSSProperties | undefined {
+    if (!palette) return undefined;
+
+    return {
+        '--color-gc-blue': palette.accent,
+        '--color-gc-indigo': palette.accent,
+        '--color-gc-purple': palette.soft,
+        '--color-gc-pink': palette.accent,
+        '--color-gc-lilac-200': palette.soft,
+        '--color-gc-lilac-300': palette.soft,
+        '--color-gc-lilac-400': palette.accent,
+        '--color-gc-lilac-500': palette.accent,
+        '--primary': palette.accent,
+        '--ring': palette.accent,
+        '--gc-gradient': `linear-gradient(120deg, ${palette.accent}, ${palette.soft})`,
+    } as CSSProperties;
+}
+
+/** Матове «рідке скло» для кнопок під постером. */
+const POSTER_GLASS =
+    'h-10 rounded-xl border-gc-lilac-400/35 bg-gc-indigo/[0.14] px-3.5 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18)] backdrop-blur-xl backdrop-saturate-150 hover:bg-gc-indigo/25';
+
 export default function GameShow({
+    palette = null,
     game,
     similar,
     clans,
@@ -180,8 +275,16 @@ export default function GameShow({
     events,
     event_types,
     can_add_event,
+    saved,
+    following,
+    pinned,
+    guides,
+    steam_friends,
+    can_curate,
+    moments = [],
 }: Props) {
     const d = game.details ?? {};
+    const guidesOn = usePlugin('game_guides');
     const [video, setVideo] = useState<string | null>(null);
     const [shot, setShot] = useState<string | null>(null);
     const mp = d.multiplayer ?? {};
@@ -237,7 +340,16 @@ export default function GameShow({
     const beat = d.time_to_beat;
 
     return (
-        <>
+        <div className="relative isolate" style={paletteStyle(palette)}>
+            {palette && (
+                <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-x-[-12px] -top-6 -z-10 h-[620px] opacity-70 blur-3xl"
+                    style={{
+                        background: `radial-gradient(60% 55% at 25% 25%, ${palette.accent}66, transparent 70%), radial-gradient(55% 50% at 85% 45%, ${palette.soft}33, transparent 75%)`,
+                    }}
+                />
+            )}
             <Head title={game.name} />
             <Link
                 href="/games"
@@ -245,54 +357,98 @@ export default function GameShow({
             >
                 <ArrowLeft className="size-4" /> {tr('Каталог ігор')}
             </Link>
-            <div className="glass overflow-hidden rounded-3xl">
-                <div className="relative aspect-[21/8] max-h-[320px] w-full overflow-hidden bg-black/40">
-                    {d.artworks?.[0] ? (
-                        <img
-                            src={d.artworks[0]}
-                            alt=""
-                            className="size-full object-cover"
-                        />
-                    ) : (
-                        <GameCover game={game} />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-                    <div className="absolute inset-x-4 bottom-4">
-                        <h1 className="font-display text-2xl font-semibold text-white sm:text-3xl">
+            <div
+                className="glass overflow-hidden rounded-3xl"
+                style={
+                    palette
+                        ? {
+                              backgroundImage: `linear-gradient(to bottom, ${palette.base}e6, ${palette.accent}26 360px, transparent 760px)`,
+                          }
+                        : undefined
+                }
+            >
+                <div className="relative flex min-h-[300px] flex-col justify-start overflow-hidden sm:min-h-[340px]">
+                    <div
+                        className="absolute inset-0 [mask-image:linear-gradient(to_bottom,black_45%,transparent)]"
+                        aria-hidden
+                    >
+                        {d.artworks?.[0] ? (
+                            <img
+                                decoding="async"
+                                fetchPriority="high"
+                                src={d.artworks[0]}
+                                alt=""
+                                className="size-full object-cover"
+                            />
+                        ) : (
+                            <GameCover game={game} />
+                        )}
+                    </div>
+                    <div className="scrim scrim-top scrim-dark absolute inset-x-0 top-0 h-2/3" />
+                    <div className="relative space-y-3 p-4 sm:p-6">
+                        <h1 className="font-display text-[28px] leading-[1.1] font-bold tracking-tight break-words text-white drop-shadow-[0_2px_12px_rgb(0_0_0/0.6)] sm:text-4xl">
                             {game.name}
                         </h1>
-                        <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/70">
-                            <span>
-                                {game.platforms.map((p) => p.label).join(' · ')}
-                            </span>
+                        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium text-white/85">
                             {game.released && (
                                 <span>{game.released.slice(0, 4)}</span>
                             )}
+                            {game.platforms.length > 0 && (
+                                <span>
+                                    {game.platforms
+                                        .map((p) => p.label)
+                                        .join(' · ')}
+                                </span>
+                            )}
                             {game.rating ? (
                                 <span className="inline-flex items-center gap-1">
-                                    <Star className="size-3.5 fill-amber-300 text-amber-300" />{' '}
+                                    <Star className="size-3.5 fill-amber-300 text-amber-300" />
                                     {game.rating.toFixed(1)}
                                 </span>
                             ) : null}
-                            {d.age_ratings?.map((a) => (
-                                <span
-                                    key={a}
-                                    className="rounded-md border border-white/25 px-1.5 text-xs"
-                                >
-                                    {a}
-                                </span>
-                            ))}
                         </p>
+                        {(d.age_ratings?.length ?? 0) > 0 && (
+                            <p className="flex flex-wrap gap-1.5">
+                                {d.age_ratings?.map((a) => (
+                                    <span
+                                        key={a}
+                                        className="rounded-md border border-white/30 bg-black/20 px-1.5 py-0.5 text-xs font-medium text-white/85 backdrop-blur-md"
+                                    >
+                                        {a}
+                                    </span>
+                                ))}
+                            </p>
+                        )}
                     </div>
                 </div>
                 <div className="space-y-4 p-4 sm:p-5">
+                    <div className="flex flex-wrap gap-2">
+                        <FollowButton
+                            kind="game"
+                            id={game.id}
+                            following={following}
+                            className={POSTER_GLASS}
+                        />
+                        <PinButton
+                            kind="game"
+                            id={game.id}
+                            pinned={pinned}
+                            className={POSTER_GLASS}
+                        />
+                        <SaveButton
+                            kind="game"
+                            id={game.id}
+                            saved={saved}
+                            className={POSTER_GLASS}
+                        />
+                    </div>
                     {(game.modes.length > 0 || game.genres.length > 0) && (
                         <div className="flex flex-wrap gap-1.5">
                             {game.modes.map((m) => (
                                 <Link
                                     key={m.key}
                                     href={`/games?mode=${m.key}`}
-                                    className="rounded-lg bg-[var(--accent)]/20 px-2.5 py-1 text-xs text-[#c7d2fe] hover:bg-[var(--accent)]/30"
+                                    className="rounded-lg bg-gc-indigo/20 px-2.5 py-1 text-xs text-gc-lilac-200 hover:bg-gc-indigo/30"
                                 >
                                     {m.label}
                                 </Link>
@@ -345,6 +501,63 @@ export default function GameShow({
             <div className="mt-4">
                 <PlayingNow users={playing_now} count={playing_count} />
             </div>
+
+            {(steam_friends.length > 0 || can_curate) && (
+                <section className="glass mt-4 space-y-3 rounded-3xl p-4 sm:p-5">
+                    {steam_friends.length > 0 && (
+                        <div>
+                            <h2 className="font-display text-base font-semibold text-white">
+                                {tr('Друзі з цією грою в Steam')}
+                            </h2>
+                            <p className="mt-2 text-sm text-white/70">
+                                {steam_friends
+                                    .map((friend) => friend.name)
+                                    .join(', ')}
+                            </p>
+                        </div>
+                    )}
+                    {can_curate && (
+                        <form
+                            className="flex flex-wrap gap-3 text-sm text-white/80"
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                const data = new FormData(event.currentTarget);
+                                router.post(`/games/${game.slug}/collections`, {
+                                    duo: data.get('duo') === 'on',
+                                    evening: data.get('evening') === 'on',
+                                });
+                            }}
+                        >
+                            <label className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    name="duo"
+                                    defaultChecked={game.collections.includes(
+                                        'duo',
+                                    )}
+                                />
+                                {tr('На двох')}
+                            </label>
+                            <label className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    name="evening"
+                                    defaultChecked={game.collections.includes(
+                                        'evening',
+                                    )}
+                                />
+                                {tr('На вечір')}
+                            </label>
+                            <button
+                                type="submit"
+                                className="rounded-xl bg-white px-3 py-1.5 text-sm font-semibold text-black"
+                            >
+                                {tr('Зберегти добірку')}
+                            </button>
+                        </form>
+                    )}
+                </section>
+            )}
 
             {(events.length > 0 || can_add_event) && (
                 <section className="glass mt-4 rounded-3xl p-4 sm:p-5">
@@ -652,6 +865,74 @@ export default function GameShow({
                 </Section>
             )}
 
+            {moments.length > 0 && (
+                <Section title={tr('Моменти')} icon={Clapperboard}>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        {moments.map((moment) => (
+                            <MomentCard key={moment.id} moment={moment} />
+                        ))}
+                    </div>
+                    <Link
+                        href={`/moments?game=${game.slug}`}
+                        className="mt-4 inline-flex text-sm font-medium text-gc-lilac-300 hover:text-white"
+                    >
+                        {tr('Усі моменти гри →')}
+                    </Link>
+                </Section>
+            )}
+
+            {guidesOn && (
+                <Section title={tr('Гіди')} icon={BookOpen}>
+                    <GuideForm slug={game.slug} />
+                    {guides.length === 0 ? (
+                        <p className="text-sm text-white/45">
+                            {tr('Гідів ще немає. Напишіть перший.')}
+                        </p>
+                    ) : (
+                        <div className="space-y-3">
+                            {guides.map((guide) => (
+                                <article
+                                    key={guide.id}
+                                    className="rounded-2xl bg-white/[0.04] p-4"
+                                >
+                                    <div className="flex items-start gap-3">
+                                        <div className="min-w-0 flex-1">
+                                            <h3 className="font-semibold text-white">
+                                                {guide.title}
+                                            </h3>
+                                            {guide.user && (
+                                                <Link
+                                                    href={`/${guide.user.username}`}
+                                                    className="text-xs text-white/45 hover:text-white"
+                                                >
+                                                    {guide.user.name}
+                                                </Link>
+                                            )}
+                                            <p className="mt-2 text-sm whitespace-pre-line text-white/75">
+                                                {guide.body}
+                                            </p>
+                                        </div>
+                                        {guide.mine && (
+                                            <button
+                                                type="button"
+                                                className="text-xs text-rose-200 hover:text-rose-100"
+                                                onClick={() =>
+                                                    router.delete(
+                                                        `/games/${game.slug}/guides/${guide.id}`,
+                                                    )
+                                                }
+                                            >
+                                                {tr('Видалити')}
+                                            </button>
+                                        )}
+                                    </div>
+                                </article>
+                            ))}
+                        </div>
+                    )}
+                </Section>
+            )}
+
             {(d.websites?.length || d.igdb_url) && (
                 <Section title={tr('Спільнота й посилання')} icon={Globe}>
                     <div className="flex flex-wrap gap-2">
@@ -713,6 +994,8 @@ export default function GameShow({
                                     <span className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/10 text-sm font-bold text-white">
                                         {c.logo_url ? (
                                             <img
+                                                loading="lazy"
+                                                decoding="async"
                                                 src={c.logo_url}
                                                 alt=""
                                                 className="size-full object-cover"
@@ -788,6 +1071,8 @@ export default function GameShow({
                         />
                     ) : (
                         <img
+                            loading="lazy"
+                            decoding="async"
                             src={shot!.replace('t_screenshot_big', 't_1080p')}
                             alt=""
                             className="max-h-full max-w-full rounded-2xl"
@@ -795,6 +1080,6 @@ export default function GameShow({
                     )}
                 </div>
             )}
-        </>
+        </div>
     );
 }

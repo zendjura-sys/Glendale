@@ -11,16 +11,20 @@ import 'audio.dart';
 import 'auth_screen.dart';
 import 'chat.dart';
 import 'cinema.dart';
+import 'movie_screen.dart';
 import 'clans.dart';
 import 'communities.dart';
 import 'families.dart';
 import 'i18n.dart';
 import 'events.dart';
+import 'extras.dart';
 import 'family_widget.dart';
 import 'feed.dart';
+import 'characters.dart';
 import 'games.dart';
 import 'listen_together.dart';
 import 'music.dart';
+import 'party.dart';
 import 'people.dart';
 import 'photos.dart';
 import 'playing.dart';
@@ -133,10 +137,18 @@ Future<void> main() async {
             builder: (_, _) => const CinemaScreen(),
             routes: [
               GoRoute(path: 'my', builder: (_, state) => MyCinemaScreen(status: state.uri.queryParameters['status'] ?? 'all')),
-              GoRoute(path: ':slug', builder: (_, state) => MovieScreen(key: ValueKey(state.pathParameters['slug']), slug: state.pathParameters['slug']!, autoplay: state.uri.queryParameters['play'] == '1')),
+              GoRoute(path: 'ten/:username', builder: (_, state) => TopTenScreen(key: ValueKey(state.pathParameters['username']), username: state.pathParameters['username']!)),
+              GoRoute(path: ':slug', builder: (_, state) => MovieScreen(key: ValueKey(state.pathParameters['slug']), slug: state.pathParameters['slug']!)),
             ],
           ),
-          GoRoute(path: '/events', builder: (_, _) => const EventsScreen()),
+          GoRoute(path: '/events', builder: (_, _) => const EventsScreen(), routes: [GoRoute(path: 'releases', builder: (_, _) => const ReleasesScreen())]),
+          GoRoute(path: '/moments', builder: (_, _) => const MomentsScreen()),
+          GoRoute(path: '/quests', builder: (_, _) => const QuestsScreen()),
+          GoRoute(path: '/saved', builder: (_, _) => const SavedScreen()),
+          GoRoute(path: '/drafts', builder: (_, _) => const DraftsScreen()),
+          GoRoute(path: '/starred', builder: (_, _) => const SavedMessagesScreen()),
+          GoRoute(path: '/invite', builder: (_, _) => const InviteScreen()),
+          GoRoute(path: '/join/:token', builder: (_, state) => JoinInviteScreen(key: ValueKey(state.pathParameters['token']), token: state.pathParameters['token']!)),
           GoRoute(path: '/playing', builder: (_, _) => const PlayingSettingsScreen()),
           GoRoute(path: '/listen/:code', builder: (_, state) => ListenScreen(key: ValueKey(state.pathParameters['code']), code: state.pathParameters['code']!)),
           GoRoute(path: '/watch/:code', builder: (_, state) => WatchPartyScreen(key: ValueKey(state.pathParameters['code']), code: state.pathParameters['code']!)),
@@ -155,9 +167,15 @@ Future<void> main() async {
             path: '/servers',
             builder: (_, _) => const ServersScreen(),
             routes: [
+              GoRoute(path: 'compare', builder: (_, state) => ServerCompareScreen(a: state.uri.queryParameters['a'], b: state.uri.queryParameters['b'])),
               GoRoute(path: ':slug', builder: (_, state) => ServerScreen(slug: state.pathParameters['slug']!)),
             ],
           ),
+          GoRoute(path: '/party', builder: (_, _) => const PartyBoardScreen()),
+          GoRoute(path: '/party/:id', builder: (_, state) => PartyScreen(key: ValueKey(state.pathParameters['id']), id: state.pathParameters['id']!)),
+          GoRoute(path: '/characters/create', builder: (_, state) => CharacterEditScreen(server: state.uri.queryParameters['server'])),
+          GoRoute(path: '/characters/:id', builder: (_, state) => CharacterScreen(key: ValueKey(state.pathParameters['id']), id: state.pathParameters['id']!)),
+          GoRoute(path: '/characters/:id/edit', builder: (_, state) => CharacterEditScreen(id: state.pathParameters['id'])),
           GoRoute(
             path: '/games',
             builder: (_, _) => const GamesScreen(),

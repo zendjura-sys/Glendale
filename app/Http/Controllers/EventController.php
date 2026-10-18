@@ -33,11 +33,44 @@ class EventController extends Controller
             'events' => $this->calendar->upcoming($this->user($request), $data['kind'] ?? null),
             'kind' => $data['kind'] ?? null,
             'kinds' => self::KINDS,
+            'reminder_lead' => EventCalendar::leadOf($this->user($request)),
+            'reminder_leads' => EventCalendar::REMIND_LEADS,
         ];
 
         return $request->expectsJson() && ! $request->header('X-Inertia')
             ? response()->json($props)
             : Inertia::render('events/index', $props);
+    }
+
+    /** Файл .ics для календаря телефона. */
+    public function calendarFile(Request $request, string $kind, int $id): \Illuminate\Http\Response
+    {
+        $entry = $this->calendar->calendarEntry($kind, $id, $this->user($request));
+        abort_if($entry === null, 404);
+
+        return response(EventCalendar::ics($entry), 200, [
+            'Content-Type' => 'text/calendar; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="gamecon-'.$kind.'-'.$id.'.ics"',
+        ]);
+    }
+
+    /** Запас нагадування: 10 хв, пів години, година чи доба до початку. */
+    public function reminder(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['lead' => ['required', 'integer', Rule::in(EventCalendar::REMIND_LEADS)]]);
+        $user = $this->user($request);
+        $user->mergePref(['event_lead' => (int) $data['lead']]);
+        $user->save();
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Нагадування збережено.']);
+
+        return back();
+    }
+
+    public function releases(Request $request): Response
+    {
+        return Inertia::render('releases/index', [
+            'events' => $this->calendar->releases($this->user($request)),
+        ]);
     }
 
     public function storeServer(Request $request, GtaServer $server): RedirectResponse
@@ -48,6 +81,7 @@ class EventController extends Controller
             'description' => ['nullable', 'string', 'max:1000'],
             'starts_at' => ['required', 'date'],
             'family_id' => ['nullable', 'integer'],
+            'weekly' => ['sometimes', 'boolean'],
         ]);
         // Час із форми — київський; з часовим поясом (застосунок) — як є.
         $startsAt = Carbon::instance(CarbonImmutable::parse((string) $data['starts_at'], 'Europe/Kyiv')->utc()->toMutable());
@@ -60,6 +94,7 @@ class EventController extends Controller
             'description' => isset($data['description']) ? trim((string) $data['description']) : null,
             'starts_at' => $startsAt,
             'family_id' => isset($data['family_id']) ? (int) $data['family_id'] : null,
+            'repeat' => ($data['weekly'] ?? false) ? 'weekly' : null,
         ]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Подію додано в календар сервера.']);
 

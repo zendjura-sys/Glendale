@@ -28,6 +28,7 @@ import {
     usePlayer,
 } from '@/lib/player';
 import { cn } from '@/lib/utils';
+import { usePlugin } from '@/lib/plugins';
 import type { LocalTrack, UserCard } from '@/types';
 import { tr } from '@/lib/i18n';
 
@@ -38,6 +39,7 @@ type Playback = {
     state_ms: number;
     server_ms: number;
     shared_control: boolean;
+    repeat: boolean;
 };
 
 type QueueItem = { index: number; track: LocalTrack; by: UserCard | null };
@@ -72,6 +74,7 @@ const clock = (s: number) => {
  */
 export default function ListenTogether({ party: initial, friends }: Props) {
     const [party, setParty] = useState(initial);
+    const repeatOn = usePlugin('listen_repeat');
     const [synced, setSynced] = useState(true);
     const [search, setSearch] = useState('');
     const [results, setResults] = useState<LocalTrack[]>([]);
@@ -221,6 +224,8 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                             <div className="size-40 shrink-0 overflow-hidden rounded-2xl bg-white/[0.06] sm:size-44">
                                 {state.track?.cover_url ? (
                                     <img
+                                        loading="lazy"
+                                        decoding="async"
                                         src={state.track.cover_url}
                                         alt=""
                                         className="size-full object-cover"
@@ -232,7 +237,7 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                 )}
                             </div>
                             <div className="min-w-0 flex-1 text-center sm:text-left">
-                                <p className="text-xs font-semibold tracking-wider text-gc-lilac-200 uppercase">
+                                <p className="text-xs font-semibold text-gc-lilac-200">
                                     {tr('Слухаємо разом')}
                                     {party.ended && tr(' · завершено')}
                                 </p>
@@ -429,6 +434,8 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                                             <span className="size-9 shrink-0 overflow-hidden rounded-lg bg-white/[0.06]">
                                                 {t.cover_url ? (
                                                     <img
+                                                        loading="lazy"
+                                                        decoding="async"
                                                         src={t.cover_url}
                                                         alt=""
                                                         className="size-full object-cover"
@@ -562,6 +569,27 @@ export default function ListenTogether({ party: initial, friends }: Props) {
                             )}
                             {party.is_host && (
                                 <>
+                                    {repeatOn && (
+                                        <label className="flex cursor-pointer items-center justify-between gap-2 rounded-xl px-1 py-2 text-sm text-white/75">
+                                            {tr('Повторювати цей трек')}
+                                            <input
+                                                type="checkbox"
+                                                checked={state.repeat}
+                                                onChange={(e) =>
+                                                    void api<{
+                                                        state: Playback;
+                                                    }>(
+                                                        'POST',
+                                                        `${base}/repeat`,
+                                                        {
+                                                            repeat: e.target
+                                                                .checked,
+                                                        },
+                                                    ).then(apply)
+                                                }
+                                            />
+                                        </label>
+                                    )}
                                     <label className="flex cursor-pointer items-center justify-between gap-2 rounded-xl px-1 py-2 text-sm text-white/75">
                                         {tr('Керувати можуть усі')}
                                         <input

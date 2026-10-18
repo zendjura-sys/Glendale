@@ -50,8 +50,9 @@ const glassGradient = LinearGradient(
   end: Alignment.bottomCenter,
 );
 
-const onest = TextStyle(fontFamily: 'Onest', color: ink);
-const unbounded = TextStyle(fontFamily: 'Unbounded', color: ink, fontWeight: FontWeight.w700);
+/// Montserrat — той самий шрифт, що й на сайті, вбудований у застосунок.
+const onest = TextStyle(fontFamily: 'Montserrat', color: ink);
+const unbounded = TextStyle(fontFamily: 'Montserrat', color: ink, fontWeight: FontWeight.w700);
 
 TextStyle display(double size, {Color color = ink}) => unbounded.copyWith(fontSize: size, color: color, height: 1.15, letterSpacing: -0.3);
 TextStyle body(double size, {Color color = ink, FontWeight weight = FontWeight.w400}) => onest.copyWith(fontSize: size, color: color, fontWeight: weight);
@@ -69,10 +70,10 @@ ThemeData gameConTheme() {
       onSurface: ink,
       error: danger,
     ),
-    fontFamily: 'Onest',
+    fontFamily: 'Montserrat',
   );
   return base.copyWith(
-    textTheme: base.textTheme.apply(fontFamily: 'Onest', bodyColor: ink, displayColor: ink),
+    textTheme: base.textTheme.apply(fontFamily: 'Montserrat', bodyColor: ink, displayColor: ink),
     splashColor: indigo.withValues(alpha: 0.16),
     highlightColor: Colors.white.withValues(alpha: 0.03),
     dividerColor: line,

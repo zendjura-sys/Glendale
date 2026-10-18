@@ -20,10 +20,11 @@ use Illuminate\Support\Carbon;
  * @property float $position
  * @property int $state_ms
  * @property bool $shared_control
+ * @property bool $repeat
  * @property Carbon|null $ended_at
  * @property Carbon $created_at
  */
-#[Fillable(['code', 'host_id', 'track_id', 'queue', 'playing', 'position', 'state_ms', 'shared_control', 'ended_at'])]
+#[Fillable(['code', 'host_id', 'track_id', 'queue', 'playing', 'position', 'state_ms', 'shared_control', 'repeat', 'ended_at'])]
 class ListenParty extends Model
 {
     /** Скільки секунд без сигналу людина ще вважається слухачем. */
@@ -40,6 +41,7 @@ class ListenParty extends Model
             'position' => 'float',
             'state_ms' => 'integer',
             'shared_control' => 'boolean',
+            'repeat' => 'boolean',
             'ended_at' => 'datetime',
         ];
     }

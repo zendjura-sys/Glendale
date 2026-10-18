@@ -1,4 +1,4 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     Clock3,
     Crown,
@@ -14,7 +14,10 @@ import {
 import { useEffect, useState } from 'react';
 import { selectClass } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
+import { ServerIcon } from '@/components/servers/server-icon';
 import { ServerCard } from '@/components/servers/server-card';
+import { VoteTops } from '@/components/servers/server-votes';
+import type { VoteTopRow } from '@/components/servers/server-votes';
 import {
     emptyServer,
     ServerFormFields,
@@ -27,16 +30,28 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import type { GtaServerCard } from '@/types';
+import { shortNumber } from '@/lib/format';
 import { LOCALE, tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 type Props = {
     servers: GtaServerCard[];
+    /** Платний банер над каталогом. */
+    banner?: GtaServerCard | null;
+    votes: {
+        voted_today: number | null;
+        day: VoteTopRow[];
+        month: VoteTopRow[];
+    } | null;
     filters: {
         platform: 'pc' | 'mobile' | null;
         q: string;
         sort: string;
         lang: string;
+        saved: boolean;
+        tag: string | null;
     };
+    favorites: GtaServerCard[];
     heading: string | null;
     languages: { code: string; native: string; count: number }[];
     stats: {
@@ -59,23 +74,30 @@ type Props = {
     };
 };
 
-const sorts = [
-    ['online', tr('За онлайном')],
-    ['families', tr('За сім’ями')],
-    ['name', tr('За назвою')],
-    ['new', tr('Нові')],
-] as const;
+const SORTS = (votes: boolean) =>
+    [
+        ['online', tr('За онлайном')],
+        ...(votes ? [['votes', tr('За голосами')] as const] : []),
+        ['families', tr('За сім’ями')],
+        ['name', tr('За назвою')],
+        ['new', tr('Нові')],
+    ] as const;
 
 export default function Servers({
     servers,
+    banner,
+    votes,
     filters,
     heading,
     languages,
     stats,
     my_suggestions,
     options,
+    favorites,
 }: Props) {
     const [q, setQ] = useState(filters.q);
+    const tagsOn = usePlugin('server_tags');
+    const favoritesOn = usePlugin('server_favorites');
     const [suggesting, setSuggesting] = useState(false);
     const myLanguage = LOCALE.split('-')[0];
     const form = useForm({
@@ -92,6 +114,8 @@ export default function Servers({
                 q: next.q || undefined,
                 sort: next.sort === 'online' ? undefined : next.sort,
                 lang: next.lang,
+                saved: next.saved || undefined,
+                tag: next.tag || undefined,
             },
             { preserveState: true, preserveScroll: true, replace: true },
         );
@@ -139,7 +163,7 @@ export default function Servers({
                     <div className="pointer-events-none absolute -bottom-36 -left-10 size-96 rounded-full bg-[#2563eb]/25 blur-3xl" />
                     <div className="relative flex flex-wrap items-start justify-between gap-5">
                         <div className="max-w-xl">
-                            <span className="inline-flex items-center gap-2 rounded-full border border-[#facc15]/25 bg-[#facc15]/10 px-3 py-1 text-xs font-semibold tracking-wider text-[#fde68a] uppercase">
+                            <span className="inline-flex items-center gap-2 rounded-full border border-[#facc15]/25 bg-[#facc15]/10 px-3 py-1 text-xs font-semibold text-[#fde68a]">
                                 {tr('🇺🇦 Зроблено в Україні')}
                             </span>
                             <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
@@ -158,11 +182,19 @@ export default function Servers({
                             {[
                                 [
                                     tr('Гравців онлайн'),
-                                    stats.online.toLocaleString(LOCALE),
+                                    shortNumber(stats.online),
                                     'text-emerald-300',
                                 ],
-                                [tr('Серверів'), stats.servers, 'text-white'],
-                                [tr('Сімей'), stats.families, 'text-[#c4b5fd]'],
+                                [
+                                    tr('Серверів'),
+                                    shortNumber(stats.servers),
+                                    'text-white',
+                                ],
+                                [
+                                    tr('Сімей'),
+                                    shortNumber(stats.families),
+                                    'text-[#c4b5fd]',
+                                ],
                             ].map(([label, value, tone]) => (
                                 <div
                                     key={label}
@@ -185,16 +217,21 @@ export default function Servers({
                     </div>
 
                     <div className="relative mt-6 flex flex-col gap-3 lg:flex-row lg:items-center">
-                        <div className="flex shrink-0 rounded-xl bg-white/[0.04] p-1">
+                        <div className="-mx-1 scrollbar-none flex min-w-0 snap-x snap-mandatory gap-1 overflow-x-auto overscroll-x-contain rounded-xl bg-white/[0.04] p-1 lg:shrink-0">
                             {tabs.map((tab) => (
                                 <button
                                     key={tab.label}
                                     type="button"
-                                    onClick={() =>
-                                        visit({ platform: tab.value })
-                                    }
+                                    onClick={(event) => {
+                                        event.currentTarget.scrollIntoView({
+                                            behavior: 'smooth',
+                                            block: 'nearest',
+                                            inline: 'center',
+                                        });
+                                        visit({ platform: tab.value });
+                                    }}
                                     className={cn(
-                                        'inline-flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium transition',
+                                        'inline-flex h-9 shrink-0 snap-start items-center gap-2 rounded-lg px-3 text-sm font-medium whitespace-nowrap transition',
                                         filters.platform === tab.value
                                             ? 'bg-white/10 text-white'
                                             : 'text-white/50 hover:text-white',
@@ -234,17 +271,46 @@ export default function Servers({
                                 ))}
                             </select>
                         )}
+                        {tagsOn && (
+                            <select
+                                value={filters.tag ?? ''}
+                                onChange={(e) =>
+                                    visit({ tag: e.target.value || null })
+                                }
+                                className={cn(selectClass, 'h-11')}
+                                aria-label={tr('Тег сервера')}
+                            >
+                                <option value="">{tr('Усі теги')}</option>
+                                <option value="rp">{tr('RP')}</option>
+                                <option value="pvp">{tr('PvP')}</option>
+                                <option value="mixed">{tr('RP і PvP')}</option>
+                            </select>
+                        )}
                         <select
                             value={filters.sort}
                             onChange={(e) => visit({ sort: e.target.value })}
                             className={cn(selectClass, 'h-11')}
                         >
-                            {sorts.map(([value, label]) => (
+                            {SORTS(votes !== null).map(([value, label]) => (
                                 <option key={value} value={value}>
                                     {label}
                                 </option>
                             ))}
                         </select>
+                        {favoritesOn && (
+                            <button
+                                type="button"
+                                onClick={() => visit({ saved: !filters.saved })}
+                                className={cn(
+                                    'inline-flex h-11 shrink-0 items-center rounded-xl px-4 text-sm font-semibold',
+                                    filters.saved
+                                        ? 'bg-white text-black'
+                                        : 'bg-white/10 text-white',
+                                )}
+                            >
+                                {tr('Обрані')}
+                            </button>
+                        )}
                         <button
                             type="button"
                             onClick={() => setSuggesting(true)}
@@ -289,6 +355,57 @@ export default function Servers({
                     </div>
                 )}
 
+                {banner && (
+                    <Link
+                        href={`/servers/${banner.slug}`}
+                        className="glass flex items-center gap-4 rounded-3xl border-indigo-400/40 p-4 transition hover:border-indigo-300/60 sm:p-5"
+                    >
+                        <ServerIcon
+                            name={banner.name}
+                            icon={banner.icon}
+                            className="size-14 shrink-0"
+                        />
+                        <span className="min-w-0 flex-1">
+                            <span className="block truncate font-display text-lg font-bold text-white">
+                                {banner.name}
+                            </span>
+                            {banner.tagline && (
+                                <span className="line-clamp-2 text-sm text-white/60">
+                                    {banner.tagline}
+                                </span>
+                            )}
+                        </span>
+                        <span className="shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold text-white/55">
+                            {tr('Реклама')}
+                        </span>
+                    </Link>
+                )}
+
+                {votes && (
+                    <VoteTops
+                        day={votes.day}
+                        month={votes.month}
+                        votedToday={votes.voted_today}
+                    />
+                )}
+
+                {favoritesOn && favorites.length > 0 && !filters.saved && (
+                    <section className="space-y-3">
+                        <h2 className="font-display text-xl font-bold text-white">
+                            {tr('Обрані')}
+                        </h2>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            {favorites.map((server, index) => (
+                                <ServerCard
+                                    key={server.id}
+                                    server={server}
+                                    index={index}
+                                />
+                            ))}
+                        </div>
+                    </section>
+                )}
+
                 {servers.length === 0 ? (
                     <EmptyState
                         icon={SearchX}
@@ -318,11 +435,11 @@ export default function Servers({
                     </div>
                 )}
 
-                <div className="glass flex flex-wrap items-center gap-4 rounded-3xl p-5">
-                    <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-brand">
+                <div className="glass flex flex-col gap-4 rounded-3xl p-5 sm:flex-row sm:items-center">
+                    <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-brand">
                         <Crown className="size-6 text-white" />
                     </span>
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0 sm:flex-1">
                         <div className="font-display text-lg font-semibold text-white">
                             {tr('Керуєте сім’єю на сервері?')}
                         </div>
@@ -334,7 +451,7 @@ export default function Servers({
                     </div>
                     <a
                         href="/families/create"
-                        className="glass inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold text-white hover:bg-white/10"
+                        className="glass inline-flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white hover:bg-white/10 sm:w-auto"
                     >
                         <UsersRound className="size-4" /> {tr('Створити сім’ю')}
                     </a>

@@ -27,7 +27,7 @@ export type StoryItem = {
     url: string;
     duration: number;
     caption: string | null;
-    privacy: 'friends' | 'everyone';
+    privacy: 'friends' | 'close' | 'everyone';
     created_at: string;
     seen: boolean;
     views_count: number | null;
@@ -81,7 +81,9 @@ function Composer({
     const [preview, setPreview] = useState<string | null>(null);
     const [duration, setDuration] = useState<number | null>(null);
     const [caption, setCaption] = useState('');
-    const [privacy, setPrivacy] = useState<'friends' | 'everyone'>('friends');
+    const [privacy, setPrivacy] = useState<'friends' | 'close' | 'everyone'>(
+        'friends',
+    );
     const [busy, setBusy] = useState(false);
     const input = useRef<HTMLInputElement>(null);
 
@@ -173,6 +175,8 @@ function Composer({
                             />
                         ) : (
                             <img
+                                loading="lazy"
+                                decoding="async"
                                 src={preview}
                                 alt=""
                                 className="size-full object-cover"
@@ -196,6 +200,7 @@ function Composer({
                     {(
                         [
                             ['friends', tr('Друзям'), Users],
+                            ['close', tr('Близьким'), Users],
                             ['everyone', tr('Усім'), Globe],
                         ] as const
                     ).map(([key, label, Icon]) => (
@@ -439,6 +444,7 @@ function StoryViewer({
                         />
                     ) : (
                         <img
+                            decoding="async"
                             key={story.id}
                             src={story.url}
                             alt=""

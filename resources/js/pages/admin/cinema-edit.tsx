@@ -2,6 +2,8 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     ArrowLeft,
     ExternalLink,
+    Eye,
+    EyeOff,
     ImagePlus,
     Plus,
     RefreshCw,
@@ -55,7 +57,12 @@ type EditableMovie = MovieCard & {
 type Props = {
     movie: EditableMovie | null;
     types: MovieOption<MovieType>[];
-    providers: { kodik: boolean; flixcdn: boolean; metadata: boolean };
+    providers: {
+        kodik: boolean;
+        videoseed?: boolean;
+        flixcdn: boolean;
+        metadata: boolean;
+    };
     metadata: { key: string; label: string; configured: boolean }[];
 };
 
@@ -237,7 +244,9 @@ export default function AdminCinemaEdit({
                                 <button
                                     type="button"
                                     disabled={
-                                        !providers.kodik && !providers.flixcdn
+                                        !providers.kodik &&
+                                        !providers.videoseed &&
+                                        !providers.flixcdn
                                     }
                                     onClick={() =>
                                         router.post(
@@ -599,7 +608,7 @@ export default function AdminCinemaEdit({
                             </h2>
                             <p className="mb-4 text-xs text-white/45">
                                 {tr(
-                                    'Kodik і FlixCDN оновлюються автоматично. Власний плеєр — будь-який iframe або YouTube/Vimeo.',
+                                    'Kodik, Videoseed і FlixCDN оновлюються автоматично; сховані озвучки лишаються схованими. Власний плеєр — будь-який iframe або YouTube/Vimeo.',
                                 )}
                             </p>
                             {movie.flixcdn_link && (
@@ -614,7 +623,10 @@ export default function AdminCinemaEdit({
                                 {movie.sources.map((s) => (
                                     <li
                                         key={s.key}
-                                        className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3.5 py-2 text-sm"
+                                        className={cn(
+                                            'flex items-center gap-3 rounded-xl bg-white/[0.03] px-3.5 py-2 text-sm',
+                                            s.is_hidden && 'opacity-50',
+                                        )}
                                     >
                                         <Pill
                                             tone={
@@ -622,7 +634,10 @@ export default function AdminCinemaEdit({
                                                     ? 'blue'
                                                     : s.provider === 'flixcdn'
                                                       ? 'violet'
-                                                      : 'gold'
+                                                      : s.provider ===
+                                                          'videoseed'
+                                                        ? 'green'
+                                                        : 'gold'
                                             }
                                         >
                                             {s.provider_label}
@@ -636,6 +651,28 @@ export default function AdminCinemaEdit({
                                                 </span>
                                             )}
                                         </span>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                router.patch(
+                                                    `/admin/cinema/${movie.id}/sources/${s.id}`,
+                                                    { is_hidden: !s.is_hidden },
+                                                    { preserveScroll: true },
+                                                )
+                                            }
+                                            className="text-white/40 hover:text-white"
+                                            title={
+                                                s.is_hidden
+                                                    ? tr('Показувати глядачам')
+                                                    : tr('Сховати озвучку')
+                                            }
+                                        >
+                                            {s.is_hidden ? (
+                                                <EyeOff className="size-4" />
+                                            ) : (
+                                                <Eye className="size-4" />
+                                            )}
+                                        </button>
                                         <a
                                             href={s.link}
                                             target="_blank"

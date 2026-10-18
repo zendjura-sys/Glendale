@@ -19,9 +19,15 @@ type Props = {
     conversations: ConversationSummary[];
     active: ConversationDetails | null;
     history: ChatHistory | null;
+    draft?: string | null;
 };
 
-export default function Messages({ conversations, active, history }: Props) {
+export default function Messages({
+    conversations,
+    active,
+    history,
+    draft = null,
+}: Props) {
     const userId = usePage().props.auth.user.id;
     const playing = usePlayer().current !== null;
     const [list, setList] = useState(conversations);
@@ -134,6 +140,8 @@ export default function Messages({ conversations, active, history }: Props) {
                         key={active.id}
                         active={active}
                         history={history}
+                        conversations={list}
+                        draft={draft}
                         onRead={onRead}
                         onOpenInfo={() => setInfoOpen(true)}
                         onTypingChange={setTypingName}

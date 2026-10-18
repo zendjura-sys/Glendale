@@ -1,0 +1,55 @@
+/*
+ * Шаблон стилю GameCon (Адмінка → Дизайн → «Завантажити шаблон»).
+ *
+ * Стиль підключається ПІСЛЯ стандартного вигляду сайту й перевизначає змінні нижче.
+ * Змініть потрібні значення, видаліть решту рядків і завантажте файл назад в Адмінка → Дизайн.
+ *
+ * Правила:
+ *  - тільки CSS у кодуванні UTF-8, до 200 КБ;
+ *  - без @import, без «<», без екранованих символів (\);
+ *  - url() — лише data: (картинки, шрифти) або шляхи цього сайту, наприклад /storage/…;
+ *  - палітра, яку людина обрала в налаштуваннях (html[data-palette]), сильніша за :root і міняє акцент.
+ *    Щоб стиль перебив і її, пишіть html[data-palette] замість :root.
+ */
+
+:root {
+    /* Основні поверхні й текст */
+    --background: #05070f;
+    --foreground: #eef1ff;
+    --card: rgb(255 255 255 / 0.035);
+    --card-foreground: #eef1ff;
+    --popover: #0d1222;
+    --popover-foreground: #eef1ff;
+    --muted: rgb(255 255 255 / 0.05);
+    --muted-foreground: #8b93b3;
+    --border: rgb(255 255 255 / 0.08);
+    --input: rgb(255 255 255 / 0.1);
+    --radius: 0.875rem;
+
+    /* Акцент і кнопки */
+    --primary: #6d7dff;
+    --primary-foreground: #ffffff;
+    --ring: #7c8cff;
+    --destructive: #ff4d6d;
+
+    /* Бічна панель */
+    --sidebar: #070a16;
+    --sidebar-foreground: #dfe3f7;
+    --sidebar-primary: #6d7dff;
+
+    /* Фірмова палітра (градієнти, підсвітка, значки) */
+    --color-gc-blue: #4f8bff;
+    --color-gc-indigo: #6d5dfc;
+    --color-gc-purple: #a855f7;
+    --color-gc-pink: #f04fd8;
+    --color-gc-cyan: #38e1ff;
+    --color-gc-mint: #22d3a6;
+    --color-gc-lilac-400: #8fa0ff;
+    --color-gc-violet-400: #8b6bff;
+    --color-gc-ink: #070914;
+}
+
+/* Колір під сторінкою, поки вона вантажиться */
+html {
+    background-color: #05070f;
+}

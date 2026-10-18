@@ -3,51 +3,48 @@ import { createInertiaApp } from '@inertiajs/react';
 import { SkipLink } from '@/components/gc/skip-link';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import AdminLayout from '@/layouts/admin-layout';
-import AuthLayout from '@/layouts/auth-layout';
-import SettingsLayout from '@/layouts/settings/layout';
-import SocialLayout from '@/layouts/social-layout';
-import { configureEcho } from '@laravel/echo-react';
-import { xsrfToken } from '@/lib/api';
 import { installKeyboardGuard } from '@/lib/keyboard';
+import { startSmoothScroll } from '@/lib/smooth-scroll';
+import { LazyMotion } from 'motion/react';
+import { lazy, Suspense } from 'react';
+
+// Швидкий перший кадр: стартовий файл без макетів. Кожен макет (соцмережа, адмінка, вхід, налаштування) —
+// окремим файлом, що вантажиться, коли вперше знадобиться, і далі лишається в кеші.
+const socialLayout = () => import('@/layouts/social-layout');
+const adminLayout = () => import('@/layouts/admin-layout');
+const authLayout = () => import('@/layouts/auth-layout');
+const settingsLayout = () => import('@/layouts/settings/layout');
+const SocialLayout = lazy(socialLayout);
+const AdminLayout = lazy(adminLayout);
+const AuthLayout = lazy(authLayout);
+const SettingsLayout = lazy(settingsLayout);
+
+// Макет першої сторінки починаємо качати одразу, паралельно зі сторінкою, — без другого очікування.
+if (typeof document !== 'undefined') {
+    const initial = document.querySelector('script[data-page]')?.textContent;
+    const name = initial
+        ? ((JSON.parse(initial) as { component?: string }).component ?? '')
+        : '';
+    if (name.startsWith('auth/')) void authLayout();
+    else if (name.startsWith('admin/')) void adminLayout();
+    else if (
+        name &&
+        name !== 'welcome' &&
+        name !== 'start/mode' &&
+        name !== 'start/phone' &&
+        !name.startsWith('legal/')
+    ) {
+        void socialLayout();
+        if (name.startsWith('settings/')) void settingsLayout();
+    }
+}
+
+// Анімації: легке ядро одразу, решта можливостей (layout, drag) — окремим файлом після першого кадру.
+const motionFeatures = () =>
+    import('@/lib/motion-features').then((module) => module.default);
 
 installKeyboardGuard();
-
-// Мета-тег CSRF застаріває після входу через Inertia, тому авторизуємо канали cookie XSRF-TOKEN.
-configureEcho({
-    broadcaster: 'reverb',
-    authorizer: (channel: { name: string }) => ({
-        authorize: (
-            socketId: string,
-            callback: (
-                error: Error | null,
-                data: { auth: string } | null,
-            ) => void,
-        ) => {
-            fetch('/broadcasting/auth', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-XSRF-TOKEN': xsrfToken(),
-                },
-                body: JSON.stringify({
-                    socket_id: socketId,
-                    channel_name: channel.name,
-                }),
-            })
-                .then((response) =>
-                    response.ok
-                        ? response.json()
-                        : Promise.reject(new Error(String(response.status))),
-                )
-                .then((data) => callback(null, data))
-                .catch((error: Error) => callback(error, null));
-        },
-    }),
-});
+startSmoothScroll();
 
 const appName = import.meta.env.VITE_APP_NAME || 'GameCon';
 
@@ -99,6 +96,9 @@ void createInertiaApp({
     layout: (name) => {
         switch (true) {
             case name === 'welcome':
+            case name === 'start/mode':
+            case name === 'start/phone':
+            case name.startsWith('legal/'):
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
@@ -118,11 +118,13 @@ void createInertiaApp({
     },
     withApp(app) {
         return (
-            <TooltipProvider delayDuration={0}>
-                <SkipLink />
-                {app}
-                <Toaster />
-            </TooltipProvider>
+            <LazyMotion features={motionFeatures} strict>
+                <TooltipProvider delayDuration={0}>
+                    <SkipLink />
+                    <Suspense fallback={null}>{app}</Suspense>
+                    <Toaster />
+                </TooltipProvider>
+            </LazyMotion>
         );
     },
     progress: {

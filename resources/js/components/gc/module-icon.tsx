@@ -1,6 +1,9 @@
 import {
     Box,
     CalendarDays,
+    Clapperboard,
+    Target,
+    UserRoundSearch,
     Crown,
     Film,
     Gamepad2,
@@ -8,6 +11,7 @@ import {
     MessageCircle,
     Music,
     Newspaper,
+    Phone,
     Search,
     Server,
     Shield,
@@ -20,6 +24,7 @@ import type { LucideIcon, LucideProps } from 'lucide-react';
 const icons: Record<string, LucideIcon> = {
     'user-round': UserRound,
     newspaper: Newspaper,
+    phone: Phone,
     'users-round': UsersRound,
     search: Search,
     'message-circle': MessageCircle,
@@ -32,6 +37,9 @@ const icons: Record<string, LucideIcon> = {
     'gamepad-2': Gamepad2,
     swords: Swords,
     'calendar-days': CalendarDays,
+    clapperboard: Clapperboard,
+    target: Target,
+    'user-round-search': UserRoundSearch,
 };
 
 export function ModuleIcon({ name, ...props }: { name: string } & LucideProps) {

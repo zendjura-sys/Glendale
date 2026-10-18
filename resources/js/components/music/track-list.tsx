@@ -2,6 +2,7 @@ import {
     Check,
     Download,
     ExternalLink,
+    FileText,
     Headphones,
     ListEnd,
     ListPlus,
@@ -26,6 +27,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { api, ApiError } from '@/lib/api';
+import { usePlugin } from '@/lib/plugins';
 import { compactNumber, formatDuration } from '@/lib/format';
 import {
     patchTrack,
@@ -37,6 +39,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { LocalTrack, PlaylistCard, TrackCard } from '@/types';
 import { EditTrackDialog } from './edit-track-dialog';
+import { LyricsDialog } from './lyrics-dialog';
 import { PlaylistDialog } from './playlist-dialog';
 import { ShareTrackDialog } from './share-track-dialog';
 import { Equalizer, SpotifyLogo, TrackCover } from './track-cover';
@@ -64,12 +67,14 @@ export function TrackList({
     removeLabel,
 }: Props) {
     const player = usePlayer();
+    const similarOn = usePlugin('similar_tracks');
     const [overrides, setOverrides] = useState<
         Record<string, Partial<LocalTrack>>
     >({});
     const [hidden, setHidden] = useState<string[]>([]);
     const [sharing, setSharing] = useState<TrackCard | null>(null);
     const [editing, setEditing] = useState<LocalTrack | null>(null);
+    const [lyricsFor, setLyricsFor] = useState<LocalTrack | null>(null);
     const [newPlaylistFor, setNewPlaylistFor] = useState<number | null>(null);
 
     const list = tracks
@@ -118,6 +123,26 @@ export function TrackList({
         } catch (error) {
             toast.error(
                 error instanceof ApiError ? error.message : tr('Не вдалося.'),
+            );
+        }
+    };
+
+    const similar = async (track: LocalTrack) => {
+        try {
+            const data = await api<{ tracks: TrackCard[] }>(
+                'GET',
+                `/music/tracks/${track.id}/similar`,
+            );
+            if (data.tracks.length === 0) {
+                toast(tr('Схожих треків у каталозі немає.'));
+                return;
+            }
+            playQueue([track, ...data.tracks], 0);
+        } catch (error) {
+            toast.error(
+                error instanceof ApiError
+                    ? error.message
+                    : tr('Не вдалося знайти схожі треки.'),
             );
         }
     };
@@ -321,6 +346,25 @@ export function TrackList({
                                     >
                                         <Share2 /> {tr('Поділитися на стіні')}
                                     </DropdownMenuItem>
+                                    {similarOn && track.source === 'local' && (
+                                        <DropdownMenuItem
+                                            className={itemClass}
+                                            onSelect={() => void similar(track)}
+                                        >
+                                            <Headphones /> {tr('Схожі треки')}
+                                        </DropdownMenuItem>
+                                    )}
+                                    {track.source === 'local' &&
+                                        track.has_lyrics && (
+                                            <DropdownMenuItem
+                                                className={itemClass}
+                                                onSelect={() =>
+                                                    setLyricsFor(track)
+                                                }
+                                            >
+                                                <FileText /> {tr('Текст пісні')}
+                                            </DropdownMenuItem>
+                                        )}
                                     {track.source === 'local' ? (
                                         <DropdownMenuItem
                                             className={itemClass}
@@ -392,6 +436,10 @@ export function TrackList({
             <ShareTrackDialog
                 track={sharing}
                 onOpenChange={(open) => !open && setSharing(null)}
+            />
+            <LyricsDialog
+                track={lyricsFor}
+                onOpenChange={(open) => !open && setLyricsFor(null)}
             />
             <EditTrackDialog
                 track={editing}

@@ -289,7 +289,7 @@ class MediaApiController extends ApiController
                 'genres' => $movie->genres ?? [],
                 'backdrop' => $movie->backdrop,
             ],
-            'players' => $this->cinema->players($movie),
+            'players' => $this->cinema->players($movie, $viewer),
             'state' => $this->cinema->stateFor($movie, $viewer),
             'statuses' => Movie::STATUSES,
         ]);

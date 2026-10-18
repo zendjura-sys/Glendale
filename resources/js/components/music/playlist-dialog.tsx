@@ -80,6 +80,8 @@ export function PlaylistDialog({
                         <label className="group relative flex size-28 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-white/[0.05] ring-1 ring-white/10">
                             {preview ? (
                                 <img
+                                    loading="lazy"
+                                    decoding="async"
                                     src={preview}
                                     alt=""
                                     className="size-full object-cover"

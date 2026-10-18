@@ -28,7 +28,11 @@ class VoiceRoom extends Model
 
     public const OWNER_CLAN = 'clan';
 
-    public const OWNERS = [self::OWNER_FAMILY, self::OWNER_COMMUNITY, self::OWNER_CLAN];
+    public const OWNER_SERVER = 'server';
+
+    public const OWNER_PARTY = 'party';
+
+    public const OWNERS = [self::OWNER_FAMILY, self::OWNER_COMMUNITY, self::OWNER_CLAN, self::OWNER_SERVER, self::OWNER_PARTY];
 
     public const PERMISSION_PREFIX = 'voice.room.';
 

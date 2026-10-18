@@ -15,7 +15,10 @@ import { usePlayer } from '@/lib/player';
 import { cn, floatingAboveNav } from '@/lib/utils';
 import { send } from '@/routes/verification';
 import type { SocialConnection } from '@/types/auth';
+import { StreamSettings } from '@/components/streams/stream';
+import type { StreamInfo } from '@/components/streams/stream';
 import { tr } from '@/lib/i18n';
+import { useFeature } from '@/lib/plugins';
 
 type ProfileForm = {
     first_name: string;
@@ -25,6 +28,7 @@ type ProfileForm = {
     status: string;
     about: string;
     city: string;
+    country: string;
     birthday: string;
     gender: string;
     website: string;
@@ -38,6 +42,8 @@ type Props = {
     status?: string;
     profile: { [K in keyof ProfileForm]: ProfileForm[K] | null };
     connections: SocialConnection[];
+    countries: { code: string; name: string }[];
+    stream: StreamInfo | null;
 };
 
 const fieldClass =
@@ -48,9 +54,12 @@ export default function Profile({
     status,
     profile,
     connections,
+    countries,
+    stream,
 }: Props) {
     const { auth } = usePage().props;
     const playing = usePlayer().current !== null;
+    const playingOn = useFeature('playing');
     const form = useForm<ProfileForm>({
         first_name: profile.first_name ?? '',
         last_name: profile.last_name ?? '',
@@ -59,6 +68,7 @@ export default function Profile({
         status: profile.status ?? '',
         about: profile.about ?? '',
         city: profile.city ?? '',
+        country: profile.country ?? '',
         birthday: profile.birthday ?? '',
         gender: profile.gender ?? '',
         website: profile.website ?? '',
@@ -148,7 +158,9 @@ export default function Profile({
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="status">{tr('Статус')}</Label>
+                            <Label htmlFor="status">
+                                {tr('Короткий статус')}
+                            </Label>
                             <Input
                                 id="status"
                                 value={data.status}
@@ -189,6 +201,15 @@ export default function Profile({
                     </div>
                 </SettingsCard>
 
+                <SettingsCard
+                    title={tr('Стрім')}
+                    description={tr(
+                        'Канал Twitch або YouTube: коли ви в ефірі, у профілі з’явиться LIVE і плеєр.',
+                    )}
+                >
+                    <StreamSettings stream={stream} />
+                </SettingsCard>
+
                 <SettingsCard title={tr('Особиста інформація')}>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div className="grid gap-2">
@@ -206,6 +227,25 @@ export default function Profile({
                                 />
                             </div>
                             <InputError message={errors.city} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="country">{tr('Країна')}</Label>
+                            <select
+                                id="country"
+                                value={data.country}
+                                onChange={(e) =>
+                                    setData('country', e.target.value)
+                                }
+                                className={cn(fieldClass, 'h-11')}
+                            >
+                                <option value="">{tr('Не вказано')}</option>
+                                {countries.map((item) => (
+                                    <option key={item.code} value={item.code}>
+                                        {item.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <InputError message={errors.country} />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="birthday">
@@ -418,7 +458,7 @@ export default function Profile({
                 </div>
             </form>
 
-            <PlayingSettingsCard />
+            {playingOn && <PlayingSettingsCard />}
 
             <div className="mt-5">
                 <ConnectedAccounts connections={connections} />

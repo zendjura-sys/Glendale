@@ -1,0 +1,21 @@
+---
+description: GameCon — главные правила проекта (сайт Laravel + приложение Flutter)
+alwaysApply: true
+---
+
+Перед работой прочитай `AGENTS.md`, `docs/ARCHITECTURE.md` и `docs/SECRETS.md` в корне репозитория.
+
+Коротко:
+- Никогда не коммить секреты (ключи, токены, пароли, keystore, `.env`, `.mcp.json`) — репозиторий публичный.
+  Ключи живут в Админке → Інтеграції (`SiteSettings`, зашифрованы), в `.env` сервера и в GitHub Secrets.
+- Не трогай рабочие секреты, сервер, `APP_KEY`, историю git (без force‑push) без прямой просьбы владельца.
+- Старые миграции не редактировать — только новые.
+- Автоматика кино только добавляет/обновляет озвучки (`movie_sources`), не удаляет; удаление — после
+  `MovieSource::RETIRE_DAYS` дней отсутствия.
+- Новая функция сайта для приложения → маршрут в мосте `Route::prefix('site')` в `routes/api.php`
+  + проверка в `tests/Feature/AppSiteParityTest.php`.
+- Все строки — через `tr()` (украинский текст = ключ), затем `npm run i18n:extract`.
+- В приложении нет оплаты и цен (правила Google Play).
+- Не обходить защиту чужих сервисов (балансеры, DRM, чужие ключи).
+- Перед коммитом: `vendor/bin/pint`, `npm run check`, `npm run types:check`, `npm run i18n:check`,
+  `vendor/bin/phpstan analyse --memory-limit=2G`, `php artisan test`, `cd mobile && flutter analyze && flutter test`.

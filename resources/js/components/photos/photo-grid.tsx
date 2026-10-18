@@ -1,6 +1,8 @@
 import { Heart, MessageCircle } from 'lucide-react';
 import { compactNumber } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import type { PhotoThumb } from '@/types';
+import { tr } from '@/lib/i18n';
 
 export function PhotoTile({
     photo,
@@ -17,11 +19,21 @@ export function PhotoTile({
         >
             <img
                 src={photo.url}
-                alt=""
+                alt={photo.alt ?? ''}
                 loading="lazy"
-                className="size-full object-cover transition duration-500 group-hover:scale-110"
+                className={cn(
+                    'size-full object-cover transition duration-500',
+                    photo.is_sensitive
+                        ? 'scale-110 blur-2xl'
+                        : 'group-hover:scale-110',
+                )}
             />
-            <span className="absolute inset-0 flex items-end justify-start gap-3 bg-gradient-to-t from-black/70 via-transparent to-transparent p-2.5 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">
+            {photo.is_sensitive && (
+                <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
+                    {tr('Чутливе')}
+                </span>
+            )}
+            <span className="scrim scrim-dark absolute inset-0 flex items-end justify-start gap-3 p-2.5 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">
                 <span className="inline-flex items-center gap-1">
                     <Heart className="size-3.5" />
                     {compactNumber(photo.likes_count)}

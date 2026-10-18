@@ -155,7 +155,7 @@ class FamiliesTest extends TestCase
         $this->assertTrue(ConversationParticipant::query()->where('conversation_id', $conversation->id)->where('user_id', $applicant->id)->whereNull('left_at')->exists());
 
         $message = $conversation->messages()->create(['user_id' => $applicant->id, 'type' => Message::TYPE_TEXT, 'body' => 'Всім привіт']);
-        $card = app(MessengerPresenter::class)->message($message->load('user'), $applicant);
+        $card = app(MessengerPresenter::class)->message($message->load('user'));
         $this->assertSame('Luca_Brasi [777]', $card['user']['name']);
         $this->assertSame('Новачок', $card['user']['family_rank']['title']);
 

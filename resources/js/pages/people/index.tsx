@@ -8,15 +8,24 @@ import { cn } from '@/lib/utils';
 import type { PersonCard as Person, ScrollData } from '@/types';
 import { tr } from '@/lib/i18n';
 
-type Filters = { q: string; city: string; gender: string; online: boolean };
+type Filters = {
+    q: string;
+    city: string;
+    gender: string;
+    online: boolean;
+    language: string;
+    country: string;
+    game: string;
+};
 
 type Props = {
     filters: Filters;
+    saved: Filters | null;
     total: number;
     users: ScrollData<Person>;
 };
 
-export default function People({ filters, total, users }: Props) {
+export default function People({ filters, saved, total, users }: Props) {
     const [form, setForm] = useState<Filters>(filters);
 
     useEffect(() => {
@@ -29,6 +38,9 @@ export default function People({ filters, total, users }: Props) {
                     city: form.city || undefined,
                     gender: form.gender || undefined,
                     online: form.online ? 1 : undefined,
+                    language: form.language || undefined,
+                    country: form.country || undefined,
+                    game: form.game || undefined,
                 },
                 { preserveState: true, replace: true },
             );
@@ -127,6 +139,56 @@ export default function People({ filters, total, users }: Props) {
                             />{' '}
                             {tr('Зараз онлайн')}
                         </button>
+                    </div>
+                    <div className="relative mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        <input
+                            value={form.country}
+                            onChange={(event) =>
+                                setForm({
+                                    ...form,
+                                    country: event.target.value,
+                                })
+                            }
+                            placeholder={tr('Країна')}
+                            className="input-glass h-11 rounded-xl px-3.5 text-sm text-white placeholder:text-white/35"
+                        />
+                        <input
+                            value={form.language}
+                            onChange={(event) =>
+                                setForm({
+                                    ...form,
+                                    language: event.target.value,
+                                })
+                            }
+                            placeholder={tr('Мова, напр. uk')}
+                            className="input-glass h-11 rounded-xl px-3.5 text-sm text-white placeholder:text-white/35"
+                        />
+                        <input
+                            value={form.game}
+                            onChange={(event) =>
+                                setForm({ ...form, game: event.target.value })
+                            }
+                            placeholder={tr('Гра')}
+                            className="input-glass h-11 rounded-xl px-3.5 text-sm text-white placeholder:text-white/35"
+                        />
+                    </div>
+                    <div className="relative mt-3 flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            onClick={() => router.post('/people/saved', form)}
+                            className="h-11 rounded-xl bg-white/10 px-4 text-sm font-medium text-white"
+                        >
+                            {tr('Зберегти запит')}
+                        </button>
+                        {saved && (
+                            <button
+                                type="button"
+                                onClick={() => setForm(saved)}
+                                className="h-11 rounded-xl px-4 text-sm text-gc-lilac-300 hover:text-white"
+                            >
+                                {tr('Мій запит')}
+                            </button>
+                        )}
                     </div>
                 </section>
 

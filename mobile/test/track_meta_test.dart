@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gamecon/api.dart';
 import 'package:gamecon/state.dart';
 import 'package:gamecon/track_edit.dart';
+import 'package:gamecon/widgets.dart';
 
 Uint8List _frame(String id, List<int> body) {
   final size = body.length;
@@ -56,16 +57,28 @@ void main() {
     expect([guess.artist, guess.title], ['Manowar', 'Warrior of the United']);
   });
 
-  test('compact hryvnia for narrow tiles', () {
+  test('compact hryvnia for narrow tiles (як на сайті: 1K, 1M)', () {
     expect(hryvniaShort(0), '0 ₴');
-    expect(hryvniaShort(9999900), '99 999 ₴');
-    expect(hryvniaShort(10000000), '100к ₴');
-    expect(hryvniaShort(25050000), '250к ₴');
-    expect(hryvniaShort(100000000), '1М ₴');
-    expect(hryvniaShort(155000000), '1,5М ₴');
-    expect(hryvniaShort(1000000000), '10М ₴');
-    expect(hryvniaShort(-100000000), '−1М ₴');
-    expect(hryvniaShort(250000000000), '2,5млрд ₴');
+    expect(hryvniaShort(99900), '999 ₴');
+    expect(hryvniaShort(100000), '1K ₴');
+    expect(hryvniaShort(9999900), '99,9K ₴');
+    expect(hryvniaShort(10000000), '100K ₴');
+    expect(hryvniaShort(25050000), '250K ₴');
+    expect(hryvniaShort(100000000), '1M ₴');
+    expect(hryvniaShort(155000000), '1,5M ₴');
+    expect(hryvniaShort(1000000000), '10M ₴');
+    expect(hryvniaShort(-100000000), '−1M ₴');
+    expect(hryvniaShort(250000000000), '2,5B ₴');
+  });
+
+  test('short counters like the site', () {
+    expect(compact(999), '999');
+    expect(compact(1000), '1K');
+    expect(compact(1625), '1,6K');
+    expect(compact(15300), '15,3K');
+    expect(compact(100000), '100K');
+    expect(compact(1000000), '1M');
+    expect(compact(10000000), '10M');
   });
 
   test('queue reorder keeps the playing track', () {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Track;
 use App\Services\MusicService;
+use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -44,10 +45,14 @@ class TrackController extends Controller
             'artist' => ['required', 'string', 'max:150'],
             'album' => ['nullable', 'string', 'max:150'],
             'genre' => ['nullable', 'string', 'max:40'],
+            'lyrics' => ['nullable', 'string', 'max:8000'],
             'cover_url' => ['nullable', 'url:https', 'max:500'],
         ]);
         $coverUrl = $data['cover_url'] ?? null;
         unset($data['cover_url']);
+        if (! app(Plugins::class)->on('lyrics')) {
+            unset($data['lyrics']);
+        }
         $track->update(array_map(fn ($v) => is_string($v) ? (trim($v) ?: null) : $v, $data));
 
         // Обкладинка з автозаповнення (каталог iTunes); стару видаляємо лише після успішного збереження нової.
@@ -60,6 +65,13 @@ class TrackController extends Controller
         }
 
         return response()->json(['track' => $track->toCard(true)]);
+    }
+
+    public function lyrics(Track $track): JsonResponse
+    {
+        app(Plugins::class)->ensure('lyrics');
+
+        return response()->json(['lyrics' => $track->lyrics]);
     }
 
     public function destroy(Request $request, Track $track): JsonResponse

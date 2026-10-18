@@ -7,12 +7,15 @@ import 'package:url_launcher/url_launcher.dart';
 import 'api.dart';
 import 'family_widget.dart';
 import 'nav_items.dart';
+import 'playing.dart';
 import 'shell.dart';
 import 'state.dart';
+import 'account.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
 import 'language_picker.dart';
+import 'extras.dart';
 
 // ───────────────────────── Сповіщення ─────────────────────────
 
@@ -186,6 +189,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           options: [
             SegmentOption('profile', tr('Профіль'), icon: LucideIcons.userRound),
             SegmentOption('security', tr('Безпека'), icon: LucideIcons.shield),
+            SegmentOption('account', tr('Акаунт'), icon: LucideIcons.monitorSmartphone),
             SegmentOption('app', tr('Застосунок'), icon: LucideIcons.smartphone),
           ],
           selected: tab,
@@ -196,6 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           id: tab,
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: switch (tab) {
             'security' => _security(),
+            'account' => const [AccountSettings()],
             'app' => const [NavEditor(), SizedBox(height: 12), FamilyWidgetSettings()],
             _ => _profile(),
           }),
@@ -292,6 +297,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       const SizedBox(height: 14),
       PrimaryButton(label: tr('Зберегти зміни'), icon: LucideIcons.check, busy: saving, onPressed: _save),
+      const SizedBox(height: 12),
+      const PlayingSettingsCard(),
+      const SizedBox(height: 12),
+      const StreamSettingsCard(),
     ];
   }
 
@@ -472,7 +481,7 @@ class _NavPreview extends StatelessWidget {
             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
               Icon(item.icon, size: 19, color: muted),
               const SizedBox(height: 3),
-              Text(item.label, maxLines: 1, overflow: TextOverflow.fade, softWrap: false, style: body(10.5, color: muted, weight: FontWeight.w500)),
+              Text(item.label, maxLines: 1, overflow: TextOverflow.fade, softWrap: false, style: body(11, color: muted, weight: FontWeight.w500)),
             ]),
           ),
       ]),

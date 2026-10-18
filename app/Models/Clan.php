@@ -27,6 +27,7 @@ use Illuminate\Support\Facades\Storage;
  * @property array<string, list<int>>|null $permissions
  * @property string $join_mode
  * @property bool $is_recruiting
+ * @property list<string>|null $questions
  * @property string $currency
  * @property int $treasury
  * @property int $members_count
@@ -34,7 +35,7 @@ use Illuminate\Support\Facades\Storage;
  * @property-read string|null $logo_url
  * @property-read string $display_name
  */
-#[Fillable(['slug', 'type', 'name', 'tag', 'game_id', 'owner_id', 'description', 'rules', 'logo_path', 'features', 'rank_titles', 'permissions', 'join_mode', 'is_recruiting', 'currency'])]
+#[Fillable(['slug', 'type', 'name', 'tag', 'game_id', 'owner_id', 'description', 'rules', 'logo_path', 'features', 'rank_titles', 'permissions', 'join_mode', 'is_recruiting', 'currency', 'questions'])]
 class Clan extends Model
 {
     public const TYPES = ['clan' => 'Клан', 'guild' => 'Гільдія'];
@@ -92,6 +93,7 @@ class Clan extends Model
             'features' => 'array',
             'rank_titles' => 'array',
             'permissions' => 'array',
+            'questions' => 'array',
             'is_recruiting' => 'boolean',
             'treasury' => 'integer',
         ];

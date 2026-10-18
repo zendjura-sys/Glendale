@@ -31,4 +31,12 @@ class ListenPartyMember extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * @return BelongsTo<ListenParty, $this>
+     */
+    public function party(): BelongsTo
+    {
+        return $this->belongsTo(ListenParty::class, 'listen_party_id');
+    }
 }

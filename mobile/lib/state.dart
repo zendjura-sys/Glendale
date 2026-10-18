@@ -8,16 +8,23 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api.dart';
 import 'nav_items.dart';
+import 'subscription.dart';
 import 'i18n.dart';
 
 class Session extends ChangeNotifier {
   Session(this.prefs) : api = Api(() => _token) {
     _token = prefs.getString('token');
+    subscription = SubscriptionController(api, prefs);
   }
 
   final SharedPreferences prefs;
   final Api api;
   static String? _token;
+
+  /// GameCon+ цього акаунта — лише статус (купівлі в застосунку немає, див. subscription.dart).
+  late final SubscriptionController subscription;
+
+  static bool get hasToken => _token != null;
 
   String? get token => _token;
   Map<String, dynamic>? me;
@@ -72,6 +79,7 @@ class Session extends ChangeNotifier {
       try {
         me = await api.me();
         _startPolling();
+        unawaited(subscription.refreshSubscriptionStatus());
       } catch (_) {
         await clear();
       }
@@ -85,6 +93,7 @@ class Session extends ChangeNotifier {
     await prefs.setString('token', value);
     me = user ?? await api.me();
     _startPolling();
+    unawaited(subscription.refreshSubscriptionStatus());
     notifyListeners();
   }
 
@@ -100,6 +109,7 @@ class Session extends ChangeNotifier {
     unreadChats = 0;
     unreadNotifications = 0;
     await prefs.remove('token');
+    await subscription.reset();
     notifyListeners();
   }
 
@@ -148,6 +158,7 @@ class Session extends ChangeNotifier {
   @override
   void dispose() {
     _poll?.cancel();
+    subscription.dispose();
     super.dispose();
   }
 }

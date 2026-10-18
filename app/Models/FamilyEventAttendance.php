@@ -24,6 +24,9 @@ class FamilyEventAttendance extends Model
 
     public const STATUS_ABSENT = 'absent';
 
+    /** Місць немає: стоїть у черзі, перший у ній займе місце того, хто відмовиться. */
+    public const STATUS_WAITLIST = 'waitlist';
+
     /** Відповів «не піду» до початку. */
     public const STATUS_DECLINED = 'declined';
 

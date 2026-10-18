@@ -8,6 +8,7 @@ use App\Models\Track;
 use App\Models\User;
 use App\Services\FriendshipService;
 use App\Services\ListenParties;
+use App\Support\Plugins\Plugins;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -103,6 +104,15 @@ class ListenPartyController extends Controller
         $this->parties->next($party, $user);
 
         return response()->json($this->parties->state($party->refresh(), $user));
+    }
+
+    public function repeat(Request $request, ListenParty $party): JsonResponse
+    {
+        app(Plugins::class)->ensure('listen_repeat');
+        $user = $this->live($request, $party);
+        $this->parties->setRepeat($party, $user, $request->boolean('repeat'));
+
+        return response()->json(['state' => $this->parties->playback($party->refresh())]);
     }
 
     public function shared(Request $request, ListenParty $party): JsonResponse

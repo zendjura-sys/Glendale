@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Community;
 use App\Models\Family;
 use App\Models\User;
+use App\Support\NotifyPrefs;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
@@ -13,7 +14,7 @@ class NotificationController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $notifications = $request->user()->notifications()->latest()->limit(30)->get();
+        $notifications = NotifyPrefs::visible($request->user()->notifications())->latest()->limit(30)->get();
         $actors = User::query()
             ->whereIn('id', $notifications->pluck('data.actor_id')->filter()->unique())
             ->get()
@@ -51,7 +52,7 @@ class NotificationController extends Controller
                 'read' => $n->read_at !== null,
                 'created_at' => $n->created_at->toIso8601String(),
             ])->values(),
-            'unread' => $request->user()->unreadNotifications()->count(),
+            'unread' => NotifyPrefs::unreadCount($request->user()),
         ]);
     }
 

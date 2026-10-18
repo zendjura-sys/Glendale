@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { LOCALE, tr } from '@/lib/i18n';
+import { shortNumber } from '@/lib/format';
+import { tr } from '@/lib/i18n';
 
 const tones = [
     'from-gc-blue to-gc-indigo',
@@ -78,11 +79,11 @@ export function OnlineMeter({
                         )}
                         <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
                     </span>
-                    {online.toLocaleString(LOCALE)} {tr('онлайн')}
+                    {shortNumber(online)} {tr('онлайн')}
                 </span>
                 {max && (
                     <span className="text-white/35">
-                        {tr('з')} {max.toLocaleString(LOCALE)}
+                        {tr('з')} {shortNumber(max)}
                     </span>
                 )}
             </div>

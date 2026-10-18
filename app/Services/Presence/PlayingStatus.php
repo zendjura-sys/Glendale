@@ -4,7 +4,9 @@ namespace App\Services\Presence;
 
 use App\Models\Game;
 use App\Models\GtaServer;
+use App\Models\PlayedPlace;
 use App\Models\User;
+use App\Services\FollowAlerts;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
@@ -47,6 +49,7 @@ class PlayingStatus
         }
 
         // Те саме й ще довго діє — не пишемо в базу на кожен сигнал.
+        $changedTarget = $user->playing_kind !== $target['kind'] || (int) $user->playing_ref_id !== (int) ($target['id'] ?? 0);
         $same = $user->playing_kind === $target['kind'] && $user->playing_ref_id === $target['id']
             && $user->playing_label === $target['label'] && $user->playing_note === $target['note'] && $user->playing_source === $source;
         if ($same && $user->playing_until?->gt(now()->addMinutes(intdiv($minutes, 2)))) {
@@ -63,6 +66,18 @@ class PlayingStatus
             'playing_until' => now()->addMinutes($minutes),
             'playing_source' => $source,
         ])->save();
+
+        if (in_array($target['kind'], [PlayedPlace::GAME, PlayedPlace::SERVER], true) && $target['id'] !== null) {
+            PlayedPlace::query()->firstOrCreate([
+                'user_id' => $user->id,
+                'kind' => $target['kind'],
+                'subject_id' => $target['id'],
+            ]);
+        }
+
+        if ($changedTarget) {
+            app(FollowAlerts::class)->friendsStarted($user->fresh());
+        }
     }
 
     public function clear(User $user): void
@@ -101,6 +116,15 @@ class PlayingStatus
         }
 
         return ['kind' => 'game', 'id' => null, 'label' => Str::limit(trim($name), 80, ''), 'icon' => null, 'url' => null, 'note' => null];
+    }
+
+    /** Посилання на сторінку гри в каталозі за Steam appid. */
+    public function steamGameHref(string $appId): ?string
+    {
+        $id = $this->steamApps()[$appId] ?? null;
+        $slug = $id !== null ? Game::query()->whereKey($id)->value('slug') : null;
+
+        return is_string($slug) && $slug !== '' ? '/games/'.$slug : null;
     }
 
     /**

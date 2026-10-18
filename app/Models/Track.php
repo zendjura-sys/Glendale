@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -19,6 +20,7 @@ use Illuminate\Support\Facades\Storage;
  * @property string $artist
  * @property string|null $album
  * @property string|null $genre
+ * @property string|null $lyrics
  * @property int $duration
  * @property string $path
  * @property string|null $cover_path
@@ -32,7 +34,7 @@ use Illuminate\Support\Facades\Storage;
  * @property-read string|null $cover_url
  * @property-read User|null $user
  */
-#[Fillable(['user_id', 'title', 'artist', 'album', 'genre', 'duration', 'path', 'cover_path', 'mime', 'size'])]
+#[Fillable(['user_id', 'title', 'artist', 'album', 'genre', 'lyrics', 'duration', 'path', 'cover_path', 'mime', 'size'])]
 class Track extends Model
 {
     use SoftDeletes;
@@ -98,6 +100,7 @@ class Track extends Model
             'artist' => $this->artist,
             'album' => $this->album,
             'genre' => $this->genre,
+            'has_lyrics' => filled($this->lyrics) && app(Plugins::class)->on('lyrics'),
             'duration' => $this->duration,
             'url' => $this->url,
             'cover_url' => $this->cover_url,

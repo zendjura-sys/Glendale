@@ -2,7 +2,9 @@ import { Link } from '@inertiajs/react';
 import { useState } from 'react';
 import {
     Flag,
+    Forward,
     Languages,
+    Star,
     AlertCircle,
     Check,
     CheckCheck,
@@ -25,6 +27,8 @@ import {
 } from './message-media';
 import { useContentTranslation } from '@/components/gc/translate';
 import { tr } from '@/lib/i18n';
+import { useProfanityMask } from '@/lib/profanity';
+import { usePlugin } from '@/lib/plugins';
 
 export type BubbleActions = {
     onReply: (message: ChatMessage) => void;
@@ -34,6 +38,8 @@ export type BubbleActions = {
     onReport?: (message: ChatMessage) => void;
     onRetry: (message: ChatMessage) => void;
     onCopy: (message: ChatMessage) => void;
+    onForward: (message: ChatMessage) => void;
+    onStar: (message: ChatMessage) => void;
     onJump: (id: number) => void;
     onOpenImage: (items: ChatAttachment[], index: number) => void;
     onMediaLoad: () => void;
@@ -78,6 +84,8 @@ function Images({
                 }}
             >
                 <img
+                    loading="lazy"
+                    decoding="async"
                     src={image.url}
                     alt=""
                     onLoad={onLoad}
@@ -104,6 +112,8 @@ function Images({
                     className="aspect-square overflow-hidden"
                 >
                     <img
+                        loading="lazy"
+                        decoding="async"
                         src={image.url}
                         alt=""
                         onLoad={onLoad}
@@ -138,6 +148,8 @@ export function MessageBubble({
     highlighted,
     actions,
 }: Props) {
+    const forwardOn = usePlugin('forward_message');
+    const favoriteOn = usePlugin('favorite_messages');
     const images = message.attachments.filter(
         (a) => (a.type ?? 'image') === 'image',
     );
@@ -151,6 +163,7 @@ export function MessageBubble({
         (hasImages && !message.body && !message.reply_to && !files.length);
     const pending = message.pending;
     const translation = useContentTranslation('message', message.id);
+    const mask = useProfanityMask();
     const [toolsOpen, setToolsOpen] = useState(false);
 
     const meta = (
@@ -278,6 +291,45 @@ export function MessageBubble({
                         </div>
                     )}
 
+                    {(message.publish_at || message.expires_at) && (
+                        <p
+                            className={cn(
+                                'mb-1 text-[11px]',
+                                own ? 'text-white/70' : 'text-white/45',
+                                hasImages && 'px-2 pt-1',
+                            )}
+                        >
+                            {message.publish_at
+                                ? tr('Заплановано')
+                                : tr('Зникне за добу')}
+                        </p>
+                    )}
+
+                    {message.forward && (
+                        <p
+                            className={cn(
+                                'mb-1 text-xs',
+                                own ? 'text-white/75' : 'text-white/50',
+                                hasImages && 'px-2 pt-1',
+                            )}
+                        >
+                            {message.forward.username ? (
+                                <Link
+                                    href={`/${message.forward.username}`}
+                                    className="hover:underline"
+                                >
+                                    {tr('Переслано від {name}', {
+                                        name: message.forward.name,
+                                    })}
+                                </Link>
+                            ) : (
+                                tr('Переслано від {name}', {
+                                    name: message.forward.name,
+                                })
+                            )}
+                        </p>
+                    )}
+
                     {message.reply_to && (
                         <button
                             type="button"
@@ -316,6 +368,8 @@ export function MessageBubble({
                     {isSticker && message.sticker && (
                         <div className="relative">
                             <img
+                                loading="lazy"
+                                decoding="async"
                                 src={message.sticker.url}
                                 alt={message.sticker.emoji ?? tr('Стікер')}
                                 onLoad={actions.onMediaLoad}
@@ -377,6 +431,34 @@ export function MessageBubble({
                         />
                     )}
 
+                    {message.card && (
+                        <Link
+                            href={message.card.href}
+                            className={cn(
+                                'mb-1.5 flex items-center gap-2 rounded-xl p-2',
+                                own ? 'bg-white/15' : 'bg-black/20',
+                            )}
+                        >
+                            {message.card.image && (
+                                <img
+                                    loading="lazy"
+                                    decoding="async"
+                                    src={message.card.image}
+                                    alt=""
+                                    className="size-10 rounded-lg object-cover"
+                                />
+                            )}
+                            <span className="min-w-0">
+                                <span className="block text-[11px] opacity-60">
+                                    {tr(message.card.hint)}
+                                </span>
+                                <span className="block truncate text-sm font-medium">
+                                    {message.card.title}
+                                </span>
+                            </span>
+                        </Link>
+                    )}
+
                     {!onlyImages && (
                         <div
                             className={cn(
@@ -386,7 +468,7 @@ export function MessageBubble({
                         >
                             {message.body && (
                                 <span className="break-words whitespace-pre-wrap">
-                                    {translation.text ?? message.body}
+                                    {mask(translation.text ?? message.body)}
                                 </span>
                             )}
                             <span className="float-right mt-1.5 ml-2.5 translate-y-0.5">
@@ -442,6 +524,38 @@ export function MessageBubble({
                             title={tr('Редагувати')}
                         >
                             <Pencil className="size-3.5" />
+                        </button>
+                    )}
+                    {forwardOn && message.type !== 'system' && (
+                        <button
+                            type="button"
+                            className={toolButton}
+                            onClick={() => actions.onForward(message)}
+                            title={tr('Переслати')}
+                        >
+                            <Forward className="size-3.5" />
+                        </button>
+                    )}
+                    {favoriteOn && (
+                        <button
+                            type="button"
+                            className={cn(
+                                toolButton,
+                                message.starred && 'text-amber-300',
+                            )}
+                            onClick={() => actions.onStar(message)}
+                            title={
+                                message.starred
+                                    ? tr('Прибрати з обраних')
+                                    : tr('В обране')
+                            }
+                        >
+                            <Star
+                                className={cn(
+                                    'size-3.5',
+                                    message.starred && 'fill-current',
+                                )}
+                            />
                         </button>
                     )}
                     {canDelete && (

@@ -1,9 +1,11 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
+    BellRing,
     CalendarDays,
     Check,
     Coins,
     Crown,
+    Download,
     LogOut,
     MessageCircle,
     Newspaper,
@@ -19,12 +21,15 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { InviteLinkButton } from '@/components/gc/invite-link';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { VoiceRooms } from '@/components/gc/voice-rooms';
 import { timeAgo } from '@/lib/format';
-import { cn } from '@/lib/utils';
+import { cn, formText } from '@/lib/utils';
 import type { ClanCard, UserCard } from '@/types';
 import { ClanLogo } from './index';
+import { eventTime } from '@/lib/event-time';
+import { BotsCard } from '@/components/bots/bots-card';
 import { LOCALE, tr } from '@/lib/i18n';
 
 type Member = {
@@ -36,9 +41,11 @@ type Member = {
     is_owner: boolean;
     contributed: number;
     note: string | null;
+    answers?: string[];
     joined_at: string | null;
     applied_at: string;
     events?: number;
+    away?: boolean;
 };
 
 type Props = {
@@ -52,6 +59,7 @@ type Props = {
         rank_titles: Record<number, string>;
         conversation_id: number | null;
         created_at: string | null;
+        questions: string[];
     };
     me: (Member & { can: Record<string, boolean> }) | null;
     application: { applied_at: string } | null;
@@ -75,6 +83,14 @@ type Props = {
         starts_at: string;
         going_count: number;
         going: boolean;
+        repeat: string | null;
+        cover_url: string | null;
+        ics_url: string;
+        bracket: {
+            teams: string[];
+            semi: [number | null, number | null][];
+            final: [number | null, number | null];
+        } | null;
     }[];
     contributions: {
         id: number;
@@ -97,12 +113,22 @@ type Props = {
         join_mode: string;
         is_recruiting: boolean;
         currency: string;
+        questions: string[];
     } | null;
     logs: {
         id: number;
         text: string;
         actor: string | null;
         created_at: string;
+    }[];
+    allies: { name: string; slug: string }[];
+    alliance_requests: { id: number; name: string; slug: string }[];
+    matches: {
+        id: number;
+        home: string;
+        away: string;
+        starts_at: string;
+        note: string | null;
     }[];
 };
 
@@ -116,14 +142,6 @@ const ghost =
     'glass inline-flex h-10 items-center justify-center gap-2 rounded-xl px-3.5 text-sm text-white/75 hover:text-white';
 
 const num = (n: number) => new Intl.NumberFormat(LOCALE).format(n);
-const kyiv = (iso: string) =>
-    new Date(iso).toLocaleString(LOCALE, {
-        timeZone: 'Europe/Kyiv',
-        day: '2-digit',
-        month: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
 
 function Card({
     title,
@@ -153,6 +171,53 @@ function Card({
 const post = (url: string, data: Record<string, unknown> = {}) =>
     router.post(url, data as never, { preserveScroll: true });
 
+function JoinForm({ base, questions }: { base: string; questions: string[] }) {
+    const form = useForm({ note: '', answers: questions.map(() => '') });
+
+    return (
+        <form
+            className="glass w-full basis-full space-y-2 rounded-2xl p-3"
+            onSubmit={(event) => {
+                event.preventDefault();
+                form.post(`${base}/join`, { preserveScroll: true });
+            }}
+        >
+            {questions.map((question, index) => (
+                <label
+                    key={`${index}-${question}`}
+                    className="block text-xs text-white/55"
+                >
+                    {question}
+                    <input
+                        value={form.data.answers[index] ?? ''}
+                        maxLength={300}
+                        onChange={(event) => {
+                            const next = [...form.data.answers];
+                            next[index] = event.target.value;
+                            form.setData('answers', next);
+                        }}
+                        className={cn(input, 'mt-1')}
+                        required
+                    />
+                </label>
+            ))}
+            <input
+                value={form.data.note}
+                maxLength={500}
+                onChange={(event) => form.setData('note', event.target.value)}
+                placeholder={tr('Кілька слів про себе (необов’язково)')}
+                className={input}
+            />
+            {form.errors.answers && (
+                <p className="text-xs text-rose-300">{form.errors.answers}</p>
+            )}
+            <button type="submit" disabled={form.processing} className={btn}>
+                <UserPlus className="size-4" /> {tr('Подати заявку')}
+            </button>
+        </form>
+    );
+}
+
 /** Сторінка клану: огляд, новини, заходи, внески, рейтинг, статут, учасники й налаштування — за увімкненими розділами. */
 export default function ClanShow(props: Props) {
     const {
@@ -181,7 +246,13 @@ export default function ClanShow(props: Props) {
         ['members', tr('Учасники'), Users, !!me],
         ['settings', tr('Налаштування'), Settings, can['settings.manage']],
     ].filter((t) => t[3]) as [string, string, typeof Users, boolean][];
-    const [tab, setTab] = useState('overview');
+    // ?tab=settings — сюди повертає підключення бота Discord.
+    const [tab, setTab] = useState(() =>
+        typeof window === 'undefined'
+            ? 'overview'
+            : (new URLSearchParams(window.location.search).get('tab') ??
+              'overview'),
+    );
 
     return (
         <>
@@ -221,26 +292,35 @@ export default function ClanShow(props: Props) {
                             <MessageCircle className="size-4" /> {tr('Чат')}
                         </a>
                     )}
-                    {!me && !application && clan.is_recruiting && (
-                        <button
-                            type="button"
-                            onClick={() =>
-                                post(`${base}/join`, {
-                                    note:
-                                        prompt(
-                                            tr(
-                                                'Кілька слів про себе (необов’язково)',
-                                            ),
-                                        ) ?? '',
-                                })
-                            }
-                            className={btn}
-                        >
-                            <UserPlus className="size-4" />{' '}
-                            {clan.join_mode === 'open'
-                                ? tr('Вступити')
-                                : tr('Подати заявку')}
-                        </button>
+                    {me?.can['members.manage'] && (
+                        <InviteLinkButton
+                            url={`${base}/invite-link`}
+                            className={ghost}
+                        />
+                    )}
+                    {!me &&
+                    !application &&
+                    clan.is_recruiting &&
+                    clan.questions.length > 0 &&
+                    clan.join_mode !== 'open' ? (
+                        <JoinForm base={base} questions={clan.questions} />
+                    ) : (
+                        !me &&
+                        !application &&
+                        clan.is_recruiting && (
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    post(`${base}/join`, { note: '' })
+                                }
+                                className={btn}
+                            >
+                                <UserPlus className="size-4" />{' '}
+                                {clan.join_mode === 'open'
+                                    ? tr('Вступити')
+                                    : tr('Подати заявку')}
+                            </button>
+                        )
                     )}
                     {application && (
                         <button
@@ -307,6 +387,117 @@ export default function ClanShow(props: Props) {
                                     })}
                             </p>
                         </Card>
+                        <Card title={tr('Союз і матчі')} icon={Swords}>
+                            {props.allies.length === 0 ? (
+                                <p className="text-sm text-white/45">
+                                    {tr('Союзників ще немає.')}
+                                </p>
+                            ) : (
+                                <div className="flex flex-wrap gap-2">
+                                    {props.allies.map((ally) => (
+                                        <Link
+                                            key={ally.slug}
+                                            href={`/clans/${ally.slug}`}
+                                            className="rounded-full bg-white/10 px-3 py-1 text-sm text-white"
+                                        >
+                                            {ally.name}
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+                            {props.matches.length > 0 && (
+                                <ul className="mt-3 space-y-1 text-sm text-white/75">
+                                    {props.matches.map((match) => (
+                                        <li key={match.id}>
+                                            {match.home} vs {match.away} ·{' '}
+                                            {eventTime(match.starts_at)}
+                                            {match.note
+                                                ? ` · ${match.note}`
+                                                : ''}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                            {me?.is_owner && (
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                    <form
+                                        className="flex gap-2"
+                                        onSubmit={(event) => {
+                                            event.preventDefault();
+                                            const data = new FormData(
+                                                event.currentTarget,
+                                            );
+                                            post(`${base}/allies`, {
+                                                tag: formText(data, 'tag'),
+                                            });
+                                            event.currentTarget.reset();
+                                        }}
+                                    >
+                                        <input
+                                            name="tag"
+                                            placeholder={tr('Тег союзу')}
+                                            className={cn(input, 'w-28')}
+                                        />
+                                        <button type="submit" className={ghost}>
+                                            {tr('Союз')}
+                                        </button>
+                                    </form>
+                                    <form
+                                        className="flex flex-wrap gap-2"
+                                        onSubmit={(event) => {
+                                            event.preventDefault();
+                                            const data = new FormData(
+                                                event.currentTarget,
+                                            );
+                                            post(`${base}/matches`, {
+                                                tag: formText(data, 'tag'),
+                                                starts_at: formText(
+                                                    data,
+                                                    'starts_at',
+                                                ),
+                                                note: formText(data, 'note'),
+                                            });
+                                        }}
+                                    >
+                                        <input
+                                            name="tag"
+                                            placeholder={tr('Тег суперника')}
+                                            className={cn(input, 'w-28')}
+                                        />
+                                        <input
+                                            name="starts_at"
+                                            type="datetime-local"
+                                            required
+                                            className={cn(input, 'w-48')}
+                                        />
+                                        <input
+                                            name="note"
+                                            placeholder={tr('Нотатка')}
+                                            className={cn(input, 'w-36')}
+                                        />
+                                        <button type="submit" className={ghost}>
+                                            {tr('Матч')}
+                                        </button>
+                                    </form>
+                                </div>
+                            )}
+                            {props.alliance_requests.map((request) => (
+                                <button
+                                    key={request.id}
+                                    type="button"
+                                    onClick={() =>
+                                        post(
+                                            `${base}/allies/${request.id}/accept`,
+                                        )
+                                    }
+                                    className={cn(ghost, 'mt-2')}
+                                >
+                                    {tr('Прийняти союз від {name}', {
+                                        name: request.name,
+                                    })}
+                                </button>
+                            ))}
+                        </Card>
                         {me && has('voice') && (
                             <VoiceRooms
                                 owner={{ type: 'clan', id: clan.id }}
@@ -342,7 +533,7 @@ export default function ClanShow(props: Props) {
                                         className="py-1 text-sm text-white/75"
                                     >
                                         <span className="text-gc-lilac-200">
-                                            {kyiv(e.starts_at)}
+                                            {eventTime(e.starts_at)}
                                         </span>{' '}
                                         — {e.title} · {e.going_count}{' '}
                                         {tr('іде')}
@@ -426,6 +617,9 @@ export default function ClanShow(props: Props) {
                         applications={applications}
                         rankTitles={clan.rank_titles}
                     />
+                )}
+                {tab === 'settings' && props.settings && (
+                    <BotsCard type="clan" id={clan.id} />
                 )}
                 {tab === 'settings' && props.settings && (
                     <SettingsTab
@@ -565,7 +759,13 @@ function EventsTab({
     events: Props['events'];
     canManage: boolean;
 }) {
-    const form = useForm({ title: '', description: '', starts_at: '' });
+    const form = useForm({
+        title: '',
+        description: '',
+        starts_at: '',
+        weekly: false,
+        cover: null as File | null,
+    });
 
     return (
         <>
@@ -613,6 +813,35 @@ function EventsTab({
                                 {form.errors.starts_at}
                             </p>
                         )}
+                        <label className="flex flex-col gap-1 text-xs text-white/50 sm:col-span-2">
+                            {tr('Обкладинка (необов’язково)')}
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) =>
+                                    form.setData(
+                                        'cover',
+                                        e.target.files?.[0] ?? null,
+                                    )
+                                }
+                                className={cn(input, 'py-2')}
+                            />
+                            {form.errors.cover && (
+                                <span className="text-rose-300">
+                                    {form.errors.cover}
+                                </span>
+                            )}
+                        </label>
+                        <label className="flex items-center gap-2 text-sm text-white/70 sm:col-span-2">
+                            <input
+                                type="checkbox"
+                                checked={form.data.weekly}
+                                onChange={(e) =>
+                                    form.setData('weekly', e.target.checked)
+                                }
+                            />
+                            {tr('Щотижня')}
+                        </label>
                         <button
                             type="submit"
                             disabled={form.processing}
@@ -633,9 +862,18 @@ function EventsTab({
                     key={e.id}
                     className="glass flex flex-wrap items-center gap-3 rounded-3xl p-4"
                 >
+                    {e.cover_url && (
+                        <img
+                            loading="lazy"
+                            decoding="async"
+                            src={e.cover_url}
+                            alt=""
+                            className="aspect-[3/1] w-full rounded-2xl object-cover"
+                        />
+                    )}
                     <div className="min-w-0 flex-1">
                         <p className="text-xs text-gc-lilac-200">
-                            {kyiv(e.starts_at)}
+                            {eventTime(e.starts_at)}
                         </p>
                         <h3 className="font-semibold text-white">{e.title}</h3>
                         {e.description && (
@@ -645,7 +883,9 @@ function EventsTab({
                         )}
                         <p className="mt-1 text-xs text-white/45">
                             {tr('Іде:')} {e.going_count}
+                            {e.repeat === 'weekly' ? ` · ${tr('Щотижня')}` : ''}
                         </p>
+                        {canManage && <BracketForm base={base} event={e} />}
                     </div>
                     <button
                         type="button"
@@ -660,6 +900,14 @@ function EventsTab({
                             tr('Піду')
                         )}
                     </button>
+                    <a
+                        href={e.ics_url}
+                        className={ghost}
+                        title={tr('Додати в календар телефона')}
+                    >
+                        <Download className="size-4" />
+                        <span className="sr-only">{tr('У календар')}</span>
+                    </a>
                     {canManage && (
                         <button
                             type="button"
@@ -906,6 +1154,11 @@ function MembersTab({
                                         {m.note}
                                     </span>
                                 )}
+                                {m.answers && m.answers.length > 0 && (
+                                    <span className="block text-xs text-white/45">
+                                        {m.answers.join(' · ')}
+                                    </span>
+                                )}
                             </span>
                             <button
                                 type="button"
@@ -952,8 +1205,25 @@ function MembersTab({
                                 </span>
                                 <span className="block text-xs text-white/50">
                                     {m.rank_title}
+                                    {m.away && ` · ${tr('давно не заходив')}`}
                                 </span>
                             </span>
+                            {manage && m.away && me && m.id !== me.id && (
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        router.post(
+                                            `${base}/members/${m.id}/nudge`,
+                                            {},
+                                            { preserveScroll: true },
+                                        )
+                                    }
+                                    className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-amber-300/10 px-3 text-xs font-medium text-amber-100 hover:bg-amber-300/20"
+                                >
+                                    <BellRing className="size-3.5" />
+                                    {tr('Нагадати')}
+                                </button>
+                            )}
                             {canTouch && (
                                 <>
                                     <select
@@ -1042,6 +1312,7 @@ function SettingsTab({
         ...settings,
         description: settings.description ?? '',
         rules: settings.rules ?? '',
+        questions: [0, 1, 2].map((index) => settings.questions?.[index] ?? ''),
         features: clan.features,
         rank_titles: [1, 2, 3, 4, 5].map((r) => clan.rank_titles[r] ?? ''),
         permissions: permissions?.matrix ?? {},
@@ -1152,6 +1423,26 @@ function SettingsTab({
                             }
                         />
                     </label>
+                </div>
+                <div className="mt-3 space-y-2">
+                    <p className="text-xs text-white/45">
+                        {tr('Питання в заявці')}
+                    </p>
+                    {[0, 1, 2].map((index) => (
+                        <input
+                            key={index}
+                            value={form.data.questions[index] ?? ''}
+                            maxLength={80}
+                            onChange={(e) => {
+                                const next = [...form.data.questions];
+                                next[index] = e.target.value;
+                                form.setData('questions', next);
+                            }}
+                            placeholder={tr('Питання {n}', { n: index + 1 })}
+                            className={input}
+                            aria-label={tr('Питання {n}', { n: index + 1 })}
+                        />
+                    ))}
                 </div>
             </Card>
 
@@ -1322,6 +1613,115 @@ function SettingsTab({
                     ))}
                 </Card>
             )}
+        </form>
+    );
+}
+
+function BracketForm({
+    base,
+    event,
+}: {
+    base: string;
+    event: Props['events'][number];
+}) {
+    const form = useForm({
+        teams: event.bracket?.teams ?? ['', '', '', ''],
+        semi: event.bracket?.semi ?? [
+            [null, null],
+            [null, null],
+        ],
+        final: event.bracket?.final ?? [null, null],
+    });
+    const field =
+        'input-glass h-9 w-full rounded-lg px-2 text-xs text-white placeholder:text-white/30 focus:outline-none';
+
+    return (
+        <form
+            className="mt-3 grid gap-2"
+            onSubmit={(e) => {
+                e.preventDefault();
+                form.post(`${base}/events/${event.id}/bracket`, {
+                    preserveScroll: true,
+                });
+            }}
+        >
+            <p className="text-xs text-white/45">{tr('Сітка на 4')}</p>
+            <div className="grid grid-cols-2 gap-2">
+                {form.data.teams.map((name, index) => (
+                    <input
+                        key={index}
+                        value={name}
+                        onChange={(e) => {
+                            const teams = [...form.data.teams];
+                            teams[index] = e.target.value;
+                            form.setData('teams', teams);
+                        }}
+                        placeholder={tr('Команда {n}', { n: index + 1 })}
+                        className={field}
+                    />
+                ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+                {form.data.semi.map((pair, index) => (
+                    <div key={index} className="flex gap-1">
+                        {pair.map((score, side) => (
+                            <input
+                                key={side}
+                                type="number"
+                                min={0}
+                                max={99}
+                                value={score ?? ''}
+                                onChange={(e) => {
+                                    const semi = form.data.semi.map((row) => [
+                                        ...row,
+                                    ]) as [number | null, number | null][];
+                                    semi[index][side] =
+                                        e.target.value === ''
+                                            ? null
+                                            : Number(e.target.value);
+                                    form.setData('semi', semi);
+                                }}
+                                placeholder={
+                                    index === 0
+                                        ? tr('Півфінал')
+                                        : tr('Півфінал')
+                                }
+                                className={field}
+                            />
+                        ))}
+                    </div>
+                ))}
+            </div>
+            <div className="flex gap-1">
+                {form.data.final.map((score, side) => (
+                    <input
+                        key={side}
+                        type="number"
+                        min={0}
+                        max={99}
+                        value={score ?? ''}
+                        onChange={(e) => {
+                            const final = [...form.data.final] as [
+                                number | null,
+                                number | null,
+                            ];
+                            final[side] =
+                                e.target.value === ''
+                                    ? null
+                                    : Number(e.target.value);
+                            form.setData('final', final);
+                        }}
+                        placeholder={tr('Фінал')}
+                        className={field}
+                    />
+                ))}
+            </div>
+            <button
+                type="submit"
+                className="h-9 rounded-lg bg-white/10 text-xs font-semibold text-white"
+            >
+                {tr('Зберегти сітку')}
+            </button>
         </form>
     );
 }

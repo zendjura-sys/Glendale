@@ -24,7 +24,7 @@ export function AlbumCard({ album }: { album: PhotoAlbumCard }) {
                     <Images className="size-10 text-white/25" />
                 </span>
             )}
-            <span className="absolute inset-0 bg-gradient-to-t from-[#070a1c] via-[#070a1c]/30 to-transparent" />
+            <span className="scrim absolute inset-0" />
             {album.privacy !== 'public' && (
                 <span className="absolute top-3 right-3 flex size-8 items-center justify-center rounded-full bg-black/40 backdrop-blur">
                     <Privacy className="size-3.5 text-white/80" />

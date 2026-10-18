@@ -116,7 +116,7 @@ export default function MusicUser({
 
                 {playlists.length > 0 && (
                     <section className="glass rounded-3xl p-4 sm:p-5">
-                        <h2 className="mb-3 font-display text-[13px] font-semibold tracking-wide text-white/70 uppercase">
+                        <h2 className="mb-3 font-display text-[13px] font-semibold text-white/70">
                             {tr('Плейлисти')}
                         </h2>
                         <div className={playlistGridClass}>
@@ -141,7 +141,7 @@ export default function MusicUser({
                     />
                 ) : (
                     <section className="glass rounded-3xl p-2 sm:p-3">
-                        <h2 className="p-2 font-display text-[13px] font-semibold tracking-wide text-white/70 uppercase">
+                        <h2 className="p-2 font-display text-[13px] font-semibold text-white/70">
                             {tr('Аудіозаписи')}
                         </h2>
                         <InfiniteScroll data="tracks" preserveUrl>

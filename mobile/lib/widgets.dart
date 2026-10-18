@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'plus.dart';
 import 'state.dart';
+import 'subscription.dart';
 import 'theme.dart';
 import 'i18n.dart';
 
@@ -132,8 +134,10 @@ class GradientText extends StatelessWidget {
 
 /// Скляна картка `.glass`.
 class Glass extends StatelessWidget {
-  const Glass({required this.child, this.padding = const EdgeInsets.all(16), this.radius = 22, this.onTap, this.gradient, this.border, super.key});
+  const Glass({required this.child, this.padding = const EdgeInsets.all(16), this.radius = 22, this.onTap, this.gradient, this.border, this.overlay, super.key});
   final Widget child;
+  /// Шар поверх картки на весь її розмір (напр. жива рамка GameCon+).
+  final Widget? overlay;
   final EdgeInsets padding;
   final double radius;
   final VoidCallback? onTap;
@@ -157,7 +161,9 @@ class Glass extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       borderRadius: shape,
-      child: onTap == null ? box : InkWell(onTap: onTap, borderRadius: shape, child: box),
+      child: overlay == null
+          ? (onTap == null ? box : InkWell(onTap: onTap, borderRadius: shape, child: box))
+          : Stack(children: [onTap == null ? box : InkWell(onTap: onTap, borderRadius: shape, child: box), Positioned.fill(child: overlay!)]),
     );
   }
 }
@@ -294,7 +300,8 @@ class PrimaryButton extends StatelessWidget {
         else if (icon != null)
           Icon(icon, color: Colors.white, size: compact ? 16 : 18),
         if (busy || icon != null) const SizedBox(width: 8),
-        Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(compact ? 13.5 : 15, color: Colors.white, weight: FontWeight.w600))),
+        // Довгий підпис чи великий системний шрифт — текст трохи зменшується, а не обрізається «…».
+        Flexible(child: FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1, style: body(compact ? 13.5 : 15, color: Colors.white, weight: FontWeight.w600)))),
       ],
     );
     return Opacity(
@@ -306,7 +313,7 @@ class PrimaryButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           child: Ink(
             height: height,
-            padding: EdgeInsets.symmetric(horizontal: compact ? 14 : 20),
+            padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 16),
             decoration: BoxDecoration(
               gradient: buttonGradient,
               borderRadius: BorderRadius.circular(14),
@@ -342,14 +349,14 @@ class GhostButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           child: Ink(
             height: compact ? 40 : 48,
-            padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 18),
+            padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 14),
             decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: lineStrong)),
             child: Row(
               mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (icon != null) ...[Icon(icon, size: compact ? 16 : 18, color: iconColor ?? color), const SizedBox(width: 8)],
-                Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(compact ? 13 : 14.5, color: color, weight: FontWeight.w600))),
+                Flexible(child: FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1, style: body(compact ? 13 : 14.5, color: color, weight: FontWeight.w600)))),
               ],
             ),
           ),
@@ -806,8 +813,10 @@ class GcSwitch extends StatelessWidget {
 // ───────────────────────── Люди ─────────────────────────
 
 class Avatar extends StatelessWidget {
-  const Avatar({required this.name, this.url, this.size = 44, this.online = false, this.ring = false, this.square = false, super.key});
+  const Avatar({required this.name, this.url, this.size = 44, this.online = false, this.ring = false, this.square = false, this.frame, super.key});
   final String? url;
+  /// Рамка GameCon+ (кольори з `plus.frame`): тонке двоколірне кільце.
+  final List<Color>? frame;
   final String name;
   final double size;
   final bool online;
@@ -834,29 +843,40 @@ class Avatar extends StatelessWidget {
     final photo = absolute(url);
     final colors = _palette[name.hashCode.abs() % _palette.length];
     final radius = square ? BorderRadius.circular(size * 0.28) : BorderRadius.circular(size);
+    final framed = frame != null && !ring && !square;
+    final gap = framed ? (size * 0.035).clamp(1.5, 3.0) : 0.0;
+    final inner = size - gap * 4;
     Widget face = ClipRRect(
       borderRadius: radius,
       child: photo == null
           ? Container(
-              width: size,
-              height: size,
+              width: inner,
+              height: inner,
               alignment: Alignment.center,
               decoration: BoxDecoration(gradient: LinearGradient(colors: colors, begin: Alignment.topLeft, end: Alignment.bottomRight)),
-              child: Text(initials(name), style: display(size * 0.34, color: Colors.white)),
+              child: Text(initials(name), style: display(inner * 0.34, color: Colors.white)),
             )
           : CachedNetworkImage(
               imageUrl: photo,
               fit: BoxFit.cover,
-              width: size,
-              height: size,
+              width: inner,
+              height: inner,
               placeholder: (_, _) => Container(color: raised),
               errorWidget: (_, _, _) => Container(color: raised),
             ),
     );
+    if (framed) {
+      face = Container(
+        padding: EdgeInsets.all(gap),
+        decoration: BoxDecoration(borderRadius: radius, gradient: LinearGradient(colors: frame!.length > 1 ? frame! : [frame!.first, frame!.first], begin: Alignment.topLeft, end: Alignment.bottomRight)),
+        child: Container(padding: EdgeInsets.all(gap), decoration: BoxDecoration(borderRadius: radius, color: voidColor), child: face),
+      );
+    }
     if (ring) {
+      final rim = frame == null ? brand : LinearGradient(colors: frame!.length > 1 ? frame! : [frame!.first, frame!.first], begin: Alignment.topLeft, end: Alignment.bottomRight);
       face = Container(
         padding: EdgeInsets.all(size * 0.03),
-        decoration: BoxDecoration(borderRadius: radius, gradient: brand),
+        decoration: BoxDecoration(borderRadius: radius, gradient: rim),
         child: Container(
           padding: EdgeInsets.all(size * 0.03),
           decoration: BoxDecoration(borderRadius: radius, color: voidColor),
@@ -910,16 +930,13 @@ class UserTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         child: Row(
           children: [
-            Avatar(url: text(user['avatar_url']), name: name, size: size, online: user['is_online'] == true),
+            Avatar(url: text(user['avatar_url']), name: name, size: size, online: user['is_online'] == true, frame: PlusMark.of(user)?.frame),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(children: [
-                    Flexible(child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w600))),
-                    if (user['is_verified'] == true) ...[const SizedBox(width: 4), const Icon(LucideIcons.badgeCheck, size: 15, color: primary)],
-                  ]),
+                  PlusNameRow(user: user, style: body(15, weight: FontWeight.w600)),
                   Text(
                     subtitle ?? '@${text(user['username']) ?? ''}',
                     maxLines: 1,
@@ -1048,7 +1065,7 @@ class MetricTile extends StatelessWidget {
               Expanded(
                 child: SizedBox(
                   height: 28,
-                  child: Text(label.toUpperCase(), maxLines: 2, overflow: TextOverflow.ellipsis, style: body(10.5, color: muted, weight: FontWeight.w600).copyWith(letterSpacing: 0.8, height: 1.3)),
+                  child: Text(label.toUpperCase(), maxLines: 2, overflow: TextOverflow.ellipsis, style: body(11, color: muted, weight: FontWeight.w600).copyWith(letterSpacing: 0.8, height: 1.3)),
                 ),
               ),
               if (icon != null) Icon(icon, size: 15, color: faint),
@@ -1284,9 +1301,14 @@ class SectionLabel extends StatelessWidget {
 
 void toast(BuildContext context, Object message) {
   final text = '$message';
+  // Ліміт GameCon+ від сервера («З GameCon+ — до 25») — лише пояснення, що це, без жодної оплати.
+  final plus = isPlusLimit(message);
   ScaffoldMessenger.maybeOf(context)
     ?..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(text)));
+    ..showSnackBar(SnackBar(
+      content: Text(text),
+      action: plus ? SnackBarAction(label: tr('Що таке GameCon+?'), onPressed: () => showProFeatures(context)) : null,
+    ));
 }
 
 /// Шторка знизу зі скляним фоном, ручкою й заголовком.
@@ -1342,7 +1364,8 @@ Future<T?> showGcSheet<T>(BuildContext context, {String? title, String? subtitle
         ],
       );
       return Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(sheet).bottom),
+        // Клавіатура або системна смуга жестів унизу — що більше.
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(sheet).bottom > 0 ? MediaQuery.viewInsetsOf(sheet).bottom : MediaQuery.viewPaddingOf(sheet).bottom),
         child: height == null ? content : SizedBox(height: height, child: content),
       );
       }
@@ -1475,17 +1498,57 @@ String duration(dynamic seconds) {
   return h > 0 ? '$h:${m.toString().padLeft(2, '0')}:$s' : '$m:$s';
 }
 
+/// Коротке число, як на сайті: 999 → 999, 1 000 → 1K, 15 300 → 15,3K, 1 000 000 → 1M.
 String compact(dynamic value) {
   final n = value is num ? value.toInt() : int.tryParse('$value') ?? 0;
-  final digits = n.abs().toString();
-  final out = StringBuffer();
-  for (var i = 0; i < digits.length; i++) {
-    if (i > 0 && (digits.length - i) % 3 == 0) out.write(' ');
-    out.write(digits[i]);
+  final abs = n.abs();
+  final sign = n < 0 ? '−' : '';
+  for (final (at, suffix) in const [(1000000000, 'B'), (1000000, 'M'), (1000, 'K')]) {
+    if (abs >= at) {
+      final scaled = abs / at;
+      final factor = scaled < 100 ? 10 : 1;
+      final cut = (scaled * factor).floor() / factor;
+      final text = cut == cut.truncateToDouble() ? cut.toInt().toString() : cut.toStringAsFixed(1).replaceAll('.', ',');
+      return '$sign$text$suffix';
+    }
   }
-  return '${n < 0 ? '−' : ''}$out';
+  return '$sign$abs';
 }
 
 int intOf(dynamic value, [int fallback = 0]) => value is int ? value : (value is num ? value.toInt() : int.tryParse('$value') ?? fallback);
 
 Map<String, dynamic> mapOf(dynamic value) => value is Map ? Map<String, dynamic>.from(value) : <String, dynamic>{};
+
+
+final _maskCache = <String, RegExp?>{};
+
+/// Мат зірочками, якщо людина ввімкнула «Приховувати образливі слова» (шаблон приходить із сервера).
+String maskProfanity(String value, String? pattern) {
+  if (pattern == null || pattern.isEmpty || value.isEmpty) return value;
+  final re = _maskCache.putIfAbsent(pattern, () {
+    try {
+      return RegExp(pattern, unicode: true, caseSensitive: false);
+    } catch (_) {
+      return null;
+    }
+  });
+  if (re == null) return value;
+  return value.replaceAllMapped(re, (m) {
+    final word = m[0]!;
+    return word.substring(0, 1) + '*' * (word.length - 1 < 1 ? 1 : word.length - 1);
+  });
+}
+
+/// Назва мови для підпису «Оригінал: …».
+String languageName(String code) => switch (code) {
+      'uk' => tr('Українська'),
+      'en' => 'English',
+      'de' => 'Deutsch',
+      'fr' => 'Français',
+      'es' => 'Español',
+      'ru' => tr('Російська'),
+      'kk' => 'Қазақ тілі',
+      'zh' => '中文',
+      'ja' => '日本語',
+      _ => code,
+    };

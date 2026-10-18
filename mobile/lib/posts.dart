@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
 import 'player_view.dart';
+import 'plus.dart';
 import 'shell.dart';
 import 'state.dart';
 import 'theme.dart';
@@ -39,6 +40,7 @@ class PostCard extends StatefulWidget {
 
 class _PostCardState extends State<PostCard> {
   late bool liked = widget.post['liked'] == true;
+  late String? reaction = text(widget.post['reaction']) ?? (liked ? 'like' : null);
   late int likes = intOf(widget.post['likes_count']);
   late int comments = intOf(widget.post['comments_count']);
   late bool showComments = widget.expanded || maps(widget.post['comments']).isNotEmpty;
@@ -47,16 +49,22 @@ class _PostCardState extends State<PostCard> {
 
   Map<String, dynamic> get post => widget.post;
 
-  Future<void> _like() async {
+  /// Реакція як на сайті: та сама — знімає, інша — замінює.
+  Future<void> _react(String next) async {
     final api = AppScope.read(context).session.api;
+    final previous = reaction;
+    final previousLikes = likes;
+    final removing = previous == next;
     setState(() {
-      liked = !liked;
-      likes += liked ? 1 : -1;
+      reaction = removing ? null : next;
+      liked = reaction != null;
+      likes += previous == null ? 1 : (removing ? -1 : 0);
     });
     try {
-      final result = await api.post('/api/v1/posts/${post['id']}/like');
+      final result = await api.post('/api/v1/posts/${post['id']}/like', {'reaction': next});
       if (mounted) {
         setState(() {
+          reaction = text(result['reaction']);
           liked = result['liked'] == true;
           likes = intOf(result['likes_count'], likes);
         });
@@ -64,8 +72,9 @@ class _PostCardState extends State<PostCard> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          liked = !liked;
-          likes += liked ? 1 : -1;
+          reaction = previous;
+          liked = previous != null;
+          likes = previousLikes;
         });
         toast(context, e);
       }
@@ -88,6 +97,21 @@ class _PostCardState extends State<PostCard> {
           mainAxisSize: MainAxisSize.min,
           children: [
             _SheetAction(icon: LucideIcons.link, label: tr('Копіювати посилання'), onTap: () => Navigator.pop(sheet, 'link')),
+            _SheetAction(
+              icon: post['saved'] == true ? LucideIcons.bookmarkCheck : LucideIcons.bookmark,
+              label: post['saved'] == true ? tr('Прибрати зі збереженого') : tr('Зберегти'),
+              onTap: () => Navigator.pop(sheet, 'save'),
+            ),
+            if (can['edit'] == true) _SheetAction(icon: LucideIcons.pencil, label: tr('Редагувати'), onTap: () => Navigator.pop(sheet, 'edit')),
+            if (can['share'] == true) _SheetAction(icon: LucideIcons.share2, label: tr('Поділитися на стіні'), onTap: () => Navigator.pop(sheet, 'share')),
+            if (can['quote'] == true) _SheetAction(icon: LucideIcons.quote, label: tr('Цитувати'), onTap: () => Navigator.pop(sheet, 'quote')),
+            if (can['hide'] == true) _SheetAction(icon: LucideIcons.eyeOff, label: tr('Не цікаво'), onTap: () => Navigator.pop(sheet, 'hide')),
+            if (can['mute'] == true)
+              _SheetAction(
+                icon: post['muted'] == true ? LucideIcons.volume2 : LucideIcons.volumeX,
+                label: post['muted'] == true ? tr('Зняти заглушку') : tr('Заглушити'),
+                onTap: () => Navigator.pop(sheet, 'mute'),
+              ),
             if (can['pin'] == true)
               _SheetAction(
                 icon: post['is_pinned'] == true ? LucideIcons.pinOff : LucideIcons.pin,
@@ -101,6 +125,51 @@ class _PostCardState extends State<PostCard> {
     );
     if (!mounted || choice == null) return;
     if (choice == 'link') return _copyLink();
+    if (choice == 'save') {
+      try {
+        final result = await api.post(Api.site('/saved'), {'kind': 'post', 'id': post['id']});
+        if (!mounted) return;
+        setState(() => post['saved'] = result['saved'] == true);
+        toast(context, post['saved'] == true ? tr('Збережено.') : tr('Прибрано зі збереженого.'));
+      } catch (e) {
+        if (mounted) toast(context, e);
+      }
+      return;
+    }
+    if (choice == 'edit') {
+      final body = await askText(context, tr('Редагувати запис'), initial: text(post['body']) ?? '', maxLines: 8);
+      if (body == null || body.trim().isEmpty || !mounted) return;
+      if (await attempt(context, () => api.patch(Api.site('/posts/${post['id']}'), {'body': body.trim()}))) {
+        setState(() => post['body'] = body.trim());
+        widget.onChanged?.call();
+      }
+      return;
+    }
+    if (choice == 'share') {
+      await attempt(context, () => api.post(Api.site('/posts/${post['id']}/share')), success: tr('Запис опубліковано на вашій стіні.'));
+      return;
+    }
+    if (choice == 'quote') {
+      final body = await askText(context, tr('Цитувати'), hint: tr('Ваш коментар до цитати…'), action: tr('Опублікувати'), maxLines: 5);
+      if (body == null || body.trim().isEmpty || !mounted) return;
+      await attempt(context, () => api.post(Api.site('/posts/${post['id']}/quote'), {'body': body.trim()}), success: tr('Цитату опубліковано.'));
+      return;
+    }
+    if (choice == 'hide') {
+      if (await attempt(context, () => api.post(Api.site('/posts/${post['id']}/hide')), success: tr('Більше не покажемо цей запис.'))) {
+        setState(() => deleted = true);
+        widget.onDeleted?.call();
+      }
+      return;
+    }
+    if (choice == 'mute') {
+      final wasMuted = post['muted'] == true;
+      if (await attempt(context, () => api.post(Api.site('/posts/${post['id']}/mute')), success: wasMuted ? tr('Заглушку знято.') : tr('Записи автора більше не з’являтимуться в стрічці.'))) {
+        setState(() => post['muted'] = !wasMuted);
+        widget.onChanged?.call();
+      }
+      return;
+    }
     if (choice == 'pin') {
       if (await attempt(context, () => api.post(Api.site('/posts/${post['id']}/pin')))) {
         setState(() => post['is_pinned'] = post['is_pinned'] != true);
@@ -126,7 +195,11 @@ class _PostCardState extends State<PostCard> {
     final wall = post['wall'] is Map ? mapOf(post['wall']) : null;
     final who = publisher ?? author;
     final name = text(who['name']) ?? 'GameCon';
-    final bodyText = text(post['body']) ?? '';
+    final session = AppScope.read(context).session;
+    final bodyText = maskProfanity(text(post['body']) ?? '', text(session.me?['profanity_mask']));
+    final badge = post['badge'] is Map ? mapOf(post['badge']) : null;
+    final tag = post['tag'] is Map ? mapOf(post['tag']) : null;
+    final lang = text(post['lang']);
     final long = bodyText.length > 420 && !fullText && !widget.expanded;
     final vis = _visibility[text(post['visibility']) ?? 'public'] ?? _visibility['public']!;
     final images = maps(post['attachments']).where((a) => absolute(a['url']) != null).toList();
@@ -157,7 +230,7 @@ class _PostCardState extends State<PostCard> {
               children: [
                 GestureDetector(
                   onTap: openWho,
-                  child: Avatar(url: text(who['avatar_url']), name: name, size: 44, online: publisher == null && author['is_online'] == true, square: publisher != null),
+                  child: Avatar(url: text(who['avatar_url']), name: name, size: 44, online: publisher == null && author['is_online'] == true, square: publisher != null, frame: publisher == null ? PlusMark.of(author)?.frame : null),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -168,8 +241,10 @@ class _PostCardState extends State<PostCard> {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         spacing: 4,
                         children: [
-                          GestureDetector(onTap: openWho, child: Text(name, style: body(15, weight: FontWeight.w700))),
+                          GestureDetector(onTap: openWho, child: PlusName(name, plus: publisher == null ? PlusMark.of(author) : null, style: body(15, weight: FontWeight.w700), maxLines: null)),
                           if (who['is_verified'] == true) const Icon(LucideIcons.badgeCheck, size: 15, color: primary),
+                          if (publisher == null && PlusMark.of(author) != null) const PlusBadge(size: 15),
+                          if (badge != null) RoleBadge(title: text(badge['title']) ?? '', color: text(badge['color'])),
                           if (wall != null) ...[
                             const Icon(LucideIcons.chevronRight, size: 16, color: faint),
                             GestureDetector(
@@ -180,18 +255,23 @@ class _PostCardState extends State<PostCard> {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Row(
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 6,
+                        runSpacing: 4,
                         children: [
                           GestureDetector(
                             onTap: () => context.push('/posts/${post['id']}'),
                             child: Text(ago(post['created_at']), style: body(12, color: muted)),
                           ),
-                          Text('  ·  ', style: body(12, color: faint)),
                           Icon(vis.$1, size: 13, color: muted),
-                          if (post['is_pinned'] == true) ...[
-                            const SizedBox(width: 8),
-                            Pill(label: tr('Закріплено'), icon: LucideIcons.pin, color: Color(0xFF9FB6FF)),
-                          ],
+                          if (tag != null)
+                            GestureDetector(
+                              onTap: () => context.push(appPathFor(text(tag['href']))),
+                              child: Pill(label: '#${tag['name']}', color: soft),
+                            ),
+                          if (post['pending'] == true) Pill(label: tr('На перевірці'), icon: LucideIcons.clock, color: const Color(0xFFF5B342)),
+                          if (post['is_pinned'] == true) Pill(label: tr('Закріплено'), icon: LucideIcons.pin, color: const Color(0xFF9FB6FF)),
                         ],
                       ),
                     ],
@@ -200,6 +280,11 @@ class _PostCardState extends State<PostCard> {
                 IconButton(onPressed: _menu, icon: const Icon(LucideIcons.ellipsis, color: muted), visualDensity: VisualDensity.compact),
               ],
             ),
+            if (bodyText.isNotEmpty && lang != null && lang != I18n.locale.split('-').first)
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Text(tr('Оригінал: {language}', {'language': languageName(lang)}), style: body(11.5, color: faint)),
+              ),
             if (bodyText.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 12),
@@ -220,19 +305,14 @@ class _PostCardState extends State<PostCard> {
                   ),
                 ),
               ),
+            if (post['shared'] is Map) _SharedCard(shared: mapOf(post['shared']), ownText: bodyText),
             if (images.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 12), child: MediaGrid(items: images)),
             if (music != null) Padding(padding: const EdgeInsets.only(top: 12), child: MusicAttachment(track: music)),
             if (movie != null) Padding(padding: const EdgeInsets.only(top: 12), child: MovieAttachment(movie: movie)),
             const SizedBox(height: 14),
             Row(
               children: [
-                _ActionPill(
-                  icon: liked ? LucideIcons.heart600 : LucideIcons.heart,
-                  color: liked ? const Color(0xFFFB7185) : null,
-                  background: liked ? const Color(0xFFF43F5E).withValues(alpha: 0.14) : null,
-                  label: likes > 0 ? compact(likes) : null,
-                  onTap: _like,
-                ),
+                ReactionButton(reaction: reaction, count: likes, onPick: _react),
                 const SizedBox(width: 8),
                 _ActionPill(
                   icon: LucideIcons.messageCircle,
@@ -268,19 +348,17 @@ class _PostCardState extends State<PostCard> {
 }
 
 class _ActionPill extends StatelessWidget {
-  const _ActionPill({required this.icon, required this.onTap, this.label, this.color, this.background});
+  const _ActionPill({required this.icon, required this.onTap, this.label});
   final IconData icon;
   final VoidCallback? onTap;
   final String? label;
-  final Color? color;
-  final Color? background;
 
   @override
   Widget build(BuildContext context) {
     return Opacity(
       opacity: onTap == null ? 0.4 : 1,
       child: Material(
-        color: background ?? Colors.white.withValues(alpha: 0.045),
+        color: Colors.white.withValues(alpha: 0.045),
         borderRadius: BorderRadius.circular(20),
         child: InkWell(
           onTap: onTap,
@@ -290,8 +368,8 @@ class _ActionPill extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 18, color: color ?? soft.withValues(alpha: 0.7)),
-                if (label != null) ...[const SizedBox(width: 6), Text(label!, style: body(13.5, color: color ?? soft.withValues(alpha: 0.75), weight: FontWeight.w600))],
+                Icon(icon, size: 18, color: soft.withValues(alpha: 0.7)),
+                if (label != null) ...[const SizedBox(width: 6), Text(label!, style: body(13.5, color: soft.withValues(alpha: 0.75), weight: FontWeight.w600))],
               ],
             ),
           ),
@@ -761,7 +839,7 @@ class _CommentsThreadState extends State<CommentsThread> {
                         api: AppScope.read(context).session.api,
                         type: 'comment',
                         id: intOf(comment['id']),
-                        original: text(comment['body']) ?? '',
+                        original: maskProfanity(text(comment['body']) ?? '', text(AppScope.read(context).session.me?['profanity_mask'])),
                         builder: (context, shownText) => Text.rich(
                           TextSpan(children: [
                             if (parent != null) TextSpan(text: '${text(mapOf(parent['user'])['first_name']) ?? ''}, ', style: body(14, color: const Color(0xFF9AA8FF))),
@@ -797,7 +875,7 @@ class _CommentsThreadState extends State<CommentsThread> {
                         onTap: () => _like(comment),
                         child: Row(children: [
                           Icon(comment['liked'] == true ? LucideIcons.heart600 : LucideIcons.heart, size: 15, color: comment['liked'] == true ? const Color(0xFFFB7185) : faint),
-                          if (intOf(comment['likes_count']) > 0) ...[const SizedBox(width: 3), Text('${comment['likes_count']}', style: body(11.5, color: muted))],
+                          if (intOf(comment['likes_count']) > 0) ...[const SizedBox(width: 3), Text(compact(comment['likes_count']), style: body(11.5, color: muted))],
                         ]),
                       ),
                     ],
@@ -1236,3 +1314,174 @@ class TrackRow extends StatelessWidget {
     );
   }
 }
+
+
+const reactionGlyphs = [
+  ('like', '❤️', 'Подобається'),
+  ('fire', '🔥', 'Вогонь'),
+  ('laugh', '😂', 'Смішно'),
+  ('gg', '🎮', 'Добре зіграно'),
+  ('sad', '😢', 'Шкода'),
+];
+
+/// Одна кнопка реакції: дотик — «подобається» (або зняти свою), довге натискання — смужка емоцій.
+class ReactionButton extends StatelessWidget {
+  const ReactionButton({super.key, required this.reaction, required this.count, required this.onPick});
+  final String? reaction;
+  final int count;
+  final ValueChanged<String> onPick;
+
+  Future<void> _openPicker(BuildContext context) async {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null) return;
+    final anchor = box.localToGlobal(Offset.zero);
+    HapticFeedback.selectionClick();
+    final picked = await showGeneralDialog<String>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: tr('Закрити'),
+      barrierColor: Colors.transparent,
+      transitionDuration: const Duration(milliseconds: 160),
+      pageBuilder: (ctx, _, _) {
+        final width = MediaQuery.sizeOf(ctx).width;
+        const stripWidth = 5 * 48.0 + 12;
+        final left = anchor.dx.clamp(8.0, width - stripWidth - 8);
+        return Stack(children: [
+          Positioned(
+            left: left,
+            top: anchor.dy - 62,
+            child: Material(
+              color: popover,
+              elevation: 8,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30), side: const BorderSide(color: lineStrong)),
+              child: Padding(
+                padding: const EdgeInsets.all(6),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  for (final (id, glyph, label) in reactionGlyphs)
+                    Tooltip(
+                      message: tr(label),
+                      child: InkResponse(
+                        onTap: () => Navigator.of(ctx).pop(id),
+                        radius: 24,
+                        child: Container(
+                          width: 48,
+                          height: 44,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: reaction == id ? Colors.white.withValues(alpha: 0.12) : null,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(glyph, style: const TextStyle(fontSize: 24)),
+                        ),
+                      ),
+                    ),
+                ]),
+              ),
+            ),
+          ),
+        ]);
+      },
+      transitionBuilder: (ctx, animation, _, child) => FadeTransition(
+        opacity: animation,
+        child: SlideTransition(position: Tween(begin: const Offset(0, 0.02), end: Offset.zero).animate(animation), child: child),
+      ),
+    );
+    if (picked != null) onPick(picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final current = reactionGlyphs.where((r) => r.$1 == reaction).firstOrNull;
+    return Material(
+      color: current != null ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.045),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: () => onPick(reaction ?? 'like'),
+        onLongPress: () => _openPicker(context),
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            if (current != null)
+              Text(current.$2, style: const TextStyle(fontSize: 16, height: 1.1))
+            else
+              Icon(LucideIcons.heart, size: 18, color: soft.withValues(alpha: 0.7)),
+            if (count > 0) ...[const SizedBox(width: 6), Text(compact(count), style: body(13.5, color: current != null ? ink : soft.withValues(alpha: 0.75), weight: FontWeight.w600))],
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+
+const _badgeColors = {
+  'indigo': Color(0xFF9AA8FF),
+  'sky': Color(0xFF9CBCFF),
+  'emerald': Color(0xFF22D3A6),
+  'amber': Color(0xFFF5B342),
+  'rose': Color(0xFFFF7A59),
+  'violet': Color(0xFFA58BFF),
+};
+
+/// Підпис ролі учасника спільноти з кольором (як на сайті).
+class RoleBadge extends StatelessWidget {
+  const RoleBadge({super.key, required this.title, this.color});
+  final String title;
+  final String? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final tone = _badgeColors[color] ?? _badgeColors['indigo']!;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(color: tone.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
+      child: Text(title, style: body(11, color: tone, weight: FontWeight.w600)),
+    );
+  }
+}
+
+
+/// Поширений запис: звідки він (спільнота або людина) і його текст.
+class _SharedCard extends StatelessWidget {
+  const _SharedCard({required this.shared, required this.ownText});
+  final Map<String, dynamic> shared;
+  final String ownText;
+
+  @override
+  Widget build(BuildContext context) {
+    final community = shared['community'] is Map ? mapOf(shared['community']) : null;
+    final source = text(shared['body']) ?? '';
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => context.push(appPathFor(text(shared['post_href']) ?? text(shared['href']))),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(16), border: Border.all(color: line)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              if (community != null) ...[const Icon(LucideIcons.usersRound, size: 13, color: muted), const SizedBox(width: 4)],
+              Flexible(
+                child: Text(
+                  community != null ? tr('Із спільноти «{name}»', {'name': community['name']}) : tr('Запис'),
+                  style: body(11.5, color: muted),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ]),
+            const SizedBox(height: 2),
+            Text(text(shared['name']) ?? '', style: body(13.5, weight: FontWeight.w600)),
+            if (source.isNotEmpty && source != ownText) ...[
+              const SizedBox(height: 4),
+              Text(source, maxLines: 3, overflow: TextOverflow.ellipsis, style: body(13.5, color: soft)),
+            ],
+          ]),
+        ),
+      ),
+    );
+  }
+}
+

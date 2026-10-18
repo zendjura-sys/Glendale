@@ -1,5 +1,16 @@
 import { Deferred, Head, InfiniteScroll, Link, router } from '@inertiajs/react';
-import { Inbox, Radio, Search, Send, Sparkles, UsersRound } from 'lucide-react';
+import {
+    Briefcase,
+    Clapperboard,
+    Inbox,
+    MessageCircleOff,
+    Radio,
+    Search,
+    Send,
+    Sparkles,
+    Swords,
+    UsersRound,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { PersonCard } from '@/components/gc/person-card';
 import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
@@ -7,7 +18,15 @@ import { cn } from '@/lib/utils';
 import type { PersonCard as Person, ScrollData } from '@/types';
 import { tr } from '@/lib/i18n';
 
-type Tab = 'all' | 'online' | 'requests' | 'outgoing';
+type Tab =
+    | 'all'
+    | 'online'
+    | 'requests'
+    | 'outgoing'
+    | 'raid'
+    | 'cinema'
+    | 'work'
+    | 'stale';
 
 type Props = {
     tab: Tab;
@@ -22,6 +41,10 @@ const tabs: { key: Tab; label: string; icon: typeof UsersRound }[] = [
     { key: 'online', label: tr('Онлайн'), icon: Radio },
     { key: 'requests', label: tr('Заявки'), icon: Inbox },
     { key: 'outgoing', label: tr('Надіслані'), icon: Send },
+    { key: 'raid', label: tr('Рейд'), icon: Swords },
+    { key: 'cinema', label: tr('Кіно'), icon: Clapperboard },
+    { key: 'work', label: tr('Робота'), icon: Briefcase },
+    { key: 'stale', label: tr('Давно не писали'), icon: MessageCircleOff },
 ];
 
 const empty: Record<Tab, { title: string; text: string }> = {
@@ -42,6 +65,22 @@ const empty: Record<Tab, { title: string; text: string }> = {
     outgoing: {
         title: tr('Немає надісланих заявок'),
         text: tr('Заявки, які ви надіслали, чекають тут на відповідь.'),
+    },
+    raid: {
+        title: tr('У рейді нікого'),
+        text: tr('Позначте друга списком «Рейд» на його картці.'),
+    },
+    cinema: {
+        title: tr('У кіно нікого'),
+        text: tr('Позначте друга списком «Кіно» на його картці.'),
+    },
+    work: {
+        title: tr('У роботі нікого'),
+        text: tr('Позначте друга списком «Робота» на його картці.'),
+    },
+    stale: {
+        title: tr('Усіх нещодавно написали'),
+        text: tr('Тут друзі, з якими не було листування довше місяця.'),
     },
 };
 

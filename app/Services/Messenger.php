@@ -14,7 +14,9 @@ use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\Sticker;
 use App\Models\User;
+use App\Models\UserBlock;
 use App\Services\Push\PushNotifier;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\QueryException;
@@ -33,7 +35,7 @@ class Messenger
 
     public function canMessage(User $from, User $to): bool
     {
-        if ($from->is($to) || $to->isBanned()) {
+        if ($from->is($to) || $to->isBanned() || UserBlock::either($from, $to)) {
             return false;
         }
 
@@ -199,19 +201,31 @@ class Messenger
     /**
      * @param  list<UploadedFile>  $images
      * @param  list<UploadedFile>  $documents
+     * @param  array{kind: string, id: int, title: string, hint: string, href: string, image: string|null}|null  $card
      */
-    public function send(Conversation $conversation, User $sender, ?string $body, array $images = [], ?int $replyToId = null, array $documents = []): Message
+    public function send(Conversation $conversation, User $sender, ?string $body, array $images = [], ?int $replyToId = null, array $documents = [], ?CarbonInterface $publishAt = null, ?CarbonInterface $expiresAt = null, ?array $card = null): Message
     {
         $body = $body !== null ? trim($body) : null;
 
-        if (($body === null || $body === '') && $images === [] && $documents === []) {
+        if (($body === null || $body === '') && $images === [] && $documents === [] && $card === null) {
             throw ValidationException::withMessages(['body' => 'Повідомлення порожнє.']);
         }
 
-        return $this->deliver($conversation, $sender, [
+        $attributes = [
             'type' => Message::TYPE_TEXT,
             'body' => $body === '' ? null : $body,
-        ], $replyToId, function (Message $message) use ($images, $documents) {
+        ];
+        if ($card !== null) {
+            $attributes['meta'] = ['card' => $card];
+        }
+        if ($publishAt?->isFuture()) {
+            $attributes['publish_at'] = $publishAt;
+        }
+        if ($expiresAt?->isFuture()) {
+            $attributes['expires_at'] = $expiresAt;
+        }
+
+        return $this->deliver($conversation, $sender, $attributes, $replyToId, function (Message $message) use ($images, $documents) {
             $position = 0;
 
             foreach ($images as $file) {
@@ -276,6 +290,28 @@ class Messenger
         ], $replyToId);
     }
 
+    public function forward(Conversation $target, User $sender, Message $source): Message
+    {
+        $source->loadMissing(['user', 'attachments']);
+        $meta = $source->meta ?? [];
+        $meta['forward'] = [
+            'name' => $source->user->name ?? 'GameCon',
+            'username' => $source->user?->username,
+        ];
+
+        return $this->deliver($target, $sender, [
+            'type' => $source->type,
+            'body' => $source->body,
+            'meta' => $meta,
+        ], null, function (Message $copy) use ($source): void {
+            foreach ($source->attachments as $attachment) {
+                $copy->attachments()->create($attachment->only([
+                    'type', 'disk', 'path', 'name', 'mime', 'width', 'height', 'size', 'duration', 'meta', 'position',
+                ]));
+            }
+        });
+    }
+
     /**
      * @param  array<string, mixed>  $attributes
      * @param  (callable(Message): void)|null  $attach
@@ -286,7 +322,10 @@ class Messenger
             $replyToId = null;
         }
 
-        $message = DB::transaction(function () use ($conversation, $sender, $attributes, $replyToId, $attach) {
+        $publishAt = $attributes['publish_at'] ?? null;
+        $scheduled = $publishAt instanceof CarbonInterface && $publishAt->isFuture();
+
+        $message = DB::transaction(function () use ($conversation, $sender, $attributes, $replyToId, $attach, $scheduled) {
             $message = $conversation->messages()->create([
                 ...$attributes,
                 'user_id' => $sender->id,
@@ -297,15 +336,62 @@ class Messenger
                 $attach($message);
             }
 
-            $this->touch($conversation, $message);
-            $conversation->participants()->where('user_id', $sender->id)->update(['last_read_message_id' => $message->id]);
+            if (! $scheduled) {
+                $this->touch($conversation, $message);
+                $conversation->participants()->where('user_id', $sender->id)->update(['last_read_message_id' => $message->id]);
+            }
 
             return $message;
         });
 
-        $this->broadcastNew($conversation, $message);
+        if (! $scheduled) {
+            $this->broadcastNew($conversation, $message);
+        }
 
         return $message;
+    }
+
+    public function publishDue(): int
+    {
+        $count = 0;
+        Message::query()
+            ->whereNotNull('publish_at')
+            ->where('publish_at', '<=', now())
+            ->orderBy('id')
+            ->limit(100)
+            ->get()
+            ->each(function (Message $message) use (&$count): void {
+                $when = $message->publish_at ?? now();
+                $message->forceFill(['publish_at' => null, 'created_at' => $when])->save();
+                $conversation = $message->conversation;
+                $this->touch($conversation, $message);
+                if ($message->user_id) {
+                    $conversation->participants()->where('user_id', $message->user_id)->update(['last_read_message_id' => $message->id]);
+                }
+                $this->broadcastNew($conversation, $message);
+                $count++;
+            });
+
+        return $count;
+    }
+
+    public function expireDue(): int
+    {
+        $count = 0;
+        Message::query()
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<=', now())
+            ->orderBy('id')
+            ->limit(100)
+            ->get()
+            ->each(function (Message $message) use (&$count): void {
+                if (! $message->trashed()) {
+                    $this->remove($message);
+                    $count++;
+                }
+            });
+
+        return $count;
     }
 
     private function cleanName(string $name): string
@@ -356,7 +442,11 @@ class Messenger
             $message->delete();
 
             if ($conversation->last_message_id === $message->id) {
-                $previous = $conversation->messages()->latest('id')->first();
+                $previous = $conversation->messages()
+                    ->where(fn ($query) => $query->whereNull('publish_at')->orWhere('publish_at', '<=', now()))
+                    ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+                    ->latest('id')
+                    ->first();
                 $conversation->update([
                     'last_message_id' => $previous?->id,
                     'last_message_at' => $previous !== null ? $previous->created_at : $conversation->last_message_at,
@@ -370,6 +460,12 @@ class Messenger
     public function markRead(Conversation $conversation, User $user, int $messageId): void
     {
         $messageId = min($messageId, (int) $conversation->last_message_id);
+        $me = $conversation->participantFor($user);
+
+        $conversation->participants()
+            ->where('user_id', $user->id)
+            ->whereNull('left_at')
+            ->update(['marked_unread' => false]);
 
         $updated = $conversation->participants()
             ->where('user_id', $user->id)
@@ -378,14 +474,57 @@ class Messenger
             ->update(['last_read_message_id' => $messageId]);
 
         if ($updated) {
-            $this->broadcast(new ConversationRead($conversation->id, $user->id, $messageId));
+            if ($me?->share_receipts !== false) {
+                $this->broadcast(new ConversationRead($conversation->id, $user->id, $messageId));
+            }
             $this->broadcast(new InboxUpdated($user->id, $conversation->id, null));
         }
+    }
+
+    public function markUnread(Conversation $conversation, User $user): void
+    {
+        $conversation->participants()
+            ->where('user_id', $user->id)
+            ->whereNull('left_at')
+            ->update(['marked_unread' => true]);
     }
 
     public function setMuted(Conversation $conversation, User $user, bool $muted): void
     {
         $conversation->participants()->where('user_id', $user->id)->update(['is_muted' => $muted]);
+    }
+
+    public function setSlow(Conversation $conversation, User $actor, int $seconds): void
+    {
+        $this->ensureGroup($conversation);
+        abort_unless($conversation->participantFor($actor)?->canManage(), 403);
+        abort_unless(in_array($seconds, [0, 10, 30, 60], true), 422);
+        $conversation->forceFill(['slow_seconds' => $seconds])->save();
+    }
+
+    public function setMemberRole(Conversation $conversation, User $actor, User $target, string $role): void
+    {
+        $this->ensureGroup($conversation);
+        abort_unless($conversation->participantFor($actor)?->role === ConversationParticipant::ROLE_OWNER, 403);
+        abort_unless(in_array($role, [ConversationParticipant::ROLE_ADMIN, ConversationParticipant::ROLE_MEMBER], true), 422);
+        $row = $conversation->participantFor($target);
+        abort_if($row === null || $row->role === ConversationParticipant::ROLE_OWNER || $actor->is($target), 422);
+        $row->forceFill(['role' => $role])->save();
+    }
+
+    public function assertCanSend(Conversation $conversation, User $user): void
+    {
+        $seconds = (int) $conversation->slow_seconds;
+        if ($seconds <= 0 || ! $conversation->isGroup()) {
+            return;
+        }
+        if ($conversation->participantFor($user)?->canManage()) {
+            return;
+        }
+        $last = $conversation->messages()->where('user_id', $user->id)->latest('id')->first();
+        if ($last && $last->created_at->gt(now()->subSeconds($seconds))) {
+            throw ValidationException::withMessages(['body' => 'Повільний режим: зачекайте перед наступним повідомленням.']);
+        }
     }
 
     /**
@@ -397,7 +536,9 @@ class Messenger
             ->where('user_id', $user->id)
             ->whereNull('left_at')
             ->where('is_muted', false)
-            ->whereExists(fn ($q) => $this->unreadMessages($q, $user->id, 'conversation_participants'))
+            ->where(fn ($query) => $query
+                ->where('marked_unread', true)
+                ->orWhereExists(fn ($q) => $this->unreadMessages($q, $user->id, 'conversation_participants')))
             ->count();
     }
 
@@ -412,6 +553,8 @@ class Messenger
                 ? 'messages.id > coalesce(me.last_read_message_id, 0)'
                 : 'messages.id > coalesce(conversation_participants.last_read_message_id, 0)')
             ->whereNull('messages.deleted_at')
+            ->where(fn ($q) => $q->whereNull('messages.publish_at')->orWhere('messages.publish_at', '<=', now()))
+            ->where(fn ($q) => $q->whereNull('messages.expires_at')->orWhere('messages.expires_at', '>', now()))
             ->where(fn ($q) => $q->whereNull('messages.user_id')->orWhere('messages.user_id', '!=', $userId));
     }
 

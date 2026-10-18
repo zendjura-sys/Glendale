@@ -17,7 +17,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $joined_at
  * @property Carbon|null $left_at
  */
-#[Fillable(['conversation_id', 'user_id', 'role', 'last_read_message_id', 'is_muted', 'joined_at', 'left_at'])]
+#[Fillable(['conversation_id', 'user_id', 'role', 'last_read_message_id', 'is_muted', 'pinned_at', 'folder', 'marked_unread', 'share_receipts', 'joined_at', 'left_at'])]
 class ConversationParticipant extends Model
 {
     public const ROLE_OWNER = 'owner';
@@ -30,6 +30,9 @@ class ConversationParticipant extends Model
     {
         return [
             'is_muted' => 'boolean',
+            'marked_unread' => 'boolean',
+            'share_receipts' => 'boolean',
+            'pinned_at' => 'datetime',
             'joined_at' => 'datetime',
             'left_at' => 'datetime',
         ];

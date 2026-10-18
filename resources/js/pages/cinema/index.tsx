@@ -5,6 +5,7 @@ import {
     Clock,
     Film,
     Info,
+    Loader2,
     Play,
     Search,
     SlidersHorizontal,
@@ -22,7 +23,7 @@ import {
 import { selectClass } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
 import { plural } from '@/lib/format';
-import { cn } from '@/lib/utils';
+import { cn, formText } from '@/lib/utils';
 import type {
     MovieCard,
     MovieFeatured,
@@ -30,7 +31,9 @@ import type {
     MovieType,
     ScrollData,
 } from '@/types';
+import { api } from '@/lib/api';
 import { tr } from '@/lib/i18n';
+import { usePlugin } from '@/lib/plugins';
 
 type Filters = {
     type: MovieType | null;
@@ -52,7 +55,59 @@ type Props = {
     genres: { name: string; count: number }[];
     years: number[];
     myCounts: Record<string, number>;
+    requests: string[];
+    /** Пошук порожній — спитати TMDB і показати додане до каталогу. */
+    lookup?: boolean;
 };
+
+/** Порожній пошук: TMDB → тайтли з плеєром одразу додаються до каталогу. */
+function TmdbLookup({ query }: { query: string }) {
+    const [found, setFound] = useState<MovieCard[] | null>(null);
+
+    useEffect(() => {
+        let alive = true;
+        setFound(null);
+        api<{ movies: MovieCard[] }>(
+            'GET',
+            `/cinema/lookup?q=${encodeURIComponent(query)}`,
+        )
+            .then((r) => alive && setFound(r.movies))
+            .catch(() => alive && setFound([]));
+
+        return () => {
+            alive = false;
+        };
+    }, [query]);
+
+    if (found === null) {
+        return (
+            <section className="glass flex items-center gap-3 rounded-3xl p-4 text-sm text-white/65">
+                <Loader2 className="size-4 animate-spin" />
+                {tr('У каталозі немає — шукаємо в TMDB і додаємо знайдене…')}
+            </section>
+        );
+    }
+    if (found.length === 0) return null;
+
+    return (
+        <section className="glass rounded-3xl p-4 sm:p-5">
+            <h2 className="font-display text-lg font-semibold text-white">
+                {tr('Знайдено в TMDB')}
+                <span className="ml-2 text-sm font-normal text-white/40">
+                    {found.length}
+                </span>
+            </h2>
+            <p className="mb-4 text-xs text-white/45">
+                {tr('Ці тайтли щойно додано до каталогу — можна дивитися.')}
+            </p>
+            <div className={movieGridClass}>
+                {found.map((movie) => (
+                    <MovieTile key={movie.id} movie={movie} />
+                ))}
+            </div>
+        </section>
+    );
+}
 
 const sorts: { key: Filters['sort']; label: string }[] = [
     { key: 'new', label: tr('Нові на сайті') },
@@ -104,6 +159,7 @@ function Hero({ items }: { items: MovieFeatured[] }) {
                 >
                     {item.backdrop || item.poster ? (
                         <img
+                            decoding="async"
                             src={item.backdrop ?? item.poster ?? ''}
                             alt=""
                             className={cn(
@@ -117,15 +173,15 @@ function Hero({ items }: { items: MovieFeatured[] }) {
                     )}
                 </div>
             ))}
-            <div className="absolute inset-0 -z-10 bg-gradient-to-r from-gc-ink via-gc-ink/80 to-transparent" />
-            <div className="absolute inset-0 -z-10 bg-gradient-to-t from-gc-ink via-transparent to-gc-ink/30" />
+            <div className="scrim scrim-side absolute inset-0 -z-10" />
+            <div className="scrim absolute inset-0 -z-10" />
 
             <div className="flex min-h-[340px] items-end gap-6 p-5 sm:min-h-[420px] sm:p-8">
                 <div
                     key={movie.id}
                     className="max-w-xl min-w-0 flex-1 animate-rise"
                 >
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-2.5 py-1 text-xs font-semibold tracking-wider text-white/70 uppercase backdrop-blur">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.07] px-2.5 py-1 text-xs font-semibold text-white/70 backdrop-blur">
                         <Sparkles className="size-3.5 text-gc-amber" />
                         {tr('Рекомендуємо')}
                     </span>
@@ -230,8 +286,11 @@ export default function CinemaIndex({
     genres,
     years,
     myCounts,
+    requests,
+    lookup = false,
 }: Props) {
     const [search, setSearch] = useState(filters.q);
+    const requestOn = usePlugin('movie_request');
 
     const apply = (patch: Partial<Filters>) => {
         const next = { ...filters, q: search, ...patch };
@@ -278,7 +337,7 @@ export default function CinemaIndex({
                         <div className="pointer-events-none absolute -top-24 -right-16 size-80 rounded-full bg-gc-indigo/25 blur-3xl" />
                         <div className="pointer-events-none absolute -bottom-36 left-10 size-80 rounded-full bg-gc-pink/15 blur-3xl" />
                         <div className="relative">
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs font-semibold tracking-wider text-white/60 uppercase">
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs font-semibold text-white/60">
                                 <Clapperboard className="size-3.5 text-gc-lilac-400" />
                                 {tr('Кіно GameCon')}
                             </span>
@@ -452,9 +511,14 @@ export default function CinemaIndex({
                                 )
                             }
                             action={
-                                row.key === 'continue' ? (
+                                row.key === 'continue' ||
+                                row.key === 'later' ? (
                                     <Link
-                                        href="/cinema/my?status=watching"
+                                        href={
+                                            row.key === 'later'
+                                                ? '/cinema/my?status=planned'
+                                                : '/cinema/my?status=watching'
+                                        }
                                         className="text-xs font-medium text-gc-lilac-300 hover:text-white"
                                     >
                                         {tr('Усі')}
@@ -465,6 +529,7 @@ export default function CinemaIndex({
                         />
                     ))}
 
+                {lookup && <TmdbLookup query={filters.q} />}
                 {movies.data.length === 0 ? (
                     <EmptyState
                         icon={Film}
@@ -497,6 +562,49 @@ export default function CinemaIndex({
                             </div>
                         </InfiniteScroll>
                     </section>
+                )}
+                {requestOn && (
+                    <form
+                        className="glass flex flex-wrap items-end gap-2 rounded-3xl p-4"
+                        onSubmit={(event) => {
+                            event.preventDefault();
+                            const data = new FormData(event.currentTarget);
+                            router.post('/cinema/requests', {
+                                title: formText(data, 'title'),
+                                year: data.get('year') || undefined,
+                            });
+                        }}
+                    >
+                        <label className="min-w-[12rem] flex-1 text-xs text-white/45">
+                            {tr('Немає в каталозі')}
+                            <input
+                                name="title"
+                                required
+                                maxLength={160}
+                                placeholder={tr('Назва фільму')}
+                                className="input-glass mt-1 h-11 w-full rounded-xl px-3 text-sm text-white"
+                            />
+                        </label>
+                        <input
+                            name="year"
+                            type="number"
+                            min={1900}
+                            max={2100}
+                            placeholder={tr('Рік')}
+                            className="input-glass h-11 w-24 rounded-xl px-3 text-sm text-white"
+                        />
+                        <button
+                            type="submit"
+                            className="h-11 rounded-xl bg-white/10 px-4 text-sm font-medium text-white"
+                        >
+                            {tr('Запитати')}
+                        </button>
+                        {requests.length > 0 && (
+                            <p className="w-full text-xs text-white/40">
+                                {requests.join(' · ')}
+                            </p>
+                        )}
+                    </form>
                 )}
             </div>
         </>

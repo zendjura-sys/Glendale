@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark" style="color-scheme: dark">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark" data-palette="{{ auth()->user()?->palette() ?? 'aurora' }}" data-skin="{{ \App\Support\Skins::for(auth()->user()) }}" style="color-scheme: dark">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -54,8 +54,9 @@
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
         <link rel="manifest" href="/site.webmanifest">
 
-        @fonts
 
+        {{-- Розмір тексту пристрою (lib/device-prefs.ts) — до першого кадру, щоб сторінка не «стрибала». --}}
+        <script>try{var t=localStorage.getItem('gc.text-size');if(t==='s'||t==='l'||t==='xl')document.documentElement.dataset.text=t}catch(e){}</script>
         @php($locale = app()->getLocale())
         @if ($locale === 'uk')
             <script>window.__I18N__={locale:'uk',dict:{}};</script>
@@ -64,6 +65,11 @@
         @endif
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
+        {{-- Стиль сайту з Адмінка → Дизайн: після app.css, щоб перевизначати змінні теми. --}}
+        @php($designTheme = app(\App\Services\Design\SiteThemes::class)->urlFor(request()))
+        @if ($designTheme)
+            <link rel="stylesheet" href="{{ $designTheme }}" data-site-theme>
+        @endif
         <x-inertia::head>
             <title>{{ config('app.name', 'GameCon') }}</title>
         </x-inertia::head>

@@ -21,6 +21,10 @@ export type GtaServerCard = {
     stats_updated_at: string | null;
     is_featured: boolean;
     families_count: number;
+    votes_month?: number;
+    /** Платне просування: top, highlight, banner. */
+    promo?: string[];
+    tags?: { mode: string | null; region: string | null };
 };
 
 export type ServerOption = {
@@ -42,6 +46,8 @@ export type FamilyCard = {
     status_label: string;
     members_count: number;
     is_recruiting: boolean;
+    /** GameCon+ для сім’ї: null — без підписки. */
+    plus?: { accent: string[] | null } | null;
     description?: string | null;
     server: {
         slug: string;

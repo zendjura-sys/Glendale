@@ -67,7 +67,7 @@ class ClanTile extends StatelessWidget {
             Row(children: [
               const Icon(LucideIcons.usersRound, size: 13, color: faint),
               const SizedBox(width: 4),
-              Text('${clan['members_count'] ?? 0}', style: body(12, color: faint)),
+              Text(compact(clan['members_count']), style: body(12, color: faint)),
               const SizedBox(width: 10),
               if (clan['pending'] == true)
                 Text(tr('заявка на розгляді'), style: body(12, color: gold))

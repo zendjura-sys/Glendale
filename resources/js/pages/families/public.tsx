@@ -1,5 +1,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, Clock3, ShieldCheck, UserPlus, Users } from 'lucide-react';
+import { DonationJarCard } from '@/components/gc/donation-jar';
+import type { DonationJar } from '@/components/gc/donation-jar';
 import { FamilyLogo } from '@/components/families/family-logo';
 import {
     btnGhost,
@@ -11,7 +13,7 @@ import { UserAvatar } from '@/components/gc/user-avatar';
 import { ServerIcon } from '@/components/servers/server-icon';
 import { Field, inputClass } from '@/components/servers/server-form';
 import { formatDate } from '@/lib/format';
-import { cn } from '@/lib/utils';
+import { cn, formText } from '@/lib/utils';
 import type { FamilyCard, MemberCard } from '@/types';
 import { tr } from '@/lib/i18n';
 
@@ -23,9 +25,20 @@ type Props = {
         display: string;
         left_at: string | null;
     } | null;
+    blocked: { username: string; name: string }[];
+    can_block: boolean;
+    /** Банка Monobank сім’ї (відкладений проп). */
+    donation?: DonationJar | null;
 };
 
-export default function FamilyPublic({ family, leaders, application }: Props) {
+export default function FamilyPublic({
+    family,
+    leaders,
+    application,
+    blocked,
+    can_block,
+    donation,
+}: Props) {
     const form = useForm({ rp_nickname: '', static_id: '', note: '' });
     const pending = application?.status === 'pending';
     const canApply =
@@ -48,6 +61,8 @@ export default function FamilyPublic({ family, leaders, application }: Props) {
                     <div className="h-40 sm:h-52">
                         {family.cover_url ? (
                             <img
+                                loading="lazy"
+                                decoding="async"
                                 src={family.cover_url}
                                 alt=""
                                 className="size-full object-cover"
@@ -110,6 +125,10 @@ export default function FamilyPublic({ family, leaders, application }: Props) {
                                 </p>
                             </section>
                         )}
+                        <DonationJarCard
+                            jar={donation}
+                            title={tr('Підтримати сім’ю')}
+                        />
                         <section className="glass rounded-3xl p-5">
                             <h2 className="mb-3 font-display font-semibold text-white">
                                 {tr('Керівництво')}
@@ -253,6 +272,57 @@ export default function FamilyPublic({ family, leaders, application }: Props) {
                             </p>
                         )}
                     </section>
+                    {can_block && (
+                        <section className="glass space-y-3 rounded-3xl p-4">
+                            <h2 className="font-display text-base font-semibold text-white">
+                                {tr('Чорний список')}
+                            </h2>
+                            <form
+                                className="flex gap-2"
+                                onSubmit={(event) => {
+                                    event.preventDefault();
+                                    const data = new FormData(
+                                        event.currentTarget,
+                                    );
+                                    router.post(`/f/${family.slug}/block`, {
+                                        username: formText(data, 'username'),
+                                    });
+                                    event.currentTarget.reset();
+                                }}
+                            >
+                                <input
+                                    name="username"
+                                    placeholder={tr('Нік')}
+                                    className="input-glass h-10 flex-1 rounded-xl px-3 text-sm text-white"
+                                />
+                                <button
+                                    type="submit"
+                                    className="h-10 rounded-xl bg-white px-3 text-sm font-semibold text-black"
+                                >
+                                    {tr('Заблокувати')}
+                                </button>
+                            </form>
+                            {blocked.map((person) => (
+                                <div
+                                    key={person.username}
+                                    className="flex items-center justify-between text-sm text-white/75"
+                                >
+                                    <span>{person.name}</span>
+                                    <button
+                                        type="button"
+                                        className="text-xs text-rose-300"
+                                        onClick={() =>
+                                            router.delete(
+                                                `/f/${family.slug}/block/${person.username}`,
+                                            )
+                                        }
+                                    >
+                                        {tr('Прибрати')}
+                                    </button>
+                                </div>
+                            ))}
+                        </section>
+                    )}
                 </div>
             </div>
         </>

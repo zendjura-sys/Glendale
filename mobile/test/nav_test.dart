@@ -21,7 +21,7 @@ void main() {
 
   test('панель береться з акаунта, як на сайті', () async {
     SharedPreferences.setMockInitialValues({});
-    final session = Session(await SharedPreferences.getInstance())..me = {'id': 7, 'nav_tabs': ['music', 'cinema', 'events']};
+    final session = Session(await SharedPreferences.getInstance())..me = {'id': 7, 'nav_tabs': ['music', 'cinema', 'nope']};
     expect(session.navTabs, ['/music', '/cinema']);
     session.me = {'id': 8, 'nav_tabs': <String>[]};
     expect(session.navTabs, defaultNav);

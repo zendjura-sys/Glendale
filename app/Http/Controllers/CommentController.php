@@ -8,14 +8,19 @@ use App\Models\Movie;
 use App\Models\Photo;
 use App\Models\Post;
 use App\Notifications\PostInteraction;
+use App\Services\CommunityWall;
 use App\Services\FriendshipService;
+use App\Services\Mentions;
 use App\Services\Moderation\ContentFilter;
 use App\Services\PhotoService;
 use App\Services\PostPresenter;
+use App\Support\CommentOrder;
+use App\Support\Stickers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class CommentController extends Controller
 {
@@ -30,7 +35,9 @@ class CommentController extends Controller
         $viewer = $request->user();
         $this->authorizeView($request, $post);
 
-        $comments = $post->comments()->with('user')->orderBy('id')->limit(200)->get();
+        $comments = $post->comments()->with('user');
+        CommentOrder::apply($comments, $request->query('sort'));
+        $comments = $comments->limit(200)->get();
         $liked = Like::query()
             ->where('user_id', $viewer->id)
             ->where('likeable_type', (new Comment)->getMorphClass())
@@ -38,8 +45,10 @@ class CommentController extends Controller
             ->pluck('likeable_id')
             ->flip();
 
+        $canPin = $viewer->id === $post->author_id || $viewer->isStaff();
+
         return response()->json([
-            'comments' => $comments->map(fn (Comment $c) => $this->presenter->comment($c, $viewer, $liked->has($c->id)))->values(),
+            'comments' => $comments->map(fn (Comment $c) => $this->presenter->comment($c, $viewer, $liked->has($c->id), $canPin))->values(),
         ]);
     }
 
@@ -50,13 +59,19 @@ class CommentController extends Controller
         abort_unless($post->comments_enabled, 403, 'Коментарі вимкнено.');
 
         $data = $request->validate([
-            'body' => ['required', 'string', 'max:2000'],
+            'body' => ['nullable', 'string', 'max:2000', 'required_without:sticker'],
             'parent_id' => ['nullable', 'integer'],
+            'spoiler' => ['sometimes', 'boolean'],
+            'sticker' => ['nullable', 'string', Rule::in(array_keys(Stickers::ITEMS))],
         ]);
 
         $filter = app(ContentFilter::class);
         $filter->ensureCanPost($user);
-        $data['body'] = (string) $filter->clean(trim($data['body']));
+        $data['body'] = trim((string) ($data['body'] ?? ''));
+        app(CommunityWall::class)->guardComment($post, $user, $data['body']);
+        if ($data['body'] !== '') {
+            $data['body'] = (string) $filter->clean($data['body']);
+        }
 
         $parentId = isset($data['parent_id'])
             ? $post->comments()->whereKey($data['parent_id'])->value('id')
@@ -66,7 +81,9 @@ class CommentController extends Controller
             $comment = $post->comments()->create([
                 'user_id' => $user->id,
                 'parent_id' => $parentId,
-                'body' => trim($data['body']),
+                'body' => $data['body'],
+                'spoiler' => (bool) ($data['spoiler'] ?? false),
+                'sticker' => $data['sticker'] ?? null,
             ]);
             $post->increment('comments_count');
 
@@ -74,13 +91,45 @@ class CommentController extends Controller
         });
 
         if ($post->author_id !== $user->id) {
-            $post->author->notify(new PostInteraction(PostInteraction::COMMENT, $user, $post, Str::limit($comment->body, 80)));
+            $excerpt = $comment->spoiler ? 'Спойлер' : ($comment->body !== '' ? Str::limit($comment->body, 80) : Stickers::emoji($comment->sticker));
+            $post->author->notify(new PostInteraction(PostInteraction::COMMENT, $user, $post, $excerpt));
         }
 
+        app(Mentions::class)->notify($user, $comment->body, route('posts.show', $post, absolute: false));
+
         return response()->json([
-            'comment' => $this->presenter->comment($comment->load('user'), $user),
+            'comment' => $this->presenter->comment($comment->load('user'), $user, false, $user->id === $post->author_id || $user->isStaff()),
             'comments_count' => $post->fresh()->comments_count,
         ], 201);
+    }
+
+    public function pin(Request $request, Comment $comment): JsonResponse
+    {
+        $user = $request->user();
+        $comment->loadMissing('post', 'movie');
+        abort_unless($comment->parent_id === null, 422, 'Закріпити можна лише коментар, не відповідь.');
+
+        if ($comment->post_id !== null) {
+            $post = $comment->post;
+            abort_unless($post instanceof Post, 404);
+            $this->authorizeView($request, $post);
+            abort_unless($post->author_id === $user->id || $user->isStaff(), 403);
+            if (! $comment->is_pinned) {
+                Comment::query()->where('post_id', $post->id)->where('is_pinned', true)->update(['is_pinned' => false]);
+            }
+        } elseif ($comment->movie_id !== null) {
+            abort_unless($comment->movie instanceof Movie, 404);
+            abort_unless($user->isStaff(), 403);
+            if (! $comment->is_pinned) {
+                Comment::query()->where('movie_id', $comment->movie_id)->where('is_pinned', true)->update(['is_pinned' => false]);
+            }
+        } else {
+            abort(404);
+        }
+
+        $comment->update(['is_pinned' => ! $comment->is_pinned]);
+
+        return response()->json(['id' => $comment->id, 'is_pinned' => $comment->is_pinned]);
     }
 
     public function destroy(Request $request, Comment $comment): JsonResponse

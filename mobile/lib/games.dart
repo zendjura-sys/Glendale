@@ -12,6 +12,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+import 'extras.dart';
 
 final _categories = [('', tr('Усі')), ('pc', tr('ПК')), ('mobile', tr('Мобільні')), ('console', tr('Консолі'))];
 
@@ -372,35 +373,28 @@ class GameScreen extends StatelessWidget {
           );
         }
 
+        final palette = mapOf(data['palette']);
+        final accent = hexColor(palette['accent']) ?? primary;
+        final soft2 = hexColor(palette['soft']) ?? const Color(0xFFB4BFFF);
+        final base = hexColor(palette['base']);
+
         return ScreenScroll(
           onRefresh: reload,
           children: [
-            if (artwork != null) ...[NetImage(artwork, height: 170, radius: 22), const SizedBox(height: 12)],
+            _GameHero(game: game, poster: artwork ?? text(game['cover']), ages: _strings(d['age_ratings']), accent: accent, base: base),
+            if (game['id'] != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: SubjectActions(kind: 'game', id: game['id'], saved: data['saved'] == true, following: data['following'] == true, pinned: data['pinned'] == true, size: 38),
+                ),
+              ),
             Glass(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  GameCover(game, size: 84),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(text(game['name']) ?? '', style: display(20)),
-                      const SizedBox(height: 6),
-                      Text(platformsLabel(game, 8), style: body(12.5, color: muted)),
-                      Row(children: [
-                        if (game['year'] != null) Text(tr('{v} р.  ', {'v': game['year']}), style: body(12.5, color: faint)),
-                        if (game['rating'] != null) ...[
-                          const Icon(LucideIcons.star, size: 13, color: gold),
-                          Text(' ${(game['rating'] as num).toStringAsFixed(1)}  ', style: body(12.5, color: soft)),
-                        ],
-                        for (final a in _strings(d['age_ratings'])) Padding(padding: const EdgeInsets.only(right: 4), child: Pill(label: a)),
-                      ]),
-                    ]),
-                  ),
-                ]),
                 if (modes.isNotEmpty || genres.isNotEmpty) ...[
-                  const SizedBox(height: 12),
                   Wrap(spacing: 6, runSpacing: 6, children: [
-                    for (final m in modes) Pill(label: text(m['label']) ?? '', color: primary),
+                    for (final m in modes) Pill(label: text(m['label']) ?? '', color: soft2, background: accent.withValues(alpha: 0.18)),
                     for (final g in genres) Pill(label: g),
                   ]),
                 ],
@@ -548,6 +542,112 @@ class GameScreen extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+
+/// Колір із «#rrggbb» (палітра постера з сервера).
+Color? hexColor(dynamic value) {
+  final hex = text(value);
+  if (hex == null || !RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(hex)) return null;
+  return Color(int.parse('FF${hex.substring(1)}', radix: 16));
+}
+
+/// Постер гри на всю ширину: назва, рік, платформи й оцінка зверху, знизу постер розчиняється у фон.
+/// Кольори — свотчі Palette API, які рахує сервер (ті самі, що й на сайті).
+class _GameHero extends StatelessWidget {
+  const _GameHero({required this.game, required this.poster, required this.ages, required this.accent, this.base});
+  final Map<String, dynamic> game;
+  final String? poster;
+  final List<String> ages;
+  final Color accent;
+  final Color? base;
+
+  @override
+  Widget build(BuildContext context) {
+    final rating = game['rating'];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Stack(clipBehavior: Clip.none, children: [
+        Positioned(
+          left: -40,
+          right: -40,
+          top: -30,
+          height: 380,
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: const Alignment(-0.4, -0.3),
+                  radius: 0.9,
+                  colors: [accent.withValues(alpha: 0.32), (base ?? accent).withValues(alpha: 0.12), Colors.transparent],
+                ),
+              ),
+            ),
+          ),
+        ),
+        ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          child: SizedBox(
+            height: 300,
+            width: double.infinity,
+            child: Stack(fit: StackFit.expand, children: [
+              ShaderMask(
+                blendMode: BlendMode.dstIn,
+                shaderCallback: (rect) => const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.black, Colors.black, Colors.transparent],
+                  stops: [0, 0.45, 1],
+                ).createShader(rect),
+                child: poster != null ? NetImage(poster) : Container(color: raised),
+              ),
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xCC000000), Color(0x59000000), Colors.transparent],
+                    stops: [0, 0.35, 0.7],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(
+                    text(game['name']) ?? '',
+                    style: display(26).copyWith(fontWeight: FontWeight.w800, shadows: const [Shadow(color: Color(0x99000000), blurRadius: 12)]),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(spacing: 10, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                    if (game['year'] != null) Text('${game['year']}', style: body(13, color: Colors.white.withValues(alpha: 0.88), weight: FontWeight.w600)),
+                    if (platformsLabel(game, 8).isNotEmpty) Text(platformsLabel(game, 8), style: body(13, color: Colors.white.withValues(alpha: 0.85), weight: FontWeight.w500)),
+                    if (rating is num)
+                      Row(mainAxisSize: MainAxisSize.min, children: [
+                        const Icon(LucideIcons.star, size: 14, color: gold),
+                        const SizedBox(width: 3),
+                        Text(rating.toStringAsFixed(1), style: body(13, color: Colors.white, weight: FontWeight.w600)),
+                      ]),
+                  ]),
+                  if (ages.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Wrap(spacing: 6, children: [
+                      for (final a in ages)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.white.withValues(alpha: 0.3))),
+                          child: Text(a, style: body(11.5, color: Colors.white.withValues(alpha: 0.9), weight: FontWeight.w500)),
+                        ),
+                    ]),
+                  ],
+                ]),
+              ),
+            ]),
+          ),
+        ),
+      ]),
     );
   }
 }

@@ -28,6 +28,7 @@ type Props = {
     photos: ScrollData<PhotoThumb>;
     openPhoto: number | null;
     can: { manage: boolean; upload: boolean };
+    contributors: { username: string; name: string }[];
     privacyOptions: AlbumPrivacy[];
     limits: { upload: number };
 };
@@ -44,6 +45,7 @@ export default function PhotoAlbum({
     photos,
     openPhoto,
     can,
+    contributors,
     privacyOptions,
     limits,
 }: Props) {
@@ -52,6 +54,7 @@ export default function PhotoAlbum({
     const [hidden, setHidden] = useState<number[]>([]);
     const [dragging, setDragging] = useState(false);
     const [progress, setProgress] = useState<number | null>(null);
+    const [friendName, setFriendName] = useState('');
     const input = useRef<HTMLInputElement>(null);
     const Privacy = privacyMeta[album.privacy].icon;
 
@@ -127,6 +130,8 @@ export default function PhotoAlbum({
                 <section className="glass relative overflow-hidden rounded-3xl">
                     {album.cover_url && (
                         <img
+                            loading="lazy"
+                            decoding="async"
                             src={album.cover_url}
                             alt=""
                             className="absolute inset-0 size-full scale-110 object-cover opacity-25 blur-2xl"
@@ -232,6 +237,79 @@ export default function PhotoAlbum({
                         event.target.value = '';
                     }}
                 />
+
+                {album.owner.type === 'user' &&
+                    (can.manage || contributors.length > 0) && (
+                        <section className="glass rounded-3xl p-4">
+                            <h2 className="text-sm font-semibold text-white">
+                                {tr('Спільний альбом')}
+                            </h2>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                                {contributors.map((person) => (
+                                    <span
+                                        key={person.username}
+                                        className="inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-3 py-1 text-sm text-white"
+                                    >
+                                        <Link href={`/${person.username}`}>
+                                            {person.name}
+                                        </Link>
+                                        {can.manage && (
+                                            <button
+                                                type="button"
+                                                className="text-white/40 hover:text-white"
+                                                onClick={() =>
+                                                    router.delete(
+                                                        `/albums/${album.id}/contributors/${person.username}`,
+                                                        {
+                                                            preserveScroll: true,
+                                                        },
+                                                    )
+                                                }
+                                                aria-label={tr('Прибрати')}
+                                            >
+                                                ×
+                                            </button>
+                                        )}
+                                    </span>
+                                ))}
+                            </div>
+                            {can.manage && (
+                                <form
+                                    className="mt-3 flex gap-2"
+                                    onSubmit={(event) => {
+                                        event.preventDefault();
+                                        if (!friendName.trim()) return;
+                                        router.post(
+                                            `/albums/${album.id}/contributors`,
+                                            { username: friendName.trim() },
+                                            {
+                                                preserveScroll: true,
+                                                onSuccess: () =>
+                                                    setFriendName(''),
+                                            },
+                                        );
+                                    }}
+                                >
+                                    <input
+                                        value={friendName}
+                                        onChange={(event) =>
+                                            setFriendName(event.target.value)
+                                        }
+                                        placeholder={tr(
+                                            'Ім’я користувача друга',
+                                        )}
+                                        className="input-glass h-10 flex-1 rounded-xl px-3 text-sm text-white placeholder:text-white/30 focus:outline-none"
+                                    />
+                                    <button
+                                        type="submit"
+                                        className="h-10 rounded-xl bg-white px-3 text-sm font-medium text-black"
+                                    >
+                                        {tr('Додати')}
+                                    </button>
+                                </form>
+                            )}
+                        </section>
+                    )}
 
                 {photos.data.length === 0 ? (
                     can.upload ? (

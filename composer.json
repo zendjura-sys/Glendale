@@ -10,6 +10,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "chillerlan/php-qrcode": "^5.0",
         "inertiajs/inertia-laravel": "^3.0",
         "intervention/image": "^3",
         "laravel/chisel": "^0.1.0",

@@ -3,15 +3,25 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\BotLink;
 use App\Models\Game;
+use App\Models\ImageFlag;
 use App\Models\MovieSource;
+use App\Models\PlusGrant;
+use App\Models\PlusPayment;
+use App\Models\PlusSubscription;
 use App\Models\PushDevice;
 use App\Models\SpotifyAccount;
 use App\Models\User;
+use App\Models\UserStream;
 use App\Models\VoiceParticipant;
 use App\Models\VoiceRoom;
 use App\Services\Auth\DiscordOAuth;
 use App\Services\Auth\FirebaseAuth;
+use App\Services\Billing\GooglePlay;
+use App\Services\Billing\MonobankAcquiring;
+use App\Services\Bots\DiscordApi;
+use App\Services\Bots\TelegramApi;
 use App\Services\Cinema\CinemaException;
 use App\Services\Cinema\FlixcdnClient;
 use App\Services\Cinema\FlixcdnPlayer;
@@ -19,12 +29,15 @@ use App\Services\Cinema\KodikClient;
 use App\Services\Cinema\Metadata\OmdbProvider;
 use App\Services\Cinema\Metadata\ShikimoriProvider;
 use App\Services\Cinema\Metadata\TmdbProvider;
+use App\Services\Cinema\VideoseedClient;
 use App\Services\Games\GameCatalog;
 use App\Services\Games\Igdb;
 use App\Services\I18n\DeepL;
+use App\Services\Moderation\NsfwCheck;
 use App\Services\Presence\SteamPresence;
 use App\Services\Push\FcmClient;
 use App\Services\Spotify\SpotifyClient;
+use App\Services\Streams\LiveStreams;
 use App\Services\Voice\LiveKit;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\RedirectResponse;
@@ -326,6 +339,85 @@ class IntegrationController extends Controller
                     ],
                 ],
             ],
+            'telegram_bot' => [
+                'label' => 'Бот Telegram',
+                'group' => 'bots',
+                'description' => 'Офіційний бот GameCon: сім’ї, клани й спільноти додають його в свої групи одним натисканням. Події з кнопками «Піду / Не піду», нагадування, пости й меню — без команд.',
+                'docs' => 'https://t.me/BotFather',
+                'steps' => [
+                    'Відкрийте @BotFather → /newbot, задайте ім’я (наприклад, GameCon) і username, скопіюйте токен сюди.',
+                    'У @BotFather → /setjoingroups → Enable, щоб бота можна було додавати в групи.',
+                    'Натисніть «Перевірити»: сайт запам’ятає @username бота й сам підключить вебхук '.url('/api/bots/telegram').'.',
+                    'Далі керівники груп натискають «Додати в Telegram» у налаштуваннях своєї сім’ї, клану чи спільноти.',
+                ],
+                'configured' => app(TelegramApi::class)->token() !== null,
+                'stat' => BotLink::query()->where('platform', BotLink::TELEGRAM)->count().' груп · '.User::query()->whereNotNull('telegram_id')->count().' прив’язаних акаунтів',
+                'test' => fn () => app(TelegramApi::class)->connect(url('/api/bots/telegram')) !== null,
+                'fields' => [
+                    ['name' => 'token', 'setting' => 'telegram_bot_token', 'type' => 'secret', 'label' => 'Токен бота', 'env' => config('services.telegram.bot_token'),
+                        'rules' => ['nullable', 'string', 'regex:/^\d{6,12}:[A-Za-z0-9_-]{30,50}$/'], 'message' => 'Токен від @BotFather має вигляд 123456789:AA…'],
+                ],
+            ],
+            'discord_bot' => [
+                'label' => 'Бот Discord',
+                'group' => 'bots',
+                'description' => 'Той самий застосунок Discord, що й для входу: бот публікує картки з кнопками в обраний канал сервера групи й видає ролі за складом.',
+                'docs' => 'https://discord.com/developers/applications',
+                'steps' => [
+                    'Client ID, Client Secret і Bot Token беруться з блоку «Discord» вище — вони вже мають бути заповнені.',
+                    'Developer Portal → ваш застосунок → OAuth2 → Redirects: додайте '.route('bots.discord.callback').'.',
+                    'General Information → скопіюйте Public Key сюди.',
+                    'Там же Interactions Endpoint URL: '.url('/api/bots/discord/interactions').' — збережіть (Discord перевірить адресу; спершу збережіть Public Key тут і задеплойте).',
+                    'Ролі: роль бота на сервері групи має бути вище за ролі, які він видає.',
+                ],
+                'configured' => app(DiscordApi::class)->configured() && app(DiscordApi::class)->publicKey() !== null,
+                'stat' => BotLink::query()->where('platform', BotLink::DISCORD)->count().' серверів',
+                'test' => fn () => app(DiscordApi::class)->publicKey() !== null && $this->discord->testCredentials(),
+                'fields' => [
+                    ['name' => 'public_key', 'setting' => 'discord_public_key', 'type' => 'text', 'label' => 'Public Key', 'placeholder' => '64 символи hex',
+                        'env' => config('services.discord.public_key'),
+                        'rules' => ['nullable', 'string', 'regex:/^[0-9a-fA-F]{64}$/'], 'message' => 'Public Key — 64 символи 0–9, a–f.'],
+                ],
+            ],
+            'twitch' => [
+                'label' => 'Twitch',
+                'group' => 'bots',
+                'description' => '«Зараз у стрімі»: сайт сам бачить, коли гравці з каналом Twitch виходять в ефір, і показує LIVE. YouTube працює без ключа.',
+                'docs' => 'https://dev.twitch.tv/console/apps',
+                'steps' => [
+                    'dev.twitch.tv → Your Console → Applications → Register Your Application.',
+                    'OAuth Redirect URL: '.url('/').' (не використовується, але поле обов’язкове), Category: Website Integration.',
+                    'Скопіюйте Client ID, натисніть New Secret і скопіюйте Client Secret сюди.',
+                ],
+                'configured' => filled($this->settings->get('twitch_client_id')) && $this->settings->secret('twitch_client_secret') !== null,
+                'stat' => UserStream::query()->count().' каналів · '.UserStream::query()->where('is_live', true)->count().' зараз в ефірі',
+                'test' => fn () => app(LiveStreams::class)->testTwitch(),
+                'fields' => [
+                    ['name' => 'client_id', 'setting' => 'twitch_client_id', 'type' => 'text', 'label' => 'Client ID', 'placeholder' => 'abcd1234…',
+                        'rules' => ['nullable', 'string', 'regex:/^[a-z0-9]{20,40}$/'], 'message' => 'Client ID Twitch — 20–40 малих літер і цифр.'],
+                    ['name' => 'client_secret', 'setting' => 'twitch_client_secret', 'type' => 'secret', 'label' => 'Client Secret',
+                        'rules' => ['nullable', 'string', 'regex:/^[a-z0-9]{20,40}$/'], 'message' => 'Client Secret Twitch — 20–40 малих літер і цифр.'],
+                ],
+            ],
+            'sightengine' => [
+                'label' => 'Автоперевірка фото (Sightengine)',
+                'group' => 'bots',
+                'description' => 'Кожне фото в альбомах і записах перевіряється на відвертий вміст: сумнівні розмиваються, відверті йдуть у Модерація → «Фото на перевірці».',
+                'docs' => 'https://sightengine.com/docs/nudity-detection-model-2.1',
+                'steps' => [
+                    'Зареєструйтеся на sightengine.com (є безкоштовний тариф).',
+                    'Dashboard → API keys: скопіюйте API user і API secret сюди й натисніть «Перевірити».',
+                ],
+                'configured' => app(NsfwCheck::class)->configured(),
+                'stat' => ImageFlag::query()->where('status', ImageFlag::PENDING)->count().' фото чекають рішення',
+                'test' => fn () => app(NsfwCheck::class)->test(),
+                'fields' => [
+                    ['name' => 'user', 'setting' => 'sightengine_user', 'type' => 'text', 'label' => 'API user', 'placeholder' => '123456789',
+                        'rules' => ['nullable', 'string', 'regex:/^\d{5,15}$/'], 'message' => 'API user — це число.'],
+                    ['name' => 'secret', 'setting' => 'sightengine_secret', 'type' => 'secret', 'label' => 'API secret',
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{16,64}$/'], 'message' => 'API secret — латинські літери й цифри.'],
+                ],
+            ],
             'voice' => [
                 'label' => 'Голосові кімнати (LiveKit)',
                 'group' => 'voice',
@@ -405,6 +497,9 @@ class IntegrationController extends Controller
                 'fields' => [
                     ['name' => 'token', 'setting' => 'kodik_token', 'type' => 'secret', 'label' => 'API-токен', 'env' => config('services.kodik.token'),
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{16,64}$/'], 'message' => 'Токен Kodik — це 16–64 латинські літери та цифри.'],
+                    // Прямі посилання на потоки (video-links) — для власного плеєра застосунку. Ключ видає Kodik.
+                    ['name' => 'links_key', 'setting' => 'kodik_links_key', 'type' => 'secret', 'label' => 'Ключ прямих посилань (video-links) — для плеєра застосунку; порожньо — використовується токен Kodik', 'env' => config('services.kodik.links_key'),
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{16,64}$/'], 'message' => 'Ключ — 16–64 латинські літери та цифри.'],
                 ],
             ],
             'flixcdn' => [
@@ -432,6 +527,27 @@ class IntegrationController extends Controller
                     ['name' => 'api_updates', 'setting' => 'flixcdn_api_updates', 'type' => 'url', 'label' => 'API: оновлення',
                         'placeholder' => 'https://api.example/updates?token={token}&page={page}', 'help' => 'Список новинок для автонаповнення.',
                         'rules' => $url],
+                    ['name' => 'translation_param', 'setting' => 'flixcdn_translation_param', 'type' => 'text', 'label' => 'Параметр озвучки',
+                        'placeholder' => 'translation', 'help' => 'Кожна озвучка з API стає окремим плеєром: до адреси додається ?параметр=ID озвучки. Порожньо — типово translation; «-» — не розбивати (один плеєр «Усі озвучки»).',
+                        'rules' => ['nullable', 'string', 'max:40', 'regex:/^(-|[A-Za-z_][A-Za-z0-9_\-\[\]]*)$/'], 'message' => 'Латинські літери, цифри, _ або «-».'],
+                ],
+            ],
+            'videoseed' => [
+                'label' => 'Videoseed',
+                'group' => 'players',
+                'description' => 'Другий плеєр поруч із Kodik: фільми й серіали з озвучками, пошук за ID Кінопошуку, IMDb і TMDB, автоімпорт новинок.',
+                'docs' => 'https://videoseed.tv',
+                'steps' => [
+                    'Зареєструйтеся на videoseed.tv і відкрийте «Редагування профілю» — там API-токен.',
+                    'Вставте токен і натисніть «Перевірити».',
+                    'Адмінка → Кіно: позначте Videoseed в автонаповненні, а в «Плеєри» — порядок вкладок і озвучки.',
+                ],
+                'configured' => app(VideoseedClient::class)->configured(),
+                'stat' => MovieSource::query()->where('provider', 'videoseed')->count().' плеєрів у каталозі',
+                'test' => fn () => app(VideoseedClient::class)->test(),
+                'fields' => [
+                    ['name' => 'token', 'setting' => 'videoseed_token', 'type' => 'secret', 'label' => 'API-токен', 'env' => config('services.videoseed.token'),
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{16,64}$/'], 'message' => 'Токен Videoseed — це 16–64 латинські літери та цифри.'],
                 ],
             ],
             'tmdb' => [
@@ -509,6 +625,56 @@ class IntegrationController extends Controller
                 'fields' => [
                     ['name' => 'key', 'setting' => 'omdb_key', 'type' => 'secret', 'label' => 'API Key', 'env' => config('services.omdb.key'),
                         'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{6,40}$/'], 'message' => 'Ключ OMDb — латинські літери та цифри.'],
+                ],
+            ],
+            'google_play' => [
+                'label' => 'Google Play — підписки в застосунку',
+                'group' => 'payments',
+                'description' => 'GameCon+ у застосунку купується через Google Play Billing: Google приймає оплату й раз на місяць перераховує виручку (мінус комісію) на ваш рахунок. Сервер перевіряє кожну покупку в Google і сам вмикає й вимикає GameCon+.',
+                'docs' => 'https://developer.android.com/google/play/billing/getting-ready',
+                'steps' => [
+                    'Play Console → Налаштування → Платіжний профіль: дані ФОП і рахунок для виплат (валютний рахунок ФОП у monobank).',
+                    'Play Console → Монетизація → Підписки: створіть підписку з ID gamecon_plus (або власним — впишіть нижче) і базові плани, напр. monthly і yearly, з цінами.',
+                    'Google Cloud Console (проєкт, пов’язаний із Play Console): увімкніть Google Play Android Developer API, створіть сервісний акаунт і ключ JSON.',
+                    'Play Console → Користувачі й дозволи → запросіть email сервісного акаунта з правами «Перегляд фінансових даних» і «Керування замовленнями й підписками». Можна використати акаунт Firebase — тоді поле ключа лишіть порожнім.',
+                    'Real-time developer notifications: створіть тему Pub/Sub, дайте google-play-developer-notifications@system.gserviceaccount.com роль Publisher, push-підписку на адресу '.app(GooglePlay::class)->rtdnUrl().' і вкажіть тему в Play Console → Монетизація → Налаштування монетизації.',
+                    'Увімкніть перемикач нижче й натисніть «Перевірити». Купувати можна лише у версії застосунку з Google Play (для тестів — ліцензовані тестувальники).',
+                ],
+                'configured' => app(GooglePlay::class)->enabled(),
+                'stat' => PlusSubscription::query()->where('provider', PlusSubscription::GOOGLE_PLAY)->whereIn('status', PlusSubscription::ENTITLED)->where('renews_at', '>', now())->count().' активних підписок',
+                'test' => fn () => app(GooglePlay::class)->test(),
+                'fields' => [
+                    ['name' => 'enabled', 'setting' => 'google_play_enabled', 'type' => 'bool', 'label' => 'Продавати GameCon+ у застосунку', 'rules' => ['required', 'boolean']],
+                    ['name' => 'products', 'setting' => 'google_play_products', 'type' => 'text', 'label' => 'ID підписок', 'placeholder' => 'gamecon_plus',
+                        'help' => 'Через кому, як у Play Console. Порожньо — gamecon_plus.',
+                        'rules' => ['nullable', 'string', 'max:200', 'regex:/^[a-z0-9][a-z0-9_.]*(\s*,\s*[a-z0-9][a-z0-9_.]*)*$/'], 'message' => 'ID — малі латинські літери, цифри, _ і крапка; кілька — через кому.'],
+                    ['name' => 'package', 'setting' => 'google_play_package', 'type' => 'text', 'label' => 'Пакет застосунку', 'placeholder' => (string) config('services.google_play.package'),
+                        'rules' => ['nullable', 'string', 'max:100', 'regex:/^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/'], 'message' => 'Напр. online.gamecon.app'],
+                    ['name' => 'service_account', 'setting' => 'google_play_service_account', 'type' => 'secret', 'label' => 'Ключ сервісного акаунта (JSON)', 'placeholder' => '{"type": "service_account", …}',
+                        'env' => config('services.google_play.credentials'), 'help' => 'Порожньо — ключ Firebase з блоку Push-сповіщень (якщо йому дано доступ у Play Console).',
+                        'rules' => ['nullable', 'string', 'max:10000', fn (string $attribute, mixed $value, \Closure $fail) => is_string($value) && FcmClient::parse($value) === null
+                            ? $fail('Вставте повний JSON ключа сервісного акаунта (type: service_account).') : null],
+                    ],
+                ],
+            ],
+            'monobank' => [
+                'label' => 'monobank — інтернет-еквайринг',
+                'group' => 'payments',
+                'description' => 'Оплата GameCon+ і просування карткою Visa / Mastercard, Apple Pay, Google Pay і в застосунку monobank. Збережені картки — для автопродовження. Кошти надходять на рахунок ФОП у monobank.',
+                'docs' => 'https://monobank.ua/api-docs/acquiring',
+                'steps' => [
+                    'Підключіть інтернет-еквайринг до ФОП: застосунок monobank → ФОП → «Еквайринг» → «Інтернет-еквайринг» (потрібні сайт і юридичні документи).',
+                    'Вебкабінет web.monobank.ua → Еквайринг → Налаштування → скопіюйте токен (X-Token) сюди. Для перевірки є тестовий токен на api.monobank.ua.',
+                    'Натисніть «Перевірити» — має з’явитися назва вашого магазину.',
+                    'Адреса вебхука задається сама: '.rtrim((string) config('app.url'), '/').'/billing/monobank/webhook (сайт має бути доступний з інтернету по https).',
+                    'Тарифи, автопродовження й Google Pay — в Адмінка → Білінг.',
+                ],
+                'configured' => app(MonobankAcquiring::class)->configured(),
+                'stat' => PlusGrant::query()->where('ends_at', '>', now())->distinct()->count('owner_id').' з GameCon+ · '.PlusPayment::query()->where('status', PlusPayment::PAID)->count().' покупок',
+                'test' => fn () => rescue(fn () => app(MonobankAcquiring::class)->details() !== null, false, report: false),
+                'fields' => [
+                    ['name' => 'token', 'setting' => 'monobank_acquiring_token', 'type' => 'secret', 'label' => 'Токен еквайрингу (X-Token)', 'env' => config('services.monobank_acquiring.token'),
+                        'rules' => ['nullable', 'string', 'min:20', 'max:200', 'regex:/^[A-Za-z0-9_\-]+$/'], 'message' => 'Токен — латинські літери, цифри, _ і -.'],
                 ],
             ],
         ];

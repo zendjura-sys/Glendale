@@ -89,7 +89,7 @@ export default function Navigation({ defaults, max }: Props) {
                     ))}
                 </div>
 
-                <h3 className="mb-2 text-xs font-semibold tracking-wide text-white/45 uppercase">
+                <h3 className="mb-2 text-xs font-semibold text-white/45">
                     {tr('У панелі')}
                 </h3>
                 <ul className="grid gap-1.5" data-test="nav-pinned">
@@ -134,7 +134,7 @@ export default function Navigation({ defaults, max }: Props) {
                 </ul>
 
                 <div className="mt-6 mb-2 flex items-center justify-between">
-                    <h3 className="text-xs font-semibold tracking-wide text-white/45 uppercase">
+                    <h3 className="text-xs font-semibold text-white/45">
                         {tr('У меню')}
                     </h3>
                     {full && (

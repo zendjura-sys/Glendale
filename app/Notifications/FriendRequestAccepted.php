@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\User;
+use App\Notifications\Concerns\QuietHours;
 use Illuminate\Notifications\Notification;
 
 class FriendRequestAccepted extends Notification
@@ -14,7 +15,7 @@ class FriendRequestAccepted extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return QuietHours::channels($notifiable);
     }
 
     /**

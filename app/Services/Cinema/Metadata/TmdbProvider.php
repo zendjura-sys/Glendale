@@ -41,6 +41,86 @@ class TmdbProvider extends MetadataProvider
         return $this->get('/configuration') !== null;
     }
 
+    /** Списки TMDB для автонаповнення: ключ → [шлях, вид за замовчуванням]. */
+    public const LISTS = [
+        'trending_day' => ['/trending/all/day', null],
+        'trending_week' => ['/trending/all/week', null],
+        'popular_movie' => ['/movie/popular', 'movie'],
+        'popular_tv' => ['/tv/popular', 'tv'],
+        'now_playing' => ['/movie/now_playing', 'movie'],
+        'on_the_air' => ['/tv/on_the_air', 'tv'],
+        'top_rated_movie' => ['/movie/top_rated', 'movie'],
+        'top_rated_tv' => ['/tv/top_rated', 'tv'],
+    ];
+
+    /**
+     * Сторінка списку TMDB (20 тайтлів).
+     *
+     * @return list<array{kind: string, id: string, title: string, year: int|null, rating: float|null, votes: int}>
+     */
+    public function discover(string $list, int $page = 1): array
+    {
+        [$path, $fixed] = self::LISTS[$list] ?? self::LISTS['trending_week'];
+        $json = $this->get($path, ['language' => $this->language(), 'page' => max(1, min(20, $page))]);
+        $rows = is_array($json['results'] ?? null) ? $json['results'] : [];
+
+        $out = [];
+        foreach ($rows as $row) {
+            if (! is_array($row) || ! is_numeric($row['id'] ?? null)) {
+                continue;
+            }
+            $kind = $fixed ?? (string) ($row['media_type'] ?? '');
+            if (! in_array($kind, ['movie', 'tv'], true)) {
+                continue;
+            }
+            $out[] = [
+                'kind' => $kind,
+                'id' => (string) $row['id'],
+                'title' => (string) (self::str($row['title'] ?? $row['name'] ?? null) ?? ''),
+                'year' => self::year($row['release_date'] ?? $row['first_air_date'] ?? null),
+                'rating' => self::rating($row['vote_average'] ?? null),
+                'votes' => (int) ($row['vote_count'] ?? 0),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Пошук фільмів і серіалів за назвою (/search/multi) — той самий формат, що й discover().
+     *
+     * @return list<array{kind: string, id: string, title: string, year: int|null, rating: float|null, votes: int}>
+     */
+    public function search(string $query): array
+    {
+        $json = $this->get('/search/multi', ['language' => $this->language(), 'query' => $query, 'include_adult' => 'false', 'page' => 1]);
+        $rows = is_array($json['results'] ?? null) ? $json['results'] : [];
+
+        $out = [];
+        foreach ($rows as $row) {
+            if (! is_array($row) || ! is_numeric($row['id'] ?? null) || ! in_array($row['media_type'] ?? null, ['movie', 'tv'], true)) {
+                continue;
+            }
+            $out[] = [
+                'kind' => (string) $row['media_type'],
+                'id' => (string) $row['id'],
+                'title' => (string) (self::str($row['title'] ?? $row['name'] ?? null) ?? ''),
+                'year' => self::year($row['release_date'] ?? $row['first_air_date'] ?? null),
+                'rating' => self::rating($row['vote_average'] ?? null),
+                'votes' => (int) ($row['vote_count'] ?? 0),
+            ];
+        }
+
+        return $out;
+    }
+
+    public function imdbId(string $kind, string $id): ?string
+    {
+        $json = $this->get("/{$kind}/{$id}/external_ids");
+
+        return self::str($json['imdb_id'] ?? null);
+    }
+
     public function lookup(Movie $movie): ?array
     {
         [$kind, $id] = $this->resolve($movie);

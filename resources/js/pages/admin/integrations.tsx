@@ -320,6 +320,20 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                         ),
                     ],
                     [
+                        'bots',
+                        tr('Боти, стріми й автоперевірка'),
+                        tr(
+                            'Офіційні боти GameCon для груп у Telegram і Discord, позначка LIVE для стрімерів Twitch і автоперевірка фото.',
+                        ),
+                    ],
+                    [
+                        'payments',
+                        tr('Оплата'),
+                        tr(
+                            'Еквайринг monobank: оплата карткою, Apple Pay і Google Pay, збережені картки для автопродовження. Тарифи й правила — в Адмінка → Білінг.',
+                        ),
+                    ],
+                    [
                         'voice',
                         tr('Голосові кімнати'),
                         tr(

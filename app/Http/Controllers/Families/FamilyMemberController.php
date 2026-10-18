@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Families;
 use App\Models\Family;
 use App\Models\FamilyMember;
 use App\Models\FamilyPunishment;
+use App\Models\User;
+use App\Notifications\ComeBackNudge;
 use App\Services\Families\FamilyAudit;
 use App\Services\Families\FamilyService;
 use App\Services\Voice\VoiceRooms;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -183,6 +186,21 @@ class FamilyMemberController extends FamilyBaseController
         $this->gate->forget();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Ранги й права збережено.']);
+
+        return back();
+    }
+
+    /** Нагадати учасникові, що давно не заходив: сповіщення від керівника. */
+    public function nudge(Request $request, Family $family, FamilyMember $member): RedirectResponse
+    {
+        abort_unless($member->family_id === $family->id && $member->isActive(), 404);
+        $actor = $this->member($request, $family, 'members.manage', write: true);
+        $target = User::query()->findOrFail($member->user_id);
+        if (! ComeBackNudge::allowed($target, 'family.'.$family->id)) {
+            throw ValidationException::withMessages(['member' => 'Нагадати можна тому, хто не заходив 2 тижні, і не частіше разу на 3 дні.']);
+        }
+        $target->notify(new ComeBackNudge(User::query()->findOrFail($actor->user_id), "[{$family->tag}] {$family->name}", '/f/'.$family->slug));
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Нагадування надіслано.']);
 
         return back();
     }

@@ -3,12 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\FeedController;
 use App\Http\Controllers\PostController;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\CommunityService;
+use App\Services\FeedSignals;
 use App\Services\FriendshipService;
 use App\Services\PostPresenter;
+use App\Support\I18n\LanguageGuess;
+use App\Support\MutedWords;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
@@ -20,6 +24,7 @@ class FeedApiController extends ApiController
         private readonly FriendshipService $friendships,
         private readonly PostPresenter $presenter,
         private readonly CommunityService $communities,
+        private readonly FeedSignals $signals,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -30,6 +35,7 @@ class FeedApiController extends ApiController
         $hasSources = $friendIds !== [] || $communityIds !== [];
         $requested = $request->query('tab');
         $tab = match (true) {
+            $requested === 'country' => 'country',
             $requested === 'discover' => 'discover',
             $requested === 'friends' && $hasSources => 'friends',
             $hasSources => 'friends',
@@ -38,23 +44,40 @@ class FeedApiController extends ApiController
 
         $query = Post::query()
             ->visibleTo($user, $friendIds)
-            ->whereHas('author', fn (Builder $q) => $q->whereNull('banned_at'));
+            ->whereHas('author', fn (Builder $q) => $q->whereNull('banned_at')->whereNull('frozen_at'));
 
         if ($tab === 'friends') {
             $query->where(fn (Builder $q) => $q
                 ->where(fn (Builder $w) => $w->where('wall_type', '!=', 'community')->whereIn('author_id', [...$friendIds, $user->id]))
                 ->orWhere(fn (Builder $w) => $w->where('wall_type', 'community')->whereIn('wall_id', $communityIds ?: [0])));
+        } elseif ($tab === 'country' && is_string($user->country) && $user->country !== '') {
+            $query->where('visibility', Post::VISIBILITY_PUBLIC)
+                ->whereHas('author', fn (Builder $q) => $q->where('country', $user->country));
+        } elseif ($tab === 'country') {
+            $query->whereRaw('1 = 0');
         } else {
             $query->where('visibility', Post::VISIBILITY_PUBLIC)
                 ->where('created_at', '>=', now()->subDays(30))
                 ->orderByDesc('likes_count');
         }
 
+        $rawLang = $request->query('lang');
+        $lang = is_string($rawLang) && in_array($rawLang, LanguageGuess::LANGS, true) ? $rawLang : null;
+        if ($lang !== null) {
+            $query->where('lang', $lang);
+        }
+
+        $this->signals->apply($query, $user, $tab === 'discover');
+        MutedWords::hidePosts($query, $user);
+
         $posts = $query->orderByDesc('id')->paginate(10);
         $items = $this->presenter->many(new Collection($posts->items()), $user);
 
         return response()->json([
             'tab' => $tab,
+            'lang' => $lang,
+            'languages' => LanguageGuess::LANGS,
+            'tomorrow' => $request->integer('page', 1) > 1 ? [] : app(FeedController::class)->tomorrowFor($user),
             'has_sources' => $hasSources,
             'posts' => $this->page($posts, $items),
             'suggestions' => collect($this->friendships->suggestions($user, 5))

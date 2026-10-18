@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Community;
 use App\Models\CommunityMember;
 use App\Models\Photo;
+use App\Models\Post;
 use App\Models\User;
 use App\Services\CommunityService;
+use App\Services\CommunityWall;
+use App\Services\Donations\MonobankJar;
 use App\Services\FriendshipService;
 use App\Services\ImageStorage;
 use App\Services\PhotoService;
@@ -30,6 +33,7 @@ class CommunityController extends Controller
         private readonly FriendshipService $friendships,
         private readonly PostPresenter $presenter,
         private readonly ImageStorage $images,
+        private readonly CommunityWall $wall,
     ) {}
 
     public function index(Request $request): Response
@@ -97,9 +101,14 @@ class CommunityController extends Controller
         $membership = $community->membershipFor($viewer);
         $canView = $this->communities->canView($community, $viewer, $membership);
         $friendIds = $this->friendships->friendIds($viewer);
+        $tags = $community->post_tags ?? [];
+        $rawTag = $request->query('tag');
+        $tag = is_string($rawTag) && in_array($rawTag, $tags, true) ? $rawTag : null;
+        $moderates = (bool) $membership?->isManager() || $viewer->isStaff();
 
         $posts = $community->posts()
             ->visibleTo($viewer, $friendIds)
+            ->when($tag !== null, fn (Builder $q) => $q->where('tag', $tag))
             ->orderByDesc('is_pinned')
             ->orderByDesc('id')
             ->cursorPaginate(FeedController::PER_PAGE);
@@ -140,24 +149,42 @@ class CommunityController extends Controller
             $photos = [
                 'count' => Photo::query()->whereIn('album_id', $albumIds)->count(),
                 'items' => Photo::query()->whereIn('album_id', $albumIds)->latest('id')->limit(6)->get()
-                    ->map(fn (Photo $p) => ['id' => $p->id, 'url' => $p->url, 'href' => '/albums/'.$p->album_id.'?photo='.$p->id])
+                    ->map(fn (Photo $p) => ['id' => $p->id, 'url' => $p->url, 'href' => '/albums/'.$p->album_id.'?photo='.$p->id, 'alt' => $p->alt, 'is_sensitive' => $p->is_sensitive])
                     ->all(),
                 'can_create' => $photoService->canCreateAlbum($community, $viewer),
             ];
         }
 
+        $pending = fn () => $community->posts()->where('is_pending', true)->where('is_draft', false);
+        $queue = $moderates && $canView
+            ? $this->presenter->many($pending()->oldest('id')->limit(20)->get(), $viewer)
+            : [];
+
         return Inertia::render('communities/show', [
             'community' => $this->details($community),
+            // Банку видно лише тим, хто бачить вміст спільноти.
+            'donation' => $canView ? Inertia::defer(fn () => app(MonobankJar::class)->card($community->donation_jar, $community->donation_note)) : null,
+            'tags' => $tags,
+            'tag' => $tag,
+            'queue' => $queue,
+            'my_pending' => $pending()->where('author_id', $viewer->id)->count(),
+            'rules' => [
+                'rules' => $community->rules !== null && trim($community->rules) !== '',
+                'handbook' => $community->handbook !== null && trim($community->handbook) !== '',
+                'premoderation' => $community->premoderation,
+                'slow_mode' => $community->slow_mode,
+            ],
             'membership' => $membership ? ['status' => $membership->status, 'role' => $membership->role] : null,
             'can' => [
                 'view' => $canView,
                 'post' => $this->communities->canPost($community, $membership),
                 'post_as_community' => (bool) $membership?->isManager(),
                 'manage' => (bool) $membership?->isAdmin() || $viewer->isStaff(),
+                'moderate' => $moderates,
             ],
             'stats' => [
                 'members' => $community->members_count,
-                'posts' => $community->posts()->count(),
+                'posts' => $community->posts()->where('is_draft', false)->where('is_pending', false)->count(),
                 'friends' => (clone $friendsInside)->count(),
                 'requests' => $membership?->isAdmin() ? $community->memberships()->where('status', CommunityMember::STATUS_PENDING)->count() : 0,
             ],
@@ -176,7 +203,119 @@ class CommunityController extends Controller
             'community' => $this->details($community),
             'categories' => Community::CATEGORIES,
             'isOwner' => $community->owner_id === $request->user()->id || $request->user()->isStaff(),
+            'widget' => $community->isClosed() ? null : url('/widget/'.$community->slug.'/card.js'),
+            'extras' => [
+                'rules' => $community->rules ?? '',
+                'handbook' => $community->handbook ?? '',
+                'welcome' => $community->welcome ?? '',
+                'banned_words' => implode("\n", $community->banned_words ?? []),
+                'post_tags' => implode("\n", $community->post_tags ?? []),
+                'slow_mode' => $community->slow_mode,
+                'premoderation' => $community->premoderation,
+            ],
+            'slowModes' => CommunityWall::SLOW_MODES,
+            'stats' => Inertia::defer(fn () => $this->wall->stats($community)),
+            'jar' => ['url' => $community->donation_jar, 'note' => $community->donation_note],
         ]);
+    }
+
+    /** Банка Monobank для донатів спільноті (картка «Підтримати» на сторінці; лише сайт). */
+    public function updateJar(Request $request, Community $community, MonobankJar $jars): RedirectResponse
+    {
+        $this->authorizeAdmin($request, $community);
+        $data = $request->validate([
+            'url' => ['nullable', 'string', 'max:200'],
+            'note' => ['nullable', 'string', 'max:200'],
+        ]);
+        $id = MonobankJar::clientId($data['url'] ?? null);
+        abort_if(filled($data['url'] ?? null) && $id === null, 422, 'Вставте посилання на банку Monobank: https://send.monobank.ua/jar/…');
+
+        $jars->forget($community->donation_jar);
+        $community->forceFill([
+            'donation_jar' => $id !== null ? MonobankJar::url($id) : null,
+            'donation_note' => filled($data['note'] ?? null) ? trim((string) $data['note']) : null,
+        ])->save();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => $community->donation_jar ? 'Банку збережено — картка «Підтримати» з’явилася на сторінці спільноти.' : 'Банку прибрано.']);
+
+        return back();
+    }
+
+    public function updateRules(Request $request, Community $community): RedirectResponse
+    {
+        $this->authorizeAdmin($request, $community);
+
+        $data = $request->validate([
+            'rules' => ['nullable', 'string', 'max:10000'],
+            'handbook' => ['nullable', 'string', 'max:50000'],
+            'welcome' => ['nullable', 'string', 'max:1000'],
+            'banned_words' => ['nullable', 'string', 'max:5000'],
+            'post_tags' => ['nullable', 'string', 'max:1000'],
+            'slow_mode' => ['required', 'integer', Rule::in(CommunityWall::SLOW_MODES)],
+            'premoderation' => ['required', 'boolean'],
+        ]);
+
+        $trimmed = fn (?string $text) => ($text = trim((string) $text)) === '' ? null : $text;
+        $words = CommunityWall::lines($data['banned_words'] ?? null, CommunityWall::MAX_WORDS, 40);
+        $tags = CommunityWall::lines($data['post_tags'] ?? null, CommunityWall::MAX_TAGS, 24);
+
+        $community->update([
+            'rules' => $trimmed($data['rules'] ?? null),
+            'handbook' => $trimmed($data['handbook'] ?? null),
+            'welcome' => $trimmed($data['welcome'] ?? null),
+            'banned_words' => $words === [] ? null : $words,
+            'post_tags' => $tags === [] ? null : $tags,
+            'slow_mode' => (int) $data['slow_mode'],
+            'premoderation' => (bool) $data['premoderation'],
+        ]);
+
+        if (! $community->premoderation) {
+            $waiting = $community->posts()->where('is_pending', true)->get();
+            foreach ($waiting as $post) {
+                $this->wall->approve($post);
+            }
+        }
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Правила збережено.']);
+
+        return to_route('communities.edit', $community);
+    }
+
+    /**
+     * Сторінка правил або довідника спільноти.
+     */
+    public function page(Request $request, Community $community, string $page): Response
+    {
+        abort_unless($this->communities->canView($community, $request->user()), 403);
+        $text = $page === 'handbook' ? $community->handbook : $community->rules;
+        abort_if($text === null || trim($text) === '', 404);
+
+        return Inertia::render('communities/page', [
+            'community' => $community->toCard(),
+            'page' => $page,
+            'text' => $text,
+            'other' => $page === 'handbook'
+                ? ($community->rules !== null && trim($community->rules) !== '')
+                : ($community->handbook !== null && trim($community->handbook) !== ''),
+        ]);
+    }
+
+    public function approvePost(Request $request, Community $community, Post $post): RedirectResponse
+    {
+        $this->authorizeModerator($request, $community, $post);
+        $this->wall->approve($post);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Запис опубліковано.']);
+
+        return back();
+    }
+
+    public function rejectPost(Request $request, Community $community, Post $post): RedirectResponse
+    {
+        $this->authorizeModerator($request, $community, $post);
+        $this->wall->reject($post);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Запис відхилено.']);
+
+        return back();
     }
 
     public function update(Request $request, Community $community): RedirectResponse
@@ -300,6 +439,13 @@ class CommunityController extends Controller
             'wall' => $community->wall,
             'created_at' => $community->created_at->toIso8601String(),
         ];
+    }
+
+    private function authorizeModerator(Request $request, Community $community, Post $post): void
+    {
+        $user = $request->user();
+        abort_unless($post->wall_type === $community->getMorphClass() && $post->wall_id === $community->id && $post->is_pending, 404);
+        abort_unless($community->membershipFor($user)?->isManager() || $user->isStaff(), 403);
     }
 
     private function authorizeAdmin(Request $request, Community $community): void
