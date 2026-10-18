@@ -11,7 +11,7 @@ import {
     Youtube,
 } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
-import { type FormEvent, useEffect, useState } from 'react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
 import AppearanceController from '@/actions/App/Http/Controllers/Settings/AppearanceController';
 import { PlusBadge } from '@/components/gc/plus';
 import { UserAvatar } from '@/components/gc/user-avatar';
@@ -32,6 +32,7 @@ import {
 } from '@/lib/backgrounds';
 import { tr } from '@/lib/i18n';
 import type { NetworkMode } from '@/lib/modes';
+import { SKINS } from '@/lib/skins';
 import { motionOr, POP, SNAP } from '@/lib/motion';
 import { usePlugin } from '@/lib/plugins';
 import { cn } from '@/lib/utils';
@@ -96,6 +97,8 @@ type Form = {
     background_motion: boolean;
     background_video: string;
     network_mode: string;
+    skin: string;
+    seasonal: boolean;
 };
 
 export default function Appearance({
@@ -117,6 +120,8 @@ export default function Appearance({
     modes,
     networkMode,
     moduleNames,
+    skin,
+    seasonal,
 }: {
     palette: string;
     palettes: PaletteOption[];
@@ -136,6 +141,8 @@ export default function Appearance({
     modes: NetworkMode[];
     networkMode: string;
     moduleNames: Record<string, string>;
+    skin: string;
+    seasonal: boolean;
 }) {
     const palettesOn = usePlugin('palettes');
     const quietOn = usePlugin('quiet_hours');
@@ -165,10 +172,13 @@ export default function Appearance({
             ? `https://youtu.be/${background.video}`
             : '',
         network_mode: networkMode,
+        skin,
+        seasonal,
     });
     const [phrase, setPhrase] = useState('');
     const reduce = useReducedMotion();
     const user = usePage().props.auth.user;
+    const savedSkin = useRef(skin);
     // Збережений стан: від нього рахуються незбережені зміни й до нього повертає «Скасувати».
     const [saved, setSaved] = useState(form.data);
     const [textSize, setTextSize] = useState<TextSize>(readTextSize);
@@ -193,6 +203,26 @@ export default function Appearance({
         isPlus,
     ]);
     useEffect(() => () => setBackgroundPreview(null), []);
+    // Пішли без «Зберегти» — повертається збережений стиль.
+    useEffect(
+        () => () => {
+            document.documentElement.dataset.skin = savedSkin.current;
+        },
+        [],
+    );
+
+    const pickSkin = (id: string) => {
+        document.documentElement.dataset.skin = id;
+        form.setData((data) => ({
+            ...data,
+            skin: id,
+            // Material іде в парі з «Авророю» (як у задумі стилю); фон можна змінити окремо.
+            background:
+                id === 'material' && !youtubeId(data.background_video)
+                    ? 'aurora'
+                    : data.background,
+        }));
+    };
 
     const previewText = (size: TextSize) => {
         setTextSize(size);
@@ -208,7 +238,10 @@ export default function Appearance({
         if (countChanges(form.data, saved) === 0) return;
         form.submit(AppearanceController.update(), {
             preserveScroll: true,
-            onSuccess: () => setSaved(form.data),
+            onSuccess: () => {
+                setSaved(form.data);
+                savedSkin.current = form.data.skin;
+            },
         });
     };
 
@@ -216,6 +249,7 @@ export default function Appearance({
         form.setData(saved);
         form.clearErrors();
         document.documentElement.dataset.palette = saved.palette;
+        document.documentElement.dataset.skin = saved.skin;
         previewText(savedText);
     };
 
@@ -266,6 +300,76 @@ export default function Appearance({
                         </div>
                     </div>
                 </div>
+
+                <SettingsCard
+                    title={tr('Стиль інтерфейсу')}
+                    description={tr(
+                        'Ті самі розділи й іконки — інша «оболонка». Видно одразу, збережіть, якщо подобається.',
+                    )}
+                >
+                    <div
+                        role="radiogroup"
+                        aria-label={tr('Стиль інтерфейсу')}
+                        className="grid grid-cols-2 gap-2.5 lg:grid-cols-4"
+                    >
+                        {SKINS().map((item) => {
+                            const active = form.data.skin === item.id;
+
+                            return (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={active}
+                                    onClick={() => pickSkin(item.id)}
+                                    className="group flex flex-col justify-start text-left"
+                                >
+                                    <span
+                                        className={cn(
+                                            'skin-thumb relative block aspect-[4/3] overflow-hidden rounded-2xl ring-1 transition',
+                                            `skin-thumb--${item.id}`,
+                                            active
+                                                ? 'ring-2 ring-primary'
+                                                : 'ring-white/10 group-hover:ring-white/30',
+                                        )}
+                                    >
+                                        <span className="skin-thumb__card" />
+                                        <span className="skin-thumb__button" />
+                                        {active && (
+                                            <m.span
+                                                initial={
+                                                    reduce
+                                                        ? false
+                                                        : {
+                                                              scale: 0.4,
+                                                              opacity: 0,
+                                                          }
+                                                }
+                                                animate={{
+                                                    scale: 1,
+                                                    opacity: 1,
+                                                }}
+                                                transition={motionOr(
+                                                    reduce,
+                                                    POP,
+                                                )}
+                                                className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground"
+                                            >
+                                                <Check className="size-3.5" />
+                                            </m.span>
+                                        )}
+                                    </span>
+                                    <span className="mt-2 block text-sm font-medium text-white">
+                                        {item.name}
+                                    </span>
+                                    <span className="block text-xs text-white/45">
+                                        {item.hint}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </SettingsCard>
 
                 <SettingsCard
                     title={tr('Режим соцмережі')}
@@ -386,6 +490,21 @@ export default function Appearance({
                         {tr('Рухомий фон')}
                         <span className="text-xs text-white/40">
                             {tr('вимкніть, щоб сцена стояла нерухомо')}
+                        </span>
+                    </label>
+
+                    <label className="mt-2 flex min-h-11 items-center gap-3 text-sm text-white">
+                        <input
+                            type="checkbox"
+                            checked={form.data.seasonal}
+                            onChange={(e) =>
+                                form.setData('seasonal', e.target.checked)
+                            }
+                            className="gc-switch"
+                        />
+                        {tr('Святкові прикраси')}
+                        <span className="text-xs text-white/40">
+                            {tr('сніг на Новий рік, писанки на Великдень…')}
                         </span>
                     </label>
 

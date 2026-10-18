@@ -50,6 +50,8 @@ declare module '@inertiajs/core' {
             plugins: Record<string, boolean>;
             /** Можливості інтерфейсу за режимом соцмережі: stories, live, playing. */
             features?: Record<string, boolean>;
+            /** Сезонні прикраси (App\\Support\\Seasons): newyear, valentine, easter, independence, halloween. */
+            season?: string | null;
             music: SharedMusic;
             counters: {
                 friend_requests: number;

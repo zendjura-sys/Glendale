@@ -20,7 +20,9 @@ use App\Support\Modules\ModuleManager;
 use App\Support\NetworkModes;
 use App\Support\NotifyPrefs;
 use App\Support\Plugins\Plugins;
+use App\Support\Seasons;
 use App\Support\Settings\SiteSettings;
+use App\Support\Skins;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -105,6 +107,7 @@ class HandleInertiaRequests extends Middleware
                     'network_mode' => app(NetworkModes::class)->for($user)['id'],
                     'palette' => $user->palette(),
                     'background' => Backgrounds::for($user),
+                    'skin' => Skins::for($user),
                     'hide_spoilers' => app(Plugins::class)->on('spoiler_switch') && (bool) $user->pref('hide_spoilers'),
                     'profanity_mask' => $user->pref('hide_profanity') ? app(ContentFilter::class)->clientPattern() : null,
                     // До коли діє GameCon+ (оплата — карткою через monobank, без балансу).
@@ -126,6 +129,8 @@ class HandleInertiaRequests extends Middleware
             'modules' => fn () => app(NetworkModes::class)->modulesFor($user),
             'plugins' => fn () => app(NetworkModes::class)->pluginsFor($user),
             'features' => fn () => app(NetworkModes::class)->featuresFor($user),
+            // Сезонні прикраси (Новий рік, Великдень…) або null.
+            'season' => fn () => app(Seasons::class)->for($user),
             'music' => $user ? fn () => $this->musicProps($user) : null,
             'counters' => $user ? fn () => [
                 'friend_requests' => $this->friendships->incomingCount($user),

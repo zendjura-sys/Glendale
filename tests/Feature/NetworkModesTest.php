@@ -26,6 +26,12 @@ class NetworkModesTest extends TestCase
         $this->assertContains('feed', $visible);
         $this->assertFalse($modes->featuresFor($user)['playing']);
 
+        // «Класика»: звична соцмережа без кіно й ігрових розділів.
+        $user->mergePref(['network_mode' => 'classic']);
+        $this->assertNotContains('cinema', $modes->modulesFor($user));
+        $this->assertNotContains('servers', $modes->modulesFor($user));
+        $this->assertContains('music', $modes->modulesFor($user));
+
         $user->mergePref(['network_mode' => 'gamer']);
         $this->assertNotContains('cinema', $modes->modulesFor($user));
         $this->assertFalse($modes->featuresFor($user)['stories']);

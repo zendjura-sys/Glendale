@@ -14,6 +14,7 @@ import {
     UsersRound,
 } from 'lucide-react';
 import { SiteBackground } from '@/components/backgrounds/site-background';
+import { Seasonal } from '@/components/gc/seasonal';
 import { Logo } from '@/components/gc/logo';
 import { PlayStoreLink } from '@/components/gc/play-store';
 import { UserAvatar } from '@/components/gc/user-avatar';
@@ -184,6 +185,7 @@ export default function Welcome({
         <>
             <Head title={tr('Соціальна мережа для геймерів і кіноманів')} />
             <SiteBackground />
+            <Seasonal />
 
             <header className="fixed inset-x-0 top-0 z-40 pt-[env(safe-area-inset-top)]">
                 <div className="liquid-glass liquid-glass--dense mx-2 mt-2 flex h-14 items-center gap-3 rounded-[22px] px-3 sm:mx-3 sm:px-4 xl:mx-auto xl:max-w-[1240px]">

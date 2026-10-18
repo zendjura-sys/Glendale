@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\SiteTheme;
 use App\Services\Design\SiteThemes;
+use App\Support\Seasons;
+use App\Support\Settings\SiteSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -37,6 +39,8 @@ class DesignController extends Controller
                     'updated_at' => $theme->updated_at->toIso8601String(),
                 ]),
             'limits' => ['max_kb' => intdiv(SiteThemes::MAX_BYTES, 1024)],
+            'seasonal' => app(Seasons::class)->setting(),
+            'seasons' => Seasons::ALL,
         ]);
     }
 
@@ -100,6 +104,17 @@ class DesignController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => $theme->is_active
             ? 'Стиль видалено, сайт повернувся до стандартного вигляду.'
             : 'Стиль видалено.']);
+
+        return back();
+    }
+
+    /** Сезонні прикраси: автоматично за датою, вимкнено або показати потрібний сезон уже зараз. */
+    public function seasonal(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['seasonal' => ['required', 'string', 'in:'.implode(',', ['auto', 'off', ...Seasons::ALL])]]);
+        app(SiteSettings::class)->put([Seasons::SETTING => $data['seasonal']]);
+        Log::info('design: seasonal decorations', ['value' => $data['seasonal'], 'by' => $request->user()->id]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Сезонні прикраси збережено.']);
 
         return back();
     }

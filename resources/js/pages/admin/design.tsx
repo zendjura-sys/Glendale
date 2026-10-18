@@ -6,6 +6,7 @@ import {
     FileCode2,
     Palette,
     RotateCcw,
+    Snowflake,
     Trash2,
     Upload,
 } from 'lucide-react';
@@ -33,6 +34,8 @@ type Theme = {
 type Props = {
     themes: Theme[];
     limits: { max_kb: number };
+    seasonal: string;
+    seasons: string[];
 };
 
 // Попередній перегляд — повне завантаження сторінки: стиль підключається в <head> лише при першому відкритті.
@@ -41,7 +44,12 @@ const previewUrl = (id: number | 'default') => `/feed?design_preview=${id}`;
 const kb = (bytes: number) =>
     `${Math.max(1, Math.round(bytes / 1024)).toLocaleString('uk-UA')} КБ`;
 
-export default function AdminDesign({ themes, limits }: Props) {
+export default function AdminDesign({
+    themes,
+    limits,
+    seasonal,
+    seasons,
+}: Props) {
     const active = themes.find((theme) => theme.is_active) ?? null;
     const fileRef = useRef<HTMLInputElement>(null);
     const form = useForm<{
@@ -82,6 +90,8 @@ export default function AdminDesign({ themes, limits }: Props) {
                     </a>
                 }
             />
+
+            <SeasonalCard value={seasonal} seasons={seasons} />
 
             <section className="glass mb-5 flex flex-wrap items-center gap-3 rounded-2xl p-4">
                 <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-brand text-white">
@@ -426,6 +436,81 @@ function ThemeCard({ theme, limit }: { theme: Theme; limit: number }) {
                     e.target.value = '';
                 }}
             />
+        </section>
+    );
+}
+
+const SEASON_LABELS = (): Record<string, string> => ({
+    auto: tr('Автоматично'),
+    off: tr('Вимкнено'),
+    newyear: tr('Новий рік і Різдво'),
+    valentine: tr('День закоханих'),
+    easter: tr('Великдень'),
+    independence: tr('День Незалежності'),
+    halloween: tr('Хелловін'),
+});
+
+/** Сезонні прикраси: за датою, вимкнені або потрібний сезон уже зараз. */
+function SeasonalCard({
+    value,
+    seasons,
+}: {
+    value: string;
+    seasons: string[];
+}) {
+    const labels = SEASON_LABELS();
+    const [sending, setSending] = useState<string | null>(null);
+    const choose = (next: string) => {
+        if (next === value) return;
+        setSending(next);
+        router.post(
+            '/admin/design/seasonal',
+            { seasonal: next },
+            { preserveScroll: true, onFinish: () => setSending(null) },
+        );
+    };
+
+    return (
+        <section className="glass mb-5 rounded-2xl p-4">
+            <div className="flex items-center gap-3">
+                <span className="flex size-11 items-center justify-center rounded-2xl bg-white/[0.06] text-white">
+                    <Snowflake className="size-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                    <h3 className="font-display text-base font-bold text-white">
+                        {tr('Святкові прикраси')}
+                    </h3>
+                    <p className="text-xs text-white/45">
+                        {tr(
+                            'Автоматично — за календарем (Київ). Можна вимкнути для всіх або показати сезон уже зараз. Людина може вимкнути прикраси в себе в налаштуваннях.',
+                        )}
+                    </p>
+                </div>
+            </div>
+            <div
+                role="radiogroup"
+                aria-label={tr('Святкові прикраси')}
+                className="mt-3 flex flex-wrap gap-2"
+            >
+                {['auto', 'off', ...seasons].map((id) => (
+                    <button
+                        key={id}
+                        type="button"
+                        role="radio"
+                        aria-checked={value === id}
+                        disabled={sending !== null}
+                        onClick={() => choose(id)}
+                        className={cn(
+                            'h-9 rounded-xl px-3 text-sm font-medium transition disabled:opacity-60',
+                            value === id
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-white/[0.05] text-white/70 hover:bg-white/[0.09] hover:text-white',
+                        )}
+                    >
+                        {labels[id] ?? id}
+                    </button>
+                ))}
+            </div>
         </section>
     );
 }

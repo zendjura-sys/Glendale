@@ -45,6 +45,6 @@ export function FEATURE_LABELS(): Record<string, string> {
     return {
         stories: tr('Історії'),
         live: tr('Трансляції друзів'),
-        playing: tr('Статус «Граю в…»'),
+        playing: tr('Ігрові блоки профілю («Граю в…», Steam, платформи)'),
     };
 }

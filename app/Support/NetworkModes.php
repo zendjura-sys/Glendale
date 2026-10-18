@@ -58,7 +58,7 @@ class NetworkModes
         return array_values(array_filter(array_map(fn (array $item) => $this->normalize($item), [
             $mode('all', 'Все включено', 'Усе, що вміє GameCon: ігри, кіно, музика, спільноти й історії.', 'layers', $all, []),
             $mode('gamer', 'Геймер', 'Ігри, сервери, клани, пошук паті, завдання й моменти. Без історій і кіно — лише гра.', 'gamepad-2', $without(['cinema']), ['stories' => false]),
-            $mode('classic', 'Класика', 'Звична соцмережа з музикою, фото, іграми й моментами — без кіно.', 'sparkles', $without(['cinema']), []),
+            $mode('classic', 'Класика', 'Звична соцмережа: друзі, повідомлення, музика, фото, спільноти й події. Без кіно, ігрових розділів і моментів.', 'sparkles', $without(['cinema', ...self::GAMING]), ['live' => false, 'playing' => false]),
             $mode('adventure', 'Пригоди', 'Музика, кіно, фото, спільноти й події. Без ігрових розділів.', 'compass', $without(self::GAMING), ['live' => false, 'playing' => false]),
             $mode('cinema', 'Кіноман', 'Кіно й перегляд разом, музика, фото та спільноти.', 'clapperboard', $without([...self::GAMING, 'events']), ['live' => false, 'playing' => false]),
             $mode('minimal', 'Мінімал', 'Лише головне: стрічка, друзі, повідомлення, фото й спільноти.', 'feather', ['profile', 'feed', 'friends', 'people', 'messages', 'communities', 'photos'], ['live' => false, 'playing' => false, 'stories' => false]),

@@ -6,11 +6,17 @@ import { useEffect } from 'react';
  * usePage() працює лише всередині сторінки Inertia.
  */
 export function PaletteSync() {
-    const palette = usePage().props.auth.user?.palette ?? 'aurora';
+    const user = usePage().props.auth.user;
+    const palette = user?.palette ?? 'aurora';
+    const skin = user?.skin ?? 'flat';
 
     useEffect(() => {
         document.documentElement.dataset.palette = palette;
     }, [palette]);
+    // Стиль інтерфейсу (Налаштування → Вигляд) — так само на <html>.
+    useEffect(() => {
+        document.documentElement.dataset.skin = skin;
+    }, [skin]);
 
     return null;
 }

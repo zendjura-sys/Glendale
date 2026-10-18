@@ -21,6 +21,7 @@ import { useEffect, useState } from 'react';
 import type { PropsWithChildren, ReactNode } from 'react';
 import { LayoutGroup, m, useReducedMotion } from 'motion/react';
 import { SiteBackground } from '@/components/backgrounds/site-background';
+import { Seasonal } from '@/components/gc/seasonal';
 import { IncomingCall } from '@/components/gc/incoming-call';
 import { InboxListener } from '@/components/gc/inbox-listener';
 import { Logo, LogoMark } from '@/components/gc/logo';
@@ -701,6 +702,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 </>
             )}
             <SiteBackground />
+            <Seasonal />
             <Topbar />
             <div
                 className={cn(

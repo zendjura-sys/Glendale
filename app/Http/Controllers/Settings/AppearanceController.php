@@ -12,6 +12,7 @@ use App\Support\NotifyPrefs;
 use App\Support\Palette;
 use App\Support\Plugins\Plugins;
 use App\Support\ProfileBlocks;
+use App\Support\Skins;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -33,6 +34,8 @@ class AppearanceController extends Controller
                 'video' => Backgrounds::youtubeId($user->pref('background_video')),
             ],
             'backgrounds' => Backgrounds::PRESETS,
+            'skin' => Skins::for($user),
+            'seasonal' => $user->pref('seasonal') !== false,
             'modes' => app(NetworkModes::class)->available(),
             'networkMode' => app(NetworkModes::class)->for($user)['id'],
             'moduleNames' => app(NetworkModes::class)->moduleNames(),
@@ -85,6 +88,8 @@ class AppearanceController extends Controller
             'background' => ['sometimes', 'string', 'in:'.implode(',', Backgrounds::PRESETS)],
             'background_motion' => ['sometimes', 'boolean'],
             'background_video' => ['sometimes', 'nullable', 'string', 'max:200'],
+            'skin' => ['sometimes', 'string', 'in:'.implode(',', Skins::ALL)],
+            'seasonal' => ['sometimes', 'boolean'],
             'network_mode' => ['sometimes', 'string', 'in:'.implode(',', array_column(app(NetworkModes::class)->available(), 'id'))],
         ]);
 
@@ -135,6 +140,12 @@ class AppearanceController extends Controller
                     : NotifyPrefs::enabled($request->user(), $key);
             }
             $patch['notify'] = $notify;
+        }
+        if (array_key_exists('seasonal', $data)) {
+            $patch['seasonal'] = (bool) $data['seasonal'];
+        }
+        if (array_key_exists('skin', $data)) {
+            $patch['skin'] = $data['skin'];
         }
         if (array_key_exists('network_mode', $data)) {
             $patch['network_mode'] = $data['network_mode'];

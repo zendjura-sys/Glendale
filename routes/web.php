@@ -673,6 +673,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::get('template', 'template')->name('template');
             Route::post('/', 'store')->middleware('throttle:30,1')->name('store');
             Route::post('reset', 'reset')->name('reset');
+            Route::post('seasonal', 'seasonal')->name('seasonal');
             Route::whereNumber('theme')->group(function () {
                 Route::post('{theme}', 'update')->middleware('throttle:30,1')->name('update');
                 Route::post('{theme}/activate', 'activate')->name('activate');

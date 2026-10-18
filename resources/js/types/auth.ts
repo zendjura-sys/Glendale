@@ -22,6 +22,8 @@ export type User = {
     palette?: string;
     /** Режим соцмережі (id), див. NetworkModes на сервері. */
     network_mode?: string;
+    /** Стиль інтерфейсу: flat (основний), hero, material, flex. */
+    skin?: string;
     /** Фон сайту: сцена, чи рухається вона, і відео YouTube (лише з GameCon+). */
     background?: SiteBackgroundPrefs;
     hide_spoilers?: boolean;

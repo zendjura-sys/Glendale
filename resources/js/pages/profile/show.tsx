@@ -677,7 +677,9 @@ export default function ProfileShow({
                         {liveOn && stream && <ProfileStream stream={stream} />}
                         {blockSequence(blockOrder).map((key) => {
                             const widgets: Record<string, ReactNode> = {
-                                platforms: profile.platforms &&
+                                // Ігрові блоки — лише в режимах, де є «Граю в…» (не в «Класиці», «Кіномані»…).
+                                platforms: playingOn &&
+                                    profile.platforms &&
                                     (profile.platforms.steam ||
                                         profile.platforms.xbox ||
                                         profile.platforms.playstation) && (
@@ -734,40 +736,41 @@ export default function ProfileShow({
                                             </div>
                                         </Widget>
                                     ),
-                                steam: (steamLibrary?.length ?? 0) > 0 && (
-                                    <Widget title={tr('Бібліотека Steam')}>
-                                        <div className="space-y-1 px-1">
-                                            {steamLibrary?.map((game) =>
-                                                game.href ? (
-                                                    <Link
-                                                        key={game.name}
-                                                        href={game.href}
-                                                        className="flex justify-between gap-3 text-sm text-white"
-                                                    >
-                                                        <span className="truncate">
-                                                            {game.name}
-                                                        </span>
-                                                        <span className="text-xs text-white/40">
-                                                            {game.hours}г
-                                                        </span>
-                                                    </Link>
-                                                ) : (
-                                                    <div
-                                                        key={game.name}
-                                                        className="flex justify-between gap-3 text-sm text-white/80"
-                                                    >
-                                                        <span className="truncate">
-                                                            {game.name}
-                                                        </span>
-                                                        <span className="text-xs text-white/40">
-                                                            {game.hours}г
-                                                        </span>
-                                                    </div>
-                                                ),
-                                            )}
-                                        </div>
-                                    </Widget>
-                                ),
+                                steam: playingOn &&
+                                    (steamLibrary?.length ?? 0) > 0 && (
+                                        <Widget title={tr('Бібліотека Steam')}>
+                                            <div className="space-y-1 px-1">
+                                                {steamLibrary?.map((game) =>
+                                                    game.href ? (
+                                                        <Link
+                                                            key={game.name}
+                                                            href={game.href}
+                                                            className="flex justify-between gap-3 text-sm text-white"
+                                                        >
+                                                            <span className="truncate">
+                                                                {game.name}
+                                                            </span>
+                                                            <span className="text-xs text-white/40">
+                                                                {game.hours}г
+                                                            </span>
+                                                        </Link>
+                                                    ) : (
+                                                        <div
+                                                            key={game.name}
+                                                            className="flex justify-between gap-3 text-sm text-white/80"
+                                                        >
+                                                            <span className="truncate">
+                                                                {game.name}
+                                                            </span>
+                                                            <span className="text-xs text-white/40">
+                                                                {game.hours}г
+                                                            </span>
+                                                        </div>
+                                                    ),
+                                                )}
+                                            </div>
+                                        </Widget>
+                                    ),
                                 about: profile.about && (
                                     <Widget title={tr('Про себе')}>
                                         <p className="px-1 text-sm leading-relaxed whitespace-pre-line text-white/75">
