@@ -3,13 +3,14 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import 'audio.dart';
-import 'listen_together.dart';
+import 'full_player.dart';
 import 'state.dart';
-import 'theme.dart';
 import 'track_edit.dart';
+import 'theme.dart';
 import 'widgets.dart';
 import 'i18n.dart';
+
+export 'full_player.dart' show showFullPlayer;
 
 class TrackCover extends StatelessWidget {
   const TrackCover({required this.url, required this.seed, this.size = 48, this.radius = 14, super.key});
@@ -51,18 +52,14 @@ class MiniPlayer extends StatelessWidget {
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
-              boxShadow: const [BoxShadow(color: Color(0x996D5DFC), blurRadius: 28, offset: Offset(0, 12), spreadRadius: -18)],
+              boxShadow: [palette.isLight ? const BoxShadow(color: Color(0x33102A50), blurRadius: 28, offset: Offset(0, 10), spreadRadius: -14) : const BoxShadow(color: Color(0xB3000000), blurRadius: 30, offset: Offset(0, 10), spreadRadius: -14)],
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(18),
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
                 child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: const Color(0xB30F1426),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: fg.withValues(alpha: 0.10)),
-                  ),
+                  decoration: BoxDecoration(color: bar.withValues(alpha: 0.93), borderRadius: BorderRadius.circular(18)),
                   child: Stack(
                     children: [
                       Positioned.fill(
@@ -109,162 +106,30 @@ class MiniPlayer extends StatelessWidget {
   }
 }
 
-Future<void> showFullPlayer(BuildContext context, TrackPlayer player) {
-  return showGcSheet<void>(
-    context,
-    builder: (sheet) => ListenableBuilder(
-      listenable: player,
-      builder: (context, _) {
-        final track = player.current;
-        if (track == null) return const SizedBox(height: 120);
-        final total = player.duration.inMilliseconds.toDouble();
-        final at = player.position.inMilliseconds.toDouble().clamp(0.0, total <= 0 ? 0.0 : total);
-        final session = player.session;
-        final own = track.id != null && session != null && (track.userId == session.myId || session.isAdmin);
-        final details = [track.album, track.genre].whereType<String>().join(' · ');
-        return _PullToClose(
-          child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
-          padding: const EdgeInsets.fromLTRB(24, 6, 24, 28),
-          child: Column(
-            children: [
-              AspectRatio(aspectRatio: 1, child: TrackCover(url: track.cover, seed: track.id ?? track.title, size: double.infinity, radius: 26)),
-              const SizedBox(height: 18),
-              Row(
-                children: [
-                  SizedBox(
-                    width: 44,
-                    child: track.id != null
-                        ? IconButton(
-                            tooltip: tr('Слухати разом'),
-                            onPressed: () {
-                              Navigator.pop(sheet);
-                              startListening(context, trackId: track.id);
-                            },
-                            icon: Icon(LucideIcons.headphones, size: 20, color: soft),
-                          )
-                        : null,
-                  ),
-                  Expanded(
-                    child: Column(children: [
-                      Text(track.title, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: display(20)),
-                      const SizedBox(height: 6),
-                      Text(artistOf(track.artist), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: muted)),
-                      if (details.isNotEmpty) ...[
-                        const SizedBox(height: 3),
-                        Text(details, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: faint)),
-                      ],
-                    ]),
-                  ),
-                  SizedBox(
-                    width: 44,
-                    child: own
-                        ? IconButton(
-                            tooltip: tr('Редагувати метадані'),
-                            onPressed: () async {
-                              final card = await editTrackSheet(context, track.toCard());
-                              if (card != null) player.updateMeta(card);
-                            },
-                            icon: Icon(LucideIcons.pencil, size: 20, color: soft),
-                          )
-                        : null,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Slider(
-                value: at,
-                max: total <= 0 ? 1 : total,
-                onChanged: total <= 0 ? null : (value) => player.seek(Duration(milliseconds: value.round())),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    Text(duration(player.position.inSeconds), style: body(12, color: muted)),
-                    const Spacer(),
-                    Text(duration(player.duration.inSeconds), style: body(12, color: muted)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  IconButton(tooltip: tr('Перемішати'), onPressed: player.toggleShuffle, icon: Icon(LucideIcons.shuffle, color: player.shuffle ? primary : muted)),
-                  IconButton(onPressed: player.prev, icon: Icon(LucideIcons.skipBack, size: 32, color: ink)),
-                  RoundIcon(icon: player.playing ? LucideIcons.pause : LucideIcons.play, onTap: player.toggle, filled: true, size: 68),
-                  IconButton(onPressed: player.next, icon: Icon(LucideIcons.skipForward, size: 32, color: ink)),
-                  IconButton(tooltip: tr('Повтор треку'), onPressed: player.toggleRepeat, icon: Icon(player.repeat ? LucideIcons.repeat1 : LucideIcons.repeat, color: player.repeat ? primary : muted)),
-                ],
-              ),
-              if (GcAudioHandler.failure != null) ...[
-                const SizedBox(height: 10),
-                Text(tr('Фонове відтворення недоступне: {failure}', {'failure': GcAudioHandler.failure}), textAlign: TextAlign.center, style: body(11, color: faint)),
-              ],
-              if (player.queue.length > 1) ...[
-                const SizedBox(height: 18),
-                Row(children: [
-                  Expanded(child: CardTitle(tr('Черга відтворення'), icon: LucideIcons.listMusic)),
-                  Text('${player.index + 1} / ${player.queue.length}', style: body(12, color: faint)),
-                ]),
-                Align(alignment: Alignment.centerLeft, child: Text(tr('Торкніться, щоб увімкнути; перетягніть за ⋮⋮, щоб змінити порядок.'), style: body(12, color: faint))),
-                const SizedBox(height: 6),
-                ReorderableListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  buildDefaultDragHandles: false,
-                  itemCount: player.queue.length,
-                  onReorderItem: player.move,
-                  proxyDecorator: (child, _, _) => Material(color: popover, elevation: 6, borderRadius: BorderRadius.circular(14), child: child),
-                  itemBuilder: (context, i) => _QueueRow(key: ObjectKey(player.queue[i]), player: player, i: i),
-                ),
-              ],
-            ],
-          ),
-          ),
-        );
-      },
-    ),
-  );
-}
-
-/// Свайп униз будь-де по плеєру закриває його, коли вміст прокручено до самого верху.
-class _PullToClose extends StatefulWidget {
-  const _PullToClose({required this.child});
-  final Widget child;
-
-  @override
-  State<_PullToClose> createState() => _PullToCloseState();
-}
-
-class _PullToCloseState extends State<_PullToClose> {
-  double pulled = 0;
-
-  void _close() {
-    pulled = 0;
-    Navigator.of(context).maybePop();
-  }
+/// Черга відтворення: торкнутися — увімкнути, перетягнути за ⋮⋮ — змінити порядок.
+class PlayerQueue extends StatelessWidget {
+  const PlayerQueue({required this.player, super.key});
+  final TrackPlayer player;
 
   @override
   Widget build(BuildContext context) {
-    return NotificationListener<ScrollNotification>(
-      onNotification: (n) {
-        if (n.depth != 0) return false;
-        if (n is OverscrollNotification && n.overscroll < 0 && n.dragDetails != null) {
-          pulled -= n.overscroll;
-          if (pulled > 72) _close();
-        } else if (n is ScrollEndNotification) {
-          // Швидкий змах униз від верху теж закриває.
-          if (n.metrics.pixels <= 0 && (n.dragDetails?.primaryVelocity ?? 0) > 700) _close();
-          pulled = 0;
-        } else if (n is ScrollStartNotification) {
-          pulled = 0;
-        }
-        return false;
-      },
-      child: widget.child,
-    );
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        Expanded(child: Text(tr('Торкніться, щоб увімкнути; перетягніть за ⋮⋮, щоб змінити порядок.'), style: body(12, color: faint))),
+        const SizedBox(width: 8),
+        Text('${player.index + 1} / ${player.queue.length}', style: body(12, color: faint)),
+      ]),
+      const SizedBox(height: 6),
+      ReorderableListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        buildDefaultDragHandles: false,
+        itemCount: player.queue.length,
+        onReorderItem: player.move,
+        proxyDecorator: (child, _, _) => Material(color: popover, elevation: 6, borderRadius: BorderRadius.circular(14), child: child),
+        itemBuilder: (context, i) => _QueueRow(key: ObjectKey(player.queue[i]), player: player, i: i),
+      ),
+    ]);
   }
 }
 
