@@ -405,7 +405,7 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
 
 
 /// Що нового в цій версії застосунку — один раз після оновлення.
-const whatsNewVersion = '1.1.46';
+const whatsNewVersion = '1.1.47';
 
 List<String> _whatsNew() => [
       tr('Новий вигляд, як на сайті: темна тема «Неоновий синій» і світла «Крижана Арктика» — у Налаштуваннях → Вигляд.'),
