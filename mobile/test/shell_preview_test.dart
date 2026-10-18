@@ -150,4 +150,44 @@ void main() {
     expect(tester.widget<PendingBar>(find.byType(PendingBar)).count, 0);
     await tester.pumpWidget(const SizedBox());
   });
+
+  testWidgets('тости угорі, як на сайті: тип, хрестик і смужка часу', (tester) async {
+    SharedPreferences.setMockInitialValues({'whats_new': whatsNewVersion});
+    final session = Session(await SharedPreferences.getInstance())..me = {'id': 1, 'name': 'Тоні Старк', 'first_name': 'Тоні', 'username': 'tonny'};
+    palette = arcticPalette;
+    addTearDown(() => palette = neonPalette);
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    final router = GoRouter(initialLocation: '/feed', routes: [
+      ShellRoute(
+        builder: (_, _, child) => AppShell(session: session, player: TrackPlayer(), child: child),
+        routes: [GoRoute(path: '/feed', builder: (_, _) => const _Feed())],
+      ),
+    ]);
+    final key = GlobalKey();
+    await tester.pumpWidget(RepaintBoundary(key: key, child: MaterialApp.router(debugShowCheckedModeBanner: false, theme: gameConTheme(), routerConfig: router)));
+    await tester.pump(const Duration(milliseconds: 300));
+    final context = tester.element(find.byType(_Feed));
+    toast(context, 'Вигляд збережено.');
+    toast(context, Exception('Не вдалося зберегти зміни.'));
+    toast(context, 'Нові функції вже доступні.', kind: ToastKind.info);
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 1200));
+    expect(find.text('Вигляд збережено.'), findsOneWidget);
+    expect(find.text('Не вдалося зберегти зміни.'), findsOneWidget);
+    if (out != null) {
+      await tester.runAsync(() async {
+        final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+        final image = await boundary.toImage(pixelRatio: 1);
+        final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+        File('$out/toasts-app.png').writeAsBytesSync(bytes!.buffer.asUint8List());
+      });
+    }
+    // Самі зникають, коли спливе час.
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Вигляд збережено.'), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
 }

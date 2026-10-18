@@ -405,7 +405,7 @@ Future<void> showFeedbackSheet(BuildContext context, {String screen = 'menu'}) a
 
 
 /// Що нового в цій версії застосунку — один раз після оновлення.
-const whatsNewVersion = '1.1.47';
+const whatsNewVersion = '1.1.48';
 
 List<String> _whatsNew() => [
       tr('Новий вигляд, як на сайті: темна тема «Неоновий синій» і світла «Крижана Арктика» — у Налаштуваннях → Вигляд.'),
@@ -413,6 +413,7 @@ List<String> _whatsNew() => [
       tr('На планшеті — шапка й список розділів ліворуч, як на сайті на комп’ютері.'),
       tr('Плеєр «Зараз грає»: колір обкладинки, вініл, хвиля прогресу й текст пісні в такт.'),
       tr('GameCon+ можна оформити прямо в застосунку через Google Play.'),
+      tr('Нові сповіщення вгорі екрана: колір за типом, хрестик і смужка часу.'),
     ];
 
 Future<void> showWhatsNew(BuildContext context, SharedPreferences prefs) async {

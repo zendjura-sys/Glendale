@@ -1306,16 +1306,247 @@ class SectionLabel extends StatelessWidget {
 
 // ───────────────────────── Шторки, тости, діалоги ─────────────────────────
 
-void toast(BuildContext context, Object message) {
-  final text = '$message';
+enum ToastKind { success, error, warning, info }
+
+/// Тост, як на сайті (.gc-toast): угорі під шапкою, іконка в кольорі типу, текст, хрестик
+/// і смужка часу. Нові — зверху; змахнути вгору чи вбік — закрити. Помилки (винятки, «Не вдалося…»)
+/// стають червоними, решта — зеленими, якщо тип не вказано.
+void toast(BuildContext context, Object message, {ToastKind? kind}) {
+  final text = '$message'.replaceFirst(RegExp(r'^Exception: '), '');
   // Ліміт GameCon+ від сервера («З GameCon+ — до 25») — лише пояснення, що це, без жодної оплати.
   final plus = isPlusLimit(message);
-  ScaffoldMessenger.maybeOf(context)
-    ?..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(
-      content: Text(text),
-      action: plus ? SnackBarAction(label: tr('Що таке GameCon+?'), onPressed: () => showProFeatures(context)) : null,
-    ));
+  final lower = text.toLowerCase();
+  final type = kind ??
+      (plus
+          ? ToastKind.info
+          : message is! String || lower.startsWith('не ') || lower.contains('не вдалося') || lower.contains('помилк')
+              ? ToastKind.error
+              : ToastKind.success);
+  final overlay = Overlay.maybeOf(context, rootOverlay: true);
+  if (overlay == null) return;
+  _Toasts.instance.show(
+    overlay,
+    _ToastData(text, type, action: plus ? (tr('Що таке GameCon+?'), () => showProFeatures(context)) : null),
+  );
+}
+
+class _ToastData {
+  _ToastData(this.text, this.kind, {this.action});
+  final String text;
+  final ToastKind kind;
+  final (String, VoidCallback)? action;
+  final key = UniqueKey();
+}
+
+/// Стопка тостів поверх усього застосунку (один шар у кореневому Overlay).
+class _Toasts {
+  _Toasts._();
+  static final instance = _Toasts._();
+  static const duration = Duration(milliseconds: 4500);
+  static const visible = 3;
+
+  final items = ValueNotifier<List<_ToastData>>([]);
+  OverlayEntry? _entry;
+
+  void show(OverlayState overlay, _ToastData data) {
+    final list = [data, ...items.value];
+    items.value = list.length > visible ? list.sublist(0, visible) : list;
+    // Один шар на всі тости (mounted ще false до першого кадру, тож перевіряємо саму наявність).
+    if (_entry == null) {
+      _entry = OverlayEntry(builder: (_) => _ToastStack(items: items, onDismiss: dismiss));
+      overlay.insert(_entry!);
+    }
+  }
+
+  void dismiss(_ToastData data) {
+    items.value = [for (final item in items.value) if (item != data) item];
+    if (items.value.isEmpty) {
+      _entry?.remove();
+      _entry = null;
+    }
+  }
+}
+
+class _ToastStack extends StatelessWidget {
+  const _ToastStack({required this.items, required this.onDismiss});
+  final ValueNotifier<List<_ToastData>> items;
+  final ValueChanged<_ToastData> onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final wide = media.size.width >= tabletWidth;
+    return Positioned(
+      top: media.viewPadding.top + siteBarHeight + 8,
+      left: wide ? null : 12,
+      right: wide ? 16 : 12,
+      child: SafeArea(
+        top: false,
+        bottom: false,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: wide ? 380 : 560),
+          child: ValueListenableBuilder(
+            valueListenable: items,
+            builder: (context, list, _) => Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final item in list)
+                  Padding(
+                    key: item.key,
+                    padding: EdgeInsets.only(bottom: 10),
+                    child: _ToastCard(data: item, onDismiss: () => onDismiss(item)),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ToastCard extends StatefulWidget {
+  const _ToastCard({required this.data, required this.onDismiss});
+  final _ToastData data;
+  final VoidCallback onDismiss;
+
+  @override
+  State<_ToastCard> createState() => _ToastCardState();
+}
+
+class _ToastCardState extends State<_ToastCard> with TickerProviderStateMixin {
+  late final appear = AnimationController(vsync: this, duration: Duration(milliseconds: 320));
+  late final timer = AnimationController(vsync: this, duration: _Toasts.duration);
+  bool leaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    appear.forward();
+    timer.addStatusListener((status) {
+      if (status == AnimationStatus.completed) _close();
+    });
+    timer.forward();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) appear.value = 1;
+  }
+
+  @override
+  void dispose() {
+    appear.dispose();
+    timer.dispose();
+    super.dispose();
+  }
+
+  Future<void> _close() async {
+    if (leaving || !mounted) return;
+    leaving = true;
+    timer.stop();
+    await appear.reverse();
+    widget.onDismiss();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // «!» та «i» — самим знаком у кружку (іконки Lucide для них уже мають власне коло).
+    final (color, Widget mark) = switch (widget.data.kind) {
+      ToastKind.success => (Color(0xFF22C55E), Icon(LucideIcons.check, size: 18, color: Colors.white)),
+      ToastKind.error => (Color(0xFFF43F5E), Icon(LucideIcons.x, size: 18, color: Colors.white)),
+      ToastKind.warning => (Color(0xFFF59E0B), Text('!', style: body(17, color: Colors.white, weight: FontWeight.w800).copyWith(height: 1))),
+      ToastKind.info => (primary, Text('i', style: body(17, color: Colors.white, weight: FontWeight.w800).copyWith(height: 1))),
+    };
+    final action = widget.data.action;
+    final curve = CurvedAnimation(parent: appear, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
+    return FadeTransition(
+      opacity: curve,
+      child: SlideTransition(
+        position: Tween(begin: Offset(0, -0.4), end: Offset.zero).animate(curve),
+        child: Dismissible(
+          key: widget.data.key,
+          direction: DismissDirection.up,
+          onDismissed: (_) => widget.onDismiss(),
+          child: Semantics(
+            liveRegion: true,
+            child: Material(
+              color: Colors.transparent,
+              child: GestureDetector(
+                // Утримання — пауза таймера, як наведення курсора на сайті.
+                onTapDown: (_) => timer.stop(),
+                onTapUp: (_) => timer.forward(),
+                onTapCancel: () => timer.forward(),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [palette.isLight ? BoxShadow(color: Color(0x33102A50), blurRadius: 28, offset: Offset(0, 10), spreadRadius: -12) : BoxShadow(color: Color(0xB3000000), blurRadius: 30, offset: Offset(0, 10), spreadRadius: -12)],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                      child: Container(
+                        color: popover.withValues(alpha: 0.96),
+                        child: Stack(children: [
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(14, 14, 8, 16),
+                            child: Row(children: [
+                              Container(
+                                width: 32,
+                                height: 32,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                                child: mark,
+                              ),
+                              SizedBox(width: 12),
+                              Expanded(child: Text(widget.data.text, style: body(14, weight: FontWeight.w600).copyWith(height: 1.35))),
+                              if (action != null)
+                                TextButton(
+                                  onPressed: () {
+                                    _close();
+                                    action.$2();
+                                  },
+                                  child: Text(action.$1, style: body(13, color: primary, weight: FontWeight.w600)),
+                                ),
+                              IconButton(
+                                tooltip: tr('Закрити'),
+                                visualDensity: VisualDensity.compact,
+                                onPressed: _close,
+                                icon: Icon(LucideIcons.x, size: 16, color: ink.withValues(alpha: 0.5)),
+                              ),
+                            ]),
+                          ),
+                          // Смужка часу: зменшується, поки тост на екрані.
+                          if (!MediaQuery.disableAnimationsOf(context))
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              height: 3,
+                              child: AnimatedBuilder(
+                                animation: timer,
+                                builder: (_, _) => FractionallySizedBox(
+                                  alignment: Alignment.centerLeft,
+                                  widthFactor: 1 - timer.value,
+                                  child: ColoredBox(color: color),
+                                ),
+                              ),
+                            ),
+                        ]),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Шторка знизу зі скляним фоном, ручкою й заголовком.
