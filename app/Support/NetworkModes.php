@@ -27,6 +27,9 @@ class NetworkModes
 
     private const GAMING = ['servers', 'games', 'clans', 'quests', 'moments', 'party', 'families'];
 
+    /** Модулі, додані після появи режимів: у збережених раніше режимах їх ще не було. */
+    private const ADDED_LATER = ['phone'];
+
     public function __construct(
         private readonly SiteSettings $settings,
         private readonly ModuleManager $modules,
@@ -74,6 +77,15 @@ class NetworkModes
         $modes = is_array($stored) && is_array($stored['modes'] ?? null)
             ? array_values(array_filter(array_map(fn ($mode) => $this->normalize($mode), $stored['modes'])))
             : $this->presets();
+        // Модулі, що з’явилися після збереження режимів (напр. «Телефон»), видно в усіх режимах,
+        // доки адміністратор сам не прибере їх із режиму.
+        if (is_array($stored) && is_array($stored['modes'] ?? null)) {
+            $known = is_array($stored['known_modules'] ?? null) ? $stored['known_modules'] : array_diff($this->moduleKeys(), self::ADDED_LATER);
+            $new = array_values(array_diff($this->moduleKeys(), $known));
+            foreach ($modes as $i => $mode) {
+                $modes[$i]['modules'] = array_values(array_intersect($this->moduleKeys(), array_unique([...$mode['modules'], ...$new])));
+            }
+        }
         if ($modes === []) {
             $modes = $this->presets();
         }
@@ -92,7 +104,7 @@ class NetworkModes
     public function save(array $config): void
     {
         $modes = array_values(array_filter(array_map(fn ($mode) => $this->normalize($mode), $config['modes'])));
-        $this->settings->put([self::SETTING => ['default' => $config['default'], 'modes' => $modes]]);
+        $this->settings->put([self::SETTING => ['default' => $config['default'], 'modes' => $modes, 'known_modules' => $this->moduleKeys()]]);
     }
 
     /**

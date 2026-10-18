@@ -31,6 +31,7 @@ if (typeof document !== 'undefined') {
         name &&
         name !== 'welcome' &&
         name !== 'start/mode' &&
+        name !== 'start/phone' &&
         !name.startsWith('legal/')
     ) {
         void socialLayout();
@@ -96,6 +97,7 @@ void createInertiaApp({
         switch (true) {
             case name === 'welcome':
             case name === 'start/mode':
+            case name === 'start/phone':
             case name.startsWith('legal/'):
                 return null;
             case name.startsWith('auth/'):

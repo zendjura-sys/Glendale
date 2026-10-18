@@ -6,6 +6,7 @@ use App\Http\Controllers\PlusController;
 use App\Models\Family;
 use App\Models\GtaServer;
 use App\Models\PaymentOrder;
+use App\Models\PhoneNumber;
 use App\Models\PlusGrant;
 use App\Models\PlusPayment;
 use App\Models\PlusRenewal;
@@ -14,6 +15,7 @@ use App\Models\User;
 use App\Models\WalletTransaction;
 use App\Notifications\BillingNotice;
 use App\Notifications\PlusGifted;
+use App\Services\Phones\PhoneNumbers;
 use App\Services\Plus\Plus;
 use App\Services\Plus\ServerPromotions;
 use Illuminate\Support\Facades\DB;
@@ -78,7 +80,7 @@ class Shop
      *
      * @param  array<string, mixed>  $input
      */
-    public function target(User $payer, string $product, array $input): User|Family|GtaServer
+    public function target(User $payer, string $product, array $input): User|Family|GtaServer|PhoneNumber
     {
         $kind = (string) (app(Catalog::class)->get($product)['kind'] ?? '');
 
@@ -88,6 +90,8 @@ class Shop
             'family' => PlusController::ledFamilies($payer)->firstWhere('id', (int) ($input['family_id'] ?? 0))
                 ?? throw ValidationException::withMessages(['family_id' => 'Підключити GameCon+ для сім’ї може лише її лідер.']),
             'promo' => $this->ownServer($payer, (int) ($input['server_id'] ?? 0)),
+            // Номер тримається за покупцем, поки триває оплата (без дублікатів — PhoneNumbers::hold).
+            'phone' => app(PhoneNumbers::class)->hold($payer, (string) ($input['phone_operator'] ?? ''), (string) ($input['phone_digits'] ?? ''), $product),
             default => throw ValidationException::withMessages(['product' => 'Невідомий товар.']),
         };
     }
@@ -246,18 +250,20 @@ class Shop
         return $payment;
     }
 
-    public function targetType(User|Family|GtaServer $target): string
+    public function targetType(User|Family|GtaServer|PhoneNumber $target): string
     {
         return match (true) {
+            $target instanceof PhoneNumber => 'phone',
             $target instanceof GtaServer => 'server',
             $target instanceof Family => 'family',
             default => 'user',
         };
     }
 
-    private function targetOf(string $type, int $id): User|Family|GtaServer|null
+    private function targetOf(string $type, int $id): User|Family|GtaServer|PhoneNumber|null
     {
         return match ($type) {
+            'phone' => PhoneNumber::query()->find($id),
             'server' => GtaServer::query()->find($id),
             'family' => Family::query()->find($id),
             default => User::query()->find($id),
@@ -286,6 +292,7 @@ class Shop
                 $this->plus->revoke($grant);
             }
             ServerPromotion::query()->where('payment_id', $payment->id)->update(['ends_at' => now()]);
+            app(PhoneNumbers::class)->revoke($payment->id);
 
             $payer = $payment->user;
             if ($payer !== null && $payment->provider === 'wallet' && str_starts_with($payment->provider_id, 'wt-')) {
@@ -305,9 +312,9 @@ class Shop
     /**
      * @throws InsufficientFunds
      */
-    private function charge(User $payer, string $product, User|Family|GtaServer $target, string $type, string $description): PlusPayment
+    private function charge(User $payer, string $product, User|Family|GtaServer|PhoneNumber $target, string $type, string $description): PlusPayment
     {
-        $price = self::price($product);
+        $price = app(Catalog::class)->priceFor($payer, $product);
         $txn = $this->wallet->debit($payer, $price, $type, $description, $product);
         $payment = PlusPayment::query()->create([
             'provider' => 'wallet',
@@ -315,6 +322,7 @@ class Shop
             'user_id' => $payer->id,
             'product' => $product,
             'target_type' => match (true) {
+                $target instanceof PhoneNumber => 'phone',
                 $target instanceof GtaServer => 'server',
                 $target instanceof Family => 'family',
                 default => 'user',
@@ -330,10 +338,16 @@ class Shop
         return $payment;
     }
 
-    private function apply(PlusPayment $payment, string $product, User|Family|GtaServer $target, User $payer, string $source): void
+    private function apply(PlusPayment $payment, string $product, User|Family|GtaServer|PhoneNumber $target, User $payer, string $source): void
     {
         $meta = (array) app(Catalog::class)->get($product);
         $days = (int) ($meta['days'] ?? 0);
+
+        if ($target instanceof PhoneNumber) {
+            app(PhoneNumbers::class)->activate($target, $payment->id);
+
+            return;
+        }
 
         if ($target instanceof GtaServer) {
             $this->promotions->start($target, (string) ($meta['promo'] ?? 'top'), $days, $payer, $payment->id);

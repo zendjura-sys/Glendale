@@ -14,6 +14,7 @@ import {
     Images,
     LayoutDashboard,
     Palette,
+    Phone,
     Music2,
     PlugZap,
     Puzzle,
@@ -111,6 +112,7 @@ function groups(): { title: string; items: Item[] }[] {
             items: [
                 { label: 'GameCon+', href: '/admin/plus', icon: Sparkles },
                 { label: tr('Білінг'), href: '/admin/billing', icon: Wallet },
+                { label: tr('Номери'), href: '/admin/phones', icon: Phone },
             ],
         },
         {

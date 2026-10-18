@@ -13,6 +13,7 @@ use App\Services\FriendshipService;
 use App\Services\I18n\ContentTranslator;
 use App\Services\Messenger;
 use App\Services\Moderation\ContentFilter;
+use App\Services\Phones\PhoneNumbers;
 use App\Services\Spotify\SpotifyClient;
 use App\Support\Backgrounds;
 use App\Support\I18n\Locales;
@@ -110,6 +111,8 @@ class HandleInertiaRequests extends Middleware
                     'background' => Backgrounds::for($user),
                     'skin' => Skins::for($user),
                     'theme' => Skins::theme($user),
+                    // Внутрішній номер GameCon (+555 / +777) або null.
+                    'phone' => $this->modules->enabled('phone') ? app(PhoneNumbers::class)->current($user)?->toCard() : null,
                     'hide_spoilers' => app(Plugins::class)->on('spoiler_switch') && (bool) $user->pref('hide_spoilers'),
                     'profanity_mask' => $user->pref('hide_profanity') ? app(ContentFilter::class)->clientPattern() : null,
                     // До коли діє GameCon+ (оплата — карткою через monobank, без балансу).
@@ -133,6 +136,9 @@ class HandleInertiaRequests extends Middleware
             'features' => fn () => app(NetworkModes::class)->featuresFor($user),
             // Сезонні прикраси (Новий рік, Великдень…) або null.
             'season' => fn () => app(Seasons::class)->for($user),
+            // Вікно «Отримайте номер» для акаунтів без номера (після онбордингу; «Пізніше» — більше не показуємо).
+            'phonePrompt' => fn () => $user !== null && $this->modules->enabled('phone') && $user->pref('onboarded') !== false
+                && $user->pref('phone_prompt') !== false && app(PhoneNumbers::class)->current($user) === null,
             // Фірмовий фон з адмінки (картинки для ПК і телефона) або null.
             'siteBackground' => fn () => Backgrounds::image(),
             'music' => $user ? fn () => $this->musicProps($user) : null,

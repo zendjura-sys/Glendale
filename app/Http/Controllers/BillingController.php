@@ -63,6 +63,8 @@ class BillingController extends Controller
             'username' => ['nullable', 'string', 'max:64'],
             'family_id' => ['nullable', 'integer'],
             'server_id' => ['nullable', 'integer'],
+            'phone_operator' => ['nullable', 'string', 'size:2'],
+            'phone_digits' => ['nullable', 'string', 'size:7'],
             'renew' => ['boolean'],
             'save_card' => ['boolean'],
         ]);
@@ -80,7 +82,7 @@ class BillingController extends Controller
     {
         $data = $request->validate(['product' => ['required', 'string', Rule::in(array_keys($this->catalog->products()))]]);
         $user = $request->user();
-        $price = $this->catalog->price($data['product']);
+        $price = $this->catalog->priceFor($user, $data['product']);
         $promo = $codes->discountFor($user, $data['product'], $price);
         $credit = min(max(0, (int) $user->balance), $price - $promo['amount']);
 
@@ -103,7 +105,7 @@ class BillingController extends Controller
             'product' => ['required', 'string', Rule::in(array_keys($this->catalog->products()))],
         ]);
         $result = $codes->redeem($request->user(), $data['code'], $data['product']);
-        $price = $this->catalog->price($data['product']);
+        $price = $this->catalog->priceFor($request->user(), $data['product']);
 
         return response()->json([
             ...$result,

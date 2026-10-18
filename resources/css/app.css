@@ -2438,8 +2438,7 @@ html[data-text='xl'] {
     --gc-float: 0 24px 60px -24px rgb(0 0 0 / 0.75);
 }
 
-/* =====================================================================================
- * Стиль «GameCon» — основний (html[data-skin='gamecon'], app/Support/Skins.php).
+/* ============================================================================== * Стиль «GameCon» — основний (html[data-skin='gamecon'], app/Support/Skins.php).
  * Розкладка класичної соцмережі, матове скло без рамок: усе, що позаду, розмивається,
  * межі блоків не видно — їх відділяє тінь. Дві теми (html[data-theme], lib/theme.ts):
  *   dark  — «Неоновий синій»: нічне тло, неоново-синій акцент і світіння;
@@ -3095,4 +3094,84 @@ html[data-text='xl'] {
     )
     .scrim {
     --scrim: #070914;
+}
+/* ── Внутрішні номери (components/phone): колір рівня, діамант — м’який перелив, без 3D. ── */
+.phone-tier--regular {
+    --tier: rgb(255 255 255 / 0.85);
+}
+.phone-tier--bronze {
+    --tier: #d9955c;
+}
+.phone-tier--silver {
+    --tier: #cfd8e3;
+}
+.phone-tier--gold {
+    --tier: #f4c64e;
+}
+.phone-tier--platinum {
+    --tier: #a9e4f2;
+}
+.phone-tier--diamond {
+    --tier: #c4b5fd;
+}
+.phone-badge {
+    color: var(--tier);
+}
+.phone-badge__label {
+    color: var(--tier);
+    background: color-mix(in srgb, var(--tier) 16%, transparent);
+}
+.phone-tier--diamond .phone-badge__number {
+    background: linear-gradient(90deg, #a5f3fc, #c4b5fd, #f0abfc, #a5f3fc) 0 0 /
+        300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: phone-diamond 6s linear infinite;
+}
+@keyframes phone-diamond {
+    to {
+        background-position: 300% 0;
+    }
+}
+/* Рамка картки рівня (вибір, підказки). */
+.phone-tier-ring {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tier) 45%, transparent);
+    background: color-mix(in srgb, var(--tier) 8%, transparent);
+}
+/* Клавіша набирача. */
+.phone-key {
+    transition:
+        background-color 0.15s ease,
+        transform 0.1s ease;
+}
+.phone-key:active {
+    transform: scale(0.96);
+}
+@media (prefers-reduced-motion: reduce) {
+    .phone-tier--diamond .phone-badge__number {
+        animation: none;
+    }
+    .phone-key:active {
+        transform: none;
+    }
+}
+/* Рівні внутрішніх номерів у «Крижаній Арктиці»: ті самі метали, але густіші, щоб читалися на білому. */
+:root[data-theme='light'] .phone-tier--regular {
+    --tier: #334155;
+}
+:root[data-theme='light'] .phone-tier--bronze {
+    --tier: #a35a1f;
+}
+:root[data-theme='light'] .phone-tier--silver {
+    --tier: #64748b;
+}
+:root[data-theme='light'] .phone-tier--gold {
+    --tier: #b7791f;
+}
+:root[data-theme='light'] .phone-tier--platinum {
+    --tier: #0e7490;
+}
+:root[data-theme='light'] .phone-tier--diamond {
+    --tier: #7c3aed;
 }

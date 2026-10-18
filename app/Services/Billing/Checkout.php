@@ -8,6 +8,7 @@ use App\Models\PlusPayment;
 use App\Models\PlusRenewal;
 use App\Models\User;
 use App\Notifications\BillingNotice;
+use App\Services\Phones\PhoneNumbers;
 use App\Services\Plus\PromoCodes;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -50,7 +51,7 @@ class Checkout
         }
         $target = $this->shop->target($payer, $product, $input);
         $recurring = (bool) ($this->catalog->get($product)['recurring'] ?? false);
-        $price = $this->catalog->price($product);
+        $price = $this->catalog->priceFor($payer, $product);
         $promo = app(PromoCodes::class)->discountFor($payer, $product, $price);
         $credit = min(max(0, (int) $payer->balance), $price - $promo['amount']);
         $renew = $renew && $recurring;
@@ -248,6 +249,15 @@ class Checkout
             rescue(fn () => $this->monobank->remove($order->invoice_id), report: false);
         }
         $order->update(['status' => PaymentOrder::CANCELLED]);
+        $this->releasePhone($order);
+    }
+
+    /** Неоплачений номер більше не тримаємо — його може взяти інший. */
+    private function releasePhone(PaymentOrder $order): void
+    {
+        if ($order->target_type === 'phone') {
+            app(PhoneNumbers::class)->releaseHold($order->target_id);
+        }
     }
 
     /**
@@ -327,6 +337,9 @@ class Checkout
     {
         $changed = PaymentOrder::query()->whereKey($order->id)->where('status', PaymentOrder::PENDING)
             ->update(['status' => PaymentOrder::FAILED, 'failure' => mb_substr($reason, 0, 255)]);
+        if ($changed > 0) {
+            $this->releasePhone($order);
+        }
         if ($changed === 0 || $order->kind !== 'renewal' || $order->renewal_id === null) {
             return;
         }

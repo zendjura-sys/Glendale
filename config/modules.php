@@ -52,6 +52,15 @@ return [
         'default' => true,
         'nav' => ['label' => 'Повідомлення', 'route' => 'messages.index', 'position' => 30],
     ],
+    'phone' => [
+        'name' => 'Телефон',
+        'description' => 'Внутрішні номери (+555 випадкові, +777 куплені), набирач, дзвінки й повідомлення за номером.',
+        'icon' => 'phone',
+        'core' => false,
+        'available' => true,
+        'default' => true,
+        'nav' => ['label' => 'Телефон', 'route' => 'phone.index', 'position' => 32],
+    ],
     'communities' => [
         'name' => 'Спільноти',
         'description' => 'Групи та публічні сторінки з власною стіною й адмінами.',

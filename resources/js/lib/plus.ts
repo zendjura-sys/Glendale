@@ -28,6 +28,12 @@ export const PRODUCT_LABELS = (): Record<string, string> => ({
     promo_highlight_7: tr('Виділена картка · 7 днів'),
     promo_highlight_30: tr('Виділена картка · 30 днів'),
     promo_banner_30: tr('Банер над каталогом · 30 днів'),
+    phone_regular: tr('Номер +777 · звичайний'),
+    phone_bronze: tr('Номер +777 · бронзовий'),
+    phone_silver: tr('Номер +777 · срібний'),
+    phone_gold: tr('Номер +777 · золотий'),
+    phone_platinum: tr('Номер +777 · платиновий'),
+    phone_diamond: tr('Номер +777 · діамантовий'),
 });
 
 /** Купити карткою: відкриває вікно оплати (BillingHost). */

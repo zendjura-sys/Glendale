@@ -31,6 +31,7 @@ import { UserAvatar } from '@/components/gc/user-avatar';
 import { VoiceBar } from '@/components/gc/voice-bar';
 import { VerifiedBadge } from '@/components/gc/verified-badge';
 import { BillingHost } from '@/components/billing/billing-host';
+import { PhonePrompt } from '@/components/phone/phone-prompt';
 import { PlusMenuCard } from '@/components/gc/plus-card';
 import { PlusBadge, plusNameProps, plusNameStyle } from '@/components/gc/plus';
 import { PlayerBar } from '@/components/music/player-bar';
@@ -701,6 +702,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
             <VoiceBar />
             {modules.includes('music') && <PlayerBar />}
             <BillingHost />
+            <PhonePrompt />
             <MobileNav />
             <FeedbackDialog />
             <KeyboardShortcuts username={auth.user.username} />
