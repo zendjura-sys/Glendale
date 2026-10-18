@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { Fragment, useEffect, useRef, type ReactNode } from 'react';
 import { FriendButton } from '@/components/gc/friend-button';
+import { PhoneBadge } from '@/components/phone/phone-badge';
 import { PostCard } from '@/components/gc/post-card';
 import { PostComposer } from '@/components/gc/post-composer';
 import { PostSkeleton } from '@/components/gc/post-skeleton';
@@ -45,6 +46,7 @@ import { compactNumber, formatDate, lastSeen, plural } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type {
     NowPlaying,
+    PhoneCard,
     PostItem,
     Relation,
     ScrollData,
@@ -89,6 +91,8 @@ type Profile = UserCard & {
     header_fx?: 'aurora' | 'rim' | null;
     /** GameCon+: відеофон власника (ID YouTube) — фон сторінки й для гостей. */
     background_video?: string | null;
+    /** Внутрішній номер (якщо власник показує його в профілі). */
+    phone?: (PhoneCard & { can_call: boolean }) | null;
     about: string | null;
     city: string | null;
     birthday: string | null;
@@ -548,6 +552,24 @@ export default function ProfileShow({
                                           })}
                                 </span>
                             )}
+                            {profile.phone &&
+                                (profile.phone.can_call ? (
+                                    <Link
+                                        href={`/phone?dial=${encodeURIComponent(profile.phone.number)}`}
+                                        title={tr('Набрати номер')}
+                                        className="inline-flex items-center rounded-lg transition hover:opacity-80"
+                                    >
+                                        <PhoneBadge
+                                            phone={profile.phone}
+                                            size="sm"
+                                        />
+                                    </Link>
+                                ) : (
+                                    <PhoneBadge
+                                        phone={profile.phone}
+                                        size="sm"
+                                    />
+                                ))}
                             {profile.city && (
                                 <span className="inline-flex items-center gap-1.5">
                                     <MapPin className="size-4 text-gc-lilac-400" />{' '}

@@ -8,7 +8,7 @@ import { PRODUCT_LABELS } from '@/lib/plus';
 
 type Product = {
     key: string;
-    kind: 'plus' | 'gift' | 'family' | 'promo';
+    kind: 'plus' | 'gift' | 'family' | 'promo' | 'phone';
     price: number;
     days: number;
     recurring: boolean;
@@ -70,6 +70,7 @@ const GROUPS = (): Record<Product['kind'], string> => ({
     family: tr('GameCon+ для сім’ї'),
     gift: tr('Подарунок другу'),
     promo: tr('Просування сервера'),
+    phone: tr('Внутрішні номери +777'),
 });
 
 /**

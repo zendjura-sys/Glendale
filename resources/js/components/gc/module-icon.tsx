@@ -11,6 +11,7 @@ import {
     MessageCircle,
     Music,
     Newspaper,
+    Phone,
     Search,
     Server,
     Shield,
@@ -23,6 +24,7 @@ import type { LucideIcon, LucideProps } from 'lucide-react';
 const icons: Record<string, LucideIcon> = {
     'user-round': UserRound,
     newspaper: Newspaper,
+    phone: Phone,
     'users-round': UsersRound,
     search: Search,
     'message-circle': MessageCircle,

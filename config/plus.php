@@ -25,6 +25,13 @@ return [
         'promo_highlight_7' => ['kind' => 'promo', 'promo' => 'highlight', 'name' => 'Виділена картка · 7 днів', 'price' => 199, 'days' => 7, 'recurring' => false],
         'promo_highlight_30' => ['kind' => 'promo', 'promo' => 'highlight', 'name' => 'Виділена картка · 30 днів', 'price' => 590, 'days' => 30, 'recurring' => false],
         'promo_banner_30' => ['kind' => 'promo', 'promo' => 'banner', 'name' => 'Банер над каталогом серверів · 30 днів', 'price' => 2490, 'days' => 30, 'recurring' => false],
+        // Внутрішні номери +777 (App\Services\Phones): ціна за рівнем номера, з GameCon+ — знижка (Адмінка → Номери).
+        'phone_regular' => ['kind' => 'phone', 'name' => 'Номер +777 · звичайний', 'price' => 19, 'days' => 0, 'recurring' => false],
+        'phone_bronze' => ['kind' => 'phone', 'name' => 'Номер +777 · бронзовий', 'price' => 49, 'days' => 0, 'recurring' => false],
+        'phone_silver' => ['kind' => 'phone', 'name' => 'Номер +777 · срібний', 'price' => 99, 'days' => 0, 'recurring' => false],
+        'phone_gold' => ['kind' => 'phone', 'name' => 'Номер +777 · золотий', 'price' => 199, 'days' => 0, 'recurring' => false],
+        'phone_platinum' => ['kind' => 'phone', 'name' => 'Номер +777 · платиновий', 'price' => 499, 'days' => 0, 'recurring' => false],
+        'phone_diamond' => ['kind' => 'phone', 'name' => 'Номер +777 · діамантовий', 'price' => 999, 'days' => 0, 'recurring' => false],
     ],
 
     // Скільки серверів одночасно може займати платне місце.

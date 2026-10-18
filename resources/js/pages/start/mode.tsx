@@ -69,7 +69,7 @@ export default function StartMode({
                         {...rise(1)}
                         className="text-sm font-medium text-primary"
                     >
-                        {tr('Ласкаво просимо!')}
+                        {tr('Ще один крок')}
                     </m.p>
                     <m.h1
                         {...rise(2)}

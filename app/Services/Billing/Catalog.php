@@ -2,6 +2,8 @@
 
 namespace App\Services\Billing;
 
+use App\Models\User;
+use App\Services\Phones\PhoneNumbers;
 use App\Support\Settings\SiteSettings;
 
 /**
@@ -11,7 +13,7 @@ use App\Support\Settings\SiteSettings;
  */
 class Catalog
 {
-    public const KINDS = ['plus', 'family', 'gift', 'promo'];
+    public const KINDS = ['plus', 'family', 'gift', 'promo', 'phone'];
 
     public const PROMOS = ['top', 'highlight', 'banner'];
 
@@ -75,6 +77,18 @@ class Catalog
     public function price(string $key): int
     {
         return (int) ($this->get($key)['price'] ?? 0) * 100;
+    }
+
+    /** Ціна для покупця (копійки): номери з GameCon+ — зі знижкою з Адмінка → Номери. */
+    public function priceFor(?User $user, string $key): int
+    {
+        $price = $this->price($key);
+        if ($user !== null && $user->isPlus() && ($this->get($key)['kind'] ?? null) === 'phone') {
+            $discount = app(PhoneNumbers::class)->config()['plus_discount'];
+            $price = (int) (round($price * (100 - $discount) / 100 / 100) * 100);
+        }
+
+        return $price;
     }
 
     public function enabled(string $key): bool

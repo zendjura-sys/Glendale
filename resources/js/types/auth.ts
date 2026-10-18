@@ -26,6 +26,8 @@ export type User = {
     skin?: string;
     /** Фон сайту: сцена, чи рухається вона, і відео YouTube (лише з GameCon+). */
     background?: SiteBackgroundPrefs;
+    /** Внутрішній номер GameCon (+555 випадковий / +777 куплений). */
+    phone?: PhoneCard | null;
     hide_spoilers?: boolean;
     /** GameCon+ активний до (ISO), null — немає. */
     plus_until?: string | null;
@@ -87,4 +89,18 @@ export type SiteBackgroundPrefs = {
     preset: SiteBackgroundPreset;
     motion: boolean;
     video: string | null;
+};
+
+export type PhoneTier =
+    | 'regular'
+    | 'bronze'
+    | 'silver'
+    | 'gold'
+    | 'platinum'
+    | 'diamond';
+
+export type PhoneCard = {
+    number: string;
+    tier: PhoneTier;
+    kind: 'random' | 'purchased';
 };

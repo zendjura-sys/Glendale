@@ -35,6 +35,7 @@ use App\Http\Controllers\NowPlayingController;
 use App\Http\Controllers\OAuth;
 use App\Http\Controllers\PartyController;
 use App\Http\Controllers\PeopleController;
+use App\Http\Controllers\PhoneController;
 use App\Http\Controllers\PhotoAlbumController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PlayingController;
@@ -119,6 +120,20 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('start', [StartController::class, 'store'])->name('start.store');
     Route::post('start/skip', [StartController::class, 'skip'])->name('start.skip');
     Route::get('start/mode', [StartController::class, 'mode'])->name('start.mode');
+    Route::get('start/phone', [StartController::class, 'phone'])->name('start.phone');
+    Route::post('start/phone', [StartController::class, 'phoneDone'])->name('start.phone.done');
+    // Внутрішні номери: свій номер, набирач, дзвінки й повідомлення за номером.
+    Route::prefix('phone')->name('phone.')->middleware('module:phone')->controller(PhoneController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('picker', 'picker')->name('picker');
+        Route::post('random', 'random')->middleware('throttle:10,1')->name('random');
+        Route::get('check', 'check')->middleware('throttle:120,1')->name('check');
+        Route::get('suggest', 'suggest')->middleware('throttle:60,1')->name('suggest');
+        Route::get('lookup', 'lookup')->middleware('throttle:60,1')->name('lookup');
+        Route::post('dial', 'dial')->middleware('throttle:30,1')->name('dial');
+        Route::put('settings', 'settings')->name('settings');
+        Route::post('dismiss', 'dismiss')->name('dismiss');
+    });
     Route::post('start/mode', [StartController::class, 'chooseMode'])->name('start.mode.store');
     Route::get('cards/search', [FollowController::class, 'cards'])->middleware('throttle:120,1')->name('cards.search');
     Route::post('follows', [FollowController::class, 'toggle'])->middleware('throttle:60,1')->name('follows.toggle');
@@ -666,6 +681,13 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::delete('stickers/{pack}', [Admin\StickerController::class, 'destroy'])->name('stickers.destroy');
         Route::post('stickers/{pack}/items', [Admin\StickerController::class, 'upload'])->name('stickers.upload');
         Route::delete('stickers/{pack}/items/{sticker}', [Admin\StickerController::class, 'destroySticker'])->scopeBindings()->name('stickers.items.destroy');
+        Route::prefix('phones')->name('phones.')->controller(Admin\PhoneNumbersController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::put('/', 'update')->name('update');
+            Route::post('rules', 'storeRule')->name('rules.store');
+            Route::delete('rules/{rule}', 'destroyRule')->whereNumber('rule')->name('rules.destroy');
+            Route::delete('numbers/{number}', 'destroyNumber')->whereNumber('number')->name('numbers.destroy');
+        });
         Route::get('modes', [Admin\ModesController::class, 'index'])->name('modes.index');
         Route::put('modes', [Admin\ModesController::class, 'update'])->name('modes.update');
         Route::post('modes/reset', [Admin\ModesController::class, 'reset'])->name('modes.reset');

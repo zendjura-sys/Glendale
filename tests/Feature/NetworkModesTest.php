@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Support\NetworkModes;
+use App\Support\Settings\SiteSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -64,6 +65,9 @@ class NetworkModesTest extends TestCase
         $user = User::query()->where('email', 'olena@example.com')->firstOrFail();
 
         $this->actingAs($user)->get('/feed')->assertRedirect('/start');
+        // Реєстрація → номер → режим.
+        $this->actingAs($user)->get('/start')->assertRedirect('/start/phone');
+        $this->actingAs($user)->post('/start/phone')->assertRedirect('/start/mode');
         $this->actingAs($user)->get('/start')->assertRedirect('/start/mode');
         $this->actingAs($user)->get('/start/mode')->assertOk()
             ->assertInertia(fn ($page) => $page->component('start/mode')->has('modes', 6));
@@ -126,5 +130,20 @@ class NetworkModesTest extends TestCase
 
         $this->actingAs($admin)->post('/admin/modes/reset')->assertRedirect();
         $this->assertSame('all', $modes->config()['default']);
+    }
+
+    public function test_modules_added_after_modes_were_saved_are_visible(): void
+    {
+        // Режими, збережені до появи «Телефону» (без known_modules), — номер однаково видно.
+        app(SiteSettings::class)->put([NetworkModes::SETTING => ['default' => 'all', 'modes' => [
+            ['id' => 'all', 'name' => 'Все', 'enabled' => true, 'modules' => ['profile', 'feed', 'friends', 'messages']],
+        ]]]);
+        $this->assertContains('phone', app(NetworkModes::class)->config()['modes'][0]['modules']);
+
+        // Адміністратор прибрав його з режиму й зберіг — лишається прибраним.
+        $config = app(NetworkModes::class)->config();
+        $config['modes'][0]['modules'] = ['profile', 'feed', 'friends', 'messages'];
+        app(NetworkModes::class)->save($config);
+        $this->assertNotContains('phone', app(NetworkModes::class)->config()['modes'][0]['modules']);
     }
 }

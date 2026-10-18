@@ -26,7 +26,7 @@ type UserRef = { id: number; name: string; username: string };
 
 type Product = {
     key: string;
-    kind: 'plus' | 'family' | 'gift' | 'promo';
+    kind: 'plus' | 'family' | 'gift' | 'promo' | 'phone';
     promo: 'top' | 'highlight' | 'banner' | null;
     name: string;
     price: number;
@@ -107,6 +107,7 @@ const KIND_LABELS = (): Record<Product['kind'], string> => ({
     family: tr('Сім’я'),
     gift: tr('Подарунок'),
     promo: tr('Просування'),
+    phone: tr('Номер'),
 });
 
 const PROMO_LABELS = (): Record<string, string> => ({
@@ -456,13 +457,14 @@ function ProductsForm({ products }: { products: Product[] }) {
                                         })
                                     }
                                 >
-                                    {Object.entries(KIND_LABELS()).map(
-                                        ([key, label]) => (
+                                    {Object.entries(KIND_LABELS())
+                                        // Номери продаються лише за рівнями (phone_*), нових таких тарифів не буває.
+                                        .filter(([kind]) => kind !== 'phone')
+                                        .map(([key, label]) => (
                                             <option key={key} value={key}>
                                                 {label}
                                             </option>
-                                        ),
-                                    )}
+                                        ))}
                                 </select>
                             ) : (
                                 <span className="block h-9 py-2 text-white/70">
