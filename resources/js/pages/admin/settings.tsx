@@ -26,6 +26,7 @@ type Settings = {
     site_name: string;
     tagline: string;
     seo_description: string;
+    seo_same_as: string | null;
     play_store_enabled: boolean;
     play_store_url: string;
     play_store_badge: 'get' | 'preregister';
@@ -273,6 +274,7 @@ export default function AdminSettings({
         ...settings,
         tagline: settings.tagline ?? '',
         seo_description: settings.seo_description ?? '',
+        seo_same_as: settings.seo_same_as ?? '',
         play_store_enabled: Boolean(settings.play_store_enabled),
         play_store_url: settings.play_store_url ?? '',
         play_store_badge:
@@ -360,6 +362,30 @@ export default function AdminSettings({
                             className="input-glass w-full resize-y rounded-xl px-3.5 py-3 text-sm text-white placeholder:text-white/30"
                         />
                         <InputError message={errors.seo_description} />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="seo_same_as">
+                            {tr('Офіційні сторінки в соцмережах')}
+                        </Label>
+                        <textarea
+                            id="seo_same_as"
+                            value={data.seo_same_as ?? ''}
+                            onChange={(e) =>
+                                setData('seo_same_as', e.target.value)
+                            }
+                            rows={3}
+                            maxLength={2000}
+                            placeholder={
+                                'https://t.me/gamecon\nhttps://www.instagram.com/gamecon'
+                            }
+                            className="input-glass w-full resize-y rounded-xl px-3.5 py-3 text-sm text-white placeholder:text-white/30"
+                        />
+                        <p className="text-xs text-white/45">
+                            {tr(
+                                'По одній адресі в рядку: Telegram, Instagram, TikTok, YouTube, Discord. Пошуковики пов’язують їх із сайтом.',
+                            )}
+                        </p>
+                        <InputError message={errors.seo_same_as} />
                     </div>
                     <img
                         loading="lazy"

@@ -195,14 +195,14 @@ export default function Welcome({
                     <nav className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
                         <Link
                             href={login()}
-                            className="rounded-xl px-3 py-2 text-sm font-medium whitespace-nowrap text-white/75 transition hover:bg-white/[0.06] hover:text-white sm:px-4"
+                            className="inline-flex min-h-11 items-center rounded-xl px-3 text-sm font-medium whitespace-nowrap text-white/75 transition hover:bg-white/[0.06] hover:text-white sm:px-4"
                         >
                             {tr('Увійти')}
                         </Link>
                         {canRegister && (
                             <Link
                                 href={register()}
-                                className="btn-glow rounded-xl px-3.5 py-2 text-sm font-semibold whitespace-nowrap sm:px-4"
+                                className="btn-glow inline-flex min-h-11 items-center rounded-xl px-3.5 text-sm font-semibold whitespace-nowrap sm:px-4"
                             >
                                 {tr('Реєстрація')}
                             </Link>

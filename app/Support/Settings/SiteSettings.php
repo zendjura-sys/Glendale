@@ -15,6 +15,8 @@ class SiteSettings
     public const DEFAULTS = [
         'site_name' => 'GameCon',
         'tagline' => 'Соціальна мережа нового покоління',
+        // Офіційні сторінки сайту в соцмережах (по одній адресі в рядку) — для розмітки Schema «sameAs».
+        'seo_same_as' => null,
         'seo_description' => 'GameCon — соціальна мережа для геймерів і кіноманів: друзі, спільноти, музика, кіно, сімʼї та ігрові сервери.',
         'play_store_enabled' => false,
         'play_store_url' => null,
@@ -178,6 +180,20 @@ class SiteSettings
         return is_string($value) && trim($value) !== ''
             ? trim($value)
             : (string) self::DEFAULTS['seo_description'];
+    }
+
+    /**
+     * Офіційні сторінки в соцмережах і магазинах застосунків — для розмітки Organization.sameAs.
+     *
+     * @return list<string>
+     */
+    public function seoSameAs(): array
+    {
+        $lines = preg_split('/\R/', (string) $this->get('seo_same_as')) ?: [];
+        $links = array_values(array_filter(array_map('trim', $lines), fn (string $url) => preg_match('#\Ahttps://[^\s<>"]+\z#i', $url) === 1));
+        $play = $this->playStoreUrl();
+
+        return array_values(array_unique($play !== null ? [...$links, $play] : $links));
     }
 
     public function playStoreUrl(): ?string

@@ -46,7 +46,8 @@ export function SiteFooter({
                         {i > 0 && <span aria-hidden>|</span>}
                         <Link
                             href={link.href}
-                            className="rounded px-1 transition hover:text-white"
+                            // Не менше 44 px — зручно влучити пальцем.
+                            className="inline-flex min-h-11 items-center rounded-lg px-2 transition hover:text-white"
                         >
                             {link.label}
                         </Link>

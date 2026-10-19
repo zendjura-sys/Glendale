@@ -11,6 +11,7 @@
         <script>
             (function () {
                 var d = document.documentElement, pref = d.dataset.themePref;
+                d.classList.add('js');
                 if (pref === 'guest') {
                     try { pref = localStorage.getItem('gc-theme') || 'system'; } catch (e) { pref = 'system'; }
                 }
@@ -58,19 +59,50 @@
         <meta name="twitter:image" content="{{ $seoImage }}">
         <meta name="twitter:image:alt" content="{{ $seoName }}">
 
+        @php
+            // Хто стоїть за сайтом (Organization) — для пошуковиків: логотип, контакт підтримки, офіційні сторінки.
+            $seoEmail = trim((string) ($seo->get('legal_email') ?: config('legal.email')));
+            $seoGraph = [
+                [
+                    '@type' => 'WebSite',
+                    '@id' => url('/').'#website',
+                    'name' => $seoName,
+                    'description' => $seoDescription,
+                    'url' => url('/'),
+                    'inLanguage' => 'uk-UA',
+                    'publisher' => ['@id' => url('/').'#organization'],
+                ],
+                array_filter([
+                    '@type' => 'Organization',
+                    '@id' => url('/').'#organization',
+                    'name' => $seoName,
+                    'url' => url('/'),
+                    'logo' => url('/apple-touch-icon.png'),
+                    'image' => $seoImage,
+                    'email' => $seoEmail !== '' ? $seoEmail : null,
+                    'sameAs' => $seo->seoSameAs() ?: null,
+                    'contactPoint' => $seoEmail !== '' ? [[
+                        '@type' => 'ContactPoint',
+                        'contactType' => 'customer support',
+                        'email' => $seoEmail,
+                        'url' => url('/contacts'),
+                        'availableLanguage' => ['uk', 'en'],
+                    ]] : null,
+                ]),
+            ];
+        @endphp
         <script type="application/ld+json">
             {!! json_encode([
                 '@@context' => 'https://schema.org',
-                '@type' => 'WebSite',
-                'name' => $seoName,
-                'description' => $seoDescription,
-                'url' => url('/'),
+                '@graph' => $seoGraph,
             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) !!}
         </script>
 
         <style>
             html { background-color: #05070f; }
             html[data-theme='light'] { background-color: #e9f1f8; }
+            /* Текст головної для пошуковиків і браузерів без JavaScript; з JavaScript його замінює сайт. */
+            html.js .seo-static { display: none; }
         </style>
 
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -104,5 +136,8 @@
     </head>
     <body class="font-sans antialiased">
         <x-inertia::app />
+        @if (($page['component'] ?? null) === 'welcome')
+            @include('seo.home', ['name' => $seoName, 'description' => $seoDescription, 'email' => $seoEmail])
+        @endif
     </body>
 </html>
