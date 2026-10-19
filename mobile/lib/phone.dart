@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'api.dart';
+import 'play_billing.dart';
 import 'i18n.dart';
 import 'state.dart';
 import 'theme.dart';
@@ -14,7 +15,8 @@ import 'widgets.dart';
 
 // «Телефон» — як на сайті (pages/phone/index.tsx): свій внутрішній номер, набирач, дзвінок і повідомлення
 // за номером, подарунки й передача номера друзям, приватність і останні дзвінки. Усе через міст /site/phone.
-// Купити гарний номер у застосунку не можна: цифрові покупки — лише через Google Play Billing.
+// Купити гарний номер можна лише через Google Play Billing (play_billing.dart): ціна — за рівнем номера
+// з Google Play, сервер бронює номер на час оплати й сам перевіряє покупку.
 
 const phoneTiers = ['regular', 'bronze', 'silver', 'gold', 'platinum', 'diamond'];
 
@@ -116,6 +118,7 @@ class PhoneScreen extends StatelessWidget {
         _Dialer(initial: dial, premium: text((data['codes'] as Map?)?['premium']) ?? '777'),
         SizedBox(height: 12),
         _MyNumber(data: data, reload: reload),
+        _BuyNumber(data: data, reload: reload),
         _Offers(data: data, reload: reload),
         SizedBox(height: 12),
         _Privacy(data: data, reload: reload),
@@ -621,6 +624,212 @@ Future<Map<String, dynamic>?> pickFriend(BuildContext context, List<Map<String, 
               ),
           ]),
   );
+}
+
+// ───────────────────────── Купити гарний номер ─────────────────────────
+
+/// «Купити гарний номер»: код оператора й 7 цифр або «Підібрати» за рівнем; ціна рівня — з Google Play.
+/// Показується лише в збірці з Google Play, коли продаж номерів увімкнено в адмінці.
+class _BuyNumber extends StatefulWidget {
+  const _BuyNumber({required this.data, required this.reload});
+  final Map<String, dynamic> data;
+  final Future<void> Function() reload;
+
+  @override
+  State<_BuyNumber> createState() => _BuyNumberState();
+}
+
+class _BuyNumberState extends State<_BuyNumber> {
+  final operator = TextEditingController();
+  final digits = TextEditingController();
+  Map<String, dynamic>? check;
+  List<Map<String, dynamic>> ideas = [];
+  String? ideasTier;
+  bool loadingIdeas = false;
+  Map<String, dynamic>? giftTo;
+  Timer? _debounce;
+  PlayBilling? _billing;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _billing = AppScope.read(context).session.subscription.billing..addListener(_onBilling);
+      _billing!.loadPhones();
+    });
+  }
+
+  @override
+  void dispose() {
+    _billing?.removeListener(_onBilling);
+    _debounce?.cancel();
+    operator.dispose();
+    digits.dispose();
+    super.dispose();
+  }
+
+  /// Покупку підтверджено — тост і свіжі дані екрана.
+  void _onBilling() {
+    final message = _billing?.phoneMessage;
+    if (message == null || !mounted) return;
+    _billing!.phoneMessage = null;
+    toast(context, message);
+    setState(() {
+      check = null;
+      giftTo = null;
+      operator.clear();
+      digits.clear();
+    });
+    widget.reload();
+  }
+
+  void _changed() {
+    _debounce?.cancel();
+    setState(() => check = null);
+    final op = operator.text, d = digits.text;
+    if (op.length != 2 || d.length != 7) return;
+    _debounce = Timer(Duration(milliseconds: 250), () async {
+      try {
+        final data = await AppScope.read(context).session.api.get(Api.site('/phone/check?operator=$op&digits=$d'));
+        if (mounted && op == operator.text && d == digits.text) setState(() => check = data);
+      } catch (e) {
+        if (mounted) toast(context, e);
+      }
+    });
+  }
+
+  /// Лише цифри й не довше за потрібне (код оператора — 2, номер — 7).
+  void _clamp(TextEditingController field, int max) {
+    final clean = field.text.replaceAll(RegExp(r'\D'), '');
+    final value = clean.length > max ? clean.substring(0, max) : clean;
+    if (value != field.text) field.value = TextEditingValue(text: value, selection: TextSelection.collapsed(offset: value.length));
+    _changed();
+  }
+
+  Future<void> _suggest(String tier) async {
+    setState(() {
+      ideasTier = tier;
+      loadingIdeas = true;
+    });
+    final op = operator.text.length == 2 ? '&operator=${operator.text}' : '';
+    try {
+      final data = await AppScope.read(context).session.api.get(Api.site('/phone/suggest?tier=$tier$op'));
+      if (mounted) setState(() => ideas = maps(data['numbers']));
+    } catch (e) {
+      if (mounted) toast(context, e);
+    } finally {
+      if (mounted) setState(() => loadingIdeas = false);
+    }
+  }
+
+  void _pick(Map<String, dynamic> idea) {
+    operator.text = '${idea['operator']}';
+    digits.text = '${idea['digits']}';
+    _changed();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final billing = AppScope.of(context).session.subscription.billing;
+    return ListenableBuilder(
+      listenable: billing,
+      builder: (context, _) {
+        if (!PlayBilling.supported || !billing.phonesAvailable) return SizedBox.shrink();
+        final premium = text((widget.data['codes'] as Map?)?['premium']) ?? '777';
+        final tier = text(check?['tier']);
+        final price = tier == null ? null : billing.phonePrices[tier]?.price;
+        final available = check?['available'] == true;
+        final labels = tierLabels();
+        return Padding(
+          padding: EdgeInsets.only(top: 12),
+          child: Glass(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Text(tr('Купити гарний номер'), style: body(16, weight: FontWeight.w600)),
+              SizedBox(height: 4),
+              Text(tr('Мережа +{code}: свій код оператора й цифри. Ціна — за рівнем номера.', {'code': premium}), style: body(13, color: muted)),
+              SizedBox(height: 14),
+              Row(children: [
+                Text('+$premium', style: body(18, color: muted, weight: FontWeight.w600)),
+                SizedBox(width: 8),
+                SizedBox(
+                  width: 64,
+                  child: GcField(controller: operator, label: '05', keyboard: TextInputType.number, onChanged: (_) => _clamp(operator, 2)),
+                ),
+                SizedBox(width: 8),
+                Expanded(child: GcField(controller: digits, label: '7777777', keyboard: TextInputType.number, onChanged: (_) => _clamp(digits, 7))),
+              ]),
+              SizedBox(height: 10),
+              // Перевірка номера: рівень, вільний чи ні, ціна з Google Play.
+              AnimatedSwitcher(
+                duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : Duration(milliseconds: 200),
+                child: check == null
+                    ? Text(tr('Введіть код оператора й 7 цифр — або підберіть готовий нижче.'), key: ValueKey('hint'), style: body(12, color: faint))
+                    : Row(key: ValueKey('${check!['number']}'), children: [
+                        Expanded(child: PhoneBadge(phone: check!, size: 15, showLabel: true)),
+                        Text(available ? (price ?? '') : (text(check!['reason']) ?? ''), style: body(13.5, color: available ? ink : dangerSoft, weight: FontWeight.w600)),
+                      ]),
+              ),
+              SizedBox(height: 14),
+              Text(tr('Підібрати'), style: body(12.5, color: muted, weight: FontWeight.w600)),
+              SizedBox(height: 6),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(children: [
+                  for (final t in phoneTiers.skip(1))
+                    if (billing.phonePrices.containsKey(t))
+                      Padding(
+                        padding: EdgeInsets.only(right: 8),
+                        child: SelectPill(label: labels[t]!, selected: ideasTier == t, onTap: () => _suggest(t)),
+                      ),
+                ]),
+              ),
+              if (loadingIdeas)
+                Padding(padding: EdgeInsets.all(12), child: Center(child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))))
+              else if (ideas.isNotEmpty)
+                Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Wrap(spacing: 8, runSpacing: 8, children: [
+                    for (final idea in ideas)
+                      Material(
+                        color: fg.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () => _pick(idea),
+                          child: Padding(padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), child: PhoneBadge(phone: idea, size: 13)),
+                        ),
+                      ),
+                  ]),
+                ),
+              SizedBox(height: 12),
+              SwitchListTile(
+                value: giftTo != null,
+                contentPadding: EdgeInsets.zero,
+                title: Text(giftTo == null ? tr('Подарувати другові') : tr('У подарунок: {name}', {'name': giftTo!['name']}), style: body(14, weight: FontWeight.w500)),
+                onChanged: (on) async {
+                  if (!on) return setState(() => giftTo = null);
+                  final friend = await pickFriend(context, maps(widget.data['friends']), title: tr('Кому подарувати номер?'));
+                  if (friend != null && mounted) setState(() => giftTo = friend);
+                },
+              ),
+              if (billing.error != null) Padding(padding: EdgeInsets.only(bottom: 8), child: Text(billing.error!, style: body(13, color: dangerSoft))),
+              PrimaryButton(
+                label: price == null || !available ? tr('Купити номер') : tr('Купити за {price}', {'price': price}),
+                icon: LucideIcons.shoppingBag,
+                busy: billing.busy,
+                onPressed: !available || price == null || billing.busy
+                    ? null
+                    : () => billing.buyPhone(operator: operator.text, digits: digits.text, giftTo: giftTo == null ? null : intOf(giftTo!['id'])),
+              ),
+              SizedBox(height: 8),
+              Text(tr('Оплата через Google Play. Номер одразу ваш на сайті й у застосунку; попередній звільниться.'), style: body(11.5, color: faint)),
+            ]),
+          ),
+        );
+      },
+    );
+  }
 }
 
 // ───────────────────────── Подарунки й передача ─────────────────────────

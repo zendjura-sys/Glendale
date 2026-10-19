@@ -72,6 +72,13 @@ class PlayBilling extends ChangeNotifier {
   String? _accountId;
   List<PlayPlan> plans = const [];
 
+  /// Номери телефону — разові товари phone_<рівень>: ціни з Google Play за рівнем.
+  Map<String, ProductDetails> phonePrices = const {};
+  bool get phonesAvailable => phonePrices.isNotEmpty;
+
+  /// Останній куплений номер (повідомлення сервера) — екран «Телефон» показує його й оновлюється.
+  String? phoneMessage;
+
   /// Справжня платформа пристрою (не defaultTargetPlatform, який тести підміняють на Android).
   static bool get supported => !kIsWeb && Platform.isAndroid;
 
@@ -114,6 +121,79 @@ class PlayBilling extends ChangeNotifier {
     }
   }
 
+  /// Ціни номерів за рівнями (для «Купити гарний номер»).
+  Future<void> loadPhones() async {
+    if (!supported) return;
+    try {
+      final config = await _api.get('/api/v1/google-play');
+      final ids = (config['phone_products'] is List ? config['phone_products'] as List : const []).map((e) => '$e').toSet();
+      _accountId = config['account_id'] is String ? config['account_id'] as String : _accountId;
+      if (ids.isEmpty || !await InAppPurchase.instance.isAvailable()) {
+        phonePrices = const {};
+      } else {
+        final response = await InAppPurchase.instance.queryProductDetails(ids);
+        phonePrices = {for (final product in response.productDetails) product.id.replaceFirst('phone_', ''): product};
+      }
+    } catch (_) {
+      phonePrices = const {};
+    }
+    notifyListeners();
+  }
+
+  /// Купити номер: сервер бронює його на час оплати, Google Play приймає оплату за рівень,
+  /// сервер перевіряє покупку й вмикає саме заброньований номер.
+  Future<void> buyPhone({required String operator, required String digits, int? giftTo}) async {
+    if (busy) return;
+    busy = true;
+    error = null;
+    phoneMessage = null;
+    notifyListeners();
+    try {
+      final hold = await _api.post('/api/v1/google-play/phone/hold', {'operator': operator, 'digits': digits, 'gift_to': ?giftTo});
+      final product = '${hold['product']}';
+      final details = phonePrices[product.replaceFirst('phone_', '')];
+      if (details == null) throw ApiException(tr('Цей рівень номера зараз не продається в Google Play.'));
+      final started = await InAppPurchase.instance.buyConsumable(
+        purchaseParam: GooglePlayPurchaseParam(productDetails: details, applicationUserName: '${hold['account_id']}', obfuscatedProfileId: '${hold['profile_id']}'),
+        // Списує покупку сервер, коли номер уже ввімкнено.
+        autoConsume: false,
+      );
+      if (!started) busy = false;
+    } on ApiException catch (e) {
+      busy = false;
+      error = e.message;
+    } catch (e) {
+      busy = false;
+      error = '$e';
+    }
+    notifyListeners();
+  }
+
+  Future<void> _verifyPhone(PurchaseDetails purchase) async {
+    busy = true;
+    notifyListeners();
+    final details = phonePrices[purchase.productID.replaceFirst('phone_', '')];
+    try {
+      final result = await _api.post('/api/v1/google-play/phone/verify', {
+        'purchase_token': purchase.verificationData.serverVerificationData,
+        'product_id': purchase.productID,
+        if (details != null) 'amount_micros': (details.rawPrice * 1000000).round(),
+        if (details != null) 'currency': details.currencyCode,
+      });
+      phoneMessage = result['message'] is String ? result['message'] as String : tr('Номер ваш.');
+      if (purchase.pendingCompletePurchase) {
+        try {
+          await InAppPurchase.instance.completePurchase(purchase);
+        } catch (_) {}
+      }
+    } on ApiException catch (e) {
+      // Покупку не закриваємо: якщо номер не ввімкнено, Google поверне кошти сам.
+      error = e.message;
+    } finally {
+      busy = false;
+    }
+  }
+
   Future<void> buy(PlayPlan plan) async {
     if (busy) return;
     busy = true;
@@ -150,7 +230,11 @@ class PlayBilling extends ChangeNotifier {
           error = purchase.error?.message ?? tr('Покупку не завершено.');
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
-          await _verify(purchase);
+          if (purchase.productID.startsWith('phone_')) {
+            await _verifyPhone(purchase);
+          } else {
+            await _verify(purchase);
+          }
       }
       notifyListeners();
     }
