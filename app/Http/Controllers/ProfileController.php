@@ -132,7 +132,7 @@ class ProfileController extends Controller
                 // GameCon+: власний відеофон власника видно й гостям його сторінки.
                 'background_video' => $canSeeContent ? Backgrounds::for($user)['video'] : null,
                 // Внутрішній номер (якщо власник не сховав його з профілю); can_call — чи можна набрати.
-                'phone' => $this->phoneCard($request->user(), $user),
+                'phone' => app(PhoneNumbers::class)->profileCard($request->user(), $user),
                 'about' => $canSeeContent ? $user->about : null,
                 'city' => $user->city,
                 'birthday' => $canSeeContent ? $user->birthday?->toDateString() : null,
@@ -384,14 +384,4 @@ class ProfileController extends Controller
     /**
      * @return array{number: string, tier: string, kind: string, can_call: bool}|null
      */
-    private function phoneCard(?User $viewer, User $owner): ?array
-    {
-        $phones = app(PhoneNumbers::class);
-        if (! app(ModuleManager::class)->enabled('phone') || ! $phones->visibleOnProfile($owner)) {
-            return null;
-        }
-        $number = $phones->current($owner);
-
-        return $number === null ? null : [...$number->toCard(), 'can_call' => $viewer !== null && $phones->reachable($viewer, $owner)];
-    }
 }

@@ -187,4 +187,15 @@ class AppearanceController extends Controller
 
         return back();
     }
+
+    /** Швидка зміна режиму соцмережі (застосунок: Налаштування → Вигляд). */
+    public function mode(Request $request): RedirectResponse
+    {
+        $modes = app(NetworkModes::class);
+        $data = $request->validate(['mode' => ['required', 'string', 'in:'.implode(',', array_column($modes->available(), 'id'))]]);
+        $request->user()->mergePref(['network_mode' => $data['mode']]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Режим змінено.']);
+
+        return back();
+    }
 }

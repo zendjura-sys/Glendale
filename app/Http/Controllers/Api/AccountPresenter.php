@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\User;
 use App\Services\Moderation\ContentFilter;
 use App\Support\Modules\ModuleManager;
+use App\Support\NetworkModes;
 use App\Support\Skins;
 
 class AccountPresenter
@@ -16,6 +17,8 @@ class AccountPresenter
      */
     public static function make(User $user): array
     {
+        $modes = app(NetworkModes::class);
+
         return [
             'id' => $user->id,
             'username' => $user->username,
@@ -36,7 +39,11 @@ class AccountPresenter
             'is_private' => $user->is_private,
             'message_privacy' => $user->message_privacy,
             'role' => $user->role,
-            'nav_tabs' => app(ModuleManager::class)->navTabsFor($user),
+            // Як на сайті: панель і меню лише з розділів поточного режиму («Геймер», «Класика»…).
+            'nav_tabs' => array_values(array_intersect(app(ModuleManager::class)->navTabsFor($user), $modes->modulesFor($user))),
+            'modules' => $modes->modulesFor($user),
+            'network_mode' => $modes->for($user)['id'],
+            'modes' => array_map(fn (array $mode) => ['id' => $mode['id'], 'name' => $mode['name'], 'description' => $mode['description'], 'icon' => $mode['icon']], $modes->available()),
             // Тема, як на сайті: system (як на пристрої), dark («Неоновий синій») або light («Крижана Арктика»).
             'theme' => Skins::theme($user),
             'two_factor' => $user->two_factor_confirmed_at !== null,

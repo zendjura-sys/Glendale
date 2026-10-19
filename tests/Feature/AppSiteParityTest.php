@@ -8,6 +8,8 @@ use App\Models\Post;
 use App\Models\Track;
 use App\Models\User;
 use App\Services\Auth\ApiTokens;
+use App\Services\FriendshipService;
+use App\Services\Phones\PhoneNumbers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -115,5 +117,49 @@ class AppSiteParityTest extends TestCase
 
         $this->withToken($this->app_token($user))->getJson("/api/v1/site/music/tracks/{$track->id}/lyrics")
             ->assertOk()->assertJsonPath('lyrics', "[00:01.00]перший\n[00:05.00]другий\n[00:09.00]третій");
+    }
+
+    public function test_app_phone_section_matches_the_site(): void
+    {
+        $user = User::factory()->create(['first_name' => 'Тоні']);
+        $friend = User::factory()->create(['first_name' => 'Пеппер']);
+        app(FriendshipService::class)->request($user, $friend);
+        app(FriendshipService::class)->accept($friend, $user);
+        $token = $this->app_token($user);
+
+        $this->withToken($token)->getJson('/api/v1/site/phone')->assertOk()
+            ->assertJsonStructure(['phone', 'codes', 'privacy', 'visible', 'history', 'incoming', 'outgoing', 'gifts', 'friends', 'nextRandomAt', 'cooldownDays']);
+
+        $mine = $this->withToken($token)->postJson('/api/v1/site/phone/random')->assertOk()->json('phone.number');
+        $theirs = app(PhoneNumbers::class)->random($friend)->formatted();
+
+        $this->withToken($token)->getJson('/api/v1/site/phone/lookup?number='.urlencode($theirs))->assertOk()
+            ->assertJsonPath('found', true)->assertJsonPath('user.id', $friend->id);
+        $this->withToken($token)->getJson('/api/v1/site/phone/lookup?number='.urlencode($mine))->assertJsonPath('found', false);
+        $this->withToken($token)->postJson('/api/v1/site/phone/dial', ['number' => $theirs])->assertOk()->assertJsonStructure(['conversation' => ['id'], 'can_call']);
+        $this->withToken($token)->putJson('/api/v1/site/phone/settings', ['privacy' => 'friends', 'visible' => false])->assertOk()->assertJsonPath('ok', true);
+        $this->assertSame('friends', $user->fresh()->pref('phone_privacy'));
+
+        // Номер у профілі застосунку — як на сайті.
+        $this->withToken($token)->getJson("/api/v1/users/{$friend->username}")->assertOk()->assertJsonPath('user.phone.number', $theirs);
+        $this->withToken($this->app_token($friend))->getJson("/api/v1/users/{$user->username}")->assertJsonPath('user.phone', null);
+    }
+
+    public function test_app_follows_the_network_mode_like_the_site(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->app_token($user);
+
+        $me = $this->withToken($token)->getJson('/api/v1/me')->assertOk()->json('user');
+        $this->assertContains('cinema', $me['modules']);
+        $this->assertNotEmpty($me['modes']);
+
+        // «Мінімал» ховає кіно й ігрові розділи — і з меню застосунку теж.
+        $this->withToken($token)->putJson('/api/v1/site/settings/mode', ['mode' => 'minimal'])->assertOk()->assertJsonPath('ok', true);
+        $me = $this->withToken($token)->getJson('/api/v1/me')->json('user');
+        $this->assertSame('minimal', $me['network_mode']);
+        $this->assertNotContains('cinema', $me['modules']);
+        $this->assertNotContains('servers', $me['modules']);
+        $this->withToken($token)->putJson('/api/v1/site/settings/mode', ['mode' => 'nope'])->assertStatus(422);
     }
 }

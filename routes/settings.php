@@ -19,6 +19,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('settings/appearance', [AppearanceController::class, 'edit'])->name('appearance.edit');
     Route::put('settings/appearance', [AppearanceController::class, 'update'])->name('appearance.update');
     Route::put('settings/theme', [AppearanceController::class, 'theme'])->name('appearance.theme');
+    Route::put('settings/mode', [AppearanceController::class, 'mode'])->name('appearance.mode');
 
     Route::get('settings/navigation', [NavigationController::class, 'edit'])->name('navigation.edit');
     Route::put('settings/navigation', [NavigationController::class, 'update'])->name('navigation.update');

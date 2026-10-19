@@ -32,6 +32,7 @@ use App\Http\Controllers\MusicController;
 use App\Http\Controllers\NowPlayingController;
 use App\Http\Controllers\OAuth\TokenController as OAuthTokenController;
 use App\Http\Controllers\PartyController;
+use App\Http\Controllers\PhoneController;
 use App\Http\Controllers\PhotoAlbumController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PlayingController;
@@ -295,6 +296,22 @@ Route::prefix('v1')->group(function () {
          * шляхами з префіксом /api/v1/site. BridgeSiteAction перетворює редиректи й Inertia-сторінки на JSON.
          */
         Route::prefix('site')->middleware(BridgeSiteAction::class)->group(function () {
+            // «Телефон»: свій номер, набирач, дзвінки й повідомлення за номером, подарунки й передача.
+            // Купівлі номера в застосунку немає (оплата лише через Google Play Billing).
+            Route::prefix('phone')->middleware('module:phone')->controller(PhoneController::class)->group(function () {
+                Route::get('/', 'index');
+                Route::post('random', 'random')->middleware('throttle:10,1');
+                Route::get('lookup', 'lookup')->middleware('throttle:60,1');
+                Route::post('dial', 'dial')->middleware('throttle:30,1');
+                Route::put('settings', 'settings');
+                Route::post('dismiss', 'dismiss');
+                Route::post('transfer', 'transfer')->middleware('throttle:20,1');
+                Route::post('offers/{offer}/accept', 'accept')->whereNumber('offer');
+                Route::post('offers/{offer}/decline', 'decline')->whereNumber('offer');
+                Route::delete('offers/{offer}', 'cancel')->whereNumber('offer');
+                Route::post('gifts/{number}/give', 'regift')->whereNumber('number')->middleware('throttle:20,1');
+                Route::post('gifts/{number}/claim', 'claim')->whereNumber('number');
+            });
             Route::middleware('module:feed')->group(function () {
                 Route::post('posts/{post}/pin', [PostController::class, 'pin'])->whereNumber('post');
                 Route::get('posts/drafts', [PostController::class, 'drafts']);
@@ -316,6 +333,7 @@ Route::prefix('v1')->group(function () {
             Route::delete('settings/profile', [SettingsProfileController::class, 'destroy']);
             Route::put('settings/navigation', [NavigationController::class, 'update']);
             Route::put('settings/theme', [AppearanceController::class, 'theme']);
+            Route::put('settings/mode', [AppearanceController::class, 'mode']);
             // Свій канал Twitch/YouTube і позначка LIVE у профілі.
             Route::put('settings/stream', [StreamController::class, 'update'])->middleware('throttle:10,1');
             Route::delete('settings/stream', [StreamController::class, 'destroy']);
