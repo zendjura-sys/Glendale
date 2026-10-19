@@ -635,6 +635,7 @@ class IntegrationController extends Controller
                 'steps' => [
                     'Play Console → Налаштування → Платіжний профіль: дані ФОП і рахунок для виплат (валютний рахунок ФОП у monobank).',
                     'Play Console → Монетизація → Підписки: створіть підписку з ID gamecon_plus (або власним — впишіть нижче) і базові плани, напр. monthly і yearly, з цінами.',
+                    'Номери телефону (за бажанням): Play Console → Монетизація → Продукти → Разові продукти — створіть phone_regular, phone_bronze, phone_silver, phone_gold, phone_platinum, phone_diamond з ціною рівня й увімкніть «Продавати номери» нижче.',
                     'Google Cloud Console (проєкт, пов’язаний із Play Console): увімкніть Google Play Android Developer API, створіть сервісний акаунт і ключ JSON.',
                     'Play Console → Користувачі й дозволи → запросіть email сервісного акаунта з правами «Перегляд фінансових даних» і «Керування замовленнями й підписками». Можна використати акаунт Firebase — тоді поле ключа лишіть порожнім.',
                     'Real-time developer notifications: створіть тему Pub/Sub, дайте google-play-developer-notifications@system.gserviceaccount.com роль Publisher, push-підписку на адресу '.app(GooglePlay::class)->rtdnUrl().' і вкажіть тему в Play Console → Монетизація → Налаштування монетизації.',
@@ -645,6 +646,9 @@ class IntegrationController extends Controller
                 'test' => fn () => app(GooglePlay::class)->test(),
                 'fields' => [
                     ['name' => 'enabled', 'setting' => 'google_play_enabled', 'type' => 'bool', 'label' => 'Продавати GameCon+ у застосунку', 'rules' => ['required', 'boolean']],
+                    ['name' => 'phones', 'setting' => 'google_play_phones_enabled', 'type' => 'bool', 'label' => 'Продавати номери телефону в застосунку',
+                        'help' => 'Разові товари Play Console з ID phone_regular, phone_bronze, phone_silver, phone_gold, phone_platinum, phone_diamond (ціна — за рівнем).',
+                        'rules' => ['required', 'boolean']],
                     ['name' => 'products', 'setting' => 'google_play_products', 'type' => 'text', 'label' => 'ID підписок', 'placeholder' => 'gamecon_plus',
                         'help' => 'Через кому, як у Play Console. Порожньо — gamecon_plus.',
                         'rules' => ['nullable', 'string', 'max:200', 'regex:/^[a-z0-9][a-z0-9_.]*(\s*,\s*[a-z0-9][a-z0-9_.]*)*$/'], 'message' => 'ID — малі латинські літери, цифри, _ і крапка; кілька — через кому.'],

@@ -116,6 +116,7 @@ class SiteSettings
         'google_play_enabled' => false,
         'google_play_package' => null,
         'google_play_products' => null,
+        'google_play_phones_enabled' => false,
         'google_play_service_account' => null,
         'google_play_rtdn_token' => null,
     ];

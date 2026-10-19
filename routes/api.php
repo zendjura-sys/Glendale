@@ -90,6 +90,8 @@ Route::prefix('v1')->group(function () {
         // Покупка GameCon+ у застосунку — лише через Google Play Billing; сервер перевіряє токен у Google.
         Route::get('google-play', [GooglePlayController::class, 'show'])->middleware('throttle:60,1');
         Route::post('google-play/verify', [GooglePlayController::class, 'verify'])->middleware('throttle:30,1');
+        Route::post('google-play/phone/hold', [GooglePlayController::class, 'phoneHold'])->middleware(['throttle:20,1', 'module:phone']);
+        Route::post('google-play/phone/verify', [GooglePlayController::class, 'phoneVerify'])->middleware(['throttle:30,1', 'module:phone']);
         Route::post('me/locale', [LocaleController::class, 'update'])->middleware('throttle:30,1');
         Route::post('translate', TranslateController::class)->middleware('throttle:60,1');
         Route::post('logout', [AuthController::class, 'logout']);
@@ -297,11 +299,13 @@ Route::prefix('v1')->group(function () {
          */
         Route::prefix('site')->middleware(BridgeSiteAction::class)->group(function () {
             // «Телефон»: свій номер, набирач, дзвінки й повідомлення за номером, подарунки й передача.
-            // Купівлі номера в застосунку немає (оплата лише через Google Play Billing).
+            // Купити номер у застосунку можна лише через Google Play Billing (google-play/phone/*).
             Route::prefix('phone')->middleware('module:phone')->controller(PhoneController::class)->group(function () {
                 Route::get('/', 'index');
                 Route::post('random', 'random')->middleware('throttle:10,1');
                 Route::get('lookup', 'lookup')->middleware('throttle:60,1');
+                Route::get('check', 'check')->middleware('throttle:120,1');
+                Route::get('suggest', 'suggest')->middleware('throttle:60,1');
                 Route::post('dial', 'dial')->middleware('throttle:30,1');
                 Route::put('settings', 'settings');
                 Route::post('dismiss', 'dismiss');

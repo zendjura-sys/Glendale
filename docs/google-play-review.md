@@ -19,6 +19,18 @@
 `Api/GooglePlayController`, `GooglePlayRtdnController`. Тест `tests/Feature/AppSubscriptionStatusTest.php`
 проверяет, что в ответах для приложения нет цен сайта, ссылок на оплату сайта и донат-сервисов.
 
+## Номера телефона в приложении
+
+- Красивый номер (+777) покупается тоже только через Google Play: разовые товары `phone_regular`, `phone_bronze`,
+  `phone_silver`, `phone_gold`, `phone_platinum`, `phone_diamond` — цена по уровню номера задаётся в Play Console
+  (скидка GameCon+ действует только на сайте).
+- Приложение: проверка номера и «Підібрати» — через мост (`/api/v1/site/phone/check|suggest`), затем
+  `POST /api/v1/google-play/phone/hold` бронирует номер и отдаёт `profile_id` → покупка с obfuscatedAccountId и
+  obfuscatedProfileId → `POST /api/v1/google-play/phone/verify`: сервер проверяет покупку (purchases.products),
+  включает именно забронированный номер и списывает покупку (consume). Если бронь пропала, покупка не
+  подтверждается — Google вернёт деньги сам через 3 дня. Возврат (RTDN voided) освобождает номер.
+- Включение: Админка → Інтеграції → Google Play → «Продавати номери телефону в застосунку».
+
 ## Актуальные требования Google (октябрь 2026)
 
 - С 31 августа 2026 новые приложения и обновления должны использовать **Play Billing Library 8+**

@@ -105,7 +105,7 @@ class GooglePlayBillingTest extends TestCase
         $this->assertStringNotContainsString('price', $json);
 
         app(SiteSettings::class)->put(['google_play_enabled' => false]);
-        $this->withToken($this->token($user))->getJson('/api/v1/google-play')->assertOk()->assertExactJson(['enabled' => false, 'products' => [], 'account_id' => null]);
+        $this->withToken($this->token($user))->getJson('/api/v1/google-play')->assertOk()->assertExactJson(['enabled' => false, 'products' => [], 'account_id' => null, 'phone_products' => []]);
         $this->withToken($this->token($user))->postJson('/api/v1/google-play/verify', ['purchase_token' => 'token-123456'])->assertNotFound();
     }
 
