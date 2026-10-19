@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'achievements.dart';
 import 'playing.dart';
+import 'phone.dart';
 import 'plus.dart';
 import 'subscription.dart';
 import 'account.dart';
@@ -645,6 +646,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       if (plus != null) ...[const SizedBox(width: 6), const PlusBadge(size: 20)],
                     ]),
                     if (text(profile['status']) != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(text(profile['status'])!, style: body(14, color: soft))),
+                    // Внутрішній номер, як на сайті: торкнутися — набрати його в «Телефоні».
+                    if (profile['phone'] is Map)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: GestureDetector(
+                          onTap: mapOf(profile['phone'])['can_call'] == true ? () => context.push('/phone?dial=${Uri.encodeQueryComponent('${mapOf(profile['phone'])['number']}')}') : null,
+                          child: PhoneBadge(phone: mapOf(profile['phone']), size: 14),
+                        ),
+                      ),
                     if (profile['playing'] is Map) Padding(padding: const EdgeInsets.only(top: 8), child: PlayingBadge(mapOf(profile['playing']))),
                     if (data['stream'] is Map) Padding(padding: const EdgeInsets.only(top: 8), child: StreamBadge(mapOf(data['stream']))),
                     const SizedBox(height: 8),

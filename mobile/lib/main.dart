@@ -33,6 +33,7 @@ import 'servers.dart';
 import 'settings.dart';
 import 'shell.dart';
 import 'state.dart';
+import 'phone.dart';
 import 'theme.dart';
 import 'track_edit.dart';
 import 'watch_party.dart';
@@ -138,6 +139,7 @@ Future<void> main() async {
           ),
           GoRoute(path: '/events', builder: (_, _) => const EventsScreen(), routes: [GoRoute(path: 'releases', builder: (_, _) => const ReleasesScreen())]),
           GoRoute(path: '/moments', builder: (_, _) => const MomentsScreen()),
+          GoRoute(path: '/phone', builder: (_, state) => PhoneScreen(key: ValueKey(state.uri.queryParameters['dial']), dial: state.uri.queryParameters['dial'])),
           GoRoute(path: '/quests', builder: (_, _) => const QuestsScreen()),
           GoRoute(path: '/saved', builder: (_, _) => const SavedScreen()),
           GoRoute(path: '/drafts', builder: (_, _) => const DraftsScreen()),

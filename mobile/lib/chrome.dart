@@ -352,7 +352,7 @@ class SideList extends StatelessWidget {
           ),
         ),
         SizedBox(height: 4),
-        for (final nav in navCatalog)
+        for (final nav in visibleNav(session.modules))
           link(
             _isActive(nav.path, path, session.username) ? nav.activeIcon : nav.icon,
             nav.title,
@@ -428,7 +428,7 @@ class _IslandNavState extends State<IslandNav> {
   Widget build(BuildContext context) {
     final session = widget.session;
     final tabs = session.navTabs;
-    final rest = [for (final item in navCatalog) if (!tabs.contains(item.path)) item];
+    final rest = [for (final item in visibleNav(session.modules)) if (!tabs.contains(item.path)) item];
     final restActive = rest.any((i) => _isActive(i.path, widget.path, session.username));
     final restBadge = rest.any((i) => i.path == '/messages') ? session.unreadChats : 0;
     final media = MediaQuery.of(context);

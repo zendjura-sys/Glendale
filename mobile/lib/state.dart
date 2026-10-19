@@ -46,6 +46,9 @@ class Session extends ChangeNotifier {
   /// Розділи нижньої панелі, які обрав цей акаунт (без «Меню» — воно завжди останнє).
   /// Вибір зберігається в акаунті й однаковий на сайті та в застосунку; локальна копія —
   /// поки профіль ще не завантажився.
+  /// Розділи, увімкнені для цього акаунта (режим соцмережі й адмінка); null — ще не відомо.
+  Set<String>? get modules => me?['modules'] is List ? {for (final key in me!['modules'] as List) '$key'} : null;
+
   List<String> get navTabs {
     final server = me?['nav_tabs'];
     final saved = server is List ? [for (final key in server) '/$key'] : prefs.getStringList(_navKey);

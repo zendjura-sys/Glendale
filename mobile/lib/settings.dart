@@ -254,7 +254,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: switch (tab) {
             'security' => _security(),
             'account' => [AccountSettings()],
-            'appearance' => [ThemePicker(selected: theme, onSelect: _pickTheme)],
+            'appearance' => [ThemePicker(selected: theme, onSelect: _pickTheme), const SizedBox(height: 12), const ModePicker()],
             'app' => const [NavEditor(), SizedBox(height: 12), FamilyWidgetSettings()],
             _ => _profile(),
           }),
@@ -442,7 +442,7 @@ class NavEditor extends StatelessWidget {
       listenable: session,
       builder: (context, _) {
         final tabs = session.navTabs;
-        final rest = [for (final item in navCatalog) if (!tabs.contains(item.path)) item];
+        final rest = [for (final item in visibleNav(session.modules)) if (!tabs.contains(item.path)) item];
         final full = tabs.length >= maxNav;
 
         void save(List<String> next) => session.setNavTabs(next).catchError((Object e) {
@@ -707,4 +707,100 @@ class _ThemeThumb extends CustomPainter {
 
   @override
   bool shouldRepaint(_ThemeThumb old) => old.id != id;
+}
+
+/// Режим соцмережі, як на сайті («Геймер», «Класика», «Мінімал»…): яку частину GameCon видно в меню.
+/// Діє одразу на сайті й у застосунку; вимкнене адміністратором лишається вимкненим у будь-якому режимі.
+class ModePicker extends StatefulWidget {
+  const ModePicker({super.key});
+
+  @override
+  State<ModePicker> createState() => _ModePickerState();
+}
+
+class _ModePickerState extends State<ModePicker> {
+  String? busy;
+
+  static const _icons = {
+    'gamepad-2': LucideIcons.gamepad2,
+    'sparkles': LucideIcons.sparkles,
+    'compass': LucideIcons.compass,
+    'clapperboard': LucideIcons.clapperboard,
+    'feather': LucideIcons.feather,
+    'layers': LucideIcons.layers,
+    'music-2': LucideIcons.music2,
+    'users-round': LucideIcons.usersRound,
+    'swords': LucideIcons.swords,
+    'heart': LucideIcons.heart,
+  };
+
+  Future<void> _choose(String id) async {
+    final session = AppScope.read(context).session;
+    setState(() => busy = id);
+    if (await attempt(context, () => session.api.put(Api.site('/settings/mode'), {'mode': id}))) await session.refreshMe();
+    if (mounted) setState(() => busy = null);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final session = AppScope.of(context).session;
+    return ListenableBuilder(
+      listenable: session,
+      builder: (context, _) {
+        final modes = maps(session.me?['modes']);
+        if (modes.length < 2) return const SizedBox.shrink();
+        final current = text(session.me?['network_mode']);
+        final reduce = MediaQuery.disableAnimationsOf(context);
+        return Glass(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Text(tr('Режим'), style: body(16, weight: FontWeight.w600)),
+            const SizedBox(height: 4),
+            Text(tr('Яку частину GameCon видно в меню. Решта не зникає — її просто не видно.'), style: body(13, color: muted)),
+            const SizedBox(height: 12),
+            for (final mode in modes)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: AnimatedContainer(
+                  duration: reduce ? Duration.zero : const Duration(milliseconds: 220),
+                  decoration: BoxDecoration(
+                    color: mode['id'] == current ? primary.withValues(alpha: palette.isLight ? 0.10 : 0.16) : fg.withValues(alpha: 0.035),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: busy != null || mode['id'] == current ? null : () => _choose('${mode['id']}'),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(children: [
+                          Icon(_icons[mode['icon']] ?? LucideIcons.layers, color: mode['id'] == current ? primary : accent, size: 22),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(text(mode['name']) ?? '', style: body(14.5, weight: FontWeight.w600)),
+                              if (text(mode['description']) != null) Text(text(mode['description'])!, style: body(12, color: muted).copyWith(height: 1.35)),
+                            ]),
+                          ),
+                          const SizedBox(width: 8),
+                          if (busy == mode['id'])
+                            const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                          else
+                            AnimatedScale(
+                              scale: mode['id'] == current ? 1 : 0,
+                              duration: reduce ? Duration.zero : const Duration(milliseconds: 260),
+                              curve: Curves.easeOutBack,
+                              child: Icon(LucideIcons.circleCheck, color: primary, size: 20),
+                            ),
+                        ]),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ]),
+        );
+      },
+    );
+  }
 }

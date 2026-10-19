@@ -38,6 +38,8 @@ String appPathFor(String? sitePath) {
       return parts.length > 1 && int.tryParse(rest(1)) != null ? '/messages/${rest(1)}' : '/messages';
     case 'posts':
       return rest(1) == 'drafts' ? '/drafts' : '/posts/${rest(1)}';
+    case 'phone':
+      return '/phone$query';
     case 'moments':
     case 'quests':
     case 'saved':

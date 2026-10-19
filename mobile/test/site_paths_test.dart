@@ -16,5 +16,7 @@ void main() {
     expect(appPathFor('/events/releases'), '/events/releases');
     expect(appPathFor('/cinema/ten/neo'), '/cinema/ten/neo');
     expect(appPathFor('/servers/compare?a=one&b=two'), '/servers/compare?a=one&b=two');
+    expect(appPathFor('/phone'), '/phone');
+    expect(appPathFor('/phone?dial=%2B7770512345'), '/phone?dial=%2B7770512345');
   });
 }
