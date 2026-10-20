@@ -90,6 +90,8 @@ class HandleInertiaRequests extends Middleware
                 'max_attachments' => (int) $this->settings->get('max_attachments'),
                 'max_message_file_mb' => (int) $this->settings->get('max_message_file_mb'),
                 'announcement' => $this->settings->get('maintenance_message'),
+                // Google Analytics 4 (G-…): завантажується лише після згоди на аналітичні cookie.
+                'analytics' => $this->settings->analyticsId(),
                 'social' => [
                     'discord' => app(DiscordOAuth::class)->configured(),
                     'google' => app(FirebaseAuth::class)->clientConfig(),

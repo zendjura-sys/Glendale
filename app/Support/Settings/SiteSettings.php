@@ -17,6 +17,8 @@ class SiteSettings
         'tagline' => 'Соціальна мережа нового покоління',
         // Офіційні сторінки сайту в соцмережах (по одній адресі в рядку) — для розмітки Schema «sameAs».
         'seo_same_as' => null,
+        // Ідентифікатор потоку Google Analytics 4 (G-XXXXXXX); порожньо — аналітики немає.
+        'analytics_ga_id' => null,
         'seo_description' => 'GameCon — соціальна мережа для геймерів і кіноманів: друзі, спільноти, музика, кіно, сімʼї та ігрові сервери.',
         'play_store_enabled' => false,
         'play_store_url' => null,
@@ -194,6 +196,13 @@ class SiteSettings
         $play = $this->playStoreUrl();
 
         return array_values(array_unique($play !== null ? [...$links, $play] : $links));
+    }
+
+    public function analyticsId(): ?string
+    {
+        $id = strtoupper(trim((string) $this->get('analytics_ga_id')));
+
+        return preg_match('/\AG-[A-Z0-9]{4,16}\z/', $id) === 1 ? $id : null;
     }
 
     public function playStoreUrl(): ?string

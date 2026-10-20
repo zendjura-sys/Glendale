@@ -96,6 +96,7 @@ class SettingsController extends Controller
             'site_name' => ['required', 'string', 'max:60'],
             'tagline' => ['nullable', 'string', 'max:140'],
             'seo_description' => ['nullable', 'string', 'max:300'],
+            'analytics_ga_id' => ['nullable', 'string', 'regex:/^G-[A-Za-z0-9]{4,16}$/'],
             'seo_same_as' => ['nullable', 'string', 'max:2000', function (string $attribute, mixed $value, \Closure $fail) {
                 foreach (preg_split('/\R/', (string) $value) ?: [] as $line) {
                     if (trim($line) !== '' && preg_match('#\Ahttps://[^\s<>"]+\z#i', trim($line)) !== 1) {

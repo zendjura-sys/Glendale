@@ -39,6 +39,7 @@ declare module '@inertiajs/core' {
                 max_attachments: number;
                 max_message_file_mb: number;
                 announcement: string | null;
+                analytics?: string | null;
                 social: {
                     discord: boolean;
                     google: FirebaseConfig | null;

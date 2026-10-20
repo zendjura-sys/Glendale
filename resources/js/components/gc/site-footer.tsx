@@ -1,5 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import { PaymentBadges } from '@/components/billing/payment-badges';
+import { reopenConsent } from '@/lib/consent';
+import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 /**
@@ -54,6 +56,13 @@ export function SiteFooter({
                     </span>
                 ))}
             </nav>
+            <button
+                type="button"
+                onClick={reopenConsent}
+                className="mt-1 inline-flex min-h-11 items-center rounded-lg px-2 transition hover:text-white"
+            >
+                {tr('Налаштування cookie')}
+            </button>
             <PaymentBadges className="mt-3 justify-center" />
             <p className="mt-2">
                 © {footer.year} {name || 'GameCon'}. {t.rights}

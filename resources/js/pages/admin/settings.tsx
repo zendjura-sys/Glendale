@@ -27,6 +27,7 @@ type Settings = {
     tagline: string;
     seo_description: string;
     seo_same_as: string | null;
+    analytics_ga_id: string | null;
     play_store_enabled: boolean;
     play_store_url: string;
     play_store_badge: 'get' | 'preregister';
@@ -275,6 +276,7 @@ export default function AdminSettings({
         tagline: settings.tagline ?? '',
         seo_description: settings.seo_description ?? '',
         seo_same_as: settings.seo_same_as ?? '',
+        analytics_ga_id: settings.analytics_ga_id ?? '',
         play_store_enabled: Boolean(settings.play_store_enabled),
         play_store_url: settings.play_store_url ?? '',
         play_store_badge:
@@ -386,6 +388,26 @@ export default function AdminSettings({
                             )}
                         </p>
                         <InputError message={errors.seo_same_as} />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="analytics_ga_id">
+                            {tr('Google Analytics 4')}
+                        </Label>
+                        <Input
+                            id="analytics_ga_id"
+                            value={data.analytics_ga_id ?? ''}
+                            onChange={(e) =>
+                                setData('analytics_ga_id', e.target.value)
+                            }
+                            placeholder="G-XXXXXXXXXX"
+                            className="input-glass h-11 rounded-xl"
+                        />
+                        <p className="text-xs text-white/45">
+                            {tr(
+                                'Ідентифікатор потоку з analytics.google.com → Адміністратор → Потоки даних. Аналітика вмикається лише тим, хто погодився на cookie.',
+                            )}
+                        </p>
+                        <InputError message={errors.analytics_ga_id} />
                     </div>
                     <img
                         loading="lazy"
