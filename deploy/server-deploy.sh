@@ -49,4 +49,11 @@ else
     chown -R "$OWNER":www-data "$APP"
 fi
 
+# 5. Сайт відкривається в браузері (порожній екран через помилку JavaScript curl не помічає).
+if ! bash deploy/smoke.sh; then
+    echo "✗ Сайт оновлено, але в браузері він зламаний. Попередня версія — повторний деплой старішого коміту;" \
+        "база: $BACKUP" >&2
+    exit 1
+fi
+
 echo "✅ Готово. Відкат бази за потреби: gunzip -c $BACKUP | mysql -u$U -p $DB"
