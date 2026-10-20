@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { ImagePlus } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { TrackCover } from '@/components/music/track-cover';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { api, ApiError } from '@/lib/api';
 import type { LocalTrack } from '@/types';
@@ -32,10 +34,44 @@ export function EditTrackDialog({
     });
     const [saving, setSaving] = useState(false);
     const [ready, setReady] = useState(false);
+    // Нова обкладинка (файл) і її прев’ю; на сервер іде лише разом зі «Зберегти».
+    const [cover, setCover] = useState<File | null>(null);
+    const [preview, setPreview] = useState<string | null>(null);
+    const coverInput = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (!cover) {
+            setPreview(null);
+
+            return;
+        }
+        const url = URL.createObjectURL(cover);
+        setPreview(url);
+
+        return () => URL.revokeObjectURL(url);
+    }, [cover]);
+
+    const pickCover = (file: File | undefined) => {
+        if (!file) return;
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+            toast.error(
+                tr('Обкладинка має бути картинкою (JPG, PNG або WebP).'),
+            );
+
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error(tr('Обкладинка завелика (максимум 5 МБ).'));
+
+            return;
+        }
+        setCover(file);
+    };
 
     useEffect(() => {
         if (!track) return;
         setReady(false);
+        setCover(null);
         setData({
             title: track.title,
             artist: track.artist,
@@ -60,10 +96,23 @@ export function EditTrackDialog({
         if (!track) return;
         setSaving(true);
         try {
+            let body: Record<string, unknown> | FormData = data;
+            let method: 'PATCH' | 'POST' = 'PATCH';
+            if (cover) {
+                // Файл — лише multipart POST: у PATCH PHP файлів не розбирає (Laravel читає _method).
+                const form = new FormData();
+                Object.entries(data).forEach(([key, value]) =>
+                    form.append(key, value),
+                );
+                form.append('cover', cover);
+                form.append('_method', 'PATCH');
+                body = form;
+                method = 'POST';
+            }
             const response = await api<{ track: LocalTrack }>(
-                'PATCH',
+                method,
                 `/music/tracks/${track.id}`,
-                data,
+                body,
             );
             onSaved(response.track);
             onOpenChange(false);
@@ -84,6 +133,38 @@ export function EditTrackDialog({
                     {tr('Редагування треку')}
                 </DialogTitle>
                 <div className="mt-5 grid gap-3">
+                    <div className="flex items-center gap-4">
+                        <TrackCover
+                            url={preview ?? track?.cover_url}
+                            seed={track?.id}
+                            className="size-20 rounded-2xl"
+                        />
+                        <div className="min-w-0">
+                            <button
+                                type="button"
+                                onClick={() => coverInput.current?.click()}
+                                className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-3.5 text-sm font-medium text-white/80 transition hover:bg-white/[0.1] hover:text-white"
+                            >
+                                <ImagePlus className="size-4" />
+                                {track?.cover_url || preview
+                                    ? tr('Змінити обкладинку')
+                                    : tr('Додати обкладинку')}
+                            </button>
+                            <span className="mt-1.5 block text-xs text-white/45">
+                                {tr('JPG, PNG або WebP, до 5 МБ')}
+                            </span>
+                        </div>
+                        <input
+                            ref={coverInput}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            className="hidden"
+                            onChange={(event) => {
+                                pickCover(event.target.files?.[0]);
+                                event.target.value = '';
+                            }}
+                        />
+                    </div>
                     {fields.map(([key, label]) => (
                         <label
                             key={key}

@@ -32,7 +32,7 @@ class MusicService
     {
         $extension = strtolower($audio->getClientOriginalExtension() ?: $audio->extension() ?: 'mp3');
         $path = $audio->storeAs('music/'.now()->format('Y/m'), Str::random(32).'.'.$extension, 'public');
-        $coverPath = $cover ? $this->images->store($cover, 'music/covers', cover: [600, 600])['path']
+        $coverPath = $cover ? $this->storeCover($cover)
             : (filled($meta['cover_url'] ?? null) ? $this->coverFromUrl((string) $meta['cover_url']) : null);
 
         $track = Track::query()->create([
@@ -51,6 +51,12 @@ class MusicService
         $this->add($user, $track);
 
         return $track;
+    }
+
+    /** Обкладинка треку з файлу (завантаження чи редагування): квадрат 600×600. Повертає шлях на диску public. */
+    public function storeCover(UploadedFile $cover): string
+    {
+        return $this->images->store($cover, 'music/covers', cover: [600, 600])['path'];
     }
 
     /** Хости, звідки сервер сам завантажує обкладинки за посиланням (каталог iTunes). */
@@ -92,7 +98,7 @@ class MusicService
                 return null;
             }
 
-            return $this->images->store($file, 'music/covers', cover: [600, 600])['path'];
+            return $this->storeCover($file);
         } catch (Throwable) {
             return null;
         } finally {

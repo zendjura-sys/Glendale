@@ -160,6 +160,37 @@ class MusicTest extends TestCase
         Storage::disk('public')->assertExists($cover);
     }
 
+    public function test_owner_uploads_cover_when_editing_and_old_cover_is_removed(): void
+    {
+        $owner = User::factory()->create();
+        $track = $this->track($owner);
+        $track->update(['cover_path' => 'music/covers/old.webp']);
+        Storage::disk('public')->put('music/covers/old.webp', 'old');
+
+        // Як шле сайт: multipart POST з _method=PATCH (у PATCH PHP файлів не розбирає).
+        $this->actingAs($owner)->post(route('tracks.update', $track), [
+            '_method' => 'PATCH',
+            'title' => 'Підземний поверх',
+            'artist' => 'Xander Frost',
+            'album' => 'DieGO',
+            'cover' => UploadedFile::fake()->image('cover.png', 900, 900),
+        ], ['Accept' => 'application/json'])->assertOk()->assertJsonPath('track.album', 'DieGO');
+
+        $cover = $track->fresh()->cover_path;
+        $this->assertNotNull($cover);
+        $this->assertNotSame('music/covers/old.webp', $cover);
+        Storage::disk('public')->assertExists($cover);
+        Storage::disk('public')->assertMissing('music/covers/old.webp');
+
+        $this->actingAs($owner)->post(route('tracks.update', $track), [
+            '_method' => 'PATCH',
+            'title' => 'Підземний поверх',
+            'artist' => 'Xander Frost',
+            'cover' => UploadedFile::fake()->create('cover.pdf', 10, 'application/pdf'),
+        ], ['Accept' => 'application/json'])->assertUnprocessable()->assertJsonValidationErrors('cover');
+        $this->assertSame($cover, $track->fresh()->cover_path);
+    }
+
     public function test_library_add_and_remove_and_non_owner_cannot_edit(): void
     {
         $owner = User::factory()->create();

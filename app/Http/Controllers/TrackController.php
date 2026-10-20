@@ -46,17 +46,26 @@ class TrackController extends Controller
             'album' => ['nullable', 'string', 'max:150'],
             'genre' => ['nullable', 'string', 'max:40'],
             'lyrics' => ['nullable', 'string', 'max:8000'],
+            'cover' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'cover_url' => ['nullable', 'url:https', 'max:500'],
+        ], [
+            'cover.image' => 'Обкладинка має бути картинкою (JPG, PNG або WebP).',
+            'cover.mimes' => 'Обкладинка має бути картинкою (JPG, PNG або WebP).',
+            'cover.max' => 'Обкладинка завелика (максимум 5 МБ).',
         ]);
         $coverUrl = $data['cover_url'] ?? null;
-        unset($data['cover_url']);
+        unset($data['cover_url'], $data['cover']);
         if (! app(Plugins::class)->on('lyrics')) {
             unset($data['lyrics']);
         }
         $track->update(array_map(fn ($v) => is_string($v) ? (trim($v) ?: null) : $v, $data));
 
-        // Обкладинка з автозаповнення (каталог iTunes); стару видаляємо лише після успішного збереження нової.
-        if (filled($coverUrl) && ($cover = $this->music->coverFromUrl((string) $coverUrl)) !== null) {
+        // Обкладинка з файлу (вікно редагування) або з автозаповнення (каталог iTunes);
+        // стару видаляємо лише після успішного збереження нової. Файл — POST з _method=PATCH.
+        $file = $request->file('cover');
+        $cover = $file !== null ? $this->music->storeCover($file)
+            : (filled($coverUrl) ? $this->music->coverFromUrl((string) $coverUrl) : null);
+        if ($cover !== null) {
             $old = $track->cover_path;
             $track->update(['cover_path' => $cover]);
             if ($old) {
