@@ -2698,6 +2698,19 @@ html[data-text='xl'] {
     background: color-mix(in oklab, var(--primary) 30%, transparent);
     color: #0d1b2e;
 }
+/*
+ * Другорядний текст (text-white/40…60) на світлому тлі — контраст не нижче 4.5:1 (WCAG AA):
+ * чорнило на 40–50 % давало 2.5–3.3. Вага як у самого класу (:where) і шар utilities — hover:text-white працює.
+ */
+@layer utilities {
+    :where(:root[data-theme='light'])
+        :is(.text-white\/40, .text-white\/45, .text-white\/50) {
+        color: color-mix(in oklab, var(--color-white) 65%, transparent);
+    }
+    :where(:root[data-theme='light']) :is(.text-white\/55, .text-white\/60) {
+        color: color-mix(in oklab, var(--color-white) 70%, transparent);
+    }
+}
 :root[data-theme='light'] ::-webkit-scrollbar-thumb {
     background-color: rgb(13 27 46 / 0.16);
 }
