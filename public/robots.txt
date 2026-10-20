@@ -1,2 +1,17 @@
+# GameCon — правила для пошукових роботів.
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /settings
+Disallow: /messages
+Disallow: /notifications
+Disallow: /phone
+Disallow: /oauth/
+Disallow: /broadcasting/
+Disallow: /mail/
+Disallow: /reset-password
+Disallow: /two-factor-challenge
+Disallow: /*?*token=
+
+Sitemap: https://gamecon.online/sitemap.xml

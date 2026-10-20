@@ -48,6 +48,7 @@ use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\SavedController;
 use App\Http\Controllers\ServerAppController;
 use App\Http\Controllers\ServerController;
+use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StartController;
 use App\Http\Controllers\StoryController;
@@ -77,6 +78,7 @@ Route::get('terms', [LegalController::class, 'terms'])->name('legal.terms');
 Route::get('privacy', [LegalController::class, 'privacy'])->name('legal.privacy');
 Route::get('refund-policy', [LegalController::class, 'refund'])->name('legal.refund');
 Route::get('pricing', [LegalController::class, 'pricing'])->name('legal.pricing');
+Route::get('sitemap.xml', SitemapController::class)->middleware('throttle:30,1')->name('sitemap');
 Route::get('contacts', [LegalController::class, 'contacts'])->name('legal.contacts');
 
 Route::redirect('dashboard', '/feed')->name('dashboard');

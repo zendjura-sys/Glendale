@@ -1,6 +1,7 @@
 import type { VisitOptions } from '@inertiajs/core';
 import { createInertiaApp } from '@inertiajs/react';
 import { SkipLink } from '@/components/gc/skip-link';
+import { CookieConsent } from '@/components/gc/cookie-consent';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { installKeyboardGuard } from '@/lib/keyboard';
@@ -96,6 +97,7 @@ void createInertiaApp({
     layout: (name) => {
         switch (true) {
             case name === 'welcome':
+            case name === 'error':
             case name === 'start/mode':
             case name === 'start/phone':
             case name.startsWith('legal/'):
@@ -123,6 +125,7 @@ void createInertiaApp({
                     <SkipLink />
                     <Suspense fallback={null}>{app}</Suspense>
                     <Toaster />
+                    <CookieConsent />
                 </TooltipProvider>
             </LazyMotion>
         );
