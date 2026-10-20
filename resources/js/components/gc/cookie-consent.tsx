@@ -1,4 +1,4 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { Cookie } from 'lucide-react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
@@ -16,11 +16,9 @@ import { motionOr, RISE } from '@/lib/motion';
 /**
  * Банер згоди на cookie: обов’язкові потрібні для входу й безпеки, аналітичні (Google Analytics) —
  * лише з дозволу. На телефоні стоїть над нижнім островом, на ПК — у кутку.
+ * Стоїть поза сторінкою Inertia (у withApp), тому usePage тут недоступний — ідентифікатор аналітики приходить пропом.
  */
-export function CookieConsent() {
-    const analytics =
-        (usePage().props as { site?: { analytics?: string | null } }).site
-            ?.analytics ?? null;
+export function CookieConsent({ analytics }: { analytics: string | null }) {
     const reduce = useReducedMotion();
     const [choice, setChoice] = useState<Consent | null | undefined>(undefined);
 

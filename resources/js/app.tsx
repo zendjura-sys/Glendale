@@ -2,6 +2,7 @@ import type { VisitOptions } from '@inertiajs/core';
 import { createInertiaApp } from '@inertiajs/react';
 import { SkipLink } from '@/components/gc/skip-link';
 import { CookieConsent } from '@/components/gc/cookie-consent';
+import { ErrorBoundary } from '@/components/gc/error-boundary';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { installKeyboardGuard } from '@/lib/keyboard';
@@ -118,14 +119,23 @@ void createInertiaApp({
             viewTransition: shouldViewTransition(options),
         }),
     },
-    withApp(app) {
+    withApp(app, { page }) {
+        const analytics =
+            (page.props as { site?: { analytics?: string | null } }).site
+                ?.analytics ?? null;
+
         return (
             <LazyMotion features={motionFeatures} strict>
                 <TooltipProvider delayDuration={0}>
                     <SkipLink />
-                    <Suspense fallback={null}>{app}</Suspense>
-                    <Toaster />
-                    <CookieConsent />
+                    {/* Збій сторінки — картка з кнопкою оновлення; збій тостів чи банера — лише вони зникають. */}
+                    <ErrorBoundary>
+                        <Suspense fallback={null}>{app}</Suspense>
+                    </ErrorBoundary>
+                    <ErrorBoundary fallback={null}>
+                        <Toaster />
+                        <CookieConsent analytics={analytics} />
+                    </ErrorBoundary>
                 </TooltipProvider>
             </LazyMotion>
         );
