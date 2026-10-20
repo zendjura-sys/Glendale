@@ -39,9 +39,11 @@ use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Translation\Loader;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Http\Request;
 use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\Events\NotificationSent;
@@ -49,6 +51,7 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -77,6 +80,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        // Захист від флуду на рівні застосунку (nginx стримує грубіше — deploy/nginx): запитів на хвилину
+        // з одного акаунта чи адреси. Із запасом для звичайної роботи й оновлень у реальному часі.
+        RateLimiter::for('web-global', fn (Request $request) => Limit::perMinute(600)->by('web|'.($request->user()?->id ?: $request->ip())));
+        RateLimiter::for('api-global', fn (Request $request) => Limit::perMinute(600)->by('api|'.($request->user()?->id ?: $request->ip())));
 
         // $t у шаблонах листів: переклад мовою отримувача (Laravel ставить її з preferredLocale).
         View::share('t', fn (string $text, array $params = []) => (string) preg_replace_callback(

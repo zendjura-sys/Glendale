@@ -28,6 +28,15 @@ export default function Register({ passwordRules }: Props) {
             >
                 {({ processing, errors }) => (
                     <>
+                        {/* Пастка для ботів: людям не видно, боти заповнюють — таку реєстрацію сервер відхиляє. */}
+                        <input
+                            type="text"
+                            name="website"
+                            tabIndex={-1}
+                            autoComplete="off"
+                            aria-hidden
+                            className="pointer-events-none absolute -left-[9999px] size-px opacity-0"
+                        />
                         <div className="grid gap-5">
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="grid gap-2">
