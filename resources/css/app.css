@@ -2808,9 +2808,12 @@ html[data-text='xl'] {
     -webkit-backdrop-filter: blur(24px) saturate(180%);
     backdrop-filter: blur(24px) saturate(180%);
 }
-/* Нижня панель-острів на телефоні: щільне матове скло (майже непрозоре, фон за ним лише ледь розмитий), без рамки. */
+/* Нижня панель-острів на телефоні: щільне матове скло без рамки. Під напівпрозорий колір підкладено тло
+   сторінки — інакше текст карток під островом просвічував крізь нього. */
 .gc-island {
-    background: var(--gc-island);
+    background:
+        linear-gradient(var(--gc-island), var(--gc-island)),
+        var(--background);
     box-shadow: var(--gc-island-shadow);
     -webkit-backdrop-filter: blur(30px) saturate(180%);
     backdrop-filter: blur(30px) saturate(180%);
