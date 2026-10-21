@@ -40,6 +40,7 @@ declare module '@inertiajs/core' {
                 max_message_file_mb: number;
                 announcement: string | null;
                 analytics?: string | null;
+                music_upload?: { max_mb: number; formats: string[] };
                 /** Рік «Підсумків року», якщо зараз їхній сезон (грудень — січень). */
                 wrapped?: number | null;
                 social: {

@@ -12,7 +12,7 @@ import { tr } from '@/lib/i18n';
  * або офіційний iFrame-плеєр Spotify для всіх інших.
  */
 
-export type Engine = 'audio' | 'sdk' | 'embed';
+export type Engine = 'audio' | 'live' | 'sdk' | 'embed';
 export type RepeatMode = 'off' | 'all' | 'one';
 
 export type PlayerState = {
@@ -28,6 +28,12 @@ export type PlayerState = {
     shuffle: boolean;
     repeat: RepeatMode;
     engine: Engine | null;
+    /** ∞ — коли черга скінчилась, грати схожі треки (як автовідтворення в Apple Music). */
+    autoplay: boolean;
+    /** Безкінечна станція, з якої підвантажуються наступні треки (me, genre:…, artist:…, track:…). */
+    station: string | null;
+    /** Щойно зіграні треки (історія в «Далі в черзі»). */
+    played: TrackCard[];
 };
 
 type SpotifyAuth = { connected: boolean; premium: boolean };
@@ -39,6 +45,7 @@ const saved = (() => {
             volume?: number;
             shuffle?: boolean;
             repeat?: RepeatMode;
+            autoplay?: boolean;
         };
     } catch {
         return {};
@@ -58,6 +65,9 @@ let state: PlayerState = {
     shuffle: saved.shuffle ?? false,
     repeat: saved.repeat ?? 'off',
     engine: null,
+    autoplay: saved.autoplay ?? true,
+    station: null,
+    played: [],
 };
 
 const listeners = new Set<() => void>();
@@ -71,15 +81,25 @@ function set(patch: Partial<PlayerState>) {
     state = { ...state, ...patch };
     listeners.forEach((listener) => listener());
 
-    if ('volume' in patch || 'shuffle' in patch || 'repeat' in patch) {
-        localStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify({
-                volume: state.volume,
-                shuffle: state.shuffle,
-                repeat: state.repeat,
-            }),
-        );
+    if (
+        'volume' in patch ||
+        'shuffle' in patch ||
+        'repeat' in patch ||
+        'autoplay' in patch
+    ) {
+        try {
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify({
+                    volume: state.volume,
+                    shuffle: state.shuffle,
+                    repeat: state.repeat,
+                    autoplay: state.autoplay,
+                }),
+            );
+        } catch {
+            // Без сховища налаштування живуть до перезавантаження.
+        }
     }
 }
 
@@ -104,6 +124,37 @@ const effectiveVolume = () => (state.muted ? 0 : state.volume);
 /* ------------------------------------------------------------------ */
 
 let audio: HTMLAudioElement | null = null;
+
+let live: HTMLAudioElement | undefined;
+
+/** Живе радіо — окремий елемент: чужий потік без CORS не можна вести через Web Audio («Караоке»). */
+function liveEl(): HTMLAudioElement {
+    if (live) return live;
+
+    live = new Audio();
+    live.preload = 'none';
+    live.addEventListener('playing', () => {
+        if (state.engine === 'live') set({ playing: true, loading: false });
+    });
+    live.addEventListener('pause', () => {
+        if (state.engine === 'live') set({ playing: false });
+    });
+    live.addEventListener('waiting', () => {
+        if (state.engine === 'live') set({ loading: true });
+    });
+    live.addEventListener('error', () => {
+        if (state.engine !== 'live' || !live!.src) return;
+        set({ playing: false, loading: false });
+        toast.error(tr('Станція зараз не відповідає. Спробуйте пізніше.'));
+    });
+
+    return live;
+}
+
+/** Спільний HTMLAudioElement для власних треків (і графа «Караоке»). */
+export function audioElement(): HTMLAudioElement {
+    return audioEl();
+}
 
 function audioEl(): HTMLAudioElement {
     if (audio) return audio;
@@ -398,6 +449,10 @@ async function playViaEmbed(track: SpotifyTrack): Promise<void> {
 
 function stopEngines(except?: Engine) {
     if (except !== 'audio' && audio && !audio.paused) audio.pause();
+    if (except !== 'live' && live) {
+        live.pause();
+        live.removeAttribute('src');
+    }
     if (except !== 'sdk' && sdkPlayer && state.engine === 'sdk')
         void sdkPlayer.pause();
     if (except !== 'embed' && embed && state.engine === 'embed') embed.pause();
@@ -406,6 +461,7 @@ function stopEngines(except?: Engine) {
 
 function report(track: TrackCard) {
     clearTimeout(reportTimer);
+    if (track.source === 'radio') return;
     reportTimer = setTimeout(() => {
         const body =
             track.source === 'local'
@@ -453,6 +509,14 @@ async function start(index: number) {
     const track = state.queue[index];
     if (!track) return;
     endedFor = null;
+    if (state.current && state.current.key !== track.key) {
+        set({
+            played: [
+                state.current,
+                ...state.played.filter((t) => t.key !== state.current!.key),
+            ].slice(0, 30),
+        });
+    }
 
     set({
         index,
@@ -466,6 +530,17 @@ async function start(index: number) {
     report(track);
 
     try {
+        if (track.source === 'radio') {
+            stopEngines('live');
+            const el = liveEl();
+            set({ engine: 'live', duration: 0 });
+            el.src = track.url;
+            el.volume = effectiveVolume();
+            await el.play();
+
+            return;
+        }
+
         if (track.source === 'local') {
             stopEngines('audio');
             const el = audioEl();
@@ -526,7 +601,95 @@ function onEnded() {
         ? state.queue.length > 1
         : state.index < state.queue.length - 1;
     if (hasNext || state.repeat === 'all') next();
+    else if (
+        state.current?.source === 'local' &&
+        (state.station || state.autoplay)
+    )
+        void extend().then((added) => {
+            if (added) next();
+            else set({ playing: false, position: 0 });
+        });
     else set({ playing: false, position: 0 });
+}
+
+/**
+ * Дописати в чергу наступну порцію: зі станції або «схожі на останній трек» (∞).
+ * Повертає, чи щось додалося.
+ */
+async function extend(): Promise<boolean> {
+    const last = [...state.queue].reverse().find((t) => t.source === 'local');
+    const key = state.station ?? (last ? `track:${last.id}` : null);
+    if (!key) return false;
+    const exclude = state.queue
+        .filter((t) => t.source === 'local')
+        .map((t) => t.id)
+        .slice(-300);
+    try {
+        const params = new URLSearchParams({ key });
+        exclude.forEach((id) => params.append('exclude[]', String(id)));
+        const { tracks } = await api<{ tracks: TrackCard[] }>(
+            'GET',
+            `/music/station?${params.toString()}`,
+        );
+        if (tracks.length === 0) return false;
+        set({ queue: [...state.queue, ...tracks] });
+
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/** Безкінечна станція: перша порція одразу, далі — підвантажується, коли черга закінчується. */
+export async function playStation(key: string) {
+    set({ station: key });
+    try {
+        const params = new URLSearchParams({ key });
+        const { tracks } = await api<{ tracks: TrackCard[] }>(
+            'GET',
+            `/music/station?${params.toString()}`,
+        );
+        if (tracks.length === 0) {
+            toast.message(tr('На цій станції поки немає треків.'));
+
+            return;
+        }
+        history = [];
+        set({ queue: tracks, index: 0, station: key });
+        void start(0);
+    } catch {
+        toast.error(tr('Не вдалося запустити станцію.'));
+    }
+}
+
+/** Грати останнім (у кінці черги). */
+export function playLater(track: TrackCard) {
+    if (!state.current) {
+        playTrack(track);
+
+        return;
+    }
+    set({ queue: [...state.queue.filter((t) => t.key !== track.key), track] });
+    toast.success(tr('Трек гратиме останнім.'));
+}
+
+export function toggleAutoplay() {
+    set({ autoplay: !state.autoplay });
+}
+
+/** Перемістити трек у черзі (перетягування в «Далі в черзі»). */
+export function moveInQueue(from: number, to: number) {
+    if (from === to || from === state.index) return;
+    const queue = [...state.queue];
+    const [item] = queue.splice(from, 1);
+    queue.splice(to, 0, item);
+    const index = queue.findIndex((t) => t.key === state.current?.key);
+    set({ queue, index });
+}
+
+/** Очистити «Далі в черзі» (усе після поточного треку). */
+export function clearUpNext() {
+    set({ queue: state.queue.slice(0, state.index + 1) });
 }
 
 export function setSpotifyAuth(auth: SpotifyAuth) {
@@ -547,7 +710,7 @@ export function playQueue(tracks: TrackCard[], index = 0) {
     }
 
     history = [];
-    set({ queue: tracks, index });
+    set({ queue: tracks, index, station: null });
     void start(index);
 }
 
@@ -598,6 +761,15 @@ export function toggle() {
             const el = audioEl();
             if (el.paused) void el.play().catch(() => {});
             else el.pause();
+            break;
+        }
+        case 'live': {
+            // Живий ефір після паузи починається з поточного моменту, а не з буфера.
+            const el = liveEl();
+            if (el.paused) {
+                el.src = state.current?.url ?? el.src;
+                void el.play().catch(() => {});
+            } else el.pause();
             break;
         }
         case 'sdk':
@@ -656,6 +828,7 @@ export function toggleMute() {
 
 function applyVolume() {
     if (audio) audio.volume = effectiveVolume();
+    if (live) live.volume = effectiveVolume();
     void sdkPlayer?.setVolume(Math.max(effectiveVolume(), 0.0001));
 }
 
@@ -687,6 +860,7 @@ export function closePlayer() {
     stopEngines();
     clearInterval(ticker);
     if (audio) audio.removeAttribute('src');
+    if (live) live.removeAttribute('src');
     set({
         queue: [],
         index: -1,

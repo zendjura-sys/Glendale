@@ -1,6 +1,6 @@
 import type { UserCard } from './social';
 
-export type TrackSource = 'local' | 'spotify';
+export type TrackSource = 'local' | 'spotify' | 'radio';
 
 type BaseTrack = {
     key: string;
@@ -20,6 +20,11 @@ export type LocalTrack = BaseTrack & {
     plays_count: number;
     user_id: number | null;
     in_library: boolean;
+    /** Зірочка «Улюблене». */
+    favorite?: boolean;
+    year?: number | null;
+    /** lossy, lossless (до 48 кГц) або hires (понад 48 кГц). */
+    quality?: 'lossy' | 'lossless' | 'hires' | null;
 };
 
 export type SpotifyTrack = BaseTrack & {
@@ -30,7 +35,18 @@ export type SpotifyTrack = BaseTrack & {
     explicit?: boolean;
 };
 
-export type TrackCard = LocalTrack | SpotifyTrack;
+/** Інтернет-радіостанція: грає тим самим плеєром, без тривалості й перемотки. */
+export type RadioTrack = BaseTrack & {
+    source: 'radio';
+    id: number;
+    url: string;
+    genre: string | null;
+    homepage: string | null;
+    slug: string;
+    live: true;
+};
+
+export type TrackCard = LocalTrack | SpotifyTrack | RadioTrack;
 
 export type NowPlaying = TrackCard & {
     is_playing: boolean;
@@ -77,3 +93,78 @@ export type SpotifyPlaylist = {
 export type SharedMusic = {
     spotify: { connected: boolean; premium: boolean; configured: boolean };
 } | null;
+
+// ───────── Розділ «Музика» в стилі Apple Music (MusicCatalog) ─────────
+
+export type MixCard = {
+    kind: 'mix';
+    key: 'favorites' | 'discovery' | 'new' | 'friends' | 'chill';
+    colors: [string, string];
+    covers: string[];
+    href: string;
+};
+
+export type StationCard = {
+    kind: 'station';
+    /** me, genre:…, artist:…, track:… */
+    key: string;
+    name: string;
+    colors: [string, string];
+    covers: string[];
+};
+
+export type AlbumCard = {
+    kind: 'album';
+    title: string;
+    artist: string;
+    year: number | null;
+    tracks_count: number;
+    cover_url: string | null;
+    href: string;
+};
+
+export type ArtistCard = {
+    kind: 'artist';
+    name: string;
+    tracks_count: number;
+    cover_url: string | null;
+    href: string;
+    plays?: number;
+};
+
+export type GenreCard = {
+    name: string;
+    tracks_count: number;
+    cover_url: string | null;
+    href: string;
+};
+
+export type LibraryPlaylist = PlaylistCard & {
+    kind: 'playlist';
+    href: string;
+    is_featured?: boolean;
+    category?: string | null;
+};
+
+export type RecentItem =
+    | {
+          kind: 'album';
+          title: string;
+          subtitle: string;
+          cover_url: string | null;
+          href: string;
+      }
+    | {
+          kind: 'track';
+          title: string;
+          subtitle: string;
+          cover_url: string | null;
+          track: LocalTrack;
+      }
+    | {
+          kind: 'playlist';
+          title: string;
+          subtitle: null;
+          playlist: LibraryPlaylist;
+          href: string;
+      };

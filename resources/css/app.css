@@ -3417,3 +3417,175 @@ html[data-text='xl'] {
         display: none;
     }
 }
+
+/* ==============================================================================
+ * Розділ «Музика» в стилі Apple Music (layouts/music-layout.tsx, components/am/*).
+ * Власні кольори iOS: біле (світла тема) чи чорне (темна) тло, червоний акцент, системний шрифт,
+ * нижня панель і міні-плеєр — «рідке скло» iOS 26. Не залежить від стилю й палітри сайту.
+ * ============================================================================== */
+.am {
+    /* Світла тема сайту перефарбовує «білий» Tailwind у чорнило; у музиці білий — справжній. */
+    --color-white: #ffffff;
+    --am-bg: #ffffff;
+    --am-bg2: #f2f2f7;
+    --am-elevated: #ffffff;
+    --am-label: #000000;
+    --am-label2: rgb(60 60 67 / 0.6);
+    --am-label3: rgb(60 60 67 / 0.3);
+    --am-sep: rgb(60 60 67 / 0.18);
+    --am-fill: rgb(120 120 128 / 0.12);
+    --am-fill2: rgb(120 120 128 / 0.2);
+    --am-accent: #fa2d48;
+    --am-glass: rgb(255 255 255 / 0.72);
+    --am-glass-rim: rgb(255 255 255 / 0.9);
+    --am-glass-shadow:
+        0 8px 32px rgb(0 0 0 / 0.12), 0 1px 2px rgb(0 0 0 / 0.06);
+    --am-tab-active: rgb(120 120 128 / 0.16);
+    background: var(--am-bg);
+    color: var(--am-label);
+    font-family:
+        -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
+        'Inter', 'Helvetica Neue', 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+html[data-theme='dark'] .am {
+    --am-bg: #000000;
+    --am-bg2: #1c1c1e;
+    --am-elevated: #1c1c1e;
+    --am-label: #ffffff;
+    --am-label2: rgb(235 235 245 / 0.6);
+    --am-label3: rgb(235 235 245 / 0.3);
+    --am-sep: rgb(84 84 88 / 0.55);
+    --am-fill: rgb(120 120 128 / 0.24);
+    --am-fill2: rgb(120 120 128 / 0.32);
+    --am-accent: #fc3c44;
+    --am-glass: rgb(30 30 32 / 0.62);
+    --am-glass-rim: rgb(255 255 255 / 0.14);
+    --am-glass-shadow: 0 8px 32px rgb(0 0 0 / 0.5);
+    --am-tab-active: rgb(120 120 128 / 0.3);
+}
+/* У розділі «Музика» тло сторінки — тло розділу (без сцен сайту). */
+html:has(.am) body {
+    background: var(--am-bg, #000);
+}
+.am-glass {
+    background: var(--am-glass);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+    box-shadow:
+        inset 0 0 0 0.5px var(--am-glass-rim),
+        var(--am-glass-shadow);
+}
+.am-large-title {
+    font-size: 34px;
+    line-height: 41px;
+    font-weight: 700;
+    letter-spacing: 0.37px;
+}
+.am-title2 {
+    font-size: 22px;
+    line-height: 28px;
+    font-weight: 700;
+    letter-spacing: 0.35px;
+}
+.am-headline {
+    font-size: 17px;
+    line-height: 22px;
+    font-weight: 600;
+    letter-spacing: -0.41px;
+}
+.am-body {
+    font-size: 17px;
+    line-height: 22px;
+    letter-spacing: -0.41px;
+}
+.am-subhead {
+    font-size: 15px;
+    line-height: 20px;
+    letter-spacing: -0.24px;
+}
+.am-footnote {
+    font-size: 13px;
+    line-height: 18px;
+    letter-spacing: -0.08px;
+}
+.am-caption {
+    font-size: 11px;
+    line-height: 13px;
+    font-weight: 600;
+    letter-spacing: 0.07px;
+    text-transform: uppercase;
+}
+.am-art {
+    border-radius: 8px;
+    box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.1);
+    background: var(--am-fill);
+}
+/* Горизонтальна полиця: картки з прокруткою вбік, без смуги прокрутки. */
+.am-shelf {
+    scrollbar-width: none;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--am-gutter, 20px);
+}
+.am-shelf::-webkit-scrollbar {
+    display: none;
+}
+.am-shelf > * {
+    scroll-snap-align: start;
+}
+/* Повзунки розділу «Музика»: тонка доріжка iOS, заповнена до --value. */
+.am-volume,
+.am-np-range {
+    height: 22px;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+}
+.am-volume::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 999px;
+    background: linear-gradient(
+        to right,
+        var(--am-label2) var(--value),
+        var(--am-fill2) var(--value)
+    );
+}
+.am-np-range::-webkit-slider-runnable-track {
+    height: 7px;
+    border-radius: 999px;
+    background: linear-gradient(
+        to right,
+        rgb(255 255 255 / 0.85) var(--value),
+        rgb(255 255 255 / 0.25) var(--value)
+    );
+}
+.am-volume::-moz-range-track {
+    height: 4px;
+    border-radius: 999px;
+    background: linear-gradient(
+        to right,
+        var(--am-label2) var(--value),
+        var(--am-fill2) var(--value)
+    );
+}
+.am-np-range::-moz-range-track {
+    height: 7px;
+    border-radius: 999px;
+    background: linear-gradient(
+        to right,
+        rgb(255 255 255 / 0.85) var(--value),
+        rgb(255 255 255 / 0.25) var(--value)
+    );
+}
+.am-volume::-webkit-slider-thumb,
+.am-np-range::-webkit-slider-thumb {
+    appearance: none;
+    width: 0;
+    height: 0;
+}
+.am-volume::-moz-range-thumb,
+.am-np-range::-moz-range-thumb {
+    width: 0;
+    height: 0;
+    border: 0;
+}

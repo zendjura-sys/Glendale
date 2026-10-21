@@ -36,10 +36,14 @@ import {
 import { cn } from '@/lib/utils';
 import { Equalizer, SpotifyLogo, TrackCover } from './track-cover';
 import { tr } from '@/lib/i18n';
+import { TrackActionsProvider } from '@/components/am/track-actions';
 
-// Повноекранний плеєр — окремим файлом: вантажиться, лише коли його вперше відкривають.
-const FullPlayer = lazy(() =>
-    import('./full-player').then((module) => ({ default: module.FullPlayer })),
+// Повноекранний «Зараз грає» (як у розділі «Музика», стиль Apple Music) — окремим файлом:
+// вантажиться, лише коли його вперше відкривають.
+const NowPlaying = lazy(() =>
+    import('@/components/am/now-playing').then((module) => ({
+        default: module.NowPlaying,
+    })),
 );
 
 function Range({
@@ -111,6 +115,7 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
     const [queueOpen, setQueueOpen] = useState(false);
     const [expanded, setExpanded] = useState(false);
     const [fullLoaded, setFullLoaded] = useState(false);
+    const [view, setView] = useState<'artwork' | 'lyrics' | 'queue'>('artwork');
     const track = player.current;
 
     useEffect(() => {
@@ -397,9 +402,15 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
                     </div>
                 </div>
             </div>
-            {fullLoaded && (
+            {fullLoaded && expanded && (
                 <Suspense fallback={null}>
-                    <FullPlayer open={expanded} onOpenChange={setExpanded} />
+                    <TrackActionsProvider>
+                        <NowPlaying
+                            view={view}
+                            onView={setView}
+                            onClose={() => setExpanded(false)}
+                        />
+                    </TrackActionsProvider>
                 </Suspense>
             )}
         </>

@@ -16,10 +16,12 @@ const socialLayout = () => import('@/layouts/social-layout');
 const adminLayout = () => import('@/layouts/admin-layout');
 const authLayout = () => import('@/layouts/auth-layout');
 const settingsLayout = () => import('@/layouts/settings/layout');
+const musicLayout = () => import('@/layouts/music-layout');
 const SocialLayout = lazy(socialLayout);
 const AdminLayout = lazy(adminLayout);
 const AuthLayout = lazy(authLayout);
 const SettingsLayout = lazy(settingsLayout);
+const MusicLayout = lazy(musicLayout);
 
 // Макет першої сторінки починаємо качати одразу, паралельно зі сторінкою, — без другого очікування.
 if (typeof document !== 'undefined') {
@@ -29,6 +31,8 @@ if (typeof document !== 'undefined') {
         : '';
     if (name.startsWith('auth/')) void authLayout();
     else if (name.startsWith('admin/')) void adminLayout();
+    else if (name.startsWith('music/') && name !== 'music/together')
+        void musicLayout();
     else if (
         name &&
         name !== 'welcome' &&
@@ -108,6 +112,11 @@ void createInertiaApp({
                 return AuthLayout;
             case name.startsWith('admin/'):
                 return AdminLayout;
+            // «Музика» — власний розділ у стилі Apple Music; кімната «Слухати разом» лишається в макеті сайту.
+            case name.startsWith('music/') &&
+                name !== 'music/together' &&
+                name !== 'music/index':
+                return MusicLayout;
             case name.startsWith('settings/'):
                 return [SocialLayout, SettingsLayout];
             default:
