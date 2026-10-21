@@ -44,6 +44,8 @@ export function Waveform({
     onSeek,
     count = 72,
     className,
+    rest = 'bg-white/20',
+    played = 'bg-white',
 }: {
     seed: string;
     position: number;
@@ -51,6 +53,9 @@ export function Waveform({
     onSeek: (seconds: number) => void;
     count?: number;
     className?: string;
+    /** Колір незіграних і зіграних смуг (класи Tailwind). */
+    rest?: string;
+    played?: string;
 }) {
     const heights = useMemo(() => bars(seed, count), [seed, count]);
     const box = useRef<HTMLDivElement>(null);
@@ -116,13 +121,13 @@ export function Waveform({
                 className,
             )}
         >
-            {row('bg-white/20')}
+            {row(rest)}
             {/* Зіграна частина — той самий ряд, обрізаний по прогресу (без перерахунку смуг). */}
             <div
                 className="absolute inset-0"
                 style={{ clipPath: `inset(0 ${(1 - progress) * 100}% 0 0)` }}
             >
-                {row('bg-white')}
+                {row(played)}
             </div>
         </div>
     );
