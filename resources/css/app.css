@@ -2812,8 +2812,7 @@ html[data-text='xl'] {
    сторінки — інакше текст карток під островом просвічував крізь нього. */
 .gc-island {
     background:
-        linear-gradient(var(--gc-island), var(--gc-island)),
-        var(--background);
+        linear-gradient(var(--gc-island), var(--gc-island)), var(--background);
     box-shadow: var(--gc-island-shadow);
     -webkit-backdrop-filter: blur(30px) saturate(180%);
     backdrop-filter: blur(30px) saturate(180%);
