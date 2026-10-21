@@ -175,4 +175,20 @@ class AppSiteParityTest extends TestCase
             ->assertJsonPath('wrapped.year', 2026)
             ->assertJsonPath('wrapped.music.top_tracks.0.title', 'Afterglow');
     }
+
+    public function test_app_opens_apple_style_music_sections_through_bridge(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->app_token($user);
+        $track = Track::query()->create(['title' => 'Neon', 'artist' => 'Nightdrive', 'album' => 'Run', 'genre' => 'Synthwave', 'duration' => 100, 'path' => 'music/a.mp3', 'mime' => 'audio/mpeg', 'size' => 1]);
+
+        foreach (['home', 'new', 'radio', 'library', 'library/songs', 'library/albums', 'charts', 'replay', 'find?q=Neon'] as $path) {
+            $this->withToken($token)->getJson('/api/v1/site/music/'.$path)->assertOk();
+        }
+        $this->withToken($token)->getJson('/api/v1/site/music/artist?name=Nightdrive')->assertOk()->assertJsonPath('artist.name', 'Nightdrive');
+        $this->withToken($token)->getJson('/api/v1/site/music/album?artist=Nightdrive&title=Run')->assertOk()->assertJsonPath('album.tracks.0.id', $track->id);
+        $this->withToken($token)->getJson('/api/v1/site/music/station?key=genre:Synthwave')->assertOk()->assertJsonPath('tracks.0.id', $track->id);
+        $this->withToken($token)->postJson("/api/v1/site/music/tracks/{$track->id}/favorite")->assertOk()->assertJsonPath('favorite', true);
+        $this->withToken($token)->getJson('/api/v1/site/music/playlists/mine')->assertOk()->assertJsonStructure(['playlists']);
+    }
 }

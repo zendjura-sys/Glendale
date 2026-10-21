@@ -30,6 +30,7 @@ use App\Http\Controllers\MessengerController;
 use App\Http\Controllers\MomentController;
 use App\Http\Controllers\MonobankWebhookController;
 use App\Http\Controllers\MusicController;
+use App\Http\Controllers\MusicHubController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NowPlayingController;
 use App\Http\Controllers\OAuth;
@@ -320,7 +321,23 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     });
 
     Route::prefix('music')->middleware('module:music')->group(function () {
-        Route::get('/', [MusicController::class, 'index'])->name('music.index');
+        // Розділ у стилі Apple Music: Головна, Нове, Радіо, Медіатека, Пошук.
+        Route::get('/', [MusicHubController::class, 'home'])->name('music.index');
+        Route::get('new', [MusicHubController::class, 'newest'])->name('music.new');
+        Route::get('radio', [MusicHubController::class, 'radio'])->name('music.radio');
+        Route::get('library', [MusicHubController::class, 'library'])->name('music.library');
+        Route::post('library/sections', [MusicHubController::class, 'sections'])->name('music.library.sections');
+        Route::get('library/{section}', [MusicHubController::class, 'librarySection'])->where('section', '[a-z]+')->name('music.library.section');
+        Route::get('artist', [MusicHubController::class, 'artist'])->name('music.artist');
+        Route::get('album', [MusicHubController::class, 'album'])->name('music.album');
+        Route::get('mix/{key}', [MusicHubController::class, 'mix'])->where('key', '[a-z]+')->name('music.mix');
+        Route::get('genre', [MusicHubController::class, 'genre'])->name('music.genre');
+        Route::get('charts', [MusicHubController::class, 'charts'])->name('music.charts');
+        Route::get('replay/{year?}', [MusicHubController::class, 'replay'])->whereNumber('year')->name('music.replay');
+        Route::get('station', [MusicHubController::class, 'station'])->middleware('throttle:120,1')->name('music.station');
+        Route::get('playlists/mine', [MusicHubController::class, 'myPlaylists'])->name('music.playlists.mine');
+        Route::post('tracks/{track}/favorite', [MusicHubController::class, 'favorite'])->whereNumber('track')->name('tracks.favorite');
+        Route::delete('tracks/{track}/favorite', [MusicHubController::class, 'unfavorite'])->whereNumber('track')->name('tracks.unfavorite');
         Route::get('u/{user}', [MusicController::class, 'user'])->name('music.user');
         Route::get('search', [MusicController::class, 'search'])->middleware('throttle:120,1')->name('music.search');
         Route::post('now-playing', [NowPlayingController::class, 'store'])->middleware('throttle:60,1')->name('music.now-playing');

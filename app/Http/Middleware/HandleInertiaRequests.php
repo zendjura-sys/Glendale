@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Track;
 use App\Models\User;
 use App\Services\Auth\DiscordOAuth;
 use App\Services\Auth\FirebaseAuth;
@@ -93,6 +94,8 @@ class HandleInertiaRequests extends Middleware
                 'announcement' => $this->settings->get('maintenance_message'),
                 // Google Analytics 4 (G-…): завантажується лише після згоди на аналітичні cookie.
                 'analytics' => $this->settings->analyticsId(),
+                // Завантаження музики: ліміт і формати (кнопка «Завантажити» в розділі «Музика»).
+                'music_upload' => ['max_mb' => (int) $this->settings->get('music_max_track_mb'), 'formats' => Track::AUDIO_MIMES],
                 // «Підсумки року» відкриті (грудень — січень): банер у стрічці й пункт меню.
                 'wrapped' => app(Plugins::class)->on('wrapped') ? app(YearInReview::class)->season() : null,
                 'social' => [

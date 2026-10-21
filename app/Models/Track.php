@@ -25,6 +25,16 @@ use Illuminate\Support\Facades\Storage;
  * @property string $path
  * @property string|null $cover_path
  * @property string|null $mime
+ * @property int|null $year
+ * @property int|null $track_no
+ * @property string|null $codec
+ * @property int|null $sample_rate
+ * @property int|null $bit_depth
+ * @property int|null $bitrate
+ * @property int|null $channels
+ * @property string|null $quality
+ * @property string|null $stream_path
+ * @property bool $processing
  * @property int $size
  * @property int $plays_count
  * @property int $adds_count
@@ -34,12 +44,24 @@ use Illuminate\Support\Facades\Storage;
  * @property-read string|null $cover_url
  * @property-read User|null $user
  */
-#[Fillable(['user_id', 'title', 'artist', 'album', 'genre', 'lyrics', 'duration', 'path', 'cover_path', 'mime', 'size'])]
+#[Fillable(['user_id', 'title', 'artist', 'album', 'genre', 'year', 'track_no', 'lyrics', 'duration', 'path', 'stream_path', 'processing', 'cover_path', 'mime', 'codec', 'sample_rate', 'bit_depth', 'bitrate', 'channels', 'quality', 'size'])]
 class Track extends Model
 {
     use SoftDeletes;
 
     public const AUDIO_MIMES = ['mp3', 'mpga', 'm4a', 'mp4', 'aac', 'ogg', 'oga', 'opus', 'wav', 'flac', 'webm'];
+
+    /** Якість звуку: стиснений, без втрат (до 48 кГц) і високої роздільності (понад 48 кГц). */
+    public const QUALITY_LOSSY = 'lossy';
+
+    public const QUALITY_LOSSLESS = 'lossless';
+
+    public const QUALITY_HIRES = 'hires';
+
+    protected function casts(): array
+    {
+        return ['processing' => 'boolean'];
+    }
 
     /**
      * @return BelongsTo<User, $this>
@@ -72,11 +94,21 @@ class Track extends Model
     }
 
     /**
+     * Адреса для відтворення: копія для браузера, якщо оригінал грає не скрізь (ALAC, AIFF, WMA…).
+     *
      * @return Attribute<string, never>
      */
     protected function url(): Attribute
     {
-        return Attribute::get(fn () => Storage::disk('public')->url($this->path));
+        return Attribute::get(fn () => Storage::disk('public')->url($this->stream_path ?? $this->path));
+    }
+
+    /**
+     * @param  Builder<Track>  $query
+     */
+    public function scopeReady(Builder $query): void
+    {
+        $query->where('processing', false);
     }
 
     /**
@@ -100,6 +132,8 @@ class Track extends Model
             'artist' => $this->artist,
             'album' => $this->album,
             'genre' => $this->genre,
+            'year' => $this->year,
+            'quality' => $this->quality,
             'has_lyrics' => filled($this->lyrics) && app(Plugins::class)->on('lyrics'),
             'duration' => $this->duration,
             'url' => $this->url,

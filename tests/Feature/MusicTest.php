@@ -80,17 +80,17 @@ class MusicTest extends TestCase
         $track = $this->track($user);
         app(MusicService::class)->add($user, $track);
 
-        $this->actingAs($user)->get(route('music.index'))
+        // Пісні медіатеки тепер у «Медіатека → Пісні» (розділ у стилі Apple Music).
+        $this->actingAs($user)->get(route('music.library.section', 'songs'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('music/index')
-                ->where('tab', 'mine')
-                ->where('stats.tracks', 1)
-                ->where('stats.duration', 180)
-                ->where('spotify.configured', false)
-                ->where('tracks.data.0.key', 'local:'.$track->id)
-                ->where('tracks.data.0.in_library', true)
+                ->component('music/library-section')
+                ->where('section', 'songs')
+                ->where('songs.data.0.key', 'local:'.$track->id)
+                ->where('songs.data.0.in_library', true)
                 ->where('music.spotify.connected', false));
+        $this->actingAs($user)->get(route('music.library'))
+            ->assertInertia(fn (Assert $page) => $page->where('data.counts.songs', 1));
     }
 
     public function test_user_can_upload_a_track(): void

@@ -131,7 +131,7 @@ class MusicService
 
     /**
      * @param  iterable<int>  $trackIds
-     * @return array<int, true>
+     * @return array<int, bool>
      */
     public function libraryIds(User $user, iterable $trackIds): array
     {
@@ -144,11 +144,10 @@ class MusicService
             return [];
         }
 
+        // Ключ — трек у медіатеці; значення — чи позначений «Улюбленим» (зірочка).
         $owned = [];
-        foreach (DB::table('music_library')->where('user_id', $user->id)->whereIn('track_id', $ids)->pluck('track_id') as $id) {
-            if (is_numeric($id)) {
-                $owned[(int) $id] = true;
-            }
+        foreach (DB::table('music_library')->where('user_id', $user->id)->whereIn('track_id', $ids)->get(['track_id', 'is_favorite']) as $row) {
+            $owned[(int) $row->track_id] = (bool) $row->is_favorite;
         }
 
         return $owned;
@@ -169,7 +168,7 @@ class MusicService
         }
         $owned = $this->libraryIds($viewer, $trackIds);
 
-        return array_values($tracks->map(fn (Track $t) => $t->toCard(isset($owned[$t->id])))->all());
+        return array_values($tracks->map(fn (Track $t) => [...$t->toCard(isset($owned[$t->id])), 'favorite' => $owned[$t->id] ?? false])->all());
     }
 
     public function canManageTrack(Track $track, User $user): bool

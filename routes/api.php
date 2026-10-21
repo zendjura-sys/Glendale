@@ -29,6 +29,7 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessengerController;
 use App\Http\Controllers\MomentController;
 use App\Http\Controllers\MusicController;
+use App\Http\Controllers\MusicHubController;
 use App\Http\Controllers\NowPlayingController;
 use App\Http\Controllers\OAuth\TokenController as OAuthTokenController;
 use App\Http\Controllers\PartyController;
@@ -455,6 +456,24 @@ Route::prefix('v1')->group(function () {
 
             Route::prefix('music')->middleware('module:music')->group(function () {
                 Route::get('/', [MusicController::class, 'index']);
+                // Розділ у стилі Apple Music (ті самі контролери, що й на сайті).
+                Route::get('home', [MusicHubController::class, 'home']);
+                Route::get('new', [MusicHubController::class, 'newest']);
+                Route::get('radio', [MusicHubController::class, 'radio']);
+                Route::get('library', [MusicHubController::class, 'library']);
+                Route::post('library/sections', [MusicHubController::class, 'sections']);
+                Route::get('library/{section}', [MusicHubController::class, 'librarySection'])->where('section', '[a-z]+');
+                Route::get('artist', [MusicHubController::class, 'artist']);
+                Route::get('album', [MusicHubController::class, 'album']);
+                Route::get('mix/{key}', [MusicHubController::class, 'mix'])->where('key', '[a-z]+');
+                Route::get('genre', [MusicHubController::class, 'genre']);
+                Route::get('charts', [MusicHubController::class, 'charts']);
+                Route::get('replay/{year?}', [MusicHubController::class, 'replay'])->whereNumber('year');
+                Route::get('station', [MusicHubController::class, 'station'])->middleware('throttle:120,1');
+                Route::get('playlists/mine', [MusicHubController::class, 'myPlaylists']);
+                Route::get('find', [MusicHubController::class, 'search']);
+                Route::post('tracks/{track}/favorite', [MusicHubController::class, 'favorite'])->whereNumber('track');
+                Route::delete('tracks/{track}/favorite', [MusicHubController::class, 'unfavorite'])->whereNumber('track');
                 Route::get('u/{user}', [MusicController::class, 'user']);
                 Route::post('tracks', [TrackController::class, 'store'])->middleware('throttle:60,1');
                 Route::post('playlists', [PlaylistController::class, 'store'])->middleware('throttle:20,1');
