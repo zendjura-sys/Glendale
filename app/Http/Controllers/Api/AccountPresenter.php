@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\User;
 use App\Services\Moderation\ContentFilter;
+use App\Services\Wrapped\YearInReview;
 use App\Support\Modules\ModuleManager;
 use App\Support\NetworkModes;
+use App\Support\Plugins\Plugins;
 use App\Support\Skins;
 
 class AccountPresenter
@@ -43,6 +45,8 @@ class AccountPresenter
             'nav_tabs' => array_values(array_intersect(app(ModuleManager::class)->navTabsFor($user), $modes->modulesFor($user))),
             'modules' => $modes->modulesFor($user),
             'network_mode' => $modes->for($user)['id'],
+            // Рік «Підсумків року», коли їхній сезон (грудень — січень): банер у стрічці застосунку.
+            'wrapped' => app(Plugins::class)->on('wrapped') ? app(YearInReview::class)->season() : null,
             'modes' => array_map(fn (array $mode) => ['id' => $mode['id'], 'name' => $mode['name'], 'description' => $mode['description'], 'icon' => $mode['icon']], $modes->available()),
             // Тема, як на сайті: system (як на пристрої), dark («Неоновий синій») або light («Крижана Арктика»).
             'theme' => Skins::theme($user),

@@ -47,6 +47,9 @@ class Session extends ChangeNotifier {
   /// Вибір зберігається в акаунті й однаковий на сайті та в застосунку; локальна копія —
   /// поки профіль ще не завантажився.
   /// Розділи, увімкнені для цього акаунта (режим соцмережі й адмінка); null — ще не відомо.
+  /// Рік «Підсумків року», якщо зараз їхній сезон (грудень — січень).
+  int? get wrappedYear => me?['wrapped'] is int ? me!['wrapped'] as int : null;
+
   Set<String>? get modules => me?['modules'] is List ? {for (final key in me!['modules'] as List) '$key'} : null;
 
   List<String> get navTabs {

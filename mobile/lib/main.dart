@@ -39,6 +39,7 @@ import 'track_edit.dart';
 import 'watch_party.dart';
 import 'theme_controller.dart';
 import 'widgets.dart';
+import 'wrapped.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -84,6 +85,8 @@ Future<void> main() async {
     routes: [
       GoRoute(path: '/', redirect: (_, _) => '/feed'),
       GoRoute(path: '/login', builder: (_, _) => AuthScreen(session: session)),
+      // «Підсумки року» — на весь екран, без шапки й нижнього меню.
+      GoRoute(path: '/wrapped', builder: (_, _) => const WrappedScreen()),
       ShellRoute(
         builder: (_, _, child) => AppShell(session: session, player: player, child: child),
         routes: [

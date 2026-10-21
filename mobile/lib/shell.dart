@@ -42,6 +42,7 @@ String appPathFor(String? sitePath) {
       return '/phone$query';
     case 'moments':
     case 'quests':
+    case 'wrapped':
     case 'saved':
     case 'invite':
       return '/$head';

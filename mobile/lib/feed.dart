@@ -12,6 +12,7 @@ import 'state.dart';
 import 'stories.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'wrapped.dart';
 import 'i18n.dart';
 
 /// Сторінки записів з підвантаженням: стрічка, стіна профілю, спільнота.
@@ -121,6 +122,7 @@ class _FeedScreenState extends State<FeedScreen> {
       onRefresh: _reload,
       children: [
         StoriesStrip(key: stories),
+        if (AppScope.of(context).session.wrappedYear case final year?) ...[WrappedBanner(year: year), const SizedBox(height: 12)],
         if (tomorrow.isNotEmpty) ...[_TomorrowCard(events: tomorrow), const SizedBox(height: 12)],
         Composer(onPosted: _reload),
         SizedBox(height: 12),
