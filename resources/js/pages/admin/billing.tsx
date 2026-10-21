@@ -117,6 +117,7 @@ const PROMO_LABELS = (): Record<string, string> => ({
 });
 
 const BADGE_LABELS: Record<PaymentBadge, string> = {
+    plata: 'plata by mono',
     visa: 'Visa',
     mastercard: 'Mastercard',
     maestro: 'Maestro',
