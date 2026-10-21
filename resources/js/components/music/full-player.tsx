@@ -1,8 +1,6 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import {
-    ChevronLeft,
-    Heart,
-    ListMusic,
+    ChevronDown,
     Loader2,
     MicVocal,
     Pause,
@@ -19,9 +17,9 @@ import {
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import type { PanInfo } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
 import type { CSSProperties, ReactNode } from 'react';
 import { api } from '@/lib/api';
+import { useCoverColor } from '@/lib/cover-color';
 import { formatDuration } from '@/lib/format';
 import { tr } from '@/lib/i18n';
 import { activeLine, parseLyrics } from '@/lib/lyrics';
@@ -31,7 +29,6 @@ import {
     cycleRepeat,
     jumpTo,
     next,
-    patchTrack,
     prev,
     seek,
     setVolume,
@@ -46,9 +43,9 @@ import { TrackCover } from './track-cover';
 import { Waveform } from './waveform';
 
 /**
- * Повноекранний плеєр («Зараз грає») у фірмовому стилі: фіолетове тло з пурпурним сяйвом унизу,
- * кругла обкладинка з м’яким сяйвом, біла хвиля прогресу, кнопки з рідкого скла. Свайп по обкладинці —
- * інший трек, караоке-текст (LRC) і черга. Телефон — одна колонка (обкладинка ↔ текст/черга), ПК — дві.
+ * Повноекранний плеєр («Зараз грає»): тло в кольорі обкладинки, вініл визирає з-за обкладинки
+ * й крутиться під час гри, прогрес-хвиля, свайп по обкладинці — інший трек, скляна панель
+ * керування, караоке-текст (LRC). Телефон — одна колонка (обкладинка ↔ текст), ПК — дві.
  */
 
 const SWIPE = 80;
@@ -83,13 +80,48 @@ function useLyrics(track: TrackCard | null, enabled: boolean) {
     return local && state?.key === key ? state.lyrics : null;
 }
 
-/** Обкладинка-коло з м’яким сяйвом її ж кольору; свайп убік — інший трек. */
+/** Вініл: борозни, відблиск і «яблуко» з обкладинкою; крутиться лише під час гри. */
+function Vinyl({
+    cover,
+    spinning,
+}: {
+    cover: string | null;
+    spinning: boolean;
+}) {
+    return (
+        <div
+            aria-hidden
+            className="absolute inset-[3%] animate-[spin_8s_linear_infinite] rounded-full shadow-[0_20px_50px_-20px_rgb(0_0_0/0.9)] motion-reduce:animate-none"
+            style={{
+                animationPlayState: spinning ? 'running' : 'paused',
+                background:
+                    'repeating-radial-gradient(circle at center, #0b0b10 0 1.5px, #15151c 1.5px 3px)',
+            }}
+        >
+            <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_30deg,transparent_0deg,rgb(255_255_255/0.09)_40deg,transparent_90deg,transparent_180deg,rgb(255_255_255/0.07)_220deg,transparent_270deg)]" />
+            <div className="absolute inset-[33%] overflow-hidden rounded-full bg-[var(--tint)] ring-4 ring-black/40">
+                {cover && (
+                    <img
+                        decoding="async"
+                        src={cover}
+                        alt=""
+                        className="size-full object-cover"
+                    />
+                )}
+                <span className="absolute top-1/2 left-1/2 size-[9%] -translate-1/2 rounded-full bg-[#0b0b10]" />
+            </div>
+        </div>
+    );
+}
+
 function Stage({
     track,
+    playing,
     direction,
     onSwipe,
 }: {
     track: TrackCard;
+    playing: boolean;
     direction: number;
     onSwipe: (direction: 1 | -1) => void;
 }) {
@@ -100,21 +132,16 @@ function Stage({
     };
 
     return (
-        <div className="relative aspect-square w-[min(76vw,40dvh,380px)] lg:w-[min(32vw,58dvh,460px)]">
-            {/* Сяйво: та сама обкладинка, сильно розмита, за колом. */}
-            <div
-                aria-hidden
-                className="absolute inset-[6%] translate-y-[6%] rounded-full bg-[#a855f7] opacity-60 blur-[48px]"
+        // Обкладинка + вініл, що визирає праворуч; зсув ліворуч центрує всю композицію.
+        <div className="relative aspect-square w-[min(64vw,40dvh,360px)] -translate-x-[16%] lg:w-[min(30vw,62dvh,440px)]">
+            <m.div
+                className="absolute inset-0"
+                initial={reduce ? false : { x: '0%' }}
+                animate={{ x: '34%' }}
+                transition={motionOr(reduce, { ...RISE, delay: 0.15 })}
             >
-                {track.cover_url && (
-                    <img
-                        decoding="async"
-                        src={track.cover_url}
-                        alt=""
-                        className="size-full rounded-full object-cover"
-                    />
-                )}
-            </div>
+                <Vinyl cover={track.cover_url} spinning={playing} />
+            </m.div>
             <AnimatePresence
                 initial={false}
                 custom={direction}
@@ -127,13 +154,13 @@ function Stage({
                         enter: (d: number) => ({
                             x: d * 70,
                             opacity: 0,
-                            scale: 0.94,
+                            filter: 'blur(8px)',
                         }),
-                        center: { x: 0, opacity: 1, scale: 1 },
+                        center: { x: 0, opacity: 1, filter: 'blur(0px)' },
                         exit: (d: number) => ({
                             x: d * -70,
                             opacity: 0,
-                            scale: 0.94,
+                            filter: 'blur(8px)',
                         }),
                     }}
                     initial={reduce ? false : 'enter'}
@@ -153,7 +180,7 @@ function Stage({
                     <TrackCover
                         url={track.cover_url}
                         seed={track.key}
-                        className="pointer-events-none size-full rounded-full ring-1 ring-white/20 select-none"
+                        className="pointer-events-none size-full rounded-[22px] shadow-[0_30px_70px_-25px_rgb(0_0_0/0.9)] ring-1 ring-white/10 select-none"
                     />
                 </m.div>
             </AnimatePresence>
@@ -269,10 +296,6 @@ function UpNext({ queue, index }: { queue: TrackCard[]; index: number }) {
     );
 }
 
-/** Пласке матове скло: молочна заливка, сильне розмиття й тонкий світлий обідок — без тіней і відблисків. */
-const GLASS =
-    'bg-white/[0.14] ring-1 ring-white/30 ring-inset backdrop-blur-2xl backdrop-saturate-150';
-
 function Control({
     onClick,
     label,
@@ -292,55 +315,16 @@ function Control({
             aria-pressed={active}
             title={label}
             className={cn(
-                'relative flex size-12 items-center justify-center rounded-full transition-colors',
-                active ? 'text-white' : 'text-white/75 hover:text-white',
-            )}
-        >
-            {children}
-            {active && (
-                <span className="absolute bottom-0.5 size-1 rounded-full bg-white" />
-            )}
-        </button>
-    );
-}
-
-/** Кругла скляна кнопка шапки (згорнути, улюблене). */
-function GlassButton({
-    onClick,
-    label,
-    pressed,
-    children,
-}: {
-    onClick?: () => void;
-    label: string;
-    pressed?: boolean;
-    children: ReactNode;
-}) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            aria-label={label}
-            aria-pressed={pressed}
-            title={label}
-            className={cn(
-                'flex size-12 items-center justify-center rounded-full text-white transition-[background-color,transform] hover:bg-white/20 active:scale-95',
-                GLASS,
+                'flex size-11 items-center justify-center rounded-full transition-colors',
+                active
+                    ? 'bg-white/15 text-white'
+                    : 'text-white/70 hover:bg-white/10 hover:text-white',
             )}
         >
             {children}
         </button>
     );
 }
-
-/** Тло як у фірмовому плеєрі: бузковий верх, глибокий індиго посередині, пурпурне сяйво внизу. */
-const BACKDROP = [
-    'radial-gradient(120% 55% at 50% -5%, rgb(110 72 230 / 0.95), transparent 62%)',
-    'radial-gradient(70% 45% at 8% 38%, rgb(124 58 237 / 0.55), transparent 70%)',
-    'radial-gradient(70% 45% at 95% 45%, rgb(67 56 202 / 0.6), transparent 70%)',
-    'radial-gradient(130% 50% at 50% 108%, rgb(192 38 211 / 0.95), rgb(147 51 234 / 0.55) 40%, transparent 72%)',
-    'linear-gradient(180deg, #2b1a86 0%, #170f55 45%, #1b1063 68%, #5b21b6 100%)',
-].join(', ');
 
 export function FullPlayer({
     open,
@@ -352,8 +336,9 @@ export function FullPlayer({
     const player = usePlayer();
     const reduce = useReducedMotion();
     const track = player.current;
+    const tint = useCoverColor(track?.cover_url);
     const lyrics = useLyrics(track, open);
-    const [view, setView] = useState<'cover' | 'lyrics' | 'queue'>('cover');
+    const [view, setView] = useState<'cover' | 'lyrics'>('cover');
     const [direction, setDirection] = useState(1);
 
     useEffect(() => {
@@ -367,26 +352,6 @@ export function FullPlayer({
         if (d === 1) next();
         else prev();
     };
-    const flip = (target: 'lyrics' | 'queue') =>
-        setView((v) => (v === target ? 'cover' : target));
-    const toggleLibrary = async () => {
-        if (track.source !== 'local') return;
-        const saved = !track.in_library;
-        patchTrack(track.key, { in_library: saved });
-        try {
-            await api(
-                saved ? 'POST' : 'DELETE',
-                `/music/tracks/${track.id}/library`,
-            );
-            toast.success(
-                saved
-                    ? tr('Додано до ваших аудіозаписів.')
-                    : tr('Прибрано з ваших аудіозаписів.'),
-            );
-        } catch {
-            patchTrack(track.key, { in_library: !saved });
-        }
-    };
     const RepeatIcon = player.repeat === 'one' ? Repeat1 : Repeat;
     const VolumeIcon =
         player.muted || player.volume === 0
@@ -395,30 +360,32 @@ export function FullPlayer({
               ? Volume1
               : Volume2;
     const showLyrics = view === 'lyrics' && lyrics !== null;
-    const showQueue = view === 'queue';
-    const saved = track.source === 'local' && track.in_library;
 
     const info = (
-        <AnimatePresence mode="wait" initial={false}>
-            <m.div
-                key={track.key}
-                initial={reduce ? false : { opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={reduce ? undefined : { opacity: 0, y: -6 }}
-                transition={{ duration: 0.25, ease: EASE_OUT }}
-                className="min-w-0 text-center lg:text-left"
-            >
-                <h2 className="truncate font-display text-[1.65rem] leading-tight font-semibold tracking-tight text-white lg:text-[2.1rem]">
-                    {track.title}
-                </h2>
-                <p className="mt-1.5 truncate text-[0.95rem] text-white/70">
-                    {track.artist}
-                    {track.album && (
-                        <span className="text-white/45"> · {track.album}</span>
-                    )}
-                </p>
-            </m.div>
-        </AnimatePresence>
+        <div className="min-w-0">
+            <AnimatePresence mode="wait" initial={false}>
+                <m.div
+                    key={track.key}
+                    initial={reduce ? false : { opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduce ? undefined : { opacity: 0, y: -6 }}
+                    transition={{ duration: 0.25, ease: EASE_OUT }}
+                >
+                    <h2 className="truncate font-display text-2xl font-bold tracking-tight text-white lg:text-[2rem]">
+                        {track.title}
+                    </h2>
+                    <p className="mt-1 truncate text-base text-white/60">
+                        {track.artist}
+                        {track.album && (
+                            <span className="text-white/40">
+                                {' '}
+                                · {track.album}
+                            </span>
+                        )}
+                    </p>
+                </m.div>
+            </AnimatePresence>
+        </div>
     );
 
     const progress = (
@@ -428,12 +395,8 @@ export function FullPlayer({
                 position={player.position}
                 duration={player.duration}
                 onSeek={seek}
-                count={64}
-                rest="bg-white/35"
-                played="bg-white"
-                className="h-14 [&>div]:gap-[3px]"
             />
-            <div className="mt-2 flex justify-between text-sm text-white/75 tabular-nums">
+            <div className="mt-1.5 flex justify-between text-xs text-white/50 tabular-nums">
                 <span>{formatDuration(player.position)}</span>
                 <span>{formatDuration(player.duration)}</span>
             </div>
@@ -441,16 +404,16 @@ export function FullPlayer({
     );
 
     const controls = (
-        <div className="flex items-center justify-between">
+        <div className="liquid-glass flex items-center justify-between rounded-[26px] px-3 py-2.5">
             <Control
                 onClick={toggleShuffle}
                 label={tr('Перемішати')}
                 active={player.shuffle}
             >
-                <Shuffle className="size-[22px]" />
+                <Shuffle className="size-[18px]" />
             </Control>
             <Control onClick={() => go(-1)} label={tr('Попередній')}>
-                <SkipBack className="size-7 fill-current" />
+                <SkipBack className="size-6 fill-current" />
             </Control>
             <m.button
                 type="button"
@@ -458,35 +421,19 @@ export function FullPlayer({
                 whileTap={reduce ? undefined : { scale: 0.92 }}
                 transition={SNAP}
                 aria-label={player.playing ? tr('Пауза') : tr('Відтворити')}
-                className={cn(
-                    'flex size-[84px] items-center justify-center rounded-full text-white transition-colors hover:bg-white/20',
-                    GLASS,
-                )}
+                className="flex size-16 items-center justify-center rounded-full bg-white text-[#0b0d1d] transition-colors hover:bg-white/90"
             >
                 {player.loading && !player.playing ? (
-                    <Loader2 className="size-8 animate-spin" />
+                    <Loader2 className="size-7 animate-spin" />
                 ) : player.playing ? (
-                    <Pause className="size-8 fill-current" />
+                    <Pause className="size-7 fill-current" />
                 ) : (
-                    <Play className="ml-1 size-8 fill-current" />
+                    <Play className="ml-1 size-7 fill-current" />
                 )}
             </m.button>
             <Control onClick={() => go(1)} label={tr('Наступний')}>
-                <SkipForward className="size-7 fill-current" />
+                <SkipForward className="size-6 fill-current" />
             </Control>
-            <Control
-                onClick={() => flip('queue')}
-                label={tr('Далі в черзі')}
-                active={showQueue}
-            >
-                <ListMusic className="size-[22px]" />
-            </Control>
-        </div>
-    );
-
-    // Другорядне: повтор, текст пісні, на ПК — гучність.
-    const extras = (
-        <div className="flex items-center justify-center gap-2 lg:justify-start">
             <Control
                 onClick={cycleRepeat}
                 label={
@@ -500,40 +447,6 @@ export function FullPlayer({
             >
                 <RepeatIcon className="size-[18px]" />
             </Control>
-            {lyrics && (
-                <Control
-                    onClick={() => flip('lyrics')}
-                    label={tr('Текст пісні')}
-                    active={showLyrics}
-                >
-                    <MicVocal className="size-[18px]" />
-                </Control>
-            )}
-            <div className="ml-2 hidden items-center gap-2 lg:flex">
-                <button
-                    type="button"
-                    onClick={toggleMute}
-                    aria-label={tr('Гучність')}
-                    className="flex size-9 items-center justify-center rounded-full text-white/70 hover:text-white"
-                >
-                    <VolumeIcon className="size-[18px]" />
-                </button>
-                <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={player.muted ? 0 : player.volume}
-                    onChange={(e) => setVolume(Number(e.target.value))}
-                    aria-label={tr('Гучність')}
-                    className="gc-range w-40"
-                    style={
-                        {
-                            '--value': `${(player.muted ? 0 : player.volume) * 100}%`,
-                        } as CSSProperties
-                    }
-                />
-            </div>
         </div>
     );
 
@@ -560,89 +473,138 @@ export function FullPlayer({
                                         : { opacity: 0, y: 40 }
                                 }
                                 transition={motionOr(reduce, RISE)}
-                                className="fixed inset-0 z-[60] overflow-hidden bg-[#170f55] text-white focus:outline-none"
-                                style={{ backgroundImage: BACKDROP }}
+                                className="fixed inset-0 z-[60] overflow-hidden bg-background text-white focus:outline-none"
+                                style={
+                                    {
+                                        '--tint': tint
+                                            ? `rgb(${tint})`
+                                            : 'var(--primary)',
+                                    } as CSSProperties
+                                }
                             >
                                 <DialogPrimitive.Title className="sr-only">
                                     {tr('Зараз грає')}: {track.title}
                                 </DialogPrimitive.Title>
 
-                                <div className="relative mx-auto flex h-full max-w-6xl flex-col px-6 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] lg:px-10">
+                                {/* Тло: розмита обкладинка + колір обкладинки + затемнення під текст. */}
+                                <div
+                                    aria-hidden
+                                    className="pointer-events-none absolute inset-0"
+                                >
+                                    {track.cover_url && (
+                                        <img
+                                            decoding="async"
+                                            src={track.cover_url}
+                                            alt=""
+                                            className="absolute inset-0 size-full scale-150 object-cover opacity-45 blur-[90px] transition-opacity duration-700"
+                                        />
+                                    )}
+                                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,color-mix(in_oklab,var(--tint)_55%,transparent),transparent_65%)] transition-[background] duration-700" />
+                                    <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgb(0_0_0/0.15),rgb(0_0_0/0.35)_45%,rgb(0_0_0/0.75))]" />
+                                </div>
+
+                                <div className="relative mx-auto flex h-full max-w-6xl flex-col px-5 pt-[calc(env(safe-area-inset-top)+0.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.25rem)] lg:px-10">
                                     <header className="flex h-14 shrink-0 items-center gap-3">
-                                        <DialogPrimitive.Close asChild>
-                                            <GlassButton
-                                                label={tr('Згорнути плеєр')}
-                                            >
-                                                <ChevronLeft className="size-6" />
-                                            </GlassButton>
+                                        <DialogPrimitive.Close
+                                            aria-label={tr('Згорнути плеєр')}
+                                            className="flex size-11 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                                        >
+                                            <ChevronDown className="size-6" />
                                         </DialogPrimitive.Close>
-                                        <p className="min-w-0 flex-1 truncate text-center text-lg font-medium text-white">
+                                        <p className="min-w-0 flex-1 truncate text-center text-sm font-medium text-white/60">
                                             {tr('Зараз грає')}
                                         </p>
-                                        {track.source === 'local' ? (
-                                            <GlassButton
-                                                onClick={toggleLibrary}
-                                                pressed={saved}
-                                                label={
-                                                    saved
-                                                        ? tr(
-                                                              'Прибрати з моїх аудіозаписів',
-                                                          )
-                                                        : tr(
-                                                              'Додати до моїх аудіозаписів',
-                                                          )
+                                        {lyrics ? (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setView((v) =>
+                                                        v === 'lyrics'
+                                                            ? 'cover'
+                                                            : 'lyrics',
+                                                    )
                                                 }
+                                                aria-pressed={showLyrics}
+                                                aria-label={tr('Текст пісні')}
+                                                title={tr('Текст пісні')}
+                                                className={cn(
+                                                    'flex size-11 items-center justify-center rounded-full transition-colors lg:invisible',
+                                                    showLyrics
+                                                        ? 'bg-white/15 text-white'
+                                                        : 'text-white/70 hover:bg-white/10 hover:text-white',
+                                                )}
                                             >
-                                                <Heart
-                                                    className={cn(
-                                                        'size-[22px] transition-colors',
-                                                        saved &&
-                                                            'fill-current text-[#f472d0]',
-                                                    )}
-                                                />
-                                            </GlassButton>
+                                                <MicVocal className="size-5" />
+                                            </button>
                                         ) : (
-                                            <span className="size-12" />
+                                            <span className="size-11" />
                                         )}
                                     </header>
 
-                                    <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)] lg:items-center lg:gap-16">
-                                        {/* Обкладинка; на телефоні її місце займає текст пісні чи черга. */}
+                                    <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)] lg:items-center lg:gap-16">
+                                        {/* Обкладинка (на телефоні міняється на текст). */}
                                         <div className="flex min-h-0 items-center justify-center">
-                                            {showLyrics && (
+                                            {showLyrics ? (
                                                 <LyricsView
                                                     lyrics={lyrics}
                                                     position={player.position}
                                                     className="h-full w-full lg:hidden"
                                                 />
-                                            )}
-                                            {showQueue && (
-                                                <div className="h-full w-full overflow-y-auto pt-4 lg:hidden">
-                                                    <UpNext
-                                                        queue={player.queue}
-                                                        index={player.index}
-                                                    />
-                                                </div>
-                                            )}
+                                            ) : null}
                                             <div
                                                 className={cn(
-                                                    (showLyrics || showQueue) &&
+                                                    showLyrics &&
                                                         'hidden lg:block',
                                                 )}
                                             >
                                                 <Stage
                                                     track={track}
+                                                    playing={player.playing}
                                                     direction={direction}
                                                     onSwipe={go}
                                                 />
                                             </div>
                                         </div>
 
-                                        <div className="flex min-h-0 flex-col gap-6">
+                                        <div className="flex min-h-0 flex-col gap-5">
                                             {info}
                                             {progress}
                                             {controls}
-                                            {extras}
+                                            <div className="hidden items-center gap-2 lg:flex">
+                                                <button
+                                                    type="button"
+                                                    onClick={toggleMute}
+                                                    aria-label={tr('Гучність')}
+                                                    className="flex size-9 items-center justify-center rounded-full text-white/60 hover:text-white"
+                                                >
+                                                    <VolumeIcon className="size-[18px]" />
+                                                </button>
+                                                <input
+                                                    type="range"
+                                                    min={0}
+                                                    max={1}
+                                                    step={0.01}
+                                                    value={
+                                                        player.muted
+                                                            ? 0
+                                                            : player.volume
+                                                    }
+                                                    onChange={(e) =>
+                                                        setVolume(
+                                                            Number(
+                                                                e.target.value,
+                                                            ),
+                                                        )
+                                                    }
+                                                    aria-label={tr('Гучність')}
+                                                    className="gc-range w-40"
+                                                    style={
+                                                        {
+                                                            '--value': `${(player.muted ? 0 : player.volume) * 100}%`,
+                                                        } as CSSProperties
+                                                    }
+                                                />
+                                            </div>
                                             {/* ПК: текст пісні або «далі в черзі» під керуванням. */}
                                             <div className="hidden min-h-0 lg:block">
                                                 {lyrics ? (
@@ -651,7 +613,7 @@ export function FullPlayer({
                                                         position={
                                                             player.position
                                                         }
-                                                        className="h-[min(28dvh,260px)]"
+                                                        className="h-[min(32dvh,300px)]"
                                                     />
                                                 ) : (
                                                     <UpNext

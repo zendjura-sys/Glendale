@@ -190,7 +190,7 @@ class Session extends ChangeNotifier {
 
 /// Один трек у черзі програвача (локальний трек GameCon).
 class QueueTrack {
-  QueueTrack({required this.id, required this.url, required this.title, required this.artist, this.cover, this.album, this.genre, this.userId, this.hasLyrics = false, this.inLibrary = false});
+  QueueTrack({required this.id, required this.url, required this.title, required this.artist, this.cover, this.album, this.genre, this.userId, this.hasLyrics = false});
   final int? id;
   final String url;
   final String title;
@@ -202,9 +202,6 @@ class QueueTrack {
 
   /// У треку є текст (караоке, якщо з мітками LRC).
   final bool hasLyrics;
-
-  /// Трек у «моїх аудіозаписах» (серце в повноекранному плеєрі).
-  final bool inLibrary;
 
   /// Картка для листа редагування (ті ж ключі, що віддає сервер).
   Map<String, dynamic> toCard() => {'id': id, 'url': url, 'title': title, 'artist': artist, 'album': album, 'genre': genre, 'cover_url': cover, 'user_id': userId};
@@ -222,7 +219,6 @@ class QueueTrack {
       genre: text(track['genre']),
       userId: track['user_id'] is int ? track['user_id'] as int : int.tryParse('${track['user_id']}'),
       hasLyrics: track['has_lyrics'] == true,
-      inLibrary: track['in_library'] == true,
     );
   }
 }
@@ -422,7 +418,6 @@ class TrackPlayer extends ChangeNotifier {
         genre: text(card['genre']),
         userId: old.userId,
         hasLyrics: card['has_lyrics'] is bool ? card['has_lyrics'] as bool : old.hasLyrics,
-        inLibrary: card['in_library'] is bool ? card['in_library'] as bool : old.inLibrary,
       );
       changed = true;
     }
