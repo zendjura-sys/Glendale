@@ -58,6 +58,7 @@ use App\Http\Controllers\VoiceController;
 use App\Http\Controllers\WatchPartyController;
 use App\Http\Controllers\WebPushController;
 use App\Http\Controllers\WelcomeController;
+use App\Http\Controllers\WrappedController;
 use App\Models\BotLink;
 use App\Models\VoiceRoom;
 use App\Services\Servers\ServerOAuth;
@@ -486,6 +487,8 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('{server}/apps/{app}/secret', [ServerAppController::class, 'secret'])->middleware('throttle:10,1')->name('apps.secret');
         Route::delete('{server}/apps/{app}', [ServerAppController::class, 'destroy'])->name('apps.destroy');
     });
+
+    Route::get('wrapped', [WrappedController::class, 'show'])->middleware('throttle:30,1')->name('wrapped');
 
     Route::prefix('quests')->name('quests.')->middleware('module:quests')->group(function () {
         Route::get('/', [QuestController::class, 'index'])->name('index');

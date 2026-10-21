@@ -99,6 +99,7 @@ void createInertiaApp({
         switch (true) {
             case name === 'welcome':
             case name === 'error':
+            case name === 'wrapped':
             case name === 'start/mode':
             case name === 'start/phone':
             case name.startsWith('legal/'):

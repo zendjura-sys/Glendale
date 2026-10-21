@@ -15,6 +15,7 @@ use App\Services\Messenger;
 use App\Services\Moderation\ContentFilter;
 use App\Services\Phones\PhoneNumbers;
 use App\Services\Spotify\SpotifyClient;
+use App\Services\Wrapped\YearInReview;
 use App\Support\Backgrounds;
 use App\Support\I18n\Locales;
 use App\Support\Modules\ModuleManager;
@@ -92,6 +93,8 @@ class HandleInertiaRequests extends Middleware
                 'announcement' => $this->settings->get('maintenance_message'),
                 // Google Analytics 4 (G-…): завантажується лише після згоди на аналітичні cookie.
                 'analytics' => $this->settings->analyticsId(),
+                // «Підсумки року» відкриті (грудень — січень): банер у стрічці й пункт меню.
+                'wrapped' => app(Plugins::class)->on('wrapped') ? app(YearInReview::class)->season() : null,
                 'social' => [
                     'discord' => app(DiscordOAuth::class)->configured(),
                     'google' => app(FirebaseAuth::class)->clientConfig(),

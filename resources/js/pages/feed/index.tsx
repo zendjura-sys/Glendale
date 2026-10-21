@@ -25,6 +25,7 @@ import { PostComposer } from '@/components/gc/post-composer';
 import { PostSkeleton } from '@/components/gc/post-skeleton';
 import { StoriesBar } from '@/components/gc/stories';
 import { UserAvatar } from '@/components/gc/user-avatar';
+import { WrappedBanner } from '@/components/gc/wrapped-banner';
 import { EmptyState, Widget, WidgetSkeleton } from '@/components/gc/widget';
 import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -148,6 +149,7 @@ export default function Feed({
             <div className="flex gap-5">
                 <div className="min-w-0 flex-1 space-y-4 xl:max-w-[640px]">
                     {storiesOn && <StoriesBar />}
+                    <WrappedBanner />
                     {liveOn && <FriendsLive streams={streaming ?? []} />}
                     <FeedQuests quests={quests ?? []} />
                     <TomorrowCard events={tomorrow ?? []} />

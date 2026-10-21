@@ -11,6 +11,7 @@ use App\Services\Auth\ApiTokens;
 use App\Services\FriendshipService;
 use App\Services\Phones\PhoneNumbers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /** Розділи сайту, які застосунок відкриває через міст /api/v1/site: ті самі контролери, відповіді — JSON. */
@@ -161,5 +162,17 @@ class AppSiteParityTest extends TestCase
         $this->assertNotContains('cinema', $me['modules']);
         $this->assertNotContains('servers', $me['modules']);
         $this->withToken($token)->putJson('/api/v1/site/settings/mode', ['mode' => 'nope'])->assertStatus(422);
+    }
+
+    public function test_app_opens_wrapped_through_site_bridge(): void
+    {
+        $this->travelTo(now()->setDate(2026, 12, 3));
+        $user = User::factory()->create();
+        DB::table('music_plays')->insert(['user_id' => $user->id, 'title' => 'Afterglow', 'artist' => 'Vira Echo', 'played_at' => now()->subDay()]);
+        $token = $this->app_token($user);
+
+        $this->withToken($token)->getJson('/api/v1/site/wrapped')->assertOk()
+            ->assertJsonPath('wrapped.year', 2026)
+            ->assertJsonPath('wrapped.music.top_tracks.0.title', 'Afterglow');
     }
 }

@@ -53,6 +53,7 @@ use App\Http\Controllers\TrackController;
 use App\Http\Controllers\TranslateController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Controllers\WatchPartyController;
+use App\Http\Controllers\WrappedController;
 use App\Http\Middleware\BridgeSiteAction;
 use App\Models\VoiceRoom;
 use Illuminate\Support\Facades\Route;
@@ -505,6 +506,8 @@ Route::prefix('v1')->group(function () {
                 Route::post('suggest', [ServerController::class, 'suggest'])->middleware('throttle:5,10');
                 Route::get('{server}', [ServerController::class, 'show']);
             });
+
+            Route::get('wrapped', [WrappedController::class, 'show'])->middleware('throttle:30,1');
 
             Route::prefix('quests')->middleware('module:quests')->group(function () {
                 Route::get('/', [QuestController::class, 'index']);

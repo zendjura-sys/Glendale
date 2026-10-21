@@ -40,6 +40,8 @@ declare module '@inertiajs/core' {
                 max_message_file_mb: number;
                 announcement: string | null;
                 analytics?: string | null;
+                /** Рік «Підсумків року», якщо зараз їхній сезон (грудень — січень). */
+                wrapped?: number | null;
                 social: {
                     discord: boolean;
                     google: FirebaseConfig | null;

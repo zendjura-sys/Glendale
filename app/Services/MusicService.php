@@ -274,8 +274,37 @@ class MusicService
         if ($track) {
             $track->increment('plays_count');
         }
+        $this->logPlay($user, $track, $spotifyTrack);
 
         Cache::forget($this->statusCacheKey($user));
+    }
+
+    /**
+     * Історія прослушувань для «Підсумків року». Той самий трек підряд (пауза, перемотка, повторний
+     * виклик плеєра) протягом 10 хвилин рахується один раз.
+     *
+     * @param  array<string, mixed>|null  $spotifyTrack
+     */
+    private function logPlay(User $user, ?Track $track, ?array $spotifyTrack): void
+    {
+        $title = $track ? $track->title : (string) ($spotifyTrack['title'] ?? '');
+        if ($title === '') {
+            return;
+        }
+        $artist = $track ? (string) $track->artist : (string) ($spotifyTrack['artist'] ?? '');
+        $last = DB::table('music_plays')->where('user_id', $user->id)->latest('played_at')->first(['track_id', 'title', 'artist', 'played_at']);
+        if ($last !== null && $last->title === $title && $last->artist === $artist
+            && now()->diffInMinutes($last->played_at, true) < 10) {
+            return;
+        }
+        DB::table('music_plays')->insert([
+            'user_id' => $user->id,
+            'track_id' => $track?->id,
+            'title' => Str::limit($title, 197, '…'),
+            'artist' => Str::limit($artist, 197, '…'),
+            'cover_url' => $track ? null : ($spotifyTrack['cover_url'] ?? null),
+            'played_at' => now(),
+        ]);
     }
 
     public function stop(User $user): void
