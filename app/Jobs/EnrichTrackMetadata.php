@@ -34,7 +34,8 @@ class EnrichTrackMetadata implements ShouldBeUnique, ShouldQueue
     public static function dispatchPending(bool $all = false, ?int $limit = null): int
     {
         $count = 0;
-        Track::query()->when(! $all, fn ($q) => $q->whereNull('enriched_at'))->select('id')
+        // Без $all — нові треки, а також треки без тривалості («0:00»).
+        Track::query()->when(! $all, fn ($q) => $q->where(fn ($q) => $q->whereNull('enriched_at')->orWhere('duration', '<=', 0)))->select('id')
             ->chunkById(200, function ($tracks) use (&$count, $limit) {
                 foreach ($tracks as $track) {
                     if ($limit !== null && $count >= $limit) {

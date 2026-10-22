@@ -353,6 +353,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::delete('tracks/{track}', [TrackController::class, 'destroy'])->name('tracks.destroy');
             Route::get('tracks/{track}/download', [TrackController::class, 'download'])->name('tracks.download');
             Route::get('tracks/{track}/lyrics', [TrackController::class, 'lyrics'])->name('tracks.lyrics');
+            Route::get('tracks/{track}/metadata', [TrackController::class, 'metadata'])->middleware('throttle:10,1')->name('tracks.metadata');
             Route::get('lyrics/find', [TrackController::class, 'findLyrics'])->middleware('throttle:60,1')->name('lyrics.find');
             Route::post('tracks/{track}/library', [TrackController::class, 'add'])->name('tracks.add');
             Route::delete('tracks/{track}/library', [TrackController::class, 'remove'])->name('tracks.remove');
@@ -654,6 +655,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('photos/{photo}/restore', [Admin\PhotoController::class, 'restore'])->whereNumber('photo')->name('photos.restore');
         Route::get('music', [Admin\MusicController::class, 'index'])->name('music.index');
         Route::post('music/enrich', [Admin\MusicController::class, 'enrich'])->middleware('throttle:10,1')->name('music.enrich');
+        Route::post('music/metadata/check', [Admin\MusicController::class, 'checkMetadata'])->middleware('throttle:10,1')->name('music.metadata.check');
         Route::delete('music/{track}', [Admin\MusicController::class, 'destroy'])->whereNumber('track')->name('music.destroy');
         Route::post('music/{track}/restore', [Admin\MusicController::class, 'restore'])->whereNumber('track')->name('music.restore');
         // Радіостанції й добірки редакції для розділу «Музика».

@@ -88,49 +88,11 @@ class MetadataEnricher
         if (! $this->online()) {
             return [];
         }
-        $disk = Storage::disk('public');
-        $file = $track->path !== '' && $disk->exists($track->path) ? $disk->path($track->path) : null;
-        $info = $file !== null ? $this->probe->probe($file) : null;
-        $duration = $track->duration > 0 ? $track->duration : ($info['duration'] ?? null);
+        ['candidates' => $candidates, 'identity' => $identity, 'file' => $file, 'duration' => $duration] = $this->gather($track);
 
-        $candidates = $info !== null ? $this->fileCandidates($info) : [];
-        $identity = null;
-        foreach ([
-            'acoustid' => fn () => $file !== null ? $this->fromAcoustId($track, $file, $duration) : [],
-            'musicbrainz' => fn () => $this->fromMusicBrainz($track, $duration),
-            'discogs' => fn () => $this->fromDiscogs($track, $duration),
-            'spotify' => fn () => $this->fromSpotify($track, $duration),
-            'lastfm' => fn () => $this->fromLastFm($track, $duration),
-        ] as $source => $gather) {
-            try {
-                $found = $gather();
-            } catch (Throwable $e) {
-                Log::warning('Метадані треку: джерело недоступне', ['source' => $source, 'track' => $track->id, 'error' => $e->getMessage()]);
-                $found = [];
-            }
-            $identity ??= $found !== [] ? $source : null;
-            $candidates = [...$candidates, ...$found];
-        }
-
-        // Обкладинка Cover Art Archive — за релізом, який переміг серед кандидатів (або вже збереженим).
-        $winners = MetaMatch::pick($candidates);
-        $release = $winners['release_mbid']['value'] ?? $track->release_mbid;
-        $group = $winners['release_group_mbid']['value'] ?? $track->release_group_mbid;
-        if (is_string($release) && $release !== '') {
-            $candidates[] = $this->cover('https://coverartarchive.org/release/'.$release.'/front-500', 'caa');
-        }
-        if (is_string($group) && $group !== '') {
-            $candidates[] = $this->cover('https://coverartarchive.org/release-group/'.$group.'/front-500', 'caa_group');
-        }
-
-        if (blank($track->lyrics)) {
-            $artist = $winners['artist']['value'] ?? $track->artist;
-            $title = $winners['title']['value'] ?? $track->title;
-            $album = $winners['album']['value'] ?? $track->album;
-            $text = $this->lyrics->find((string) $artist, (string) $title, is_string($album) ? $album : null, $duration ?: null);
-            if ($text !== null) {
-                $candidates[] = ['field' => 'lyrics', 'value' => $text, 'source' => 'lrclib', 'score' => self::SCORE_LRCLIB];
-            }
+        // Тривалість — з самого файлу, якщо при завантаженні її не визначили (треки «0:00»).
+        if ($track->duration <= 0 && $duration > 0) {
+            $track->forceFill(['duration' => (int) round($duration)])->saveQuietly();
         }
 
         $applied = $this->apply($track, $candidates, $file);
@@ -144,6 +106,115 @@ class MetadataEnricher
         }
 
         return $applied;
+    }
+
+    /**
+     * Підказка для вікна редагування: найкраще значення кожного поля з усіх джерел, БЕЗ збереження
+     * і без захисту «введеного людиною» — людина сама натиснула «Знайти» й вирішує, що прийняти.
+     *
+     * @return array{fields: array<string, array{value: mixed, source: string, score: float}>, cover: array{url: string|null, embedded: bool, source: string}|null, sources: list<string>}
+     */
+    public function suggest(Track $track): array
+    {
+        ['candidates' => $candidates, 'file' => $file] = $this->gather($track, ignoreCurrent: true);
+        $fields = [];
+        foreach (MetaMatch::pick(array_values(array_filter($candidates, fn ($c) => $c['field'] !== 'cover'))) as $field => $winner) {
+            if (in_array($field, ['title', 'artist', 'album', 'genre', 'year', 'track_no', 'lyrics'], true) && filled($winner['value'])) {
+                $fields[$field] = ['value' => $winner['value'], 'source' => $winner['source'], 'score' => round((float) $winner['score'], 1)];
+            }
+        }
+        $covers = array_values(array_filter($candidates, fn ($c) => $c['field'] === 'cover' && ($c['value'] !== 'embedded' || $file !== null)));
+        usort($covers, fn ($a, $b) => $b['score'] <=> $a['score']);
+        $cover = $covers[0] ?? null;
+
+        return [
+            'fields' => $fields,
+            'cover' => $cover === null ? null : [
+                'url' => $cover['value'] === 'embedded' ? null : (string) $cover['value'],
+                'embedded' => $cover['value'] === 'embedded',
+                'source' => $cover['source'],
+            ],
+            'sources' => array_values(array_unique(array_map(fn ($c) => $c['source'], $candidates))),
+        ];
+    }
+
+    /**
+     * Кандидати з файлу й усіх мережевих джерел.
+     * $ignoreCurrent — не підставляти «сміттєві» поточні назву/виконавця в пошук, коли є кращі з тегів.
+     *
+     * @return array{candidates: list<array{field: string, value: mixed, source: string, score: int|float}>, identity: ?string, file: ?string, duration: float}
+     */
+    private function gather(Track $track, bool $ignoreCurrent = false): array
+    {
+        $disk = Storage::disk('public');
+        $file = $track->path !== '' && $disk->exists($track->path) ? $disk->path($track->path) : null;
+        $info = $file !== null ? $this->probe->probe($file) : null;
+        $duration = (float) ($track->duration > 0 ? $track->duration : ($info['duration'] ?? 0));
+
+        $candidates = $info !== null ? $this->fileCandidates($info) : [];
+        // Для пошуку беремо назву й виконавця з тегів файлу, якщо поточні схожі на «сміття» (хеш, крапка).
+        $probe = clone $track;
+        $tags = (array) ($info['tags'] ?? []);
+        foreach (['title', 'artist'] as $field) {
+            if (filled($tags[$field] ?? null) && $this->looksLikeJunk((string) $probe->getAttribute($field))) {
+                $probe->setAttribute($field, (string) $tags[$field]);
+            }
+        }
+
+        $identity = null;
+        if ($this->online()) {
+            foreach ([
+                'acoustid' => fn () => $file !== null ? $this->fromAcoustId($probe, $file, $duration ?: null) : [],
+                'musicbrainz' => fn () => $this->fromMusicBrainz($probe, $duration ?: null),
+                'discogs' => fn () => $this->fromDiscogs($probe, $duration ?: null),
+                'spotify' => fn () => $this->fromSpotify($probe, $duration ?: null),
+                'lastfm' => fn () => $this->fromLastFm($probe, $duration ?: null),
+            ] as $source => $gather) {
+                try {
+                    $found = $gather();
+                } catch (Throwable $e) {
+                    Log::warning('Метадані треку: джерело недоступне', ['source' => $source, 'track' => $track->id, 'error' => $e->getMessage()]);
+                    $found = [];
+                }
+                $identity ??= $found !== [] ? $source : null;
+                $candidates = [...$candidates, ...$found];
+            }
+        }
+
+        // Обкладинка Cover Art Archive — за релізом, який переміг серед кандидатів (або вже збереженим).
+        $winners = MetaMatch::pick($candidates);
+        $release = $winners['release_mbid']['value'] ?? $track->release_mbid;
+        $group = $winners['release_group_mbid']['value'] ?? $track->release_group_mbid;
+        if ($this->online() && is_string($release) && $release !== '') {
+            $candidates[] = $this->cover('https://coverartarchive.org/release/'.$release.'/front-500', 'caa');
+        }
+        if ($this->online() && is_string($group) && $group !== '') {
+            $candidates[] = $this->cover('https://coverartarchive.org/release-group/'.$group.'/front-500', 'caa_group');
+        }
+
+        if ($this->online() && ($ignoreCurrent || blank($track->lyrics))) {
+            $artist = $winners['artist']['value'] ?? $probe->artist;
+            $title = $winners['title']['value'] ?? $probe->title;
+            $album = $winners['album']['value'] ?? $probe->album;
+            $text = $this->lyrics->find((string) $artist, (string) $title, is_string($album) ? $album : null, $duration ?: null);
+            if ($text !== null) {
+                $candidates[] = ['field' => 'lyrics', 'value' => $text, 'source' => 'lrclib', 'score' => self::SCORE_LRCLIB];
+            }
+        }
+
+        return ['candidates' => $candidates, 'identity' => $identity, 'file' => $file, 'duration' => $duration];
+    }
+
+    /** «Сміттєва» назва чи виконавець: порожньо, лише розділові знаки, хеш або ім’я файлу. */
+    private function looksLikeJunk(string $value): bool
+    {
+        $value = trim($value);
+
+        return $value === ''
+            || ! preg_match('/\p{L}/u', $value)
+            || (bool) preg_match('/^[0-9a-f]{10,}$/i', $value)
+            || (bool) preg_match('/\.(mp3|flac|m4a|wav|ogg|opus|aac)$/i', $value)
+            || in_array(mb_strtolower($value), ['unknown', 'unknown artist', 'track', 'невідомий'], true);
     }
 
     /**
@@ -165,7 +236,7 @@ class MetadataEnricher
             }
             $current = $track->getAttribute($field);
             $known = $track->fieldMeta($field);
-            if (! $this->mayWrite($current, $known, $winner['score'])) {
+            if (! $this->mayWrite($current, $known, $winner['score'], $field)) {
                 // Те саме значення від надійнішого джерела — лише оновлюємо довіру.
                 if ($known !== null && $known['source'] !== Track::SOURCE_USER && filled($current)
                     && MetaMatch::valueKey($field, $current) === MetaMatch::valueKey($field, $winner['value']) && $winner['score'] > $known['score']) {
@@ -196,8 +267,12 @@ class MetadataEnricher
     }
 
     /** Чи можна записати значення з довірою $score у поле з поточним значенням і походженням. */
-    private function mayWrite(mixed $current, ?array $known, float $score): bool
+    private function mayWrite(mixed $current, ?array $known, float $score, string $field = ''): bool
     {
+        // «Сміття» замість назви, виконавця чи альбому (хеш, крапка, ім’я файлу) замінюємо навіть у полі від людини.
+        if (in_array($field, ['title', 'artist', 'album'], true) && is_string($current) && $current !== '' && $this->looksLikeJunk($current)) {
+            return $score >= self::SCORE_TAGS;
+        }
         if ($known !== null && $known['source'] === Track::SOURCE_USER) {
             return false;
         }

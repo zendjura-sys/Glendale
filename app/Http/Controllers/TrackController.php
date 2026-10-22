@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Track;
 use App\Services\Music\AudioProbe;
 use App\Services\Music\LyricsFinder;
+use App\Services\Music\MetadataEnricher;
+use App\Services\Music\MusicBrainz;
 use App\Services\MusicService;
 use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
@@ -73,13 +75,16 @@ class TrackController extends Controller
             'lyrics' => ['nullable', 'string', 'max:8000'],
             'cover' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'cover_url' => ['nullable', 'url:https', 'max:500'],
+            // «Знайти дані автоматично»: обкладинка, вбудована у сам аудіофайл.
+            'cover_embedded' => ['nullable', 'boolean'],
         ], [
             'cover.image' => 'Обкладинка має бути картинкою (JPG, PNG або WebP).',
             'cover.mimes' => 'Обкладинка має бути картинкою (JPG, PNG або WebP).',
             'cover.max' => 'Обкладинка завелика (максимум 5 МБ).',
         ]);
         $coverUrl = $data['cover_url'] ?? null;
-        unset($data['cover_url'], $data['cover']);
+        $embedded = (bool) ($data['cover_embedded'] ?? false);
+        unset($data['cover_url'], $data['cover'], $data['cover_embedded']);
         if (! app(Plugins::class)->on('lyrics')) {
             unset($data['lyrics']);
         }
@@ -92,7 +97,8 @@ class TrackController extends Controller
         // стару видаляємо лише після успішного збереження нової. Файл — POST з _method=PATCH.
         $file = $request->file('cover');
         $cover = $file !== null ? $this->music->storeCover($file)
-            : (filled($coverUrl) ? $this->music->coverFromUrl((string) $coverUrl) : null);
+            : (filled($coverUrl) ? $this->coverFromUrl((string) $coverUrl)
+                : ($embedded ? $this->embeddedCover($track) : null));
         if ($cover !== null) {
             $old = $track->cover_path;
             $track->markUserFields(['cover']);
@@ -103,6 +109,41 @@ class TrackController extends Controller
         }
 
         return response()->json(['track' => $track->toCard(true)]);
+    }
+
+    /**
+     * «Знайти дані автоматично» у вікні редагування: найкращі значення з усіх джерел (теги файлу,
+     * AcoustID, MusicBrainz, Discogs, Spotify, Last.fm, LRCLIB, Cover Art Archive) — без збереження.
+     */
+    public function metadata(Request $request, Track $track, MetadataEnricher $enricher): JsonResponse
+    {
+        abort_unless($this->music->canManageTrack($track, $request->user()), 403);
+
+        return response()->json($enricher->suggest($track));
+    }
+
+    /** Обкладинка за посиланням: каталог iTunes (застосунок) або джерела метаданих (Cover Art Archive, Spotify, Discogs). */
+    private function coverFromUrl(string $url): ?string
+    {
+        return $this->music->coverFromUrl($url)
+            ?? $this->music->coverFromUrl($url, MusicService::METADATA_COVER_HOSTS, ['User-Agent' => MusicBrainz::USER_AGENT]);
+    }
+
+    private function embeddedCover(Track $track): ?string
+    {
+        $disk = Storage::disk('public');
+        if ($track->path === '' || ! $disk->exists($track->path)) {
+            return null;
+        }
+        $temp = app(AudioProbe::class)->extractCover($disk->path($track->path));
+        if ($temp === null) {
+            return null;
+        }
+        try {
+            return $this->music->storeCover(new UploadedFile($temp, basename($temp), null, null, true));
+        } finally {
+            @unlink($temp);
+        }
     }
 
     public function lyrics(Track $track): JsonResponse

@@ -500,4 +500,47 @@ class MusicMetadataTest extends TestCase
         $this->assertNotNull($first->fresh()->enriched_at);
         $this->assertSame(1, Track::query()->whereNull('enriched_at')->count());
     }
+
+    public function test_edit_dialog_suggestion_ignores_user_lock_and_junk_title_is_replaced(): void
+    {
+        $this->fakeHttp([
+            '*musicbrainz.org/ws/2/recording?*' => Http::response(['recordings' => [$this->mbRecording('Night Album', '2019-04-01', 4)]]),
+            'https://coverartarchive.org/release/'.self::RELEASE.'/front-500' => $this->image(),
+        ]);
+        $owner = User::factory()->create();
+        // «Сміттєвий» альбом від людини (хеш) і нормальна назва.
+        $track = $this->track(['user_id' => $owner->id, 'album' => 'c184cb89a4e7b5', 'duration' => 0], ['album' => ['user', 100], 'title' => ['user', 100]]);
+
+        // Підказка: без збереження, з найкращими значеннями й обкладинкою; чужому — 403.
+        $this->actingAs(User::factory()->create())->getJson("/music/tracks/{$track->id}/metadata")->assertForbidden();
+        $this->actingAs($owner)->getJson("/music/tracks/{$track->id}/metadata")->assertOk()
+            ->assertJsonPath('fields.album.value', 'Night Album')
+            ->assertJsonPath('fields.album.source', 'musicbrainz')
+            ->assertJsonPath('cover.url', 'https://coverartarchive.org/release/'.self::RELEASE.'/front-500')
+            ->assertJsonPath('cover.embedded', false);
+        $this->assertSame('c184cb89a4e7b5', $track->fresh()->album);
+
+        // Автоматика замінює «сміття» навіть у полі від людини, а нормальну назву не чіпає.
+        app(MetadataEnricher::class)->enrich($track);
+        $this->assertSame('Night Album', $track->fresh()->album);
+        $this->assertSame('Neon Rain', $track->fresh()->title);
+    }
+
+    public function test_admin_can_check_sources_live(): void
+    {
+        $this->fakeHttp([
+            '*musicbrainz.org/ws/2/recording?*' => Http::response(['count' => 1, 'recordings' => [['id' => self::REC, 'releases' => [['id' => self::RELEASE]]]]]),
+            'https://coverartarchive.org/release/'.self::RELEASE => Http::response('', 404),
+            '*lrclib.net/api/search*' => Http::response([['id' => 1]]),
+        ]);
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs(User::factory()->create())->postJson(route('admin.music.metadata.check'))->assertForbidden();
+        $this->actingAs($admin)->postJson(route('admin.music.metadata.check'))->assertOk()
+            ->assertJsonPath('results.musicbrainz.ok', true)
+            ->assertJsonPath('results.coverartarchive.ok', true)
+            ->assertJsonPath('results.lrclib.ok', true)
+            ->assertJsonPath('results.acoustid.ok', false)
+            ->assertJsonPath('results.lastfm.message', 'Ключ не додано — Адмінка → Інтеграції');
+    }
 }

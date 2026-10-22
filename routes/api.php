@@ -484,6 +484,7 @@ Route::prefix('v1')->group(function () {
                 Route::whereNumber(['track', 'playlist'])->group(function () {
                     Route::post('tracks/{track}/library', [TrackController::class, 'add']);
                     Route::get('tracks/{track}/lyrics', [TrackController::class, 'lyrics']);
+                    Route::get('tracks/{track}/metadata', [TrackController::class, 'metadata'])->middleware('throttle:10,1');
                     Route::delete('tracks/{track}/library', [TrackController::class, 'remove']);
                     Route::get('playlists/{playlist}', [PlaylistController::class, 'show']);
                     Route::patch('tracks/{track}', [TrackController::class, 'update']);

@@ -12,14 +12,19 @@ use App\Services\Music\AudioProbe;
 use App\Services\Music\Discogs;
 use App\Services\Music\LastFm;
 use App\Services\Music\MetadataEnricher;
+use App\Services\Music\MusicBrainz;
 use App\Services\Spotify\SpotifyClient;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class MusicController extends Controller
 {
@@ -92,6 +97,66 @@ class MusicController extends Controller
                 $row('lrclib', 'LRCLIB', $public, 'Тексти пісень із часом рядків'),
             ],
         ];
+    }
+
+    /**
+     * «Перевірити зараз»: справжній запит до кожного джерела — чи відповідає, за скільки мс і що не так.
+     * «Готово» в списку означає лише «ключ збережено»; ця перевірка показує, чи ключ і сервіс справді працюють.
+     */
+    public function checkMetadata(Request $request): JsonResponse
+    {
+        $ua = ['User-Agent' => MusicBrainz::USER_AGENT];
+        $http = fn () => Http::timeout(8)->acceptJson()->withHeaders($ua);
+        $results = [];
+        $run = function (string $key, callable $check) use (&$results) {
+            $started = microtime(true);
+            try {
+                [$ok, $message] = $check();
+            } catch (Throwable $e) {
+                [$ok, $message] = [false, Str::limit($e->getMessage(), 120)];
+            }
+            $results[$key] = ['ok' => $ok, 'ms' => (int) round((microtime(true) - $started) * 1000), 'message' => $message];
+        };
+
+        $release = null;
+        $run('musicbrainz', function () use ($http, &$release) {
+            $response = $http()->get('https://musicbrainz.org/ws/2/recording', ['query' => 'recording:"Yesterday" AND artist:"The Beatles"', 'limit' => 1, 'fmt' => 'json']);
+            $release = $response->json('recordings.0.releases.0.id');
+
+            return [$response->ok() && $response->json('count') > 0, $response->ok() ? 'Знайдено «Yesterday» — The Beatles' : 'HTTP '.$response->status()];
+        });
+        $run('coverartarchive', function () use ($http, $release) {
+            if (! is_string($release)) {
+                return [false, 'Немає релізу для перевірки (MusicBrainz не відповів)'];
+            }
+            $response = $http()->withOptions(['allow_redirects' => false])->get('https://coverartarchive.org/release/'.$release);
+            // 404 — у релізу немає обкладинки, але сервіс відповів; збій — лише 5xx чи тайм-аут.
+            $ok = $response->status() < 500;
+
+            return [$ok, $ok ? 'Сервіс відповідає (HTTP '.$response->status().')' : 'HTTP '.$response->status()];
+        });
+        $run('lrclib', function () use ($http) {
+            $response = $http()->get('https://lrclib.net/api/search', ['track_name' => 'Yesterday', 'artist_name' => 'The Beatles']);
+            $found = count((array) $response->json());
+
+            return [$response->ok(), $response->ok() ? "Знайдено текстів: {$found}" : 'HTTP '.$response->status()];
+        });
+        $keyed = [
+            'acoustid' => app(AcoustId::class),
+            'discogs' => app(Discogs::class),
+            'lastfm' => app(LastFm::class),
+        ];
+        foreach ($keyed as $key => $service) {
+            $run($key, fn () => ! $service->configured() ? [false, 'Ключ не додано — Адмінка → Інтеграції']
+                : ($service->test() ? [true, 'Ключ дійсний'] : [false, 'Ключ відхилено або сервіс недоступний']));
+        }
+        $spotify = app(SpotifyClient::class);
+        $run('spotify', fn () => ! $spotify->configured() ? [false, 'Ключі не додано — Адмінка → Інтеграції']
+            : ($spotify->testCredentials() ? [true, 'Ключі дійсні'] : [false, 'Ключі відхилено']));
+
+        Log::info('music: metadata sources checked', ['by' => $request->user()->id, 'failed' => array_keys(array_filter($results, fn ($r) => ! $r['ok']))]);
+
+        return response()->json(['results' => $results]);
     }
 
     /** «Оновити метадані»: у чергу — треки, які ще не збагачувались (з all — усі). */
