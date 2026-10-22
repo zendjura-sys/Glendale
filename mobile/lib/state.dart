@@ -191,9 +191,29 @@ class Session extends ChangeNotifier {
   }
 }
 
-/// Один трек у черзі програвача (локальний трек GameCon).
+/// Один трек у черзі програвача: локальний трек GameCon або інтернет-радіостанція (живий потік).
 class QueueTrack {
-  QueueTrack({required this.id, required this.url, required this.title, required this.artist, this.cover, this.album, this.genre, this.userId, this.hasLyrics = false});
+  QueueTrack({
+    required this.id,
+    required this.url,
+    required this.title,
+    required this.artist,
+    this.cover,
+    this.album,
+    this.genre,
+    this.userId,
+    this.hasLyrics = false,
+    String? key,
+    this.source = 'local',
+    this.live = false,
+    this.quality,
+    this.seconds = 0,
+    this.favorite = false,
+    this.inLibrary = false,
+    this.homepage,
+  }) : key = key ?? (id == null ? url : 'local:$id');
+
+  /// id треку GameCon; у радіостанції — null (її id з іншої таблиці, див. [key]).
   final int? id;
   final String url;
   final String title;
@@ -206,25 +226,100 @@ class QueueTrack {
   /// У треку є текст (караоке, якщо з мітками LRC).
   final bool hasLyrics;
 
-  /// Картка для листа редагування (ті ж ключі, що віддає сервер).
-  Map<String, dynamic> toCard() => {'id': id, 'url': url, 'title': title, 'artist': artist, 'album': album, 'genre': genre, 'cover_url': cover, 'user_id': userId};
+  /// Унікальний ключ картки, як на сайті: `local:42`, `radio:7`.
+  final String key;
+
+  /// `local` — трек GameCon, `radio` — інтернет-радіо.
+  final String source;
+
+  /// Пряма трансляція: без тривалості й перемотування.
+  final bool live;
+
+  /// Якість файлу: lossy, lossless (без втрат) чи hires.
+  final String? quality;
+  final int seconds;
+
+  /// Зірочка «Улюблене» й «у медіатеці» — міняються з плеєра.
+  bool favorite;
+  bool inLibrary;
+
+  /// Сайт радіостанції.
+  final String? homepage;
+
+  bool get local => source == 'local' && id != null;
+
+  /// Картка (ті ж ключі, що віддає сервер): для листа редагування й меню треку.
+  Map<String, dynamic> toCard() => {
+        'id': id,
+        'key': key,
+        'source': source,
+        'url': url,
+        'title': title,
+        'artist': artist,
+        'album': album,
+        'genre': genre,
+        'cover_url': cover,
+        'user_id': userId,
+        'has_lyrics': hasLyrics,
+        'quality': quality,
+        'duration': seconds,
+        'favorite': favorite,
+        'in_library': inLibrary,
+        'live': live,
+        'homepage': homepage,
+      };
 
   static QueueTrack? fromJson(Map<String, dynamic> track) {
     final url = absolute(track['url']);
     if (url == null) return null;
+    final source = text(track['source']) ?? 'local';
+    if (source == 'spotify') return null;
+    final radio = source == 'radio';
+    int? number(dynamic v) => v is int ? v : int.tryParse('$v');
     return QueueTrack(
-      id: track['id'] is int ? track['id'] as int : int.tryParse('${track['id']}'),
+      id: radio ? null : number(track['id']),
       url: url,
       title: text(track['title']) ?? tr('Без назви'),
       artist: text(track['artist']) ?? '',
       cover: absolute(track['cover_url']),
       album: text(track['album']),
       genre: text(track['genre']),
-      userId: track['user_id'] is int ? track['user_id'] as int : int.tryParse('${track['user_id']}'),
+      userId: number(track['user_id']),
       hasLyrics: track['has_lyrics'] == true,
+      key: text(track['key']) ?? (radio ? 'radio:${track['id']}' : null),
+      source: source,
+      live: radio || track['live'] == true,
+      quality: text(track['quality']),
+      seconds: number(track['duration']) ?? 0,
+      favorite: track['favorite'] == true,
+      inLibrary: track['in_library'] == true,
+      homepage: text(track['homepage']),
     );
   }
+
+  QueueTrack copyWith({String? title, String? artist, String? cover, String? album, String? genre, bool? hasLyrics}) => QueueTrack(
+        id: id,
+        url: url,
+        title: title ?? this.title,
+        artist: artist ?? this.artist,
+        cover: cover ?? this.cover,
+        album: album,
+        genre: genre,
+        userId: userId,
+        hasLyrics: hasLyrics ?? this.hasLyrics,
+        key: key,
+        source: source,
+        live: live,
+        quality: quality,
+        seconds: seconds,
+        favorite: favorite,
+        inLibrary: inLibrary,
+        homepage: homepage,
+      );
 }
+
+/// Ключ картки треку з сервера (`local:42`, `radio:7`, `spotify:…`).
+String trackKey(Map<String, dynamic> track) => text(track['key']) ?? '${text(track['source']) ?? 'local'}:${track['id']}';
 
 class TrackPlayer extends ChangeNotifier {
   TrackPlayer() {
@@ -253,14 +348,44 @@ class TrackPlayer extends ChangeNotifier {
 
   /// Рушій відтворення — для медіасесії в шторці (`GcAudioHandler`).
   AudioPlayer get engine => _player;
-  Session? session;
+  Session? _session;
+  Session? get session => _session;
+  set session(Session? value) {
+    _session = value;
+    final prefs = value?.prefs;
+    if (prefs == null) return;
+    // Налаштування плеєра живуть на телефоні, як localStorage на сайті.
+    autoplay = prefs.getBool('music.autoplay') ?? true;
+    shuffle = prefs.getBool('music.shuffle') ?? false;
+    repeatMode = prefs.getString('music.repeat') ?? 'off';
+    volume = prefs.getDouble('music.volume') ?? 1;
+    unawaited(_player.setVolume(volume));
+  }
+
   List<QueueTrack> queue = [];
   int index = -1;
   bool playing = false;
   bool shuffle = false;
-  bool repeat = false;
+
+  /// Повтор: off, all (уся черга), one (один трек).
+  String repeatMode = 'off';
+  bool get repeat => repeatMode == 'one';
+
+  /// ∞ — коли черга скінчилась, грати схожі треки (як автовідтворення в Apple Music).
+  bool autoplay = true;
+
+  /// Безкінечна станція, з якої підвантажуються наступні треки (me, genre:…, artist:…, track:…).
+  String? station;
+
+  /// Щойно зіграні треки («Історія» в черзі).
+  final history = <QueueTrack>[];
+
+  /// Гучність плеєра застосунку (0…1), окремо від системної.
+  double volume = 1;
   Duration position = Duration.zero;
   Duration duration = Duration.zero;
+  Future<bool>? _extending;
+  bool _extendable = true;
 
   int _covers = 0;
 
@@ -282,10 +407,15 @@ class TrackPlayer extends ChangeNotifier {
   String get title => current?.title ?? '';
   String get artist => current?.artist ?? '';
 
-  bool isCurrent(dynamic id) => current != null && '${current!.id}' == '$id';
+  bool isCurrent(dynamic id) => current != null && current!.id != null && '${current!.id}' == '$id';
+
+  /// Чи це та сама картка, що грає зараз (за ключем: трек і радіостанція з однаковим id — різні).
+  bool isCurrentCard(Map<String, dynamic> track) => current != null && current!.key == trackKey(track);
 
   /// Грає [tracks] з позиції [start]; повторне натискання на поточний трек — пауза.
-  Future<void> playList(List<Map<String, dynamic>> tracks, int start) async {
+  /// [station] — ключ безкінечної станції, з якої дописувати чергу; [extend] = false — без ∞
+  /// (напр. «Слухати разом», де чергою керує кімната).
+  Future<void> playList(List<Map<String, dynamic>> tracks, int start, {String? station, bool extend = true}) async {
     final items = <QueueTrack>[];
     var target = 0;
     for (var i = 0; i < tracks.length; i++) {
@@ -295,32 +425,91 @@ class TrackPlayer extends ChangeNotifier {
       items.add(item);
     }
     if (items.isEmpty) return;
-    if (current != null && start < tracks.length && isCurrent(tracks[start]['id'])) {
+    _extendable = extend;
+    if (current != null && start < tracks.length && isCurrentCard(tracks[start])) {
+      queue = items;
+      index = target;
+      this.station = station;
       await toggle();
       return;
     }
     queue = items;
+    this.station = station;
     await _start(target);
+  }
+
+  /// Безкінечна станція: перша порція одразу, далі підвантажується, коли черга добігає кінця.
+  /// Повертає false, якщо на станції поки немає треків.
+  Future<bool> playStation(String key) async {
+    final api = session?.api;
+    if (api == null) return false;
+    final data = await api.get(Api.site('/music/station?${Uri(queryParameters: {'key': key}).query}'));
+    final tracks = maps(data['tracks']);
+    if (tracks.isEmpty) return false;
+    history.clear();
+    await playList(tracks, 0, station: key);
+    return true;
   }
 
   Future<void> play(String url, String nextTitle, String nextArtist) async {
     queue = [QueueTrack(id: null, url: url, title: nextTitle, artist: nextArtist)];
+    station = null;
+    _extendable = true;
     await _start(0);
   }
 
   Future<void> _start(int i) async {
+    final previous = current;
+    if (previous != null && i != index) {
+      history.remove(previous);
+      history.insert(0, previous);
+      if (history.length > 50) history.removeLast();
+    }
     index = i;
     position = Duration.zero;
+    duration = Duration.zero;
     notifyListeners();
     final track = queue[i];
     onStart?.call(track);
+    // Черга добігає кінця — заздалегідь дописуємо наступну порцію станції чи ∞.
+    if (queue.length - i <= 3) unawaited(_extend());
     try {
       await _player.setUrl(track.url);
       unawaited(_player.play());
-      if (track.id != null) {
+      if (track.local) {
         unawaited(session?.api.post('/api/v1/music/now-playing', {'track_id': track.id}).catchError((_) => <String, dynamic>{}));
       }
     } catch (_) {}
+  }
+
+  /// Дописати в чергу наступну порцію: зі станції або «схожі на останній трек» (∞).
+  Future<bool> _extend() {
+    return _extending ??= _fetchMore().whenComplete(() => _extending = null);
+  }
+
+  Future<bool> _fetchMore() async {
+    final api = session?.api;
+    final now = current;
+    if (api == null || now == null || !now.local || !_extendable) return false;
+    final last = queue.lastWhere((t) => t.local, orElse: () => now);
+    final key = station ?? (autoplay ? 'track:${last.id}' : null);
+    if (key == null) return false;
+    final exclude = [for (final t in queue) if (t.local) t.id!];
+    final query = [
+      'key=${Uri.encodeQueryComponent(key)}',
+      for (final id in exclude.skip(exclude.length > 300 ? exclude.length - 300 : 0)) 'exclude[]=$id',
+    ].join('&');
+    try {
+      final data = await api.get(Api.site('/music/station?$query'));
+      final known = {for (final t in queue) t.key};
+      final more = [for (final t in maps(data['tracks'])) ?QueueTrack.fromJson(t)].where((t) => !known.contains(t.key)).toList();
+      if (more.isEmpty) return false;
+      queue = [...queue, ...more];
+      notifyListeners();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> toggle({bool forcePlay = false}) async {
@@ -337,7 +526,9 @@ class TrackPlayer extends ChangeNotifier {
     var n = shuffle && queue.length > 1 ? _random.nextInt(queue.length - 1) : index + 1;
     if (shuffle && queue.length > 1 && n >= index) n++;
     if (n >= queue.length) {
-      if (auto) {
+      // Кінець черги: станція чи ∞ дописують нові треки, «повторювати все» — з початку.
+      if (repeatMode != 'all' && await _extend() && index + 1 < queue.length) return _start(index + 1);
+      if (auto && repeatMode != 'all') {
         await _player.pause();
         await _player.seek(Duration.zero);
         return;
@@ -349,16 +540,28 @@ class TrackPlayer extends ChangeNotifier {
 
   Future<void> prev() async {
     if (queue.isEmpty) return;
-    if (position.inSeconds > 3) return seek(Duration.zero);
+    if (position.inSeconds > 3 && current?.live != true) return seek(Duration.zero);
     await _start(index <= 0 ? queue.length - 1 : index - 1);
   }
 
-  Future<void> seek(Duration to) => _player.seek(to);
+  Future<void> seek(Duration to) async {
+    // Пряму трансляцію не перемотати.
+    if (current?.live == true) return;
+    await _player.seek(to);
+  }
 
   Future<void> playAt(int i) async {
     if (i < 0 || i >= queue.length) return;
     if (i == index) return toggle();
     await _start(i);
+  }
+
+  /// Увімкнути трек з «Історії»: стає наступним і грає одразу.
+  Future<void> replay(QueueTrack track) async {
+    final at = queue.indexOf(track);
+    if (at >= 0) return playAt(at);
+    queue.insert(index + 1, track);
+    await _start(index + 1);
   }
 
   /// Перетягування в черзі: [to] — нова позиція після вилучення з [from].
@@ -386,15 +589,25 @@ class TrackPlayer extends ChangeNotifier {
     }
   }
 
-  /// «Грати наступним» або «Додати в кінець черги».
+  /// Очистити «Далі в черзі» (усе після поточного треку).
+  void clearUpNext() {
+    if (index < 0) return;
+    queue = queue.sublist(0, index + 1);
+    station = null;
+    notifyListeners();
+  }
+
+  /// «Грати наступним» або «Грати останнім» (у кінці черги).
   Future<void> enqueue(Map<String, dynamic> track, {bool next = false}) async {
     final item = QueueTrack.fromJson(track);
     if (item == null) return;
     if (current == null) {
       queue = [item];
+      station = null;
+      _extendable = true;
       return _start(0);
     }
-    final existing = queue.indexWhere((t) => t.id != null && t.id == item.id);
+    final existing = queue.indexWhere((t) => t.key == item.key);
     if (existing == index) return;
     if (existing >= 0) {
       queue.removeAt(existing);
@@ -411,36 +624,65 @@ class TrackPlayer extends ChangeNotifier {
     for (var i = 0; i < queue.length; i++) {
       final old = queue[i];
       if (id == null || old.id != id) continue;
-      queue[i] = QueueTrack(
-        id: old.id,
-        url: old.url,
+      final next = old.copyWith(
         title: text(card['title']) ?? old.title,
         artist: text(card['artist']) ?? '',
         cover: absolute(card['cover_url']) ?? old.cover,
         album: text(card['album']),
         genre: text(card['genre']),
-        userId: old.userId,
         hasLyrics: card['has_lyrics'] is bool ? card['has_lyrics'] as bool : old.hasLyrics,
       );
+      if (card['favorite'] is bool) next.favorite = card['favorite'] as bool;
+      if (card['in_library'] is bool) next.inLibrary = card['in_library'] as bool;
+      queue[i] = next;
       changed = true;
     }
     if (changed) notifyListeners();
   }
 
-  void toggleShuffle() {
-    shuffle = !shuffle;
+  /// Зірочка й «у медіатеці» змінилися деінде (меню треку) — оновлюємо копію в черзі.
+  void markTrack(int? id, {bool? favorite, bool? inLibrary}) {
+    for (final t in queue) {
+      if (id == null || t.id != id) continue;
+      if (favorite != null) t.favorite = favorite;
+      if (inLibrary != null) t.inLibrary = inLibrary;
+    }
     notifyListeners();
   }
 
-  void toggleRepeat() {
-    repeat = !repeat;
+  void toggleShuffle() {
+    shuffle = !shuffle;
+    unawaited(session?.prefs.setBool('music.shuffle', shuffle));
     notifyListeners();
+  }
+
+  /// Повтор по колу: вимкнено → уся черга → один трек.
+  void toggleRepeat() => setRepeat(switch (repeatMode) { 'off' => 'all', 'all' => 'one', _ => 'off' });
+
+  void setRepeat(String mode) {
+    repeatMode = mode;
+    unawaited(session?.prefs.setString('music.repeat', mode));
+    notifyListeners();
+  }
+
+  void toggleAutoplay() {
+    autoplay = !autoplay;
+    unawaited(session?.prefs.setBool('music.autoplay', autoplay));
+    notifyListeners();
+  }
+
+  Future<void> setVolume(double value) async {
+    volume = value.clamp(0.0, 1.0);
+    notifyListeners();
+    await _player.setVolume(volume);
+    unawaited(session?.prefs.setDouble('music.volume', volume));
   }
 
   Future<void> stop() async {
     await _player.stop();
     queue = [];
     index = -1;
+    station = null;
     notifyListeners();
   }
 

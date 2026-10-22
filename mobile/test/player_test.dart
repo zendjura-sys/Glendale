@@ -1,4 +1,4 @@
-// Плеєр «Зараз грає»: караоке й хвиля такі самі, як на сайті; знімки — лише локально (GC_SHOTS=dir).
+// Плеєр «Зараз грає» (iOS 26, як на сайті): караоке й хвиля такі самі, як на сайті; знімки — лише локально (GC_SHOTS=dir).
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -30,6 +30,18 @@ void main() {
     expect(activeLine(lyrics.lines, 25), 3);
   });
 
+  test('радіостанція в черзі — живий потік зі своїм ключем, Spotify у черзу не потрапляє', () {
+    final radio = QueueTrack.fromJson({'source': 'radio', 'id': 7, 'key': 'radio:7', 'title': 'Хвиля', 'url': 'https://radio.example/live', 'live': true, 'duration': 0});
+    expect(radio!.live, isTrue);
+    expect(radio.id, isNull);
+    expect(radio.key, 'radio:7');
+    final track = QueueTrack.fromJson({'source': 'local', 'id': 7, 'key': 'local:7', 'title': 'Пісня', 'url': '/storage/a.mp3', 'quality': 'lossless', 'favorite': true});
+    expect(track!.local, isTrue);
+    expect(track.key, isNot(radio.key));
+    expect(track.toCard()['favorite'], isTrue);
+    expect(QueueTrack.fromJson({'source': 'spotify', 'id': 'x', 'url': 'https://open.spotify.com/track/x'}), isNull);
+  });
+
   test('текст без міток — звичайний, без підсвічування', () {
     final lyrics = parseLyrics('рядок\nще рядок');
     expect(lyrics.timed, isFalse);
@@ -58,7 +70,7 @@ void main() {
       final session = Session(await SharedPreferences.getInstance());
       final player = TrackPlayer()..session = session;
       player.queue = [
-        QueueTrack(id: 42, url: 'https://example.com/a.mp3', title: 'Neon Skyline', artist: 'Nightdrive Kyiv', album: 'Нічне місто'),
+        QueueTrack(id: 42, url: 'https://example.com/a.mp3', title: 'Neon Skyline', artist: 'Nightdrive Kyiv', album: 'Нічне місто', quality: 'hires'),
         QueueTrack(id: 43, url: 'https://example.com/b.mp3', title: 'Північне сяйво', artist: 'Aurora Lab'),
       ];
       player.index = 0;
@@ -82,7 +94,8 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(find.text('Neon Skyline'), findsOneWidget);
-      expect(find.text('Зараз грає'), findsOneWidget);
+      expect(find.text('Nightdrive Kyiv'), findsOneWidget);
+      expect(find.text('Hi-Res без втрат'), findsOneWidget);
       if (out != null) {
         await tester.runAsync(() async {
           final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;

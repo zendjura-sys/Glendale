@@ -19,4 +19,20 @@ void main() {
     expect(appPathFor('/phone'), '/phone');
     expect(appPathFor('/phone?dial=%2B7770512345'), '/phone?dial=%2B7770512345');
   });
+
+  test('розділ «Музика» в стилі Apple Music', () {
+    expect(appPathFor('/music'), '/music');
+    expect(appPathFor('/music/new'), '/music/new');
+    expect(appPathFor('/music/radio'), '/music/radio');
+    expect(appPathFor('/music/library/songs'), '/music/library/songs');
+    expect(appPathFor('/music/search?q=neon'), '/music/search?q=neon');
+    expect(appPathFor('/music/artist?name=Nightdrive%20Kyiv'), '/music/artist?name=Nightdrive%20Kyiv');
+    expect(appPathFor('/music/album?artist=A&title=B'), '/music/album?artist=A&title=B');
+    expect(appPathFor('/music/mix/favorites'), '/music/mix/favorites');
+    expect(appPathFor('/music/charts'), '/music/charts');
+    expect(appPathFor('/music/replay/2025'), '/music/replay/2025');
+    expect(appPathFor('/music/playlists/7'), '/music/playlists/7');
+    expect(appPathFor('/music/u/neo'), '/music?user=neo');
+    expect(appPathFor('/music?tab=mine'), '/music/library/songs');
+  });
 }

@@ -124,7 +124,7 @@ class _ListenScreenState extends State<ListenScreen> {
     }
     if (!player.isCurrent(track['id'])) {
       if (playing) {
-        await player.playList([track], 0);
+        await player.playList([track], 0, extend: false);
         await player.seek(Duration(milliseconds: (expected * 1000).round()));
       }
       return;

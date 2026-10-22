@@ -55,7 +55,16 @@ String appPathFor(String? sitePath) {
     case 'music':
       if (rest(1) == 'u' && parts.length > 2) return '/music?user=${rest(2)}';
       if (rest(1) == 'playlists' && parts.length > 2) return '/music/playlists/${rest(2)}';
-      return '/music$query';
+      // Розділ у стилі Apple Music: ті самі шляхи, що на сайті.
+      if (const {'new', 'radio', 'library', 'search', 'artist', 'album', 'mix', 'genre', 'charts', 'replay'}.contains(rest(1)) && parts.length <= 3) return '$path$query';
+      // Старі вкладки ?tab=… ведуть у нові розділи (як OLD_TABS у MusicHubController).
+      return switch (uri?.queryParameters['tab']) {
+        'mine' => '/music/library/songs',
+        'playlists' => '/music/library/playlists',
+        'spotify' => '/music/library/spotify',
+        'discover' => '/music/new',
+        _ => '/music',
+      };
     case 'cinema':
       return '$path${rest(1) == 'my' ? query : ''}';
     case 'families':

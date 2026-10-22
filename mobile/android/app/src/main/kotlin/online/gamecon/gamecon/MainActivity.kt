@@ -30,8 +30,34 @@ class MainActivity : AudioServiceActivity() {
                     PlayingDetector.checkNow(this)
                     result.success(true)
                 }
+                // «Вивід звуку» в плеєрі: системний перемикач навушників, колонок і Cast.
+                "audioOutput" -> result.success(showOutputSwitcher())
+                "bluetoothSettings" -> {
+                    startActivity(android.content.Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS))
+                    result.success(true)
+                }
                 else -> result.notImplemented()
             }
+        }
+    }
+
+    /** Системний перемикач виводу звуку: Android 14+ — MediaRouter2, Android 11–13 — діалог SystemUI. */
+    private fun showOutputSwitcher(): Boolean {
+        return try {
+            if (android.os.Build.VERSION.SDK_INT >= 34) {
+                android.media.MediaRouter2.getInstance(this).showSystemOutputSwitcher()
+            } else if (android.os.Build.VERSION.SDK_INT >= 30) {
+                sendBroadcast(
+                    android.content.Intent("com.android.systemui.action.LAUNCH_MEDIA_OUTPUT_DIALOG")
+                        .setPackage("com.android.systemui")
+                        .putExtra("package_name", packageName),
+                )
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            false
         }
     }
 

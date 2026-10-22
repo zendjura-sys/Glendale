@@ -24,6 +24,8 @@ import 'characters.dart';
 import 'games.dart';
 import 'listen_together.dart';
 import 'music.dart';
+import 'music_home.dart';
+import 'music_pages.dart';
 import 'party.dart';
 import 'people.dart';
 import 'photos.dart';
@@ -126,9 +128,36 @@ Future<void> main() async {
           ),
           GoRoute(
             path: '/music',
-            builder: (_, state) => MusicScreen(key: ValueKey(state.uri.queryParameters['user']), username: state.uri.queryParameters['user'], tab: state.uri.queryParameters['tab']),
+            builder: (_, state) {
+              // Аудіозаписи іншого користувача — старий екран; свій розділ — у стилі Apple Music.
+              final user = state.uri.queryParameters['user'];
+              if (user != null) return MusicScreen(key: ValueKey(user), username: user);
+              final tab = MusicHub.tabFor(state.uri.queryParameters['tab']);
+              return MusicHub(key: ValueKey('music-$tab'), tab: tab);
+            },
             routes: [
               GoRoute(path: 'playlists/:id', builder: (_, state) => PlaylistScreen(id: int.tryParse(state.pathParameters['id']!) ?? 0)),
+              GoRoute(path: 'new', builder: (_, _) => const MusicHub(key: ValueKey('music-new'), tab: 'new')),
+              GoRoute(path: 'radio', builder: (_, _) => const MusicHub(key: ValueKey('music-radio'), tab: 'radio')),
+              GoRoute(
+                path: 'library',
+                builder: (_, _) => const MusicHub(key: ValueKey('music-library'), tab: 'library'),
+                routes: [GoRoute(path: ':section', builder: (_, state) => LibrarySectionScreen(key: ValueKey(state.uri.toString()), section: state.pathParameters['section']!))],
+              ),
+              GoRoute(path: 'search', builder: (_, state) => MusicSearchScreen(initial: state.uri.queryParameters['q'] ?? '')),
+              GoRoute(path: 'artist', builder: (_, state) => ArtistScreen(key: ValueKey(state.uri.toString()), name: state.uri.queryParameters['name'] ?? '')),
+              GoRoute(
+                path: 'album',
+                builder: (_, state) => MusicAlbumScreen(key: ValueKey(state.uri.toString()), artist: state.uri.queryParameters['artist'] ?? '', title: state.uri.queryParameters['title'] ?? ''),
+              ),
+              GoRoute(path: 'mix/:key', builder: (_, state) => MixScreen(key: ValueKey(state.uri.toString()), mixKey: state.pathParameters['key']!)),
+              GoRoute(path: 'genre', builder: (_, state) => GenreScreen(key: ValueKey(state.uri.toString()), name: state.uri.queryParameters['name'] ?? '')),
+              GoRoute(path: 'charts', builder: (_, _) => const ChartsScreen()),
+              GoRoute(
+                path: 'replay',
+                builder: (_, _) => const ReplayScreen(),
+                routes: [GoRoute(path: ':year', builder: (_, state) => ReplayScreen(key: ValueKey(state.uri.toString()), year: int.tryParse(state.pathParameters['year']!)))],
+              ),
             ],
           ),
           GoRoute(

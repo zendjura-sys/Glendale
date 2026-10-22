@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
 import 'feed.dart';
+import 'music_ui.dart';
 import 'posts.dart';
 import 'state.dart';
 import 'theme.dart';
@@ -17,8 +18,8 @@ import 'track_edit.dart';
 import 'widgets.dart';
 import 'i18n.dart';
 
-/// Грає список локальних треків (Spotify-треки відкриваються в Spotify).
-Future<void> playTracks(BuildContext context, List<Map<String, dynamic>> tracks, int index, {bool shuffle = false}) async {
+/// Грає список треків GameCon і радіостанцій (Spotify-треки відкриваються в Spotify).
+Future<void> playTracks(BuildContext context, List<Map<String, dynamic>> tracks, int index, {bool shuffle = false, String? station}) async {
   final track = tracks[index];
   if (text(track['source']) == 'spotify') {
     final link = text(track['url']) ?? 'https://open.spotify.com/track/${track['id']}';
@@ -27,10 +28,30 @@ Future<void> playTracks(BuildContext context, List<Map<String, dynamic>> tracks,
   }
   final player = AppScope.read(context).player;
   final local = tracks.where((t) => text(t['source']) != 'spotify').toList();
-  final start = local.indexWhere((t) => '${t['id']}' == '${track['id']}');
-  if (shuffle && !player.shuffle) player.toggleShuffle();
-  if (!shuffle && player.shuffle) player.toggleShuffle();
-  await player.playList(local, start < 0 ? 0 : start);
+  final start = local.indexWhere((t) => trackKey(t) == trackKey(track));
+  if (shuffle != player.shuffle) player.toggleShuffle();
+  await player.playList(local, start < 0 ? 0 : start, station: station);
+}
+
+/// «Завантажити трек»: файл, теги, обкладинка з каталогу. Повертає true, якщо трек додано.
+Future<bool> uploadTrack(BuildContext context, {Map<String, dynamic>? limits}) async {
+  var info = limits;
+  if (info == null) {
+    try {
+      info = mapOf((await AppScope.read(context).session.api.get(Api.site('/music?tab=mine')))['limits']);
+    } catch (_) {
+      info = const {};
+    }
+  }
+  if (!context.mounted) return false;
+  final formats = [for (final f in (info['formats'] as List? ?? ['mp3', 'm4a', 'ogg', 'wav', 'flac'])) '$f'];
+  final done = await showGcSheet<bool>(
+    context,
+    title: tr('Завантажити трек'),
+    subtitle: tr('До {v} МБ · {v2}', {'v': info['max_mb'] ?? 20, 'v2': formats.join(', ')}),
+    builder: (sheet) => _UploadTrack(formats: formats, onDone: () => Navigator.pop(sheet, true)),
+  );
+  return done == true;
 }
 
 String minutesLabel(dynamic seconds) {
@@ -122,14 +143,7 @@ class _MusicScreenState extends State<MusicScreen> {
   }
 
   Future<void> _upload() async {
-    final limits = mapOf(page?['limits']);
-    final done = await showGcSheet<bool>(
-      context,
-      title: tr('Завантажити трек'),
-      subtitle: tr('До {v} МБ · {v2}', {'v': limits['max_mb'] ?? 20, 'v2': (limits['formats'] as List? ?? ['mp3']).join(', ')}),
-      builder: (sheet) => _UploadTrack(formats: [for (final f in (limits['formats'] as List? ?? ['mp3', 'm4a', 'ogg', 'wav', 'flac'])) '$f'], onDone: () => Navigator.pop(sheet, true)),
-    );
-    if (done == true) _load(reset: true);
+    if (await uploadTrack(context, limits: mapOf(page?['limits'])) && mounted) _load(reset: true);
   }
 
   Future<void> _newPlaylist() async {
@@ -331,88 +345,21 @@ class _LibraryTrackState extends State<LibraryTrack> {
   }
 
   Future<void> _menu() async {
-    final me = AppScope.read(context).session;
-    final own = intOf(track['user_id']) == me.myId || me.isAdmin;
-    final choice = await showGcSheet<String>(
+    final detach = widget.playlistId != null && widget.canManagePlaylist;
+    await showTrackMenu(
       context,
-      title: text(track['title']),
-      subtitle: text(track['artist']),
-      builder: (sheet) => Padding(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          SheetAction(icon: LucideIcons.play, label: tr('Слухати'), onTap: () => Navigator.pop(sheet, 'play')),
-          if (text(track['source']) != 'spotify') ...[
-            SheetAction(icon: LucideIcons.listStart, label: tr('Грати наступним'), onTap: () => Navigator.pop(sheet, 'next')),
-            SheetAction(icon: LucideIcons.listEnd, label: tr('Додати в чергу'), onTap: () => Navigator.pop(sheet, 'queue')),
-          ],
-          SheetAction(icon: track['in_library'] == true ? LucideIcons.circleMinus : LucideIcons.circlePlus, label: track['in_library'] == true ? tr('Прибрати з моїх') : tr('Додати до моїх'), onTap: () => Navigator.pop(sheet, 'library')),
-          SheetAction(icon: LucideIcons.listPlus, label: tr('Додати до плейлиста'), onTap: () => Navigator.pop(sheet, 'playlist')),
-          if (widget.playlistId != null && widget.canManagePlaylist) SheetAction(icon: LucideIcons.listMinus, label: tr('Прибрати з плейлиста'), onTap: () => Navigator.pop(sheet, 'detach')),
-          if (own) SheetAction(icon: LucideIcons.pencil, label: tr('Редагувати'), onTap: () => Navigator.pop(sheet, 'edit')),
-          if (own) SheetAction(icon: LucideIcons.trash2, label: tr('Видалити трек'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
-        ]),
-      ),
+      track,
+      onChanged: () {
+        if (mounted) setState(() {});
+        widget.onChanged?.call();
+      },
+      removeLabel: tr('Прибрати з плейлиста'),
+      onRemove: !detach
+          ? null
+          : () async {
+              if (await attempt(context, () => api.delete(Api.site('/music/playlists/${widget.playlistId}/tracks/${track['id']}')), success: tr('Прибрано з плейлиста.'))) widget.onChanged?.call();
+            },
     );
-    if (!mounted || choice == null) return;
-    switch (choice) {
-      case 'play':
-        await playTracks(context, widget.tracks, widget.index);
-      case 'next' || 'queue':
-        await AppScope.read(context).player.enqueue(track, next: choice == 'next');
-        if (mounted) toast(context, choice == 'next' ? tr('Заграє наступним.') : tr('Додано в чергу.'));
-      case 'library':
-        await _toggleLibrary();
-      case 'playlist':
-        await _addToPlaylist();
-      case 'detach':
-        if (await attempt(context, () => api.delete(Api.site('/music/playlists/${widget.playlistId}/tracks/${track['id']}')), success: tr('Прибрано з плейлиста.'))) widget.onChanged?.call();
-      case 'edit':
-        if (await _edit() == true) widget.onChanged?.call();
-      case 'delete':
-        if (!await confirm(context, tr('Видалити трек?'), text: tr('Він зникне в усіх, хто додав його собі.'), action: tr('Видалити'), danger: true)) return;
-        if (!mounted) return;
-        if (await attempt(context, () => api.delete(Api.site('/music/tracks/${track['id']}')), success: tr('Трек видалено.'))) widget.onChanged?.call();
-    }
-  }
-
-  Future<void> _addToPlaylist() async {
-    var playlists = widget.playlists;
-    if (playlists.isEmpty) {
-      try {
-        playlists = maps((await api.get(Api.site('/music?tab=mine')))['playlists']);
-      } catch (_) {}
-    }
-    if (!mounted) return;
-    final mine = playlists.where((p) => intOf(p['user_id']) == AppScope.read(context).session.myId).toList();
-    final picked = await showGcSheet<int>(
-      context,
-      title: tr('Додати до плейлиста'),
-      builder: (sheet) => Padding(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          for (final p in mine)
-            SheetAction(icon: LucideIcons.listMusic, label: '${p['title']} · ${p['tracks_count']}', onTap: () => Navigator.pop(sheet, intOf(p['id']))),
-          SheetAction(icon: LucideIcons.plus, label: tr('Новий плейлист'), onTap: () => Navigator.pop(sheet, -1)),
-        ]),
-      ),
-    );
-    if (picked == null || !mounted) return;
-    final id = picked == -1 ? await editPlaylist(context) : picked;
-    if (id == null || !mounted) return;
-    try {
-      final result = await api.post(Api.site('/music/playlists/$id/tracks/${track['id']}'));
-      if (mounted) toast(context, result['added'] == false ? tr('Трек уже є в плейлисті.') : tr('Додано до плейлиста.'));
-    } catch (e) {
-      if (mounted) toast(context, e);
-    }
-  }
-
-  Future<bool?> _edit() async {
-    final player = AppScope.read(context).player;
-    final card = await editTrackSheet(context, track);
-    if (card == null) return false;
-    player.updateMeta(card);
-    return true;
   }
 
   @override
@@ -422,7 +369,7 @@ class _LibraryTrackState extends State<LibraryTrack> {
       listenable: player,
       builder: (context, _) => TrackRow(
         track: track,
-        playing: player.isCurrent(track['id']),
+        playing: player.isCurrentCard(track),
         onTap: () => playTracks(context, widget.tracks, widget.index),
         trailing: Row(mainAxisSize: MainAxisSize.min, children: [
           if (text(track['source']) != 'spotify')

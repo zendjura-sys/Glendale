@@ -8,7 +8,6 @@ import 'state.dart';
 import 'track_edit.dart';
 import 'theme.dart';
 import 'widgets.dart';
-import 'i18n.dart';
 
 export 'full_player.dart' show showFullPlayer;
 
@@ -100,80 +99,6 @@ class MiniPlayer extends StatelessWidget {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Черга відтворення: торкнутися — увімкнути, перетягнути за ⋮⋮ — змінити порядок.
-class PlayerQueue extends StatelessWidget {
-  const PlayerQueue({required this.player, super.key});
-  final TrackPlayer player;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        Expanded(child: Text(tr('Торкніться, щоб увімкнути; перетягніть за ⋮⋮, щоб змінити порядок.'), style: body(12, color: faint))),
-        const SizedBox(width: 8),
-        Text('${player.index + 1} / ${player.queue.length}', style: body(12, color: faint)),
-      ]),
-      const SizedBox(height: 6),
-      ReorderableListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        buildDefaultDragHandles: false,
-        itemCount: player.queue.length,
-        onReorderItem: player.move,
-        proxyDecorator: (child, _, _) => Material(color: popover, elevation: 6, borderRadius: BorderRadius.circular(14), child: child),
-        itemBuilder: (context, i) => _QueueRow(key: ObjectKey(player.queue[i]), player: player, i: i),
-      ),
-    ]);
-  }
-}
-
-class _QueueRow extends StatelessWidget {
-  const _QueueRow({required this.player, required this.i, super.key});
-  final TrackPlayer player;
-  final int i;
-
-  @override
-  Widget build(BuildContext context) {
-    final track = player.queue[i];
-    final on = i == player.index;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () => player.playAt(i),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-          decoration: BoxDecoration(color: on ? primary.withValues(alpha: 0.10) : Colors.transparent, borderRadius: BorderRadius.circular(14)),
-          child: Row(children: [
-            Stack(alignment: Alignment.center, children: [
-              TrackCover(url: track.cover, seed: track.id ?? i, size: 42, radius: 10),
-              if (on)
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.45), borderRadius: BorderRadius.circular(10)),
-                  child: Icon(player.playing ? LucideIcons.audioLines : LucideIcons.pause, size: 18, color: Colors.white),
-                ),
-            ]),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(track.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: on ? accent : ink, weight: FontWeight.w600)),
-                Text(artistOf(track.artist), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: muted)),
-              ]),
-            ),
-            IconButton(tooltip: tr('Прибрати з черги'), visualDensity: VisualDensity.compact, onPressed: () => player.removeAt(i), icon: Icon(LucideIcons.x, size: 18, color: faint)),
-            ReorderableDragStartListener(
-              index: i,
-              child: Padding(padding: EdgeInsets.symmetric(horizontal: 6, vertical: 8), child: Icon(LucideIcons.gripVertical, size: 18, color: muted)),
-            ),
-          ]),
         ),
       ),
     );
