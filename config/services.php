@@ -162,4 +162,10 @@ return [
         'url' => env('SHIKIMORI_URL', 'https://shikimori.one'),
     ],
 
+    // Звукові дані й перекодування треків (музика); не знайдено — завантаження без них.
+    'ffmpeg' => [
+        'ffmpeg' => env('FFMPEG_PATH', 'ffmpeg'),
+        'ffprobe' => env('FFPROBE_PATH', 'ffprobe'),
+    ],
+
 ];

@@ -2,10 +2,12 @@
 
 namespace App\Services;
 
+use App\Jobs\ProcessTrackAudio;
 use App\Models\MusicStatus;
 use App\Models\Playlist;
 use App\Models\Track;
 use App\Models\User;
+use App\Services\Music\AudioProbe;
 use App\Services\Spotify\SpotifyClient;
 use App\Services\Spotify\SpotifyException;
 use Illuminate\Database\Eloquent\Builder;
@@ -46,11 +48,15 @@ class MusicService
             'cover_path' => $coverPath,
             'mime' => $audio->getMimeType(),
             'size' => (int) $audio->getSize(),
+            // Формат, який браузер не відтворить (AIFF, WMA, APE…), ховаємо до появи копії AAC.
+            'processing' => app(AudioProbe::class)->available() && ! in_array($extension, AudioProbe::PLAYABLE_EXTENSIONS, true),
         ]);
 
         $this->add($user, $track);
+        // Кодек, якість, теги й обкладинка з файлу (через чергу — завантаження не чекає ffmpeg).
+        ProcessTrackAudio::dispatch($track->id);
 
-        return $track;
+        return $track->refresh();
     }
 
     /** Обкладинка треку з файлу (завантаження чи редагування): квадрат 600×600. Повертає шлях на диску public. */

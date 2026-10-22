@@ -38,7 +38,12 @@ class RadioStation extends Model
      */
     protected function logoUrl(): Attribute
     {
-        return Attribute::get(fn () => $this->logo_path ? Storage::disk('public')->url($this->logo_path) : null);
+        // Логотип — файл на нашому диску або адреса https, яку вказав адміністратор.
+        return Attribute::get(fn () => match (true) {
+            ! $this->logo_path => null,
+            str_starts_with($this->logo_path, 'https://') => $this->logo_path,
+            default => Storage::disk('public')->url($this->logo_path),
+        });
     }
 
     /**

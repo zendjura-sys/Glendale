@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Music\AudioProbe;
 use App\Support\Plugins\Plugins;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -50,6 +51,15 @@ class Track extends Model
     use SoftDeletes;
 
     public const AUDIO_MIMES = ['mp3', 'mpga', 'm4a', 'mp4', 'aac', 'ogg', 'oga', 'opus', 'wav', 'flac', 'webm'];
+
+    /** Формати, які приймаємо лише з ffmpeg на сервері: файл перевіряє ffprobe, для браузера робиться копія AAC. */
+    public const FFMPEG_MIMES = ['aiff', 'aif', 'wma', 'ape', 'wv', 'tta', 'ac3', 'amr', 'mka', 'caf', 'dsf'];
+
+    /** Формати для завантаження: «рідні» плюс ті, що розбирає ffmpeg, якщо він є на сервері. */
+    public static function uploadFormats(): array
+    {
+        return app(AudioProbe::class)->available() ? [...self::AUDIO_MIMES, ...self::FFMPEG_MIMES] : self::AUDIO_MIMES;
+    }
 
     /** Якість звуку: стиснений, без втрат (до 48 кГц) і високої роздільності (понад 48 кГц). */
     public const QUALITY_LOSSY = 'lossy';

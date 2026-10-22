@@ -270,7 +270,10 @@ export function UploadTracksDialog({
                 <input
                     ref={input}
                     type="file"
-                    accept="audio/*"
+                    // APE, WavPack, TTA… часто без типу audio/* — додаємо розширення.
+                    accept={['audio/*', ...formats.map((f) => `.${f}`)].join(
+                        ',',
+                    )}
                     multiple
                     hidden
                     onChange={(event) => {

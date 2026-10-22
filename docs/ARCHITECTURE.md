@@ -214,7 +214,7 @@ flowchart LR
 
 ### 4.4. Фоновые процессы
 
-- Очередь: `Jobs/*` (push, обновление плееров, проставка плееров, …). Сервис `gamecon-queue`.
+- Очередь: `Jobs/*` (push, обновление плееров, проставка плееров, разбор треков через ffmpeg — `ProcessTrackAudio`, …). Сервис `gamecon-queue`; ffmpeg ставит `deploy/remote.sh`.
 - Планировщик (`routes/console.php`, сервис `gamecon-scheduler`): `cinema:sync`, `servers:sync`,
   `families:tick`, `posts:publish`, `events:remind`, `events:sync`, `discord:presence`, `steam:presence`,
   `billing:tick`, `streams:check`, `games:sync`, `i18n:translate`, `geoip:update`, …

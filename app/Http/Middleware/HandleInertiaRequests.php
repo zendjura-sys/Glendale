@@ -95,7 +95,7 @@ class HandleInertiaRequests extends Middleware
                 // Google Analytics 4 (G-…): завантажується лише після згоди на аналітичні cookie.
                 'analytics' => $this->settings->analyticsId(),
                 // Завантаження музики: ліміт і формати (кнопка «Завантажити» в розділі «Музика»).
-                'music_upload' => ['max_mb' => (int) $this->settings->get('music_max_track_mb'), 'formats' => Track::AUDIO_MIMES],
+                'music_upload' => ['max_mb' => (int) $this->settings->get('music_max_track_mb'), 'formats' => Track::uploadFormats()],
                 // «Підсумки року» відкриті (грудень — січень): банер у стрічці й пункт меню.
                 'wrapped' => app(Plugins::class)->on('wrapped') ? app(YearInReview::class)->season() : null,
                 'social' => [

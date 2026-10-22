@@ -64,7 +64,7 @@ class MusicController extends Controller
             ],
             'limits' => [
                 'max_mb' => (int) $settings->get('music_max_track_mb'),
-                'formats' => Track::AUDIO_MIMES,
+                'formats' => Track::uploadFormats(),
             ],
         ]);
     }

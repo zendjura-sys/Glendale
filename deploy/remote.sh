@@ -8,6 +8,12 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
+# ffmpeg/ffprobe — кодек і якість треків (Lossless / Hi-Res), теги, обкладинки й копії AAC для браузера.
+# Ставимо один раз; не вдалося — деплой не зупиняємо: музика працює, лише без розбору кодеків.
+command -v ffprobe >/dev/null 2>&1 \
+    || { sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ffmpeg >/dev/null; } \
+    || echo "⚠ ffmpeg не встановлено: sudo apt-get install ffmpeg" >&2
+
 # Залежності ставимо до першого artisan: новий код може посилатися на щойно додані пакети.
 # Скрипти composer (package:discover) запускаємо вже після режиму обслуговування.
 composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-progress --no-scripts

@@ -655,6 +655,19 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::get('music', [Admin\MusicController::class, 'index'])->name('music.index');
         Route::delete('music/{track}', [Admin\MusicController::class, 'destroy'])->whereNumber('track')->name('music.destroy');
         Route::post('music/{track}/restore', [Admin\MusicController::class, 'restore'])->whereNumber('track')->name('music.restore');
+        // Радіостанції й добірки редакції для розділу «Музика».
+        Route::prefix('music/radio')->name('music.radio.')->controller(Admin\MusicRadioController::class)->group(function () {
+            Route::get('/', 'stations')->name('index');
+            Route::post('/', 'storeStation')->name('store');
+            Route::whereNumber('station')->group(function () {
+                Route::post('{station}', 'updateStation')->name('update');
+                Route::patch('{station}/flags', 'flagStation')->name('flags');
+                Route::post('{station}/probe', 'probeStation')->middleware('throttle:20,1')->name('probe');
+                Route::delete('{station}', 'destroyStation')->name('destroy');
+            });
+        });
+        Route::get('music/featured', [Admin\MusicFeaturedController::class, 'featured'])->name('music.featured.index');
+        Route::patch('music/featured/{playlist}', [Admin\MusicFeaturedController::class, 'feature'])->whereNumber('playlist')->name('music.featured.update');
         Route::prefix('cinema')->name('cinema.')->group(function () {
             Route::get('/', [Admin\CinemaController::class, 'index'])->name('index');
             Route::get('create', [Admin\CinemaController::class, 'create'])->name('create');

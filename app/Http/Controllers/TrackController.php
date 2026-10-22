@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Track;
+use App\Services\Music\AudioProbe;
 use App\Services\Music\LyricsFinder;
 use App\Services\MusicService;
 use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
+use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -16,10 +19,15 @@ class TrackController extends Controller
 {
     public function __construct(private readonly MusicService $music) {}
 
-    public function store(Request $request, SiteSettings $settings): JsonResponse
+    public function store(Request $request, SiteSettings $settings, AudioProbe $probe): JsonResponse
     {
+        $formats = Track::uploadFormats();
         $data = $request->validate([
-            'audio' => ['required', 'file', 'mimes:'.implode(',', Track::AUDIO_MIMES), 'max:'.(int) $settings->get('music_max_track_mb') * 1024],
+            'audio' => ['required', 'file', 'max:'.(int) $settings->get('music_max_track_mb') * 1024, function (string $attribute, mixed $file, Closure $fail) use ($probe, $formats) {
+                if (! $this->acceptsAudio($file, $probe)) {
+                    $fail('Підтримуються аудіофайли: '.implode(', ', $formats).'.');
+                }
+            }],
             'cover' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'cover_url' => ['nullable', 'url:https', 'max:500'],
             'title' => ['required', 'string', 'max:150'],
@@ -28,13 +36,29 @@ class TrackController extends Controller
             'genre' => ['nullable', 'string', 'max:40'],
             'duration' => ['nullable', 'integer', 'min:0', 'max:7200'],
         ], [
-            'audio.mimes' => 'Підтримуються аудіофайли: '.implode(', ', Track::AUDIO_MIMES).'.',
             'audio.max' => 'Файл завеликий (максимум '.(int) $settings->get('music_max_track_mb').' МБ).',
         ]);
 
         $track = $this->music->upload($request->user(), $request->file('audio'), $data, $request->file('cover'));
 
         return response()->json(['track' => $track->toCard(true)], 201);
+    }
+
+    /**
+     * Формат за вмістом файлу (як правило mimes) — для «рідних» форматів; решту (AIFF, APE, WMA…)
+     * за вмістом не розпізнати, тому їх приймаємо лише тоді, коли ffprobe бачить у файлі звук.
+     */
+    private function acceptsAudio(mixed $file, AudioProbe $probe): bool
+    {
+        if (! $file instanceof UploadedFile || ! $file->isValid() || $file->getPath() === '') {
+            return false;
+        }
+        if (in_array($file->guessExtension(), Track::AUDIO_MIMES, true)) {
+            return true;
+        }
+        $extension = strtolower($file->getClientOriginalExtension());
+
+        return in_array($extension, Track::FFMPEG_MIMES, true) && $probe->available() && $probe->probe($file->getRealPath() ?: $file->getPathname()) !== null;
     }
 
     public function update(Request $request, Track $track): JsonResponse
