@@ -82,12 +82,12 @@ class MusicCatalog
             return [];
         }
 
-        return MusicStatus::query()->whereIn('user_id', $ids)->where('expires_at', '>', now())
+        return array_values(MusicStatus::query()->whereIn('user_id', $ids)->where('expires_at', '>', now())
             ->where('source', 'local')->whereNotNull('track_id')->with(['user', 'track'])
             ->latest('updated_at')->limit(12)->get()
             ->filter(fn (MusicStatus $s) => $s->user !== null && $s->track !== null)
             ->map(fn (MusicStatus $s) => ['user' => $s->user->toCard(), 'track' => $s->track->toCard()])
-            ->values()->all();
+            ->all());
     }
 
     /**
@@ -99,9 +99,10 @@ class MusicCatalog
     {
         $ids = DB::table('music_plays')->where('user_id', $user->id)->whereNotNull('track_id')
             ->groupBy('track_id')->selectRaw('track_id, MAX(played_at) as last')
-            ->orderByDesc('last')->limit($limit)->pluck('track_id')->all();
+            ->orderByDesc('last')->limit($limit)->pluck('track_id')->map(fn ($id) => (int) $id)->all();
 
-        return $this->cards($this->ordered($ids), $user);
+        return $this->cards($this->ordered(array_values($ids)), $user);
+
     }
 
     // ───────────────────────── Міксы ─────────────────────────
@@ -169,7 +170,7 @@ class MusicCatalog
                 default => collect(),
             };
 
-            return collect($query)->map(fn ($id) => (int) $id)->all();
+            return array_values(collect($query)->map(fn ($id) => (int) $id)->all());
         });
 
         return $this->ordered(array_slice($ids, 0, $limit));
@@ -185,9 +186,9 @@ class MusicCatalog
         $ids = DB::table('music_plays')->where('user_id', $user->id)->whereNotNull('track_id')
             ->where('played_at', '>=', $since)->when($until, fn ($q) => $q->where('played_at', '<', $until))
             ->groupBy('track_id')->selectRaw('track_id, COUNT(*) as total')
-            ->orderByDesc('total')->limit($limit)->pluck('track_id')->all();
+            ->orderByDesc('total')->limit($limit)->pluck('track_id')->map(fn ($id) => (int) $id)->all();
 
-        return $this->ordered($ids);
+        return $this->ordered(array_values($ids));
     }
 
     /**
@@ -200,11 +201,11 @@ class MusicCatalog
             return [];
         }
 
-        return DB::table('music_plays')->whereIn('user_id', $ids)->whereNotNull('track_id')
+        return array_values(DB::table('music_plays')->whereIn('user_id', $ids)->whereNotNull('track_id')
             ->where('played_at', '>=', now()->subDays(30))
             ->groupBy('track_id')->selectRaw('track_id, COUNT(DISTINCT user_id) as people, COUNT(*) as total')
             ->orderByDesc('people')->orderByDesc('total')->limit($limit)
-            ->pluck('track_id')->map(fn ($id) => (int) $id)->all();
+            ->pluck('track_id')->map(fn ($id) => (int) $id)->all());
     }
 
     /**
@@ -217,11 +218,11 @@ class MusicCatalog
             ->groupBy('t.genre')->selectRaw('t.genre, COUNT(*) as total')->orderByDesc('total')
             ->limit($limit)->pluck('t.genre');
         if ($fromPlays->isNotEmpty()) {
-            return $fromPlays->all();
+            return array_values(array_map('strval', $fromPlays->all()));
         }
 
-        return $user->library()->whereNotNull('genre')->groupBy('genre')
-            ->selectRaw('genre, COUNT(*) as total')->orderByDesc('total')->limit($limit)->pluck('genre')->all();
+        return array_values(array_map('strval', $user->library()->whereNotNull('genre')->groupBy('genre')
+            ->selectRaw('genre, COUNT(*) as total')->orderByDesc('total')->limit($limit)->pluck('genre')->all()));
     }
 
     /**
@@ -229,8 +230,8 @@ class MusicCatalog
      */
     private function playedIds(User $user): array
     {
-        return DB::table('music_plays')->where('user_id', $user->id)->whereNotNull('track_id')
-            ->distinct()->limit(2000)->pluck('track_id')->map(fn ($id) => (int) $id)->all();
+        return array_values(DB::table('music_plays')->where('user_id', $user->id)->whereNotNull('track_id')
+            ->distinct()->limit(2000)->pluck('track_id')->map(fn ($id) => (int) $id)->all());
     }
 
     // ───────────────────────── Нове ─────────────────────────
@@ -268,13 +269,13 @@ class MusicCatalog
     public function chartIds(?string $country, int $limit): array
     {
         return Cache::remember('music:chart:'.($country ?? 'all').":{$limit}", now()->addMinutes(30), function () use ($country, $limit) {
-            return DB::table('music_plays as p')
+            return array_values(DB::table('music_plays as p')
                 ->join('tracks as t', 't.id', '=', 'p.track_id')->whereNull('t.deleted_at')->where('t.processing', false)
                 ->when($country, fn ($q) => $q->join('users as u', 'u.id', '=', 'p.user_id')->where('u.country', $country))
                 ->where('p.played_at', '>=', now()->subDays(7))
                 ->groupBy('p.track_id')->selectRaw('p.track_id, COUNT(DISTINCT p.user_id) as people, COUNT(*) as total')
                 ->orderByDesc('people')->orderByDesc('total')->limit($limit)
-                ->pluck('p.track_id')->map(fn ($id) => (int) $id)->all();
+                ->pluck('p.track_id')->map(fn ($id) => (int) $id)->all());
         });
     }
 
@@ -315,15 +316,10 @@ class MusicCatalog
     public function genres(int $limit = 40): array
     {
         return Cache::remember("music:genres:{$limit}", now()->addMinutes(30), function () use ($limit) {
-            return $this->ready()->whereNotNull('genre')->where('genre', '!=', '')
+            return array_values($this->ready()->whereNotNull('genre')->where('genre', '!=', '')
                 ->groupBy('genre')->selectRaw('genre, COUNT(*) as total, MAX(cover_path) as cover')
                 ->orderByDesc('total')->limit($limit)->get()
-                ->map(fn ($row) => [
-                    'name' => $row->genre,
-                    'tracks_count' => (int) $row->total,
-                    'cover_url' => $row->cover ? Storage::disk('public')->url($row->cover) : null,
-                    'href' => '/music/genre?name='.rawurlencode((string) $row->genre),
-                ])->values()->all();
+                ->map(fn (Track $row) => $this->genreCard($row))->all());
         });
     }
 
@@ -435,8 +431,8 @@ class MusicCatalog
      */
     private function topArtists(User $user, int $limit): array
     {
-        return DB::table('music_plays')->where('user_id', $user->id)->where('artist', '!=', '')
-            ->groupBy('artist')->selectRaw('artist, COUNT(*) as total')->orderByDesc('total')->limit($limit)->pluck('artist')->all();
+        return array_values(DB::table('music_plays')->where('user_id', $user->id)->where('artist', '!=', '')
+            ->groupBy('artist')->selectRaw('artist, COUNT(*) as total')->orderByDesc('total')->limit($limit)->pluck('artist')->map(fn ($a) => (string) $a)->all());
     }
 
     /**
@@ -444,7 +440,7 @@ class MusicCatalog
      */
     private function artistGenres(string $artist): array
     {
-        return $this->ready()->where('artist', $artist)->whereNotNull('genre')->distinct()->limit(3)->pluck('genre')->all();
+        return array_values(array_map('strval', $this->ready()->where('artist', $artist)->whereNotNull('genre')->distinct()->limit(3)->pluck('genre')->all()));
     }
 
     // ───────────────────────── Медіатека ─────────────────────────
@@ -517,8 +513,8 @@ class MusicCatalog
      */
     public function libraryPlaylists(User $user): array
     {
-        return $this->libraryPlaylistsQuery($user)->with(['tracks' => fn ($q) => $q->limit(4)])->latest('updated_at')->get()
-            ->map(fn (Playlist $p) => $this->playlistCard($p))->values()->all();
+        return array_values($this->libraryPlaylistsQuery($user)->with(['tracks' => fn ($q) => $q->limit(4)])->latest('updated_at')->get()
+            ->map(fn (Playlist $p) => $this->playlistCard($p))->all());
     }
 
     /**
@@ -526,10 +522,10 @@ class MusicCatalog
      */
     public function libraryArtists(User $user): array
     {
-        return $user->library()->where('tracks.processing', false)->where('tracks.artist', '!=', '')
+        return array_values($user->library()->where('tracks.processing', false)->where('tracks.artist', '!=', '')
             ->groupBy('tracks.artist')->selectRaw('tracks.artist as artist, COUNT(*) as total, MAX(tracks.cover_path) as cover')
             ->orderBy('tracks.artist')->get()
-            ->map(fn ($row) => $this->artistCard((string) $row->artist, $row->cover, (int) $row->total))->values()->all();
+            ->map(fn (Track $row) => $this->artistRowCard($row))->all());
     }
 
     /**
@@ -545,15 +541,10 @@ class MusicCatalog
      */
     public function libraryGenres(User $user): array
     {
-        return $user->library()->where('tracks.processing', false)->whereNotNull('tracks.genre')->where('tracks.genre', '!=', '')
+        return array_values($user->library()->where('tracks.processing', false)->whereNotNull('tracks.genre')->where('tracks.genre', '!=', '')
             ->groupBy('tracks.genre')->selectRaw('tracks.genre as genre, COUNT(*) as total, MAX(tracks.cover_path) as cover')
             ->orderBy('tracks.genre')->get()
-            ->map(fn ($row) => [
-                'name' => $row->genre,
-                'tracks_count' => (int) $row->total,
-                'cover_url' => $row->cover ? Storage::disk('public')->url($row->cover) : null,
-                'href' => '/music/genre?name='.rawurlencode((string) $row->genre),
-            ])->values()->all();
+            ->map(fn (Track $row) => $this->genreCard($row))->all());
     }
 
     // ───────────────────────── Пошук ─────────────────────────
@@ -582,7 +573,7 @@ class MusicCatalog
         $artists = $base()->where('tracks.artist', 'like', $like)->groupBy('tracks.artist')
             ->selectRaw('tracks.artist as artist, COUNT(*) as total, MAX(tracks.cover_path) as cover')
             ->orderByDesc('total')->limit(8)->get()
-            ->map(fn ($row) => $this->artistCard((string) $row->artist, $row->cover, (int) $row->total))->values()->all();
+            ->map(fn (Track $row) => $this->artistRowCard($row))->values()->all();
 
         $playlists = $scope === 'library'
             ? $this->libraryPlaylistsQuery($user)
@@ -642,7 +633,7 @@ class MusicCatalog
         return [
             'name' => $name,
             // Фото виконавця (MusicBrainz/Wikidata/Spotify — лише з кешу, без мережі), інакше обкладинка популярного треку.
-            'cover_url' => $this->artistInfo->cachedImage($name) ?? $top->first()?->cover_url,
+            'cover_url' => $this->artistInfo->cachedImage($name) ?? $top->first()->cover_url,
             'genre' => $genres[0] ?? null,
             'tracks_count' => $base()->count(),
             'listeners' => DB::table('music_plays')->where('artist', $name)->where('played_at', '>=', now()->subDays(30))->distinct()->count('user_id'),
@@ -650,7 +641,7 @@ class MusicCatalog
             'albums' => $this->albums($base()->whereNotNull('album'), 30),
             'singles' => $this->cards($base()->whereNull('album')->latest()->limit(20)->get(), $user),
             'latest' => ($latest = $base()->latest()->first()) ? $latest->toCard() : null,
-            'similar' => $similar->map(fn ($row) => $this->artistCard((string) $row->artist, $row->cover, (int) $row->total))->values()->all(),
+            'similar' => $similar->map(fn (Track $row) => $this->artistRowCard($row))->values()->all(),
             'station' => ['kind' => 'station', 'key' => 'artist:'.$name, 'name' => $name, 'colors' => $this->colorsFor($name), 'covers' => []],
         ];
     }
@@ -715,18 +706,18 @@ class MusicCatalog
         $rows = (clone $query)->groupBy("{$prefix}album", "{$prefix}artist")
             ->selectRaw("{$prefix}album as album, {$prefix}artist as artist, COUNT(*) as total, MAX({$prefix}cover_path) as cover, MAX({$prefix}year) as year, MAX({$prefix}created_at) as added")
             ->reorder()->orderByDesc('added')->limit($limit)->get();
-        $covers = $this->bestAlbumCovers($rows->pluck('album')->filter()->unique()->values()->all());
+        $covers = $this->bestAlbumCovers(array_values(array_map('strval', $rows->pluck('album')->filter()->unique()->all())));
 
-        return $rows
-            ->map(fn ($row) => [
+        return array_values($rows
+            ->map(fn (Track $row) => [
                 'kind' => 'album',
                 'title' => $row->album,
                 'artist' => $row->artist,
                 'year' => $row->year ? (int) $row->year : null,
-                'tracks_count' => (int) $row->total,
-                'cover_url' => ($cover = $covers[$row->artist."\0".$row->album] ?? $row->cover) ? Storage::disk('public')->url($cover) : null,
+                'tracks_count' => (int) $row->getAttribute('total'),
+                'cover_url' => ($cover = $covers[$row->artist."\0".$row->album] ?? $row->getAttribute('cover')) ? Storage::disk('public')->url($cover) : null,
                 'href' => $this->albumHref((string) $row->artist, (string) $row->album),
-            ])->values()->all();
+            ])->all());
     }
 
     /**
@@ -764,6 +755,35 @@ class MusicCatalog
             'tracks_count' => $total,
             'cover_url' => $this->artistInfo->cachedImage($name) ?? ($cover ? Storage::disk('public')->url($cover) : null),
             'href' => $this->artistHref($name),
+        ];
+    }
+
+    /**
+     * Картка виконавця з агрегованого рядка (artist, total, cover) — це не справжній трек, а підсумок групи.
+     *
+     * @return array<string, mixed>
+     */
+    private function artistRowCard(Track $row): array
+    {
+        $cover = $row->getAttribute('cover');
+
+        return $this->artistCard((string) $row->artist, $cover !== null ? (string) $cover : null, (int) $row->getAttribute('total'));
+    }
+
+    /**
+     * Плитка жанру з агрегованого рядка (genre, total, cover).
+     *
+     * @return array<string, mixed>
+     */
+    private function genreCard(Track $row): array
+    {
+        $cover = $row->getAttribute('cover');
+
+        return [
+            'name' => $row->genre,
+            'tracks_count' => (int) $row->getAttribute('total'),
+            'cover_url' => $cover ? Storage::disk('public')->url($cover) : null,
+            'href' => '/music/genre?name='.rawurlencode((string) $row->genre),
         ];
     }
 

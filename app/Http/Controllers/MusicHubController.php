@@ -212,7 +212,7 @@ class MusicHubController extends Controller
             'exclude.*' => ['integer'],
         ]);
 
-        return response()->json(['tracks' => $this->catalog->station($request->user(), $data['key'], array_map('intval', $data['exclude'] ?? []))]);
+        return response()->json(['tracks' => $this->catalog->station($request->user(), $data['key'], array_values(array_map('intval', $data['exclude'] ?? [])))]);
     }
 
     /** Плейлисти, куди людина може додати трек (меню «…» → «Додати в плейлист»). */

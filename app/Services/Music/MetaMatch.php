@@ -94,7 +94,7 @@ class MetaMatch
     {
         $groups = [];
         foreach ($candidates as $candidate) {
-            if (blank($candidate['value'] ?? null) || ($candidate['score'] ?? 0) <= 0) {
+            if (blank($candidate['value'] ?? null) || $candidate['score'] <= 0) {
                 continue;
             }
             $field = $candidate['field'];

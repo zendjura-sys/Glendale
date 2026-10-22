@@ -75,7 +75,7 @@ class AcoustId
         $cacheKey = 'music.acoustid.'.md5($fingerprint.'|'.$duration);
         $cached = Cache::get($cacheKey);
         if (is_array($cached)) {
-            return $cached;
+            return array_values($cached);
         }
 
         try {

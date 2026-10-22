@@ -96,7 +96,7 @@ class Id3Probe
             return null;
         }
 
-        return is_array($info) && empty($info['error']) ? $info : null;
+        return empty($info['error']) ? $info : null;
     }
 
     /**

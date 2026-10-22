@@ -62,7 +62,11 @@ class Track extends Model
     /** Формати, які приймаємо лише з ffmpeg на сервері: файл перевіряє ffprobe, для браузера робиться копія AAC. */
     public const FFMPEG_MIMES = ['aiff', 'aif', 'wma', 'ape', 'wv', 'tta', 'ac3', 'amr', 'mka', 'caf', 'dsf'];
 
-    /** Формати для завантаження: «рідні» плюс ті, що розбирає ffmpeg, якщо він є на сервері. */
+    /**
+     * Формати для завантаження: «рідні» плюс ті, що розбирає ffmpeg, якщо він є на сервері.
+     *
+     * @return list<string>
+     */
     public static function uploadFormats(): array
     {
         return app(AudioProbe::class)->available() ? [...self::AUDIO_MIMES, ...self::FFMPEG_MIMES] : self::AUDIO_MIMES;
@@ -107,9 +111,7 @@ class Track extends Model
      */
     public function fieldMeta(string $field): ?array
     {
-        $meta = $this->metadata_meta[$field] ?? null;
-
-        return is_array($meta) && isset($meta['source'], $meta['score']) ? $meta : null;
+        return $this->metadata_meta[$field] ?? null;
     }
 
     /** Наскільки надійна обкладинка (для вибору найкращої в альбомі): власна — найвища, невідома — середня. */

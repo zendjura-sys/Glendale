@@ -140,7 +140,7 @@ class YearInReview
                 'likes' => (int) $top->likes_count,
                 'comments' => (int) $top->comments_count,
                 'image' => $top->attachments->firstWhere('type', 'image')?->url,
-                'date' => $top->created_at?->toIso8601String(),
+                'date' => $top->created_at->toIso8601String(),
             ],
         ];
     }
@@ -169,7 +169,7 @@ class YearInReview
             if ($top !== null) {
                 $friendId = DB::table('conversation_participants')->where('conversation_id', $top->conversation_id)
                     ->where('user_id', '!=', $user->id)->value('user_id');
-                $friend = $friendId ? User::query()->find($friendId) : null;
+                $friend = $friendId ? User::query()->whereKey($friendId)->first() : null;
                 if ($friend !== null) {
                     $best = ['user' => $friend->toCard(), 'messages' => (int) $top->total];
                 }
@@ -275,7 +275,7 @@ class YearInReview
         $votedServer = (clone $votes)->groupBy('gta_server_id')->selectRaw('gta_server_id, COUNT(*) as total')->orderByDesc('total')->first();
 
         $serverId = $topServer->subject_id ?? $votedServer->gta_server_id ?? null;
-        $server = $serverId ? GtaServer::query()->find($serverId) : null;
+        $server = $serverId ? GtaServer::query()->whereKey($serverId)->first() : null;
 
         $moments = DB::table('moments')->where('user_id', $user->id)
             ->where('created_at', '>=', $range[0])->where('created_at', '<', $range[1]);
@@ -291,7 +291,7 @@ class YearInReview
                 'name' => $server->name,
                 'slug' => $server->slug,
                 'icon' => $server->icon,
-                'days' => (int) ($topServer?->days ?? 0),
+                'days' => (int) ($topServer->days ?? 0),
             ],
             'votes' => (clone $votes)->count(),
             'moments' => (clone $moments)->count(),

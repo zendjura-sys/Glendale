@@ -114,8 +114,11 @@ class LastFm
             return null;
         }
         // Помилка 6 — «не знайдено»: кешуємо як порожнє; інші (ключ, ліміт) — не кешуємо.
-        if (! is_array($data) || isset($data['error'])) {
-            if (is_array($data) && (int) ($data['error'] ?? 0) === 6) {
+        if (! is_array($data)) {
+            return null;
+        }
+        if (isset($data['error'])) {
+            if ((int) $data['error'] === 6) {
                 Cache::put($cacheKey, [], now()->addDays(7));
             }
 

@@ -155,7 +155,7 @@ class SpotifyClient
                 || ! MetaMatch::sameArtist(self::artistNames($item['artists'] ?? null), $artist)) {
                 continue;
             }
-            $images = collect($item['album']['images'] ?? [])->filter(fn ($i) => is_array($i) && filled($i['url'] ?? null))
+            $images = collect((array) ($item['album']['images'] ?? []))->filter(fn ($i) => is_array($i) && filled($i['url'] ?? null))
                 ->sortByDesc(fn ($i) => (int) ($i['width'] ?? 0) <= 1000 ? (int) ($i['width'] ?? 0) : 0);
             $image = $images->first();
             preg_match('/^(\d{4})/', (string) ($item['album']['release_date'] ?? ''), $m);

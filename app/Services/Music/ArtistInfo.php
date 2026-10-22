@@ -195,7 +195,7 @@ class ArtistInfo
         }
         arsort($scores);
 
-        return array_values(array_map(fn ($key) => $names[$key], array_slice(array_keys($scores), 0, 4)));
+        return array_map(fn ($key) => $names[$key], array_slice(array_keys($scores), 0, 4));
     }
 
     /**
@@ -310,7 +310,7 @@ class ArtistInfo
         if (! is_array($page) || ($page['type'] ?? '') === 'disambiguation' || blank($page['extract'] ?? null)) {
             return null;
         }
-        $about = ($page['description'] ?? '').' '.mb_substr((string) ($page['extract'] ?? ''), 0, 300);
+        $about = ($page['description'] ?? '').' '.mb_substr((string) $page['extract'], 0, 300);
         if ($checkMusic && ! preg_match(self::MUSIC_WORDS, $about)) {
             return null;
         }

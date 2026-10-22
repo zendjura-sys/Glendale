@@ -86,7 +86,7 @@ class MusicFeaturedController extends Controller
     {
         return [
             ...$playlist->toCard(),
-            'owner' => $playlist->user?->toCard(),
+            'owner' => $playlist->user->toCard(),
         ];
     }
 }

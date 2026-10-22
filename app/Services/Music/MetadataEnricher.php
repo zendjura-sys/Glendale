@@ -161,14 +161,17 @@ class MetadataEnricher
             }
         }
 
+        // Джерела порівнюють тривалість у цілих секундах.
+        $seconds = (int) round($duration) ?: null;
+
         $identity = null;
         if ($this->online()) {
             foreach ([
-                'acoustid' => fn () => $file !== null ? $this->fromAcoustId($probe, $file, $duration ?: null) : [],
-                'musicbrainz' => fn () => $this->fromMusicBrainz($probe, $duration ?: null),
-                'discogs' => fn () => $this->fromDiscogs($probe, $duration ?: null),
-                'spotify' => fn () => $this->fromSpotify($probe, $duration ?: null),
-                'lastfm' => fn () => $this->fromLastFm($probe, $duration ?: null),
+                'acoustid' => fn () => $file !== null ? $this->fromAcoustId($probe, $file, $seconds) : [],
+                'musicbrainz' => fn () => $this->fromMusicBrainz($probe, $seconds),
+                'discogs' => fn () => $this->fromDiscogs($probe, $seconds),
+                'spotify' => fn () => $this->fromSpotify($probe, $seconds),
+                'lastfm' => fn () => $this->fromLastFm($probe, $seconds),
             ] as $source => $gather) {
                 try {
                     $found = $gather();
@@ -196,7 +199,7 @@ class MetadataEnricher
             $artist = $winners['artist']['value'] ?? $probe->artist;
             $title = $winners['title']['value'] ?? $probe->title;
             $album = $winners['album']['value'] ?? $probe->album;
-            $text = $this->lyrics->find((string) $artist, (string) $title, is_string($album) ? $album : null, $duration ?: null);
+            $text = $this->lyrics->find((string) $artist, (string) $title, is_string($album) ? $album : null, $seconds);
             if ($text !== null) {
                 $candidates[] = ['field' => 'lyrics', 'value' => $text, 'source' => 'lrclib', 'score' => self::SCORE_LRCLIB];
             }
@@ -266,7 +269,11 @@ class MetadataEnricher
         return $applied;
     }
 
-    /** Чи можна записати значення з довірою $score у поле з поточним значенням і походженням. */
+    /**
+     * Чи можна записати значення з довірою $score у поле з поточним значенням і походженням.
+     *
+     * @param  array{source: string, score: int|float}|null  $known
+     */
     private function mayWrite(mixed $current, ?array $known, float $score, string $field = ''): bool
     {
         // «Сміття» замість назви, виконавця чи альбому (хеш, крапка, ім’я файлу) замінюємо навіть у полі від людини.
