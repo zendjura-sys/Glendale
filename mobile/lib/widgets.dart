@@ -1287,6 +1287,10 @@ const siteBarHeight = 58.0;
 /// Нижній острів-меню на телефоні разом із відступом знизу, без системного відступу.
 const islandExtent = 76.0;
 
+/// Скругленість нижніх панелей — повна капсула (половина висоти панелі): острів, вкладки «Музики»
+/// й міні-плеєр однакові.
+const barRadius = (islandExtent - 8) / 2;
+
 /// Плаваючий плеєр разом із відступом над меню.
 const miniPlayerExtent = 76.0;
 
@@ -1307,6 +1311,9 @@ const bottomBarSwap = Duration(milliseconds: 250);
 
 /// Сторінки розділу «Музика» з власною панеллю вкладок: там вона стоїть на місці острова.
 bool hasMusicTabs(Uri uri) => uri.queryParameters['user'] == null && RegExp(r'^/music(/(new|radio|library))?/?$').hasMatch(uri.path);
+
+/// Розділ «Музика» (свій, не чужі аудіозаписи `?user=`): там своя шапка з виходом «Назад».
+bool isMusicSection(Uri uri) => uri.queryParameters['user'] == null && RegExp(r'^/music(/|$)').hasMatch(uri.path);
 
 /// Нижній хром оболонки: скільки контент має лишити під скляним меню й плеєром.
 class ShellChrome extends InheritedWidget {

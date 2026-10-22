@@ -73,7 +73,7 @@ class _MusicHubState extends State<MusicHub> {
               child: Row(children: [
                 Expanded(
                   child: MatteGlass(
-                    borderRadius: 28,
+                    borderRadius: barRadius,
                     height: _barHeight,
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Row(children: [

@@ -52,6 +52,29 @@ class _Badge extends StatelessWidget {
 
 // ───────────────────────── Шапка ─────────────────────────
 
+/// Кнопка-іконка шапки з лічильником (дзвіночок, повідомлення, тема).
+Widget _headerButton(IconData icon, String label, VoidCallback onTap, {int badge = 0}) {
+  return Tooltip(
+    message: label,
+    child: InkResponse(
+      onTap: onTap,
+      radius: 22,
+      child: SizedBox(
+        width: 42,
+        height: 42,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            Icon(icon, size: 20, color: ink.withValues(alpha: 0.72)),
+            if (badge > 0) Positioned(right: 3, top: 3, child: _Badge(badge)),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 /// Шапка на всю ширину: матове скло, логотип, пошук і кнопки — як `Topbar` на сайті.
 class TopBar extends StatelessWidget {
   const TopBar({required this.session, required this.player, required this.wide, required this.topInset, super.key});
@@ -63,27 +86,7 @@ class TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final me = session.me;
-    Widget iconButton(IconData icon, String label, VoidCallback onTap, {int badge = 0}) {
-      return Tooltip(
-        message: label,
-        child: InkResponse(
-          onTap: onTap,
-          radius: 22,
-          child: SizedBox(
-            width: 42,
-            height: 42,
-            child: Stack(
-              clipBehavior: Clip.none,
-              alignment: Alignment.center,
-              children: [
-                Icon(icon, size: 20, color: ink.withValues(alpha: 0.72)),
-                if (badge > 0) Positioned(right: 3, top: 3, child: _Badge(badge)),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
+    const iconButton = _headerButton;
 
     // Шапка — те саме глибоке матове скло, що й нижні панелі, лише без заокруглень.
     return MatteGlass(
@@ -123,6 +126,85 @@ class TopBar extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Шапка «Музики» на телефоні — як на сайті. Острова там немає (його місце займають вкладки розділу),
+/// тож ліворуч аватар — він відкриває те саме меню розділів, що й острів, — і дзвіночок сповіщень,
+/// а праворуч «‹ Назад»: вихід із «Музики» туди, звідки прийшли.
+class MusicTopBar extends StatelessWidget {
+  const MusicTopBar({required this.session, required this.player, required this.path, required this.topInset, super.key});
+  final Session session;
+  final TrackPlayer player;
+  final String path;
+  final double topInset;
+
+  /// Останній маршрут поза «Музикою» (оболонка оновлює його на кожному переході) — туди веде «Назад».
+  static String? exit;
+
+  @override
+  Widget build(BuildContext context) {
+    final me = session.me ?? const {};
+    return MatteGlass(
+      borderRadius: 0,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(10, topInset, 6, 0),
+        child: SizedBox(
+          height: siteBarHeight,
+          child: Row(
+            children: [
+              Semantics(
+                button: true,
+                label: tr('Меню'),
+                child: InkResponse(
+                  key: const ValueKey('music-menu'),
+                  onTap: () => showSectionsMenu(context, session, player, path),
+                  radius: 22,
+                  child: Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Avatar(url: text(me['avatar_url']), name: text(me['name']) ?? tr('Я'), size: 34, frame: PlusMark.from(session.subscription.style)?.frame),
+                  ),
+                ),
+              ),
+              SizedBox(width: 2),
+              _headerButton(LucideIcons.bell, tr('Сповіщення'), () => showNotifications(context, session), badge: session.unreadNotifications),
+              Spacer(),
+              TextButton.icon(
+                onPressed: () => context.go(exit ?? '/feed'),
+                style: TextButton.styleFrom(foregroundColor: accent, padding: EdgeInsets.fromLTRB(6, 8, 10, 8)),
+                icon: Icon(LucideIcons.chevronLeft, size: 22, color: accent),
+                label: Text(tr('Назад'), style: body(15, color: accent, weight: FontWeight.w600)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Меню розділів шторкою — той самий вміст, що в розгорнутому острові, але з усіма розділами
+/// (вкладок острова поруч немає). Для екранів без острова, як-от «Музика».
+Future<void> showSectionsMenu(BuildContext context, Session session, TrackPlayer player, String path) {
+  return showGcSheet<void>(
+    context,
+    builder: (sheet) => SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(12, 4, 12, 12),
+      child: ListenableBuilder(
+        listenable: session,
+        builder: (_, _) => MenuContent(
+          session: session,
+          player: player,
+          path: path,
+          rest: visibleNav(session.modules),
+          onGo: (to) {
+            Navigator.pop(sheet);
+            context.go(to);
+          },
+          onClose: () => Navigator.pop(sheet),
+        ),
+      ),
+    ),
+  );
 }
 
 class _SearchField extends StatelessWidget {
@@ -436,7 +518,7 @@ class _IslandNavState extends State<IslandNav> {
       transform: Matrix4.translationValues(0, drag * 0.22, 0),
       // Глибоке матове скло iOS 27 — щільне й нейтральне, тож меню читається і розгорнутим.
       child: MatteGlass(
-        borderRadius: 28,
+        borderRadius: barRadius,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

@@ -54,12 +54,12 @@ class MiniPlayer extends StatelessWidget {
           },
           // Глибоке матове скло iOS 27, як у нижньої панелі; плеєр завжди стоїть над нею.
           child: MatteGlass(
-            borderRadius: 20,
+            borderRadius: barRadius,
             child: Stack(
               children: [
                 Positioned.fill(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 9),
+                    padding: const EdgeInsets.symmetric(horizontal: 11),
                     child: Row(
                       children: [
                         TrackCover(url: track.cover, seed: track.id ?? track.title, size: 46, radius: 12),

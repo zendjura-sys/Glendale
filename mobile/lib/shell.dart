@@ -148,6 +148,9 @@ class _AppShellState extends State<AppShell> {
     final path = uri.path;
     // У «Музиці» нижня панель — вкладки розділу на місці острова (одна панель за раз).
     final musicTabs = hasMusicTabs(uri);
+    // «Назад» у шапці «Музики» веде на останній маршрут поза розділом.
+    final inMusic = isMusicSection(uri);
+    if (!inMusic) MusicTopBar.exit = uri.toString();
     final topInset = MediaQuery.viewPaddingOf(context).top;
     final chatOpen = RegExp(r'^/messages/\d+').hasMatch(path);
     return AppScope(
@@ -191,7 +194,14 @@ class _AppShellState extends State<AppShell> {
                       )
                     else
                       widget.child,
-                    Positioned(top: 0, left: 0, right: 0, child: TopBar(session: widget.session, player: widget.player, wide: wide, topInset: topInset)),
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: inMusic && !wide
+                          ? MusicTopBar(session: widget.session, player: widget.player, path: path, topInset: topInset)
+                          : TopBar(session: widget.session, player: widget.player, wide: wide, topInset: topInset),
+                    ),
                     if (wide)
                       Positioned(
                         top: topInset + siteBarHeight + 10,
