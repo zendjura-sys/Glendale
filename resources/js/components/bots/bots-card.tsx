@@ -174,7 +174,7 @@ export function BotsCard({
 
     if (state === null) {
         return (
-            <section className="glass rounded-3xl p-5">
+            <section className="glass rounded-2xl p-5">
                 <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-white">
                     <Megaphone className="size-5 text-gc-lilac-300" />
                     {tr('Боти Telegram і Discord')}
@@ -258,7 +258,7 @@ export function BotsCard({
     const dc = state.discord;
 
     return (
-        <section className="glass space-y-4 rounded-3xl p-5">
+        <section className="glass space-y-4 rounded-2xl p-5">
             <div>
                 <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-white">
                     <Megaphone className="size-5 text-gc-lilac-300" />

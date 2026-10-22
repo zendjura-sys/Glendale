@@ -17,7 +17,7 @@ class NetworkModesTest extends TestCase
         $modes = app(NetworkModes::class);
         $user = User::factory()->create();
 
-        // За замовчуванням — «Все включено»: нічого не сховано.
+        // За замовчуванням — «Усе включено»: нічого не сховано.
         $this->assertSame('all', $modes->for($user)['id']);
 
         $user->mergePref(['network_mode' => 'adventure']);

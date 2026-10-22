@@ -78,7 +78,7 @@ export default function AdminMusicFeatured({
             </form>
 
             {filters.q !== '' && (
-                <section className="glass mb-6 overflow-hidden rounded-3xl">
+                <section className="glass mb-6 overflow-hidden rounded-2xl">
                     <h2 className="border-b border-white/[0.06] px-4 py-3 text-sm font-medium text-white/60">
                         {tr('Знайдено: {count}', { count: results.length })}
                     </h2>
@@ -103,7 +103,7 @@ export default function AdminMusicFeatured({
                 {groups.map((group) => (
                     <section
                         key={group.category ?? ''}
-                        className="glass overflow-hidden rounded-3xl"
+                        className="glass overflow-hidden rounded-2xl"
                     >
                         <header className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3">
                             <h2 className="font-display text-base font-bold text-white">
@@ -123,7 +123,7 @@ export default function AdminMusicFeatured({
                     </section>
                 ))}
                 {groups.length === 0 && (
-                    <div className="glass rounded-3xl px-6 py-14 text-center text-sm text-white/40">
+                    <div className="glass rounded-2xl px-6 py-14 text-center text-sm text-white/40">
                         <ListMusic className="mx-auto mb-2 size-6 text-white/25" />
                         {tr(
                             'Добірок ще немає. Знайдіть публічний плейлист і додайте його.',

@@ -167,7 +167,7 @@ export default function ClanCreate({
                 }}
                 className="space-y-4"
             >
-                <section className="glass rounded-3xl p-4 sm:p-5">
+                <section className="glass rounded-2xl p-4 sm:p-5">
                     <h2 className="mb-3 text-sm font-semibold text-white/80">
                         {tr('1. Тип')}
                     </h2>
@@ -198,7 +198,7 @@ export default function ClanCreate({
                     </div>
                 </section>
 
-                <section className="glass rounded-3xl p-4 sm:p-5">
+                <section className="glass rounded-2xl p-4 sm:p-5">
                     <h2 className="mb-3 text-sm font-semibold text-white/80">
                         {tr('2. Гра')}{' '}
                         {game && (
@@ -221,7 +221,7 @@ export default function ClanCreate({
                     )}
                 </section>
 
-                <section className="glass space-y-3 rounded-3xl p-4 sm:p-5">
+                <section className="glass space-y-3 rounded-2xl p-4 sm:p-5">
                     <h2 className="text-sm font-semibold text-white/80">
                         {tr('3. Назва й опис')}
                     </h2>
@@ -285,7 +285,7 @@ export default function ClanCreate({
                     </label>
                 </section>
 
-                <section className="glass rounded-3xl p-4 sm:p-5">
+                <section className="glass rounded-2xl p-4 sm:p-5">
                     <h2 className="mb-1 text-sm font-semibold text-white/80">
                         {tr('4. Що буде в клані')}
                     </h2>
@@ -336,7 +336,7 @@ export default function ClanCreate({
                     </div>
                 </section>
 
-                <section className="glass rounded-3xl p-4 sm:p-5">
+                <section className="glass rounded-2xl p-4 sm:p-5">
                     <h2 className="mb-3 text-sm font-semibold text-white/80">
                         {tr('5. Як вступати')}
                     </h2>

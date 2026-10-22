@@ -154,7 +154,7 @@ export default function MusicRadio({ data }: { data: Data }) {
                 <>
                     <SectionHeader
                         title={tr('Станції за жанрами')}
-                        subtitle={tr('Безкінечна музика з каталогу GameCon')}
+                        subtitle={tr('Нескінченна музика з каталогу GameCon')}
                     />
                     <Shelf rows={2}>
                         {data.genre_stations.map((s) => (

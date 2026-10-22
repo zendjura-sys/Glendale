@@ -30,7 +30,7 @@ export default function CinemaMy({ status, movies, statuses, counts }: Props) {
         <>
             <Head title={tr('Мої фільми')} />
             <div className="space-y-5">
-                <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-7">
+                <section className="glass relative overflow-hidden rounded-2xl p-5 sm:p-7">
                     <div className="pointer-events-none absolute -top-24 -right-16 size-80 rounded-full bg-gc-indigo/25 blur-3xl" />
                     <Link
                         href="/cinema"
@@ -49,7 +49,7 @@ export default function CinemaMy({ status, movies, statuses, counts }: Props) {
                     </p>
                 </section>
 
-                <div className="glass scrollbar-none flex gap-1 overflow-x-auto rounded-3xl p-2">
+                <div className="glass scrollbar-none flex gap-1 overflow-x-auto rounded-2xl p-2">
                     {tabs.map((tab) => (
                         <Link
                             key={tab.key}
@@ -91,7 +91,7 @@ export default function CinemaMy({ status, movies, statuses, counts }: Props) {
                         }
                     />
                 ) : (
-                    <section className="glass rounded-3xl p-4 sm:p-5">
+                    <section className="glass rounded-2xl p-4 sm:p-5">
                         <InfiniteScroll data="movies" preserveUrl>
                             <div className={movieGridClass}>
                                 {movies.data.map((movie) => (

@@ -8,11 +8,11 @@
 
 ## 1. Три места, где живут секреты
 
-| Где                                                         | Что там                                                                                                                                                     | Кто меняет                        |
-| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| **Админка → Інтеграції** (таблица настроек, `SiteSettings`) | ключи внешних сервисов: Kodik, Videoseed, FlixCDN, TMDB, Spotify, AcoustID, Last.fm, Discogs, Discord, Telegram, Steam, DeepL, Sightengine, FCM, LiveKit, … | администратор сайта через админку |
-| **`.env` на сервере** (`/var/www/gamecon/.env`)             | `APP_KEY`, пароли БД и Redis, почта, Reverb, запасные значения ключей интеграций                                                                            | только владелец сервера           |
-| **GitHub → Settings → Secrets and variables → Actions**     | ключ подписи Android‑приложения и пароли к нему                                                                                                             | только владелец репозитория       |
+| Где                                                         | Что там                                                                                                                                           | Кто меняет                        |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| **Админка → Інтеграції** (таблица настроек, `SiteSettings`) | ключи внешних сервисов: видеоплееры 1–3, TMDB, Spotify, AcoustID, Last.fm, Discogs, Discord, Telegram, Steam, DeepL, Sightengine, FCM, LiveKit, … | администратор сайта через админку |
+| **`.env` на сервере** (`/var/www/gamecon/.env`)             | `APP_KEY`, пароли БД и Redis, почта, Reverb, запасные значения ключей интеграций                                                                  | только владелец сервера           |
+| **GitHub → Settings → Secrets and variables → Actions**     | ключ подписи Android‑приложения и пароли к нему                                                                                                   | только владелец репозитория       |
 
 Шаблоны без значений: `.env.example` (локально), `deploy/.env.production.example` (сервер).
 
@@ -35,6 +35,12 @@
   теги, биографии, похожие исполнители; https://www.last.fm/api/account/create; `LASTFM_KEY`), `discogs_token`
   (Personal access token Discogs — релизы, обложки, фото исполнителей; https://www.discogs.com/settings/developers;
   `DISCOGS_TOKEN`). MusicBrainz, Cover Art Archive и LRCLIB ключей не требуют.
+  Перевод и орфография (необязательны): `libretranslate_key` (ключ своего LibreTranslate — обычно не нужен:
+  сервер слушает только `127.0.0.1`; адрес — обычная настройка `libretranslate_url`, запасной вариант —
+  `LIBRETRANSLATE_URL` / `LIBRETRANSLATE_KEY`), `languagetool_key` (API key LanguageTool Premium вместе с
+  логином `languagetool_username`; свой сервер LanguageTool ключа не требует; `LANGUAGETOOL_KEY`).
+  LibreTranslate ставится на сервер по желанию: `INSTALL_LIBRETRANSLATE=1` при деплое (~2–4 ГБ RAM,
+  несколько ГБ диска), см. ARCHITECTURE.md § 8.
 - Хранятся **зашифрованными** (`Crypt::encryptString`, ключ шифрования — `APP_KEY` из `.env`).
 - **Только запись:** админка никогда не показывает значение (маска), пустое поле = «оставить как есть»,
   явная очистка = удалить. `SiteSettings::public()` их не отдаёт; на клиент они не попадают.

@@ -77,7 +77,7 @@ export function ReportStatus({
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
+                'inline-flex items-center gap-1 rounded-chip px-2 py-0.5 text-xs font-medium',
                 s.tone,
             )}
         >
@@ -110,7 +110,7 @@ export function ReportRow({
                     </span>
                     <ReportStatus status={report.status} />
                     {report.flags?.similar_reports && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-xs text-rose-200">
+                        <span className="inline-flex items-center gap-1 rounded-chip bg-rose-500/10 px-2 py-0.5 text-xs text-rose-200">
                             <AlertTriangle className="size-3" />{' '}
                             {tr('схожий скрін')}
                         </span>

@@ -43,7 +43,7 @@ export function SaveButton({
             aria-label={on ? tr('Збережено') : tr('Зберегти')}
             className={cn(
                 compact
-                    ? 'inline-flex h-9 items-center gap-1.5 rounded-full bg-white/[0.045] px-3.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.08] hover:text-white'
+                    ? 'inline-flex h-9 items-center gap-1.5 rounded-control bg-white/[0.045] px-3.5 text-sm font-medium text-white/65 transition hover:bg-white/[0.08] hover:text-white'
                     : 'inline-flex h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.08] px-4 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15',
                 on && 'text-gc-lilac-200',
                 className,

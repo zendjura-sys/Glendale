@@ -155,7 +155,7 @@ function Card({
     children: ReactNode;
 }) {
     return (
-        <section className="glass rounded-3xl p-4 sm:p-5">
+        <section className="glass rounded-2xl p-4 sm:p-5">
             <div className="mb-3 flex items-center gap-2">
                 <Icon className="size-4 text-gc-lilac-200" />
                 <h2 className="flex-1 font-display text-base font-semibold text-white">
@@ -257,7 +257,7 @@ export default function ClanShow(props: Props) {
     return (
         <>
             <Head title={clan.display_name} />
-            <div className="glass mb-4 flex flex-wrap items-center gap-4 rounded-3xl p-4 sm:p-5">
+            <div className="glass mb-4 flex flex-wrap items-center gap-4 rounded-2xl p-4 sm:p-5">
                 <ClanLogo clan={clan} size="lg" />
                 <div className="min-w-0 flex-1">
                     <h1 className="truncate font-display text-xl font-semibold text-white sm:text-2xl">
@@ -398,7 +398,7 @@ export default function ClanShow(props: Props) {
                                         <Link
                                             key={ally.slug}
                                             href={`/clans/${ally.slug}`}
-                                            className="rounded-full bg-white/10 px-3 py-1 text-sm text-white"
+                                            className="rounded-chip bg-white/10 px-3 py-1 text-sm text-white"
                                         >
                                             {ally.name}
                                         </Link>
@@ -714,7 +714,7 @@ function NewsTab({
                 </p>
             )}
             {news.map((n) => (
-                <article key={n.id} className="glass rounded-3xl p-4">
+                <article key={n.id} className="glass rounded-2xl p-4">
                     <div className="mb-1 flex items-center gap-2">
                         {n.is_pinned && (
                             <Pin className="size-4 text-amber-300" />
@@ -860,7 +860,7 @@ function EventsTab({
             {events.map((e) => (
                 <article
                     key={e.id}
-                    className="glass flex flex-wrap items-center gap-3 rounded-3xl p-4"
+                    className="glass flex flex-wrap items-center gap-3 rounded-2xl p-4"
                 >
                     {e.cover_url && (
                         <img

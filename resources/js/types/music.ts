@@ -176,3 +176,15 @@ export type RecentItem =
           playlist: LibraryPlaylist;
           href: string;
       };
+
+/** «Завантажити за посиланням»: файл завантажує сервер у фоні. */
+export type TrackImportCard = {
+    id: number;
+    url: string;
+    host: string;
+    status: 'pending' | 'downloading' | 'processing' | 'done' | 'failed';
+    error: string | null;
+    progress: number | null;
+    track: LocalTrack | null;
+    created_at: string;
+};

@@ -311,7 +311,7 @@ function buildSlides(w: Wrapped): Slide[] {
                     </Rise>
                     {w.posts.top && (
                         <Rise i={3}>
-                            <div className="overflow-hidden rounded-3xl bg-white/[0.08] ring-1 ring-white/15 ring-inset">
+                            <div className="overflow-hidden rounded-2xl bg-white/[0.08] ring-1 ring-white/15 ring-inset">
                                 {w.posts.top.image && (
                                     <img
                                         src={w.posts.top.image}
@@ -794,7 +794,7 @@ function Summary({ w }: { w: Wrapped }) {
     return (
         <div className="flex flex-col gap-6">
             <Rise>
-                <div className="rounded-3xl bg-white/[0.08] p-5 ring-1 ring-white/15 ring-inset">
+                <div className="rounded-2xl bg-white/[0.08] p-5 ring-1 ring-white/15 ring-inset">
                     <div className="flex items-center gap-3">
                         <UserAvatar
                             user={w.user}
@@ -835,7 +835,7 @@ function Summary({ w }: { w: Wrapped }) {
                         type="button"
                         onClick={share}
                         disabled={busy}
-                        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-white px-6 font-semibold text-[#050913] transition hover:bg-white/90 disabled:opacity-60"
+                        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-control bg-white px-6 font-semibold text-[#050913] transition hover:bg-white/90 disabled:opacity-60"
                     >
                         {canShareFiles ? (
                             <Share2 className="size-5" />
@@ -848,7 +848,7 @@ function Summary({ w }: { w: Wrapped }) {
                     </button>
                     <Link
                         href="/feed"
-                        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-white/10 px-6 font-semibold text-white ring-1 ring-white/20 transition ring-inset hover:bg-white/15"
+                        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-control bg-white/10 px-6 font-semibold text-white ring-1 ring-white/20 transition ring-inset hover:bg-white/15"
                     >
                         <MessageCircle className="size-5" />
                         {tr('До стрічки')}
@@ -884,7 +884,7 @@ function Teaser({ opensAt }: { opensAt: string }) {
                 </p>
                 <Link
                     href="/feed"
-                    className="mt-6 inline-flex min-h-12 items-center justify-center rounded-full bg-white px-6 font-semibold text-[#050913]"
+                    className="mt-6 inline-flex min-h-12 items-center justify-center rounded-control bg-white px-6 font-semibold text-[#050913]"
                 >
                     {tr('До стрічки')}
                 </Link>

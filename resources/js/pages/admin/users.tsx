@@ -42,6 +42,7 @@ import { Input } from '@/components/ui/input';
 import { formatDate, timeAgo } from '@/lib/format';
 import type { Paginated, UserCard } from '@/types';
 import { tr } from '@/lib/i18n';
+import { SpellcheckHints, useSpellcheck } from '@/components/gc/spellcheck';
 
 type AdminUser = UserCard & {
     email: string;
@@ -89,6 +90,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
     const [q, setQ] = useState(filters.q);
     const [banTarget, setBanTarget] = useState<AdminUser | null>(null);
     const [banReason, setBanReason] = useState('');
+    const banSpell = useSpellcheck(banReason);
     const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
 
     const apply = (patch: Partial<Props['filters']>) => {
@@ -169,7 +171,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                 </select>
             </div>
 
-            <div className="glass overflow-hidden rounded-3xl">
+            <div className="glass overflow-hidden rounded-2xl">
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[860px] text-sm">
                         <thead>
@@ -385,7 +387,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                 open={!!banTarget}
                 onOpenChange={(open) => !open && setBanTarget(null)}
             >
-                <DialogContent className="glass-strong rounded-3xl border-white/10 text-white">
+                <DialogContent className="glass-strong rounded-dialog border-white/10 text-white">
                     <DialogTitle>
                         {tr('Заблокувати')} {banTarget?.name}?
                     </DialogTitle>
@@ -399,6 +401,11 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                         onChange={(e) => setBanReason(e.target.value)}
                         placeholder={tr("Причина (необов'язково)")}
                         maxLength={255}
+                    />
+                    <SpellcheckHints
+                        spell={banSpell}
+                        onApply={setBanReason}
+                        className="mt-0"
                     />
                     <DialogFooter className="gap-2">
                         <DialogClose asChild>
@@ -429,7 +436,7 @@ export default function AdminUsers({ users, filters, roles }: Props) {
                 open={!!deleteTarget}
                 onOpenChange={(open) => !open && setDeleteTarget(null)}
             >
-                <DialogContent className="glass-strong rounded-3xl border-white/10 text-white">
+                <DialogContent className="glass-strong rounded-dialog border-white/10 text-white">
                     <DialogTitle>
                         {tr('Видалити')} {deleteTarget?.name}?
                     </DialogTitle>

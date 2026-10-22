@@ -144,7 +144,7 @@ export default function CommunityMembers({
         <>
             <Head title={tr('Учасники — {name}', { name: community.name })} />
             <div className="space-y-5">
-                <section className="glass relative overflow-hidden rounded-3xl p-5 sm:p-6">
+                <section className="glass relative overflow-hidden rounded-2xl p-5 sm:p-6">
                     <div className="pointer-events-none absolute -top-24 right-0 size-72 rounded-full bg-gc-indigo/20 blur-3xl" />
                     <div className="relative flex items-center gap-4">
                         <Link
@@ -224,7 +224,7 @@ export default function CommunityMembers({
                     <InfiniteScroll
                         data="members"
                         preserveUrl
-                        className="glass divide-y divide-white/[0.05] overflow-hidden rounded-3xl"
+                        className="glass divide-y divide-white/[0.05] overflow-hidden rounded-2xl"
                     >
                         {members.data.map((member) => (
                             <div
@@ -273,7 +273,7 @@ export default function CommunityMembers({
                                 {member.role !== 'member' && (
                                     <span
                                         className={cn(
-                                            'hidden items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium sm:inline-flex',
+                                            'hidden items-center gap-1 rounded-chip px-2.5 py-1 text-xs font-medium sm:inline-flex',
                                             roleStyle[member.role],
                                         )}
                                     >

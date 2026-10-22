@@ -147,7 +147,7 @@ export function SettingsCard({
     return (
         <div
             className={cn(
-                'glass rounded-3xl p-6 sm:p-7',
+                'glass rounded-2xl p-6 sm:p-7',
                 tone === 'danger' && 'border-rose-400/15 bg-rose-500/[0.03]',
             )}
         >

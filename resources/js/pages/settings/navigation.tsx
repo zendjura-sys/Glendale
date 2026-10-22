@@ -150,7 +150,7 @@ export default function Navigation({ defaults, max }: Props) {
                             type="button"
                             disabled={full}
                             onClick={() => save([...tabs, item.key])}
-                            className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[13px] font-medium text-white/75 transition hover:bg-white/[0.07] disabled:opacity-40"
+                            className="flex items-center gap-2 rounded-control border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[13px] font-medium text-white/75 transition hover:bg-white/[0.07] disabled:opacity-40"
                         >
                             <Plus className="size-3.5 text-white/45" />
                             <ModuleIcon

@@ -102,7 +102,7 @@ export function VoiceRooms({
     if (!data) {
         // Помилку показуємо, а не ховаємо панель, — інакше незрозуміло, куди вона поділась.
         return error ? (
-            <section className={cn('glass rounded-3xl p-4', className)}>
+            <section className={cn('glass rounded-2xl p-4', className)}>
                 <div className="flex items-center gap-2 text-sm text-white/55">
                     <Volume2 className="size-4 text-white/35" />
                     {error}
@@ -150,7 +150,7 @@ export function VoiceRooms({
         );
 
     return (
-        <section className={cn('glass rounded-3xl p-4', className)}>
+        <section className={cn('glass rounded-2xl p-4', className)}>
             <div className="mb-3 flex items-center gap-2">
                 <Volume2 className="size-4 text-gc-lilac-200" />
                 <h2 className="flex-1 font-display text-base font-semibold text-white">

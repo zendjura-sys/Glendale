@@ -351,7 +351,7 @@ export default function CinemaShow({
         <>
             <Head title={movie.title} />
             <div className="space-y-5">
-                <section className="relative isolate overflow-hidden rounded-3xl border border-white/[0.08] bg-gc-ink">
+                <section className="relative isolate overflow-hidden rounded-2xl border border-white/[0.08] bg-gc-ink">
                     {(movie.backdrop || movie.poster) && (
                         <img
                             decoding="async"
@@ -376,7 +376,7 @@ export default function CinemaShow({
                                 <ArrowLeft className="size-3.5" /> {tr('Кіно')}
                             </Link>
                             {!movie.is_published && (
-                                <span className="rounded-full bg-amber-400/15 px-2.5 py-1 text-xs font-semibold text-amber-200">
+                                <span className="rounded-chip bg-amber-400/15 px-2.5 py-1 text-xs font-semibold text-amber-200">
                                     {tr('Приховано')}
                                 </span>
                             )}
@@ -455,7 +455,7 @@ export default function CinemaShow({
                                             <Link
                                                 key={genre}
                                                 href={`/cinema?genre=${encodeURIComponent(genre)}`}
-                                                className="rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-xs text-white/70 backdrop-blur transition hover:border-gc-lilac-400/40 hover:text-white"
+                                                className="rounded-control border border-white/10 bg-white/[0.06] px-2.5 py-1 text-xs text-white/70 backdrop-blur transition hover:border-gc-lilac-400/40 hover:text-white"
                                             >
                                                 {genre}
                                             </Link>
@@ -645,7 +645,7 @@ export default function CinemaShow({
 
                 <section
                     id="player"
-                    className="glass scroll-mt-24 overflow-hidden rounded-3xl"
+                    className="glass scroll-mt-24 overflow-hidden rounded-2xl"
                 >
                     {tabs.length === 0 ? (
                         <div className="flex aspect-video flex-col items-center justify-center gap-3 bg-black/40 p-6 text-center">
@@ -756,7 +756,7 @@ export default function CinemaShow({
                 <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_300px]">
                     <div className="min-w-0 space-y-5">
                         {movie.description && (
-                            <section className="glass rounded-3xl p-5">
+                            <section className="glass rounded-2xl p-5">
                                 <h2 className="mb-2 font-display text-lg font-semibold text-white">
                                     {tr('Про що')}
                                 </h2>
@@ -770,7 +770,7 @@ export default function CinemaShow({
                             slug={movie.slug}
                             canAdd={can.manage}
                         />
-                        <section className="glass rounded-3xl p-5">
+                        <section className="glass rounded-2xl p-5">
                             <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
                                 <MessageCircle className="size-5 text-gc-lilac-400" />
                                 {tr('Обговорення')}
@@ -797,7 +797,7 @@ export default function CinemaShow({
                     </div>
                     <aside className="space-y-5">
                         {seen.length > 0 && (
-                            <section className="glass rounded-3xl p-5">
+                            <section className="glass rounded-2xl p-5">
                                 <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
                                     {tr('Уже бачили')}
                                 </h2>
@@ -822,7 +822,7 @@ export default function CinemaShow({
                             </section>
                         )}
                         {taste.length > 0 && (
-                            <section className="glass rounded-3xl p-5">
+                            <section className="glass rounded-2xl p-5">
                                 <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
                                     {tr('Схожий смак')}
                                 </h2>
@@ -851,7 +851,7 @@ export default function CinemaShow({
                                 </ul>
                             </section>
                         )}
-                        <section className="glass rounded-3xl p-5">
+                        <section className="glass rounded-2xl p-5">
                             <h2 className="mb-3 font-display text-sm font-semibold text-white/70">
                                 {tr('Друзі та цей фільм')}
                             </h2>
@@ -938,7 +938,7 @@ function Soundtrack({
     const [adding, setAdding] = useState(false);
 
     return (
-        <section className="glass rounded-3xl p-5">
+        <section className="glass rounded-2xl p-5">
             <div className="mb-3 flex items-center justify-between gap-3">
                 <h2 className="font-display text-lg font-semibold text-white">
                     {tr('Саундтрек')}
@@ -952,7 +952,7 @@ function Soundtrack({
                         className={cn(
                             'flex size-9 items-center justify-center rounded-full transition',
                             adding
-                                ? 'bg-[var(--btn-primary,#6366f1)] text-white'
+                                ? 'bg-primary text-white'
                                 : 'bg-white/[0.06] text-white/70 hover:bg-white/10 hover:text-white',
                         )}
                     >

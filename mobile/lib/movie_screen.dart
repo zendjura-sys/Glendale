@@ -231,7 +231,7 @@ class _MovieScreenState extends State<MovieScreen> {
     final movie = mapOf(data?['movie']);
     final list = _episodic(source) ? voiceSeasons(seasons, source) : const <Season>[];
     final pick = chosen ?? (list.isEmpty ? null : _continuePick(list));
-    // Прямі потоки (якщо адміністратор додав ключ Kodik video-links) — і вибір плеєра, як в Anixart.
+    // Прямі потоки (якщо адміністратор додав ключ Kodik video-links) — і вибір плеєра в застосунку.
     final resolver = text(source['provider']) == 'kodik' && source['id'] != null ? _streams(source) : null;
     var first = <Stream>[];
     if (resolver != null) {

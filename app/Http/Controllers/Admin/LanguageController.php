@@ -7,18 +7,21 @@ use App\Jobs\TranslateLanguage;
 use App\Models\Translation;
 use App\Services\I18n\CatalogTranslator;
 use App\Services\I18n\DeepL;
+use App\Services\I18n\LibreTranslate;
+use App\Services\I18n\Translator;
 use App\Support\I18n\Locales;
 use App\Support\I18n\Translations;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Адмінка → Мови: додати мову за кодом (uk-UA, pt-BR…), автопереклад DeepL,
- * увімкнути/вимкнути мову, типова мова, ручні правки перекладів.
+ * Адмінка → Мови: додати мову за кодом (uk-UA, pt-BR…), автопереклад DeepL (ліміт вичерпано —
+ * LibreTranslate), увімкнути/вимкнути мову, типова мова, ручні правки перекладів.
  */
 class LanguageController extends Controller
 {
@@ -31,6 +34,8 @@ class LanguageController extends Controller
         private readonly DeepL $deepl,
         private readonly CatalogTranslator $translator,
         private readonly Translations $translations,
+        private readonly Translator $machine,
+        private readonly LibreTranslate $libre,
     ) {}
 
     public function index(): Response
@@ -40,7 +45,8 @@ class LanguageController extends Controller
             'native' => Locales::nativeName($row['code']),
             'name' => Locales::ukrainianName($row['code']),
             'enabled' => $row['enabled'],
-            'deepl' => $this->deepl->target($row['code']) !== null,
+            // Чи можна перекласти автоматично (DeepL або LibreTranslate).
+            'deepl' => $this->machine->supports($row['code']),
             'stats' => $this->translator->stats($row['code']),
             'progress' => $this->translator->progress($row['code']),
         ], $this->locales->configured());
@@ -49,10 +55,7 @@ class LanguageController extends Controller
             'languages' => $languages,
             'default_locale' => $this->locales->fallback(),
             'suggested' => array_values(array_map(fn (string $code) => ['code' => $code, 'native' => Locales::nativeName($code)], array_diff(self::SUGGESTED, array_column($languages, 'code')))),
-            'deepl' => [
-                'configured' => $this->deepl->configured(),
-                'usage' => $this->deepl->configured() ? $this->deepl->usage() : null,
-            ],
+            ...$this->machine->status(),
             'catalog' => count($this->translations->catalog()),
             'content_translation' => $this->settings->get('content_translation') !== false,
         ]);
@@ -82,7 +85,7 @@ class LanguageController extends Controller
         }
         $this->settings->put(['languages' => $current]);
         foreach ($added as $code) {
-            if ($this->deepl->configured() && $this->deepl->target($code) !== null) {
+            if ($this->machine->supports($code)) {
                 TranslateLanguage::dispatch($code);
             }
         }
@@ -125,11 +128,36 @@ class LanguageController extends Controller
     public function translate(Request $request, string $code): RedirectResponse
     {
         $this->find($code);
-        if (! $this->deepl->configured()) {
-            return back()->withErrors(['deepl' => 'Додайте ключ DeepL в Адмінці → Інтеграції.']);
+        if (! $this->machine->available()) {
+            return back()->withErrors(['deepl' => 'Додайте ключ DeepL або підключіть LibreTranslate в Адмінці → Інтеграції.']);
         }
         TranslateLanguage::dispatch($code, $request->boolean('all'));
+        Log::info('admin: languages translate', ['locale' => $code, 'all' => $request->boolean('all'), 'by' => $request->user()?->id]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Автопереклад запущено.']);
+
+        return back();
+    }
+
+    /** Кнопка «Перевірити» LibreTranslate: свіжа перевірка сервера й мов. */
+    public function testLibre(Request $request): RedirectResponse
+    {
+        $ok = $this->libre->configured() && $this->libre->check();
+        Log::info('admin: libretranslate check', ['ok' => $ok, 'by' => $request->user()?->id]);
+        Inertia::flash('toast', $ok
+            ? ['type' => 'success', 'message' => 'LibreTranslate відповідає — мови: '.implode(', ', $this->libre->languages())]
+            : ['type' => 'error', 'message' => $this->libre->configured() ? 'LibreTranslate не відповідає. Чи запущено службу libretranslate на сервері?' : 'Вкажіть адресу LibreTranslate в Адмінці → Інтеграції.']);
+
+        return back();
+    }
+
+    /** Оновити лічильник DeepL і зняти позначку «вичерпано», якщо ліміт поновився. */
+    public function refreshDeepl(Request $request): RedirectResponse
+    {
+        $usage = $this->deepl->quota(true);
+        Log::info('admin: deepl usage refresh', ['usage' => $usage, 'by' => $request->user()?->id]);
+        Inertia::flash('toast', $usage === null
+            ? ['type' => 'error', 'message' => 'DeepL не відповів.']
+            : ['type' => 'success', 'message' => $this->deepl->exhausted() ? 'Ліміт DeepL вичерпано — перекладає LibreTranslate.' : 'Лічильник DeepL оновлено.']);
 
         return back();
     }

@@ -79,6 +79,23 @@ return [
         'url' => env('DEEPL_URL'),
     ],
 
+    // Запасний перекладач, коли ліміт DeepL вичерпано: власний LibreTranslate на сервері
+    // (deploy/libretranslate.sh, INSTALL_LIBRETRANSLATE=1). Порожня адреса — вимкнено.
+    'libretranslate' => [
+        'url' => env('LIBRETRANSLATE_URL', 'http://127.0.0.1:5000'),
+        'key' => env('LIBRETRANSLATE_KEY'),
+    ],
+
+    // Перевірка орфографії текстів адміністрації: Hunspell (завжди) + LanguageTool (граматика, якщо вказано адресу).
+    'hunspell' => [
+        'path' => env('HUNSPELL_PATH', 'hunspell'),
+    ],
+    'languagetool' => [
+        'url' => env('LANGUAGETOOL_URL'),
+        'username' => env('LANGUAGETOOL_USERNAME'),
+        'key' => env('LANGUAGETOOL_KEY'),
+    ],
+
     'discord' => [
         'client_id' => env('DISCORD_CLIENT_ID'),
         'client_secret' => env('DISCORD_CLIENT_SECRET'),

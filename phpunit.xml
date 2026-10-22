@@ -33,5 +33,6 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="MUSIC_METADATA" value="false"/>
+        <env name="LIBRETRANSLATE_URL" value=""/>
     </php>
 </phpunit>

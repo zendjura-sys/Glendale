@@ -123,7 +123,7 @@ export function ServerCard({
         <Link
             href={`/servers/${server.slug}`}
             className={cn(
-                'glass group relative flex animate-rise flex-col gap-4 overflow-hidden rounded-3xl p-5 transition hover:-translate-y-0.5 hover:border-white/15',
+                'glass group relative flex animate-rise flex-col gap-4 overflow-hidden rounded-2xl p-5 transition hover:-translate-y-0.5 hover:border-white/15',
                 server.is_featured &&
                     'shadow-[0_20px_60px_-30px_rgb(124_92_255/0.9)] ring-1 ring-gc-lilac-500/30',
                 server.promo?.includes('highlight') &&
@@ -150,21 +150,21 @@ export function ServerCard({
                             server.promo?.includes('highlight')) && (
                             <span
                                 title={tr('Платне просування')}
-                                className="ml-auto shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold text-white/55"
+                                className="ml-auto shrink-0 rounded-chip bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold text-white/55"
                             >
                                 {tr('Реклама')}
                             </span>
                         )}
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2 py-0.5 text-white/65">
+                        <span className="inline-flex items-center gap-1 rounded-chip bg-white/[0.06] px-2 py-0.5 text-white/65">
                             <PlatformIcon className="size-3" />
                             {server.platform_label}
                         </span>
-                        <span className="rounded-full bg-gc-indigo/15 px-2 py-0.5 text-[#b9b0ff]">
+                        <span className="rounded-chip bg-gc-indigo/15 px-2 py-0.5 text-[#b9b0ff]">
                             {server.multiplayer_label}
                         </span>
-                        <span className="rounded-full bg-[#facc15]/10 px-2 py-0.5 text-[#fde68a]">
+                        <span className="rounded-chip bg-[#facc15]/10 px-2 py-0.5 text-[#fde68a]">
                             {server.language === 'uk'
                                 ? '🇺🇦 UA'
                                 : server.language.toUpperCase()}
@@ -172,7 +172,7 @@ export function ServerCard({
                         {(server.votes_month ?? 0) > 0 && (
                             <span
                                 title={tr('Голосів за місяць')}
-                                className="inline-flex items-center gap-1 rounded-full bg-emerald-400/10 px-2 py-0.5 text-emerald-200"
+                                className="inline-flex items-center gap-1 rounded-chip bg-emerald-400/10 px-2 py-0.5 text-emerald-200"
                             >
                                 <Vote className="size-3" />
                                 {shortNumber(server.votes_month ?? 0)}

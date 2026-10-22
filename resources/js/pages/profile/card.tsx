@@ -16,7 +16,7 @@ export default function ProfileCard({
         <>
             <Head title={profile.name} />
             <div className="mx-auto max-w-sm">
-                <section className="rounded-3xl bg-white px-6 py-8 text-center text-zinc-900 shadow-2xl">
+                <section className="rounded-2xl bg-white px-6 py-8 text-center text-zinc-900 shadow-2xl">
                     <div className="mx-auto w-fit">
                         <UserAvatar user={profile} size="xl" />
                     </div>

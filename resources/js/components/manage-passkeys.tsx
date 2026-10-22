@@ -45,7 +45,7 @@ export default function ManagePasskeys(props: Props) {
     }
 
     return (
-        <div className="glass space-y-6 rounded-3xl p-6 sm:p-7">
+        <div className="glass space-y-6 rounded-2xl p-6 sm:p-7">
             <Heading
                 variant="small"
                 title={tr('Ключі доступу')}

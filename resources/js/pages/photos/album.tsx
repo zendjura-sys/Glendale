@@ -127,7 +127,7 @@ export default function PhotoAlbum({
                     upload(event.dataTransfer.files);
                 }}
             >
-                <section className="glass relative overflow-hidden rounded-3xl">
+                <section className="glass relative overflow-hidden rounded-2xl">
                     {album.cover_url && (
                         <img
                             loading="lazy"
@@ -156,7 +156,7 @@ export default function PhotoAlbum({
                                 </p>
                             )}
                             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-white/55">
-                                <span className="rounded-full bg-white/[0.06] px-3 py-1">
+                                <span className="rounded-chip bg-white/[0.06] px-3 py-1">
                                     {album.photos_count}{' '}
                                     {plural(album.photos_count, [
                                         'фотографія',
@@ -164,12 +164,12 @@ export default function PhotoAlbum({
                                         'фотографій',
                                     ])}
                                 </span>
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1">
+                                <span className="inline-flex items-center gap-1.5 rounded-chip bg-white/[0.06] px-3 py-1">
                                     <Privacy className="size-3.5" />
                                     {privacyMeta[album.privacy].text}
                                 </span>
                                 {!album.comments_enabled && (
-                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1">
+                                    <span className="inline-flex items-center gap-1.5 rounded-chip bg-white/[0.06] px-3 py-1">
                                         <MessageCircleOff className="size-3.5" />
                                         {tr('Коментарі вимкнено')}
                                     </span>
@@ -240,7 +240,7 @@ export default function PhotoAlbum({
 
                 {album.owner.type === 'user' &&
                     (can.manage || contributors.length > 0) && (
-                        <section className="glass rounded-3xl p-4">
+                        <section className="glass rounded-2xl p-4">
                             <h2 className="text-sm font-semibold text-white">
                                 {tr('Спільний альбом')}
                             </h2>
@@ -248,7 +248,7 @@ export default function PhotoAlbum({
                                 {contributors.map((person) => (
                                     <span
                                         key={person.username}
-                                        className="inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-3 py-1 text-sm text-white"
+                                        className="inline-flex items-center gap-2 rounded-chip bg-white/[0.06] px-3 py-1 text-sm text-white"
                                     >
                                         <Link href={`/${person.username}`}>
                                             {person.name}
@@ -317,7 +317,7 @@ export default function PhotoAlbum({
                             type="button"
                             onClick={() => input.current?.click()}
                             className={cn(
-                                'glass flex w-full flex-col items-center rounded-3xl border-2 border-dashed px-6 py-16 text-center transition',
+                                'glass flex w-full flex-col items-center rounded-2xl border-2 border-dashed px-6 py-16 text-center transition',
                                 dragging
                                     ? 'border-gc-lilac-500 bg-gc-indigo/10'
                                     : 'border-white/10 hover:border-white/25',
@@ -339,7 +339,7 @@ export default function PhotoAlbum({
                         />
                     )
                 ) : (
-                    <section className="glass rounded-3xl p-3 sm:p-4">
+                    <section className="glass rounded-2xl p-3 sm:p-4">
                         <InfiniteScroll
                             data="photos"
                             preserveUrl
@@ -361,7 +361,7 @@ export default function PhotoAlbum({
 
             {dragging && can.upload && (
                 <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-[#05061a]/70 backdrop-blur-sm">
-                    <div className="flex flex-col items-center rounded-3xl border-2 border-dashed border-gc-lilac-500 bg-gc-indigo/10 px-16 py-12 text-center">
+                    <div className="flex flex-col items-center rounded-2xl border-2 border-dashed border-gc-lilac-500 bg-gc-indigo/10 px-16 py-12 text-center">
                         <UploadCloud className="size-14 animate-bounce text-gc-lilac-300" />
                         <p className="mt-4 font-display text-xl font-semibold text-white">
                             {tr('Відпустіть, щоб завантажити в «')}

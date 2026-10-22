@@ -49,7 +49,7 @@
 
 <h2>6. Game servers, families, third-party content</h2>
 <p>Games, servers and brands in the catalogue belong to their owners; {{ $legal['name'] }} is not affiliated with game publishers or servers unless expressly stated. Family and clan tools (bank, storage, reports, ranks, payouts) only record virtual in-game activity and are not a financial service.</p>
-<p>The film section shows information from open databases (TMDB, IMDb, Shikimori, etc.) and embeds players of independent third-party providers (Kodik, Videoseed, FlixCDN, etc.). <strong>We do not host or store these video files</strong> and do not control their availability, quality or advertising. If content in the Service infringes your rights, send a notice to <a href="mailto:{{ $legal['email'] }}">{{ $legal['email'] }}</a> (the work, exact page address, your contact details, proof of rights) — we will review it and restrict access to such content as provided by the Law of Ukraine "On Copyright and Related Rights".</p>
+<p>The film section shows information from open databases (TMDB, IMDb, Shikimori, etc.) and embeds players of independent third-party video providers. <strong>We do not host or store these video files</strong> and do not control their availability, quality or advertising. If content in the Service infringes your rights, send a notice to <a href="mailto:{{ $legal['email'] }}">{{ $legal['email'] }}</a> (the work, exact page address, your contact details, proof of rights) — we will review it and restrict access to such content as provided by the Law of Ukraine "On Copyright and Related Rights".</p>
 
 <h2>7. Paid products (contract for the supply of digital services)</h2>
 <h3>7.1. Subject</h3>

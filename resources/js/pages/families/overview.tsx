@@ -120,7 +120,7 @@ export default function FamilyOverview(props: Props) {
                 <div className="space-y-4">
                     <Link
                         href={`${base}/reports?new=1`}
-                        className="glass group flex items-center gap-4 overflow-hidden rounded-3xl p-5 transition hover:bg-white/[0.06]"
+                        className="glass group flex items-center gap-4 overflow-hidden rounded-2xl p-5 transition hover:bg-white/[0.06]"
                     >
                         <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300 to-rose-500 shadow-[0_10px_30px_-10px_rgb(250_204_21/0.8)]">
                             <FilePlus2 className="size-6 text-white" />

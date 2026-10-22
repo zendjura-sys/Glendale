@@ -287,7 +287,7 @@ export default function Appearance({
             <Head title={tr('Вигляд')} />
             <form id="appearance-form" onSubmit={submit} className="space-y-4">
                 {/* Живий попередній перегляд: палітра й розмір тексту змінюються тут одразу. */}
-                <div className="liquid-glass overflow-hidden rounded-3xl p-5 sm:p-6">
+                <div className="liquid-glass overflow-hidden rounded-2xl p-5 sm:p-6">
                     <span aria-hidden className="liquid-glass__glare" />
                     <p className="text-xs text-white/40">
                         {tr('Попередній перегляд — зміни видно одразу')}
@@ -304,10 +304,10 @@ export default function Appearance({
                                 )}
                             </p>
                             <div className="mt-3 flex flex-wrap items-center gap-2">
-                                <span className="inline-flex h-8 items-center rounded-full bg-primary px-3.5 text-xs font-semibold text-primary-foreground">
+                                <span className="inline-flex h-8 items-center rounded-chip bg-primary px-3.5 text-xs font-semibold text-primary-foreground">
                                     {tr('Я в ділі')}
                                 </span>
-                                <span className="inline-flex h-8 items-center rounded-full border border-white/15 px-3.5 text-xs font-medium text-white/70">
+                                <span className="inline-flex h-8 items-center rounded-chip border border-white/15 px-3.5 text-xs font-medium text-white/70">
                                     {tr('Пізніше')}
                                 </span>
                                 <span className="text-xs font-medium text-primary">
@@ -955,7 +955,7 @@ export default function Appearance({
                                                     ),
                                                 )
                                             }
-                                            className="min-h-11 rounded-full bg-white/[0.06] px-3 text-sm text-white/80"
+                                            className="min-h-11 rounded-control bg-white/[0.06] px-3 text-sm text-white/80"
                                         >
                                             {item} ×
                                         </button>
@@ -1030,7 +1030,7 @@ export default function Appearance({
                                                 }
                                                 aria-pressed={on}
                                                 className={cn(
-                                                    'min-h-11 rounded-full px-3 text-sm',
+                                                    'min-h-11 rounded-control px-3 text-sm',
                                                     on
                                                         ? 'bg-white text-gc-ink'
                                                         : 'bg-white/[0.06] text-white/75',
@@ -1083,7 +1083,7 @@ export default function Appearance({
                                         )
                                     }
                                     className={cn(
-                                        'min-h-11 rounded-full px-3 text-sm',
+                                        'min-h-11 rounded-control px-3 text-sm',
                                         on
                                             ? 'bg-white text-gc-ink'
                                             : 'bg-white/[0.06] text-white/75',

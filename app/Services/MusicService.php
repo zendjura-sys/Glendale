@@ -29,8 +29,10 @@ class MusicService
 
     /**
      * @param  array{title: string, artist: string, album?: string|null, genre?: string|null, duration?: int|null, cover_url?: string|null}  $meta
+     * @param  array<string, array{source: string, score: int|float}>  $auto  поля, заповнені автоматикою (теги, ім’я файлу) —
+     *                                                                        їх збагачення метаданих може покращити
      */
-    public function upload(User $user, UploadedFile $audio, array $meta, ?UploadedFile $cover = null): Track
+    public function upload(User $user, UploadedFile $audio, array $meta, ?UploadedFile $cover = null, array $auto = []): Track
     {
         $extension = strtolower($audio->getClientOriginalExtension() ?: $audio->extension() ?: 'mp3');
         $path = $audio->storeAs('music/'.now()->format('Y/m'), Str::random(32).'.'.$extension, 'public');
@@ -53,13 +55,16 @@ class MusicService
         ]);
 
         // Що вказав сам користувач, автоматика (MetadataEnricher) не перезапише ніколи.
-        $track->markUserFields(array_keys(array_filter([
+        $track->markUserFields(array_keys(array_diff_key(array_filter([
             'title' => true,
             'artist' => true,
             'album' => filled($track->album),
             'genre' => filled($track->genre),
             'cover' => $coverPath !== null,
-        ])));
+        ]), $auto)));
+        if ($auto !== []) {
+            $track->metadata_meta = [...($track->metadata_meta ?? []), ...array_intersect_key($auto, array_flip(Track::META_FIELDS))];
+        }
         $track->saveQuietly();
 
         $this->add($user, $track);

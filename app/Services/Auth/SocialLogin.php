@@ -49,7 +49,7 @@ class SocialLogin
         }
 
         if (! $profile->email || ! $profile->emailVerified) {
-            throw new SocialAuthException("Підтвердіть електронну пошту в {$profile->label()}, щоб зареєструватися через нього.");
+            throw new SocialAuthException("Підтвердьте електронну пошту в {$profile->label()}, щоб зареєструватися через нього.");
         }
 
         if (! $this->settings->get('registration_open')) {

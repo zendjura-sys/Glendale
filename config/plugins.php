@@ -35,7 +35,7 @@ return [
     ['key' => 'friends_seen', 'group' => 'Кіно', 'name' => 'Друзі вже бачили', 'description' => 'Хто з друзів уже подивився фільм.'],
     ['key' => 'similar_taste', 'group' => 'Кіно', 'name' => 'Схожий смак', 'description' => 'Друзі зі спільними високими оцінками.'],
     ['key' => 'movie_request', 'group' => 'Кіно', 'name' => 'Запит фільму', 'description' => 'Попросити фільм, якого немає в каталозі.'],
-    ['key' => 'preferred_player', 'group' => 'Кіно', 'name' => 'Бажаний плеєр', 'description' => 'Kodik, FlixCDN або YouTube попереду інших.'],
+    ['key' => 'preferred_player', 'group' => 'Кіно', 'name' => 'Бажаний плеєр', 'description' => 'Обраний плеєр (наприклад, Плеєр 1 або YouTube) попереду інших.'],
     ['key' => 'subtitle_language', 'group' => 'Кіно', 'name' => 'Мова субтитрів', 'description' => 'Спершу плеєр із вибраною мовою субтитрів.'],
     ['key' => 'top_ten', 'group' => 'Кіно', 'name' => 'Мої десять', 'description' => 'Публічна добірка з десяти фільмів.'],
     ['key' => 'rating_follow', 'group' => 'Кіно', 'name' => 'Підписка на оцінки', 'description' => 'Сповіщення, коли людина оцінила фільм.'],

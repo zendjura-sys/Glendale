@@ -111,7 +111,7 @@ function MetadataPanel({ metadata }: { metadata: MetadataStatus }) {
     };
 
     return (
-        <section className="glass mb-5 rounded-3xl p-5">
+        <section className="glass mb-5 rounded-2xl p-5">
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h2 className="font-display text-lg font-semibold text-white">
@@ -357,7 +357,7 @@ export default function AdminMusic({
                 />
             </form>
 
-            <div className="glass overflow-hidden rounded-3xl">
+            <div className="glass overflow-hidden rounded-2xl">
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[820px] text-sm">
                         <thead>

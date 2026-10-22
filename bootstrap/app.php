@@ -8,6 +8,7 @@ use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\TrackUserActivity;
+use App\Services\Geo\CountryRestrictions;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -75,7 +76,10 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->isMethod('GET') && ! $request->expectsJson() && ! $request->is('api/*')
                 && in_array($status, [403, 404, 410, 429, 500, 503], true) && (! config('app.debug') || $status !== 500)) {
                 try {
-                    return Inertia::render('error', ['status' => $status])->toResponse($request)->setStatusCode($status);
+                    // Розділ закритий для країни відвідувача — нейтральне пояснення замість загального тексту 403.
+                    $message = $e instanceof HttpExceptionInterface && $e->getMessage() === CountryRestrictions::MESSAGE ? $e->getMessage() : null;
+
+                    return Inertia::render('error', ['status' => $status, 'message' => $message])->toResponse($request)->setStatusCode($status);
                 } catch (Throwable) {
                     // Не вийшло показати сторінку застосунку — лишається HTML із resources/views/errors.
                 }

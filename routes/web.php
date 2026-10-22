@@ -54,6 +54,7 @@ use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StartController;
 use App\Http\Controllers\StoryController;
 use App\Http\Controllers\TrackController;
+use App\Http\Controllers\TrackImportController;
 use App\Http\Controllers\TranslateController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Controllers\WatchPartyController;
@@ -345,6 +346,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::delete('now-playing', [NowPlayingController::class, 'destroy'])->name('music.now-playing.destroy');
 
         Route::post('tracks', [TrackController::class, 'store'])->middleware('throttle:60,1')->name('tracks.store');
+        // «Завантажити за посиланням»: файл завантажує сервер у фоні (ImportTrackFromUrl).
+        Route::post('tracks/import', [TrackImportController::class, 'store'])->middleware('throttle:10,1')->name('tracks.import');
+        Route::get('imports', [TrackImportController::class, 'index'])->name('music.imports.index');
+        Route::delete('imports/{import}', [TrackImportController::class, 'destroy'])->whereNumber('import')->name('music.imports.destroy');
         Route::post('together', [ListenPartyController::class, 'store'])->middleware('throttle:10,1')->name('listen.store');
         Route::post('playlists', [PlaylistController::class, 'store'])->middleware('throttle:20,1')->name('playlists.store');
 
@@ -642,6 +647,9 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::post('me/pin', [ProfileController::class, 'pin'])->name('profile.pin');
     Route::post('me/together', [ProfileController::class, 'together'])->middleware('throttle:30,1')->name('profile.together');
 
+    // Перевірка орфографії для адміністрації й модераторів (права — в контролері).
+    Route::post('admin/spellcheck', [Admin\SpellcheckController::class, 'check'])->middleware('throttle:60,1')->name('admin.spellcheck');
+    Route::post('admin/spellcheck/words', [Admin\SpellcheckController::class, 'addWord'])->middleware('throttle:30,1')->name('admin.spellcheck.words');
     Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
         Route::get('/', Admin\DashboardController::class)->name('dashboard');
         Route::get('users', [Admin\UserController::class, 'index'])->name('users.index');
@@ -780,11 +788,16 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::put('/', [Admin\GeoController::class, 'update'])->name('update');
             Route::put('maxmind', [Admin\GeoController::class, 'maxmind'])->name('maxmind');
             Route::post('refresh', [Admin\GeoController::class, 'refresh'])->middleware('throttle:5,1')->name('refresh');
+            Route::get('restrictions', [Admin\GeoRestrictionController::class, 'index'])->name('restrictions.index');
+            Route::put('restrictions/{country}', [Admin\GeoRestrictionController::class, 'update'])->where('country', '[A-Z]{2}')->name('restrictions.update');
+            Route::get('restrictions/{country}/recommendations', [Admin\GeoRestrictionController::class, 'recommendations'])->where('country', '[A-Z]{2}')->name('restrictions.recommendations');
         });
         Route::prefix('languages')->name('languages.')->group(function () {
             Route::get('/', [Admin\LanguageController::class, 'index'])->name('index');
             Route::post('/', [Admin\LanguageController::class, 'store'])->name('store');
             Route::put('settings', [Admin\LanguageController::class, 'settings'])->name('settings');
+            Route::post('libretranslate/test', [Admin\LanguageController::class, 'testLibre'])->middleware('throttle:20,1')->name('libretranslate.test');
+            Route::post('deepl/refresh', [Admin\LanguageController::class, 'refreshDeepl'])->middleware('throttle:20,1')->name('deepl.refresh');
             Route::where(['code' => '[A-Za-z]{2,3}(-[A-Za-z0-9]{2,4}){0,2}'])->group(function () {
                 Route::patch('{code}', [Admin\LanguageController::class, 'update'])->name('update');
                 Route::delete('{code}', [Admin\LanguageController::class, 'destroy'])->name('destroy');

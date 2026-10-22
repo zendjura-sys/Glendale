@@ -13,6 +13,7 @@ import { UserAvatar } from '@/components/gc/user-avatar';
 import { formatDate, timeAgo } from '@/lib/format';
 import { tr } from '@/lib/i18n';
 import type { UserCard } from '@/types';
+import { SpellcheckTextarea } from '@/components/gc/spellcheck';
 
 export type PersonReport = {
     user_id: number;
@@ -68,7 +69,7 @@ export function PeopleReports({
     };
 
     return (
-        <section className="glass mb-6 rounded-3xl p-4 sm:p-5">
+        <section className="glass mb-6 rounded-2xl p-4 sm:p-5">
             <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
                 <UserX className="size-5 text-white/60" />
                 {tr('Скарги на людей')}
@@ -188,7 +189,7 @@ export function Appeals({ appeals }: { appeals: AppealItem[] }) {
         );
 
     return (
-        <section className="glass mb-6 rounded-3xl p-4 sm:p-5">
+        <section className="glass mb-6 rounded-2xl p-4 sm:p-5">
             <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
                 <Gavel className="size-5 text-white/60" />
                 {tr('Оскарження')}
@@ -241,20 +242,22 @@ export function Appeals({ appeals }: { appeals: AppealItem[] }) {
                             <p className="mt-2 text-sm whitespace-pre-line text-white/80">
                                 {item.body}
                             </p>
-                            <textarea
+                            <SpellcheckTextarea
                                 value={replies[item.id] ?? ''}
-                                onChange={(e) =>
+                                onValueChange={(v) =>
                                     setReplies({
                                         ...replies,
-                                        [item.id]: e.target.value,
+                                        [item.id]: v,
                                     })
                                 }
+                                textClassName="px-3 py-2 text-sm"
+                                containerClassName="mt-2"
                                 rows={2}
                                 maxLength={1000}
                                 placeholder={tr(
                                     'Відповідь людині (необов’язково)',
                                 )}
-                                className="input-glass mt-2 w-full rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none"
+                                className="input-glass w-full rounded-xl text-white placeholder:text-white/30 focus:outline-none"
                             />
                             <div className="mt-2 flex flex-wrap gap-2">
                                 <button
@@ -294,7 +297,7 @@ export type FeedbackItem = {
 /** Відгуки від людей: прочитане зникає зі списку. */
 export function FeedbackList({ feedback }: { feedback: FeedbackItem[] }) {
     return (
-        <section className="glass mb-6 rounded-3xl p-4 sm:p-5">
+        <section className="glass mb-6 rounded-2xl p-4 sm:p-5">
             <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-white">
                 <MessageSquareHeart className="size-5 text-white/60" />
                 {tr('Відгуки')}

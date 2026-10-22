@@ -22,6 +22,7 @@ use App\Services\Auth\AccountSecurity;
 use App\Services\CommunityService;
 use App\Services\Families\FamilyGate;
 use App\Services\FriendshipService;
+use App\Services\Geo\CountryRestrictions;
 use App\Services\Moderation\NsfwCheck;
 use App\Services\Push\PushNotifier;
 use App\Services\Referrals;
@@ -72,6 +73,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(FriendshipService::class);
         $this->app->scoped(CommunityService::class);
         $this->app->scoped(FamilyGate::class);
+        $this->app->scoped(CountryRestrictions::class);
     }
 
     /**

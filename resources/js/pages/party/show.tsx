@@ -38,7 +38,7 @@ export default function PartyShow({ party }: { party: PartyCardData }) {
                     {tr('Пошук паті')}
                 </Link>
 
-                <section className="glass space-y-4 rounded-3xl p-5 sm:p-6">
+                <section className="glass space-y-4 rounded-2xl p-5 sm:p-6">
                     <div className="flex items-start gap-3">
                         <UserAvatar user={party.host} size="lg" />
                         <div className="min-w-0 flex-1">
@@ -192,7 +192,7 @@ export default function PartyShow({ party }: { party: PartyCardData }) {
                     </div>
                 </section>
 
-                <section className="glass rounded-3xl p-5">
+                <section className="glass rounded-2xl p-5">
                     <h2 className="font-display text-lg font-bold text-white">
                         {tr('Склад')} · {party.count}/{party.slots}
                     </h2>

@@ -31,7 +31,7 @@ export type PlayerState = {
     engine: Engine | null;
     /** ∞ — коли черга скінчилась, грати схожі треки (як автовідтворення в Apple Music). */
     autoplay: boolean;
-    /** Безкінечна станція, з якої підвантажуються наступні треки (me, genre:…, artist:…, track:…). */
+    /** Нескінченна станція, з якої підвантажуються наступні треки (me, genre:…, artist:…, track:…). */
     station: string | null;
     /** Щойно зіграні треки (історія в «Далі в черзі»). */
     played: TrackCard[];
@@ -716,7 +716,7 @@ async function extend(): Promise<boolean> {
     }
 }
 
-/** Безкінечна станція: перша порція одразу, далі — підвантажується, коли черга закінчується. */
+/** Нескінченна станція: перша порція одразу, далі — підвантажується, коли черга закінчується. */
 export async function playStation(key: string, label?: string) {
     set({ station: key });
     try {

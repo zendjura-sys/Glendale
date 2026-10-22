@@ -108,7 +108,7 @@ export function CharacterRow({
             {character.status !== 'active' && (
                 <span
                     className={cn(
-                        'shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium',
+                        'shrink-0 rounded-chip px-2 py-0.5 text-[11px] font-medium',
                         STATUS_TONE[character.status],
                     )}
                 >

@@ -46,7 +46,7 @@ export function CookieConsent({ analytics }: { analytics: string | null }) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
                     transition={motionOr(reduce, RISE)}
-                    className="gc-island fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+6.5rem)] z-[55] mx-auto max-w-[560px] rounded-3xl p-4 text-white lg:inset-x-auto lg:right-6 lg:bottom-6 lg:mx-0 lg:w-[400px]"
+                    className="gc-island fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+6.5rem)] z-[55] mx-auto max-w-[560px] rounded-2xl p-4 text-white lg:inset-x-auto lg:right-6 lg:bottom-6 lg:mx-0 lg:w-[400px]"
                 >
                     <div className="flex items-start gap-3">
                         <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">

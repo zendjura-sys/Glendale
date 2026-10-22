@@ -43,7 +43,7 @@ export function ReportPersonButton({
                 {tr('Поскаржитися')}
             </button>
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="glass-strong rounded-3xl border-white/10 p-6 text-white sm:max-w-md">
+                <DialogContent className="glass-strong rounded-dialog border-white/10 p-6 text-white sm:max-w-md">
                     <DialogTitle className="font-display text-lg">
                         {tr('Скарга на {name}', { name })}
                     </DialogTitle>

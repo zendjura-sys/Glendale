@@ -28,7 +28,7 @@ export default function Security(props: Props) {
 
             <h1 className="sr-only">{tr('Безпека')}</h1>
 
-            <div className="glass space-y-6 rounded-3xl p-6 sm:p-7">
+            <div className="glass space-y-6 rounded-2xl p-6 sm:p-7">
                 <Heading
                     variant="small"
                     title={tr('Зміна пароля')}

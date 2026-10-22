@@ -38,7 +38,7 @@ const gutter = 16.0;
   final name = text(station['name']) ?? '';
   if (key == 'me') return (tr('Станція {name}', {'name': name}), tr('На основі того, що ти слухаєш'));
   if (key.startsWith('artist:')) return (tr('Станція «{name}»', {'name': name}), tr('Виконавець і схожа музика'));
-  return (tr('{name}: станція', {'name': name}), tr('Безкінечний потік жанру'));
+  return (tr('{name}: станція', {'name': name}), tr('Нескінченний потік жанру'));
 }
 
 String artistPath(String name) => '/music/artist?${Uri(queryParameters: {'name': name}).query}';
@@ -93,7 +93,7 @@ String stationLabel(String key) {
   return tr('Твоя станція');
 }
 
-/// Безкінечна станція: перша порція одразу, далі плеєр дописує чергу сам.
+/// Нескінченна станція: перша порція одразу, далі плеєр дописує чергу сам.
 Future<void> startStation(BuildContext context, String key, {String? label}) async {
   final player = AppScope.read(context).player;
   try {

@@ -188,7 +188,7 @@ export function Comments({
                             type="button"
                             onClick={() => chooseSort(key)}
                             className={cn(
-                                'rounded-full px-2.5 py-1 font-medium',
+                                'rounded-chip px-2.5 py-1 font-medium',
                                 sort === key
                                     ? 'bg-white/10 text-white'
                                     : 'text-white/45 hover:text-white',

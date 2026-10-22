@@ -245,7 +245,7 @@ export default function Account({
                                     </span>
                                 </span>
                                 {session.current ? (
-                                    <span className="rounded-full bg-gc-mint/15 px-2 py-0.5 text-xs font-medium text-gc-mint">
+                                    <span className="rounded-chip bg-gc-mint/15 px-2 py-0.5 text-xs font-medium text-gc-mint">
                                         {tr('Зараз')}
                                     </span>
                                 ) : (
@@ -455,7 +455,7 @@ export default function Account({
                                         <span>{timeAgo(item.created_at)}</span>
                                         <span
                                             className={cn(
-                                                'rounded-full px-2 py-0.5 font-medium',
+                                                'rounded-chip px-2 py-0.5 font-medium',
                                                 item.status === 'accepted' &&
                                                     'bg-gc-mint/15 text-gc-mint',
                                                 item.status === 'rejected' &&

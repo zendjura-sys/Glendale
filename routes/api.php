@@ -51,6 +51,7 @@ use App\Http\Controllers\Settings\StreamController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StoryController;
 use App\Http\Controllers\TrackController;
+use App\Http\Controllers\TrackImportController;
 use App\Http\Controllers\TranslateController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Controllers\WatchPartyController;
@@ -477,6 +478,9 @@ Route::prefix('v1')->group(function () {
                 Route::delete('tracks/{track}/favorite', [MusicHubController::class, 'unfavorite'])->whereNumber('track');
                 Route::get('u/{user}', [MusicController::class, 'user']);
                 Route::post('tracks', [TrackController::class, 'store'])->middleware('throttle:60,1');
+                Route::post('tracks/import', [TrackImportController::class, 'store'])->middleware('throttle:10,1');
+                Route::get('imports', [TrackImportController::class, 'index']);
+                Route::delete('imports/{import}', [TrackImportController::class, 'destroy'])->whereNumber('import');
                 Route::post('playlists', [PlaylistController::class, 'store'])->middleware('throttle:20,1');
                 Route::get('search', [MusicController::class, 'search'])->middleware('throttle:120,1');
                 Route::delete('now-playing', [NowPlayingController::class, 'destroy']);

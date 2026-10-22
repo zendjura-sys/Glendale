@@ -67,7 +67,7 @@ export function AlbumDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="glass-strong gap-0 rounded-3xl border-white/10 p-6 text-white sm:max-w-lg">
+            <DialogContent className="glass-strong gap-0 rounded-dialog border-white/10 p-6 text-white sm:max-w-lg">
                 <DialogTitle className="font-display text-xl">
                     {album ? tr('Редагування альбому') : tr('Новий альбом')}
                 </DialogTitle>

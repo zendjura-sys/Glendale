@@ -203,7 +203,7 @@ class MusicHubController extends Controller
         return Inertia::render('music/replay', ['replay' => $this->catalog->replay($request->user(), $year)]);
     }
 
-    /** Наступна порція безкінечної станції чи автовідтворення (∞) після кінця черги. */
+    /** Наступна порція нескінченної станції чи автовідтворення (∞) після кінця черги. */
     public function station(Request $request): JsonResponse
     {
         $data = $request->validate([

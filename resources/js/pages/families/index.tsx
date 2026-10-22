@@ -53,12 +53,12 @@ export default function Families({ mine, families, filters, servers }: Props) {
         <>
             <Head title={tr('Сім’ї GTA RP')} />
             <div className="space-y-5">
-                <section className="glass noise relative overflow-hidden rounded-3xl p-5 sm:p-7">
+                <section className="glass noise relative overflow-hidden rounded-2xl p-5 sm:p-7">
                     <div className="pointer-events-none absolute -top-24 -right-10 size-96 rounded-full bg-amber-400/20 blur-3xl" />
                     <div className="pointer-events-none absolute -bottom-40 left-10 size-96 rounded-full bg-gc-indigo/25 blur-3xl" />
                     <div className="relative flex flex-wrap items-end justify-between gap-5">
                         <div className="max-w-xl">
-                            <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-xs font-semibold text-amber-200">
+                            <span className="inline-flex items-center gap-2 rounded-chip border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-xs font-semibold text-amber-200">
                                 <Crown className="size-3.5" /> Family ERP
                             </span>
                             <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
@@ -90,7 +90,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                 <Link
                                     key={f.id}
                                     href={`/f/${f.slug}`}
-                                    className="glass group flex items-center gap-4 rounded-3xl p-4 transition hover:bg-white/[0.06]"
+                                    className="glass group flex items-center gap-4 rounded-2xl p-4 transition hover:bg-white/[0.06]"
                                 >
                                     <FamilyLogo family={f} size="lg" />
                                     <div className="min-w-0 flex-1">
@@ -106,7 +106,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                         <div className="mt-1.5 flex items-center gap-2">
                                             {f.membership.status ===
                                             'pending' ? (
-                                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-300/10 px-2 py-0.5 text-xs text-amber-200">
+                                                <span className="inline-flex items-center gap-1 rounded-chip bg-amber-300/10 px-2 py-0.5 text-xs text-amber-200">
                                                     <Clock3 className="size-3" />{' '}
                                                     {tr('Заявка на розгляді')}
                                                 </span>
@@ -180,13 +180,13 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                     key={f.id}
                                     href={`/f/${f.slug}`}
                                     className={cn(
-                                        'glass group relative animate-rise overflow-hidden rounded-3xl transition hover:-translate-y-0.5',
+                                        'glass group relative animate-rise overflow-hidden rounded-2xl transition hover:-translate-y-0.5',
                                         f.plus && 'border-indigo-400/40',
                                     )}
                                     style={{ animationDelay: `${i * 30}ms` }}
                                 >
                                     {f.plus && (
-                                        <span className="absolute top-2 right-2 z-10 inline-flex items-center gap-1 rounded-full bg-black/45 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur">
+                                        <span className="absolute top-2 right-2 z-10 inline-flex items-center gap-1 rounded-chip bg-black/45 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur">
                                             <PlusBadge className="size-3.5 [&_svg]:size-2.5" />
                                             GameCon+
                                         </span>
@@ -208,7 +208,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                                 }}
                                             />
                                         ) : (
-                                            <div className="size-full bg-[linear-gradient(135deg,#f59e0b33,#6d5dfc44)]" />
+                                            <div className="size-full bg-[linear-gradient(135deg,#38bdf833,#2f7bff44)]" />
                                         )}
                                     </div>
                                     <div className="-mt-8 flex items-end gap-3 px-4">
@@ -254,7 +254,7 @@ export default function Families({ mine, families, filters, servers }: Props) {
                                             </span>
                                             <span
                                                 className={cn(
-                                                    'ml-auto rounded-full px-2 py-0.5 text-xs font-medium',
+                                                    'ml-auto rounded-chip px-2 py-0.5 text-xs font-medium',
                                                     f.is_recruiting
                                                         ? 'bg-emerald-400/10 text-emerald-200'
                                                         : 'bg-white/[0.05] text-white/40',

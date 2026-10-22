@@ -5,9 +5,9 @@ const sizes = {
     xs: 'size-7 rounded-lg text-xs',
     sm: 'size-9 rounded-xl text-xs',
     md: 'size-11 rounded-[14px] text-sm',
-    lg: 'size-16 rounded-[20px] text-lg',
-    xl: 'size-24 rounded-[26px] text-2xl',
-    hero: 'size-36 rounded-[38px] text-4xl sm:size-40',
+    lg: 'size-16 rounded-xl text-lg',
+    xl: 'size-24 rounded-2xl text-2xl',
+    hero: 'size-36 rounded-[20px] text-4xl sm:size-40',
 } as const;
 
 const palettes = [

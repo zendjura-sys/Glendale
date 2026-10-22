@@ -6,7 +6,7 @@ use App\Services\Cinema\BulkPlayers;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
-/** Масова проставка плеєрів: один прохід (BulkPlayers::CHUNK тайтлів), потім наступний. */
+/** Масове призначення плеєрів: один прохід (BulkPlayers::CHUNK тайтлів), потім наступний. */
 class AssignCinemaPlayers implements ShouldQueue
 {
     use Queueable;

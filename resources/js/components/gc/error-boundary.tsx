@@ -41,7 +41,7 @@ function CrashCard() {
         <main className="flex min-h-dvh items-center justify-center px-4 py-10">
             <section
                 role="alert"
-                className="glass w-full max-w-md rounded-3xl p-8 text-center"
+                className="glass w-full max-w-md rounded-2xl p-8 text-center"
             >
                 <a href="/" aria-label="GameCon" className="inline-flex">
                     <LogoMark className="size-12" />

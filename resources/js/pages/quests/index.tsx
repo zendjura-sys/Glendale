@@ -43,7 +43,7 @@ export default function Quests({
         <>
             <Head title={tr('Завдання й сезон')} />
             <div className="mx-auto max-w-3xl space-y-5">
-                <section className="glass rounded-3xl p-5 sm:p-6">
+                <section className="glass rounded-2xl p-5 sm:p-6">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0">
                             <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-white">
@@ -57,7 +57,7 @@ export default function Quests({
                                 })}
                             </p>
                         </div>
-                        <span className="rounded-full bg-white/[0.06] px-3 py-1 text-xs text-white/60">
+                        <span className="rounded-chip bg-white/[0.06] px-3 py-1 text-xs text-white/60">
                             {tr('Виконано всього: {n}', { n: completed })}
                         </span>
                     </div>
@@ -66,7 +66,7 @@ export default function Quests({
                     </div>
                 </section>
 
-                <section className="glass rounded-3xl p-5 sm:p-6">
+                <section className="glass rounded-2xl p-5 sm:p-6">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                             <Trophy className="size-5 text-amber-300" />

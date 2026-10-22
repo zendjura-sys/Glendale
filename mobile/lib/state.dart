@@ -417,7 +417,7 @@ class TrackPlayer extends ChangeNotifier {
   /// ∞ — коли черга скінчилась, грати схожі треки (як автовідтворення в Apple Music).
   bool autoplay = true;
 
-  /// Безкінечна станція, з якої підвантажуються наступні треки (me, genre:…, artist:…, track:…).
+  /// Нескінченна станція, з якої підвантажуються наступні треки (me, genre:…, artist:…, track:…).
   String? station;
 
   /// «Грає з…» над чергою.
@@ -478,7 +478,7 @@ class TrackPlayer extends ChangeNotifier {
   bool isCurrentCard(Map<String, dynamic> track) => current != null && current!.key == trackKey(track);
 
   /// Грає [tracks] з позиції [start]; повторне натискання на поточний трек — пауза.
-  /// [station] — ключ безкінечної станції, з якої дописувати чергу; [extend] = false — без ∞
+  /// [station] — ключ нескінченної станції, з якої дописувати чергу; [extend] = false — без ∞
   /// (напр. «Слухати разом», де чергою керує кімната).
   /// [from] — «Грає з…»: альбом, плейлист, мікс тощо.
   Future<void> playList(List<Map<String, dynamic>> tracks, int start, {String? station, bool extend = true, PlayFrom? from}) async {
@@ -506,7 +506,7 @@ class TrackPlayer extends ChangeNotifier {
     await _start(target);
   }
 
-  /// Безкінечна станція: перша порція одразу, далі підвантажується, коли черга добігає кінця.
+  /// Нескінченна станція: перша порція одразу, далі підвантажується, коли черга добігає кінця.
   /// Повертає false, якщо на станції поки немає треків.
   Future<bool> playStation(String key, {PlayFrom? from}) async {
     final api = session?.api;

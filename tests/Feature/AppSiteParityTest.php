@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\Auth\ApiTokens;
 use App\Services\FriendshipService;
 use App\Services\Phones\PhoneNumbers;
+use App\Support\Net\PublicUrl;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -175,6 +176,18 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson('/api/v1/site/wrapped')->assertOk()
             ->assertJsonPath('wrapped.year', 2026)
             ->assertJsonPath('wrapped.music.top_tracks.0.title', 'Afterglow');
+    }
+
+    public function test_app_imports_tracks_by_link_through_bridge(): void
+    {
+        Http::fake(['files.example.com/*' => Http::response('<html></html>', 200, ['Content-Type' => 'text/html'])]);
+        $this->app->instance(PublicUrl::class, new PublicUrl(fn () => ['93.184.216.34']));
+        $token = $this->app_token(User::factory()->create());
+
+        $id = $this->withToken($token)->postJson('/api/v1/site/music/tracks/import', ['url' => 'https://files.example.com/song.mp3'])
+            ->assertStatus(202)->assertJsonPath('import.host', 'files.example.com')->json('import.id');
+        $this->withToken($token)->getJson('/api/v1/site/music/imports')->assertOk()->assertJsonPath('imports.0.id', $id);
+        $this->withToken($token)->deleteJson("/api/v1/site/music/imports/{$id}")->assertOk();
     }
 
     public function test_app_opens_apple_style_music_sections_through_bridge(): void

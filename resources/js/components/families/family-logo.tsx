@@ -3,8 +3,8 @@ import { cn } from '@/lib/utils';
 const sizes = {
     sm: 'size-9 rounded-xl text-xs',
     md: 'size-12 rounded-2xl text-sm',
-    lg: 'size-16 rounded-[20px] text-base',
-    xl: 'size-24 rounded-[26px] text-2xl',
+    lg: 'size-16 rounded-xl text-base',
+    xl: 'size-24 rounded-2xl text-2xl',
 } as const;
 
 const tones = [

@@ -27,8 +27,8 @@ const palettes = [
     'from-gc-indigo to-gc-purple',
     'from-gc-purple to-gc-pink',
     'from-gc-cyan to-gc-blue',
-    'from-gc-pink to-gc-coral',
-    'from-gc-mint to-gc-cyan',
+    'from-[#1e40af] to-gc-blue',
+    'from-[#0e7490] to-gc-cyan',
 ];
 
 type Props = {
@@ -92,7 +92,7 @@ export function UserAvatar({
                     </span>
                 </span>
             ) : ring ? (
-                <span className="ring-gradient flex size-full rounded-full p-[3px] shadow-[0_0_40px_-6px_rgb(124_92_255/0.8)]">
+                <span className="ring-gradient flex size-full rounded-full p-[3px]">
                     <span className="flex size-full rounded-full bg-void p-[3px]">
                         {inner}
                     </span>

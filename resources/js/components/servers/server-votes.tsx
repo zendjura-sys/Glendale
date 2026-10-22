@@ -47,7 +47,7 @@ export function VoteTops({
     }
 
     return (
-        <section className="glass rounded-3xl p-5">
+        <section className="glass rounded-2xl p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                     <Trophy className="size-5 text-amber-300" />
@@ -117,7 +117,7 @@ export function VoteTops({
                                         {row.platform_label}
                                     </span>
                                 </span>
-                                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-gc-indigo/15 px-2.5 py-1 text-xs font-semibold text-[#c4b5fd] tabular-nums">
+                                <span className="inline-flex shrink-0 items-center gap-1 rounded-chip bg-gc-indigo/15 px-2.5 py-1 text-xs font-semibold text-[#c4b5fd] tabular-nums">
                                     <Vote className="size-3.5" />
                                     {shortNumber(row.votes)}
                                     {votedToday === row.id && (
@@ -159,7 +159,7 @@ export function VotePanel({
     const peak = Math.max(1, ...(votes.daily ?? []).map((day) => day.votes));
 
     return (
-        <section className="glass rounded-3xl p-5">
+        <section className="glass rounded-2xl p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                 <div className="min-w-0 flex-1">
                     <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">

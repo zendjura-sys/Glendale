@@ -884,7 +884,7 @@ class _MembersTabState extends State<MembersTab> {
     final saved = await showGcSheet<bool>(
       context,
       title: tr('Ранги й права'),
-      subtitle: tr('Ранг 10 і власник можуть усе. Відмітьте, які ранги мають кожне право.'),
+      subtitle: tr('Ранг 10 і власник можуть усе. Позначте, які ранги мають кожне право.'),
       height: MediaQuery.sizeOf(context).height * 0.9,
       builder: (sheet) => StatefulBuilder(
         builder: (context, set) => ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 24), children: [
@@ -1227,7 +1227,7 @@ class EventsTab extends StatelessWidget {
     final ok = await showGcSheet<String>(
       context,
       title: tr('Підсумок: {v}', {'v': event['title']}),
-      subtitle: tr('Відмітьте присутніх — їм нарахуються бали й нагорода.'),
+      subtitle: tr('Позначте присутніх — їм нарахуються бали й нагорода.'),
       height: MediaQuery.sizeOf(context).height * 0.8,
       builder: (sheet) => StatefulBuilder(
         builder: (context, set) => Column(children: [

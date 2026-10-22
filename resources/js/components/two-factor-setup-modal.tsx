@@ -265,7 +265,7 @@ export default function TwoFactorSetupModal({
 
         if (showVerificationStep) {
             return {
-                title: tr('Підтвердіть код'),
+                title: tr('Підтвердьте код'),
                 description: tr('Введіть 6-значний код із застосунку'),
                 buttonText: tr('Продовжити'),
             };

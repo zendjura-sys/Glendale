@@ -159,7 +159,7 @@ export default function AdminModeration({
                 />
             </div>
 
-            <section className="glass mb-6 rounded-3xl p-4 sm:p-5">
+            <section className="glass mb-6 rounded-2xl p-4 sm:p-5">
                 <h2 className="mb-3 font-display text-lg font-semibold text-white">
                     {tr('Скарги')}
                 </h2>
@@ -303,7 +303,7 @@ export default function AdminModeration({
             <FeedbackList feedback={feedback} />
 
             {muted.length > 0 && (
-                <section className="glass mb-6 rounded-3xl p-4 sm:p-5">
+                <section className="glass mb-6 rounded-2xl p-4 sm:p-5">
                     <h2 className="mb-3 font-display text-lg font-semibold text-white">
                         {tr('Заглушені')}
                     </h2>
@@ -342,7 +342,7 @@ export default function AdminModeration({
                 </section>
             )}
 
-            <section className="glass rounded-3xl p-4 sm:p-5">
+            <section className="glass rounded-2xl p-4 sm:p-5">
                 <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold text-white">
                     <MessageSquareWarning className="size-5 text-gc-lilac-200" />
                     {tr('Автомодерація')}

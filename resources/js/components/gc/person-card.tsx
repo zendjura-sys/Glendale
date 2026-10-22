@@ -18,7 +18,7 @@ const listLabel: Record<FriendList, string> = {
 
 export function PersonCard({ person }: { person: Person }) {
     return (
-        <div className="glass group relative flex flex-col items-center overflow-hidden rounded-3xl p-5 text-center transition hover:-translate-y-0.5 hover:border-white/15">
+        <div className="glass group relative flex flex-col items-center overflow-hidden rounded-2xl p-5 text-center transition hover:-translate-y-0.5 hover:border-white/15">
             <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-gc-indigo/20 to-transparent opacity-0 transition group-hover:opacity-100" />
             <Link href={`/${person.username}`} className="relative">
                 <UserAvatar user={person} size="xl" />
@@ -39,7 +39,7 @@ export function PersonCard({ person }: { person: Person }) {
                 </p>
             )}
             {person.list && (
-                <span className="relative mt-1 rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-white/70">
+                <span className="relative mt-1 rounded-chip bg-white/10 px-2 py-0.5 text-[11px] text-white/70">
                     {listLabel[person.list]}
                 </span>
             )}

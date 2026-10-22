@@ -1054,7 +1054,7 @@ export function ChatView({
                             setNewBelow(0);
                             scrollToBottom(true);
                         }}
-                        className="absolute bottom-4 left-1/2 flex -translate-x-1/2 animate-rise items-center gap-1.5 rounded-full bg-gradient-brand px-4 py-2 text-xs font-semibold text-white shadow-[0_10px_30px_-8px_rgb(109_93_252/0.9)]"
+                        className="absolute bottom-4 left-1/2 flex -translate-x-1/2 animate-rise items-center gap-1.5 rounded-control bg-gradient-brand px-4 py-2 text-xs font-semibold text-white shadow-[0_10px_30px_-8px_rgb(109_93_252/0.9)]"
                     >
                         <ArrowDown className="size-3.5" />
                         {newBelow}{' '}
@@ -1182,7 +1182,7 @@ export function ChatView({
 function DaySeparator({ iso }: { iso: string }) {
     return (
         <div className="sticky top-1 z-10 flex justify-center py-2">
-            <span className="rounded-full border border-white/[0.06] bg-[#0b1020]/80 px-3 py-1 text-xs font-medium text-white/60 backdrop-blur-xl">
+            <span className="rounded-chip border border-white/[0.06] bg-[#0b1020]/80 px-3 py-1 text-xs font-medium text-white/60 backdrop-blur-xl">
                 {dayLabel(iso)}
             </span>
         </div>

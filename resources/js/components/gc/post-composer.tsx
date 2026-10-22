@@ -221,9 +221,8 @@ export function PostComposer({
     return (
         <section
             className={cn(
-                'glass relative overflow-clip rounded-3xl p-4 transition sm:p-5',
-                expanded &&
-                    'border-gc-lilac-500/30 shadow-[0_0_0_1px_rgb(124_140_255/0.15),0_30px_60px_-30px_rgb(109_93_252/0.6)]',
+                'glass relative overflow-clip rounded-2xl p-4 transition sm:p-5',
+                expanded && 'ring-1 ring-primary/25',
                 className,
             )}
             onDragOver={(event) => event.preventDefault()}

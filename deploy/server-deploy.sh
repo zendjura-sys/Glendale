@@ -43,7 +43,7 @@ chown -R "$OWNER":www-data "$APP"
 # 4. Залежності, збірка, міграції, перезапуск сервісів (remote.sh наприкінці знімає режим обслуговування).
 cd "$APP"
 if [ "$OWNER" != root ] && sudo -n -u "$OWNER" sudo -n true 2>/dev/null; then
-    sudo -u "$OWNER" bash deploy/remote.sh
+    sudo -u "$OWNER" env INSTALL_LIBRETRANSLATE="${INSTALL_LIBRETRANSLATE:-}" bash deploy/remote.sh
 else
     bash deploy/remote.sh
     chown -R "$OWNER":www-data "$APP"

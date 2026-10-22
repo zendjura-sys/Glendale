@@ -264,7 +264,7 @@ export default function FamilyMembers(props: Props) {
                                             />
                                             {m.warns > 0 && (
                                                 <span
-                                                    className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-xs text-rose-200"
+                                                    className="inline-flex items-center gap-1 rounded-chip bg-rose-500/10 px-2 py-0.5 text-xs text-rose-200"
                                                     title={tr('Попередження')}
                                                 >
                                                     <TriangleAlert
@@ -832,7 +832,7 @@ function RANK_TEMPLATES(): { key: string; label: string; titles: string[] }[] {
                 tr('Бувалий'),
                 tr('Ветеран'),
                 tr('Правиця'),
-                tr('Смотрящий'),
+                tr('Наглядач'),
                 tr('Авторитет'),
                 tr('Права рука'),
                 tr('Бос'),

@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import type { MovieCard } from '@/types';
 import { tr } from '@/lib/i18n';
 
-const hues = [228, 262, 290, 200, 316, 245];
+const hues = [216, 200, 222, 190, 210, 230];
 
 export function MoviePoster({
     movie,
@@ -35,7 +35,7 @@ export function MoviePoster({
                 className,
             )}
             style={{
-                background: `radial-gradient(120% 90% at 20% 0%, hsl(${hue} 90% 60% / .55), transparent 60%), linear-gradient(160deg, hsl(${hue + 30} 60% 22%), #0b0d1f)`,
+                background: `radial-gradient(120% 90% at 20% 0%, hsl(${hue} 90% 60% / .55), transparent 60%), linear-gradient(160deg, hsl(${hue + 6} 60% 20%), #0b0d1f)`,
             }}
         >
             <Clapperboard className="size-8 text-white/50" />
@@ -152,7 +152,7 @@ export function PosterRow({
         });
 
     return (
-        <section className="glass group/row relative rounded-3xl p-4 sm:p-5">
+        <section className="glass group/row relative rounded-2xl p-4 sm:p-5">
             <div className="mb-3 flex items-center gap-2">
                 <h2 className="flex-1 font-display text-lg font-semibold text-white">
                     {title}

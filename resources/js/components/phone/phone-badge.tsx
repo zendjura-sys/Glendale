@@ -41,7 +41,7 @@ export function PhoneBadge({
             />
             <span className="phone-badge__number">{phone.number}</span>
             {showLabel && phone.tier !== 'regular' && (
-                <span className="phone-badge__label rounded-full px-2 py-0.5 text-[11px] font-semibold">
+                <span className="phone-badge__label rounded-chip px-2 py-0.5 text-[11px] font-semibold">
                     {label}
                 </span>
             )}

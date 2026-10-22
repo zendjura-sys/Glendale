@@ -92,7 +92,7 @@ export function ContactShareDialog({
                                 className={cn(
                                     'flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-white/[0.05]',
                                     picked?.id === user.id &&
-                                        'bg-gc-indigo/15 ring-1 ring-[#8b7dff]/40',
+                                        'bg-gc-indigo/15 ring-1 ring-gc-lilac-400/40',
                                 )}
                             >
                                 <UserAvatar
@@ -110,7 +110,7 @@ export function ContactShareDialog({
                                     </span>
                                 </span>
                                 {user.is_friend && (
-                                    <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-xs font-medium text-emerald-200">
+                                    <span className="rounded-chip bg-emerald-400/10 px-2 py-0.5 text-xs font-medium text-emerald-200">
                                         {tr('друг')}
                                     </span>
                                 )}

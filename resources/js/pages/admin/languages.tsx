@@ -3,6 +3,7 @@ import {
     Languages,
     Loader2,
     PencilLine,
+    PlugZap,
     Plus,
     RefreshCw,
     Sparkles,
@@ -33,9 +34,18 @@ type Props = {
     languages: Language[];
     default_locale: string;
     suggested: { code: string; native: string }[];
+    active: 'deepl' | 'libretranslate' | null;
     deepl: {
         configured: boolean;
         usage: { used: number; limit: number } | null;
+        exhausted: boolean;
+        exhausted_at: string | null;
+    };
+    libretranslate: {
+        configured: boolean;
+        url: string | null;
+        up: boolean;
+        languages: string[];
     };
     catalog: number;
     content_translation: boolean;
@@ -49,7 +59,9 @@ export default function AdminLanguages({
     languages,
     default_locale,
     suggested,
+    active,
     deepl,
+    libretranslate,
     catalog,
     content_translation,
 }: Props) {
@@ -106,9 +118,11 @@ export default function AdminLanguages({
                 <StatCard
                     label={tr('DeepL за місяць')}
                     value={
-                        deepl.usage
-                            ? `${pct(deepl.usage.used, deepl.usage.limit)}%`
-                            : '—'
+                        deepl.exhausted
+                            ? tr('Вичерпано')
+                            : deepl.usage
+                              ? `${pct(deepl.usage.used, deepl.usage.limit)}%`
+                              : '—'
                     }
                     hint={
                         deepl.usage
@@ -122,10 +136,16 @@ export default function AdminLanguages({
                 />
             </div>
 
-            {!deepl.configured && (
+            <EnginesCard
+                active={active}
+                deepl={deepl}
+                libretranslate={libretranslate}
+            />
+
+            {!active && (
                 <p className="mb-6 rounded-2xl bg-amber-500/10 p-4 text-sm text-amber-100">
                     {tr(
-                        'Щоб перекладати автоматично, додайте ключ DeepL в Інтеграціях. Без нього переклади можна вписати вручну.',
+                        'Щоб перекладати автоматично, додайте ключ DeepL або підключіть LibreTranslate в Інтеграціях. Без них переклади можна вписати вручну.',
                     )}{' '}
                     <Link
                         href="/admin/integrations"
@@ -304,7 +324,7 @@ export default function AdminLanguages({
                                             )
                                         )}
                                         {!l.deepl &&
-                                            ` · ${tr('DeepL не підтримує — лише вручну')}`}
+                                            ` · ${tr('Перекладач не знає цієї мови — лише вручну')}`}
                                         {l.progress.error &&
                                             !l.progress.running &&
                                             ` · ${l.progress.error}`}
@@ -335,8 +355,7 @@ export default function AdminLanguages({
                                         <button
                                             type="button"
                                             disabled={
-                                                l.progress.running ||
-                                                !deepl.configured
+                                                l.progress.running || !active
                                             }
                                             onClick={() =>
                                                 router.post(
@@ -384,5 +403,132 @@ export default function AdminLanguages({
                 </div>
             </section>
         </>
+    );
+}
+
+/**
+ * Перекладачі: DeepL (лічильник символів за місяць — рахуються й пробіли та розділові знаки;
+ * Free — 500 000) і запасний LibreTranslate на сервері, що працює, коли ліміт вичерпано.
+ */
+function EnginesCard({
+    active,
+    deepl,
+    libretranslate,
+}: Pick<Props, 'active' | 'deepl' | 'libretranslate'>) {
+    const used = deepl.usage
+        ? pct(deepl.usage.used, deepl.usage.limit)
+        : deepl.exhausted
+          ? 100
+          : 0;
+
+    return (
+        <section className="glass mb-6 grid gap-4 rounded-3xl p-4 sm:grid-cols-2 sm:p-5">
+            <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="font-display text-base font-semibold text-white">
+                        DeepL
+                    </h2>
+                    {active === 'deepl' && (
+                        <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-200">
+                            {tr('Перекладає зараз')}
+                        </span>
+                    )}
+                    {deepl.configured && (
+                        <button
+                            type="button"
+                            onClick={() =>
+                                router.post(
+                                    '/admin/languages/deepl/refresh',
+                                    {},
+                                    { preserveScroll: true },
+                                )
+                            }
+                            className="ml-auto rounded-lg p-1.5 text-white/40 transition hover:bg-white/10 hover:text-white"
+                            title={tr('Оновити лічильник')}
+                            aria-label={tr('Оновити лічильник')}
+                        >
+                            <RefreshCw className="size-3.5" />
+                        </button>
+                    )}
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div
+                        className={cn(
+                            'h-full rounded-full transition-all',
+                            deepl.exhausted || used >= 90
+                                ? 'bg-amber-400'
+                                : 'bg-gc-blue',
+                        )}
+                        style={{ width: `${used}%` }}
+                    />
+                </div>
+                <p className="mt-1.5 text-xs text-white/50">
+                    {!deepl.configured
+                        ? tr('Ключ не додано')
+                        : deepl.exhausted
+                          ? libretranslate.up
+                              ? tr('Вичерпано — працює LibreTranslate')
+                              : tr(
+                                    'Вичерпано до нового місяця, LibreTranslate недоступний',
+                                )
+                          : deepl.usage
+                            ? tr('{used} з {limit} символів цього місяця', {
+                                  used: deepl.usage.used.toLocaleString(),
+                                  limit: deepl.usage.limit.toLocaleString(),
+                              })
+                            : tr('немає даних')}
+                </p>
+            </div>
+            <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="font-display text-base font-semibold text-white">
+                        LibreTranslate
+                    </h2>
+                    {active === 'libretranslate' && (
+                        <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-200">
+                            {tr('Перекладає зараз')}
+                        </span>
+                    )}
+                    <button
+                        type="button"
+                        onClick={() =>
+                            router.post(
+                                '/admin/languages/libretranslate/test',
+                                {},
+                                { preserveScroll: true },
+                            )
+                        }
+                        disabled={!libretranslate.configured}
+                        className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 text-xs text-white/75 transition hover:bg-white/10 disabled:opacity-40"
+                    >
+                        <PlugZap className="size-3.5" /> {tr('Перевірити')}
+                    </button>
+                </div>
+                <p className="mt-2 flex items-center gap-1.5 text-xs text-white/50">
+                    <span
+                        className={cn(
+                            'size-2 rounded-full',
+                            libretranslate.up
+                                ? 'bg-emerald-400'
+                                : 'bg-white/25',
+                        )}
+                    />
+                    {!libretranslate.configured
+                        ? tr('Вимкнено — адресу не вказано')
+                        : libretranslate.up
+                          ? tr('Працює · мови: {list}', {
+                                list: libretranslate.languages.join(', '),
+                            })
+                          : tr('Не відповідає ({url})', {
+                                url: libretranslate.url ?? '',
+                            })}
+                </p>
+                <p className="mt-1 text-xs text-white/35">
+                    {tr(
+                        'Безкоштовно й без ліміту, на вашому сервері. Вмикається сам, коли ліміт DeepL вичерпано.',
+                    )}
+                </p>
+            </div>
+        </section>
     );
 }

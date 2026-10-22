@@ -89,7 +89,7 @@ export function AchievementsCard({
     const shown = all ? data.badges : data.badges.filter((b) => b.earned);
 
     return (
-        <section className="glass rounded-3xl p-4">
+        <section className="glass rounded-2xl p-4">
             <div className="flex items-center gap-3">
                 <span className="flex size-12 shrink-0 flex-col items-center justify-center rounded-2xl bg-gradient-brand text-white">
                     <span className="text-[11px] leading-none font-semibold uppercase opacity-80">

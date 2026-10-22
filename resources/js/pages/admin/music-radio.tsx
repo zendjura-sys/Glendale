@@ -92,7 +92,7 @@ export default function AdminMusicRadio({ stations, genres, stats }: Props) {
             </datalist>
 
             {adding && (
-                <section className="glass mb-5 rounded-3xl p-4 sm:p-5">
+                <section className="glass mb-5 rounded-2xl p-4 sm:p-5">
                     <h2 className="mb-4 font-display text-base font-bold text-white">
                         {tr('Нова станція')}
                     </h2>
@@ -100,7 +100,7 @@ export default function AdminMusicRadio({ stations, genres, stats }: Props) {
                 </section>
             )}
 
-            <div className="glass overflow-hidden rounded-3xl">
+            <div className="glass overflow-hidden rounded-2xl">
                 {stations.map((station, index) =>
                     editing === station.id ? (
                         <div

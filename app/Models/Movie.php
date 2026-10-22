@@ -77,8 +77,8 @@ class Movie extends Model
 
     public const ORIGINS = [
         'manual' => 'Вручну',
-        'kodik' => 'Kodik',
-        'flixcdn' => 'FlixCDN',
+        'kodik' => 'Плеєр 1',
+        'flixcdn' => 'Плеєр 3',
     ];
 
     public const STATUSES = [

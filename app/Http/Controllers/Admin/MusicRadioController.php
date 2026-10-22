@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\RadioStation;
+use App\Support\Net\PublicUrl;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -177,17 +178,7 @@ class MusicRadioController extends Controller
     /** Публічна адреса https (не localhost і не внутрішня мережа). */
     private function publicHttps(string $url): bool
     {
-        $parts = parse_url($url);
-        $host = strtolower((string) ($parts['host'] ?? ''));
-        if (($parts['scheme'] ?? '') !== 'https' || $host === '' || isset($parts['user'])
-            || $host === 'localhost' || str_ends_with($host, '.local') || str_ends_with($host, '.internal')) {
-            return false;
-        }
-        $ips = filter_var($host, FILTER_VALIDATE_IP) ? [$host] : (gethostbynamel($host) ?: []);
-
-        return $ips !== [] && collect($ips)->every(
-            fn (string $ip) => filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false,
-        );
+        return app(PublicUrl::class)->allowed($url, ['https']);
     }
 
     /**

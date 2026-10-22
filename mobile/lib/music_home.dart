@@ -202,7 +202,7 @@ class _HomeTab extends StatelessWidget {
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(tr('Почни слухати'), style: body(16, weight: FontWeight.w700)),
                 const SizedBox(height: 4),
-                Text(tr('Тут з’являться нещодавно прослухані треки, а міксы й станції підлаштуються під твій смак.'), style: body(13.5, color: muted)),
+                Text(tr('Тут з’являться нещодавно прослухані треки, а мікси й станції підлаштуються під твій смак.'), style: body(13.5, color: muted)),
               ]),
             ),
           ),
@@ -354,7 +354,7 @@ class _RadioTab extends StatelessWidget {
             }),
           ],
         if (genres.isNotEmpty) ...[
-          SectionHeader(tr('Станції за жанрами'), subtitle: tr('Безкінечний потік треків GameCon')),
+          SectionHeader(tr('Станції за жанрами'), subtitle: tr('Нескінченний потік треків GameCon')),
           Shelf(children: [for (final s in genres) StationTile(station: s)]),
         ],
         if (live.isEmpty && genres.isEmpty) MusicEmpty(icon: LucideIcons.radio, title: tr('Станцій поки немає'), text: tr('Увімкніть свою станцію — вона підбирає музику за тим, що ви слухаєте.')),

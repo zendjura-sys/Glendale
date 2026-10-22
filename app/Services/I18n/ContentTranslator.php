@@ -13,27 +13,29 @@ use App\Services\PhotoService;
 use App\Support\I18n\Locales;
 use App\Support\Settings\SiteSettings;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Кнопка «Перекласти» під записом, коментарем чи повідомленням: DeepL визначає мову тексту
- * й перекладає мовою інтерфейсу людини. Переклад зберігається — повторно DeepL не викликаємо.
+ * Кнопка «Перекласти» під записом, коментарем чи повідомленням: перекладач (DeepL, а коли його
+ * місячний ліміт вичерпано — LibreTranslate, див. Translator) визначає мову тексту й перекладає
+ * мовою інтерфейсу людини. Переклад зберігається — повторно перекладач не викликаємо.
  */
 class ContentTranslator
 {
     public const TYPES = ['post', 'comment', 'message', 'track'];
 
     public function __construct(
-        private readonly DeepL $deepl,
+        private readonly Translator $translator,
         private readonly SiteSettings $settings,
         private readonly FriendshipService $friendships,
         private readonly PhotoService $photos,
     ) {}
 
-    /** Кнопку показуємо, лише якщо є ключ DeepL і її не вимкнено в Адмінці → Мови. */
+    /** Кнопку показуємо, лише якщо працює DeepL або LibreTranslate і її не вимкнено в Адмінці → Мови. */
     public function enabled(): bool
     {
-        return $this->deepl->configured() && $this->settings->get('content_translation') !== false;
+        return $this->settings->get('content_translation') !== false && $this->translator->available();
     }
 
     /**
@@ -44,8 +46,7 @@ class ContentTranslator
         abort_unless($this->enabled(), 404);
         $text = $this->textFor($type, $id, $user);
         abort_if($text === null || trim($text) === '', 404);
-        $target = $this->deepl->target($locale);
-        if ($target === null) {
+        if (! $this->translator->supports($locale)) {
             throw ValidationException::withMessages(['text' => 'Переклад цією мовою недоступний.']);
         }
         $hash = sha1($text);
@@ -55,10 +56,11 @@ class ContentTranslator
 
             return ['text' => (string) $cached->text, 'source' => $source, 'same' => $source === Locales::primary($locale)];
         }
-        $result = $this->deepl->content($text, $target);
+        $result = $this->translator->content($text, $locale);
         if ($result === null) {
             throw ValidationException::withMessages(['text' => 'Не вдалося перекласти — спробуйте пізніше.']);
         }
+        Log::info('translate: content', ['engine' => $result['engine'], 'type' => $type, 'locale' => $locale, 'chars' => mb_strlen($text)]);
         DB::table('content_translations')->insertOrIgnore([
             'type' => $type, 'item_id' => $id, 'locale' => $locale, 'hash' => $hash,
             'text' => $result['text'], 'source_lang' => $result['source'] ?: null, 'created_at' => now(), 'updated_at' => now(),

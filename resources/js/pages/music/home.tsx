@@ -136,7 +136,7 @@ export default function MusicHome({ home }: { home: Home }) {
                     <p className="am-headline">{tr('Почни слухати')}</p>
                     <p className="am-subhead mt-1 text-[var(--am-label2)]">
                         {tr(
-                            'Тут з’являться нещодавно прослухані треки, а міксы й станції підлаштуються під твій смак.',
+                            'Тут з’являться нещодавно прослухані треки, а мікси й станції підлаштуються під твій смак.',
                         )}
                     </p>
                     <Link

@@ -58,7 +58,7 @@ class _Glow extends StatelessWidget {
   }
 }
 
-/// Логотип GameCon: тёмний квадрат з градієнтною рамкою й «play».
+/// Логотип GameCon: темний квадрат з градієнтною рамкою й «play».
 class LogoMark extends StatelessWidget {
   const LogoMark({this.size = 40, super.key});
   final double size;

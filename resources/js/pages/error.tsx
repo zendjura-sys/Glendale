@@ -46,9 +46,18 @@ function texts(status: number): { title: string; text: string } {
     }
 }
 
-export default function ErrorPage({ status }: { status: number }) {
+export default function ErrorPage({
+    status,
+    message,
+}: {
+    status: number;
+    message?: string | null;
+}) {
     const reduce = useReducedMotion();
-    const { title, text } = texts(status);
+    const base = texts(status);
+    const title = base.title;
+    // Пояснення від сервера (розділ закритий для країни відвідувача).
+    const text = message ? tr(message) : base.text;
     const retry = status === 429 || status >= 500;
 
     return (
@@ -58,7 +67,7 @@ export default function ErrorPage({ status }: { status: number }) {
                 initial={reduce ? false : { opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={motionOr(reduce, RISE)}
-                className="glass w-full max-w-md rounded-3xl p-8 text-center"
+                className="glass w-full max-w-md rounded-2xl p-8 text-center"
             >
                 <Link href="/" aria-label="GameCon" className="inline-flex">
                     <LogoMark className="size-12" />

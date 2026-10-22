@@ -56,7 +56,7 @@ export default function Invite({
         <>
             <Head title={tr('Запросити друзів')} />
             <div className="mx-auto max-w-3xl space-y-5">
-                <section className="glass rounded-3xl p-5 sm:p-6">
+                <section className="glass rounded-2xl p-5 sm:p-6">
                     <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-white">
                         <UserPlus className="size-6 text-gc-lilac-300" />
                         {tr('Запросити друзів')}
@@ -114,7 +114,7 @@ export default function Invite({
                     </div>
                 </section>
 
-                <section className="glass rounded-3xl p-5 sm:p-6">
+                <section className="glass rounded-2xl p-5 sm:p-6">
                     <h2 className="flex items-center gap-2 font-display text-lg font-bold text-white">
                         <Gift className="size-5 text-amber-300" />
                         {tr('Нагороди')}
@@ -159,7 +159,7 @@ export default function Invite({
                 </section>
 
                 {people.length > 0 && (
-                    <section className="glass rounded-3xl p-5">
+                    <section className="glass rounded-2xl p-5">
                         <h2 className="font-display text-lg font-bold text-white">
                             {tr('Ви запросили')}
                         </h2>
@@ -176,7 +176,7 @@ export default function Invite({
                                         </span>
                                         <span
                                             className={cn(
-                                                'shrink-0 rounded-full px-2 py-0.5 text-[11px]',
+                                                'shrink-0 rounded-chip px-2 py-0.5 text-[11px]',
                                                 person.active
                                                     ? 'bg-emerald-400/10 text-emerald-200'
                                                     : 'bg-white/[0.06] text-white/50',

@@ -22,10 +22,7 @@ import type { PaymentOrderCard, Quote } from '@/types/billing';
 
 const btn =
     'inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition disabled:opacity-40';
-const primary = cn(
-    btn,
-    'bg-[var(--btn-primary,#6366f1)] text-white hover:opacity-90',
-);
+const primary = cn(btn, 'bg-primary text-white hover:opacity-90');
 const secondary = cn(btn, 'bg-white/[0.06] text-white/85 hover:bg-white/10');
 
 /** Вікно оплати для всього сайту: карткою через monobank (Visa, Mastercard, Apple Pay, Google Pay). */
@@ -79,7 +76,7 @@ function Modal({
                 event.target === event.currentTarget && onClose()
             }
         >
-            <div className="glass-strong flex max-h-[92dvh] w-full max-w-md animate-rise flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl">
+            <div className="glass-strong flex max-h-[92dvh] w-full max-w-md animate-rise flex-col overflow-hidden rounded-t-2xl sm:rounded-2xl">
                 <header className="flex items-center gap-3 border-b border-white/[0.06] px-5 py-4">
                     <PlusBadge className="size-7 rounded-lg [&_svg]:size-5" />
                     <span className="min-w-0 flex-1">
@@ -342,7 +339,7 @@ function PurchaseDialog({
                                 type="checkbox"
                                 checked={renew}
                                 onChange={(e) => setRenew(e.target.checked)}
-                                className="mt-0.5 size-4 accent-[var(--btn-primary,#6366f1)]"
+                                className="mt-0.5 size-4 accent-primary"
                             />
                             <span className="text-sm">
                                 <span className="font-medium text-white">
@@ -367,7 +364,7 @@ function PurchaseDialog({
                                     onChange={(e) =>
                                         setSaveCard(e.target.checked)
                                     }
-                                    className="size-4 accent-[var(--btn-primary,#6366f1)]"
+                                    className="size-4 accent-primary"
                                 />
                                 {tr(
                                     'Зберегти картку в monobank для автопродовження (номер картки ми не бачимо й не зберігаємо)',

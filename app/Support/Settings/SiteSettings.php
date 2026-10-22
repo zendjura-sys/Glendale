@@ -59,6 +59,14 @@ class SiteSettings
         'discord_guild_id' => null,
         'steam_api_key' => null,
         'deepl_key' => null,
+        // Запасний перекладач (коли ліміт DeepL вичерпано): адреса власного LibreTranslate і ключ (необов’язковий).
+        'libretranslate_url' => null,
+        'libretranslate_key' => null,
+        // Перевірка орфографії для адміністрації: LanguageTool (граматика) і власні слова словника.
+        'languagetool_url' => null,
+        'languagetool_username' => null,
+        'languagetool_key' => null,
+        'spellcheck_words' => null,
         'moderation' => [],
         // Мови інтерфейсу: [{code, enabled}], українська — завжди; типова — для решти відвідувачів.
         'languages' => [],
@@ -130,7 +138,7 @@ class SiteSettings
     ];
 
     /** Ключі, які не можна віддавати у фронтенд. */
-    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'kodik_links_key', 'videoseed_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key', 'deepl_key', 'maxmind_license_key', 'vapid_private', 'telegram_bot_token', 'telegram_webhook_secret', 'twitch_client_secret', 'sightengine_secret', 'donatello_token', 'monobank_acquiring_token', 'google_play_service_account', 'google_play_rtdn_token', 'acoustid_key', 'lastfm_key', 'discogs_token'];
+    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'kodik_links_key', 'videoseed_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key', 'deepl_key', 'maxmind_license_key', 'vapid_private', 'telegram_bot_token', 'telegram_webhook_secret', 'twitch_client_secret', 'sightengine_secret', 'donatello_token', 'monobank_acquiring_token', 'google_play_service_account', 'google_play_rtdn_token', 'acoustid_key', 'lastfm_key', 'discogs_token', 'libretranslate_key', 'languagetool_key'];
 
     /** @var array<string, mixed>|null */
     private ?array $values = null;

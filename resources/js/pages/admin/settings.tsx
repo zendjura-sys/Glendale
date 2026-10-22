@@ -21,6 +21,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { PLAY_BADGES } from '@/components/gc/play-store';
 import { cn } from '@/lib/utils';
 import { tr } from '@/lib/i18n';
+import { SpellcheckTextarea } from '@/components/gc/spellcheck';
 
 type Settings = {
     site_name: string;
@@ -140,7 +141,7 @@ function Section({
     description: string;
 }>) {
     return (
-        <section className="glass grid grid-cols-1 gap-6 rounded-3xl p-6 md:grid-cols-[260px_1fr]">
+        <section className="glass grid grid-cols-1 gap-6 rounded-2xl p-6 md:grid-cols-[260px_1fr]">
             <div>
                 <span className="mb-3 flex size-10 items-center justify-center rounded-xl bg-white/[0.05] ring-1 ring-white/10">
                     <Icon className="size-[18px] text-gc-lilac-300" />
@@ -215,7 +216,7 @@ function MailSection({ mail }: { mail: MailStatus }) {
             >
                 {mail.ready ? (
                     <>
-                        {tr('Відправка:')}{' '}
+                        {tr('Надсилання:')}{' '}
                         <b className="text-white">{mail.mailer}</b>
                         <span className="mt-1 block">
                             {tr('Оповіщення:')}{' '}
@@ -685,11 +686,11 @@ export default function AdminSettings({
                         <Label htmlFor="maintenance_message">
                             {tr('Текст оголошення')}
                         </Label>
-                        <textarea
+                        <SpellcheckTextarea
                             id="maintenance_message"
                             value={data.maintenance_message}
-                            onChange={(e) =>
-                                setData('maintenance_message', e.target.value)
+                            onValueChange={(v) =>
+                                setData('maintenance_message', v)
                             }
                             rows={3}
                             maxLength={500}

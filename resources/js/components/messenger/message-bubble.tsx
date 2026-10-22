@@ -128,7 +128,7 @@ function Images({
 export function SystemMessage({ message }: { message: ChatMessage }) {
     return (
         <div className="flex justify-center py-1.5">
-            <span className="rounded-full bg-white/[0.05] px-3 py-1 text-center text-xs text-white/50">
+            <span className="rounded-chip bg-white/[0.05] px-3 py-1 text-center text-xs text-white/50">
                 {message.body}
             </span>
         </div>
@@ -171,7 +171,7 @@ export function MessageBubble({
             className={cn(
                 'inline-flex items-center gap-1 text-[11px] leading-none select-none',
                 onlyImages
-                    ? 'rounded-full bg-black/45 px-2 py-1 text-white/90 backdrop-blur'
+                    ? 'rounded-chip bg-black/45 px-2 py-1 text-white/90 backdrop-blur'
                     : own
                       ? 'text-white/70'
                       : 'text-white/40',
@@ -243,11 +243,11 @@ export function MessageBubble({
                         bare
                             ? ''
                             : onlyImages
-                              ? 'overflow-hidden rounded-[18px]'
+                              ? 'overflow-hidden rounded-[14px]'
                               : cn(
-                                    'rounded-[20px] px-3.5 py-2',
+                                    'rounded-[14px] px-3.5 py-2',
                                     own
-                                        ? 'bg-gradient-to-br from-[#4f6bff] via-gc-indigo to-[#8b5cf6] text-white shadow-[0_8px_24px_-12px_rgb(109_93_252/0.9)]'
+                                        ? 'bg-primary text-white'
                                         : 'border border-white/[0.07] bg-white/[0.06] text-white/90 backdrop-blur-xl',
                                     own
                                         ? groupEnd

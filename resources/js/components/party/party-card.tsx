@@ -54,7 +54,7 @@ export function PartyCard({ party }: { party: PartyCardData }) {
     return (
         <Link
             href={party.href}
-            className="glass flex min-w-0 flex-col gap-3 rounded-3xl p-5 transition hover:border-white/15"
+            className="glass flex min-w-0 flex-col gap-3 rounded-2xl p-5 transition hover:border-white/15"
         >
             <div className="flex items-start gap-3">
                 <UserAvatar user={party.host} size="md" />
@@ -74,7 +74,7 @@ export function PartyCard({ party }: { party: PartyCardData }) {
                 </div>
                 <span
                     className={cn(
-                        'inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums',
+                        'inline-flex shrink-0 items-center gap-1 rounded-chip px-2.5 py-1 text-xs font-semibold tabular-nums',
                         full
                             ? 'bg-white/[0.06] text-white/50'
                             : 'bg-emerald-400/10 text-emerald-200',
@@ -88,7 +88,7 @@ export function PartyCard({ party }: { party: PartyCardData }) {
             <div className="flex flex-wrap gap-1.5 text-xs font-medium">
                 <span
                     className={cn(
-                        'inline-flex items-center gap-1 rounded-full px-2 py-0.5',
+                        'inline-flex items-center gap-1 rounded-chip px-2 py-0.5',
                         now
                             ? 'bg-gc-indigo/20 text-[#c4b5fd]'
                             : 'bg-white/[0.06] text-white/70',
@@ -110,7 +110,7 @@ export function PartyCard({ party }: { party: PartyCardData }) {
                     </span>
                 )}
                 {party.platform && (
-                    <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-white/70">
+                    <span className="rounded-chip bg-white/[0.06] px-2 py-0.5 text-white/70">
                         {PARTY_PLATFORMS()[party.platform] ?? party.platform}
                     </span>
                 )}

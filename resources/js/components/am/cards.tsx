@@ -62,7 +62,7 @@ export function stationTitle(station: StationCard): {
 
     return {
         title: tr('{name}: станція', { name: station.name }),
-        subtitle: tr('Безкінечний потік жанру'),
+        subtitle: tr('Нескінченний потік жанру'),
     };
 }
 

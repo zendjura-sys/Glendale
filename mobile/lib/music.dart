@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -46,13 +47,15 @@ Future<bool> uploadTrack(BuildContext context, {Map<String, dynamic>? limits}) a
   }
   if (!context.mounted) return false;
   final formats = [for (final f in (info['formats'] as List? ?? ['mp3', 'm4a', 'ogg', 'wav', 'flac'])) '$f'];
+  // Трек, завантажений за посиланням, теж оновлює список, навіть якщо аркуш закрили хрестиком.
+  var imported = false;
   final done = await showGcSheet<bool>(
     context,
     title: tr('Завантажити трек'),
     subtitle: tr('До {v} МБ · {v2}', {'v': info['max_mb'] ?? 20, 'v2': formats.join(', ')}),
-    builder: (sheet) => _UploadTrack(formats: formats, onDone: () => Navigator.pop(sheet, true)),
+    builder: (sheet) => _UploadTrack(formats: formats, onDone: () => Navigator.pop(sheet, true), onImported: () => imported = true),
   );
-  return done == true;
+  return done == true || imported;
 }
 
 String minutesLabel(dynamic seconds) {
@@ -388,9 +391,10 @@ class _LibraryTrackState extends State<LibraryTrack> {
 }
 
 class _UploadTrack extends StatefulWidget {
-  const _UploadTrack({required this.formats, required this.onDone});
+  const _UploadTrack({required this.formats, required this.onDone, this.onImported});
   final List<String> formats;
   final VoidCallback onDone;
+  final VoidCallback? onImported;
 
   @override
   State<_UploadTrack> createState() => _UploadTrackState();
@@ -408,6 +412,9 @@ class _UploadTrackState extends State<_UploadTrack> {
   final genre = TextEditingController();
   bool busy = false;
   bool searching = false;
+
+  /// «Файл» з телефона чи «За посиланням» (сервер сам завантажить файл).
+  String mode = 'file';
 
   @override
   void dispose() {
@@ -469,9 +476,24 @@ class _UploadTrackState extends State<_UploadTrack> {
 
   @override
   Widget build(BuildContext context) {
+    final modes = Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Segmented(
+        options: [SegmentOption('file', tr('Файл'), icon: LucideIcons.fileAudio), SegmentOption('link', tr('За посиланням'), icon: LucideIcons.link)],
+        selected: mode,
+        onSelect: busy ? (_) {} : (v) => setState(() => mode = v),
+      ),
+    );
+    if (mode == 'link') {
+      return SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [modes, TrackLinkImport(onImported: widget.onImported)]),
+      );
+    }
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        modes,
         GhostButton(label: audio == null ? tr('Обрати аудіофайл') : audio!.name, icon: LucideIcons.fileAudio, onPressed: busy ? null : _pick),
         if (searching) Padding(padding: const EdgeInsets.only(top: 8), child: Row(children: [const SizedBox.square(dimension: 14, child: CircularProgressIndicator(strokeWidth: 2)), const SizedBox(width: 8), Text(tr('Читаю теги й шукаю альбом…'), style: body(12.5, color: muted))])),
         const SizedBox(height: 12),
@@ -512,6 +534,217 @@ class _UploadTrackState extends State<_UploadTrack> {
           busy: busy,
           onPressed: audio != null && !searching && title.text.trim().isNotEmpty && artist.text.trim().isNotEmpty ? _submit : null,
         ),
+      ]),
+    );
+  }
+}
+
+/// «Завантажити за посиланням»: пряме посилання на файл чи хмарний диск — сервер сам
+/// завантажує трек у фоні. Нижче — останні імпорти зі статусом; поки якийсь іще в роботі
+/// й аркуш на екрані, список оновлюється кожні 3 с.
+class TrackLinkImport extends StatefulWidget {
+  const TrackLinkImport({this.onImported, super.key});
+
+  /// Якийсь імпорт щойно завершився — список треків варто оновити.
+  final VoidCallback? onImported;
+
+  @override
+  State<TrackLinkImport> createState() => TrackLinkImportState();
+}
+
+class TrackLinkImportState extends State<TrackLinkImport> {
+  static const poll = Duration(seconds: 3);
+  static const active = {'pending', 'downloading', 'processing'};
+
+  final url = TextEditingController();
+  final title = TextEditingController();
+  final artist = TextEditingController();
+  List<Map<String, dynamic>> imports = [];
+  bool busy = false;
+  String? error;
+  Timer? timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    for (final c in [url, title, artist]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      final json = await AppScope.read(context).session.api.get(Api.site('/music/imports'));
+      if (!mounted) return;
+      final next = maps(json['imports']);
+      final was = {for (final i in imports) i['id']: text(i['status'])};
+      if (next.any((i) => text(i['status']) == 'done' && was.containsKey(i['id']) && was[i['id']] != 'done')) widget.onImported?.call();
+      setState(() => imports = next);
+    } catch (_) {
+      // Мережа зникла — спробуємо на наступному колі.
+    }
+    _schedule();
+  }
+
+  /// Наступне опитування — лише поки є незавершені імпорти й екран видно.
+  void _schedule() {
+    timer?.cancel();
+    if (!mounted || !imports.any((i) => active.contains(text(i['status'])))) return;
+    timer = Timer(poll, () {
+      if (!mounted) return;
+      if (TickerMode.valuesOf(context).enabled) {
+        _load();
+      } else {
+        _schedule();
+      }
+    });
+  }
+
+  Future<void> _paste() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final value = text(data?.text);
+    if (value == null || !mounted) return;
+    setState(() {
+      url.text = value;
+      error = null;
+    });
+  }
+
+  Future<void> _submit() async {
+    final link = url.text.trim();
+    if (link.isEmpty) return;
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    try {
+      final json = await AppScope.read(context).session.api.post(Api.site('/music/tracks/import'), {
+        'url': link,
+        if (title.text.trim().isNotEmpty) 'title': title.text.trim(),
+        if (artist.text.trim().isNotEmpty) 'artist': artist.text.trim(),
+      });
+      if (!mounted) return;
+      final card = mapOf(json['import']);
+      setState(() {
+        if (card.isNotEmpty) imports = [card, ...imports.where((i) => i['id'] != card['id'])];
+        for (final c in [url, title, artist]) {
+          c.clear();
+        }
+      });
+      toast(context, tr('Посилання додано — трек завантажується'));
+      _schedule();
+    } catch (e) {
+      // Повідомлення сервера (422) показуємо як є: воно пояснює, що не так із посиланням.
+      if (mounted) setState(() => error = '$e');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _dismiss(Map<String, dynamic> item) async {
+    setState(() => imports = imports.where((i) => i['id'] != item['id']).toList());
+    try {
+      await AppScope.read(context).session.api.delete(Api.site('/music/imports/${item['id']}'));
+    } catch (e) {
+      if (mounted) toast(context, e);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Row(children: [
+        Expanded(child: GcField(controller: url, label: tr('https://…'), icon: LucideIcons.link, keyboard: TextInputType.url, onChanged: (_) => setState(() => error = null))),
+        const SizedBox(width: 8),
+        GhostButton(label: tr('Вставити'), icon: LucideIcons.clipboardPaste, expand: false, compact: true, onPressed: busy ? null : _paste),
+      ]),
+      const SizedBox(height: 8),
+      Text(tr('Пряме посилання на файл або посилання Google Диска, Dropbox чи OneDrive (доступ «усім, хто має посилання»).'), style: body(12.5, color: muted).copyWith(height: 1.4)),
+      if (error != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(error!, style: body(13, color: danger).copyWith(height: 1.35))),
+      const SizedBox(height: 12),
+      Row(children: [
+        Expanded(child: GcField(controller: title, label: tr('Назва (необов’язково)'), dense: true)),
+        const SizedBox(width: 10),
+        Expanded(child: GcField(controller: artist, label: tr('Виконавець (необов’язково)'), dense: true)),
+      ]),
+      const SizedBox(height: 16),
+      PrimaryButton(label: tr('Завантажити'), icon: LucideIcons.download, busy: busy, onPressed: url.text.trim().isEmpty ? null : _submit),
+      if (imports.isNotEmpty) ...[
+        const SizedBox(height: 20),
+        Text(tr('Останні завантаження'), style: body(14, weight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        for (final item in imports) Padding(padding: const EdgeInsets.only(bottom: 8), child: _ImportCard(item: item, onDismiss: () => _dismiss(item))),
+      ],
+    ]);
+  }
+}
+
+/// Один імпорт: джерело, статус, смужка прогресу, помилка чи «Слухати».
+class _ImportCard extends StatelessWidget {
+  const _ImportCard({required this.item, required this.onDismiss});
+  final Map<String, dynamic> item;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = text(item['status']) ?? 'pending';
+    final track = mapOf(item['track']);
+    final progress = item['progress'] == null ? null : intOf(item['progress']).clamp(0, 100);
+    final finished = status == 'done' || status == 'failed';
+    final label = switch (status) {
+      'downloading' => progress == null ? tr('Завантажується…') : tr('Завантажується… {v}%', {'v': progress}),
+      'processing' => tr('Обробка…'),
+      'done' => tr('Готово'),
+      'failed' => tr('Не вдалося'),
+      _ => tr('У черзі'),
+    };
+    final (icon, color) = switch (status) {
+      'done' => (LucideIcons.circleCheck, green),
+      'failed' => (LucideIcons.circleAlert, danger),
+      _ => (LucideIcons.loaderCircle, accent),
+    };
+    final name = track.isEmpty ? (text(item['host']) ?? text(item['url']) ?? '') : '${text(track['title']) ?? ''} · ${text(track['artist']) ?? ''}';
+    return Glass(
+      padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
+      radius: 18,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w600)),
+              const SizedBox(height: 2),
+              Text(label, style: body(12.5, color: status == 'failed' ? danger : muted)),
+            ]),
+          ),
+          if (finished) IconButton(visualDensity: VisualDensity.compact, tooltip: tr('Прибрати'), onPressed: onDismiss, icon: Icon(LucideIcons.x, size: 18, color: muted)),
+        ]),
+        if (!finished)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(28, 10, 8, 0),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(minHeight: 4, value: status == 'downloading' && progress != null ? progress / 100 : null, color: primary, backgroundColor: fg.withValues(alpha: 0.08)),
+            ),
+          ),
+        if (status == 'failed')
+          Padding(
+            padding: const EdgeInsets.fromLTRB(28, 6, 8, 0),
+            child: Text(text(item['error']) ?? tr('Не вдалося завантажити файл за посиланням.'), style: body(12.5, color: dangerSoft).copyWith(height: 1.35)),
+          ),
+        if (status == 'done' && track.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(28, 10, 8, 0),
+            child: Align(alignment: Alignment.centerLeft, child: GhostButton(label: tr('Слухати'), icon: LucideIcons.play, expand: false, compact: true, onPressed: () => playTracks(context, [track], 0))),
+          ),
       ]),
     );
   }

@@ -127,7 +127,7 @@ export default function CharacterEdit({
                     {tr('Назад')}
                 </Link>
 
-                <section className="glass space-y-5 rounded-3xl p-5 sm:p-6">
+                <section className="glass space-y-5 rounded-2xl p-5 sm:p-6">
                     <h1 className="flex items-center gap-2 font-display text-xl font-bold text-white">
                         <Drama className="size-5 text-gc-lilac-300" />
                         {character

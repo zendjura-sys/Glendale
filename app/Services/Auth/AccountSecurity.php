@@ -139,7 +139,7 @@ class AccountSecurity
             str_contains($agent, 'GameConApp') || str_contains($agent, 'Dart/') => 'Застосунок GameCon',
             str_contains($agent, 'Edg/') => 'Edge',
             str_contains($agent, 'OPR/') || str_contains($agent, 'Opera') => 'Opera',
-            str_contains($agent, 'YaBrowser') => 'Yandex',
+            str_contains($agent, 'YaBrowser') => 'Chromium',
             str_contains($agent, 'Firefox/') => 'Firefox',
             str_contains($agent, 'Chrome/') => 'Chrome',
             str_contains($agent, 'Safari/') => 'Safari',

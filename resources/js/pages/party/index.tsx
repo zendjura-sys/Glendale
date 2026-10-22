@@ -99,7 +99,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
         <>
             <Head title={tr('Пошук паті')} />
             <div className="space-y-5">
-                <section className="glass rounded-3xl p-5 sm:p-6">
+                <section className="glass rounded-2xl p-5 sm:p-6">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                         <div className="min-w-0 flex-1">
                             <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-white">
@@ -199,7 +199,7 @@ export default function PartyBoard({ parties, filters, options }: Props) {
             </div>
 
             <Dialog open={creating} onOpenChange={setCreating}>
-                <DialogContent className="glass-strong max-h-[92dvh] overflow-y-auto rounded-3xl border-white/10 p-6 text-white sm:max-w-lg">
+                <DialogContent className="glass-strong max-h-[92dvh] overflow-y-auto rounded-dialog border-white/10 p-6 text-white sm:max-w-lg">
                     <DialogTitle className="font-display text-xl">
                         {tr('Шукаю паті')}
                     </DialogTitle>

@@ -4,6 +4,7 @@ namespace App\Support\Modules;
 
 use App\Models\Module;
 use App\Models\User;
+use App\Services\Geo\CountryRestrictions;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
@@ -59,6 +60,14 @@ class ModuleManager
         }
 
         return $this->resolveEnabled($key, $this->definitions[$key], $this->state());
+    }
+
+    /** Розділ увімкнено на сайті, але закрито для країни відвідувача. */
+    public function blockedByCountry(string $key): bool
+    {
+        return $this->exists($key) && ! ($this->definitions[$key]['core'] ?? false)
+            && $this->enabledOnSite($key, $this->definitions[$key], $this->state())
+            && app(CountryRestrictions::class)->moduleBlocked($key);
     }
 
     public function set(string $key, bool $enabled): void
@@ -169,6 +178,22 @@ class ModuleManager
      * @param  array<string, bool>  $state
      */
     private function resolveEnabled(string $key, array $definition, array $state): bool
+    {
+        if ($definition['core'] ?? false) {
+            return (bool) ($definition['available'] ?? true);
+        }
+
+        // Розділ вимкнено для країни відвідувача (Адмінка → Країни → Обмеження).
+        return $this->enabledOnSite($key, $definition, $state) && ! app(CountryRestrictions::class)->moduleBlocked($key);
+    }
+
+    /**
+     * Стан для всього сайту, без урахування країни відвідувача.
+     *
+     * @param  array<string, mixed>  $definition
+     * @param  array<string, bool>  $state
+     */
+    private function enabledOnSite(string $key, array $definition, array $state): bool
     {
         if (! ($definition['available'] ?? true)) {
             return false;

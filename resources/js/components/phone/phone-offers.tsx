@@ -33,7 +33,7 @@ export function IncomingOffers({
     if (offers.length === 0) return null;
 
     return (
-        <section className="glass rounded-3xl p-5">
+        <section className="glass rounded-2xl p-5">
             <h3 className="mb-3 flex items-center gap-2 font-display text-base font-bold text-white">
                 <Gift className="size-4 text-pink-300" />
                 {tr('Вам пропонують номер')}
@@ -116,7 +116,7 @@ export function OutgoingOffers({
     if (offers.length === 0 && gifts.length === 0) return null;
 
     return (
-        <section className="glass rounded-3xl p-5">
+        <section className="glass rounded-2xl p-5">
             <h3 className="mb-3 flex items-center gap-2 font-display text-base font-bold text-white">
                 <Send className="size-4 text-white/50" />
                 {tr('Подарунки й передачі')}
