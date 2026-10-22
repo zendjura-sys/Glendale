@@ -531,10 +531,12 @@ class _IslandNavState extends State<IslandNav> {
                 child: SizedBox(
                   height: 16,
                   width: double.infinity,
+                  // Язичок майже впритул до верхнього краю острова (як на сайті).
                   child: Stack(
-                    alignment: Alignment.bottomCenter,
+                    alignment: Alignment.topCenter,
                     children: [
                       AnimatedContainer(
+                        margin: const EdgeInsets.only(top: 4),
                         duration: _motion(context, Duration(milliseconds: 200)),
                         width: 36,
                         height: 4,
