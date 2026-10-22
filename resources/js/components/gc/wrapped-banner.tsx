@@ -42,7 +42,7 @@ export function WrappedBanner() {
                     className="relative overflow-hidden rounded-3xl text-white"
                     style={{
                         background:
-                            'radial-gradient(90% 120% at 0% 0%, #4f46e5 0%, transparent 60%), radial-gradient(90% 120% at 100% 100%, #c026d3 0%, transparent 60%), #120b3d',
+                            'radial-gradient(90% 120% at 0% 0%, #2f7bff 0%, transparent 60%), radial-gradient(90% 120% at 100% 100%, #22d3ee 0%, transparent 60%), #050913',
                     }}
                 >
                     <Link

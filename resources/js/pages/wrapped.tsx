@@ -118,14 +118,14 @@ const PERSONAS: Record<Persona, { title: string; text: string }> = {
     },
 };
 
-/** Тло кожної картки: пласкі кольорові плями на глибокому індиго. */
+/** Тло кожної картки: пласкі плями неоново-синього й крижаної блакиті на нічному тлі (кольори проєкту). */
 const TONES = [
-    'radial-gradient(90% 60% at 20% 10%, #4f46e5 0%, transparent 60%), radial-gradient(80% 60% at 90% 90%, #c026d3 0%, transparent 60%), #120b3d',
-    'radial-gradient(90% 60% at 80% 0%, #db2777 0%, transparent 60%), radial-gradient(80% 60% at 0% 100%, #7c3aed 0%, transparent 60%), #1a0b33',
-    'radial-gradient(90% 60% at 10% 90%, #0891b2 0%, transparent 60%), radial-gradient(80% 60% at 100% 10%, #4f46e5 0%, transparent 60%), #0b1638',
-    'radial-gradient(90% 60% at 90% 80%, #9333ea 0%, transparent 60%), radial-gradient(80% 60% at 0% 0%, #2563eb 0%, transparent 60%), #120b3d',
-    'radial-gradient(90% 60% at 50% 0%, #e11d48 0%, transparent 60%), radial-gradient(80% 60% at 50% 100%, #f59e0b55 0%, transparent 60%), #1c0b22',
-    'radial-gradient(90% 60% at 0% 50%, #059669 0%, transparent 60%), radial-gradient(80% 60% at 100% 50%, #4f46e5 0%, transparent 60%), #08192a',
+    'radial-gradient(90% 60% at 20% 10%, #2f7bff 0%, transparent 60%), radial-gradient(80% 60% at 90% 90%, #22d3ee 0%, transparent 60%), #050913',
+    'radial-gradient(90% 60% at 80% 0%, #3d63ff 0%, transparent 60%), radial-gradient(80% 60% at 0% 100%, #1d6fe0 0%, transparent 60%), #071026',
+    'radial-gradient(90% 60% at 10% 90%, #22c4f0 0%, transparent 60%), radial-gradient(80% 60% at 100% 10%, #2a6cff 0%, transparent 60%), #0b1638',
+    'radial-gradient(90% 60% at 90% 80%, #4d9bff 0%, transparent 60%), radial-gradient(80% 60% at 0% 0%, #3d63ff 0%, transparent 60%), #050913',
+    'radial-gradient(90% 60% at 50% 0%, #a9c8ff 0%, transparent 60%), radial-gradient(80% 60% at 50% 100%, #2f7bff 0%, transparent 60%), #0b1638',
+    'radial-gradient(90% 60% at 0% 50%, #38e1ff 0%, transparent 60%), radial-gradient(80% 60% at 100% 50%, #3d63ff 0%, transparent 60%), #071026',
 ];
 
 type Slide = { key: string; render: () => ReactNode };
@@ -701,17 +701,17 @@ async function shareImage(w: Wrapped): Promise<Blob | null> {
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
-    ctx.fillStyle = '#120b3d';
+    ctx.fillStyle = '#050913';
     ctx.fillRect(0, 0, 1080, 1350);
     const glow = (x: number, y: number, r: number, color: string) => {
         const g = ctx.createRadialGradient(x, y, 0, x, y, r);
         g.addColorStop(0, color);
-        g.addColorStop(1, 'rgba(18,11,61,0)');
+        g.addColorStop(1, 'rgba(5,9,19,0)');
         ctx.fillStyle = g;
         ctx.fillRect(0, 0, 1080, 1350);
     };
-    glow(180, 160, 760, 'rgba(79,70,229,0.9)');
-    glow(960, 1250, 760, 'rgba(192,38,211,0.75)');
+    glow(180, 160, 760, 'rgba(47,123,255,0.9)');
+    glow(960, 1250, 760, 'rgba(34,211,238,0.7)');
 
     const font = (weight: number, size: number) =>
         `${weight} ${size}px Montserrat, system-ui, sans-serif`;
@@ -835,7 +835,7 @@ function Summary({ w }: { w: Wrapped }) {
                         type="button"
                         onClick={share}
                         disabled={busy}
-                        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-white px-6 font-semibold text-[#120b3d] transition hover:bg-white/90 disabled:opacity-60"
+                        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-white px-6 font-semibold text-[#050913] transition hover:bg-white/90 disabled:opacity-60"
                     >
                         {canShareFiles ? (
                             <Share2 className="size-5" />
@@ -884,7 +884,7 @@ function Teaser({ opensAt }: { opensAt: string }) {
                 </p>
                 <Link
                     href="/feed"
-                    className="mt-6 inline-flex min-h-12 items-center justify-center rounded-full bg-white px-6 font-semibold text-[#120b3d]"
+                    className="mt-6 inline-flex min-h-12 items-center justify-center rounded-full bg-white px-6 font-semibold text-[#050913]"
                 >
                     {tr('До стрічки')}
                 </Link>

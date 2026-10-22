@@ -31,11 +31,12 @@ class MusicCatalog
 
     /** Міксы «Для тебе»: ключ → кольори обкладинки (градієнт, як у Apple Music). */
     public const MIXES = [
-        'favorites' => ['#fa2d48', '#a01c6b'],
-        'discovery' => ['#5e5ce6', '#1e3a8a'],
-        'new' => ['#ff9f0a', '#d6336c'],
-        'friends' => ['#30d158', '#0a7aa8'],
-        'chill' => ['#64d2ff', '#5e5ce6'],
+        // Кольори проєкту: неоновий синій, блакить, лід — без «райдуги».
+        'favorites' => ['#2f7bff', '#1a2f7a'],
+        'discovery' => ['#3d63ff', '#0b1638'],
+        'new' => ['#22c4f0', '#2a6cff'],
+        'friends' => ['#4d9bff', '#123a8c'],
+        'chill' => ['#a9c8ff', '#2f7bff'],
     ];
 
     /** Жанри, з яких складається «Мікс для відпочинку». */
@@ -370,7 +371,7 @@ class MusicCatalog
             'key' => 'me',
             // Підписи («Станція {name}» тощо) — на клієнті через tr(): тут лише ключ і дані.
             'name' => $user->first_name ?: $user->name,
-            'colors' => ['#fa2d48', '#5e5ce6'],
+            'colors' => ['#2f7bff', '#22d3ee'],
             // Обкладинки того, що людина слухає найчастіше, — мозаїка на картці станції.
             'covers' => DB::table('music_plays')->where('user_id', $user->id)->whereNotNull('cover_url')
                 ->groupBy('cover_url')->selectRaw('cover_url, COUNT(*) as total')
@@ -830,7 +831,7 @@ class MusicCatalog
      */
     private function colorsFor(string $seed): array
     {
-        $palette = [['#fa2d48', '#a01c6b'], ['#5e5ce6', '#1e3a8a'], ['#ff9f0a', '#d6336c'], ['#30d158', '#0a7aa8'], ['#64d2ff', '#5e5ce6'], ['#bf5af2', '#5e5ce6'], ['#ff375f', '#ff9f0a']];
+        $palette = [['#2f7bff', '#1a2f7a'], ['#3d63ff', '#0b1638'], ['#22c4f0', '#2a6cff'], ['#4d9bff', '#123a8c'], ['#38e1ff', '#3d63ff'], ['#1d6fe0', '#22d3ee'], ['#7aa8ff', '#0d1b4a']];
 
         return $palette[crc32($seed) % count($palette)];
     }

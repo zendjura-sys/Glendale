@@ -17,12 +17,13 @@ const _slideTime = Duration(seconds: 7);
 
 /// Тло карток: пласкі кольорові плями на глибокому індиго (ті самі, що на сайті).
 const _tones = [
-  [Color(0xFF4F46E5), Color(0xFFC026D3), Color(0xFF120B3D)],
-  [Color(0xFFDB2777), Color(0xFF7C3AED), Color(0xFF1A0B33)],
-  [Color(0xFF0891B2), Color(0xFF4F46E5), Color(0xFF0B1638)],
-  [Color(0xFF9333EA), Color(0xFF2563EB), Color(0xFF120B3D)],
-  [Color(0xFFE11D48), Color(0xFFB45309), Color(0xFF1C0B22)],
-  [Color(0xFF059669), Color(0xFF4F46E5), Color(0xFF08192A)],
+  // Кольори проєкту: неоновий синій і крижана блакить на нічному тлі.
+  [Color(0xFF2F7BFF), Color(0xFF22D3EE), Color(0xFF050913)],
+  [Color(0xFF3D63FF), Color(0xFF1D6FE0), Color(0xFF071026)],
+  [Color(0xFF22C4F0), Color(0xFF2A6CFF), Color(0xFF0B1638)],
+  [Color(0xFF4D9BFF), Color(0xFF3D63FF), Color(0xFF050913)],
+  [Color(0xFFA9C8FF), Color(0xFF2F7BFF), Color(0xFF0B1638)],
+  [Color(0xFF38E1FF), Color(0xFF3D63FF), Color(0xFF071026)],
 ];
 
 Map<String, (String, String)> _personas() => {
@@ -171,8 +172,8 @@ class _Button extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 22),
           alignment: Alignment.center,
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            if (icon != null) ...[Icon(icon, size: 20, color: light ? const Color(0xFF120B3D) : Colors.white), const SizedBox(width: 8)],
-            Text(label, style: body(15.5, weight: FontWeight.w600, color: light ? const Color(0xFF120B3D) : Colors.white)),
+            if (icon != null) ...[Icon(icon, size: 20, color: light ? const Color(0xFF050913) : Colors.white), const SizedBox(width: 8)],
+            Text(label, style: body(15.5, weight: FontWeight.w600, color: light ? const Color(0xFF050913) : Colors.white)),
           ]),
         ),
       ),

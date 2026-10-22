@@ -69,7 +69,7 @@ export default function MusicReplay({ replay }: { replay: Replay }) {
             <div
                 className="mx-[var(--am-gutter)] rounded-2xl p-5 text-white"
                 style={{
-                    background: 'linear-gradient(145deg, #fa2d48, #5e5ce6)',
+                    background: 'linear-gradient(145deg, #2f7bff, #22c4f0)',
                 }}
             >
                 <p className="am-footnote font-semibold text-white/80">
