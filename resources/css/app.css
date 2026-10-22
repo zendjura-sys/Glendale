@@ -3465,6 +3465,11 @@ html[data-theme='dark'] .am {
     --am-glass-shadow: 0 8px 32px rgb(0 0 0 / 0.55);
     --am-tab-active: rgb(47 123 255 / 0.22);
 }
+/* Діалоги з меню «⋯» (поділитися, відомості, текст) — поверх відкритого «Зараз грає». */
+body:has([data-now-playing]) [data-slot='dialog-overlay'],
+body:has([data-now-playing]) [data-slot='dialog-content'] {
+    z-index: 85;
+}
 /* У розділі «Музика» тло сторінки — тло розділу (без сцен сайту). */
 html:has(.am) body {
     background: var(--am-bg, #050913);

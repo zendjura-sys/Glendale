@@ -1,22 +1,27 @@
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import {
     Airplay,
+    AudioLines,
+    Blend,
     Cast,
     ChevronDown,
     FastForward,
     GripHorizontal,
     Headphones,
     Infinity as InfinityIcon,
+    Languages,
     ListMusic,
     Loader2,
     MessageSquareQuote,
     MicVocal,
+    MoonStar,
     Pause,
     Play,
     Repeat,
     Repeat1,
     Rewind,
+    Share,
     Shuffle,
     Smartphone,
     Speaker,
@@ -28,10 +33,15 @@ import {
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import type { PanInfo } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
-import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
+import type {
+    CSSProperties,
+    PointerEvent as ReactPointerEvent,
+    ReactNode,
+} from 'react';
 import { toast } from 'sonner';
 import { TrackCover } from '@/components/music/track-cover';
 import { api } from '@/lib/api';
+import { setSing as setSingLevel } from '@/lib/audio-graph';
 import { useCoverColor } from '@/lib/cover-color';
 import { formatDuration } from '@/lib/format';
 import { tr } from '@/lib/i18n';
@@ -40,6 +50,7 @@ import type { Lyrics } from '@/lib/lyrics';
 import { EASE_OUT, motionOr, RISE, SNAP } from '@/lib/motion';
 import {
     audioElement,
+    getPlayerState,
     clearUpNext,
     cycleRepeat,
     jumpTo,
@@ -50,6 +61,10 @@ import {
     prev,
     removeFromQueue,
     seek,
+    setCrossfade,
+    setLyricsTranslate,
+    setNormalizeVolume,
+    setSleepTimer,
     setVolume,
     toggle,
     toggleAutoplay,
@@ -64,6 +79,7 @@ import {
     toggleFavorite,
     TrackMenu,
     useTrack,
+    useTrackActions,
 } from './track-actions';
 
 /**
@@ -135,58 +151,9 @@ function useLyrics(track: TrackCard | null): Lyrics | null | undefined {
     return lyrics;
 }
 
-// ───────────────────────── «Караоке»: приглушення голосу ─────────────────────────
+// ───────────────────────── «Караоке»: приглушення голосу (lib/audio-graph.ts) ─────────────────────────
 
-/**
- * Голос зазвичай у центрі стерео: різниця каналів (L − R) прибирає його, а басы під 180 Гц
- * повертаємо з оригіналу, щоб не зникли бочка й бас. level 0 — оригінал, 1 — без голосу.
- */
-let graph: {
-    ctx: AudioContext;
-    dry: GainNode;
-    wet: GainNode;
-    bass: GainNode;
-} | null = null;
-
-function setSing(level: number) {
-    try {
-        if (!graph) {
-            if (level === 0) return;
-            const ctx = new AudioContext();
-            const source = ctx.createMediaElementSource(audioElement());
-            const dry = ctx.createGain();
-            source.connect(dry).connect(ctx.destination);
-
-            const splitter = ctx.createChannelSplitter(2);
-            const left = ctx.createGain();
-            const right = ctx.createGain();
-            right.gain.value = -1;
-            const wet = ctx.createGain();
-            const merger = ctx.createChannelMerger(2);
-            source.connect(splitter);
-            splitter.connect(left, 0);
-            splitter.connect(right, 1);
-            left.connect(wet);
-            right.connect(wet);
-            wet.connect(merger, 0, 0);
-            wet.connect(merger, 0, 1);
-            merger.connect(ctx.destination);
-
-            const lowpass = ctx.createBiquadFilter();
-            lowpass.type = 'lowpass';
-            lowpass.frequency.value = 180;
-            const bass = ctx.createGain();
-            source.connect(lowpass).connect(bass).connect(ctx.destination);
-            graph = { ctx, dry, wet, bass };
-        }
-        void graph.ctx.resume();
-        graph.dry.gain.value = 1 - level;
-        graph.wet.gain.value = level * 0.9;
-        graph.bass.gain.value = level * 0.8;
-    } catch {
-        toast.error(tr('Караоке недоступне в цьому браузері.'));
-    }
-}
+const setSing = (level: number) => setSingLevel(audioElement(), level);
 
 // ───────────────────────── Вивід звуку ─────────────────────────
 
@@ -364,6 +331,7 @@ function OutputSheet({ onClose }: { onClose: () => void }) {
 
 function Progress({ live }: { live: boolean }) {
     const player = usePlayer();
+    const actions = useTrackActions();
     const bar = useRef<HTMLDivElement>(null);
     const [drag, setDrag] = useState<number | null>(null);
     const duration = player.duration;
@@ -433,13 +401,83 @@ function Progress({ live }: { live: boolean }) {
             </div>
             <div className="flex items-center justify-between text-[12px] font-medium text-white/60 tabular-nums">
                 <span>{formatDuration(position)}</span>
-                <QualityBadge
-                    quality={quality}
-                    className="bg-white/15 text-white/80"
-                />
+                {track && (quality === 'lossless' || quality === 'hires') ? (
+                    <button
+                        type="button"
+                        onClick={() => actions.info(track)}
+                        aria-label={tr('Відомості про пісню')}
+                    >
+                        <QualityBadge
+                            quality={quality}
+                            className="bg-white/15 text-white/80 transition hover:bg-white/25"
+                        />
+                    </button>
+                ) : null}
                 <span>-{formatDuration(Math.max(duration - position, 0))}</span>
             </div>
         </div>
+    );
+}
+
+/**
+ * «⏪ / ⏩» як в Apple Music: дотик — попередній чи наступний трек, утримання — перемотка
+ * (що довше тримаєш, то швидше).
+ */
+function SkipButton({
+    direction,
+    disabled,
+    label,
+    className,
+    children,
+}: {
+    direction: 1 | -1;
+    disabled: boolean;
+    label: string;
+    className: string;
+    children: ReactNode;
+}) {
+    const timer = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+    const held = useRef(false);
+    const since = useRef(0);
+
+    const stop = () => {
+        clearTimeout(timer.current);
+        clearInterval(timer.current);
+        timer.current = undefined;
+    };
+
+    return (
+        <button
+            type="button"
+            disabled={disabled}
+            aria-label={label}
+            className={className}
+            onPointerDown={() => {
+                held.current = false;
+                since.current = Date.now();
+                timer.current = setTimeout(() => {
+                    held.current = true;
+                    timer.current = setInterval(() => {
+                        const speed = Date.now() - since.current > 2500 ? 6 : 2;
+                        seek(getPlayerState().position + direction * speed);
+                    }, 200);
+                }, 400);
+            }}
+            onPointerUp={stop}
+            onPointerLeave={stop}
+            onPointerCancel={stop}
+            onClick={() => {
+                if (held.current) {
+                    held.current = false;
+
+                    return;
+                }
+                if (direction > 0) next();
+                else prev();
+            }}
+        >
+            {children}
+        </button>
     );
 }
 
@@ -451,15 +489,14 @@ function Controls({ live }: { live: boolean }) {
 
     return (
         <div className="flex items-center justify-around py-2">
-            <button
-                type="button"
-                onClick={prev}
+            <SkipButton
+                direction={-1}
                 disabled={live}
-                aria-label={tr('Попередній')}
+                label={tr('Попередній')}
                 className={btn}
             >
                 <Rewind className="size-9 fill-current" />
-            </button>
+            </SkipButton>
             <m.button
                 type="button"
                 onClick={toggle}
@@ -476,15 +513,14 @@ function Controls({ live }: { live: boolean }) {
                     <Play className="ml-1 size-12 fill-current" />
                 )}
             </m.button>
-            <button
-                type="button"
-                onClick={next}
+            <SkipButton
+                direction={1}
                 disabled={live}
-                aria-label={tr('Наступний')}
+                label={tr('Наступний')}
                 className={btn}
             >
                 <FastForward className="size-9 fill-current" />
-            </button>
+            </SkipButton>
         </div>
     );
 }
@@ -636,16 +672,172 @@ function TitleRow({ track, compact }: { track: TrackCard; compact?: boolean }) {
     );
 }
 
+/** Рядки тексту без міток часу — так само, як їх бачить перекладач на сервері (ContentTranslator::lyrics). */
+function sourceLines(text: string): string[] {
+    return text
+        .replace(/\r/g, '')
+        .split('\n')
+        .map((line) => line.replace(/^(\[[0-9:.]+\]\s*)+/, '').trim())
+        .filter((line) => !/^\[[a-z]+:.*\]$/i.test(line));
+}
+
+/** Переклад тексту пісні (DeepL, як для дописів): «оригінальний рядок → переклад». */
+function useLyricsTranslation(trackId: number | null, enabled: boolean) {
+    const [map, setMap] = useState<Map<string, string> | null>(null);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        setMap(null);
+        if (!enabled || trackId === null) return;
+        let alive = true;
+        setLoading(true);
+        void Promise.all([
+            api<{ lyrics: string | null }>(
+                'GET',
+                `/music/tracks/${trackId}/lyrics`,
+            ),
+            api<{ translation: string; same: boolean }>('POST', '/translate', {
+                type: 'track',
+                id: trackId,
+            }),
+        ])
+            .then(([source, result]) => {
+                if (!alive || result.same || !source.lyrics) return;
+                const original = sourceLines(source.lyrics);
+                const translated = result.translation.split('\n');
+                const next = new Map<string, string>();
+                original.forEach((line, i) => {
+                    const t = translated[i]?.trim();
+                    if (line && t && t !== line) next.set(line, t);
+                });
+                setMap(next);
+            })
+            .catch(() => {
+                if (alive) toast.error(tr('Не вдалося перекласти текст.'));
+            })
+            .finally(() => alive && setLoading(false));
+
+        return () => {
+            alive = false;
+        };
+    }, [trackId, enabled]);
+
+    return { map, loading };
+}
+
+/** Картка з рядками пісні для «Поділитися» (1080×1350): колір обкладинки, назва, рядки, GameCon. */
+async function lyricsCard(
+    lines: string[],
+    track: TrackCard,
+    tint: string | null,
+): Promise<Blob | null> {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1350;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    const base = tint ? `rgb(${tint})` : '#1d4fd1';
+    const g = ctx.createLinearGradient(0, 0, 0, 1350);
+    g.addColorStop(0, base);
+    g.addColorStop(1, '#050913');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 1080, 1350);
+    const font = (w: number, size: number) =>
+        `${w} ${size}px -apple-system, 'SF Pro Display', Inter, 'Segoe UI', Roboto, sans-serif`;
+
+    let x = 96;
+    if (track.cover_url) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = track.cover_url;
+        try {
+            await img.decode();
+            ctx.save();
+            ctx.beginPath();
+            ctx.roundRect(96, 110, 150, 150, 18);
+            ctx.clip();
+            ctx.drawImage(img, 96, 110, 150, 150);
+            ctx.restore();
+            x = 280;
+        } catch {
+            // Обкладинка з іншого домену без дозволу — картка без неї.
+        }
+    }
+    ctx.fillStyle = '#ffffff';
+    ctx.font = font(700, 44);
+    ctx.fillText(track.title.slice(0, 32), x, 175);
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = font(500, 36);
+    ctx.fillText(track.artist.slice(0, 36), x, 228);
+
+    // Рядки: великим жирним шрифтом, з переносом за шириною.
+    ctx.fillStyle = '#ffffff';
+    ctx.font = font(800, 66);
+    let y = 420;
+    for (const line of lines) {
+        let row = '';
+        for (const word of line.split(' ')) {
+            const test = row ? `${row} ${word}` : word;
+            if (ctx.measureText(test).width > 888 && row) {
+                ctx.fillText(row, 96, y);
+                y += 82;
+                row = word;
+            } else row = test;
+        }
+        ctx.fillText(row, 96, y);
+        y += 104;
+        if (y > 1180) break;
+    }
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.font = font(700, 34);
+    ctx.fillText('GameCon', 96, 1270);
+
+    return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+}
+
+async function shareLyrics(
+    lines: string[],
+    track: TrackCard,
+    tint: string | null,
+) {
+    const blob = await lyricsCard(lines, track, tint);
+    if (!blob) return;
+    const file = new File([blob], 'gamecon-lyrics.png', { type: 'image/png' });
+    try {
+        if (navigator.canShare?.({ files: [file] })) {
+            await navigator.share({
+                files: [file],
+                title: `${track.title} — ${track.artist}`,
+            });
+
+            return;
+        }
+    } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError')
+            return;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file.name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast.success(tr('Картку з текстом збережено.'));
+}
+
 function LyricsPanel({
     lyrics,
     singing,
     onSing,
+    tint,
 }: {
     lyrics: Lyrics;
     singing: number;
     onSing: (v: number) => void;
+    tint: string | null;
 }) {
     const player = usePlayer();
+    const { site } = usePage().props;
     const reduce = useReducedMotion();
     const box = useRef<HTMLDivElement>(null);
     const touched = useRef(0);
@@ -653,18 +845,52 @@ function LyricsPanel({
         ? activeLine(lyrics.lines, player.position)
         : -1;
     const [singOpen, setSingOpen] = useState(false);
-    const local = player.current?.source === 'local';
+    const [selecting, setSelecting] = useState(false);
+    const [picked, setPicked] = useState<number[]>([]);
+    const track = player.current;
+    const local = track?.source === 'local' ? track : null;
+    const canTranslate = !!local && !!site.translate;
+    const { map: translation, loading: translating } = useLyricsTranslation(
+        local?.id ?? null,
+        canTranslate && player.lyricsTranslate,
+    );
+
+    useEffect(() => {
+        setSelecting(false);
+        setPicked([]);
+    }, [track?.key]);
 
     useEffect(() => {
         const el = box.current;
-        if (!el || current < 0 || Date.now() - touched.current < 3000) return;
+        if (
+            !el ||
+            selecting ||
+            current < 0 ||
+            Date.now() - touched.current < 3000
+        )
+            return;
         const line = el.querySelector<HTMLElement>(`[data-line="${current}"]`);
         if (!line) return;
         el.scrollTo({
             top: line.offsetTop - el.clientHeight * 0.3,
             behavior: reduce ? 'auto' : 'smooth',
         });
-    }, [current, reduce]);
+    }, [current, reduce, selecting]);
+
+    const pick = (i: number) =>
+        setPicked((list) =>
+            list.includes(i)
+                ? list.filter((n) => n !== i)
+                : list.length >= 6
+                  ? list
+                  : [...list, i].sort((a, b) => a - b),
+        );
+
+    const tool = (on: boolean) =>
+        cn(
+            'flex h-9 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold backdrop-blur-xl transition',
+            on ? 'bg-white text-black' : 'bg-white/20 text-white',
+        );
 
     return (
         <div className="relative h-full min-h-0">
@@ -675,44 +901,127 @@ function LyricsPanel({
                 className="h-full [scrollbar-width:none] overflow-y-auto overscroll-contain [mask-image:linear-gradient(transparent,#000_8%,#000_80%,transparent)]"
             >
                 <div className="py-[18%] pr-14">
-                    {lyrics.timed ? (
-                        lyrics.lines.map((line, i) => {
-                            const distance =
-                                current < 0 ? 2 : Math.abs(i - current);
+                    {lyrics.lines.map((line, i) => {
+                        const timed = lyrics.timed;
+                        const distance =
+                            current < 0 ? 2 : Math.abs(i - current);
+                        const active = !timed || i === current;
+                        const chosen = picked.includes(i);
+                        const translated = translation?.get(line.text);
 
-                            return (
-                                <button
-                                    key={i}
-                                    type="button"
-                                    data-line={i}
-                                    onClick={() => seek(line.time ?? 0)}
-                                    style={{
-                                        filter:
-                                            reduce || i === current
-                                                ? undefined
-                                                : `blur(${Math.min(distance, 3) * 0.6}px)`,
-                                    }}
-                                    className={cn(
-                                        'block w-full origin-left py-2 text-left text-[30px] leading-[1.15] font-bold tracking-tight transition-[color,filter,transform] duration-500 lg:text-[36px]',
-                                        i === current
-                                            ? 'scale-100 text-white'
-                                            : 'scale-[0.98] text-white/35 hover:text-white/60',
-                                    )}
-                                >
-                                    {line.text || '♪'}
-                                </button>
-                            );
-                        })
-                    ) : (
-                        <p className="text-[24px] leading-snug font-bold whitespace-pre-wrap text-white/85">
-                            {lyrics.lines.map((l) => l.text).join('\n')}
-                        </p>
-                    )}
+                        return (
+                            <button
+                                key={i}
+                                type="button"
+                                data-line={i}
+                                onClick={() =>
+                                    selecting
+                                        ? pick(i)
+                                        : timed && seek(line.time ?? 0)
+                                }
+                                style={{
+                                    filter:
+                                        reduce || active || selecting
+                                            ? undefined
+                                            : `blur(${Math.min(distance, 3) * 0.6}px)`,
+                                }}
+                                className={cn(
+                                    'block w-full origin-left rounded-xl py-2 text-left font-bold tracking-tight transition-[color,filter,transform,background-color] duration-500',
+                                    timed
+                                        ? 'text-[30px] leading-[1.15] lg:text-[36px]'
+                                        : 'text-[24px] leading-snug',
+                                    selecting
+                                        ? chosen
+                                            ? 'bg-white/20 px-2 text-white'
+                                            : 'px-2 text-white/45'
+                                        : timed && i === current
+                                          ? 'scale-100 text-white'
+                                          : timed
+                                            ? 'scale-[0.98] text-white/35 hover:text-white/60'
+                                            : 'text-white/85',
+                                )}
+                            >
+                                {line.text || '♪'}
+                                {translated && (
+                                    <span className="mt-1 block text-[17px] leading-snug font-semibold text-white/60 lg:text-[19px]">
+                                        {translated}
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
+            {/* Верхні дії: переклад (вмикається й вимикається) і «Поділитися рядками». */}
+            <div className="absolute top-0 right-0 flex gap-1.5">
+                {canTranslate && (
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setLyricsTranslate(!player.lyricsTranslate)
+                        }
+                        aria-pressed={player.lyricsTranslate}
+                        title={
+                            player.lyricsTranslate
+                                ? tr('Вимкнути переклад')
+                                : tr('Показувати переклад')
+                        }
+                        className={tool(player.lyricsTranslate)}
+                    >
+                        {translating ? (
+                            <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                            <Languages className="size-4" />
+                        )}
+                        {tr('Переклад')}
+                    </button>
+                )}
+                <button
+                    type="button"
+                    onClick={() => {
+                        setSelecting((s) => !s);
+                        setPicked(current >= 0 ? [current] : []);
+                    }}
+                    aria-pressed={selecting}
+                    aria-label={tr('Поділитися рядками')}
+                    className={tool(selecting)}
+                >
+                    {selecting ? (
+                        <X className="size-4" />
+                    ) : (
+                        <Share className="size-4" />
+                    )}
+                </button>
+            </div>
+
+            {selecting && track && (
+                <div className="absolute inset-x-0 bottom-4 flex justify-center">
+                    <button
+                        type="button"
+                        disabled={picked.length === 0}
+                        onClick={() =>
+                            void shareLyrics(
+                                picked.map((i) => lyrics.lines[i].text),
+                                track,
+                                tint,
+                            ).then(() => {
+                                setSelecting(false);
+                                setPicked([]);
+                            })
+                        }
+                        className="flex h-11 items-center gap-2 rounded-full bg-white px-5 text-[15px] font-semibold text-black shadow-xl disabled:opacity-50"
+                    >
+                        <Share className="size-4" />
+                        {picked.length > 0
+                            ? tr('Поділитися ({n})', { n: picked.length })
+                            : tr('Оберіть рядки')}
+                    </button>
+                </div>
+            )}
+
             {/* «Караоке»: кнопка-мікрофон і вертикальний повзунок гучності голосу, як Apple Music Sing. */}
-            {local && (
+            {local && !selecting && (
                 <div className="absolute right-0 bottom-4 flex flex-col items-center gap-2">
                     <AnimatePresence>
                         {singOpen && (
@@ -846,6 +1155,138 @@ function QueueRow({
     );
 }
 
+const CROSSFADE = [0, 3, 6, 9, 12];
+const SLEEP: (number | 'track')[] = [15, 30, 45, 60, 'track'];
+
+/**
+ * «Звук» під чергою: плавні переходи (Crossfade), вирівнювання гучності (Sound Check) і таймер сну.
+ * Налаштування переходів і гучності запам’ятовуються в браузері.
+ */
+function PlaybackSettings() {
+    const player = usePlayer();
+    const { site } = usePage().props;
+    const [, tick] = useState(0);
+    const minutesLeft =
+        typeof player.sleep === 'number'
+            ? Math.max(Math.ceil((player.sleep - Date.now()) / 60_000), 0)
+            : null;
+
+    useEffect(() => {
+        if (typeof player.sleep !== 'number') return;
+        const id = setInterval(() => tick((n) => n + 1), 15_000);
+
+        return () => clearInterval(id);
+    }, [player.sleep]);
+
+    const chip = (on: boolean) =>
+        cn(
+            'h-8 shrink-0 rounded-full px-3 text-[13px] font-semibold transition',
+            on
+                ? 'bg-white text-black'
+                : 'bg-white/12 text-white/85 hover:bg-white/20',
+        );
+
+    return (
+        <div className="mt-6 space-y-4 border-t border-white/10 pt-4 pb-2">
+            <p className="text-[17px] font-semibold text-white">{tr('Звук')}</p>
+            <div>
+                <p className="flex items-center gap-2 text-[13px] text-white/60">
+                    <Blend className="size-4" />
+                    {tr('Плавні переходи між треками')}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                    {CROSSFADE.map((sec) => (
+                        <button
+                            key={sec}
+                            type="button"
+                            onClick={() => setCrossfade(sec)}
+                            aria-pressed={player.crossfade === sec}
+                            className={chip(player.crossfade === sec)}
+                        >
+                            {sec === 0 ? tr('Вимк.') : tr('{n} с', { n: sec })}
+                        </button>
+                    ))}
+                </div>
+            </div>
+            <label className="flex cursor-pointer items-center justify-between gap-3">
+                <span className="min-w-0">
+                    <span className="flex items-center gap-2 text-[15px] text-white">
+                        <AudioLines className="size-4" />
+                        {tr('Вирівнювання гучності')}
+                    </span>
+                    <span className="block text-[12px] text-white/50">
+                        {tr('Тихі й гучні пісні звучать однаково')}
+                    </span>
+                </span>
+                <input
+                    type="checkbox"
+                    checked={player.normalize}
+                    onChange={(e) => setNormalizeVolume(e.target.checked)}
+                    className="size-5 shrink-0 accent-[var(--am-accent)]"
+                />
+            </label>
+            {site.translate && (
+                <label className="flex cursor-pointer items-center justify-between gap-3">
+                    <span className="min-w-0">
+                        <span className="flex items-center gap-2 text-[15px] text-white">
+                            <Languages className="size-4" />
+                            {tr('Переклад тексту пісень')}
+                        </span>
+                        <span className="block text-[12px] text-white/50">
+                            {tr('Переклад під кожним рядком; можна вимкнути')}
+                        </span>
+                    </span>
+                    <input
+                        type="checkbox"
+                        checked={player.lyricsTranslate}
+                        onChange={(e) => setLyricsTranslate(e.target.checked)}
+                        className="size-5 shrink-0 accent-[var(--am-accent)]"
+                    />
+                </label>
+            )}
+            <div>
+                <p className="flex items-center gap-2 text-[13px] text-white/60">
+                    <MoonStar className="size-4" />
+                    {player.sleep === 'track'
+                        ? tr('Таймер сну: наприкінці треку')
+                        : minutesLeft !== null
+                          ? tr('Таймер сну: зупиниться через {n} хв', {
+                                n: minutesLeft,
+                            })
+                          : tr('Таймер сну')}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                    {SLEEP.map((value) => (
+                        <button
+                            key={value}
+                            type="button"
+                            onClick={() => setSleepTimer(value)}
+                            className={chip(
+                                value === 'track'
+                                    ? player.sleep === 'track'
+                                    : false,
+                            )}
+                        >
+                            {value === 'track'
+                                ? tr('Кінець треку')
+                                : tr('{n} хв', { n: value })}
+                        </button>
+                    ))}
+                    {player.sleep !== null && (
+                        <button
+                            type="button"
+                            onClick={() => setSleepTimer(null)}
+                            className={chip(false)}
+                        >
+                            {tr('Вимкнути')}
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function QueuePanel() {
     const player = usePlayer();
     const upcoming = player.queue.slice(player.index + 1);
@@ -935,6 +1376,23 @@ function QueuePanel() {
                         </button>
                     )}
                 </div>
+                {player.from && (
+                    <p className="truncate text-[13px] text-white/55">
+                        {tr('Грає з:')}{' '}
+                        {player.from.href ? (
+                            <Link
+                                href={player.from.href}
+                                className="font-semibold text-white/80 hover:underline"
+                            >
+                                {player.from.label}
+                            </Link>
+                        ) : (
+                            <span className="font-semibold text-white/80">
+                                {player.from.label}
+                            </span>
+                        )}
+                    </p>
+                )}
                 {player.station && (
                     <p className="text-[13px] text-white/55">
                         {tr('Зі станції — нові треки додаються самі')}
@@ -971,6 +1429,7 @@ function QueuePanel() {
                         {tr('Черга порожня')}
                     </p>
                 )}
+                <PlaybackSettings />
             </div>
         </div>
     );
@@ -996,10 +1455,12 @@ function LyricsArea({
     lyrics,
     singing,
     onSing,
+    tint,
 }: {
     lyrics: Lyrics | null | undefined;
     singing: number;
     onSing: (v: number) => void;
+    tint: string | null;
 }) {
     if (lyrics === undefined) {
         return (
@@ -1022,7 +1483,14 @@ function LyricsArea({
         );
     }
 
-    return <LyricsPanel lyrics={lyrics} singing={singing} onSing={onSing} />;
+    return (
+        <LyricsPanel
+            lyrics={lyrics}
+            singing={singing}
+            onSing={onSing}
+            tint={tint}
+        />
+    );
 }
 
 export function NowPlaying({
@@ -1083,7 +1551,12 @@ export function NowPlaying({
 
     const panelBody =
         panel === 'lyrics' ? (
-            <LyricsArea lyrics={lyrics} singing={singing} onSing={sing} />
+            <LyricsArea
+                lyrics={lyrics}
+                singing={singing}
+                onSing={sing}
+                tint={tint}
+            />
         ) : (
             <QueuePanel />
         );
@@ -1120,6 +1593,7 @@ export function NowPlaying({
                                     )
                                         close();
                                 }}
+                                data-now-playing
                                 className="am fixed inset-0 z-[70] overflow-hidden text-white focus:outline-none"
                                 style={{ background: base }}
                             >
@@ -1250,6 +1724,7 @@ export function NowPlaying({
                                                     lyrics={lyrics}
                                                     singing={singing}
                                                     onSing={sing}
+                                                    tint={tint}
                                                 />
                                             )}
                                         </div>

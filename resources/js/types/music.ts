@@ -25,6 +25,14 @@ export type LocalTrack = BaseTrack & {
     year?: number | null;
     /** lossy, lossless (до 48 кГц) або hires (понад 48 кГц). */
     quality?: 'lossy' | 'lossless' | 'hires' | null;
+    /** Формат файлу (ffprobe): кодек, частота, розрядність, бітрейт (кбіт/с), канали. */
+    audio?: {
+        codec: string;
+        sample_rate: number | null;
+        bit_depth: number | null;
+        bitrate: number | null;
+        channels: number | null;
+    } | null;
 };
 
 export type SpotifyTrack = BaseTrack & {

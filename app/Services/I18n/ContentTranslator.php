@@ -6,6 +6,7 @@ use App\Models\Comment;
 use App\Models\Message;
 use App\Models\Photo;
 use App\Models\Post;
+use App\Models\Track;
 use App\Models\User;
 use App\Services\FriendshipService;
 use App\Services\PhotoService;
@@ -20,7 +21,7 @@ use Illuminate\Validation\ValidationException;
  */
 class ContentTranslator
 {
-    public const TYPES = ['post', 'comment', 'message'];
+    public const TYPES = ['post', 'comment', 'message', 'track'];
 
     public function __construct(
         private readonly DeepL $deepl,
@@ -73,6 +74,7 @@ class ContentTranslator
             'post' => Post::query()->visibleTo($user, $this->friendships->friendIds($user))->whereKey($id)->value('body'),
             'comment' => $this->comment($id, $user),
             'message' => $this->message($id, $user),
+            'track' => $this->lyrics($id),
             default => null,
         };
     }
@@ -95,6 +97,21 @@ class ContentTranslator
         }
 
         return $comment->body;
+    }
+
+    /**
+     * Текст пісні без часових міток LRC — рядок у рядок, щоб переклад лягав під оригінал.
+     */
+    private function lyrics(int $id): ?string
+    {
+        $lyrics = Track::query()->whereKey($id)->value('lyrics');
+        if (! is_string($lyrics) || trim($lyrics) === '') {
+            return null;
+        }
+        $lines = array_map(fn (string $line) => trim((string) preg_replace('/^(\[[0-9:.]+\]\s*)+/', '', $line)), preg_split('/\R/', $lyrics) ?: []);
+        $lines = array_filter($lines, fn (string $line) => ! preg_match('/^\[[a-z]+:.*\]$/i', $line));
+
+        return implode("\n", $lines);
     }
 
     private function message(int $id, User $user): ?string

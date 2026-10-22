@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import type { SpotifyTrack, TrackCard } from '@/types';
+import { resumeAudioGraph, setNormalize } from '@/lib/audio-graph';
 import { tr } from '@/lib/i18n';
 
 /**
@@ -34,7 +35,19 @@ export type PlayerState = {
     station: string | null;
     /** Щойно зіграні треки (історія в «Далі в черзі»). */
     played: TrackCard[];
+    /** «Грає з…» — звідки черга: альбом, плейлист, станція (підпис і посилання над чергою). */
+    from: PlayFrom | null;
+    /** Плавні переходи між треками, секунди (0 — вимкнено). */
+    crossfade: number;
+    /** «Вирівнювання гучності» (як Sound Check). */
+    normalize: boolean;
+    /** Таймер сну: час зупинки (мс) або «наприкінці треку». */
+    sleep: number | 'track' | null;
+    /** Показувати переклад під рядками тексту пісні (можна вимкнути). */
+    lyricsTranslate: boolean;
 };
+
+export type PlayFrom = { label: string; href?: string | null };
 
 type SpotifyAuth = { connected: boolean; premium: boolean };
 
@@ -46,6 +59,9 @@ const saved = (() => {
             shuffle?: boolean;
             repeat?: RepeatMode;
             autoplay?: boolean;
+            crossfade?: number;
+            normalize?: boolean;
+            lyricsTranslate?: boolean;
         };
     } catch {
         return {};
@@ -68,6 +84,11 @@ let state: PlayerState = {
     autoplay: saved.autoplay ?? true,
     station: null,
     played: [],
+    from: null,
+    crossfade: saved.crossfade ?? 0,
+    normalize: saved.normalize ?? false,
+    sleep: null,
+    lyricsTranslate: saved.lyricsTranslate ?? false,
 };
 
 const listeners = new Set<() => void>();
@@ -85,7 +106,10 @@ function set(patch: Partial<PlayerState>) {
         'volume' in patch ||
         'shuffle' in patch ||
         'repeat' in patch ||
-        'autoplay' in patch
+        'autoplay' in patch ||
+        'crossfade' in patch ||
+        'normalize' in patch ||
+        'lyricsTranslate' in patch
     ) {
         try {
             localStorage.setItem(
@@ -95,6 +119,9 @@ function set(patch: Partial<PlayerState>) {
                     shuffle: state.shuffle,
                     repeat: state.repeat,
                     autoplay: state.autoplay,
+                    crossfade: state.crossfade,
+                    normalize: state.normalize,
+                    lyricsTranslate: state.lyricsTranslate,
                 }),
             );
         } catch {
@@ -116,6 +143,12 @@ export function usePlayer(): PlayerState {
 export function getPlayerState(): PlayerState {
     return state;
 }
+
+/** Множник гучності для плавного переходу (1 — без затухання). */
+let fadeLevel = 1;
+let fadeTimer: ReturnType<typeof setInterval> | undefined;
+let fadeInNext = false;
+let fadingIn = false;
 
 const effectiveVolume = () => (state.muted ? 0 : state.volume);
 
@@ -171,7 +204,27 @@ function audioEl(): HTMLAudioElement {
     audio = new Audio();
     audio.preload = 'auto';
     audio.addEventListener('timeupdate', () => {
-        if (state.engine === 'audio') set({ position: audio!.currentTime });
+        if (state.engine !== 'audio') return;
+        set({ position: audio!.currentTime });
+        // Плавний перехід: останні секунди треку затихають, наступний з’являється з тиші.
+        const left = audio!.duration - audio!.currentTime;
+        if (
+            state.crossfade > 0 &&
+            state.repeat !== 'one' &&
+            state.sleep !== 'track' &&
+            Number.isFinite(left) &&
+            audio!.duration > state.crossfade * 3 &&
+            left <= state.crossfade
+        ) {
+            clearInterval(fadeTimer);
+            fadingIn = false;
+            fadeLevel = Math.max(left / state.crossfade, 0);
+            audio!.volume = effectiveVolume() * fadeLevel;
+        } else if (fadeLevel < 1 && !fadingIn) {
+            // Перемотали назад під час затухання — гучність повертається.
+            fadeLevel = 1;
+            audio!.volume = effectiveVolume();
+        }
     });
     audio.addEventListener('loadedmetadata', () => {
         if (state.engine === 'audio' && Number.isFinite(audio!.duration))
@@ -555,7 +608,10 @@ async function start(index: number) {
             const el = audioEl();
             set({ engine: 'audio' });
             el.src = track.url;
-            el.volume = effectiveVolume();
+            if (state.normalize) setNormalize(el, true);
+            resumeAudioGraph();
+            fadeIn(el, fadeInNext && state.crossfade > 0);
+            fadeInNext = false;
             await el.play();
 
             return;
@@ -603,6 +659,13 @@ function onEnded() {
     const marker = `${state.index}:${state.current?.key}`;
     if (endedFor === marker) return;
     endedFor = marker;
+
+    if (state.sleep === 'track') {
+        set({ sleep: null, playing: false });
+
+        return;
+    }
+    fadeInNext = true;
 
     if (state.repeat === 'one') {
         void start(state.index);
@@ -654,7 +717,7 @@ async function extend(): Promise<boolean> {
 }
 
 /** Безкінечна станція: перша порція одразу, далі — підвантажується, коли черга закінчується. */
-export async function playStation(key: string) {
+export async function playStation(key: string, label?: string) {
     set({ station: key });
     try {
         const params = new URLSearchParams({ key });
@@ -668,7 +731,12 @@ export async function playStation(key: string) {
             return;
         }
         history = [];
-        set({ queue: tracks, index: 0, station: key });
+        set({
+            queue: tracks,
+            index: 0,
+            station: key,
+            from: label ? { label } : pageSource(),
+        });
         void start(0);
     } catch {
         toast.error(tr('Не вдалося запустити станцію.'));
@@ -710,21 +778,33 @@ export function setSpotifyAuth(auth: SpotifyAuth) {
     spotifyAuth = auth;
 }
 
-export function playQueue(tracks: TrackCard[], index = 0) {
+export function playQueue(
+    tracks: TrackCard[],
+    index = 0,
+    from: PlayFrom | null = null,
+) {
     if (tracks.length === 0) return;
     const current = state.current;
     const target = tracks[index];
 
     if (current && target && current.key === target.key) {
-        set({ queue: tracks, index });
+        set({ queue: tracks, index, from: from ?? state.from });
         toggle();
 
         return;
     }
 
     history = [];
-    set({ queue: tracks, index, station: null });
+    set({ queue: tracks, index, station: null, from: from ?? pageSource() });
     void start(index);
+}
+
+/** «Грає з…» за замовчуванням — сторінка, з якої запустили (назва без « · GameCon» і посилання). */
+function pageSource(): PlayFrom | null {
+    if (typeof document === 'undefined') return null;
+    const label = document.title.split(' · ').slice(0, -1).join(' · ');
+
+    return label ? { label, href: location.pathname + location.search } : null;
 }
 
 export function shuffled<T>(items: T[]): T[] {
@@ -772,6 +852,7 @@ export function toggle() {
     switch (state.engine) {
         case 'audio': {
             const el = audioEl();
+            resumeAudioGraph();
             if (el.paused) void el.play().catch(() => {});
             else el.pause();
             break;
@@ -840,7 +921,7 @@ export function toggleMute() {
 }
 
 function applyVolume() {
-    if (audio) audio.volume = effectiveVolume();
+    if (audio) audio.volume = effectiveVolume() * fadeLevel;
     if (live) live.volume = effectiveVolume();
     void sdkPlayer?.setVolume(Math.max(effectiveVolume(), 0.0001));
 }
@@ -889,4 +970,66 @@ export function closePlayer() {
 
 export function isCurrent(track: { key: string }): boolean {
     return state.current?.key === track.key;
+}
+
+/** Новий трек з’являється з тиші за половину тривалості переходу (або одразу на повній гучності). */
+function fadeIn(el: HTMLAudioElement, smooth: boolean) {
+    clearInterval(fadeTimer);
+    fadingIn = false;
+    if (!smooth) {
+        fadeLevel = 1;
+        el.volume = effectiveVolume();
+
+        return;
+    }
+    fadeLevel = 0;
+    fadingIn = true;
+    el.volume = 0;
+    const step = 50 / ((state.crossfade * 1000) / 2);
+    fadeTimer = setInterval(() => {
+        fadeLevel = Math.min(fadeLevel + step, 1);
+        el.volume = effectiveVolume() * fadeLevel;
+        if (fadeLevel >= 1) {
+            clearInterval(fadeTimer);
+            fadingIn = false;
+        }
+    }, 50);
+}
+
+export function setCrossfade(seconds: number) {
+    set({ crossfade: Math.max(0, Math.min(12, Math.round(seconds))) });
+}
+
+export function setNormalizeVolume(on: boolean) {
+    set({ normalize: on });
+    if (on || audio) setNormalize(audioEl(), on);
+}
+
+/* Таймер сну: хвилини або «наприкінці треку»; null — вимкнути. */
+let sleepTimer: ReturnType<typeof setInterval> | undefined;
+
+export function setSleepTimer(value: number | 'track' | null) {
+    clearInterval(sleepTimer);
+    if (value === null || value === 'track') {
+        set({ sleep: value });
+
+        return;
+    }
+    set({ sleep: Date.now() + value * 60_000 });
+    sleepTimer = setInterval(() => {
+        if (typeof state.sleep !== 'number') {
+            clearInterval(sleepTimer);
+
+            return;
+        }
+        if (Date.now() >= state.sleep) {
+            clearInterval(sleepTimer);
+            set({ sleep: null });
+            if (state.playing) toggle();
+        }
+    }, 1000);
+}
+
+export function setLyricsTranslate(on: boolean) {
+    set({ lyricsTranslate: on });
 }

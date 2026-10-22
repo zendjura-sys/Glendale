@@ -3,6 +3,7 @@ import {
     Disc3,
     Download,
     ExternalLink,
+    Info,
     FileText,
     Headphones,
     ListEnd,
@@ -32,6 +33,7 @@ import { EditTrackDialog } from '@/components/music/edit-track-dialog';
 import { LyricsDialog } from '@/components/music/lyrics-dialog';
 import { PlaylistDialog } from '@/components/music/playlist-dialog';
 import { ShareTrackDialog } from '@/components/music/share-track-dialog';
+import { SongInfoDialog } from './song-info';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -132,6 +134,7 @@ type Actions = {
     lyrics: (track: LocalTrack) => void;
     edit: (track: LocalTrack) => void;
     newPlaylist: (trackId?: number) => void;
+    info: (track: TrackCard) => void;
 };
 
 const ActionsContext = createContext<Actions | null>(null);
@@ -143,6 +146,7 @@ export function TrackActionsProvider({ children }: { children: ReactNode }) {
     const [newPlaylist, setNewPlaylist] = useState<{ trackId?: number } | null>(
         null,
     );
+    const [info, setInfo] = useState<TrackCard | null>(null);
 
     const value = useMemo<Actions>(
         () => ({
@@ -150,6 +154,7 @@ export function TrackActionsProvider({ children }: { children: ReactNode }) {
             lyrics: setLyricsFor,
             edit: setEditing,
             newPlaylist: (trackId) => setNewPlaylist({ trackId }),
+            info: setInfo,
         }),
         [],
     );
@@ -169,6 +174,10 @@ export function TrackActionsProvider({ children }: { children: ReactNode }) {
                 track={editing}
                 onOpenChange={(open) => !open && setEditing(null)}
                 onSaved={(track) => applyPatch(track.key, track)}
+            />
+            <SongInfoDialog
+                track={info}
+                onOpenChange={(open) => !open && setInfo(null)}
             />
             {newPlaylist && (
                 <PlaylistDialog
@@ -373,11 +382,22 @@ export function TrackMenu({
                 {local && (
                     <DropdownMenuItem
                         className={item}
-                        onSelect={() => void playStation(`track:${local.id}`)}
+                        onSelect={() =>
+                            void playStation(
+                                `track:${local.id}`,
+                                tr('Станція «{name}»', { name: local.title }),
+                            )
+                        }
                     >
                         <Radio /> {tr('Створити станцію')}
                     </DropdownMenuItem>
                 )}
+                <DropdownMenuItem
+                    className={item}
+                    onSelect={() => actions.info(track)}
+                >
+                    <Info /> {tr('Відомості про пісню')}
+                </DropdownMenuItem>
                 {local && (
                     <>
                         <DropdownMenuSeparator className="bg-[var(--am-sep)]" />

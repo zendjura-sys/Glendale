@@ -27,6 +27,7 @@ import {
     VolumeX,
 } from 'lucide-react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
+import type { PanInfo } from 'motion/react';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import type { CSSProperties, PropsWithChildren, ReactNode } from 'react';
 import { TrackActionsProvider } from '@/components/am/track-actions';
@@ -42,6 +43,7 @@ import { tr } from '@/lib/i18n';
 import { motionOr, SNAP } from '@/lib/motion';
 import {
     cycleRepeat,
+    getPlayerState,
     next,
     prev,
     seek,
@@ -443,7 +445,16 @@ function MiniPlayer() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={reduce ? undefined : { opacity: 0, y: 16 }}
                     transition={motionOr(reduce, SNAP)}
-                    className="am-glass pointer-events-auto mx-auto mb-2 flex h-14 max-w-[560px] items-center gap-3 rounded-full pr-2 pl-2"
+                    // Свайп убік — наступний чи попередній трек, як у міні-плеєрі Apple Music.
+                    drag={reduce || track.source === 'radio' ? false : 'x'}
+                    dragConstraints={{ left: 0, right: 0 }}
+                    dragElastic={0.35}
+                    dragSnapToOrigin
+                    onDragEnd={(_: unknown, info: PanInfo) => {
+                        if (info.offset.x < -70) next();
+                        else if (info.offset.x > 70) prev();
+                    }}
+                    className="am-glass pointer-events-auto mx-auto mb-2 flex h-14 max-w-[560px] touch-pan-y items-center gap-3 rounded-full pr-2 pl-2"
                 >
                     <button
                         type="button"
@@ -550,11 +561,69 @@ function TabBar() {
 
 // ───────────────────────── Макет ─────────────────────────
 
+/**
+ * Клавіші, як у Apple Music на комп’ютері: пробіл — пауза, ← / → — перемотка на 10 с,
+ * Shift + ← / → — попередній чи наступний трек, ↑ / ↓ — гучність, M — без звуку.
+ * Не заважають, коли людина друкує в полі.
+ */
+function useMusicShortcuts() {
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement | null;
+            if (
+                e.defaultPrevented ||
+                e.metaKey ||
+                e.ctrlKey ||
+                e.altKey ||
+                target?.closest(
+                    'input, textarea, select, [contenteditable="true"], [role="slider"], [role="menu"], [role="dialog"] button',
+                )
+            )
+                return;
+            const state = getPlayerState();
+            if (!state.current) return;
+            switch (e.key) {
+                case ' ':
+                    if (target?.closest('button, a')) return;
+                    toggle();
+                    break;
+                case 'ArrowRight':
+                    if (e.shiftKey) next();
+                    else seek(state.position + 10);
+                    break;
+                case 'ArrowLeft':
+                    if (e.shiftKey) prev();
+                    else seek(state.position - 10);
+                    break;
+                case 'ArrowUp':
+                    setVolume(state.volume + 0.05);
+                    break;
+                case 'ArrowDown':
+                    setVolume(state.volume - 0.05);
+                    break;
+                case 'm':
+                case 'M':
+                case 'ь':
+                case 'Ь':
+                    toggleMute();
+                    break;
+                default:
+                    return;
+            }
+            e.preventDefault();
+        };
+        window.addEventListener('keydown', onKey);
+
+        return () => window.removeEventListener('keydown', onKey);
+    }, []);
+}
+
 export default function MusicLayout({ children }: PropsWithChildren) {
     const { auth, modules, site } = usePage().props;
     const [view, setView] = useState<View | null>(null);
     const [uploading, setUploading] = useState(false);
     const player = usePlayer();
+    useMusicShortcuts();
 
     useEffect(() => {
         openNowPlaying = (v) => setView(v ?? 'artwork');

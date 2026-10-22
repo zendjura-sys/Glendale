@@ -144,6 +144,14 @@ class Track extends Model
             'genre' => $this->genre,
             'year' => $this->year,
             'quality' => $this->quality,
+            // «Відомості про пісню» й значок якості: формат файлу, що звучить.
+            'audio' => $this->codec ? [
+                'codec' => $this->codec,
+                'sample_rate' => $this->sample_rate,
+                'bit_depth' => $this->bit_depth,
+                'bitrate' => $this->bitrate,
+                'channels' => $this->channels,
+            ] : null,
             'has_lyrics' => filled($this->lyrics) && app(Plugins::class)->on('lyrics'),
             'duration' => $this->duration,
             'url' => $this->url,
