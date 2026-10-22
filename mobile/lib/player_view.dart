@@ -48,6 +48,12 @@ class MiniPlayer extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
         child: GestureDetector(
           onTap: () => showFullPlayer(context, player),
+          // Свайп міні-плеєра вбік — інший трек.
+          onHorizontalDragEnd: (d) {
+            final v = d.primaryVelocity ?? 0;
+            if (v < -400) player.next();
+            if (v > 400) player.prev();
+          },
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),

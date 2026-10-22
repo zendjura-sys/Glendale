@@ -211,6 +211,9 @@ class QueueTrack {
     this.favorite = false,
     this.inLibrary = false,
     this.homepage,
+    this.year,
+    this.audio,
+    this.plays = 0,
   }) : key = key ?? (id == null ? url : 'local:$id');
 
   /// id треку GameCon; у радіостанції — null (її id з іншої таблиці, див. [key]).
@@ -246,6 +249,12 @@ class QueueTrack {
   /// Сайт радіостанції.
   final String? homepage;
 
+  /// Для «Відомостей про пісню»: рік, формат файлу {codec, sample_rate, bit_depth, bitrate, channels}
+  /// і скільки разів слухали.
+  final int? year;
+  final Map<String, dynamic>? audio;
+  final int plays;
+
   bool get local => source == 'local' && id != null;
 
   /// Картка (ті ж ключі, що віддає сервер): для листа редагування й меню треку.
@@ -267,6 +276,9 @@ class QueueTrack {
         'in_library': inLibrary,
         'live': live,
         'homepage': homepage,
+        'year': year,
+        'audio': audio,
+        'plays_count': plays,
       };
 
   static QueueTrack? fromJson(Map<String, dynamic> track) {
@@ -294,6 +306,9 @@ class QueueTrack {
       favorite: track['favorite'] == true,
       inLibrary: track['in_library'] == true,
       homepage: text(track['homepage']),
+      year: number(track['year']),
+      audio: track['audio'] is Map ? Map<String, dynamic>.from(track['audio'] as Map) : null,
+      plays: number(track['plays_count']) ?? 0,
     );
   }
 
@@ -315,7 +330,30 @@ class QueueTrack {
         favorite: favorite,
         inLibrary: inLibrary,
         homepage: homepage,
+        year: year,
+        audio: audio,
+        plays: plays,
       );
+}
+
+/// «Грає з…» — звідки черга: альбом, плейлист, мікс, станція (підпис і маршрут застосунку).
+class PlayFrom {
+  const PlayFrom(this.label, [this.path]);
+  final String label;
+
+  /// Маршрут застосунку, куди веде дотик (у станції — немає).
+  final String? path;
+}
+
+/// «Грає з…» для всього, що запускається всередині (напр. сторінка плейлиста з його назвою).
+class PlaySource extends InheritedWidget {
+  const PlaySource({required this.from, required super.child, super.key});
+  final PlayFrom from;
+
+  static PlayFrom? of(BuildContext context) => context.getInheritedWidgetOfExactType<PlaySource>()?.from;
+
+  @override
+  bool updateShouldNotify(PlaySource oldWidget) => from.label != oldWidget.from.label || from.path != oldWidget.from.path;
 }
 
 /// Ключ картки треку з сервера (`local:42`, `radio:7`, `spotify:…`).
@@ -325,13 +363,12 @@ class TrackPlayer extends ChangeNotifier {
   TrackPlayer() {
     _player.playerStateStream.listen((state) {
       playing = state.playing;
-      if (state.processingState == ProcessingState.completed) {
-        next(auto: true);
-      }
+      if (state.processingState == ProcessingState.completed) unawaited(trackEnded());
       notifyListeners();
     });
     _player.positionStream.listen((value) {
       position = value;
+      _fadeTick();
       notifyListeners();
     });
     _player.durationStream.listen((value) {
@@ -340,7 +377,9 @@ class TrackPlayer extends ChangeNotifier {
     });
   }
 
-  final _player = AudioPlayer();
+  /// «Вирівнювання гучності»: LoudnessEnhancer Android (підсилення з обмежувачем піків) у ланцюжку just_audio.
+  final _loudness = AndroidLoudnessEnhancer();
+  late final _player = AudioPlayer(audioPipeline: AudioPipeline(androidAudioEffects: [_loudness]));
   final _random = Random();
 
   /// Викликається на початку кожного треку (тут лагодять «сміттєві» назви).
@@ -359,7 +398,11 @@ class TrackPlayer extends ChangeNotifier {
     shuffle = prefs.getBool('music.shuffle') ?? false;
     repeatMode = prefs.getString('music.repeat') ?? 'off';
     volume = prefs.getDouble('music.volume') ?? 1;
-    unawaited(_player.setVolume(volume));
+    crossfade = prefs.getInt('music.crossfade') ?? 0;
+    normalize = prefs.getBool('music.normalize') ?? false;
+    lyricsTranslate = prefs.getBool('music.translate') ?? false;
+    _applyVolume();
+    unawaited(_applyNormalize());
   }
 
   List<QueueTrack> queue = [];
@@ -376,6 +419,28 @@ class TrackPlayer extends ChangeNotifier {
 
   /// Безкінечна станція, з якої підвантажуються наступні треки (me, genre:…, artist:…, track:…).
   String? station;
+
+  /// «Грає з…» над чергою.
+  PlayFrom? from;
+
+  /// Плавні переходи між треками, секунди (0 — вимкнено).
+  int crossfade = 0;
+
+  /// «Вирівнювання гучності» (як Sound Check).
+  bool normalize = false;
+
+  /// Показувати переклад під рядками тексту пісні.
+  bool lyricsTranslate = false;
+
+  /// Таймер сну: коли зупинитися, або «наприкінці треку».
+  DateTime? sleepUntil;
+  bool sleepAfterTrack = false;
+  Timer? _sleepTimer;
+
+  /// Множник гучності під час переходу (1 — без затухання) і таймер появи нового треку з тиші.
+  double _fade = 1;
+  double _applied = -1;
+  Timer? _fadeIn;
 
   /// Щойно зіграні треки («Історія» в черзі).
   final history = <QueueTrack>[];
@@ -415,7 +480,8 @@ class TrackPlayer extends ChangeNotifier {
   /// Грає [tracks] з позиції [start]; повторне натискання на поточний трек — пауза.
   /// [station] — ключ безкінечної станції, з якої дописувати чергу; [extend] = false — без ∞
   /// (напр. «Слухати разом», де чергою керує кімната).
-  Future<void> playList(List<Map<String, dynamic>> tracks, int start, {String? station, bool extend = true}) async {
+  /// [from] — «Грає з…»: альбом, плейлист, мікс тощо.
+  Future<void> playList(List<Map<String, dynamic>> tracks, int start, {String? station, bool extend = true, PlayFrom? from}) async {
     final items = <QueueTrack>[];
     var target = 0;
     for (var i = 0; i < tracks.length; i++) {
@@ -430,35 +496,39 @@ class TrackPlayer extends ChangeNotifier {
       queue = items;
       index = target;
       this.station = station;
+      this.from = from ?? this.from;
       await toggle();
       return;
     }
     queue = items;
     this.station = station;
+    this.from = from;
     await _start(target);
   }
 
   /// Безкінечна станція: перша порція одразу, далі підвантажується, коли черга добігає кінця.
   /// Повертає false, якщо на станції поки немає треків.
-  Future<bool> playStation(String key) async {
+  Future<bool> playStation(String key, {PlayFrom? from}) async {
     final api = session?.api;
     if (api == null) return false;
     final data = await api.get(Api.site('/music/station?${Uri(queryParameters: {'key': key}).query}'));
     final tracks = maps(data['tracks']);
     if (tracks.isEmpty) return false;
     history.clear();
-    await playList(tracks, 0, station: key);
+    await playList(tracks, 0, station: key, from: from);
     return true;
   }
 
   Future<void> play(String url, String nextTitle, String nextArtist) async {
     queue = [QueueTrack(id: null, url: url, title: nextTitle, artist: nextArtist)];
     station = null;
+    from = null;
     _extendable = true;
     await _start(0);
   }
 
-  Future<void> _start(int i) async {
+  /// [fadeIn] — новий трек з’являється з тиші (плавний перехід після попереднього).
+  Future<void> _start(int i, {bool fadeIn = false}) async {
     final previous = current;
     if (previous != null && i != index) {
       history.remove(previous);
@@ -470,6 +540,7 @@ class TrackPlayer extends ChangeNotifier {
     duration = Duration.zero;
     notifyListeners();
     final track = queue[i];
+    _startFade(fadeIn && crossfade > 0 && !track.live);
     onStart?.call(track);
     // Черга добігає кінця — заздалегідь дописуємо наступну порцію станції чи ∞.
     if (queue.length - i <= 3) unawaited(_extend());
@@ -520,14 +591,29 @@ class TrackPlayer extends ChangeNotifier {
     }
   }
 
+  /// Трек дограв: таймер сну «наприкінці треку» зупиняє музику, інакше — наступний.
+  Future<void> trackEnded() async {
+    if (sleepAfterTrack) {
+      sleepAfterTrack = false;
+      notifyListeners();
+      try {
+        await _player.pause();
+        await _player.seek(Duration.zero);
+      } catch (_) {}
+      return;
+    }
+    await next(auto: true);
+  }
+
   Future<void> next({bool auto = false}) async {
     if (queue.isEmpty) return;
     if (auto && repeat) return _start(index);
+    final fade = auto && crossfade > 0;
     var n = shuffle && queue.length > 1 ? _random.nextInt(queue.length - 1) : index + 1;
     if (shuffle && queue.length > 1 && n >= index) n++;
     if (n >= queue.length) {
       // Кінець черги: станція чи ∞ дописують нові треки, «повторювати все» — з початку.
-      if (repeatMode != 'all' && await _extend() && index + 1 < queue.length) return _start(index + 1);
+      if (repeatMode != 'all' && await _extend() && index + 1 < queue.length) return _start(index + 1, fadeIn: fade);
       if (auto && repeatMode != 'all') {
         await _player.pause();
         await _player.seek(Duration.zero);
@@ -535,7 +621,7 @@ class TrackPlayer extends ChangeNotifier {
       }
       n = 0;
     }
-    await _start(n);
+    await _start(n, fadeIn: fade);
   }
 
   Future<void> prev() async {
@@ -604,6 +690,7 @@ class TrackPlayer extends ChangeNotifier {
     if (current == null) {
       queue = [item];
       station = null;
+      from = null;
       _extendable = true;
       return _start(0);
     }
@@ -674,8 +761,103 @@ class TrackPlayer extends ChangeNotifier {
   Future<void> setVolume(double value) async {
     volume = value.clamp(0.0, 1.0);
     notifyListeners();
-    await _player.setVolume(volume);
+    _applyVolume();
     unawaited(session?.prefs.setDouble('music.volume', volume));
+  }
+
+  /// Гучність наприкінці треку при плавному переході: 1 → 0 за останні [crossfade] секунд
+  /// (короткі треки — без затухання, як на сайті).
+  static double fadeOutLevel(Duration position, Duration duration, int crossfade) {
+    if (crossfade <= 0 || duration.inMilliseconds <= crossfade * 3000) return 1;
+    final left = (duration - position).inMilliseconds / 1000;
+    return left >= crossfade ? 1 : (left / crossfade).clamp(0.0, 1.0);
+  }
+
+  void _fadeTick() {
+    final track = current;
+    final out = track == null || track.live || repeat || sleepAfterTrack ? 1.0 : fadeOutLevel(position, duration, crossfade);
+    if (out < 1) {
+      _fadeIn?.cancel();
+      _fade = out;
+    } else if (_fadeIn?.isActive != true) {
+      // Перемотали назад під час затухання — гучність повертається.
+      _fade = 1;
+    }
+    _applyVolume();
+  }
+
+  /// Новий трек з’являється з тиші за половину тривалості переходу (або одразу на повній гучності).
+  void _startFade(bool smooth) {
+    _fadeIn?.cancel();
+    _fade = smooth ? 0 : 1;
+    _applyVolume();
+    if (!smooth) return;
+    final step = 50 / (crossfade * 1000 / 2);
+    _fadeIn = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+      _fade = min(_fade + step, 1);
+      if (_fade >= 1) timer.cancel();
+      _applyVolume();
+    });
+  }
+
+  void _applyVolume() {
+    final value = volume * _fade;
+    if ((value - _applied).abs() < 0.004) return;
+    _applied = value;
+    unawaited(_player.setVolume(value).catchError((_) {}));
+  }
+
+  /// Множник гучності переходу зараз (для тестів і медіасесії).
+  double get fadeLevel => _fade;
+
+  void setCrossfade(int seconds) {
+    crossfade = seconds.clamp(0, 12);
+    unawaited(session?.prefs.setInt('music.crossfade', crossfade));
+    _fadeTick();
+    notifyListeners();
+  }
+
+  void setNormalize(bool on) {
+    normalize = on;
+    unawaited(session?.prefs.setBool('music.normalize', on));
+    unawaited(_applyNormalize());
+    notifyListeners();
+  }
+
+  /// +4 дБ з обмежувачем — тихі треки підтягуються, гучні не «ріжуть» (як компресор сайту).
+  Future<void> _applyNormalize() async {
+    try {
+      await _loudness.setTargetGain(normalize ? 4 : 0);
+      await _loudness.setEnabled(normalize);
+    } catch (_) {}
+  }
+
+  void setLyricsTranslate(bool on) {
+    lyricsTranslate = on;
+    unawaited(session?.prefs.setBool('music.translate', on));
+    notifyListeners();
+  }
+
+  /// Таймер сну: [minutes] хвилин, [afterTrack] — наприкінці треку; без обох — вимкнути.
+  void setSleep({int? minutes, bool afterTrack = false}) {
+    _sleepTimer?.cancel();
+    sleepAfterTrack = afterTrack;
+    sleepUntil = minutes == null ? null : DateTime.now().add(Duration(minutes: minutes));
+    if (minutes != null) {
+      _sleepTimer = Timer(Duration(minutes: minutes), () {
+        sleepUntil = null;
+        notifyListeners();
+        unawaited(_player.pause().catchError((_) {}));
+      });
+    }
+    notifyListeners();
+  }
+
+  /// Скільки хвилин лишилося до зупинки (null — таймер на хвилини не заведено).
+  int? get sleepMinutesLeft {
+    final until = sleepUntil;
+    if (until == null) return null;
+    return max(0, (until.difference(DateTime.now()).inSeconds / 60).ceil());
   }
 
   Future<void> stop() async {
@@ -683,11 +865,14 @@ class TrackPlayer extends ChangeNotifier {
     queue = [];
     index = -1;
     station = null;
+    from = null;
     notifyListeners();
   }
 
   @override
   void dispose() {
+    _sleepTimer?.cancel();
+    _fadeIn?.cancel();
     _player.dispose();
     super.dispose();
   }

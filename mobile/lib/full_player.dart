@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:share_plus/share_plus.dart';
 
+import 'api.dart' show text;
 import 'audio.dart';
 import 'i18n.dart';
 import 'lyrics.dart';
@@ -49,11 +51,10 @@ Future<void> showFullPlayer(BuildContext context, TrackPlayer player) {
 
 final _tints = <String, Color?>{};
 
-/// Переважний колір обкладинки (як useCoverColor на сайті): середнє зі зваженням на насиченість.
-Future<Color?> coverColor(String url) async {
-  if (_tints.containsKey(url)) return _tints[url];
+/// Картинка з мережі (через кеш) як ui.Image розміром [size]×[size]; null — не вдалося.
+Future<ui.Image?> _netImage(String url, int size) {
   final completer = Completer<ui.Image?>();
-  final stream = ResizeImage(CachedNetworkImageProvider(url), width: 16, height: 16).resolve(ImageConfiguration.empty);
+  final stream = ResizeImage(CachedNetworkImageProvider(url), width: size, height: size).resolve(ImageConfiguration.empty);
   late final ImageStreamListener listener;
   listener = ImageStreamListener((info, _) {
     if (!completer.isCompleted) completer.complete(info.image);
@@ -63,7 +64,13 @@ Future<Color?> coverColor(String url) async {
     stream.removeListener(listener);
   });
   stream.addListener(listener);
-  final image = await completer.future.timeout(const Duration(seconds: 8), onTimeout: () => null);
+  return completer.future.timeout(const Duration(seconds: 8), onTimeout: () => null);
+}
+
+/// Переважний колір обкладинки (як useCoverColor на сайті): середнє зі зваженням на насиченість.
+Future<Color?> coverColor(String url) async {
+  if (_tints.containsKey(url)) return _tints[url];
+  final image = await _netImage(url, 16);
   if (image == null) return _tints[url] = null;
   final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
   if (data == null) return _tints[url] = null;
@@ -99,6 +106,11 @@ class _FullPlayerState extends State<FullPlayer> {
   Lyrics? lyrics;
   bool lyricsLoading = false;
 
+  /// Переклад тексту пісні: «оригінальний рядок → переклад» (null — ще не просили або немає).
+  Map<String, String>? translation;
+  bool translating = false;
+  String? _translated;
+
   /// Що відкрито замість обкладинки: null, 'lyrics' чи 'queue'.
   String? view;
 
@@ -121,9 +133,11 @@ class _FullPlayerState extends State<FullPlayer> {
       if (mounted) Navigator.of(context).maybePop();
       return;
     }
-    if (track.key == _key) return;
+    if (track.key == _key) return _syncTranslation();
     final key = _key = track.key;
     lyrics = null;
+    translation = null;
+    _translated = null;
     final cover = track.cover;
     if (cover != null) {
       coverColor(cover).then((color) {
@@ -138,8 +152,30 @@ class _FullPlayerState extends State<FullPlayer> {
     lyricsLoading = true;
     fetchLyrics(api, id: track.id, artist: track.artist, title: track.title, seconds: track.seconds).then((found) {
       if (mounted && _key == key) setState(() => lyrics = found);
+      _syncTranslation();
     }).catchError((_) {}).whenComplete(() {
       if (mounted && _key == key) setState(() => lyricsLoading = false);
+    });
+  }
+
+  /// Переклад вмикається лише для своїх треків і коли на сайті є переклад (DeepL); відповідь
+  /// без перекладу (404, вимкнено) — тихо без нього.
+  bool get _canTranslate => player.current?.local == true && I18n.translate;
+
+  void _syncTranslation() {
+    final track = player.current;
+    final source = lyrics?.source;
+    final api = player.session?.api;
+    if (track == null || source == null || api == null || !_canTranslate || !player.lyricsTranslate || _translated == track.key) return;
+    final key = _translated = track.key;
+    setState(() => translating = true);
+    api.post('/api/v1/translate', {'type': 'track', 'id': track.id}).then((result) {
+      final map = result['same'] == true ? <String, String>{} : alignTranslation(source, text(result['translation']) ?? '');
+      if (mounted && _key == key) setState(() => translation = map);
+    }).catchError((_) {
+      if (mounted && _key == key) setState(() => translation = const {});
+    }).whenComplete(() {
+      if (mounted && _key == key) setState(() => translating = false);
     });
   }
 
@@ -295,7 +331,15 @@ class _FullPlayerState extends State<FullPlayer> {
       if (lyricsLoading) return const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white70));
       return const NoLyrics(color: Colors.white70);
     }
-    return _LyricsView(lyrics: current, position: player.position.inMilliseconds / 1000, onSeek: (s) => player.seek(Duration(milliseconds: (s * 1000).round())));
+    final track = player.current!;
+    return _LyricsView(
+      lyrics: current,
+      position: player.position.inMilliseconds / 1000,
+      onSeek: (s) => player.seek(Duration(milliseconds: (s * 1000).round())),
+      translation: _canTranslate && player.lyricsTranslate ? translation : null,
+      translate: _canTranslate ? (on: player.lyricsTranslate, busy: translating, toggle: () => player.setLyricsTranslate(!player.lyricsTranslate)) : null,
+      onShare: (lines) => shareLyricLines(context, lines, track, tint),
+    );
   }
 
   /// Сторінка виконавця: згортаємо плеєр і відкриваємо її в розділі «Музика».
@@ -492,10 +536,91 @@ class _ProgressState extends State<_Progress> {
       const SizedBox(height: 4),
       Row(children: [
         SizedBox(width: 56, child: Text(duration(position.round()), style: figures)),
-        Expanded(child: Center(child: QualityBadge(widget.track.quality, color: Colors.white70))),
+        Expanded(child: Center(child: _FormatBadge(track: widget.track))),
         SizedBox(width: 56, child: Text('-${duration(math.max(0, total - position).round())}', textAlign: TextAlign.right, style: figures)),
       ]),
     ]);
+  }
+}
+
+/// Значок якості (або кодек для звичайних файлів); дотик — «Відомості про пісню».
+class _FormatBadge extends StatelessWidget {
+  const _FormatBadge({required this.track});
+  final QueueTrack track;
+
+  @override
+  Widget build(BuildContext context) {
+    final codec = text(track.audio?['codec']);
+    final Widget badge = QualityBadge.label(track.quality) != null
+        ? QualityBadge(track.quality, color: Colors.white70)
+        : (track.local && codec != null ? Text(codecName(codec), style: body(11, color: Colors.white54, weight: FontWeight.w600)) : const SizedBox.shrink());
+    if (!track.local) return badge;
+    return Semantics(
+      button: true,
+      label: tr('Відомості про пісню'),
+      child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: () => showSongInfo(context, track.toCard(), beforeNavigate: () => Navigator.of(context).maybePop()), child: Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), child: badge)),
+    );
+  }
+}
+
+/// ⏪/⏩: дотик — попередній/наступний трек, утримання — перемотка (що довше тримаєш, то швидше), як на сайті.
+class _SkipButton extends StatefulWidget {
+  const _SkipButton({required this.player, required this.forward, required this.child});
+  final TrackPlayer player;
+  final bool forward;
+  final Widget child;
+
+  @override
+  State<_SkipButton> createState() => _SkipButtonState();
+}
+
+class _SkipButtonState extends State<_SkipButton> {
+  Timer? _timer;
+  bool _held = false;
+
+  void _down() {
+    _held = false;
+    final since = DateTime.now();
+    _timer?.cancel();
+    _timer = Timer(const Duration(milliseconds: 400), () {
+      _held = true;
+      _timer = Timer.periodic(const Duration(milliseconds: 200), (_) {
+        final p = widget.player;
+        final step = DateTime.now().difference(since).inMilliseconds > 2500 ? 6 : 2;
+        final to = p.position + Duration(seconds: widget.forward ? step : -step);
+        p.seek(to < Duration.zero ? Duration.zero : (p.duration > Duration.zero && to > p.duration ? p.duration : to));
+      });
+    });
+  }
+
+  void _stop() {
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  @override
+  void dispose() {
+    _stop();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: widget.forward ? tr('Наступний') : tr('Попередній'),
+      child: InkResponse(
+        onTapDown: (_) => _down(),
+        onTapCancel: _stop,
+        onTap: () {
+          _stop();
+          if (_held) return;
+          widget.forward ? widget.player.next() : widget.player.prev();
+        },
+        radius: 40,
+        child: SizedBox(width: 76, height: 64, child: Center(child: widget.child)),
+      ),
+    );
   }
 }
 
@@ -512,7 +637,7 @@ class _Controls extends StatelessWidget {
           child: InkResponse(onTap: onTap, radius: 40, child: SizedBox(width: 76, height: 64, child: Center(child: child))),
         );
     return Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-      button(tr('Попередній'), player.prev, const CustomPaint(size: Size(40, 26), painter: _SkipGlyph(forward: false))),
+      _SkipButton(player: player, forward: false, child: const CustomPaint(size: Size(40, 26), painter: _SkipGlyph(forward: false))),
       button(
         player.playing ? tr('Пауза') : tr('Відтворити'),
         player.toggle,
@@ -522,7 +647,7 @@ class _Controls extends StatelessWidget {
           child: CustomPaint(key: ValueKey(player.playing), size: const Size.square(40), painter: _PlayGlyph(player.playing)),
         ),
       ),
-      button(tr('Наступний'), player.next, const CustomPaint(size: Size(40, 26), painter: _SkipGlyph(forward: true))),
+      _SkipButton(player: player, forward: true, child: const CustomPaint(size: Size(40, 26), painter: _SkipGlyph(forward: true))),
     ]);
   }
 }
@@ -677,6 +802,7 @@ class _QueuePanelState extends State<_QueuePanel> {
               : ListView(padding: EdgeInsets.zero, children: [for (final t in player.history) _QueueRow(track: t, onTap: () => player.replay(t))]),
         ),
       ] else ...[
+        if (player.from != null) _PlayingFrom(from: player.from!),
         Row(children: [
           Expanded(child: Text(tr('Далі в черзі'), style: display(17, color: Colors.white))),
           if (upcoming.isNotEmpty) GestureDetector(onTap: player.clearUpNext, child: Text(tr('Очистити'), style: body(14, color: Colors.white70))),
@@ -687,25 +813,136 @@ class _QueuePanelState extends State<_QueuePanel> {
           Text(tr('∞ Автовідтворення: після черги гратимуть схожі треки'), style: body(13, color: Colors.white54)),
         const SizedBox(height: 6),
         Expanded(
-          child: upcoming.isEmpty
-              ? Center(child: Text(tr('Черга порожня'), style: body(14, color: Colors.white54)))
-              : ReorderableListView.builder(
-                  padding: EdgeInsets.zero,
-                  buildDefaultDragHandles: false,
-                  itemCount: upcoming.length,
-                  onReorderItem: (from, to) => player.move(start + from, start + to),
-                  proxyDecorator: (child, _, _) => Material(color: Colors.white.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12), child: child),
-                  itemBuilder: (context, i) => _QueueRow(
-                    key: ObjectKey(upcoming[i]),
-                    track: upcoming[i],
-                    onTap: () => player.playAt(start + i),
-                    onRemove: () => player.removeAt(start + i),
-                    dragIndex: i,
-                  ),
-                ),
+          child: ReorderableListView.builder(
+            padding: EdgeInsets.zero,
+            header: upcoming.isEmpty ? Padding(padding: const EdgeInsets.symmetric(vertical: 28), child: Center(child: Text(tr('Черга порожня'), style: body(14, color: Colors.white54)))) : null,
+            footer: _SoundSection(player: player),
+            buildDefaultDragHandles: false,
+            itemCount: upcoming.length,
+            onReorderItem: (from, to) => player.move(start + from, start + to),
+            proxyDecorator: (child, _, _) => Material(color: Colors.white.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12), child: child),
+            itemBuilder: (context, i) => _QueueRow(
+              key: ObjectKey(upcoming[i]),
+              track: upcoming[i],
+              onTap: () => player.playAt(start + i),
+              onRemove: () => player.removeAt(start + i),
+              dragIndex: i,
+            ),
+          ),
         ),
       ],
     ]);
+  }
+}
+
+/// «Грає з: …» над чергою; дотик відкриває альбом, плейлист чи мікс, звідки черга.
+class _PlayingFrom extends StatelessWidget {
+  const _PlayingFrom({required this.from});
+  final PlayFrom from;
+
+  @override
+  Widget build(BuildContext context) {
+    final path = from.path;
+    final label = Text.rich(
+      TextSpan(children: [
+        TextSpan(text: '${tr('Грає з:')} ', style: body(13, color: Colors.white54)),
+        TextSpan(text: from.label, style: body(13, color: Colors.white, weight: FontWeight.w600)),
+      ]),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: path == null
+          ? label
+          : GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                final router = GoRouter.of(context);
+                Navigator.of(context).maybePop();
+                if (router.state.uri.toString() != path) router.push(path);
+              },
+              child: Row(children: [Flexible(child: label), const SizedBox(width: 2), const Icon(LucideIcons.chevronRight, size: 15, color: Colors.white54)]),
+            ),
+    );
+  }
+}
+
+/// «Звук» під чергою: плавні переходи, вирівнювання гучності, переклад тексту й таймер сну.
+class _SoundSection extends StatelessWidget {
+  const _SoundSection({required this.player});
+  final TrackPlayer player;
+
+  static const crossfades = [0, 3, 6, 9, 12];
+  static const sleeps = [15, 30, 45, 60];
+
+  @override
+  Widget build(BuildContext context) {
+    final live = player.current?.live == true;
+    Widget chip(String label, bool on, VoidCallback onTap) => Semantics(
+          button: true,
+          toggled: on,
+          child: GestureDetector(
+            onTap: onTap,
+            child: Container(
+              height: 32,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(color: on ? Colors.white : Colors.white.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(16)),
+              child: Center(widthFactor: 1, child: Text(label, style: body(13, color: on ? Colors.black : Colors.white.withValues(alpha: 0.85), weight: FontWeight.w600))),
+            ),
+          ),
+        );
+    Widget caption(IconData icon, String label) => Row(children: [Icon(icon, size: 16, color: Colors.white60), const SizedBox(width: 8), Flexible(child: Text(label, style: body(13, color: Colors.white60)))]);
+    Widget toggle(IconData icon, String title, String hint, bool value, ValueChanged<bool> onChanged) => Semantics(
+          toggled: value,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => onChanged(!value),
+            child: Row(children: [
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [Icon(icon, size: 16, color: Colors.white), const SizedBox(width: 8), Flexible(child: Text(title, style: body(15, color: Colors.white)))]),
+                  Text(hint, style: body(12, color: Colors.white54)),
+                ]),
+              ),
+              GcSwitch(value: value, onChanged: onChanged),
+            ]),
+          ),
+        );
+    final left = player.sleepMinutesLeft;
+    final sleepLabel = player.sleepAfterTrack
+        ? tr('Таймер сну: наприкінці треку')
+        : (left != null ? tr('Таймер сну: зупиниться через {n} хв', {'n': left}) : tr('Таймер сну'));
+    return Container(
+      margin: const EdgeInsets.only(top: 18, bottom: 8),
+      padding: const EdgeInsets.only(top: 14),
+      decoration: BoxDecoration(border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.1)))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(tr('Звук'), style: display(17, color: Colors.white)),
+        if (!live) ...[
+          const SizedBox(height: 12),
+          caption(LucideIcons.blend, tr('Плавні переходи між треками')),
+          const SizedBox(height: 8),
+          Wrap(spacing: 6, runSpacing: 6, children: [
+            for (final sec in crossfades) chip(sec == 0 ? tr('Вимк.') : tr('{n} с', {'n': sec}), player.crossfade == sec, () => player.setCrossfade(sec)),
+          ]),
+          const SizedBox(height: 14),
+          toggle(LucideIcons.audioLines, tr('Вирівнювання гучності'), tr('Тихі й гучні пісні звучать однаково'), player.normalize, player.setNormalize),
+        ],
+        if (I18n.translate) ...[
+          const SizedBox(height: 12),
+          toggle(LucideIcons.languages, tr('Переклад тексту пісень'), tr('Переклад під кожним рядком; можна вимкнути'), player.lyricsTranslate, player.setLyricsTranslate),
+        ],
+        const SizedBox(height: 14),
+        caption(LucideIcons.moonStar, sleepLabel),
+        const SizedBox(height: 8),
+        Wrap(spacing: 6, runSpacing: 6, children: [
+          for (final m in sleeps) chip(tr('{n} хв', {'n': m}), false, () => player.setSleep(minutes: m)),
+          if (!live) chip(tr('Кінець треку'), player.sleepAfterTrack, () => player.setSleep(afterTrack: true)),
+          if (player.sleepUntil != null || player.sleepAfterTrack) chip(tr('Вимкнути'), false, player.setSleep),
+        ]),
+      ]),
+    );
   }
 }
 
@@ -748,11 +985,15 @@ class _QueueRow extends StatelessWidget {
 }
 
 /// Караоке: поточний рядок яскравий і по центру; дотик до рядка — перемотка до нього.
+/// Під рядком — переклад (якщо увімкнено); «Поділитися рядками» — вибір до 6 рядків для картки.
 class _LyricsView extends StatefulWidget {
-  const _LyricsView({required this.lyrics, required this.position, required this.onSeek});
+  const _LyricsView({required this.lyrics, required this.position, required this.onSeek, required this.onShare, this.translation, this.translate});
   final Lyrics lyrics;
   final double position;
   final ValueChanged<double> onSeek;
+  final Map<String, String>? translation;
+  final ({bool on, bool busy, VoidCallback toggle})? translate;
+  final Future<void> Function(List<String> lines) onShare;
 
   @override
   State<_LyricsView> createState() => _LyricsViewState();
@@ -763,59 +1004,200 @@ class _LyricsViewState extends State<_LyricsView> {
   DateTime touched = DateTime(0);
   int shown = -2;
 
+  /// Режим вибору рядків для «Поділитися» (null — вимкнено).
+  List<int>? picked;
+
   GlobalKey _key(int i) => keys.putIfAbsent(i, GlobalKey.new);
+
+  void _pick(int i) {
+    final list = picked!;
+    setState(() {
+      if (list.contains(i)) {
+        list.remove(i);
+      } else if (list.length < 6) {
+        list.add(i);
+      }
+    });
+  }
+
+  Future<void> _share() async {
+    final list = [...picked!]..sort();
+    await widget.onShare([for (final i in list) widget.lyrics.lines[i].text]);
+    if (mounted) setState(() => picked = null);
+  }
 
   @override
   Widget build(BuildContext context) {
     final lyrics = widget.lyrics;
     final current = lyrics.timed ? activeLine(lyrics.lines, widget.position) : -1;
     final reduce = MediaQuery.disableAnimationsOf(context);
+    final selecting = picked != null;
     // Тримаємо поточний рядок по центру, але не заважаємо, якщо людина щойно гортала сама.
-    if (current != shown && current >= 0 && DateTime.now().difference(touched).inSeconds >= 3) {
+    if (current != shown && current >= 0 && !selecting && DateTime.now().difference(touched).inSeconds >= 3) {
       shown = current;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final ctx = keys[current]?.currentContext;
         if (ctx != null) Scrollable.ensureVisible(ctx, alignment: 0.35, duration: reduce ? Duration.zero : const Duration(milliseconds: 400), curve: _ease);
       });
     }
-    return NotificationListener<UserScrollNotification>(
-      onNotification: (_) {
-        touched = DateTime.now();
-        return false;
-      },
-      child: ShaderMask(
-        blendMode: BlendMode.dstIn,
-        shaderCallback: (rect) => const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0x00000000), Color(0xFF000000), Color(0xFF000000), Color(0x00000000)],
-          stops: [0, 0.08, 0.9, 1],
-        ).createShader(rect),
-        child: LayoutBuilder(
-          builder: (context, box) => SingleChildScrollView(
-            padding: EdgeInsets.only(top: 16, bottom: box.maxHeight * 0.5),
-            child: lyrics.timed
-                ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                    for (var i = 0; i < lyrics.lines.length; i++)
-                      GestureDetector(
-                        key: _key(i),
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => widget.onSeek(lyrics.lines[i].time ?? 0),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 7),
-                          child: AnimatedDefaultTextStyle(
-                            duration: reduce ? Duration.zero : const Duration(milliseconds: 300),
-                            style: display(26, color: i == current ? Colors.white : Colors.white.withValues(alpha: i < current ? 0.3 : 0.42)).copyWith(height: 1.25, letterSpacing: -0.4),
-                            child: Text(lyrics.lines[i].text.isEmpty ? '♪' : lyrics.lines[i].text),
-                          ),
-                        ),
-                      ),
-                  ])
-                : Text(lyrics.lines.map((l) => l.text).join('\n'), style: body(19, color: Colors.white.withValues(alpha: 0.85), weight: FontWeight.w600).copyWith(height: 1.55)),
+    Widget line(int i) {
+      final l = lyrics.lines[i];
+      final on = picked?.contains(i) == true;
+      final translated = widget.translation?[l.text];
+      final color = selecting
+          ? Colors.white.withValues(alpha: on ? 1 : 0.4)
+          : (!lyrics.timed ? Colors.white.withValues(alpha: 0.85) : (i == current ? Colors.white : Colors.white.withValues(alpha: i < current ? 0.3 : 0.42)));
+      final style = lyrics.timed ? display(26, color: color).copyWith(height: 1.25, letterSpacing: -0.4) : body(19, color: color, weight: FontWeight.w600).copyWith(height: 1.45);
+      return GestureDetector(
+        key: _key(i),
+        behavior: HitTestBehavior.opaque,
+        onTap: selecting ? () => _pick(i) : (lyrics.timed ? () => widget.onSeek(l.time ?? 0) : null),
+        child: AnimatedContainer(
+          duration: reduce ? Duration.zero : const Duration(milliseconds: 200),
+          margin: EdgeInsets.symmetric(vertical: lyrics.timed ? 2 : 0),
+          padding: EdgeInsets.symmetric(horizontal: selecting ? 10 : 0, vertical: lyrics.timed ? 5 : 1),
+          decoration: BoxDecoration(color: on ? Colors.white.withValues(alpha: 0.14) : Colors.transparent, borderRadius: BorderRadius.circular(12)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            AnimatedDefaultTextStyle(duration: reduce ? Duration.zero : const Duration(milliseconds: 300), style: style, child: Text(l.text.isEmpty ? (lyrics.timed ? '♪' : ' ') : l.text)),
+            if (translated != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(translated, style: body(lyrics.timed ? 16 : 14.5, color: color.withValues(alpha: color.a * 0.7), weight: FontWeight.w500).copyWith(height: 1.3))),
+          ]),
+        ),
+      );
+    }
+
+    Widget tool(IconData icon, String label, bool on, VoidCallback onTap, {bool busy = false, String? text}) => Tooltip(
+          message: label,
+          child: Semantics(
+            button: true,
+            toggled: on,
+            label: label,
+            child: GestureDetector(
+              onTap: onTap,
+              child: Container(
+                height: 32,
+                padding: EdgeInsets.symmetric(horizontal: text == null ? 8 : 11),
+                decoration: BoxDecoration(color: on ? Colors.white.withValues(alpha: 0.9) : Colors.white.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(16)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  busy ? SizedBox.square(dimension: 14, child: CircularProgressIndicator(strokeWidth: 2, color: on ? Colors.black87 : Colors.white)) : Icon(icon, size: 16, color: on ? Colors.black87 : Colors.white),
+                  if (text != null) ...[const SizedBox(width: 6), Text(text, style: body(13, color: on ? Colors.black87 : Colors.white, weight: FontWeight.w600))],
+                ]),
+              ),
+            ),
+          ),
+        );
+    final translate = widget.translate;
+
+    return Stack(children: [
+      NotificationListener<UserScrollNotification>(
+        onNotification: (_) {
+          touched = DateTime.now();
+          return false;
+        },
+        child: ShaderMask(
+          blendMode: BlendMode.dstIn,
+          shaderCallback: (rect) => const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0x00000000), Color(0xFF000000), Color(0xFF000000), Color(0x00000000)],
+            stops: [0, 0.08, 0.9, 1],
+          ).createShader(rect),
+          child: LayoutBuilder(
+            builder: (context, box) => SingleChildScrollView(
+              padding: EdgeInsets.only(top: 44, bottom: box.maxHeight * 0.5),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [for (var i = 0; i < lyrics.lines.length; i++) line(i)]),
+            ),
           ),
         ),
       ),
-    );
+      // Верхні дії: переклад (вмикається й вимикається) і «Поділитися рядками».
+      Positioned(
+        top: 0,
+        right: 0,
+        child: Row(children: [
+          if (translate != null) ...[
+            tool(LucideIcons.languages, translate.on ? tr('Вимкнути переклад') : tr('Показувати переклад'), translate.on, translate.toggle, busy: translate.busy, text: tr('Переклад')),
+            const SizedBox(width: 6),
+          ],
+          tool(selecting ? LucideIcons.x : LucideIcons.share, tr('Поділитися рядками'), selecting, () => setState(() => picked = selecting ? null : [if (current >= 0) current])),
+        ]),
+      ),
+      if (selecting)
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 16,
+          child: Center(
+            child: GestureDetector(
+              onTap: picked!.isEmpty ? null : _share,
+              child: Container(
+                height: 44,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: picked!.isEmpty ? 0.5 : 1), borderRadius: BorderRadius.circular(22), boxShadow: const [BoxShadow(color: Color(0x66000000), blurRadius: 24, offset: Offset(0, 8))]),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(LucideIcons.share, size: 17, color: Colors.black),
+                  const SizedBox(width: 8),
+                  Text(picked!.isEmpty ? tr('Оберіть рядки') : tr('Поділитися ({n})', {'n': picked!.length}), style: body(15, color: Colors.black, weight: FontWeight.w600)),
+                ]),
+              ),
+            ),
+          ),
+        ),
+    ]);
+  }
+}
+
+/// Картка з рядками пісні для «Поділитися» (1080×1350, як на сайті): колір обкладинки, обкладинка,
+/// назва й виконавець, рядки великим шрифтом, «GameCon».
+Future<Uint8List?> lyricsCard(List<String> lines, QueueTrack track, Color? tint) async {
+  const w = 1080.0, h = 1350.0;
+  final recorder = ui.PictureRecorder();
+  final canvas = Canvas(recorder, const Rect.fromLTWH(0, 0, w, h));
+  canvas.drawRect(
+    const Rect.fromLTWH(0, 0, w, h),
+    Paint()..shader = ui.Gradient.linear(Offset.zero, const Offset(0, h), [tint ?? const Color(0xFF1D4FD1), const Color(0xFF050913)]),
+  );
+  void paragraph(String value, TextStyle style, Offset at, {double width = 888, int? maxLines}) {
+    final painter = TextPainter(text: TextSpan(text: value, style: style), textDirection: TextDirection.ltr, maxLines: maxLines, ellipsis: maxLines == null ? null : '…')..layout(maxWidth: width);
+    painter.paint(canvas, at);
+  }
+
+  TextStyle font(double size, FontWeight weight, Color color, [double height = 1.2]) => TextStyle(fontFamily: 'Montserrat', fontSize: size, fontWeight: weight, color: color, height: height);
+  var x = 96.0;
+  final cover = track.cover == null ? null : await _netImage(track.cover!, 300);
+  if (cover != null) {
+    const box = Rect.fromLTWH(96, 110, 150, 150);
+    canvas.save();
+    canvas.clipRRect(RRect.fromRectAndRadius(box, const Radius.circular(18)));
+    canvas.drawImageRect(cover, Rect.fromLTWH(0, 0, cover.width.toDouble(), cover.height.toDouble()), box, Paint()..filterQuality = FilterQuality.high);
+    canvas.restore();
+    x = 280;
+  }
+  paragraph(track.title, font(44, FontWeight.w700, Colors.white), Offset(x, 128), width: w - x - 96, maxLines: 1);
+  paragraph(artistOf(track.artist, ''), font(36, FontWeight.w500, Colors.white70), Offset(x, 190), width: w - x - 96, maxLines: 1);
+  // Рядки: великим жирним шрифтом, з переносом за шириною; що не влізло — відкидаємо.
+  var y = 360.0;
+  for (final value in lines) {
+    final painter = TextPainter(text: TextSpan(text: value, style: font(66, FontWeight.w800, Colors.white, 1.22)), textDirection: TextDirection.ltr)..layout(maxWidth: 888);
+    if (y + painter.height > 1200) break;
+    painter.paint(canvas, Offset(96, y));
+    y += painter.height + 24;
+  }
+  paragraph('GameCon', font(34, FontWeight.w700, Colors.white.withValues(alpha: 0.75)), const Offset(96, 1236));
+  final image = await recorder.endRecording().toImage(w.toInt(), h.toInt());
+  final data = await image.toByteData(format: ui.ImageByteFormat.png);
+  return data?.buffer.asUint8List();
+}
+
+/// «Поділитися рядками»: картка-картинка через системне меню «Поділитися».
+Future<void> shareLyricLines(BuildContext context, List<String> lines, QueueTrack track, Color? tint) async {
+  if (lines.isEmpty) return;
+  try {
+    final png = await lyricsCard(lines, track, tint);
+    if (png == null) throw StateError('png');
+    final caption = [track.title, if (artistOf(track.artist, '').isNotEmpty) artistOf(track.artist, '')].join(' — ');
+    await SharePlus.instance.share(ShareParams(files: [XFile.fromData(png, mimeType: 'image/png', name: 'gamecon-lyrics.png')], text: caption));
+  } catch (_) {
+    if (context.mounted) toast(context, tr('Не вдалося поділитися рядками.'), kind: ToastKind.error);
   }
 }
 

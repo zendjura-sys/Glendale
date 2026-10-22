@@ -12,16 +12,20 @@ class LyricLine {
 }
 
 class Lyrics {
-  const Lyrics({required this.timed, required this.lines});
+  const Lyrics({required this.timed, required this.lines, this.source = ''});
   final bool timed;
   final List<LyricLine> lines;
+
+  /// Текст як є (з мітками) — для зіставлення з перекладом.
+  final String source;
 }
 
 final _stamp = RegExp(r'\[(\d{1,2}):(\d{1,2})(?:[.:](\d{1,3}))?\]');
 // Службові теги LRC: [ar:…], [ti:…], [offset:…] тощо.
 final _tag = RegExp(r'^\[[a-z]+:.*\]$', caseSensitive: false);
 
-Lyrics parseLyrics(String source) {
+/// [raw] — текст як віддав сервер (без обрізання), щоб рядки перекладу лягали точно.
+Lyrics parseLyrics(String source, {String? raw}) {
   final timed = <LyricLine>[];
   final plain = <LyricLine>[];
 
@@ -44,9 +48,29 @@ Lyrics parseLyrics(String source) {
 
   if (timed.length >= 3) {
     timed.sort((a, b) => (a.time ?? 0).compareTo(b.time ?? 0));
-    return Lyrics(timed: true, lines: timed);
+    return Lyrics(timed: true, lines: timed, source: raw ?? source);
   }
-  return Lyrics(timed: false, lines: plain.isNotEmpty ? plain : timed);
+  return Lyrics(timed: false, lines: plain.isNotEmpty ? plain : timed, source: raw ?? source);
+}
+
+final _leadingStamps = RegExp(r'^(\[[0-9:.]+\]\s*)+');
+
+/// Рядки тексту без міток LRC і службових тегів — саме так їх перекладає сервер
+/// (ContentTranslator::lyrics), рядок у рядок.
+List<String> sourceLines(String source) => [
+      for (final raw in source.split(RegExp(r'\r\n|\r|\n')))
+        if (raw.replaceFirst(_leadingStamps, '').trim() case final line when !_tag.hasMatch(line)) line,
+    ];
+
+/// «Оригінальний рядок → переклад» (як на сайті): рядки перекладу зіставляються з рядками
+/// оригіналу за порядком; порожні й незмінені пропускаються.
+Map<String, String> alignTranslation(String source, String translation) {
+  final original = sourceLines(source);
+  final translated = translation.split('\n');
+  return {
+    for (var i = 0; i < original.length && i < translated.length; i++)
+      if (original[i].isNotEmpty && translated[i].trim().isNotEmpty && translated[i].trim() != original[i]) original[i]: translated[i].trim(),
+  };
 }
 
 /// Індекс рядка, що звучить зараз (-1 — ще до першого рядка).

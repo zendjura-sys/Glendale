@@ -260,7 +260,7 @@ class _TopPick extends StatelessWidget {
         Text(station ? tr('Твоя станція') : tr('Створено для тебе'), style: body(12.5, color: muted, weight: FontWeight.w500)),
         const SizedBox(height: 6),
         GestureDetector(
-          onTap: () => station ? startStation(context, text(item['key']) ?? 'me') : openMusic(context, text(item['href'])),
+          onTap: () => station ? startStation(context, text(item['key']) ?? 'me', label: title) : openMusic(context, text(item['href'])),
           child: MixArt(colors: colors.isEmpty ? [primary] : colors, covers: coversOf(item['covers']), label: title, footnote: subtitle, aspect: 4 / 5, icon: station ? LucideIcons.radio : null),
         ),
       ]),

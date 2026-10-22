@@ -19,7 +19,8 @@ import 'widgets.dart';
 import 'i18n.dart';
 
 /// Грає список треків GameCon і радіостанцій (Spotify-треки відкриваються в Spotify).
-Future<void> playTracks(BuildContext context, List<Map<String, dynamic>> tracks, int index, {bool shuffle = false, String? station}) async {
+/// [from] — «Грає з…»; без нього — екран, з якого запустили ([playFromHere]).
+Future<void> playTracks(BuildContext context, List<Map<String, dynamic>> tracks, int index, {bool shuffle = false, String? station, PlayFrom? from}) async {
   final track = tracks[index];
   if (text(track['source']) == 'spotify') {
     final link = text(track['url']) ?? 'https://open.spotify.com/track/${track['id']}';
@@ -30,7 +31,7 @@ Future<void> playTracks(BuildContext context, List<Map<String, dynamic>> tracks,
   final local = tracks.where((t) => text(t['source']) != 'spotify').toList();
   final start = local.indexWhere((t) => trackKey(t) == trackKey(track));
   if (shuffle != player.shuffle) player.toggleShuffle();
-  await player.playList(local, start < 0 ? 0 : start, station: station);
+  await player.playList(local, start < 0 ? 0 : start, station: station, from: from ?? playFromHere(context));
 }
 
 /// «Завантажити трек»: файл, теги, обкладинка з каталогу. Повертає true, якщо трек додано.
@@ -723,78 +724,81 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
     final tracks = maps(page['tracks']);
     final manage = mapOf(page['can'])['manage'] == true;
     final count = intOf(playlist['tracks_count'], tracks.length);
-    return ScreenScroll(
-      onRefresh: _load,
-      children: [
-        Glass(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.pop()),
-              const Spacer(),
-              if (manage)
-                IconButton(
-                  onPressed: () async {
-                    final choice = await showGcSheet<String>(
-                      context,
-                      builder: (sheet) => Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
-                        child: Column(mainAxisSize: MainAxisSize.min, children: [
-                          SheetAction(icon: LucideIcons.pencil, label: tr('Редагувати'), onTap: () => Navigator.pop(sheet, 'edit')),
-                          SheetAction(icon: LucideIcons.trash2, label: tr('Видалити плейлист'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
-                        ]),
-                      ),
-                    );
-                    if (!context.mounted || choice == null) return;
-                    if (choice == 'edit') {
-                      if (await editPlaylist(context, playlist: playlist) != null) _load();
-                    } else if (await confirm(context, tr('Видалити плейлист?'), text: tr('Треки залишаться у ваших аудіозаписах.'), action: tr('Видалити'), danger: true)) {
-                      if (!context.mounted) return;
-                      if (await attempt(context, () => api.delete(Api.site('/music/playlists/${widget.id}'))) && context.mounted) context.pop();
-                    }
-                  },
-                  icon: Icon(LucideIcons.ellipsis, color: muted),
-                ),
-            ]),
-            const SizedBox(height: 8),
-            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              SizedBox(width: 110, height: 110, child: PlaylistCover(playlist: playlist, radius: 18)),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(playlist['is_public'] == false ? tr('Приватний плейлист') : tr('Плейлист'), style: body(12, color: muted)),
-                  const SizedBox(height: 4),
-                  Text(text(playlist['title']) ?? '', style: display(19)),
-                  const SizedBox(height: 6),
-                  GestureDetector(
-                    onTap: () => context.push('/u/${owner['username']}'),
-                    child: Text(text(owner['name']) ?? '', style: body(13, color: const Color(0xFF9AA8FF), weight: FontWeight.w600)),
-                  ),
-                  Text('$count ${plural(count, 'трек', 'треки', 'треків')} · ${minutesLabel(playlist['duration'])}', style: body(12.5, color: muted)),
-                ]),
-              ),
-            ]),
-            if (text(playlist['description']) != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(text(playlist['description'])!, style: body(14, color: soft))),
-            if (tracks.isNotEmpty) ...[
-              const SizedBox(height: 14),
-              Row(children: [
-                Expanded(child: PrimaryButton(label: tr('Слухати'), icon: LucideIcons.play, onPressed: () => playTracks(context, tracks, 0))),
-                const SizedBox(width: 10),
-                Expanded(child: GhostButton(label: tr('Перемішати'), icon: LucideIcons.shuffle, onPressed: () => playTracks(context, tracks, DateTime.now().millisecond % tracks.length, shuffle: true))),
-              ]),
-            ],
-          ]),
-        ),
-        const SizedBox(height: 12),
-        if (tracks.isEmpty)
-          EmptyState(icon: LucideIcons.volumeOff, title: tr('Плейлист порожній'), text: manage ? tr('Додавайте треки через меню «⋯» у списку музики.') : null)
-        else
+    return PlaySource(
+      from: PlayFrom(text(playlist['title']) ?? tr('Плейлист'), '/music/playlists/${widget.id}'),
+      child: ScreenScroll(
+        onRefresh: _load,
+        children: [
           Glass(
-            padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-            child: Column(children: [
-              for (var i = 0; i < tracks.length; i++) LibraryTrack(key: ValueKey('pl-${tracks[i]['id']}'), tracks: tracks, index: i, playlistId: widget.id, canManagePlaylist: manage, onChanged: _load),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                RoundIcon(icon: LucideIcons.arrowLeft, onTap: () => context.pop()),
+                const Spacer(),
+                if (manage)
+                  IconButton(
+                    onPressed: () async {
+                      final choice = await showGcSheet<String>(
+                        context,
+                        builder: (sheet) => Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+                          child: Column(mainAxisSize: MainAxisSize.min, children: [
+                            SheetAction(icon: LucideIcons.pencil, label: tr('Редагувати'), onTap: () => Navigator.pop(sheet, 'edit')),
+                            SheetAction(icon: LucideIcons.trash2, label: tr('Видалити плейлист'), color: dangerSoft, onTap: () => Navigator.pop(sheet, 'delete')),
+                          ]),
+                        ),
+                      );
+                      if (!context.mounted || choice == null) return;
+                      if (choice == 'edit') {
+                        if (await editPlaylist(context, playlist: playlist) != null) _load();
+                      } else if (await confirm(context, tr('Видалити плейлист?'), text: tr('Треки залишаться у ваших аудіозаписах.'), action: tr('Видалити'), danger: true)) {
+                        if (!context.mounted) return;
+                        if (await attempt(context, () => api.delete(Api.site('/music/playlists/${widget.id}'))) && context.mounted) context.pop();
+                      }
+                    },
+                    icon: Icon(LucideIcons.ellipsis, color: muted),
+                  ),
+              ]),
+              const SizedBox(height: 8),
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                SizedBox(width: 110, height: 110, child: PlaylistCover(playlist: playlist, radius: 18)),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(playlist['is_public'] == false ? tr('Приватний плейлист') : tr('Плейлист'), style: body(12, color: muted)),
+                    const SizedBox(height: 4),
+                    Text(text(playlist['title']) ?? '', style: display(19)),
+                    const SizedBox(height: 6),
+                    GestureDetector(
+                      onTap: () => context.push('/u/${owner['username']}'),
+                      child: Text(text(owner['name']) ?? '', style: body(13, color: const Color(0xFF9AA8FF), weight: FontWeight.w600)),
+                    ),
+                    Text('$count ${plural(count, 'трек', 'треки', 'треків')} · ${minutesLabel(playlist['duration'])}', style: body(12.5, color: muted)),
+                  ]),
+                ),
+              ]),
+              if (text(playlist['description']) != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(text(playlist['description'])!, style: body(14, color: soft))),
+              if (tracks.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Row(children: [
+                  Expanded(child: PrimaryButton(label: tr('Слухати'), icon: LucideIcons.play, onPressed: () => playTracks(context, tracks, 0))),
+                  const SizedBox(width: 10),
+                  Expanded(child: GhostButton(label: tr('Перемішати'), icon: LucideIcons.shuffle, onPressed: () => playTracks(context, tracks, DateTime.now().millisecond % tracks.length, shuffle: true))),
+                ]),
+              ],
             ]),
           ),
-      ],
+          const SizedBox(height: 12),
+          if (tracks.isEmpty)
+            EmptyState(icon: LucideIcons.volumeOff, title: tr('Плейлист порожній'), text: manage ? tr('Додавайте треки через меню «⋯» у списку музики.') : null)
+          else
+            Glass(
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+              child: Column(children: [
+                for (var i = 0; i < tracks.length; i++) LibraryTrack(key: ValueKey('pl-${tracks[i]['id']}'), tracks: tracks, index: i, playlistId: widget.id, canManagePlaylist: manage, onChanged: _load),
+              ]),
+            ),
+        ],
+      ),
     );
   }
 }

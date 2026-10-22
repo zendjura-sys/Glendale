@@ -49,11 +49,55 @@ void openMusic(BuildContext context, String? href) {
   if (href != null) context.push(appPathFor(href));
 }
 
+/// «Грає з…» за маршрутом екрана (як pageSource() на сайті — назва сторінки й посилання).
+PlayFrom? playFromRoute(Uri uri) {
+  final q = uri.queryParameters;
+  final path = uri.toString();
+  final segments = uri.pathSegments;
+  if (segments.isEmpty || segments.first != 'music') return null;
+  if (q['user'] != null) return PlayFrom(tr('Аудіозаписи @{v}', {'v': q['user']}), path);
+  final label = switch (segments.length > 1 ? segments[1] : '') {
+    'album' => text(q['title']),
+    'artist' || 'genre' => text(q['name']),
+    'mix' when segments.length > 2 => mixTitle(segments[2]).$1,
+    'playlists' => tr('Плейлист'),
+    'search' => text(q['q']) == null ? tr('Пошук') : tr('Пошук: «{q}»', {'q': q['q']!.trim()}),
+    'charts' => tr('Чарти'),
+    'replay' => segments.length > 2 ? tr('Replay {year}', {'year': segments[2]}) : 'Replay',
+    'library' => tr('Медіатека'),
+    'new' => tr('Нове'),
+    'radio' => tr('Радіо'),
+    _ => tr('Музика'),
+  };
+  return label == null ? null : PlayFrom(label, path);
+}
+
+/// «Грає з…» для запуску з цього місця: явне джерело сторінки ([PlaySource]) або маршрут.
+PlayFrom? playFromHere(BuildContext context) {
+  final own = PlaySource.of(context);
+  if (own != null) return own;
+  try {
+    final uri = GoRouter.maybeOf(context)?.state.uri;
+    return uri == null ? null : playFromRoute(uri);
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Підпис станції для «Грає з…».
+String stationLabel(String key) {
+  final name = key.contains(':') ? key.substring(key.indexOf(':') + 1) : '';
+  if (key.startsWith('artist:')) return tr('Станція «{name}»', {'name': name});
+  if (key.startsWith('genre:')) return tr('{name}: станція', {'name': name});
+  if (key.startsWith('track:')) return tr('Станція за треком');
+  return tr('Твоя станція');
+}
+
 /// Безкінечна станція: перша порція одразу, далі плеєр дописує чергу сам.
-Future<void> startStation(BuildContext context, String key) async {
+Future<void> startStation(BuildContext context, String key, {String? label}) async {
   final player = AppScope.read(context).player;
   try {
-    if (!await player.playStation(key) && context.mounted) toast(context, tr('На цій станції поки немає треків.'), kind: ToastKind.info);
+    if (!await player.playStation(key, from: PlayFrom(label ?? stationLabel(key))) && context.mounted) toast(context, tr('На цій станції поки немає треків.'), kind: ToastKind.info);
   } catch (_) {
     if (context.mounted) toast(context, tr('Не вдалося запустити станцію.'), kind: ToastKind.error);
   }
@@ -342,7 +386,7 @@ class StationTile extends StatelessWidget {
     final colors = [for (final c in (station['colors'] as List? ?? const [])) hexColor(c, primary)];
     return Tile(
       width: width ?? tileWidth(context),
-      onTap: () => startStation(context, text(station['key']) ?? 'me'),
+      onTap: () => startStation(context, text(station['key']) ?? 'me', label: title),
       art: MixArt(colors: colors.isEmpty ? [primary] : colors, covers: coversOf(station['covers']), label: title, icon: LucideIcons.radio, aspect: aspect),
       title: title,
       subtitle: subtitle,
@@ -672,6 +716,7 @@ Future<void> showTrackMenu(BuildContext context, Map<String, dynamic> track, {Vo
           if (local) item('station', LucideIcons.radio, tr('Створити станцію')),
           if (local && album != null) item('album', LucideIcons.disc3, tr('Перейти до альбому')),
           if (!radio && artist != null && !junkMeta(artist)) item('artist', LucideIcons.userRound, tr('Перейти до виконавця')),
+          item('info', LucideIcons.info, tr('Відомості про пісню')),
           if (!radio) item('lyrics', LucideIcons.fileText, tr('Переглянути текст')),
           if (!radio) item('share', LucideIcons.share2, tr('Поділитися на стіні')),
           if (local) item('together', LucideIcons.headphones, tr('Слухати разом')),
@@ -716,6 +761,8 @@ Future<void> showTrackMenu(BuildContext context, Map<String, dynamic> track, {Vo
       final router = GoRouter.of(context);
       beforeNavigate?.call();
       router.push(choice == 'album' ? albumPath(artist ?? '', album ?? '') : artistPath(artist ?? ''));
+    case 'info':
+      await showSongInfo(context, track, beforeNavigate: beforeNavigate);
     case 'lyrics':
       await showLyricsSheet(context, track);
     case 'share':
@@ -790,12 +837,113 @@ Future<void> addToPlaylist(BuildContext context, Map<String, dynamic> track) asy
 }
 
 /// Текст пісні: свій трек — з нашого каталогу (сервер сам дошукає), інший (Spotify) — пошук за назвою.
+// ───────────────────────── Відомості про пісню ─────────────────────────
+
+/// Назви кодеків для людей, як на сайті (song-info.tsx): «flac» → «FLAC», «alac» → «Apple Lossless (ALAC)».
+String codecName(String codec) {
+  if (codec.startsWith('pcm_')) return tr('PCM (без стиснення)');
+  return switch (codec) {
+    'flac' => 'FLAC',
+    'alac' => 'Apple Lossless (ALAC)',
+    'aac' => 'AAC',
+    'mp3' => 'MP3',
+    'opus' => 'Opus',
+    'vorbis' => 'Ogg Vorbis',
+    'ape' => 'Monkey’s Audio',
+    'wavpack' => 'WavPack',
+    'wmav2' => 'WMA',
+    'ac3' => 'Dolby Digital (AC-3)',
+    'eac3' => 'Dolby Digital Plus',
+    _ => codec.toUpperCase(),
+  };
+}
+
+/// Рядок формату: «FLAC · 96 кГц · 24 біт · стерео».
+String? formatLine(dynamic audio) {
+  if (audio is! Map || text(audio['codec']) == null) return null;
+  final rate = intOf(audio['sample_rate']), depth = intOf(audio['bit_depth']), bitrate = intOf(audio['bitrate']), channels = intOf(audio['channels']);
+  final khz = (rate / 1000).toStringAsFixed(rate % 1000 == 0 ? 0 : 1).replaceAll('.', ',');
+  return [
+    codecName(text(audio['codec'])!),
+    if (rate > 0) tr('{n} кГц', {'n': khz}),
+    if (depth > 0) tr('{n} біт', {'n': depth}),
+    if (bitrate > 0) tr('{n} кбіт/с', {'n': bitrate}),
+    if (channels > 0) channels == 1 ? tr('моно') : (channels == 2 ? tr('стерео') : tr('{n} каналів', {'n': channels})),
+  ].join(' · ');
+}
+
+/// «Відомості про пісню», як в Apple Music: альбом, рік, жанр, тривалість, формат звуку, прослуховування.
+Future<void> showSongInfo(BuildContext context, Map<String, dynamic> track, {VoidCallback? beforeNavigate}) {
+  final source = text(track['source']) ?? 'local';
+  final local = source == 'local';
+  final artist = text(track['artist']) ?? '';
+  final album = text(track['album']);
+  final homepage = text(track['homepage']);
+  final format = local ? formatLine(track['audio']) : null;
+  final router = GoRouter.maybeOf(context);
+  return showGcSheet<void>(
+    context,
+    builder: (sheet) {
+      Widget row(String label, Widget value) => Container(
+            padding: const EdgeInsets.symmetric(vertical: 11),
+            decoration: BoxDecoration(border: Border(bottom: BorderSide(color: line))),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(label, style: body(14, color: muted)),
+              const SizedBox(width: 16),
+              Expanded(child: Align(alignment: Alignment.centerRight, child: value)),
+            ]),
+          );
+      Text value(String v) => Text(v, textAlign: TextAlign.right, style: body(14.5));
+      Widget link(String v, VoidCallback onTap) => GestureDetector(onTap: onTap, child: Text(v, textAlign: TextAlign.right, style: body(14.5, color: accent, weight: FontWeight.w600)));
+      Future<void> open(String url) => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      final seconds = intOf(track['duration']);
+      final plays = intOf(track['plays_count']);
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            SizedBox(width: 72, child: Artwork(url: text(track['cover_url']), seed: trackKey(track), radius: 10, icon: source == 'radio' ? LucideIcons.radio : LucideIcons.music)),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(text(track['title']) ?? tr('Без назви'), maxLines: 2, overflow: TextOverflow.ellipsis, style: display(17)),
+                Text(artistOf(artist, '—'), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: muted)),
+                if (local && QualityBadge.label(text(track['quality'])) != null) Padding(padding: const EdgeInsets.only(top: 6), child: QualityBadge(text(track['quality']))),
+              ]),
+            ),
+          ]),
+          const SizedBox(height: 8),
+          if (album != null)
+            row(
+              tr('Альбом'),
+              router == null
+                  ? value(album)
+                  : link(album, () {
+                      Navigator.pop(sheet);
+                      beforeNavigate?.call();
+                      router.push(albumPath(artist, album));
+                    }),
+            ),
+          if (local && track['year'] != null) row(tr('Рік'), value('${track['year']}')),
+          if (text(track['genre']) != null) row(tr('Жанр'), value(text(track['genre'])!)),
+          if (seconds > 0) row(tr('Тривалість'), value(duration(seconds))),
+          if (format != null) row(tr('Формат'), value(format)),
+          if (local && plays > 0) row(tr('Прослуховувань'), value('$plays')),
+          if (source == 'spotify') row(tr('Джерело'), link('Spotify', () => open(text(track['url']) ?? 'https://open.spotify.com/track/${track['id']}'))),
+          if (homepage != null) row(tr('Сайт станції'), link(Uri.tryParse(homepage)?.host ?? homepage, () => open(homepage))),
+        ]),
+      );
+    },
+  );
+}
+
 Future<Lyrics?> fetchLyrics(Api api, {int? id, required String artist, required String title, int seconds = 0}) async {
   final data = id != null && id > 0
       ? await api.get(Api.site('/music/tracks/$id/lyrics'))
       : await api.get(Api.site('/music/lyrics/find?${Uri(queryParameters: {'artist': artist, 'title': title, if (seconds > 0) 'duration': '$seconds'}).query}'));
-  final source = text(data['lyrics'])?.trim();
-  return source == null || source.isEmpty ? null : parseLyrics(source);
+  final raw = data['lyrics'] is String ? data['lyrics'] as String : '';
+  final source = raw.trim();
+  return source.isEmpty ? null : parseLyrics(source, raw: raw);
 }
 
 Future<void> showLyricsSheet(BuildContext context, Map<String, dynamic> track) {

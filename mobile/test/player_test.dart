@@ -56,6 +56,15 @@ void main() {
     }
   });
 
+  testWidgets('«Поділитися рядками»: картка 1080×1350', (tester) async {
+    final track = QueueTrack(id: 42, url: 'https://example.com/a.mp3', title: 'Neon Skyline', artist: 'Nightdrive Kyiv');
+    final png = await tester.runAsync(() => lyricsCard(['Перший рядок пісні', 'І другий — довший, щоб перенісся на новий рядок'], track, const Color(0xFF7A3FD1)));
+    expect(png, isNotNull);
+    final data = ByteData.sublistView(png!);
+    expect([data.getUint32(16), data.getUint32(20)], [1080, 1350]);
+    if (out != null) File('$out/lyrics-card.png').writeAsBytesSync(png);
+  });
+
   for (final (name, size, ratio) in [('phone', const Size(1170, 2532), 3.0), ('tablet', const Size(2360, 1640), 2.0)]) {
     testWidgets('плеєр малюється: $name', (tester) async {
       if (out != null) {
@@ -74,6 +83,7 @@ void main() {
         QueueTrack(id: 43, url: 'https://example.com/b.mp3', title: 'Північне сяйво', artist: 'Aurora Lab'),
       ];
       player.index = 0;
+      player.from = const PlayFrom('Нічне місто', '/music/album?artist=Nightdrive%20Kyiv&title=Нічне%20місто');
       player.duration = const Duration(minutes: 3, seconds: 20);
       player.position = const Duration(minutes: 1, seconds: 4);
       tester.view.physicalSize = size;
@@ -102,6 +112,31 @@ void main() {
           final image = await boundary.toImage(pixelRatio: 1);
           final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
           File('$out/player-$name.png').writeAsBytesSync(bytes!.buffer.asUint8List());
+        });
+      }
+      // Черга: «Грає з…» над нею й розділ «Звук» під нею.
+      await tester.tap(find.byTooltip('Далі в черзі'));
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.textContaining('Грає з: Нічне місто', findRichText: true), findsOneWidget);
+      expect(find.text('Звук'), findsOneWidget);
+      expect(find.text('Вирівнювання гучності'), findsOneWidget);
+      for (final chip in ['6 с', '30 хв']) {
+        await tester.ensureVisible(find.text(chip));
+        await tester.pump();
+        await tester.tap(find.text(chip));
+      }
+      await tester.pump();
+      expect(player.crossfade, 6);
+      expect(player.sleepMinutesLeft, 30);
+      player.setSleep();
+      if (out != null) {
+        await tester.runAsync(() async {
+          final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+          final image = await boundary.toImage(pixelRatio: 1);
+          final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+          File('$out/player-$name-queue.png').writeAsBytesSync(bytes!.buffer.asUint8List());
         });
       }
       await tester.pumpWidget(const SizedBox());
