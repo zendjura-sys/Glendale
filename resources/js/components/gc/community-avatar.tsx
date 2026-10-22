@@ -12,10 +12,10 @@ const sizes = {
 
 const palettes = [
     'from-gc-blue via-gc-indigo to-gc-purple',
-    'from-gc-mint via-gc-cyan to-gc-blue',
+    'from-[#0e7490] via-gc-cyan to-gc-blue',
     'from-gc-pink via-gc-purple to-gc-indigo',
-    'from-gc-coral via-gc-pink to-gc-purple',
-    'from-gc-cyan via-gc-blue to-gc-mint',
+    'from-[#1e40af] via-gc-blue to-gc-cyan',
+    'from-gc-cyan via-gc-blue to-[#1e40af]',
 ];
 
 export function CommunityAvatar({

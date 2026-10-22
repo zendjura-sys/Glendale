@@ -8,9 +8,9 @@ const sizes = {
 } as const;
 
 const tones = [
-    'from-[#facc15] via-[#f59e0b] to-[#ef4444]',
+    'from-[#38bdf8] via-gc-blue to-[#1e40af]',
     'from-gc-blue via-gc-indigo to-gc-purple',
-    'from-gc-mint via-gc-cyan to-gc-blue',
+    'from-[#0e7490] via-gc-cyan to-gc-blue',
     'from-gc-pink via-gc-purple to-gc-indigo',
 ];
 

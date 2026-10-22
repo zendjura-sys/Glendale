@@ -224,13 +224,8 @@ export function MixArt({
                             ),
                         )}
                     </div>
-                    <div
-                        className="absolute inset-0"
-                        style={{
-                            background: `linear-gradient(145deg, ${colors[0]}80, ${colors[1]}80)`,
-                        }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-black/20" />
+                    {/* Обкладинки — у справжніх кольорах; лише м'яке затемнення знизу під підпис. */}
+                    <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/55 to-transparent" />
                 </>
             )}
             {icon && (

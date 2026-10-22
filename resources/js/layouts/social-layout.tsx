@@ -187,7 +187,8 @@ function Sidebar() {
     );
 }
 
-function UserMenu() {
+/** Меню облікового запису (аватар): спільне для шапки сайту й розділу «Музика». */
+export function UserMenu() {
     const { auth } = usePage().props;
     const user = auth.user;
 
@@ -400,7 +401,7 @@ function TabItem({
     icon: ReactNode;
 }) {
     const className = cn(
-        'gc-tab relative flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 pt-1 text-[11px] font-medium transition-colors active:opacity-70',
+        'gc-tab glass-matte-tab relative flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-full pt-1 text-[11px] font-medium transition-colors active:opacity-70',
         active && 'is-active',
     );
     const body = (
@@ -492,13 +493,17 @@ function MobileNav() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: reduce ? 0 : 0.2 }}
-                        className="fixed inset-0 z-40 bg-black/45 lg:hidden"
+                        className="fixed inset-0 z-[54] bg-black/45 lg:hidden"
                     />
                 )}
             </AnimatePresence>
             <nav
                 aria-label={tr('Розділи')}
-                className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] [view-transition-name:gc-tabbar] lg:hidden"
+                className={cn(
+                    'pointer-events-none fixed inset-x-0 bottom-0 px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] lg:hidden',
+                    // Розгорнуте меню — над міні-плеєром; згорнута панель — під ним (плеєр стоїть над панеллю).
+                    open ? 'z-[55]' : 'z-40',
+                )}
             >
                 <m.div
                     layout
@@ -509,9 +514,10 @@ function MobileNav() {
                     dragElastic={0.22}
                     onDragEnd={onDragEnd}
                     transition={motionOr(reduce, SNAP)}
-                    style={{ borderRadius: 28 }}
+                    // Згорнутий острів — капсула (радіус = половина висоти), розгорнуте меню — м'які кути.
+                    style={{ borderRadius: open ? 28 : 35 }}
                     data-open={open || undefined}
-                    className="gc-island pointer-events-auto mx-auto flex max-w-[560px] flex-col overflow-hidden"
+                    className="gc-island pointer-events-auto mx-auto flex max-w-[560px] flex-col overflow-hidden [view-transition-name:gc-tabbar]"
                 >
                     <button
                         type="button"
@@ -520,7 +526,7 @@ function MobileNav() {
                         aria-expanded={open}
                         aria-label={open ? tr('Згорнути меню') : tr('Меню')}
                         data-test="mobile-menu"
-                        className="relative flex h-4 w-full shrink-0 touch-none items-end justify-center"
+                        className="relative flex h-4 w-full shrink-0 touch-none items-start justify-center pt-[3px]"
                     >
                         <span
                             className={cn(
@@ -731,9 +737,25 @@ function Announcement() {
     );
 }
 
+/** Остання сторінка сайту поза «Музикою» — куди веде «‹ Назад» у розділі (layouts/music-layout.tsx). */
+export const LAST_PAGE_KEY = 'gc:last-page';
+
 export default function SocialLayout({ children }: PropsWithChildren) {
     const { auth, modules } = usePage().props;
+    const { url } = usePage();
     const { current } = usePlayer();
+
+    useEffect(() => {
+        if (url.startsWith('/music')) {
+            return;
+        }
+
+        try {
+            sessionStorage.setItem(LAST_PAGE_KEY, url);
+        } catch {
+            // Приватний режим без сховища — «Назад» поведе в стрічку.
+        }
+    }, [url]);
 
     return (
         <div className="relative min-h-dvh">
@@ -760,7 +782,7 @@ export default function SocialLayout({ children }: PropsWithChildren) {
                 >
                     <Announcement />
                     <PageTransition>{children}</PageTransition>
-                    <SiteFooter />
+                    <SiteFooter className="glass-matte mb-4" />
                 </main>
             </div>
             <VoiceBar />

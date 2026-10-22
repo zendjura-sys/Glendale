@@ -33,6 +33,7 @@ import type { CSSProperties, PropsWithChildren, ReactNode } from 'react';
 import { TrackActionsProvider } from '@/components/am/track-actions';
 import { IncomingCall } from '@/components/gc/incoming-call';
 import { InboxListener } from '@/components/gc/inbox-listener';
+import { NotificationsMenu } from '@/components/gc/notifications-menu';
 import { VoiceBar } from '@/components/gc/voice-bar';
 import { BillingHost } from '@/components/billing/billing-host';
 import { SpotifyLogo, TrackCover } from '@/components/music/track-cover';
@@ -54,6 +55,7 @@ import {
     usePlayer,
 } from '@/lib/player';
 import { cn } from '@/lib/utils';
+import { LAST_PAGE_KEY, UserMenu } from '@/layouts/social-layout';
 
 const NowPlaying = lazy(() =>
     import('@/components/am/now-playing').then((module) => ({
@@ -267,7 +269,7 @@ function Transport() {
         'flex size-9 items-center justify-center rounded-md text-[var(--am-label)] transition hover:bg-[var(--am-fill)] disabled:opacity-30';
 
     return (
-        <div className="am-glass sticky top-0 z-30 hidden h-14 items-center gap-4 px-5 lg:flex">
+        <div className="glass-matte glass-matte--bar sticky top-0 z-30 hidden h-14 items-center gap-4 px-5 lg:flex">
             <div className="flex items-center gap-1">
                 <button
                     type="button"
@@ -426,7 +428,46 @@ function Transport() {
                     <ListMusic className="size-[18px]" />
                 </button>
             </div>
+            <div className="am-site-controls flex items-center gap-0.5 border-l border-[var(--am-sep)] pl-3">
+                <NotificationsMenu />
+                <UserMenu />
+            </div>
         </div>
+    );
+}
+
+/** Куди веде «‹ Назад»: остання сторінка сайту поза «Музикою», інакше — стрічка. */
+function lastSitePage(): string {
+    try {
+        return sessionStorage.getItem(LAST_PAGE_KEY) || '/feed';
+    } catch {
+        return '/feed';
+    }
+}
+
+/**
+ * Шапка розділу на телефоні — те саме матове скло, що й шапка сайту: ліворуч аватар (меню
+ * облікового запису) і сповіщення, праворуч «‹ Назад» — повернення на сайт.
+ */
+function PhoneHeader() {
+    const [back, setBack] = useState('/feed');
+
+    useEffect(() => setBack(lastSitePage()), []);
+
+    return (
+        <header className="glass-matte glass-matte--bar am-site-controls sticky top-0 z-30 pt-[env(safe-area-inset-top)] lg:hidden">
+            <div className="flex h-14 items-center gap-1 px-2">
+                <UserMenu />
+                <NotificationsMenu />
+                <Link
+                    href={back}
+                    className="am-body ml-auto inline-flex min-h-11 items-center gap-0.5 rounded-[10px] pr-2 pl-1 font-medium text-[var(--am-accent)] active:opacity-70"
+                >
+                    <ChevronLeft className="size-6" strokeWidth={2.4} />
+                    {tr('Назад')}
+                </Link>
+            </div>
+        </header>
     );
 }
 
@@ -454,7 +495,7 @@ function MiniPlayer() {
                         if (info.offset.x < -70) next();
                         else if (info.offset.x > 70) prev();
                     }}
-                    className="am-glass pointer-events-auto mx-auto mb-2 flex h-14 max-w-[560px] touch-pan-y items-center gap-3 rounded-full pr-2 pl-2"
+                    className="glass-matte pointer-events-auto mx-auto mb-2 flex h-14 max-w-[560px] touch-pan-y items-center gap-3 rounded-full pr-2 pl-2"
                 >
                     <button
                         type="button"
@@ -507,55 +548,60 @@ function MiniPlayer() {
     );
 }
 
+/**
+ * Нижня панель «Музики» — той самий матовий острів, що й панель сайту (layouts/social-layout.tsx):
+ * та сама висота, радіус і відступи, спільне ім'я переходу gc-tabbar — при вході в розділ панель
+ * сайту плавно перетікає в цю, а при виході повертається.
+ */
 function TabBar() {
     const active = useActive();
+    const tabs = [
+        ...TABS.map((tab) => ({
+            href: tab.href,
+            label: tab.label(),
+            icon: tab.icon,
+            on:
+                active(tab.href, tab.exact) ||
+                (tab.href === '/music/library' && active('/music/playlists')),
+        })),
+        {
+            href: '/music/search',
+            label: tr('Пошук'),
+            icon: Search,
+            on: active('/music/search'),
+        },
+    ];
 
     return (
-        <div className="flex items-center gap-2">
-            <nav
-                className="am-glass flex h-[62px] flex-1 items-center rounded-full px-1.5"
-                aria-label={tr('Розділи музики')}
-            >
-                {TABS.map((tab) => {
-                    const on =
-                        active(tab.href, tab.exact) ||
-                        (tab.href === '/music/library' &&
-                            active('/music/playlists'));
-
-                    return (
-                        <Link
-                            key={tab.href}
-                            href={tab.href}
-                            className={cn(
-                                'flex h-[52px] flex-1 flex-col items-center justify-center gap-0.5 rounded-full text-[10px] font-semibold transition',
-                                on
-                                    ? 'bg-[var(--am-tab-active)] text-[var(--am-accent)]'
-                                    : 'text-[var(--am-label)]',
-                            )}
-                            aria-current={on ? 'page' : undefined}
-                        >
-                            <tab.icon
-                                className="size-[22px]"
-                                strokeWidth={on ? 2.4 : 2}
-                            />
-                            {tab.label()}
-                        </Link>
-                    );
-                })}
-            </nav>
-            <Link
-                href="/music/search"
-                aria-label={tr('Пошук')}
-                className={cn(
-                    'am-glass flex size-[62px] shrink-0 items-center justify-center rounded-full',
-                    active('/music/search')
-                        ? 'text-[var(--am-accent)]'
-                        : 'text-[var(--am-label)]',
-                )}
-            >
-                <Search className="size-6" strokeWidth={2.2} />
-            </Link>
-        </div>
+        <nav
+            className="glass-matte flex flex-col overflow-hidden rounded-[35px] [view-transition-name:gc-tabbar]"
+            aria-label={tr('Розділи музики')}
+        >
+            <span aria-hidden className="h-4 shrink-0" />
+            <div className="flex items-stretch px-1 pb-1">
+                {tabs.map((tab) => (
+                    <Link
+                        key={tab.href}
+                        href={tab.href}
+                        className={cn(
+                            'glass-matte-tab flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-full pt-1 text-[11px] font-medium transition-colors active:opacity-70',
+                            tab.on
+                                ? 'text-[var(--am-accent)]'
+                                : 'text-[var(--am-label2)]',
+                        )}
+                        aria-current={tab.on ? 'page' : undefined}
+                    >
+                        <tab.icon
+                            className="size-[22px]"
+                            strokeWidth={tab.on ? 2.4 : 2}
+                        />
+                        <span className="max-w-full truncate px-0.5">
+                            {tab.label}
+                        </span>
+                    </Link>
+                ))}
+            </div>
+        </nav>
     );
 }
 
@@ -649,10 +695,11 @@ export default function MusicLayout({ children }: PropsWithChildren) {
                     <Sidebar onUpload={() => setUploading(true)} />
                     <div className="min-w-0 flex-1">
                         <Transport />
+                        <PhoneHeader />
                         <main
                             id="main-content"
                             className={cn(
-                                'mx-auto max-w-[1280px] pt-[env(safe-area-inset-top)] lg:pt-4',
+                                'mx-auto max-w-[1280px] lg:pt-4',
                                 player.current
                                     ? 'pb-[calc(env(safe-area-inset-bottom)+150px)]'
                                     : 'pb-[calc(env(safe-area-inset-bottom)+90px)]',
@@ -665,7 +712,7 @@ export default function MusicLayout({ children }: PropsWithChildren) {
                 </div>
 
                 {/* Телефон: міні-плеєр над «скляною» панеллю. */}
-                <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+8px)] lg:hidden">
+                <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] lg:hidden">
                     <MiniPlayer />
                     <div className="pointer-events-auto mx-auto max-w-[560px]">
                         <TabBar />
@@ -696,15 +743,8 @@ export default function MusicLayout({ children }: PropsWithChildren) {
 
 /** Кнопка «‹ GameCon» для телефона: на ПК повернення — у бічному меню. */
 export function BackToGameCon() {
-    return (
-        <Link
-            href="/feed"
-            className="am-body inline-flex min-h-11 items-center px-[calc(var(--am-gutter)-6px)] text-[var(--am-accent)] lg:hidden"
-        >
-            <ChevronLeft className="size-7" strokeWidth={2.4} />
-            <span className="-ml-0.5">GameCon</span>
-        </Link>
-    );
+    // Повернення на сайт тепер у шапці розділу (PhoneHeader); лишено для сумісності сторінок.
+    return null;
 }
 
 /** Завантаження музики з будь-якої сторінки розділу. */

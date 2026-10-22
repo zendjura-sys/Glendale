@@ -369,8 +369,8 @@ class MusicCatalog
             // Підписи («Станція {name}» тощо) — на клієнті через tr(): тут лише ключ і дані.
             'name' => $user->first_name ?: $user->name,
             'colors' => ['#2f7bff', '#22d3ee'],
-            // Обкладинки того, що людина слухає найчастіше, — мозаїка на картці станції.
-            'covers' => DB::table('music_plays')->where('user_id', $user->id)->whereNotNull('cover_url')
+            // Обкладинка станції — аватар людини на всю картку; без аватара — мозаїка з того, що вона слухає найчастіше.
+            'covers' => $user->avatar_url ? [$user->avatar_url] : DB::table('music_plays')->where('user_id', $user->id)->whereNotNull('cover_url')
                 ->groupBy('cover_url')->selectRaw('cover_url, COUNT(*) as total')
                 ->orderByDesc('total')->limit(4)->pluck('cover_url')->all(),
         ];

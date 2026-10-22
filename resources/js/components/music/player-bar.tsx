@@ -224,25 +224,17 @@ export function PlayerBar({ standalone }: { standalone?: boolean }) {
 
             <div
                 className={cn(
-                    'pointer-events-none fixed inset-x-0 z-40 bg-transparent px-3 [view-transition-name:gc-player]',
+                    'pointer-events-none fixed inset-x-0 z-[45] bg-transparent px-3',
                     standalone
                         ? 'bottom-[calc(env(safe-area-inset-bottom)+12px)] lg:left-[276px]'
-                        : 'bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-4',
+                        : 'bottom-[calc(5.25rem+env(safe-area-inset-bottom))] lg:bottom-4',
                 )}
             >
-                <div className="liquid-glass liquid-glass--dense pointer-events-auto relative mx-auto max-w-[1100px] overflow-hidden rounded-[22px]">
-                    {player.current?.cover_url && (
-                        <img
-                            decoding="async"
-                            src={player.current.cover_url}
-                            alt=""
-                            className="pointer-events-none absolute inset-0 size-full scale-125 object-cover opacity-[0.16] blur-3xl"
-                        />
-                    )}
-
+                {/* Матове нейтральне скло без підсвітки кольором обкладинки; ім'я переходу — на самій панелі, інакше розмиття не бачить сторінку. */}
+                <div className="glass-matte pointer-events-auto relative mx-auto max-w-[1100px] overflow-hidden rounded-full [view-transition-name:gc-player] lg:rounded-[24px]">
                     <div className="absolute inset-x-0 top-0 lg:hidden">
                         <div
-                            className="h-0.5 bg-white/80 transition-[width]"
+                            className="h-0.5 bg-primary transition-[width]"
                             style={{
                                 width: `${player.duration ? (player.position / player.duration) * 100 : 0}%`,
                             }}
