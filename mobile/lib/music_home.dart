@@ -1,5 +1,3 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -14,9 +12,8 @@ import 'widgets.dart';
 
 // Розділ «Музика» в стилі Apple Music, як на сайті (pages/music/home, new, radio, library):
 // власна панель вкладок унизу — Головна, Нове, Радіо, Медіатека — і кнопка пошуку поруч.
-
-/// Висота панелі вкладок розділу разом із відступом над нижнім меню застосунку.
-const _tabsExtent = 68.0;
+// Панель стоїть на місці острова застосунку (той сховується), тож унизу завжди одна панель,
+// а міні-плеєр — над нею.
 
 class MusicHub extends StatefulWidget {
   const MusicHub({this.tab = 'home', super.key});
@@ -68,31 +65,38 @@ class _MusicHubState extends State<MusicHub> {
       Positioned(
         left: 12,
         right: 12,
-        bottom: ShellChrome.bottomOf(context) + 4,
+        bottom: MediaQuery.viewPaddingOf(context).bottom + 8,
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560),
-            child: Row(children: [
-              Expanded(
-                child: _GlassBar(
-                  child: Row(children: [
-                    for (final key in _tabs)
-                      Expanded(
-                        child: _TabButton(icon: labels[key]!.$2, label: labels[key]!.$1, selected: tab == key, onTap: () => _select(key)),
-                      ),
-                  ]),
+            child: _BarSwap(
+              child: Row(children: [
+                Expanded(
+                  child: MatteGlass(
+                    borderRadius: 28,
+                    height: _barHeight,
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Row(children: [
+                      for (final key in _tabs)
+                        Expanded(
+                          child: _TabButton(icon: labels[key]!.$2, label: labels[key]!.$1, selected: tab == key, onTap: () => _select(key)),
+                        ),
+                    ]),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              _GlassBar(
-                round: true,
-                child: Semantics(
-                  button: true,
-                  label: tr('Пошук'),
-                  child: InkResponse(onTap: () => context.push('/music/search'), radius: 28, child: SizedBox.square(dimension: 56, child: Icon(LucideIcons.search, size: 22, color: ink))),
+                const SizedBox(width: 8),
+                MatteGlass(
+                  borderRadius: _barHeight / 2,
+                  width: _barHeight,
+                  height: _barHeight,
+                  child: Semantics(
+                    button: true,
+                    label: tr('Пошук'),
+                    child: InkResponse(onTap: () => context.push('/music/search'), radius: 30, child: Center(child: Icon(LucideIcons.search, size: 22, color: ink))),
+                  ),
                 ),
-              ),
-            ]),
+              ]),
+            ),
           ),
         ),
       ),
@@ -100,31 +104,41 @@ class _MusicHubState extends State<MusicHub> {
   }
 }
 
-/// Скляна плашка панелі вкладок (iOS 26: матове скло, що «пливе» над контентом).
-class _GlassBar extends StatelessWidget {
-  const _GlassBar({required this.child, this.round = false});
+/// Висота панелі вкладок — як в острова застосунку, щоб заміна була непомітною.
+const _barHeight = islandExtent - 8;
+
+/// Поява й зникнення панелі вкладок: виїжджає знизу й проявляється, коли острів ховається,
+/// і так само йде, коли поверх розділу відкривається інша сторінка.
+class _BarSwap extends StatefulWidget {
+  const _BarSwap({required this.child});
   final Widget child;
-  final bool round;
+
+  @override
+  State<_BarSwap> createState() => _BarSwapState();
+}
+
+class _BarSwapState extends State<_BarSwap> {
+  bool shown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => shown = true);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(28);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: radius,
-        boxShadow: [palette.isLight ? const BoxShadow(color: Color(0x26102A50), blurRadius: 24, offset: Offset(0, 8), spreadRadius: -12) : const BoxShadow(color: Color(0x99000000), blurRadius: 28, offset: Offset(0, 10), spreadRadius: -14)],
-      ),
-      child: ClipRRect(
-        borderRadius: radius,
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-          child: Container(
-            height: 56,
-            padding: round ? EdgeInsets.zero : const EdgeInsets.symmetric(horizontal: 4),
-            decoration: BoxDecoration(color: bar.withValues(alpha: 0.82), borderRadius: radius, border: Border.all(color: line)),
-            child: child,
-          ),
-        ),
+    final visible = shown && (ModalRoute.isCurrentOf(context) ?? true);
+    final duration = MediaQuery.disableAnimationsOf(context) ? Duration.zero : bottomBarSwap;
+    return IgnorePointer(
+      ignoring: !visible,
+      child: AnimatedSlide(
+        duration: duration,
+        curve: Curves.easeOutCubic,
+        offset: visible ? Offset.zero : const Offset(0, 0.35),
+        child: AnimatedOpacity(key: const ValueKey('bottom-bar-music'), duration: duration, curve: Curves.easeOutCubic, opacity: visible ? 1 : 0, child: widget.child),
       ),
     );
   }
@@ -149,12 +163,13 @@ class _TabButton extends StatelessWidget {
         onTap: onTap,
         child: AnimatedContainer(
           duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 200),
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          decoration: BoxDecoration(color: selected ? primary.withValues(alpha: 0.14) : Colors.transparent, borderRadius: BorderRadius.circular(24)),
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          // Підкладка вибраної вкладки нейтральна — скло панелі без відтінку, колір лише в іконці й підписі.
+          decoration: BoxDecoration(color: selected ? ink.withValues(alpha: 0.08) : Colors.transparent, borderRadius: BorderRadius.circular(24)),
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(icon, size: 20, color: color),
+            Icon(icon, size: 22, color: color),
             const SizedBox(height: 2),
-            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(10.5, color: color, weight: FontWeight.w600)),
+            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11, color: color, weight: FontWeight.w600)),
           ]),
         ),
       ),
@@ -185,7 +200,7 @@ class _HomeTab extends StatelessWidget {
       final friends = maps(home['friends']);
       final stations = maps(home['stations']);
       final wide = MediaQuery.sizeOf(context).width;
-      return MusicList(onRefresh: reload, extraBottom: _tabsExtent, children: [
+      return MusicList(onRefresh: reload, children: [
         LargeTitle(tr('Головна')),
         if (picks.isNotEmpty) ...[
           SectionHeader(tr('Найкраще для тебе')),
@@ -284,7 +299,7 @@ class _NewTab extends StatelessWidget {
       final moods = maps(data['moods']);
       final genres = maps(data['genres']);
       final empty = featured.isEmpty && latest.isEmpty && albums.isEmpty && charts.isEmpty;
-      return MusicList(onRefresh: reload, extraBottom: _tabsExtent, children: [
+      return MusicList(onRefresh: reload, children: [
         LargeTitle(tr('Нове')),
         if (empty) MusicEmpty(icon: LucideIcons.sparkles, title: tr('Тут поки тихо'), text: tr('Щойно на GameCon з’являться треки, тут будуть новинки й чарти.')),
         if (featured.isNotEmpty) Shelf(children: [for (final p in featured) PlaylistTile(playlist: p, width: tileWidth(context) * 1.5)]),
@@ -327,7 +342,7 @@ class _RadioTab extends StatelessWidget {
       final byGenre = maps(data['by_genre']);
       final genres = maps(data['genre_stations']);
       final width = MediaQuery.sizeOf(context).width - gutter * 2;
-      return MusicList(onRefresh: reload, extraBottom: _tabsExtent, children: [
+      return MusicList(onRefresh: reload, children: [
         LargeTitle(tr('Радіо')),
         if (mine.isNotEmpty)
           Padding(
@@ -386,7 +401,7 @@ class _LibraryTab extends StatelessWidget {
       final counts = mapOf(data['counts']);
       final recent = maps(data['recently_added']);
       final sections = [for (final s in (raw['sections'] as List? ?? const ['playlists', 'artists', 'albums', 'songs', 'favorites', 'genres', 'spotify'])) '$s'];
-      return MusicList(onRefresh: reload, extraBottom: _tabsExtent, children: [
+      return MusicList(onRefresh: reload, children: [
         LargeTitle(tr('Медіатека'), actions: [
           RoundIcon(icon: LucideIcons.listPlus, tooltip: tr('Новий плейлист'), onTap: () async {
             final id = await editPlaylist(context);

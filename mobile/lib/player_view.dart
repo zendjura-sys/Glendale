@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -54,55 +52,44 @@ class MiniPlayer extends StatelessWidget {
             if (v < -400) player.next();
             if (v > 400) player.prev();
           },
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: [palette.isLight ? const BoxShadow(color: Color(0x33102A50), blurRadius: 28, offset: Offset(0, 10), spreadRadius: -14) : const BoxShadow(color: Color(0xB3000000), blurRadius: 30, offset: Offset(0, 10), spreadRadius: -14)],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(color: bar.withValues(alpha: 0.93), borderRadius: BorderRadius.circular(18)),
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 9),
-                          child: Row(
+          // Глибоке матове скло iOS 27, як у нижньої панелі; плеєр завжди стоїть над нею.
+          child: MatteGlass(
+            borderRadius: 20,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 9),
+                    child: Row(
+                      children: [
+                        TrackCover(url: track.cover, seed: track.id ?? track.title, size: 46, radius: 12),
+                        const SizedBox(width: 11),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              TrackCover(url: track.cover, seed: track.id ?? track.title, size: 46, radius: 12),
-                              const SizedBox(width: 11),
-                              Expanded(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(track.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w700).copyWith(height: 1.2)),
-                                    const SizedBox(height: 2),
-                                    Text(artistOf(track.artist), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted).copyWith(height: 1.2)),
-                                  ],
-                                ),
-                              ),
-                              control(LucideIcons.skipBack, player.prev),
-                              RoundIcon(icon: player.playing ? LucideIcons.pause : LucideIcons.play, onTap: player.toggle, filled: true, size: 44),
-                              control(LucideIcons.skipForward, player.next),
-                              control(LucideIcons.x, player.stop, color: muted, size: 20),
+                              Text(track.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, weight: FontWeight.w700).copyWith(height: 1.2)),
+                              const SizedBox(height: 2),
+                              Text(artistOf(track.artist), maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: muted).copyWith(height: 1.2)),
                             ],
                           ),
                         ),
-                      ),
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        child: LinearProgressIndicator(value: progress, minHeight: 2.5, backgroundColor: fg.withValues(alpha: 0.06), color: primary),
-                      ),
-                    ],
+                        control(LucideIcons.skipBack, player.prev),
+                        RoundIcon(icon: player.playing ? LucideIcons.pause : LucideIcons.play, onTap: player.toggle, filled: true, size: 44),
+                        control(LucideIcons.skipForward, player.next),
+                        control(LucideIcons.x, player.stop, color: muted, size: 20),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  child: LinearProgressIndicator(value: progress, minHeight: 2.5, backgroundColor: fg.withValues(alpha: 0.06), color: primary),
+                ),
+              ],
             ),
           ),
         ),

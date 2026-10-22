@@ -144,7 +144,10 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    final path = GoRouterState.of(context).uri.path;
+    final uri = GoRouterState.of(context).uri;
+    final path = uri.path;
+    // У «Музиці» нижня панель — вкладки розділу на місці острова (одна панель за раз).
+    final musicTabs = hasMusicTabs(uri);
     final topInset = MediaQuery.viewPaddingOf(context).top;
     final chatOpen = RegExp(r'^/messages/\d+').hasMatch(path);
     return AppScope(
@@ -165,8 +168,9 @@ class _AppShellState extends State<AppShell> {
             final contentWidth = wide ? tabletContentWidth : tabletPortraitWidth;
             final systemBottom = MediaQuery.viewPaddingOf(context).bottom;
             final inCall = VoiceCall.instance.active && !hideChrome;
-            final island = wide || hideChrome ? 0.0 : islandExtent;
-            final bottom = hideChrome ? 0.0 : systemBottom + (wide ? 8 : islandExtent) + (playing ? miniPlayerExtent : 0) + (inCall ? voiceBarExtent : 0);
+            // Нижня панель (острів або вкладки «Музики»); плеєр і голосова кімната завжди над нею.
+            final bottomBar = !hideChrome && (!wide || musicTabs);
+            final bottom = hideChrome ? 0.0 : systemBottom + (bottomBar ? islandExtent : 8) + (playing ? miniPlayerExtent : 0) + (inCall ? voiceBarExtent : 0);
             final contentLeft = wide ? sideNavWidth + 28 : 0.0;
             return ShellChrome(
               bottom: bottom,
@@ -200,22 +204,22 @@ class _AppShellState extends State<AppShell> {
                       Positioned(
                         left: contentLeft,
                         right: wide ? 16 : 0,
-                        bottom: (wide ? 0 : systemBottom) + island,
+                        bottom: bottomBar ? systemBottom + islandExtent : 0,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             // Розмова в голосовій кімнаті — над плеєром, на всіх екранах.
                             if (inCall)
                               Padding(
-                                padding: EdgeInsets.only(bottom: wide && !playing ? systemBottom + 8 : 0),
+                                padding: EdgeInsets.only(bottom: !bottomBar && !playing ? systemBottom + 8 : 0),
                                 child: Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: wide || tabletPortrait ? contentWidth : double.infinity), child: VoiceBar())),
                               ),
-                            if (playing && wide)
+                            if (playing && wide && !bottomBar)
                               Padding(
                                 padding: EdgeInsets.only(bottom: systemBottom + 8),
                                 child: Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: contentWidth), child: MiniPlayer(player: widget.player))),
                               )
-                            else if (playing && tabletPortrait)
+                            else if (playing && (wide || tabletPortrait))
                               Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: contentWidth), child: MiniPlayer(player: widget.player)))
                             else if (playing)
                               MiniPlayer(player: widget.player),
@@ -223,7 +227,7 @@ class _AppShellState extends State<AppShell> {
                         ),
                       ),
                     // Острів — поверх усього, щоб розгорнуте меню й затемнення накривали екран.
-                    if (!wide && !hideChrome) Positioned.fill(child: IslandNav(session: widget.session, player: widget.player, path: path)),
+                    if (!wide && !hideChrome) Positioned.fill(child: IslandNav(session: widget.session, player: widget.player, path: path, hidden: musicTabs)),
                   ],
                 ),
               ),

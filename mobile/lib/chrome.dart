@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -86,46 +85,39 @@ class TopBar extends StatelessWidget {
       );
     }
 
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: bar.withValues(alpha: 0.9),
-            boxShadow: [BoxShadow(color: fg.withValues(alpha: 0.06), offset: Offset(0, 1))],
-          ),
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(wide ? 20 : 12, topInset, wide ? 16 : 8, 0),
-            child: SizedBox(
-              height: siteBarHeight,
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => context.go('/feed'),
-                    child: SizedBox(
-                      width: wide ? sideNavWidth : null,
-                      child: Align(alignment: Alignment.centerLeft, child: wide ? Wordmark(size: 19) : LogoMark(size: 34)),
-                    ),
-                  ),
-                  SizedBox(width: wide ? 12 : 8),
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: ConstrainedBox(constraints: BoxConstraints(maxWidth: 520), child: _SearchField()),
-                    ),
-                  ),
-                  SizedBox(width: 4),
-                  if (wide) ...[
-                    iconButton(LucideIcons.usersRound, tr('Заявки в друзі'), () => context.go('/friends?tab=requests')),
-                    iconButton(LucideIcons.messageCircle, tr('Повідомлення'), () => context.go('/messages'), badge: session.unreadChats),
-                    iconButton(palette.isLight ? LucideIcons.moon : LucideIcons.sun, palette.isLight ? tr('Темна тема «Неоновий синій»') : tr('Світла тема «Крижана Арктика»'), () => session.setTheme(palette.isLight ? 'dark' : 'light')),
-                  ],
-                  iconButton(LucideIcons.bell, tr('Сповіщення'), () => showNotifications(context, session), badge: session.unreadNotifications),
-                  SizedBox(width: 2),
-                  _UserMenu(session: session, player: player, me: me ?? const {}, wide: wide),
-                ],
+    // Шапка — те саме глибоке матове скло, що й нижні панелі, лише без заокруглень.
+    return MatteGlass(
+      borderRadius: 0,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(wide ? 20 : 12, topInset, wide ? 16 : 8, 0),
+        child: SizedBox(
+          height: siteBarHeight,
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: () => context.go('/feed'),
+                child: SizedBox(
+                  width: wide ? sideNavWidth : null,
+                  child: Align(alignment: Alignment.centerLeft, child: wide ? Wordmark(size: 19) : LogoMark(size: 34)),
+                ),
               ),
-            ),
+              SizedBox(width: wide ? 12 : 8),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: ConstrainedBox(constraints: BoxConstraints(maxWidth: 520), child: _SearchField()),
+                ),
+              ),
+              SizedBox(width: 4),
+              if (wide) ...[
+                iconButton(LucideIcons.usersRound, tr('Заявки в друзі'), () => context.go('/friends?tab=requests')),
+                iconButton(LucideIcons.messageCircle, tr('Повідомлення'), () => context.go('/messages'), badge: session.unreadChats),
+                iconButton(palette.isLight ? LucideIcons.moon : LucideIcons.sun, palette.isLight ? tr('Темна тема «Неоновий синій»') : tr('Світла тема «Крижана Арктика»'), () => session.setTheme(palette.isLight ? 'dark' : 'light')),
+              ],
+              iconButton(LucideIcons.bell, tr('Сповіщення'), () => showNotifications(context, session), badge: session.unreadNotifications),
+              SizedBox(width: 2),
+              _UserMenu(session: session, player: player, me: me ?? const {}, wide: wide),
+            ],
           ),
         ),
       ),
@@ -379,10 +371,13 @@ class SideList extends StatelessWidget {
 /// острів тягнеться вгору — за язичок, свайпом по панелі або тапом — і розгортається в меню з рештою
 /// розділів; вкладки лишаються внизу того самого острова. Згорнути: свайп униз, тап по затемненню, «Назад».
 class IslandNav extends StatefulWidget {
-  const IslandNav({required this.session, required this.player, required this.path, super.key});
+  const IslandNav({required this.session, required this.player, required this.path, this.hidden = false, super.key});
   final Session session;
   final TrackPlayer player;
   final String path;
+
+  /// Розділ має свою нижню панель (вкладки «Музики») — острів плавно ховається на її місці.
+  final bool hidden;
 
   @override
   State<IslandNav> createState() => _IslandNavState();
@@ -400,8 +395,8 @@ class _IslandNavState extends State<IslandNav> {
   @override
   void didUpdateWidget(IslandNav old) {
     super.didUpdateWidget(old);
-    // Перехід на інший розділ згортає меню.
-    if (old.path != widget.path && open) open = false;
+    // Перехід на інший розділ (або схований острів) згортає меню.
+    if ((old.path != widget.path || widget.hidden) && open) open = false;
   }
 
   void _onDragUpdate(DragUpdateDetails d) => setState(() {
@@ -439,88 +434,78 @@ class _IslandNavState extends State<IslandNav> {
       duration: _motion(context, dragging ? Duration.zero : _snap),
       curve: _snapCurve,
       transform: Matrix4.translationValues(0, drag * 0.22, 0),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-          child: AnimatedContainer(
-            duration: _motion(context, Duration(milliseconds: 200)),
-            decoration: BoxDecoration(
-              // Щільне матове скло; розгорнутий — суцільний, щоб меню читалося.
-              color: open ? popover : bar.withValues(alpha: 0.93),
-              borderRadius: BorderRadius.circular(28),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Semantics(
-                  button: true,
-                  label: open ? tr('Згорнути меню') : tr('Меню'),
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => _set(!open),
-                    child: SizedBox(
-                      height: 16,
-                      width: double.infinity,
-                      child: Stack(
-                        alignment: Alignment.bottomCenter,
-                        children: [
-                          AnimatedContainer(
-                            duration: _motion(context, Duration(milliseconds: 200)),
-                            width: 36,
-                            height: 4,
-                            decoration: BoxDecoration(color: restActive || open ? primary : fg.withValues(alpha: 0.25), borderRadius: BorderRadius.circular(4)),
-                          ),
-                          if (restBadge > 0 && !open)
-                            Positioned(
-                              top: 4,
-                              left: 0,
-                              right: 0,
-                              child: Center(child: Transform.translate(offset: Offset(28, 0), child: Container(width: 8, height: 8, decoration: BoxDecoration(color: _rose, shape: BoxShape.circle)))),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                AnimatedSize(
-                  duration: _motion(context, _snap),
-                  curve: _snapCurve,
-                  alignment: Alignment.bottomCenter,
-                  child: AnimatedOpacity(
-                    duration: _motion(context, Duration(milliseconds: 220)),
-                    opacity: open ? 1 : 0,
-                    child: open
-                        ? ConstrainedBox(
-                            constraints: BoxConstraints(maxHeight: math.max(160, maxMenu)),
-                            child: SingleChildScrollView(
-                              padding: EdgeInsets.fromLTRB(12, 8, 12, 4),
-                              child: MenuContent(session: session, player: widget.player, path: widget.path, rest: rest, onGo: _go, onClose: () => _set(false)),
-                            ),
-                          )
-                        : SizedBox(width: double.infinity),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
-                  child: Row(
+      // Глибоке матове скло iOS 27 — щільне й нейтральне, тож меню читається і розгорнутим.
+      child: MatteGlass(
+        borderRadius: 28,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Semantics(
+              button: true,
+              label: open ? tr('Згорнути меню') : tr('Меню'),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _set(!open),
+                child: SizedBox(
+                  height: 16,
+                  width: double.infinity,
+                  child: Stack(
+                    alignment: Alignment.bottomCenter,
                     children: [
-                      for (final path in tabs)
-                        if (navItem(path) case final item?)
-                          Expanded(
-                            child: _Tab(
-                              item: item,
-                              active: !open && _isActive(path, widget.path, session.username),
-                              badge: path == '/messages' ? session.unreadChats : 0,
-                              onTap: () => _go(path),
-                            ),
-                          ),
+                      AnimatedContainer(
+                        duration: _motion(context, Duration(milliseconds: 200)),
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(color: restActive || open ? primary : fg.withValues(alpha: 0.25), borderRadius: BorderRadius.circular(4)),
+                      ),
+                      if (restBadge > 0 && !open)
+                        Positioned(
+                          top: 4,
+                          left: 0,
+                          right: 0,
+                          child: Center(child: Transform.translate(offset: Offset(28, 0), child: Container(width: 8, height: 8, decoration: BoxDecoration(color: _rose, shape: BoxShape.circle)))),
+                        ),
                     ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+            AnimatedSize(
+              duration: _motion(context, _snap),
+              curve: _snapCurve,
+              alignment: Alignment.bottomCenter,
+              child: AnimatedOpacity(
+                duration: _motion(context, Duration(milliseconds: 220)),
+                opacity: open ? 1 : 0,
+                child: open
+                    ? ConstrainedBox(
+                        constraints: BoxConstraints(maxHeight: math.max(160, maxMenu)),
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.fromLTRB(12, 8, 12, 4),
+                          child: MenuContent(session: session, player: widget.player, path: widget.path, rest: rest, onGo: _go, onClose: () => _set(false)),
+                        ),
+                      )
+                    : SizedBox(width: double.infinity),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
+              child: Row(
+                children: [
+                  for (final path in tabs)
+                    if (navItem(path) case final item?)
+                      Expanded(
+                        child: _Tab(
+                          item: item,
+                          active: !open && _isActive(path, widget.path, session.username),
+                          badge: path == '/messages' ? session.unreadChats : 0,
+                          onTap: () => _go(path),
+                        ),
+                      ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -552,19 +537,24 @@ class _IslandNavState extends State<IslandNav> {
             child: Center(
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: 560),
-                child: GestureDetector(
-                  onVerticalDragUpdate: _onDragUpdate,
-                  onVerticalDragEnd: _onDragEnd,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: [
-                        palette.isLight
-                            ? BoxShadow(color: Color(0x33102A50), blurRadius: 28, offset: Offset(0, 10), spreadRadius: -14)
-                            : BoxShadow(color: Color(0xB3000000), blurRadius: 30, offset: Offset(0, 10), spreadRadius: -14),
-                      ],
+                // Заміна панелей: острів з'їжджає вниз і гасне, а на його місці з'являються вкладки розділу.
+                child: IgnorePointer(
+                  ignoring: widget.hidden,
+                  child: AnimatedSlide(
+                    duration: _motion(context, bottomBarSwap),
+                    curve: Curves.easeOutCubic,
+                    offset: widget.hidden ? Offset(0, 0.35) : Offset.zero,
+                    child: AnimatedOpacity(
+                      key: const ValueKey('bottom-bar-nav'),
+                      duration: _motion(context, bottomBarSwap),
+                      curve: Curves.easeOutCubic,
+                      opacity: widget.hidden ? 0 : 1,
+                      child: GestureDetector(
+                        onVerticalDragUpdate: _onDragUpdate,
+                        onVerticalDragEnd: _onDragEnd,
+                        child: island,
+                      ),
                     ),
-                    child: island,
                   ),
                 ),
               ),

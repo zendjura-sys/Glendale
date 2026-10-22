@@ -173,6 +173,74 @@ class Glass extends StatelessWidget {
   }
 }
 
+/// «Глибоке матове скло» в стилі iOS 27 для панелей: нижній острів, вкладки розділу, міні-плеєр.
+/// Нейтральне, без відтінку акценту; темний і світлий варіанти — за яскравістю теми.
+/// Угорі — тонкий внутрішній блік (1px), бо внутрішньої тіні у Flutter немає.
+class MatteGlass extends StatelessWidget {
+  const MatteGlass({required this.child, this.borderRadius = 24.0, this.padding, this.width, this.height, super.key});
+  final Widget child;
+  final double borderRadius;
+  final EdgeInsetsGeometry? padding;
+  final double? width;
+  final double? height;
+
+  @override
+  Widget build(BuildContext context) {
+    final light = Theme.of(context).brightness == Brightness.light;
+    final radius = BorderRadius.circular(borderRadius);
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: [
+          light
+              ? BoxShadow(color: const Color(0xFF0F172A).withValues(alpha: 0.12), blurRadius: 36, offset: const Offset(0, 16), spreadRadius: -12)
+              : BoxShadow(color: Colors.black.withValues(alpha: 0.55), blurRadius: 32, offset: const Offset(0, 14), spreadRadius: -8),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 45.0, sigmaY: 45.0),
+          child: Stack(
+            fit: StackFit.passthrough,
+            children: [
+              Container(
+                width: width,
+                height: height,
+                padding: padding,
+                decoration: BoxDecoration(
+                  borderRadius: radius,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: light ? const [Color(0xE6F5F5FA), Color(0xF2E6E8F0)] : const [Color(0xE822242A), Color(0xF215171B)],
+                  ),
+                ),
+                // Рамка поверх, щоб не зсувала вміст: острів і вкладки «Музики» однакової висоти.
+                foregroundDecoration: BoxDecoration(
+                  borderRadius: radius,
+                  border: Border.all(color: Colors.white.withValues(alpha: light ? 0.65 : 0.09), width: 1.0),
+                ),
+                child: child,
+              ),
+              // Внутрішній верхній блік.
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 1,
+                child: IgnorePointer(child: ColoredBox(color: Colors.white.withValues(alpha: light ? 0.9 : 0.16))),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Заголовок усередині картки: іконка + ВЕЛИКІ ЛІТЕРИ + дія праворуч («ДРУЗІ … 1 спільний»).
 class CardTitle extends StatelessWidget {
   const CardTitle(this.title, {this.icon, this.trailing, this.onTrailing, this.caps = true, super.key});
@@ -1233,6 +1301,12 @@ const tabletContentWidth = 820.0;
 
 /// Ширина стрічки на вертикальному планшеті (3:4), де лишається нижня панель.
 const tabletPortraitWidth = 680.0;
+
+/// Скільки триває заміна нижньої панелі (острів ↔ вкладки «Музики»).
+const bottomBarSwap = Duration(milliseconds: 250);
+
+/// Сторінки розділу «Музика» з власною панеллю вкладок: там вона стоїть на місці острова.
+bool hasMusicTabs(Uri uri) => uri.queryParameters['user'] == null && RegExp(r'^/music(/(new|radio|library))?/?$').hasMatch(uri.path);
 
 /// Нижній хром оболонки: скільки контент має лишити під скляним меню й плеєром.
 class ShellChrome extends InheritedWidget {
