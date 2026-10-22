@@ -653,6 +653,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::delete('photos/{photo}', [Admin\PhotoController::class, 'destroy'])->whereNumber('photo')->name('photos.destroy');
         Route::post('photos/{photo}/restore', [Admin\PhotoController::class, 'restore'])->whereNumber('photo')->name('photos.restore');
         Route::get('music', [Admin\MusicController::class, 'index'])->name('music.index');
+        Route::post('music/enrich', [Admin\MusicController::class, 'enrich'])->middleware('throttle:10,1')->name('music.enrich');
         Route::delete('music/{track}', [Admin\MusicController::class, 'destroy'])->whereNumber('track')->name('music.destroy');
         Route::post('music/{track}/restore', [Admin\MusicController::class, 'restore'])->whereNumber('track')->name('music.restore');
         // Радіостанції й добірки редакції для розділу «Музика».

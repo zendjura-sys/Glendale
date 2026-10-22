@@ -34,6 +34,10 @@ use App\Services\Games\GameCatalog;
 use App\Services\Games\Igdb;
 use App\Services\I18n\DeepL;
 use App\Services\Moderation\NsfwCheck;
+use App\Services\Music\AcoustId;
+use App\Services\Music\AudioProbe;
+use App\Services\Music\Discogs;
+use App\Services\Music\LastFm;
 use App\Services\Presence\SteamPresence;
 use App\Services\Push\FcmClient;
 use App\Services\Spotify\SpotifyClient;
@@ -43,6 +47,7 @@ use App\Support\Settings\SiteSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -165,6 +170,8 @@ class IntegrationController extends Controller
             $this->fcm->forgetAccessToken();
         }
 
+        // Журнал адмінки: що й хто змінив (без значень ключів).
+        Log::info('integrations: updated', ['provider' => $provider, 'by' => $request->user()?->id]);
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Налаштування '.$this->cinemaProviders()[$provider]['label'].' збережено.']);
 
         return back();
@@ -595,6 +602,57 @@ class IntegrationController extends Controller
                 'fields' => [
                     ['name' => 'key', 'setting' => 'steam_api_key', 'type' => 'secret', 'label' => 'Web API Key', 'env' => config('services.steam.key'),
                         'rules' => ['nullable', 'string', 'regex:/^[A-F0-9]{32}$/'], 'message' => 'Ключ Steam — 32 символи (цифри й літери A–F).'],
+                ],
+            ],
+            'acoustid' => [
+                'label' => 'AcoustID (розпізнавання за звуком)',
+                'group' => 'music',
+                'description' => 'Відбиток Chromaprint (fpcalc) кожного завантаженого треку → AcoustID → запис MusicBrainz: точні назва, альбом, рік, номер доріжки й обкладинка з Cover Art Archive навіть без тегів у файлі.',
+                'docs' => 'https://acoustid.org/new-application',
+                'steps' => [
+                    'Увійдіть на acoustid.org (через MusicBrainz або Google) → «Register a new application».',
+                    'Назва — GameCon, версія — 1.0, сайт — '.url('/').'. Скопіюйте API key застосунку сюди. Безкоштовно.',
+                    'На сервері має бути fpcalc: sudo apt-get install libchromaprint-tools (deploy/remote.sh ставить сам).',
+                    'Старі треки: Адмінка → Музика → «Оновити метадані» або php artisan music:enrich.',
+                ],
+                'configured' => app(AcoustId::class)->configured(),
+                'stat' => app(AudioProbe::class)->fpcalc() !== null ? 'fpcalc встановлено' : 'fpcalc не знайдено на сервері',
+                'test' => fn () => app(AcoustId::class)->test(),
+                'fields' => [
+                    ['name' => 'key', 'setting' => 'acoustid_key', 'type' => 'secret', 'label' => 'API key застосунку', 'env' => config('services.acoustid.key'),
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{6,32}$/'], 'message' => 'Ключ AcoustID — латинські літери й цифри.'],
+                ],
+            ],
+            'lastfm' => [
+                'label' => 'Last.fm',
+                'group' => 'music',
+                'description' => 'Жанри з тегів слухачів, біографії й схожі виконавці для сторінок виконавців, підказки альбому. Фото Last.fm не використовуємо (там заглушки).',
+                'docs' => 'https://www.last.fm/api/account/create',
+                'steps' => [
+                    'Увійдіть на last.fm → «Create API account»: назва — GameCon, опис і сайт — '.url('/').'.',
+                    'Скопіюйте «API key» сюди (Shared secret не потрібен). Безкоштовно.',
+                ],
+                'configured' => app(LastFm::class)->configured(),
+                'test' => fn () => app(LastFm::class)->test(),
+                'fields' => [
+                    ['name' => 'key', 'setting' => 'lastfm_key', 'type' => 'secret', 'label' => 'API key', 'env' => config('services.lastfm.key'),
+                        'rules' => ['nullable', 'string', 'regex:/^[a-f0-9]{32}$/'], 'message' => 'API key Last.fm — 32 символи 0–9, a–f.'],
+                ],
+            ],
+            'discogs' => [
+                'label' => 'Discogs',
+                'group' => 'music',
+                'description' => 'Рік, лейбл, жанри й стилі, номер доріжки й обкладинка релізу; фото й опис виконавця. До 60 запитів на хвилину.',
+                'docs' => 'https://www.discogs.com/settings/developers',
+                'steps' => [
+                    'Увійдіть на discogs.com → Settings → Developers → «Generate new token».',
+                    'Скопіюйте Personal access token сюди. Безкоштовно.',
+                ],
+                'configured' => app(Discogs::class)->configured(),
+                'test' => fn () => app(Discogs::class)->test(),
+                'fields' => [
+                    ['name' => 'token', 'setting' => 'discogs_token', 'type' => 'secret', 'label' => 'Personal access token', 'env' => config('services.discogs.token'),
+                        'rules' => ['nullable', 'string', 'regex:/^[A-Za-z0-9]{20,64}$/'], 'message' => 'Токен Discogs — латинські літери й цифри.'],
                 ],
             ],
             'deepl' => [

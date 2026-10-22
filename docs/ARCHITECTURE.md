@@ -130,6 +130,8 @@ flowchart TB
         AUTH[Вход] --> GOOGLE[Google OAuth / Firebase Auth]
         AUTH --> DISCAUTH[Discord OAuth]
         MUS[Музыка] --> SPOTIFY[Spotify API]
+        MUS --> MBZ[AcoustID / MusicBrainz /<br/>Cover Art Archive]
+        MUS --> MUSX[Discogs / Last.fm / LRCLIB /<br/>Wikipedia / Wikidata]
         BILL[Services/Billing] --> ACQ[monobank эквайринг]
         BILL --> GPAY[Google Pay pay.js]
         JAR[Банки семей/сообществ] --> MONO[Monobank «банки»]
@@ -215,6 +217,13 @@ flowchart LR
 ### 4.4. Фоновые процессы
 
 - Очередь: `Jobs/*` (push, обновление плееров, проставка плееров, разбор треков через ffmpeg — `ProcessTrackAudio`, …). Сервис `gamecon-queue`; ffmpeg ставит `deploy/remote.sh`.
+- Метаданные треков: `ProcessTrackAudio` (ffprobe, без него — getID3 `Music/Id3Probe`) → `EnrichTrackMetadata` →
+  `Music/MetadataEnricher`. Источники работают вместе: теги файла, AcoustID (отпечаток `fpcalc`, Chromaprint) →
+  MusicBrainz, поиск MusicBrainz, Discogs, Spotify, Last.fm, Cover Art Archive, LRCLIB; для каждого поля побеждает
+  значение с наибольшим доверием (`Music/MetaMatch`, совпадение источников — бонус). Происхождение полей —
+  `tracks.metadata_meta`; заданное пользователем (`user`) автоматика не меняет. «Про исполнителя» (`Music/ArtistInfo`)
+  сверяет личность через MBID ↔ Wikidata и ссылки MusicBrainz на Spotify/Discogs. Догрузка: `php artisan music:enrich`
+  или Админка → Музыка → «Оновити метадані». `MUSIC_METADATA=false` отключает внешние запросы (так в тестах).
 - Планировщик (`routes/console.php`, сервис `gamecon-scheduler`): `cinema:sync`, `servers:sync`,
   `families:tick`, `posts:publish`, `events:remind`, `events:sync`, `discord:presence`, `steam:presence`,
   `billing:tick`, `streams:check`, `games:sync`, `i18n:translate`, `geoip:update`, …

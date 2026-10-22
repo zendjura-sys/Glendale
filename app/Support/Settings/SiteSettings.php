@@ -32,6 +32,10 @@ class SiteSettings
         'music_max_track_mb' => 30,
         'spotify_client_id' => null,
         'spotify_client_secret' => null,
+        // Метадані музики: AcoustID (відбиток), Last.fm (теги, біографії), Discogs (релізи, обкладинки).
+        'acoustid_key' => null,
+        'lastfm_key' => null,
+        'discogs_token' => null,
         'kodik_token' => null,
         'kodik_links_key' => null,
         'videoseed_token' => null,
@@ -126,7 +130,7 @@ class SiteSettings
     ];
 
     /** Ключі, які не можна віддавати у фронтенд. */
-    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'kodik_links_key', 'videoseed_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key', 'deepl_key', 'maxmind_license_key', 'vapid_private', 'telegram_bot_token', 'telegram_webhook_secret', 'twitch_client_secret', 'sightengine_secret', 'donatello_token', 'monobank_acquiring_token', 'google_play_service_account', 'google_play_rtdn_token'];
+    public const SECRETS = ['spotify_client_secret', 'kodik_token', 'kodik_links_key', 'videoseed_token', 'flixcdn_token', 'tmdb_token', 'omdb_key', 'discord_client_secret', 'fcm_service_account', 'livekit_api_secret', 'rawg_key', 'igdb_client_secret', 'discord_bot_token', 'steam_api_key', 'deepl_key', 'maxmind_license_key', 'vapid_private', 'telegram_bot_token', 'telegram_webhook_secret', 'twitch_client_secret', 'sightengine_secret', 'donatello_token', 'monobank_acquiring_token', 'google_play_service_account', 'google_play_rtdn_token', 'acoustid_key', 'lastfm_key', 'discogs_token'];
 
     /** @var array<string, mixed>|null */
     private ?array $values = null;

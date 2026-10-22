@@ -45,6 +45,7 @@ class MusicCatalog
     public function __construct(
         private readonly MusicService $music,
         private readonly FriendshipService $friends,
+        private readonly ArtistInfo $artistInfo,
     ) {}
 
     // ───────────────────────── Головна ─────────────────────────
@@ -627,10 +628,21 @@ class MusicCatalog
             return null;
         }
         $genres = $this->artistGenres($name);
+        $similar = $genres === [] ? collect() : $this->ready()->whereIn('genre', $genres)->where('artist', '!=', $name)
+            ->groupBy('artist')->selectRaw('artist, COUNT(*) as total, MAX(cover_path) as cover')
+            ->orderByDesc('total')->limit(10)->get();
+        // Мало схожих за жанром — доповнюємо схожими з Last.fm (з кешу «Про виконавця»), якщо вони є в каталозі.
+        $fromInfo = array_values(array_diff((array) ($this->artistInfo->cached($name)['similar'] ?? []), $similar->pluck('artist')->all(), [$name]));
+        if ($similar->count() < 4 && $fromInfo !== []) {
+            $similar = $similar->concat($this->ready()->whereIn('artist', array_slice($fromInfo, 0, 20))
+                ->groupBy('artist')->selectRaw('artist, COUNT(*) as total, MAX(cover_path) as cover')
+                ->orderByDesc('total')->limit(10 - $similar->count())->get());
+        }
 
         return [
             'name' => $name,
-            'cover_url' => $top->first()?->cover_url,
+            // Фото виконавця (MusicBrainz/Wikidata/Spotify — лише з кешу, без мережі), інакше обкладинка популярного треку.
+            'cover_url' => $this->artistInfo->cachedImage($name) ?? $top->first()?->cover_url,
             'genre' => $genres[0] ?? null,
             'tracks_count' => $base()->count(),
             'listeners' => DB::table('music_plays')->where('artist', $name)->where('played_at', '>=', now()->subDays(30))->distinct()->count('user_id'),
@@ -638,10 +650,7 @@ class MusicCatalog
             'albums' => $this->albums($base()->whereNotNull('album'), 30),
             'singles' => $this->cards($base()->whereNull('album')->latest()->limit(20)->get(), $user),
             'latest' => ($latest = $base()->latest()->first()) ? $latest->toCard() : null,
-            'similar' => $genres === [] ? [] : $this->ready()->whereIn('genre', $genres)->where('artist', '!=', $name)
-                ->groupBy('artist')->selectRaw('artist, COUNT(*) as total, MAX(cover_path) as cover')
-                ->orderByDesc('total')->limit(10)->get()
-                ->map(fn ($row) => $this->artistCard((string) $row->artist, $row->cover, (int) $row->total))->values()->all(),
+            'similar' => $similar->map(fn ($row) => $this->artistCard((string) $row->artist, $row->cover, (int) $row->total))->values()->all(),
             'station' => ['kind' => 'station', 'key' => 'artist:'.$name, 'name' => $name, 'colors' => $this->colorsFor($name), 'covers' => []],
         ];
     }
@@ -677,7 +686,8 @@ class MusicCatalog
             'title' => $title,
             'artist' => $artist,
             'artist_href' => $this->artistHref($artist),
-            'cover_url' => $tracks->pluck('cover_url')->filter()->first(),
+            // Найнадійніша обкладинка серед треків альбому (власна, Cover Art Archive, Discogs…).
+            'cover_url' => $tracks->sortByDesc(fn (Track $t) => $t->coverScore())->first()?->cover_url,
             'year' => $tracks->pluck('year')->filter()->max(),
             'genre' => $tracks->pluck('genre')->filter()->first(),
             'duration' => (int) $tracks->sum('duration'),
@@ -702,18 +712,45 @@ class MusicCatalog
     {
         $prefix = 'tracks.';
 
-        return (clone $query)->groupBy("{$prefix}album", "{$prefix}artist")
+        $rows = (clone $query)->groupBy("{$prefix}album", "{$prefix}artist")
             ->selectRaw("{$prefix}album as album, {$prefix}artist as artist, COUNT(*) as total, MAX({$prefix}cover_path) as cover, MAX({$prefix}year) as year, MAX({$prefix}created_at) as added")
-            ->reorder()->orderByDesc('added')->limit($limit)->get()
+            ->reorder()->orderByDesc('added')->limit($limit)->get();
+        $covers = $this->bestAlbumCovers($rows->pluck('album')->filter()->unique()->values()->all());
+
+        return $rows
             ->map(fn ($row) => [
                 'kind' => 'album',
                 'title' => $row->album,
                 'artist' => $row->artist,
                 'year' => $row->year ? (int) $row->year : null,
                 'tracks_count' => (int) $row->total,
-                'cover_url' => $row->cover ? Storage::disk('public')->url($row->cover) : null,
+                'cover_url' => ($cover = $covers[$row->artist."\0".$row->album] ?? $row->cover) ? Storage::disk('public')->url($cover) : null,
                 'href' => $this->albumHref((string) $row->artist, (string) $row->album),
             ])->values()->all();
+    }
+
+    /**
+     * Найнадійніша обкладинка кожного альбому (за походженням у metadata_meta) — один запит на всі плитки.
+     *
+     * @param  list<string>  $albums
+     * @return array<string, string> «виконавець\0альбом» → cover_path
+     */
+    private function bestAlbumCovers(array $albums): array
+    {
+        if ($albums === []) {
+            return [];
+        }
+        $best = [];
+        $this->ready()->whereIn('album', $albums)->whereNotNull('cover_path')
+            ->get(['id', 'artist', 'album', 'cover_path', 'metadata_meta'])
+            ->each(function (Track $track) use (&$best) {
+                $key = $track->artist."\0".$track->album;
+                if (! isset($best[$key]) || $track->coverScore() > $best[$key][0]) {
+                    $best[$key] = [$track->coverScore(), (string) $track->cover_path];
+                }
+            });
+
+        return array_map(fn (array $b) => $b[1], $best);
     }
 
     /**
@@ -725,7 +762,7 @@ class MusicCatalog
             'kind' => 'artist',
             'name' => $name,
             'tracks_count' => $total,
-            'cover_url' => $cover ? Storage::disk('public')->url($cover) : null,
+            'cover_url' => $this->artistInfo->cachedImage($name) ?? ($cover ? Storage::disk('public')->url($cover) : null),
             'href' => $this->artistHref($name),
         ];
     }

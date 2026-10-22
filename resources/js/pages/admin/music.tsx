@@ -1,12 +1,16 @@
 import { Head, Link, router } from '@inertiajs/react';
 import {
+    CircleCheck,
+    CircleDashed,
     Download,
+    Globe,
     HardDrive,
     Headphones,
     ListMusic,
     Music2,
     Pause,
     Play,
+    RefreshCw,
     RotateCcw,
     Search,
     Trash2,
@@ -35,7 +39,23 @@ type AdminTrack = LocalTrack & {
     deleted_at: string | null;
 };
 
+type MetadataSource = {
+    key: string;
+    label: string;
+    status: 'ok' | 'missing' | 'public';
+    hint: string;
+};
+
+type MetadataStatus = {
+    online: boolean;
+    pending: number;
+    enriched: number;
+    recognized: number;
+    sources: MetadataSource[];
+};
+
 type Props = {
+    metadata: MetadataStatus;
     tracks: Paginated<AdminTrack>;
     filters: { q: string; trashed: boolean };
     stats: {
@@ -48,7 +68,102 @@ type Props = {
     };
 };
 
-export default function AdminMusic({ tracks, filters, stats }: Props) {
+/** «Музичні метадані»: інструменти й джерела на сервері та запуск оновлення для старих треків. */
+function MetadataPanel({ metadata }: { metadata: MetadataStatus }) {
+    const [busy, setBusy] = useState(false);
+    const statusLabel = {
+        ok: tr('Готово'),
+        missing: tr('Немає'),
+        public: tr('без ключа'),
+    } as const;
+
+    const refresh = () => {
+        setBusy(true);
+        router.post(
+            '/admin/music/enrich',
+            {},
+            { preserveScroll: true, onFinish: () => setBusy(false) },
+        );
+    };
+
+    return (
+        <section className="glass mb-5 rounded-3xl p-5">
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h2 className="font-display text-lg font-semibold text-white">
+                        {tr('Музичні метадані')}
+                    </h2>
+                    <p className="text-sm text-white/45">
+                        {tr(
+                            'Оброблено {enriched}, розпізнано MusicBrainz {recognized}, чекають {pending}',
+                            {
+                                enriched: metadata.enriched,
+                                recognized: metadata.recognized,
+                                pending: metadata.pending,
+                            },
+                        )}
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    disabled={busy || !metadata.online}
+                    onClick={refresh}
+                    className="flex items-center gap-2 rounded-xl bg-indigo-500/90 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:opacity-50"
+                >
+                    <RefreshCw
+                        className={cn('size-4', busy && 'animate-spin')}
+                    />
+                    {tr('Оновити метадані')}
+                </button>
+            </div>
+            <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-5">
+                {metadata.sources.map((source) => {
+                    const Icon =
+                        source.status === 'ok'
+                            ? CircleCheck
+                            : source.status === 'public'
+                              ? Globe
+                              : CircleDashed;
+
+                    return (
+                        <li
+                            key={source.key}
+                            className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5"
+                            title={source.hint}
+                        >
+                            <div className="flex items-center gap-2">
+                                <Icon
+                                    className={cn(
+                                        'size-4 shrink-0',
+                                        source.status === 'missing'
+                                            ? 'text-white/30'
+                                            : 'text-indigo-300',
+                                    )}
+                                />
+                                <span className="truncate text-sm font-medium text-white">
+                                    {source.label}
+                                </span>
+                                <span className="ml-auto shrink-0 text-xs text-white/40">
+                                    {statusLabel[source.status]}
+                                </span>
+                            </div>
+                            <p className="mt-1 truncate text-xs text-white/40">
+                                {source.hint}
+                            </p>
+                        </li>
+                    );
+                })}
+            </ul>
+        </section>
+    );
+}
+
+export default function AdminMusic({
+    tracks,
+    filters,
+    stats,
+    metadata,
+}: Props) {
     const [q, setQ] = useState(filters.q);
     const player = usePlayer();
 
@@ -162,6 +277,8 @@ export default function AdminMusic({ tracks, filters, stats }: Props) {
                     delay={240}
                 />
             </div>
+
+            {!filters.trashed && <MetadataPanel metadata={metadata} />}
 
             <form
                 onSubmit={submit}

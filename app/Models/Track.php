@@ -36,6 +36,13 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $quality
  * @property string|null $stream_path
  * @property bool $processing
+ * @property string|null $mbid
+ * @property string|null $release_mbid
+ * @property string|null $release_group_mbid
+ * @property string|null $artist_mbid
+ * @property string|null $metadata_source
+ * @property array<string, array{source: string, score: int|float}>|null $metadata_meta
+ * @property Carbon|null $enriched_at
  * @property int $size
  * @property int $plays_count
  * @property int $adds_count
@@ -45,7 +52,7 @@ use Illuminate\Support\Facades\Storage;
  * @property-read string|null $cover_url
  * @property-read User|null $user
  */
-#[Fillable(['user_id', 'title', 'artist', 'album', 'genre', 'year', 'track_no', 'lyrics', 'duration', 'path', 'stream_path', 'processing', 'cover_path', 'mime', 'codec', 'sample_rate', 'bit_depth', 'bitrate', 'channels', 'quality', 'size'])]
+#[Fillable(['user_id', 'title', 'artist', 'album', 'genre', 'year', 'track_no', 'lyrics', 'duration', 'path', 'stream_path', 'processing', 'cover_path', 'mime', 'codec', 'sample_rate', 'bit_depth', 'bitrate', 'channels', 'quality', 'size', 'mbid', 'release_mbid', 'release_group_mbid', 'artist_mbid', 'metadata_source', 'metadata_meta', 'enriched_at'])]
 class Track extends Model
 {
     use SoftDeletes;
@@ -70,7 +77,49 @@ class Track extends Model
 
     protected function casts(): array
     {
-        return ['processing' => 'boolean'];
+        return ['processing' => 'boolean', 'metadata_meta' => 'array', 'enriched_at' => 'datetime'];
+    }
+
+    /** Поля, які заповнює автоматика (MetadataEnricher); «user» у metadata_meta — їх задав користувач. */
+    public const META_FIELDS = ['title', 'artist', 'album', 'genre', 'year', 'track_no', 'lyrics', 'cover'];
+
+    /** Джерело, з якого користувач задав поле власноруч: такі значення автоматика не чіпає ніколи. */
+    public const SOURCE_USER = 'user';
+
+    /**
+     * Позначає поля як введені користувачем (завантаження, редагування).
+     *
+     * @param  list<string>  $fields
+     */
+    public function markUserFields(array $fields): void
+    {
+        $meta = $this->metadata_meta ?? [];
+        foreach (array_intersect($fields, self::META_FIELDS) as $field) {
+            $meta[$field] = ['source' => self::SOURCE_USER, 'score' => 100];
+        }
+        $this->metadata_meta = $meta;
+    }
+
+    /**
+     * Звідки взялося поле: {source, score} або null (невідомо — тоді заповнене поле теж вважаємо користувацьким).
+     *
+     * @return array{source: string, score: int|float}|null
+     */
+    public function fieldMeta(string $field): ?array
+    {
+        $meta = $this->metadata_meta[$field] ?? null;
+
+        return is_array($meta) && isset($meta['source'], $meta['score']) ? $meta : null;
+    }
+
+    /** Наскільки надійна обкладинка (для вибору найкращої в альбомі): власна — найвища, невідома — середня. */
+    public function coverScore(): float
+    {
+        if ($this->cover_path === null) {
+            return -1;
+        }
+
+        return (float) ($this->fieldMeta('cover')['score'] ?? 50);
     }
 
     /**

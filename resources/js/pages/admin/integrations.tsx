@@ -362,6 +362,13 @@ export default function AdminIntegrations({ spotify, cinema }: Props) {
                         ),
                     ],
                     [
+                        'music',
+                        tr('Музика: метадані'),
+                        tr(
+                            'Розпізнавання треків за звуком, альбоми, роки, жанри, обкладинки й біографії виконавців. MusicBrainz, Cover Art Archive і LRCLIB працюють без ключа.',
+                        ),
+                    ],
+                    [
                         'metadata',
                         tr('Кіно: метадані'),
                         tr(

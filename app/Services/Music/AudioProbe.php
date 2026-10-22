@@ -9,8 +9,9 @@ use Throwable;
 
 /**
  * Звукові дані файлу через ffprobe/ffmpeg: кодек, частота, розрядність, теги, вбудована обкладинка,
- * а також копія AAC для браузера, якщо оригінал грає не скрізь. Немає ffmpeg на сервері —
- * методи повертають null, і завантаження працює як раніше (лише «рідні» формати).
+ * а також копія AAC для браузера, якщо оригінал грає не скрізь. Немає ffprobe або він не впорався —
+ * файл розбирає getID3 (Id3Probe) у тому ж форматі; без ffmpeg немає лише копії AAC і «нерідних»
+ * форматів (їх нічим було б відтворити).
  */
 #[Singleton]
 class AudioProbe
@@ -27,6 +28,8 @@ class AudioProbe
     /** @var array<string, string|false> знайдені шляхи до програм (на час процесу) */
     private array $binaries = [];
 
+    public function __construct(private readonly Id3Probe $id3) {}
+
     public function available(): bool
     {
         return $this->binary('ffprobe') !== null && $this->binary('ffmpeg') !== null;
@@ -37,8 +40,53 @@ class AudioProbe
      */
     public function probe(string $file): ?array
     {
+        if (! is_file($file)) {
+            return null;
+        }
+
+        return $this->ffprobe($file) ?? $this->id3($file);
+    }
+
+    /** Чи є запасний розбір без ffprobe (getID3). */
+    public function id3Available(): bool
+    {
+        return $this->id3->available();
+    }
+
+    /** Чи є ffprobe (без ffmpeg — лише розбір, без копій для браузера). */
+    public function ffprobeAvailable(): bool
+    {
+        return $this->binary('ffprobe') !== null;
+    }
+
+    /** Шлях до fpcalc (Chromaprint) для відбитка AcoustID або null. */
+    public function fpcalc(): ?string
+    {
+        return $this->binary('fpcalc', 'services.chromaprint.fpcalc');
+    }
+
+    /**
+     * @return array{codec: string, sample_rate: int|null, bit_depth: int|null, bitrate: int|null, channels: int|null, duration: int|null, quality: string, has_cover: bool, tags: array{title?: string, artist?: string, album?: string, genre?: string, year?: int, track_no?: int}}|null
+     */
+    private function id3(string $file): ?array
+    {
+        $info = $this->id3->probe($file);
+        if ($info === null) {
+            return null;
+        }
+        $info['tags'] = $this->tags($info['raw_tags']);
+        unset($info['raw_tags']);
+
+        return $info;
+    }
+
+    /**
+     * @return array{codec: string, sample_rate: int|null, bit_depth: int|null, bitrate: int|null, channels: int|null, duration: int|null, quality: string, has_cover: bool, tags: array{title?: string, artist?: string, album?: string, genre?: string, year?: int, track_no?: int}}|null
+     */
+    private function ffprobe(string $file): ?array
+    {
         $ffprobe = $this->binary('ffprobe');
-        if ($ffprobe === null || ! is_file($file)) {
+        if ($ffprobe === null) {
             return null;
         }
 
@@ -104,7 +152,10 @@ class AudioProbe
     public function extractCover(string $file): ?string
     {
         $ffmpeg = $this->binary('ffmpeg');
-        $temp = $ffmpeg !== null ? tempnam(sys_get_temp_dir(), 'cover') : false;
+        if ($ffmpeg === null) {
+            return $this->id3->extractCover($file);
+        }
+        $temp = tempnam(sys_get_temp_dir(), 'cover');
         if ($temp === false) {
             return null;
         }
@@ -121,7 +172,7 @@ class AudioProbe
         }
         @unlink($out);
 
-        return null;
+        return $this->id3->extractCover($file);
     }
 
     /** Перекодування в AAC 256 кбіт/с (.m4a) для відтворення в будь-якому браузері (до 75 с — менше за retry_after черги). */
@@ -168,7 +219,7 @@ class AudioProbe
         $text = fn (string ...$keys) => collect($keys)->map(fn ($k) => trim((string) ($raw[$k] ?? '')))->first(fn ($v) => $v !== '');
         $tags = array_filter([
             'title' => $text('title'),
-            'artist' => $text('artist', 'album_artist', 'albumartist'),
+            'artist' => $text('artist', 'album_artist', 'albumartist', 'band'),
             'album' => $text('album'),
             'genre' => $text('genre'),
         ]);
@@ -177,7 +228,7 @@ class AudioProbe
         if (preg_match('/\b(1[89]\d\d|2\d\d\d)\b/', (string) $text('date', 'year', 'originaldate'), $m)) {
             $tags['year'] = (int) $m[1];
         }
-        $trackNo = (int) explode('/', (string) $text('track', 'tracknumber'))[0];
+        $trackNo = (int) explode('/', (string) $text('track', 'tracknumber', 'track_number'))[0];
         if ($trackNo > 0 && $trackNo < 1000) {
             $tags['track_no'] = $trackNo;
         }
@@ -185,11 +236,11 @@ class AudioProbe
         return $tags;
     }
 
-    /** Шлях до ffprobe/ffmpeg: з config/services.php (FFPROBE_PATH, FFMPEG_PATH) або знайдений у PATH. */
-    private function binary(string $name): ?string
+    /** Шлях до ffprobe/ffmpeg/fpcalc: з config/services.php (FFPROBE_PATH, FFMPEG_PATH, FPCALC_PATH) або знайдений у PATH. */
+    private function binary(string $name, ?string $config = null): ?string
     {
         if (! array_key_exists($name, $this->binaries)) {
-            $configured = (string) config('services.ffmpeg.'.$name, $name);
+            $configured = (string) config($config ?? 'services.ffmpeg.'.$name, $name);
             if (str_contains($configured, '/')) {
                 $this->binaries[$name] = is_executable($configured) ? $configured : false;
             } else {

@@ -52,6 +52,16 @@ class MusicService
             'processing' => app(AudioProbe::class)->available() && ! in_array($extension, AudioProbe::PLAYABLE_EXTENSIONS, true),
         ]);
 
+        // Що вказав сам користувач, автоматика (MetadataEnricher) не перезапише ніколи.
+        $track->markUserFields(array_keys(array_filter([
+            'title' => true,
+            'artist' => true,
+            'album' => filled($track->album),
+            'genre' => filled($track->genre),
+            'cover' => $coverPath !== null,
+        ])));
+        $track->saveQuietly();
+
         $this->add($user, $track);
         // Кодек, якість, теги й обкладинка з файлу (через чергу — завантаження не чекає ffmpeg).
         ProcessTrackAudio::dispatch($track->id);
@@ -68,22 +78,38 @@ class MusicService
     /** Хости, звідки сервер сам завантажує обкладинки за посиланням (каталог iTunes). */
     public const COVER_HOSTS = ['mzstatic.com'];
 
+    /** Хости обкладинок для автоматичних метаданих: Cover Art Archive (з переадресацією на archive.org), Spotify, Discogs. */
+    public const METADATA_COVER_HOSTS = ['coverartarchive.org', 'archive.org', 'scdn.co', 'spotifycdn.com', 'discogs.com'];
+
     /**
-     * Обкладинка за посиланням із каталогу (автозаповнення в застосунку): лише https і лише з COVER_HOSTS,
-     * щоб сервер не ходив куди завгодно. Повертає шлях збереженої обкладинки або null.
+     * Обкладинка за посиланням із каталогу (автозаповнення в застосунку): лише https і лише з дозволених хостів
+     * (типово COVER_HOSTS), щоб сервер не ходив куди завгодно; переадресації — лише на ті самі хости.
+     * Повертає шлях збереженої обкладинки або null.
+     *
+     * @param  list<string>|null  $hosts
+     * @param  array<string, string>  $headers
      */
-    public function coverFromUrl(string $url): ?string
+    public function coverFromUrl(string $url, ?array $hosts = null, array $headers = []): ?string
     {
-        $parts = parse_url($url);
-        $host = strtolower((string) ($parts['host'] ?? ''));
-        $allowed = collect(self::COVER_HOSTS)->contains(fn (string $h) => $host === $h || str_ends_with($host, '.'.$h));
-        if (($parts['scheme'] ?? '') !== 'https' || ! $allowed) {
+        $hosts ??= self::COVER_HOSTS;
+        $allowed = function (string $url) use ($hosts): bool {
+            $parts = parse_url($url);
+            $host = strtolower((string) ($parts['host'] ?? ''));
+
+            return ($parts['scheme'] ?? '') === 'https' && collect($hosts)->contains(fn (string $h) => $host === $h || str_ends_with($host, '.'.$h));
+        };
+        if (! $allowed($url)) {
             return null;
         }
+        $redirects = $hosts === self::COVER_HOSTS ? false : ['max' => 3, 'protocols' => ['https'], 'on_redirect' => function ($request, $response, $uri) use ($allowed) {
+            if (! $allowed((string) $uri)) {
+                throw new \RuntimeException('Переадресація обкладинки на сторонній хост.');
+            }
+        }];
 
         try {
-            $response = Http::timeout(10)->withOptions(['allow_redirects' => false])->get($url);
-        } catch (ConnectionException) {
+            $response = Http::timeout(10)->withHeaders($headers)->withOptions(['allow_redirects' => $redirects])->get($url);
+        } catch (Throwable) {
             return null;
         }
 

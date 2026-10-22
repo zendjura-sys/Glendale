@@ -14,6 +14,11 @@ command -v ffprobe >/dev/null 2>&1 \
     || { sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ffmpeg >/dev/null; } \
     || echo "⚠ ffmpeg не встановлено: sudo apt-get install ffmpeg" >&2
 
+# fpcalc (Chromaprint) — відбиток звуку для розпізнавання треків через AcoustID. Так само: один раз, без зупинки деплою.
+command -v fpcalc >/dev/null 2>&1 \
+    || { sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq libchromaprint-tools >/dev/null; } \
+    || echo "⚠ fpcalc не встановлено: sudo apt-get install libchromaprint-tools" >&2
+
 # Залежності ставимо до першого artisan: новий код може посилатися на щойно додані пакети.
 # Скрипти composer (package:discover) запускаємо вже після режиму обслуговування.
 composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-progress --no-scripts

@@ -168,4 +168,37 @@ return [
         'ffprobe' => env('FFPROBE_PATH', 'ffprobe'),
     ],
 
+    // Метадані треків: відбиток Chromaprint (fpcalc) → AcoustID → MusicBrainz, обкладинки Cover Art Archive.
+    // MUSIC_METADATA=false вимикає всі зовнішні запити (у тестах — щоб не ходити в мережу).
+    'music_metadata' => [
+        'enabled' => (bool) env('MUSIC_METADATA', true),
+    ],
+
+    'chromaprint' => [
+        'fpcalc' => env('FPCALC_PATH', 'fpcalc'),
+    ],
+
+    'acoustid' => [
+        'key' => env('ACOUSTID_KEY'),
+        'url' => env('ACOUSTID_API_URL', 'https://api.acoustid.org/v2'),
+    ],
+
+    'musicbrainz' => [
+        'url' => env('MUSICBRAINZ_API_URL', 'https://musicbrainz.org/ws/2'),
+        // Правила MusicBrainz: не частіше одного запиту на секунду з однієї адреси.
+        'interval_ms' => (int) env('MUSICBRAINZ_INTERVAL_MS', 1100),
+    ],
+
+    'lastfm' => [
+        'key' => env('LASTFM_KEY'),
+        'url' => env('LASTFM_API_URL', 'https://ws.audioscrobbler.com/2.0/'),
+    ],
+
+    'discogs' => [
+        'token' => env('DISCOGS_TOKEN'),
+        'url' => env('DISCOGS_API_URL', 'https://api.discogs.com'),
+        // Discogs з токеном — до 60 запитів на хвилину.
+        'interval_ms' => (int) env('DISCOGS_INTERVAL_MS', 1000),
+    ],
+
 ];

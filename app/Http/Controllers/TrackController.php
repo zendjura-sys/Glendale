@@ -83,7 +83,10 @@ class TrackController extends Controller
         if (! app(Plugins::class)->on('lyrics')) {
             unset($data['lyrics']);
         }
-        $track->update(array_map(fn ($v) => is_string($v) ? (trim($v) ?: null) : $v, $data));
+        $track->fill(array_map(fn ($v) => is_string($v) ? (trim($v) ?: null) : $v, $data));
+        // Змінене вручну (зокрема очищене) — тепер «від користувача»: автоматика його не чіпає.
+        $track->markUserFields(array_keys($track->getDirty()));
+        $track->save();
 
         // Обкладинка з файлу (вікно редагування) або з автозаповнення (каталог iTunes);
         // стару видаляємо лише після успішного збереження нової. Файл — POST з _method=PATCH.
@@ -92,6 +95,7 @@ class TrackController extends Controller
             : (filled($coverUrl) ? $this->music->coverFromUrl((string) $coverUrl) : null);
         if ($cover !== null) {
             $old = $track->cover_path;
+            $track->markUserFields(['cover']);
             $track->update(['cover_path' => $cover]);
             if ($old) {
                 Storage::disk('public')->delete($old);
@@ -107,7 +111,7 @@ class TrackController extends Controller
 
         // Немає свого тексту — шукаємо у відкритому каталозі й зберігаємо в трек (лише додаємо).
         if (blank($track->lyrics) && ($found = app(LyricsFinder::class)->find($track->artist, $track->title, $track->album, $track->duration ?: null))) {
-            $track->forceFill(['lyrics' => $found])->saveQuietly();
+            $track->forceFill(['lyrics' => $found, 'metadata_meta' => [...($track->metadata_meta ?? []), 'lyrics' => ['source' => 'lrclib', 'score' => 50]]])->saveQuietly();
         }
 
         return response()->json(['lyrics' => $track->lyrics]);
