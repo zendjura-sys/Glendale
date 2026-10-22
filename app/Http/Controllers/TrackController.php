@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Track;
+use App\Services\Music\LyricsFinder;
 use App\Services\MusicService;
 use App\Support\Plugins\Plugins;
 use App\Support\Settings\SiteSettings;
@@ -80,7 +81,26 @@ class TrackController extends Controller
     {
         app(Plugins::class)->ensure('lyrics');
 
+        // Немає свого тексту — шукаємо у відкритому каталозі й зберігаємо в трек (лише додаємо).
+        if (blank($track->lyrics) && ($found = app(LyricsFinder::class)->find($track->artist, $track->title, $track->album, $track->duration ?: null))) {
+            $track->forceFill(['lyrics' => $found])->saveQuietly();
+        }
+
         return response()->json(['lyrics' => $track->lyrics]);
+    }
+
+    /** Текст для пісні не з нашого каталогу (Spotify): за виконавцем, назвою й тривалістю. */
+    public function findLyrics(Request $request, LyricsFinder $finder): JsonResponse
+    {
+        app(Plugins::class)->ensure('lyrics');
+        $data = $request->validate([
+            'artist' => ['required', 'string', 'max:200'],
+            'title' => ['required', 'string', 'max:200'],
+            'album' => ['nullable', 'string', 'max:200'],
+            'duration' => ['nullable', 'integer', 'min:0', 'max:7200'],
+        ]);
+
+        return response()->json(['lyrics' => $finder->find($data['artist'], $data['title'], $data['album'] ?? null, $data['duration'] ?? null)]);
     }
 
     public function destroy(Request $request, Track $track): JsonResponse

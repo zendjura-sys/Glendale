@@ -156,6 +156,15 @@ export function audioElement(): HTMLAudioElement {
     return audioEl();
 }
 
+/** Елемент, що зараз звучить (ефірне радіо грає в окремому), і всі елементи — для вибору виходу звуку. */
+export function playingElement(): HTMLAudioElement {
+    return state.engine === 'live' ? liveEl() : audioEl();
+}
+
+export function mediaElements(): HTMLAudioElement[] {
+    return [audioEl(), liveEl()];
+}
+
 function audioEl(): HTMLAudioElement {
     if (audio) return audio;
 
@@ -575,6 +584,10 @@ async function start(index: number) {
         stopEngines('embed');
         await playViaEmbed(track);
     } catch (error) {
+        // AbortError («play() перервано викликом pause()» чи новим src) — звичайна гонка при швидкому
+        // перемиканні треків: новий запуск уже керує станом, людині тут нічого показувати.
+        if (error instanceof DOMException && error.name === 'AbortError')
+            return;
         set({ loading: false, playing: false });
         if (error instanceof DOMException && error.name === 'NotAllowedError')
             return;

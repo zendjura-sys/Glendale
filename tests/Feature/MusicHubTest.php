@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\MusicService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
@@ -135,7 +136,10 @@ class MusicHubTest extends TestCase
             ->component('music/artist')
             ->where('artist.albums.0.title', 'Midnight Run'));
 
-        $this->actingAs($user)->get('/music/artist?name=Nobody')->assertNotFound();
+        // Виконавця немає в каталозі (трек зі Spotify) — сторінка є, з порожніми розділами.
+        $this->actingAs($user)->get('/music/artist?name=Nobody')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('artist.name', 'Nobody')->where('artist.top_songs', []));
+        $this->actingAs($user)->get('/music/artist?name=')->assertNotFound();
         $this->actingAs($user)->get('/music/album?artist=Nightdrive&title=Nope')->assertNotFound();
     }
 
@@ -174,5 +178,43 @@ class MusicHubTest extends TestCase
             ->where('replay.plays', 1)->where('replay.tracks.0.id', $track->id));
         $this->actingAs($user)->getJson('/music/playlists/mine')->assertOk()->assertJsonPath('playlists.0.title', 'Вечір');
         $this->assertSame(1, DB::table('music_plays')->where('user_id', $user->id)->count());
+    }
+
+    public function test_artist_info_from_wikipedia_and_wikidata(): void
+    {
+        Http::fake([
+            'uk.wikipedia.org/w/api.php*' => Http::response(['query' => ['search' => [['title' => 'Nightdrive (гурт)']]]]),
+            'uk.wikipedia.org/api/rest_v1/*' => Http::response([
+                'type' => 'standard', 'description' => 'український гурт', 'extract' => 'Nightdrive — синтвейв-гурт.',
+                'content_urls' => ['desktop' => ['page' => 'https://uk.wikipedia.org/wiki/Nightdrive']],
+                'originalimage' => ['source' => 'https://upload.wikimedia.org/n.jpg'], 'wikibase_item' => 'Q1',
+            ]),
+            'www.wikidata.org/*' => Http::sequence()
+                ->push(['entities' => ['Q1' => ['claims' => [
+                    'P571' => [['mainsnak' => ['datavalue' => ['value' => ['time' => '+2015-00-00T00:00:00Z']]]]],
+                    'P740' => [['mainsnak' => ['datavalue' => ['value' => ['id' => 'Q2']]]]],
+                ]]]])
+                ->push(['entities' => ['Q2' => ['labels' => ['uk' => ['value' => 'Київ']]]]]),
+        ]);
+
+        $this->actingAs(User::factory()->create())->getJson('/music/artist/info?name=Nightdrive')->assertOk()
+            ->assertJsonPath('info.bio', 'Nightdrive — синтвейв-гурт.')
+            ->assertJsonPath('info.image_url', 'https://upload.wikimedia.org/n.jpg')
+            ->assertJsonPath('info.origin', 'Київ')
+            ->assertJsonPath('info.formed', '2015-00-00');
+    }
+
+    public function test_lyrics_found_in_open_catalog_are_saved_to_track(): void
+    {
+        Http::fake(['lrclib.net/api/get*' => Http::response(['syncedLyrics' => "[00:01.00] Перший рядок\n[00:05.00] Другий"])]);
+        $track = $this->track();
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->getJson("/music/tracks/{$track->id}/lyrics")->assertOk()
+            ->assertJsonPath('lyrics', "[00:01.00] Перший рядок\n[00:05.00] Другий");
+        $this->assertStringContainsString('Перший рядок', (string) $track->fresh()->lyrics);
+
+        $this->actingAs($user)->getJson('/music/lyrics/find?artist=Someone&title=Song&duration=200')->assertOk()
+            ->assertJsonPath('lyrics', "[00:01.00] Перший рядок\n[00:05.00] Другий");
     }
 }

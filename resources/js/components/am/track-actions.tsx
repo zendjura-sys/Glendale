@@ -243,7 +243,7 @@ function PlaylistSub({ track }: { track: LocalTrack }) {
             >
                 <ListPlus /> {tr('Додати в плейлист…')}
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="am max-h-80 w-60 overflow-y-auto rounded-2xl border-[var(--am-sep)] bg-[var(--am-elevated)] p-1.5 text-[var(--am-label)]">
+            <DropdownMenuSubContent className="am z-[90] max-h-80 w-60 overflow-y-auto rounded-2xl border-[var(--am-sep)] bg-[var(--am-elevated)] p-1.5 text-[var(--am-label)]">
                 <DropdownMenuItem
                     className={item}
                     onSelect={() => actions.newPlaylist(track.id)}
@@ -323,7 +323,7 @@ export function TrackMenu({
             </DropdownMenuTrigger>
             <DropdownMenuContent
                 align="end"
-                className="am w-64 rounded-2xl border-[var(--am-sep)] bg-[var(--am-elevated)] p-1.5 text-[var(--am-label)] shadow-2xl"
+                className="am z-[90] w-64 rounded-2xl border-[var(--am-sep)] bg-[var(--am-elevated)] p-1.5 text-[var(--am-label)] shadow-2xl"
             >
                 {local && (
                     <>

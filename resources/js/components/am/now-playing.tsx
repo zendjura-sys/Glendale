@@ -1,9 +1,12 @@
+import { Link, router } from '@inertiajs/react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import {
     Airplay,
+    Cast,
     ChevronDown,
     FastForward,
     GripHorizontal,
+    Headphones,
     Infinity as InfinityIcon,
     ListMusic,
     Loader2,
@@ -15,6 +18,8 @@ import {
     Repeat1,
     Rewind,
     Shuffle,
+    Smartphone,
+    Speaker,
     Star,
     Volume1,
     Volume2,
@@ -38,8 +43,10 @@ import {
     clearUpNext,
     cycleRepeat,
     jumpTo,
+    mediaElements,
     moveInQueue,
     next,
+    playingElement,
     prev,
     removeFromQueue,
     seek,
@@ -52,7 +59,12 @@ import {
 import { cn } from '@/lib/utils';
 import type { TrackCard } from '@/types';
 import { QualityBadge } from './ui';
-import { toggleFavorite, TrackMenu, useTrack } from './track-actions';
+import {
+    artistHref,
+    toggleFavorite,
+    TrackMenu,
+    useTrack,
+} from './track-actions';
 
 /**
  * «Зараз грає» як в Apple Music (iOS 26): тло з кольорів обкладинки, велика обкладинка, що
@@ -67,32 +79,50 @@ type View = 'artwork' | 'lyrics' | 'queue';
 
 // ───────────────────────── Текст пісні ─────────────────────────
 
-const lyricsCache = new Map<number, Lyrics | null>();
+const lyricsCache = new Map<string, Lyrics | null>();
 
+function lyricsUrl(track: TrackCard | null): string | null {
+    if (!track) return null;
+    if (track.source === 'local') return `/music/tracks/${track.id}/lyrics`;
+    if (track.source === 'spotify') {
+        const q = new URLSearchParams({
+            artist: track.artist,
+            title: track.title,
+        });
+        if (track.duration > 0)
+            q.set('duration', String(Math.round(track.duration)));
+
+        return `/music/lyrics/find?${q}`;
+    }
+
+    return null;
+}
+
+/** Текст пісні: undefined — завантажується, null — немає. Свій трек сервер шукає в каталозі LRCLIB. */
 function useLyrics(track: TrackCard | null): Lyrics | null | undefined {
-    const id = track?.source === 'local' && track.has_lyrics ? track.id : null;
+    const url = lyricsUrl(track);
     const [lyrics, setLyrics] = useState<Lyrics | null | undefined>(
-        id === null ? null : lyricsCache.get(id),
+        url === null ? null : lyricsCache.get(url),
     );
 
     useEffect(() => {
-        if (id === null) {
+        if (url === null) {
             setLyrics(null);
 
             return;
         }
-        if (lyricsCache.has(id)) {
-            setLyrics(lyricsCache.get(id));
+        if (lyricsCache.has(url)) {
+            setLyrics(lyricsCache.get(url));
 
             return;
         }
         let alive = true;
         setLyrics(undefined);
-        void api<{ lyrics: string | null }>('GET', `/music/tracks/${id}/lyrics`)
+        void api<{ lyrics: string | null }>('GET', url)
             .then((r) => {
                 const text = r.lyrics?.trim();
                 const parsed = text ? parseLyrics(text) : null;
-                lyricsCache.set(id, parsed);
+                lyricsCache.set(url, parsed);
                 if (alive) setLyrics(parsed);
             })
             .catch(() => alive && setLyrics(null));
@@ -100,7 +130,7 @@ function useLyrics(track: TrackCard | null): Lyrics | null | undefined {
         return () => {
             alive = false;
         };
-    }, [id]);
+    }, [url]);
 
     return lyrics;
 }
@@ -162,32 +192,172 @@ function setSing(level: number) {
 
 type OutputMedia = HTMLAudioElement & {
     setSinkId?: (id: string) => Promise<void>;
-    remote?: { prompt: () => Promise<void> };
+    sinkId?: string;
+    remote?: { prompt: () => Promise<void>; state?: string };
     webkitShowPlaybackTargetPicker?: () => void;
 };
 
-/** Вибір пристрою: навушники й колонки (Chrome), трансляція (Android), AirPlay (Safari). */
-async function chooseOutput() {
-    const el = audioElement() as OutputMedia;
-    const devices = navigator.mediaDevices as MediaDevices & {
-        selectAudioOutput?: () => Promise<{ deviceId: string }>;
-    };
-    try {
-        if (el.webkitShowPlaybackTargetPicker) {
-            el.webkitShowPlaybackTargetPicker();
-        } else if (devices?.selectAudioOutput && el.setSinkId) {
-            const device = await devices.selectAudioOutput();
-            await el.setSinkId(device.deviceId);
-        } else if (el.remote) {
-            await el.remote.prompt();
-        } else {
-            toast.message(
-                tr('Пристрій для звуку вибирається в налаштуваннях системи.'),
-            );
+type OutputDevices = MediaDevices & {
+    selectAudioOutput?: () => Promise<MediaDeviceInfo>;
+};
+
+let currentSink = '';
+
+async function applySink(deviceId: string) {
+    await Promise.all(
+        mediaElements().map((el) => (el as OutputMedia).setSinkId?.(deviceId)),
+    );
+    currentSink = deviceId;
+}
+
+/**
+ * Аркуш «Вивід звуку» як AirPlay в Apple Music: цей пристрій, навушники й колонки (де браузер дозволяє
+ * вибір), трансляція на телевізор чи колонку (Chromecast на Android, AirPlay у Safari). Помилки — тостом.
+ */
+function OutputSheet({ onClose }: { onClose: () => void }) {
+    const player = usePlayer();
+    const el = playingElement() as OutputMedia;
+    const devices = navigator.mediaDevices as OutputDevices | undefined;
+    const canSink = typeof el.setSinkId === 'function';
+    const [outputs, setOutputs] = useState<MediaDeviceInfo[]>([]);
+    const [sink, setSink] = useState(currentSink);
+    const spotify = player.engine === 'sdk' || player.engine === 'embed';
+
+    useEffect(() => {
+        if (!canSink || !devices?.enumerateDevices) return;
+        void devices
+            .enumerateDevices()
+            .then((list) =>
+                setOutputs(
+                    list.filter(
+                        (d) =>
+                            d.kind === 'audiooutput' &&
+                            d.label &&
+                            d.deviceId !== 'default' &&
+                            d.deviceId !== 'communications',
+                    ),
+                ),
+            )
+            .catch(() => {});
+    }, [canSink, devices]);
+
+    const pick = async (deviceId: string) => {
+        try {
+            await applySink(deviceId);
+            setSink(deviceId);
+        } catch {
+            toast.error(tr('Не вдалося перемкнути звук на цей пристрій.'));
         }
-    } catch {
-        // Людина закрила вибір — нічого не робимо.
-    }
+    };
+
+    const choose = async () => {
+        try {
+            const device = await devices!.selectAudioOutput!();
+            await pick(device.deviceId);
+            setOutputs((list) =>
+                list.some((d) => d.deviceId === device.deviceId)
+                    ? list
+                    : [...list, device],
+            );
+        } catch {
+            // Людина закрила вибір.
+        }
+    };
+
+    const cast = async () => {
+        try {
+            if (el.webkitShowPlaybackTargetPicker) {
+                el.webkitShowPlaybackTargetPicker();
+            } else {
+                await el.remote!.prompt();
+            }
+            onClose();
+        } catch (error) {
+            const name = error instanceof DOMException ? error.name : '';
+            if (name === 'NotFoundError') {
+                toast.message(
+                    tr(
+                        'Поруч немає пристроїв для трансляції. Перевір, що телевізор чи колонка в тій самій мережі Wi-Fi.',
+                    ),
+                );
+            } else if (name !== 'AbortError' && name !== 'NotAllowedError') {
+                toast.error(tr('Цей трек не можна транслювати з браузера.'));
+            }
+        }
+    };
+
+    const row =
+        'flex min-h-12 w-full items-center gap-3 px-4 text-left text-[15px] transition active:bg-white/10';
+    const check = (on: boolean) =>
+        on ? (
+            <span className="ml-auto size-2.5 rounded-full bg-[var(--am-accent)]" />
+        ) : null;
+
+    return (
+        <m.div
+            initial={{ opacity: 0, y: 12, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.98 }}
+            transition={{ duration: 0.18, ease: EASE_OUT }}
+            className="absolute inset-x-0 bottom-full z-10 mb-2 overflow-hidden rounded-2xl bg-[rgb(28_28_30/0.94)] text-white shadow-2xl ring-1 ring-white/10 backdrop-blur-2xl"
+            role="dialog"
+            aria-label={tr('Вивід звуку')}
+        >
+            <p className="px-4 pt-3 pb-1 text-[13px] font-semibold text-white/60">
+                {tr('Вивід звуку')}
+            </p>
+            <button
+                type="button"
+                className={row}
+                onClick={() => void (canSink ? pick('') : onClose())}
+            >
+                <Smartphone className="size-5 shrink-0" />
+                {tr('Цей пристрій')}
+                {check(sink === '')}
+            </button>
+            {outputs.map((d) => (
+                <button
+                    key={d.deviceId}
+                    type="button"
+                    className={row}
+                    onClick={() => void pick(d.deviceId)}
+                >
+                    <Headphones className="size-5 shrink-0" />
+                    <span className="min-w-0 flex-1 truncate">{d.label}</span>
+                    {check(sink === d.deviceId)}
+                </button>
+            ))}
+            {canSink && devices?.selectAudioOutput && (
+                <button
+                    type="button"
+                    className={row}
+                    onClick={() => void choose()}
+                >
+                    <Speaker className="size-5 shrink-0" />
+                    {tr('Навушники чи колонка…')}
+                </button>
+            )}
+            {(el.remote || el.webkitShowPlaybackTargetPicker) && !spotify && (
+                <button
+                    type="button"
+                    className={row}
+                    onClick={() => void cast()}
+                >
+                    <Cast className="size-5 shrink-0" />
+                    {tr('Транслювати на пристрій…')}
+                </button>
+            )}
+            <p className="border-t border-white/10 px-4 py-3 text-[12px] leading-snug text-white/55">
+                {spotify
+                    ? tr(
+                          'Пісні Spotify можна перемкнути на інший пристрій у застосунку Spotify (Spotify Connect).',
+                      )
+                    : tr(
+                          'Bluetooth-навушники й колонки під’єднуються в налаштуваннях телефона — звук перейде на них сам.',
+                      )}
+            </p>
+        </m.div>
+    );
 }
 
 // ───────────────────────── Частини екрана ─────────────────────────
@@ -345,24 +515,28 @@ function Volume() {
 function BottomRow({
     view,
     onView,
-    hasLyrics,
+    live,
 }: {
     view: View;
     onView: (v: View) => void;
-    hasLyrics: boolean;
+    live: boolean;
 }) {
+    const [output, setOutput] = useState(false);
     const btn = (on: boolean) =>
         cn(
-            'flex size-11 items-center justify-center rounded-full text-white/70 transition disabled:opacity-30',
+            'flex size-11 items-center justify-center rounded-full text-white/75 transition active:scale-90 disabled:opacity-30',
             on && 'bg-white/20 text-white',
         );
 
     return (
-        <div className="flex items-center justify-around pt-1 pb-2">
+        <div className="relative flex items-center justify-around pt-1 pb-2">
+            <AnimatePresence>
+                {output && <OutputSheet onClose={() => setOutput(false)} />}
+            </AnimatePresence>
             <button
                 type="button"
                 onClick={() => onView(view === 'lyrics' ? 'artwork' : 'lyrics')}
-                disabled={!hasLyrics}
+                disabled={live}
                 aria-label={tr('Текст пісні')}
                 aria-pressed={view === 'lyrics'}
                 className={btn(view === 'lyrics')}
@@ -371,9 +545,10 @@ function BottomRow({
             </button>
             <button
                 type="button"
-                onClick={() => void chooseOutput()}
+                onClick={() => setOutput((o) => !o)}
                 aria-label={tr('Вивід звуку')}
-                className={btn(false)}
+                aria-expanded={output}
+                className={btn(output)}
             >
                 <Airplay className="size-[22px]" />
             </button>
@@ -410,14 +585,28 @@ function TitleRow({ track, compact }: { track: TrackCard; compact?: boolean }) {
                 >
                     {t.title}
                 </p>
-                <p
-                    className={cn(
-                        'truncate text-white/60',
-                        compact ? 'text-[13px]' : 'text-[19px] leading-6',
-                    )}
-                >
-                    {t.source === 'radio' ? tr('Пряма трансляція') : t.artist}
-                </p>
+                {t.source === 'radio' || !t.artist ? (
+                    <p
+                        className={cn(
+                            'truncate text-white/60',
+                            compact ? 'text-[13px]' : 'text-[19px] leading-6',
+                        )}
+                    >
+                        {t.source === 'radio'
+                            ? tr('Пряма трансляція')
+                            : t.artist}
+                    </p>
+                ) : (
+                    <Link
+                        href={artistHref(t.artist)}
+                        className={cn(
+                            'block max-w-full truncate text-white/60 transition hover:text-white/85 hover:underline',
+                            compact ? 'text-[13px]' : 'text-[19px] leading-6',
+                        )}
+                    >
+                        {t.artist}
+                    </Link>
+                )}
             </div>
             {local && (
                 <button
@@ -802,6 +991,40 @@ function CompactHeader({ track }: { track: TrackCard }) {
 
 // ───────────────────────── Екран ─────────────────────────
 
+/** Текст пісні в панелі: завантаження, «немає тексту» або караоке. */
+function LyricsArea({
+    lyrics,
+    singing,
+    onSing,
+}: {
+    lyrics: Lyrics | null | undefined;
+    singing: number;
+    onSing: (v: number) => void;
+}) {
+    if (lyrics === undefined) {
+        return (
+            <div className="flex h-full items-center justify-center">
+                <Loader2 className="size-8 animate-spin text-white/60" />
+            </div>
+        );
+    }
+    if (lyrics === null) {
+        return (
+            <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+                <MessageSquareQuote className="size-10 text-white/40" />
+                <p className="mt-3 text-[20px] font-bold text-white/85">
+                    {tr('Тексту поки немає')}
+                </p>
+                <p className="mt-1 text-[15px] text-white/55">
+                    {tr('Для цієї пісні текст ще не додали.')}
+                </p>
+            </div>
+        );
+    }
+
+    return <LyricsPanel lyrics={lyrics} singing={singing} onSing={onSing} />;
+}
+
 export function NowPlaying({
     view,
     onView,
@@ -823,6 +1046,9 @@ export function NowPlaying({
         if (!track) onClose();
     }, [track, onClose]);
 
+    // Перехід на іншу сторінку (виконавець, альбом із меню) — згортаємо плеєр, як в Apple Music.
+    useEffect(() => router.on('start', () => setOpen(false)), []);
+
     // Караоке діє лише на власних треках; на іншому треку голос повертається.
     useEffect(() => {
         if (singing > 0 && track?.source !== 'local') {
@@ -833,45 +1059,34 @@ export function NowPlaying({
 
     if (!track) return null;
     const live = track.source === 'radio';
-    const hasLyrics = !!lyrics;
     const sing = (v: number) => {
         setSinging(v);
         setSing(v);
     };
     const close = () => setOpen(false);
     const panel =
-        view === 'lyrics' && lyrics
+        view === 'lyrics' && !live
             ? 'lyrics'
             : view === 'queue'
               ? 'queue'
               : null;
-
-    const artwork = (
-        <m.div
-            animate={{ scale: player.playing || live ? 1 : 0.82 }}
-            transition={motionOr(reduce, {
-                type: 'spring',
-                stiffness: 260,
-                damping: 26,
-            })}
-            className="mx-auto aspect-square w-full max-w-[min(86vw,46dvh,520px)] lg:max-w-[min(38vw,62dvh,560px)]"
-        >
-            <TrackCover
-                url={track.cover_url}
-                seed={track.key}
-                className="size-full rounded-[12px] shadow-[0_24px_60px_-18px_rgb(0_0_0/0.6)]"
-            />
-        </m.div>
-    );
+    const base = tint ? `rgb(${tint})` : '#2c2c2e';
 
     const controls = (
         <div className="mx-auto w-full max-w-[560px]">
             <Progress live={live} />
             <Controls live={live} />
             <Volume />
-            <BottomRow view={view} onView={onView} hasLyrics={hasLyrics} />
+            <BottomRow view={view} onView={onView} live={live} />
         </div>
     );
+
+    const panelBody =
+        panel === 'lyrics' ? (
+            <LyricsArea lyrics={lyrics} singing={singing} onSing={sing} />
+        ) : (
+            <QueuePanel />
+        );
 
     return (
         <DialogPrimitive.Root open={open} onOpenChange={(o) => !o && close()}>
@@ -895,6 +1110,7 @@ export function NowPlaying({
                                     damping: 34,
                                 })}
                                 drag={reduce ? false : 'y'}
+                                dragListener={!panel}
                                 dragConstraints={{ top: 0, bottom: 0 }}
                                 dragElastic={{ top: 0, bottom: 0.6 }}
                                 onDragEnd={(_: unknown, info: PanInfo) => {
@@ -905,30 +1121,48 @@ export function NowPlaying({
                                         close();
                                 }}
                                 className="am fixed inset-0 z-[70] overflow-hidden text-white focus:outline-none"
-                                style={{
-                                    background: tint
-                                        ? `rgb(${tint})`
-                                        : '#3a3a3c',
-                                }}
+                                style={{ background: base }}
                             >
                                 <DialogPrimitive.Title className="sr-only">
                                     {tr('Зараз грає')}: {track.title}
                                 </DialogPrimitive.Title>
 
-                                {/* Тло: розмита обкладинка, що повільно рухається, + затемнення під текст. */}
+                                {/* Тло: колір обкладинки, затемнений донизу, щоб білий текст читався завжди. */}
                                 <div
                                     aria-hidden
-                                    className="pointer-events-none absolute inset-0"
-                                >
-                                    {track.cover_url && (
-                                        <img
-                                            src={track.cover_url}
-                                            alt=""
-                                            className="absolute inset-[-25%] size-[150%] max-w-none animate-[spin_60s_linear_infinite] object-cover opacity-70 blur-[80px] saturate-150 motion-reduce:animate-none"
-                                        />
+                                    className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgb(0_0_0/0.05),rgb(0_0_0/0.45))]"
+                                />
+
+                                {/* Телефон, головний вигляд: обкладинка на весь екран угорі, що тане в колір тла (iOS 26). */}
+                                <AnimatePresence initial={false}>
+                                    {!panel && (
+                                        <m.div
+                                            key="hero"
+                                            aria-hidden
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.25 }}
+                                            className="pointer-events-none absolute inset-x-0 top-0 h-[72dvh] lg:hidden"
+                                        >
+                                            <TrackCover
+                                                url={track.cover_url}
+                                                seed={track.key}
+                                                className="size-full rounded-none [mask-image:linear-gradient(to_bottom,#000_50%,transparent_98%)] object-cover"
+                                            />
+                                        </m.div>
                                     )}
-                                    <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgb(0_0_0/0.15),rgb(0_0_0/0.35))]" />
-                                </div>
+                                </AnimatePresence>
+
+                                {/* Текст і черга: розмита обкладинка на тлі. */}
+                                {panel && track.cover_url && (
+                                    <img
+                                        aria-hidden
+                                        src={track.cover_url}
+                                        alt=""
+                                        className="pointer-events-none absolute inset-[-25%] size-[150%] max-w-none object-cover opacity-60 blur-[80px] saturate-150 lg:hidden"
+                                    />
+                                )}
 
                                 <div className="relative mx-auto flex h-full max-w-[1200px] flex-col px-6 pt-[calc(env(safe-area-inset-top)+8px)] pb-[calc(env(safe-area-inset-bottom)+8px)] lg:px-12">
                                     <div className="flex h-8 shrink-0 items-center justify-center">
@@ -938,64 +1172,43 @@ export function NowPlaying({
                                             aria-label={tr('Згорнути')}
                                             className="flex h-8 w-14 items-center justify-center"
                                         >
-                                            <span className="h-[5px] w-9 rounded-full bg-white/40 lg:hidden" />
+                                            <span className="h-[5px] w-9 rounded-full bg-white/60 shadow lg:hidden" />
                                             <ChevronDown className="hidden size-7 text-white/70 lg:block" />
                                         </button>
                                     </div>
 
-                                    {/* Телефон: обкладинка або текст/черга, керування внизу. */}
+                                    {/* Телефон. */}
                                     <div className="flex min-h-0 flex-1 flex-col lg:hidden">
-                                        <AnimatePresence
-                                            mode="wait"
-                                            initial={false}
-                                        >
-                                            {panel ? (
-                                                <m.div
-                                                    key={panel}
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    exit={{ opacity: 0 }}
-                                                    transition={{
-                                                        duration: 0.2,
-                                                        ease: EASE_OUT,
-                                                    }}
-                                                    className="flex min-h-0 flex-1 flex-col pt-2"
-                                                >
-                                                    <CompactHeader
-                                                        track={track}
-                                                    />
-                                                    <div className="min-h-0 flex-1">
-                                                        {panel === 'lyrics' &&
-                                                        lyrics ? (
-                                                            <LyricsPanel
-                                                                lyrics={lyrics}
-                                                                singing={
-                                                                    singing
-                                                                }
-                                                                onSing={sing}
-                                                            />
-                                                        ) : (
-                                                            <QueuePanel />
-                                                        )}
-                                                    </div>
-                                                </m.div>
-                                            ) : (
-                                                <m.div
-                                                    key="artwork"
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    exit={{ opacity: 0 }}
-                                                    transition={motionOr(
-                                                        reduce,
-                                                        RISE,
-                                                    )}
-                                                    className="flex min-h-0 flex-1 flex-col justify-center gap-7 py-4"
-                                                >
-                                                    {artwork}
-                                                    <TitleRow track={track} />
-                                                </m.div>
-                                            )}
-                                        </AnimatePresence>
+                                        {panel ? (
+                                            <m.div
+                                                key={panel}
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                transition={{
+                                                    duration: 0.2,
+                                                    ease: EASE_OUT,
+                                                }}
+                                                className="flex min-h-0 flex-1 flex-col pt-2"
+                                            >
+                                                <CompactHeader track={track} />
+                                                <div className="min-h-0 flex-1">
+                                                    {panelBody}
+                                                </div>
+                                            </m.div>
+                                        ) : (
+                                            <m.div
+                                                key="artwork"
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                transition={motionOr(
+                                                    reduce,
+                                                    RISE,
+                                                )}
+                                                className="flex min-h-0 flex-1 flex-col justify-end pb-2"
+                                            >
+                                                <TitleRow track={track} />
+                                            </m.div>
+                                        )}
                                         <div className="shrink-0 pt-2">
                                             {controls}
                                         </div>
@@ -1004,17 +1217,36 @@ export function NowPlaying({
                                     {/* ПК: ліворуч обкладинка й керування, праворуч текст чи черга. */}
                                     <div className="hidden min-h-0 flex-1 items-center gap-16 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                                         <div className="flex flex-col gap-6">
-                                            {artwork}
+                                            <m.div
+                                                animate={{
+                                                    scale:
+                                                        player.playing || live
+                                                            ? 1
+                                                            : 0.86,
+                                                }}
+                                                transition={motionOr(reduce, {
+                                                    type: 'spring',
+                                                    stiffness: 260,
+                                                    damping: 26,
+                                                })}
+                                                className="mx-auto aspect-square w-full max-w-[min(38vw,58dvh,560px)]"
+                                            >
+                                                <TrackCover
+                                                    url={track.cover_url}
+                                                    seed={track.key}
+                                                    className="size-full rounded-[12px] shadow-[0_24px_60px_-18px_rgb(0_0_0/0.6)]"
+                                                />
+                                            </m.div>
                                             <div className="mx-auto w-full max-w-[560px]">
                                                 <TitleRow track={track} />
                                             </div>
                                             {controls}
                                         </div>
                                         <div className="h-[min(78dvh,760px)] min-h-0">
-                                            {view === 'queue' || !lyrics ? (
+                                            {view === 'queue' || live ? (
                                                 <QueuePanel />
                                             ) : (
-                                                <LyricsPanel
+                                                <LyricsArea
                                                     lyrics={lyrics}
                                                     singing={singing}
                                                     onSing={sing}

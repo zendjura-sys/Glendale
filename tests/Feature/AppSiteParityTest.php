@@ -12,6 +12,7 @@ use App\Services\FriendshipService;
 use App\Services\Phones\PhoneNumbers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /** Розділи сайту, які застосунок відкриває через міст /api/v1/site: ті самі контролери, відповіді — JSON. */
@@ -190,5 +191,10 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->getJson('/api/v1/site/music/station?key=genre:Synthwave')->assertOk()->assertJsonPath('tracks.0.id', $track->id);
         $this->withToken($token)->postJson("/api/v1/site/music/tracks/{$track->id}/favorite")->assertOk()->assertJsonPath('favorite', true);
         $this->withToken($token)->getJson('/api/v1/site/music/playlists/mine')->assertOk()->assertJsonStructure(['playlists']);
+
+        // «Про виконавця» й текст пісні з відкритого каталогу — ті самі шляхи, що на сайті.
+        Http::fake(['*' => Http::response([])]);
+        $this->withToken($token)->getJson('/api/v1/site/music/artist/info?name=Nightdrive')->assertOk()->assertJsonStructure(['info' => ['bio', 'origin']]);
+        $this->withToken($token)->getJson('/api/v1/site/music/lyrics/find?artist=Nightdrive&title=Neon')->assertOk()->assertJsonPath('lyrics', null);
     }
 }

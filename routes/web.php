@@ -329,6 +329,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::post('library/sections', [MusicHubController::class, 'sections'])->name('music.library.sections');
         Route::get('library/{section}', [MusicHubController::class, 'librarySection'])->where('section', '[a-z]+')->name('music.library.section');
         Route::get('artist', [MusicHubController::class, 'artist'])->name('music.artist');
+        Route::get('artist/info', [MusicHubController::class, 'artistInfo'])->middleware('throttle:60,1')->name('music.artist.info');
         Route::get('album', [MusicHubController::class, 'album'])->name('music.album');
         Route::get('mix/{key}', [MusicHubController::class, 'mix'])->where('key', '[a-z]+')->name('music.mix');
         Route::get('genre', [MusicHubController::class, 'genre'])->name('music.genre');
@@ -352,6 +353,7 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
             Route::delete('tracks/{track}', [TrackController::class, 'destroy'])->name('tracks.destroy');
             Route::get('tracks/{track}/download', [TrackController::class, 'download'])->name('tracks.download');
             Route::get('tracks/{track}/lyrics', [TrackController::class, 'lyrics'])->name('tracks.lyrics');
+            Route::get('lyrics/find', [TrackController::class, 'findLyrics'])->middleware('throttle:60,1')->name('lyrics.find');
             Route::post('tracks/{track}/library', [TrackController::class, 'add'])->name('tracks.add');
             Route::delete('tracks/{track}/library', [TrackController::class, 'remove'])->name('tracks.remove');
 

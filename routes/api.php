@@ -464,6 +464,7 @@ Route::prefix('v1')->group(function () {
                 Route::post('library/sections', [MusicHubController::class, 'sections']);
                 Route::get('library/{section}', [MusicHubController::class, 'librarySection'])->where('section', '[a-z]+');
                 Route::get('artist', [MusicHubController::class, 'artist']);
+                Route::get('artist/info', [MusicHubController::class, 'artistInfo'])->middleware('throttle:60,1');
                 Route::get('album', [MusicHubController::class, 'album']);
                 Route::get('mix/{key}', [MusicHubController::class, 'mix'])->where('key', '[a-z]+');
                 Route::get('genre', [MusicHubController::class, 'genre']);
@@ -479,6 +480,7 @@ Route::prefix('v1')->group(function () {
                 Route::post('playlists', [PlaylistController::class, 'store'])->middleware('throttle:20,1');
                 Route::get('search', [MusicController::class, 'search'])->middleware('throttle:120,1');
                 Route::delete('now-playing', [NowPlayingController::class, 'destroy']);
+                Route::get('lyrics/find', [TrackController::class, 'findLyrics'])->middleware('throttle:60,1');
                 Route::whereNumber(['track', 'playlist'])->group(function () {
                     Route::post('tracks/{track}/library', [TrackController::class, 'add']);
                     Route::get('tracks/{track}/lyrics', [TrackController::class, 'lyrics']);

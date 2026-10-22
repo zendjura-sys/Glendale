@@ -141,6 +141,31 @@ class SpotifyClient
     }
 
     /**
+     * Виконавець за ім’ям (токен застосунку): фото, жанри, підписники. Null — не знайдено.
+     *
+     * @return array{name: string, image: ?string, genres: list<string>, followers: int, url: ?string}|null
+     */
+    public function artist(string $name): ?array
+    {
+        $response = $this->get(null, '/search', ['q' => 'artist:'.$name, 'type' => 'artist', 'limit' => 5]);
+        foreach ($response['artists']['items'] ?? [] as $item) {
+            if (mb_strtolower((string) ($item['name'] ?? '')) !== mb_strtolower($name)) {
+                continue;
+            }
+
+            return [
+                'name' => (string) $item['name'],
+                'image' => $item['images'][0]['url'] ?? null,
+                'genres' => array_values(array_map('strval', $item['genres'] ?? [])),
+                'followers' => (int) ($item['followers']['total'] ?? 0),
+                'url' => $item['external_urls']['spotify'] ?? null,
+            ];
+        }
+
+        return null;
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     public function topTracks(SpotifyAccount $account, int $limit = 20): array

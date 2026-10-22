@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Track;
+use App\Services\Music\ArtistInfo;
 use App\Services\Music\MusicCatalog;
 use App\Services\MusicService;
 use App\Services\Spotify\SpotifyClient;
@@ -150,10 +151,19 @@ class MusicHubController extends Controller
     public function artist(Request $request): Response
     {
         $name = trim((string) $request->query('name', ''));
-        $artist = $name === '' ? null : $this->catalog->artist($request->user(), $name);
-        abort_if($artist === null, 404);
+        abort_if($name === '' || mb_strlen($name) > 150, 404);
+        // Виконавця може не бути в нашому каталозі (трек зі Spotify) — тоді сторінка лише з «Про виконавця».
+        $artist = $this->catalog->artist($request->user(), $name) ?? $this->catalog->emptyArtist($name);
 
         return Inertia::render('music/artist', ['artist' => $artist]);
+    }
+
+    /** «Про виконавця»: фото, опис, місто, дати — окремим запитом, бо джерела зовнішні й повільні. */
+    public function artistInfo(Request $request, ArtistInfo $info): JsonResponse
+    {
+        $name = $request->validate(['name' => ['required', 'string', 'max:150']])['name'];
+
+        return response()->json(['info' => $info->get(trim($name))]);
     }
 
     public function album(Request $request): Response

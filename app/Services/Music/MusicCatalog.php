@@ -371,7 +371,10 @@ class MusicCatalog
             // Підписи («Станція {name}» тощо) — на клієнті через tr(): тут лише ключ і дані.
             'name' => $user->first_name ?: $user->name,
             'colors' => ['#fa2d48', '#5e5ce6'],
-            'covers' => [],
+            // Обкладинки того, що людина слухає найчастіше, — мозаїка на картці станції.
+            'covers' => DB::table('music_plays')->where('user_id', $user->id)->whereNotNull('cover_url')
+                ->groupBy('cover_url')->selectRaw('cover_url, COUNT(*) as total')
+                ->orderByDesc('total')->limit(4)->pluck('cover_url')->all(),
         ];
     }
 
@@ -638,6 +641,20 @@ class MusicCatalog
                 ->groupBy('artist')->selectRaw('artist, COUNT(*) as total, MAX(cover_path) as cover')
                 ->orderByDesc('total')->limit(10)->get()
                 ->map(fn ($row) => $this->artistCard((string) $row->artist, $row->cover, (int) $row->total))->values()->all(),
+            'station' => ['kind' => 'station', 'key' => 'artist:'.$name, 'name' => $name, 'colors' => $this->colorsFor($name), 'covers' => []],
+        ];
+    }
+
+    /**
+     * Виконавець без треків у нашому каталозі: порожні розділи, але станція й «Про виконавця» працюють.
+     *
+     * @return array<string, mixed>
+     */
+    public function emptyArtist(string $name): array
+    {
+        return [
+            'name' => $name, 'cover_url' => null, 'genre' => null, 'tracks_count' => 0, 'listeners' => 0,
+            'top_songs' => [], 'albums' => [], 'singles' => [], 'latest' => null, 'similar' => [],
             'station' => ['kind' => 'station', 'key' => 'artist:'.$name, 'name' => $name, 'colors' => $this->colorsFor($name), 'covers' => []],
         ];
     }

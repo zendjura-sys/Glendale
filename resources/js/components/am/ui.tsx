@@ -174,7 +174,10 @@ export function Tile({
     );
 }
 
-/** Обкладинка міксу чи станції: градієнт, мозаїка обкладинок і великий підпис унизу. */
+/**
+ * Обкладинка міксу чи станції як в Apple Music: обкладинки на весь квадрат (одна або мозаїка 2×2),
+ * поверх — кольорова вуаль із градієнта, значок і великий підпис. Без обкладинок — чистий градієнт.
+ */
 export function MixArt({
     colors,
     covers,
@@ -188,6 +191,9 @@ export function MixArt({
     className?: string;
     icon?: ReactNode;
 }) {
+    const art = (covers ?? []).filter(Boolean);
+    const grid = art.length >= 4;
+
     return (
         <div
             className={cn(
@@ -198,25 +204,41 @@ export function MixArt({
                 background: `linear-gradient(145deg, ${colors[0]}, ${colors[1]})`,
             }}
         >
-            {covers && covers.length > 0 && (
-                <div className="absolute top-[9%] right-[9%] grid w-[42%] grid-cols-2 gap-[3%] opacity-95">
-                    {covers.slice(0, 4).map((cover) => (
-                        <img
-                            key={cover}
-                            src={cover}
-                            alt=""
-                            loading="lazy"
-                            className="aspect-square w-full rounded-[4px] object-cover shadow-md"
-                        />
-                    ))}
-                </div>
+            {art.length > 0 && (
+                <>
+                    <div
+                        className={cn(
+                            'absolute inset-0',
+                            grid && 'grid grid-cols-2 grid-rows-2',
+                        )}
+                    >
+                        {(grid ? art.slice(0, 4) : art.slice(0, 1)).map(
+                            (cover) => (
+                                <img
+                                    key={cover}
+                                    src={cover}
+                                    alt=""
+                                    loading="lazy"
+                                    className="size-full object-cover"
+                                />
+                            ),
+                        )}
+                    </div>
+                    <div
+                        className="absolute inset-0"
+                        style={{
+                            background: `linear-gradient(145deg, ${colors[0]}80, ${colors[1]}80)`,
+                        }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-black/20" />
+                </>
             )}
             {icon && (
-                <div className="absolute top-[9%] left-[9%] text-white/90">
+                <div className="absolute top-[9%] left-[9%] text-white drop-shadow">
                     {icon}
                 </div>
             )}
-            <p className="[container-type:inline-size] absolute right-[9%] bottom-[8%] left-[9%] text-[clamp(15px,9cqw,26px)] leading-[1.05] font-bold tracking-tight text-white">
+            <p className="[container-type:inline-size] absolute right-[9%] bottom-[8%] left-[9%] text-[clamp(15px,9cqw,26px)] leading-[1.05] font-bold tracking-tight text-white drop-shadow-[0_1px_8px_rgb(0_0_0/0.35)]">
                 {label}
             </p>
         </div>
