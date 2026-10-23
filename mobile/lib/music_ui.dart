@@ -41,6 +41,7 @@ const gutter = 16.0;
   final key = text(station['key']) ?? '';
   final name = text(station['name']) ?? '';
   if (key == 'me') return (tr('Станція {name}', {'name': name}), tr('На основі того, що ти слухаєш'));
+  if (key.startsWith('group:')) return (tr('Станція «{name}»', {'name': name}), tr('Що слухають учасники групи'));
   if (key.startsWith('artist:')) return (tr('Станція «{name}»', {'name': name}), tr('Виконавець і схожа музика'));
   return (tr('{name}: станція', {'name': name}), tr('Нескінченний потік жанру'));
 }

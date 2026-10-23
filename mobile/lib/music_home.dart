@@ -341,6 +341,7 @@ class _RadioTab extends StatelessWidget {
       final live = maps(data['live']);
       final byGenre = maps(data['by_genre']);
       final genres = maps(data['genre_stations']);
+      final groups = maps(data['group_stations']);
       final width = MediaQuery.sizeOf(context).width - gutter * 2;
       return MusicList(onRefresh: reload, children: [
         LargeTitle(tr('Радіо')),
@@ -370,6 +371,10 @@ class _RadioTab extends StatelessWidget {
               return Shelf(children: [for (var i = 0; i < stations.length; i++) TrackTile(tracks: stations, index: i)]);
             }),
           ],
+        if (groups.isNotEmpty) ...[
+          SectionHeader(tr('Станції твоїх груп'), subtitle: tr('Що слухають у твоїх сім’ях, кланах і спільнотах')),
+          Shelf(children: [for (final s in groups) StationTile(station: s)]),
+        ],
         if (genres.isNotEmpty) ...[
           SectionHeader(tr('Станції за жанрами'), subtitle: tr('Нескінченний потік треків GameCon')),
           Shelf(children: [for (final s in genres) StationTile(station: s)]),

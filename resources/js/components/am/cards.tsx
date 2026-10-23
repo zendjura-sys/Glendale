@@ -53,6 +53,12 @@ export function stationTitle(station: StationCard): {
             subtitle: tr('На основі того, що ти слухаєш'),
         };
     }
+    if (station.key.startsWith('group:')) {
+        return {
+            title: tr('Станція «{name}»', { name: station.name }),
+            subtitle: tr('Що слухають учасники групи'),
+        };
+    }
     if (station.key.startsWith('artist:')) {
         return {
             title: tr('Станція «{name}»', { name: station.name }),
@@ -86,7 +92,7 @@ export function StationTile({ station }: { station: StationCard }) {
 
     return (
         <Tile
-            onClick={() => void playStation(station.key)}
+            onClick={() => void playStation(station.key, title)}
             art={
                 <div className="relative">
                     <MixArt

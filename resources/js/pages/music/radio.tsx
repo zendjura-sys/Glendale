@@ -15,6 +15,7 @@ type Data = {
     live: RadioTrack[];
     by_genre: { genre: string; stations: RadioTrack[] }[];
     genre_stations: StationCard[];
+    group_stations?: StationCard[];
 };
 
 /** Велика картка ефірної станції: логотип, «НАЖИВО», назва, опис і кнопка відтворення. */
@@ -155,6 +156,22 @@ export default function MusicRadio({ data }: { data: Data }) {
                     </Shelf>
                 </div>
             ))}
+
+            {(data.group_stations ?? []).length > 0 && (
+                <>
+                    <SectionHeader
+                        title={tr('Станції твоїх груп')}
+                        subtitle={tr(
+                            'Що слухають у твоїх сім’ях, кланах і спільнотах',
+                        )}
+                    />
+                    <Shelf>
+                        {data.group_stations!.map((s) => (
+                            <StationTile key={s.key} station={s} />
+                        ))}
+                    </Shelf>
+                </>
+            )}
 
             {data.genre_stations.length > 0 && (
                 <>

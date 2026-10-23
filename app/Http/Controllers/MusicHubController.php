@@ -207,7 +207,7 @@ class MusicHubController extends Controller
     public function station(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'key' => ['required', 'string', 'max:120', 'regex:/^(me|genre:.+|artist:.+|track:\d+)$/u'],
+            'key' => ['required', 'string', 'max:120', 'regex:/^(me|genre:.+|artist:.+|track:\d+|group:(family|clan|community):\d+)$/u'],
             'exclude' => ['array', 'max:500'],
             'exclude.*' => ['integer'],
         ]);

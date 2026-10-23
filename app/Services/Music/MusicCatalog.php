@@ -372,6 +372,47 @@ class MusicCatalog
                 ->map(fn (Collection $items, string $genre) => ['genre' => $genre, 'stations' => $items->map(fn (RadioStation $s) => $s->toCard())->values()->all()])
                 ->values()->all(),
             'genre_stations' => $this->genreStations(),
+            'group_stations' => $this->groupStations($user),
+        ];
+    }
+
+    /**
+     * Станції груп людини: нескінченний потік із того, що слухають учасники сім’ї, клану чи спільноти.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function groupStations(User $user): array
+    {
+        return array_map(fn (array $group) => [
+            'kind' => 'station',
+            'key' => 'group:'.$group['type'].':'.$group['id'],
+            'name' => $group['name'],
+            'colors' => $this->colorsFor($group['name']),
+            'covers' => $group['avatar_url'] ? [$group['avatar_url']] : [],
+        ], array_slice(app(ListenRooms::class)->groupsOf($user), 0, 12));
+    }
+
+    /**
+     * Чим живе група: найчастіші треки й виконавці учасників за 90 днів (крім тих, хто приховав «Зараз слухаю»).
+     * Не учасник групи — нічого.
+     *
+     * @return array{tracks: list<int>, artists: list<string>}
+     */
+    private function groupTaste(User $user, string $type, int $id): array
+    {
+        $rooms = app(ListenRooms::class);
+        $ids = $rooms->memberIds($type, $id);
+        if (! $ids->contains($user->id)) {
+            return ['tracks' => [], 'artists' => []];
+        }
+        $visible = User::query()->whereIn('id', $ids->all())->get(['id', 'preferences'])->filter(fn (User $u) => $u->showsListening())->pluck('id')->all();
+        $plays = DB::table('music_plays')->whereIn('user_id', $visible)->where('played_at', '>=', now()->subDays(90));
+
+        return [
+            'tracks' => array_values(array_map('intval', (clone $plays)->whereNotNull('track_id')->groupBy('track_id')->selectRaw('track_id, COUNT(*) as total')
+                ->orderByDesc('total')->limit(300)->pluck('track_id')->all())),
+            'artists' => array_values(array_map('strval', (clone $plays)->where('artist', '!=', '')->groupBy('artist')->selectRaw('artist, COUNT(*) as total')
+                ->orderByDesc('total')->limit(20)->pluck('artist')->all())),
         ];
     }
 
@@ -433,6 +474,9 @@ class MusicCatalog
                 ? $query->where(fn (Builder $q) => $q->whereIn('genre', $genres)->orWhereIn('artist', $this->topArtists($user, 8)))
                 : null,
             'genre' => $query->where('genre', $value),
+            'group' => ($taste = $this->groupTaste($user, ...$this->groupKey($value)))['tracks'] !== [] || $taste['artists'] !== []
+                ? $query->where(fn (Builder $q) => $q->whereIn('id', $taste['tracks'])->orWhereIn('artist', $taste['artists']))
+                : $query->whereRaw('1 = 0'),
             'artist' => $query->where(fn (Builder $q) => $q->where('artist', $value)->orWhereIn('genre', $this->artistGenres($value))),
             'track' => ($seed = Track::query()->find((int) $value)) !== null
                 ? $query->where(fn (Builder $q) => $q->where('artist', $seed->artist)->when($seed->genre, fn (Builder $q) => $q->orWhere('genre', $seed->genre)))
@@ -441,6 +485,18 @@ class MusicCatalog
         };
 
         return $this->cards($query->inRandomOrder()->limit(self::STATION_BATCH)->get(), $user);
+    }
+
+    /**
+     * «family:12» → ['family', 12].
+     *
+     * @return array{0: string, 1: int}
+     */
+    private function groupKey(string $value): array
+    {
+        [$type, $id] = array_pad(explode(':', $value, 2), 2, '0');
+
+        return [in_array($type, ['family', 'clan', 'community'], true) ? $type : 'community', (int) $id];
     }
 
     /**

@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\Community;
 use App\Models\Playlist;
 use App\Models\RadioStation;
 use App\Models\Track;
 use App\Models\User;
+use App\Services\CommunityService;
 use App\Services\MusicService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -216,5 +218,23 @@ class MusicHubTest extends TestCase
 
         $this->actingAs($user)->getJson('/music/lyrics/find?artist=Someone&title=Song&duration=200')->assertOk()
             ->assertJsonPath('lyrics', "[00:01.00] Перший рядок\n[00:05.00] Другий");
+    }
+
+    public function test_group_station_plays_what_members_listen_to(): void
+    {
+        [$owner, $member, $outsider] = User::factory()->count(3)->create();
+        $community = app(CommunityService::class)->create($owner, ['name' => 'Рок-клуб', 'type' => Community::TYPE_GROUP, 'privacy' => Community::PRIVACY_OPEN, 'wall' => Community::WALL_OPEN, 'category' => 'esports']);
+        app(CommunityService::class)->join($community, $member);
+        $rock = $this->track(['title' => 'Thunderstruck', 'artist' => 'AC/DC', 'genre' => 'Rock']);
+        $this->track(['title' => 'Інше', 'artist' => 'Хтось', 'genre' => 'Pop']);
+        DB::table('music_plays')->insert(['user_id' => $member->id, 'track_id' => $rock->id, 'title' => 'Thunderstruck', 'artist' => 'AC/DC', 'played_at' => now()]);
+
+        $key = "group:community:{$community->id}";
+        $this->actingAs($owner)->get('/music/radio')->assertInertia(fn (AssertableInertia $page) => $page->where('data.group_stations.0.key', $key));
+        $this->actingAs($owner)->getJson("/music/station?key={$key}")->assertOk()->assertJsonCount(1, 'tracks')->assertJsonPath('tracks.0.title', 'Thunderstruck');
+        // Не учасник — порожньо; приховане «Зараз слухаю» не впливає на станцію.
+        $this->actingAs($outsider)->getJson("/music/station?key={$key}")->assertOk()->assertJsonCount(0, 'tracks');
+        $member->forceFill(['preferences' => ['show_listening' => false]])->save();
+        $this->actingAs($owner)->getJson("/music/station?key={$key}")->assertOk()->assertJsonCount(0, 'tracks');
     }
 }

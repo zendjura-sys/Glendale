@@ -20,6 +20,7 @@ use App\Services\Bots\BotHub;
 use App\Services\Families\FamilyAudit;
 use App\Services\ListenParties;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
@@ -429,6 +430,22 @@ class ListenRooms
     }
 
     /**
+     * Активні учасники групи (id людей).
+     *
+     * @return Collection<int, int>
+     */
+    public function memberIds(string $type, int $id): Collection
+    {
+        $ids = match ($type) {
+            'family' => FamilyMember::query()->where('family_id', $id)->where('status', FamilyMember::STATUS_ACTIVE)->pluck('user_id'),
+            'clan' => ClanMember::query()->where('clan_id', $id)->where('status', ClanMember::STATUS_ACTIVE)->pluck('user_id'),
+            default => CommunityMember::query()->where('community_id', $id)->where('status', CommunityMember::STATUS_ACTIVE)->pluck('user_id'),
+        };
+
+        return $ids->map(fn ($v) => (int) $v);
+    }
+
+    /**
      * Сповістити учасників групи про нову кімнату (налаштування сповіщень і тихі години — у самому сповіщенні).
      *
      * @param  array{type: string, id: int, name: string, url: string, avatar_url: string|null}  $group
@@ -438,11 +455,7 @@ class ListenRooms
         if (! Cache::add("listen-room-notify:{$group['type']}:{$group['id']}", true, self::NOTIFY_COOLDOWN)) {
             return;
         }
-        $ids = match ($group['type']) {
-            'family' => FamilyMember::query()->where('family_id', $group['id'])->where('status', FamilyMember::STATUS_ACTIVE)->pluck('user_id'),
-            'clan' => ClanMember::query()->where('clan_id', $group['id'])->where('status', ClanMember::STATUS_ACTIVE)->pluck('user_id'),
-            default => CommunityMember::query()->where('community_id', $group['id'])->where('status', CommunityMember::STATUS_ACTIVE)->pluck('user_id'),
-        };
+        $ids = $this->memberIds($group['type'], $group['id']);
         $users = User::query()->whereIn('id', $ids->reject(fn ($id) => (int) $id === $host->id)->take(self::NOTIFY_LIMIT)->all())->get();
         rescue(fn () => Notification::send($users, new ListenRoomStarted($host, $party, $group['name'])), report: true);
         // І в чати групи в Discord/Telegram, якщо там є бот GameCon.
