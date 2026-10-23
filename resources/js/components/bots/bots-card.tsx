@@ -20,6 +20,7 @@ type Flags = {
     post_events: boolean;
     post_reminders: boolean;
     post_posts: boolean;
+    post_music: boolean;
 };
 
 type BotsState = {
@@ -225,6 +226,13 @@ export function BotsCard({
                     }
                 />
             )}
+            <Toggle
+                label={tr('Кімнати «Слухати разом»: хто відкрив і що грає')}
+                checked={link.post_music}
+                onChange={(v) =>
+                    act('patch', `/bots/links/${linkId}`, { post_music: v })
+                }
+            />
         </div>
     );
     const footer = (linkId: number) => (

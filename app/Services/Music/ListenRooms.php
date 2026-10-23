@@ -16,6 +16,7 @@ use App\Models\RadioStation;
 use App\Models\Track;
 use App\Models\User;
 use App\Notifications\ListenRoomStarted;
+use App\Services\Bots\BotHub;
 use App\Services\Families\FamilyAudit;
 use App\Services\ListenParties;
 use Illuminate\Database\Eloquent\Builder;
@@ -444,5 +445,7 @@ class ListenRooms
         };
         $users = User::query()->whereIn('id', $ids->reject(fn ($id) => (int) $id === $host->id)->take(self::NOTIFY_LIMIT)->all())->get();
         rescue(fn () => Notification::send($users, new ListenRoomStarted($host, $party, $group['name'])), report: true);
+        // І в чати групи в Discord/Telegram, якщо там є бот GameCon.
+        rescue(fn () => app(BotHub::class)->listenRoomStarted($group['type'], $group['id'], $party, $host), report: true);
     }
 }

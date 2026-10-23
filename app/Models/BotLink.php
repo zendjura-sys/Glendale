@@ -17,13 +17,14 @@ use Illuminate\Support\Carbon;
  * @property bool $post_events
  * @property bool $post_reminders
  * @property bool $post_posts
+ * @property bool $post_music
  * @property string|null $member_role_id
  * @property string|null $leader_role_id
  * @property Carbon|null $roles_synced_at
  * @property string|null $roles_error
  * @property int|null $linked_by
  */
-#[Fillable(['platform', 'owner_type', 'owner_id', 'chat_id', 'guild_id', 'title', 'post_events', 'post_reminders', 'post_posts', 'member_role_id', 'leader_role_id', 'roles_synced_at', 'roles_error', 'linked_by'])]
+#[Fillable(['platform', 'owner_type', 'owner_id', 'chat_id', 'guild_id', 'title', 'post_events', 'post_reminders', 'post_posts', 'post_music', 'member_role_id', 'leader_role_id', 'roles_synced_at', 'roles_error', 'linked_by'])]
 class BotLink extends Model
 {
     public const TELEGRAM = 'telegram';
@@ -38,6 +39,7 @@ class BotLink extends Model
             'post_events' => 'boolean',
             'post_reminders' => 'boolean',
             'post_posts' => 'boolean',
+            'post_music' => 'boolean',
             'roles_synced_at' => 'datetime',
         ];
     }
