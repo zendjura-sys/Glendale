@@ -259,8 +259,8 @@ function lastSitePage(): string {
 }
 
 /**
- * Шапка розділу на телефоні — те саме матове скло, що й шапка сайту: ліворуч аватар (меню
- * облікового запису) і сповіщення, праворуч «‹ Назад» — повернення на сайт.
+ * Шапка розділу на телефоні — те саме матове скло, що й шапка сайту: ліворуч «‹ Назад» —
+ * повернення на сайт, праворуч сповіщення й аватар (меню облікового запису), як у шапці сайту.
  */
 function PhoneHeader() {
     const [back, setBack] = useState('/feed');
@@ -270,15 +270,17 @@ function PhoneHeader() {
     return (
         <header className="glass-matte glass-matte--bar am-site-controls sticky top-0 z-30 pt-[env(safe-area-inset-top)] lg:hidden">
             <div className="flex h-14 items-center gap-1 px-2">
-                <UserMenu />
-                <NotificationsMenu />
                 <Link
                     href={back}
-                    className="am-body ml-auto inline-flex min-h-11 items-center gap-0.5 rounded-[10px] pr-2 pl-1 font-medium text-[var(--am-accent)] active:opacity-70"
+                    className="am-body inline-flex min-h-11 items-center gap-0.5 rounded-[10px] pr-2 pl-1 font-medium text-[var(--am-accent)] active:opacity-70"
                 >
                     <ChevronLeft className="size-6" strokeWidth={2.4} />
                     {tr('Назад')}
                 </Link>
+                <div className="ml-auto flex items-center gap-1">
+                    <NotificationsMenu />
+                    <UserMenu />
+                </div>
             </div>
         </header>
     );

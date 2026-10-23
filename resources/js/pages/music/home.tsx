@@ -80,6 +80,16 @@ function TopPick({ item }: { item: StationCard | MixCard }) {
     );
 }
 
+/** «Доброго ранку, Тоні» — за місцевим часом людини. */
+function greeting(name: string): string {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return tr('Доброго ранку, {name}', { name });
+    if (hour >= 12 && hour < 18) return tr('Добрий день, {name}', { name });
+    if (hour >= 18 && hour < 23) return tr('Добрий вечір, {name}', { name });
+
+    return tr('Доброї ночі, {name}', { name });
+}
+
 export default function MusicHome({ home }: { home: Home }) {
     const { auth } = usePage().props;
     const recent = home.recently_played as TrackCard[];
@@ -88,15 +98,14 @@ export default function MusicHome({ home }: { home: Home }) {
         <>
             <Head title={tr('Музика')} />
             <BackToGameCon />
-            <header className="flex items-end justify-between px-[var(--am-gutter)] pt-1 pb-2 lg:pt-4">
-                <h1 className="am-large-title">{tr('Головна')}</h1>
-                <Link
-                    href={`/u/${auth.user.username}`}
-                    aria-label={tr('Профіль')}
-                    className="mb-1 lg:hidden"
-                >
-                    <UserAvatar user={auth.user} size="sm" showOnline={false} />
-                </Link>
+            {/* Привітання за часом доби замість сухого «Головна»; аватар із меню — у шапці розділу. */}
+            <header className="px-[var(--am-gutter)] pt-3 pb-3 lg:pt-6">
+                <h1 className="am-large-title">
+                    {greeting(auth.user.first_name || auth.user.name)}
+                </h1>
+                <p className="am-subhead mt-1 text-[var(--am-label2)]">
+                    {tr('Твоя музика, мікси й станції — усе в одному місці')}
+                </p>
             </header>
 
             <SectionHeader title={tr('Найкраще для тебе')} />
