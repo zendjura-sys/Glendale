@@ -86,6 +86,8 @@ String appPathFor(String? sitePath) {
     case 'party':
     case 'characters':
       return path;
+    case 'tournaments':
+      return parts.length > 1 ? '/tournaments/${rest(1)}' : '/tournaments';
     case 'servers':
     case 'communities':
     case 'friends':

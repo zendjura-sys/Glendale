@@ -38,6 +38,7 @@ import 'photos.dart';
 import 'playing.dart';
 import 'push.dart';
 import 'season.dart';
+import 'tournaments.dart';
 import 'servers.dart';
 import 'settings.dart';
 import 'shell.dart';
@@ -202,6 +203,8 @@ Future<void> main() async {
           GoRoute(path: '/phone', builder: (_, state) => PhoneScreen(key: ValueKey(state.uri.queryParameters['dial']), dial: state.uri.queryParameters['dial'])),
           GoRoute(path: '/quests', builder: (_, _) => const QuestsScreen()),
           GoRoute(path: '/season', builder: (_, _) => const SeasonScreen()),
+          GoRoute(path: '/tournaments', builder: (_, _) => const TournamentsScreen()),
+          GoRoute(path: '/tournaments/:id', builder: (_, state) => TournamentScreen(id: int.tryParse(state.pathParameters['id']!) ?? 0)),
           GoRoute(path: '/saved', builder: (_, _) => const SavedScreen()),
           GoRoute(path: '/drafts', builder: (_, _) => const DraftsScreen()),
           GoRoute(path: '/starred', builder: (_, _) => const SavedMessagesScreen()),

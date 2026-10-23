@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\GtaServer;
 use App\Models\Movie;
 use App\Models\MovieSource;
 use App\Models\Post;
 use App\Models\QuestClaim;
 use App\Models\Season;
+use App\Models\Tournament;
 use App\Models\Track;
 use App\Models\User;
 use App\Services\Auth\ApiTokens;
@@ -262,6 +264,25 @@ class AppSiteParityTest extends TestCase
         $this->withToken($token)->postJson('/api/v1/site/season/levels/1/plus/claim')->assertStatus(422);
         $this->withToken($token)->postJson('/api/v1/site/season/equip', ['type' => 'frame', 'value' => 'pass_mint'])->assertOk()->assertJsonPath('ok', true);
         $this->withToken($token)->getJson('/api/v1/site/season')->assertOk()->assertJsonPath('inventory.0.equipped', true);
+    }
+
+    public function test_app_opens_server_tournaments_through_bridge(): void
+    {
+        // Турніри серверів: список, сторінка турніру, реєстрація й челендж — ті самі шляхи, що на сайті.
+        $owner = User::factory()->create();
+        $server = GtaServer::query()->create(['slug' => 'quant-rp', 'name' => 'Quant RP', 'platform' => 'pc', 'multiplayer' => 'ragemp', 'status' => GtaServer::STATUS_PUBLISHED, 'origin' => 'seed']);
+        $server->forceFill(['owner_id' => $owner->id])->save();
+        $this->withToken($this->app_token($owner))->postJson('/api/v1/site/servers/quant-rp/tournaments', [
+            'title' => 'Найдовший дрифт', 'kind' => 'challenge', 'metric' => 'Очки', 'starts_at' => now()->toIso8601String(), 'ends_at' => now()->addDay()->toIso8601String(),
+        ])->assertSuccessful();
+        $id = Tournament::query()->value('id');
+
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->getJson('/api/v1/site/tournaments')->assertOk()->assertJsonPath('tournaments.0.title', 'Найдовший дрифт');
+        $this->withToken($token)->postJson("/api/v1/site/tournaments/{$id}/join")->assertSuccessful();
+        $this->withToken($token)->getJson("/api/v1/site/tournaments/{$id}")->assertOk()
+            ->assertJsonStructure(['tournament' => ['title', 'kind', 'status'], 'entries', 'rounds', 'leaderboard', 'me' => ['entry_id', 'can_manage']])
+            ->assertJsonPath('me.can_manage', false);
     }
 
     public function test_app_opens_listen_rooms_through_bridge(): void

@@ -8,6 +8,7 @@ import {
     SearchX,
     Server,
     Smartphone,
+    Trophy,
     UsersRound,
     XCircle,
 } from 'lucide-react';
@@ -102,6 +103,7 @@ export default function Servers({
     const [q, setQ] = useState(filters.q);
     const tagsOn = usePlugin('server_tags');
     const favoritesOn = usePlugin('server_favorites');
+    const tournamentsOn = usePlugin('server_tournaments');
     const [suggesting, setSuggesting] = useState(false);
     const myLanguage = LOCALE.split('-')[0];
     const form = useForm({
@@ -181,6 +183,15 @@ export default function Servers({
                                     'ПК і мобільні проєкти з живим онлайном. Іконки, онлайн і Discord оновлюються автоматично. Не знайшли свій сервер — додайте його.',
                                 )}
                             </p>
+                            {tournamentsOn && (
+                                <Link
+                                    href="/tournaments"
+                                    className="mt-3 inline-flex h-9 items-center gap-2 rounded-xl bg-white/[0.06] px-3 text-sm font-medium text-white transition hover:bg-white/10"
+                                >
+                                    <Trophy className="size-4" />
+                                    {tr('Турніри й челенджі')}
+                                </Link>
+                            )}
                         </div>
                         <div className="grid w-full grid-cols-3 gap-2 sm:w-auto">
                             {[

@@ -55,6 +55,7 @@ use App\Http\Controllers\Settings\ProfileController as SettingsProfileController
 use App\Http\Controllers\Settings\StreamController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StoryController;
+use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\TrackImportController;
 use App\Http\Controllers\TranslateController;
@@ -559,6 +560,20 @@ Route::prefix('v1')->group(function () {
                 Route::get('compare', [ServerController::class, 'compare']);
                 Route::post('suggest', [ServerController::class, 'suggest'])->middleware('throttle:5,10');
                 Route::get('{server}', [ServerController::class, 'show']);
+            });
+
+            Route::post('servers/{server}/tournaments', [TournamentController::class, 'store'])->middleware(['module:servers', 'throttle:10,10']);
+            Route::prefix('tournaments')->middleware('module:servers')->whereNumber(['tournament', 'match', 'submission'])->group(function () {
+                Route::get('/', [TournamentController::class, 'index']);
+                Route::get('{tournament}', [TournamentController::class, 'show']);
+                Route::post('{tournament}/join', [TournamentController::class, 'join'])->middleware('throttle:20,1');
+                Route::delete('{tournament}/join', [TournamentController::class, 'leave']);
+                Route::post('{tournament}/start', [TournamentController::class, 'start']);
+                Route::post('{tournament}/matches/{match}', [TournamentController::class, 'report'])->middleware('throttle:60,1');
+                Route::post('{tournament}/submissions', [TournamentController::class, 'submit'])->middleware('throttle:10,1');
+                Route::post('{tournament}/submissions/{submission}', [TournamentController::class, 'review'])->middleware('throttle:120,1');
+                Route::post('{tournament}/finish', [TournamentController::class, 'finish']);
+                Route::delete('{tournament}', [TournamentController::class, 'destroy']);
             });
 
             Route::get('wrapped', [WrappedController::class, 'show'])->middleware('throttle:30,1');

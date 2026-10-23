@@ -59,6 +59,7 @@ use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StartController;
 use App\Http\Controllers\StoryController;
+use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\TrackImportController;
 use App\Http\Controllers\TranslateController;
@@ -548,6 +549,21 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
         Route::patch('{server}/apps/{app}', [ServerAppController::class, 'update'])->name('apps.update');
         Route::post('{server}/apps/{app}/secret', [ServerAppController::class, 'secret'])->middleware('throttle:10,1')->name('apps.secret');
         Route::delete('{server}/apps/{app}', [ServerAppController::class, 'destroy'])->name('apps.destroy');
+    });
+
+    // Турніри й челенджі серверів (плагін server_tournaments).
+    Route::post('servers/{server}/tournaments', [TournamentController::class, 'store'])->middleware(['module:servers', 'throttle:10,10'])->name('servers.tournaments.store');
+    Route::prefix('tournaments')->name('tournaments.')->middleware('module:servers')->whereNumber(['tournament', 'match', 'submission'])->group(function () {
+        Route::get('/', [TournamentController::class, 'index'])->name('index');
+        Route::get('{tournament}', [TournamentController::class, 'show'])->name('show');
+        Route::post('{tournament}/join', [TournamentController::class, 'join'])->middleware('throttle:20,1')->name('join');
+        Route::delete('{tournament}/join', [TournamentController::class, 'leave'])->name('leave');
+        Route::post('{tournament}/start', [TournamentController::class, 'start'])->name('start');
+        Route::post('{tournament}/matches/{match}', [TournamentController::class, 'report'])->middleware('throttle:60,1')->name('report');
+        Route::post('{tournament}/submissions', [TournamentController::class, 'submit'])->middleware('throttle:10,1')->name('submit');
+        Route::post('{tournament}/submissions/{submission}', [TournamentController::class, 'review'])->middleware('throttle:120,1')->name('review');
+        Route::post('{tournament}/finish', [TournamentController::class, 'finish'])->name('finish');
+        Route::delete('{tournament}', [TournamentController::class, 'destroy'])->name('destroy');
     });
 
     Route::get('wrapped', [WrappedController::class, 'show'])->middleware('throttle:30,1')->name('wrapped');

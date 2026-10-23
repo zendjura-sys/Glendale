@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
 import 'characters.dart';
+import 'tournaments.dart';
 import 'extras.dart';
 import 'state.dart';
 import 'theme.dart';
@@ -436,6 +437,16 @@ class ServerScreen extends StatelessWidget {
             if (data['votes'] is Map) ...[
               const SizedBox(height: 12),
               VotePanel(slug: slug, votes: mapOf(data['votes'])),
+            ],
+            if (data['tournaments'] is Map && maps(mapOf(data['tournaments'])['list']).isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Glass(
+                padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  CardTitle(tr('Турніри'), icon: LucideIcons.trophy, trailing: tr('Усі'), onTrailing: () => context.push('/tournaments')),
+                  for (final t in maps(mapOf(data['tournaments'])['list'])) TournamentTile(tournament: t, showServer: false),
+                ]),
+              ),
             ],
             if (data['characters'] is List) ...[
               const SizedBox(height: 12),
