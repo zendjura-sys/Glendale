@@ -59,6 +59,7 @@ use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StartController;
 use App\Http\Controllers\StoryController;
+use App\Http\Controllers\TeammateController;
 use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\TrackImportController;
@@ -90,6 +91,7 @@ Route::get('refund-policy', [LegalController::class, 'refund'])->name('legal.ref
 Route::get('pricing', [LegalController::class, 'pricing'])->name('legal.pricing');
 Route::get('sitemap.xml', SitemapController::class)->middleware('throttle:30,1')->name('sitemap');
 Route::get('contacts', [LegalController::class, 'contacts'])->name('legal.contacts');
+Route::get('child-safety', [LegalController::class, 'childSafety'])->name('legal.child-safety');
 
 // Довідка для новачків — відкрита без входу (тексти: App\Support\Help\HelpCatalog).
 Route::prefix('help')->name('help.')->controller(HelpController::class)->where(['category' => '[a-z0-9-]+', 'article' => '[a-z0-9-]+'])->group(function () {
@@ -590,6 +592,10 @@ Route::middleware(['auth', 'verified.site'])->group(function () {
     Route::prefix('party')->name('party.')->middleware('module:party')->whereNumber('party')->group(function () {
         Route::get('/', [PartyController::class, 'index'])->name('index');
         Route::post('/', [PartyController::class, 'store'])->middleware('throttle:10,10')->name('store');
+        Route::get('match', [TeammateController::class, 'index'])->name('match');
+        Route::put('match/profile', [TeammateController::class, 'update'])->middleware('throttle:20,1')->name('match.profile');
+        Route::post('match/looking', [TeammateController::class, 'looking'])->middleware('throttle:20,1')->name('match.looking');
+        Route::post('{party}/invite', [TeammateController::class, 'invite'])->middleware('throttle:30,1')->name('invite');
         Route::get('{party}', [PartyController::class, 'show'])->name('show');
         Route::post('{party}/join', [PartyController::class, 'join'])->middleware('throttle:20,1')->name('join');
         Route::delete('{party}/join', [PartyController::class, 'leave'])->name('leave');

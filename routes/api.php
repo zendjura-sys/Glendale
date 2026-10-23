@@ -55,6 +55,7 @@ use App\Http\Controllers\Settings\ProfileController as SettingsProfileController
 use App\Http\Controllers\Settings\StreamController;
 use App\Http\Controllers\SpotifyController;
 use App\Http\Controllers\StoryController;
+use App\Http\Controllers\TeammateController;
 use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\TrackImportController;
@@ -599,6 +600,10 @@ Route::prefix('v1')->group(function () {
             Route::prefix('party')->middleware('module:party')->whereNumber('party')->group(function () {
                 Route::get('/', [PartyController::class, 'index']);
                 Route::post('/', [PartyController::class, 'store'])->middleware('throttle:10,10');
+                Route::get('match', [TeammateController::class, 'index']);
+                Route::put('match/profile', [TeammateController::class, 'update'])->middleware('throttle:20,1');
+                Route::post('match/looking', [TeammateController::class, 'looking'])->middleware('throttle:20,1');
+                Route::post('{party}/invite', [TeammateController::class, 'invite'])->middleware('throttle:30,1');
                 Route::get('{party}', [PartyController::class, 'show']);
                 Route::post('{party}/join', [PartyController::class, 'join'])->middleware('throttle:20,1');
                 Route::delete('{party}/join', [PartyController::class, 'leave']);

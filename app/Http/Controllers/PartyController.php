@@ -6,6 +6,7 @@ use App\Models\Game;
 use App\Models\GtaServer;
 use App\Models\PartyPost;
 use App\Services\Party\PartyBoard;
+use App\Services\Party\Teammates;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -55,7 +56,13 @@ class PartyController extends Controller
 
     public function show(Request $request, PartyPost $party): Response
     {
-        return Inertia::render('party/show', ['party' => $this->board->card($party, $request->user())]);
+        $user = $request->user();
+
+        return Inertia::render('party/show', [
+            'party' => $this->board->card($party, $user),
+            // Автору відкритого паті — хто з підбору тиммейтів підходить (спершу ті, хто шукає зараз).
+            'suggestions' => $party->user_id === $user->id && $party->isOpen() ? app(Teammates::class)->forParty($party, $user) : [],
+        ]);
     }
 
     public function store(Request $request): RedirectResponse

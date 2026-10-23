@@ -46,6 +46,7 @@
     <li>record or rebroadcast voice rooms and calls without the participants' consent.</li>
 </ul>
 <p>For violations we may warn, mute, restrict, suspend or delete an account, community, family, clan or server listing.</p>
+<p>Child sexual abuse and exploitation (CSAE) is prohibited without exception — see our <a href="/child-safety?lang=en">Child Safety Standards</a>. Such accounts are banned permanently and the material is reported to law enforcement.</p>
 
 <h2>6. Game servers, families, third-party content</h2>
 <p>Games, servers and brands in the catalogue belong to their owners; {{ $legal['name'] }} is not affiliated with game publishers or servers unless expressly stated. Family and clan tools (bank, storage, reports, ranks, payouts) only record virtual in-game activity and are not a financial service.</p>

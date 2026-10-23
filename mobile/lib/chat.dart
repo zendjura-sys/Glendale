@@ -762,7 +762,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /// Скарга на повідомлення — потрапляє в Адмінку → Модерація (а в чаті сім’ї — ще й керівництву).
   Future<void> _report(Map<String, dynamic> message) async {
-    final reasons = [('spam', tr('Спам або реклама')), ('abuse', tr('Образи чи мат')), ('scam', tr('Шахрайство')), ('other', tr('Інше'))];
+    final reasons = [('spam', tr('Спам або реклама')), ('abuse', tr('Образи чи мат')), ('scam', tr('Шахрайство')), ('child_safety', tr('Загроза дитині, сексуальна експлуатація')), ('other', tr('Інше'))];
     final reason = await showGcSheet<String>(
       context,
       builder: (sheet) => Padding(

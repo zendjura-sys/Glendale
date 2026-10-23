@@ -1,5 +1,5 @@
-import { Head, router, useForm } from '@inertiajs/react';
-import { Plus, UserRoundSearch, X } from 'lucide-react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Plus, Radar, UserRoundSearch, X } from 'lucide-react';
 import { useState } from 'react';
 import { selectClass } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
@@ -112,6 +112,13 @@ export default function PartyBoard({ parties, filters, options }: Props) {
                                 )}
                             </p>
                         </div>
+                        <Link
+                            href="/party/match"
+                            className="inline-flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-white/[0.08] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.12] sm:w-auto"
+                        >
+                            <Radar className="size-4" />
+                            {tr('Підбір тиммейтів')}
+                        </Link>
                         <button
                             type="button"
                             onClick={() => setCreating(true)}

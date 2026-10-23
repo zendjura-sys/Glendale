@@ -285,6 +285,17 @@ class AppSiteParityTest extends TestCase
             ->assertJsonPath('me.can_manage', false);
     }
 
+    public function test_app_uses_teammate_matching_through_bridge(): void
+    {
+        // Підбір тиммейтів: анкета, «Шукаю зараз» і список сумісних — ті самі шляхи, що на сайті.
+        $token = $this->app_token(User::factory()->create());
+        $this->withToken($token)->putJson('/api/v1/site/party/match/profile', ['languages' => ['uk'], 'times' => ['evening'], 'mic' => true])->assertSuccessful();
+        $this->withToken($token)->postJson('/api/v1/site/party/match/looking', ['on' => true])->assertSuccessful();
+        $this->withToken($token)->getJson('/api/v1/site/party/match')->assertOk()
+            ->assertJsonPath('profile.times.0', 'evening')
+            ->assertJsonStructure(['profile' => ['looking_until'], 'matches', 'parties', 'options' => ['games', 'times', 'skills', 'languages', 'platforms']]);
+    }
+
     public function test_app_opens_listen_rooms_through_bridge(): void
     {
         // «Слухати разом» для груп: розділ «Кімнати», статус кімнати групи й налаштування — ті самі шляхи, що на сайті.

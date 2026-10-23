@@ -362,6 +362,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ]),
       ),
       const SizedBox(height: 12),
+      Glass(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          CardTitle(tr('Безпека дітей'), icon: LucideIcons.shieldCheck),
+          Text(
+            tr('Сексуальне насильство над дітьми та їх експлуатація в GameCon заборонені. Побачили загрозу дитині — поскаржтеся на сторінці людини чи в меню повідомлення, причина «Загроза дитині».'),
+            style: body(13, color: soft),
+          ),
+          const SizedBox(height: 10),
+          GhostButton(
+            label: tr('Стандарти безпеки дітей'),
+            icon: LucideIcons.externalLink,
+            compact: true,
+            onPressed: () => launchUrl(Uri.parse('${Api.root}/child-safety'), mode: LaunchMode.externalApplication),
+          ),
+        ]),
+      ),
+      const SizedBox(height: 12),
       const PlayingSettingsCard(),
       const SizedBox(height: 12),
       const StreamSettingsCard(),

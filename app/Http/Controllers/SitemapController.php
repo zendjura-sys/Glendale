@@ -27,6 +27,7 @@ class SitemapController extends Controller
                 ['loc' => url('/contacts'), 'changefreq' => 'monthly', 'priority' => '0.5'],
                 ['loc' => url('/terms'), 'changefreq' => 'yearly', 'priority' => '0.3'],
                 ['loc' => url('/privacy'), 'changefreq' => 'yearly', 'priority' => '0.3'],
+                ['loc' => url('/child-safety'), 'changefreq' => 'yearly', 'priority' => '0.3'],
                 ['loc' => url('/refund-policy'), 'changefreq' => 'yearly', 'priority' => '0.3'],
             ];
 

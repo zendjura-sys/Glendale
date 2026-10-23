@@ -52,6 +52,8 @@ class ModerationController extends Controller
                     'id' => $first->id,
                     'count' => $group->count(),
                     'reasons' => $group->pluck('reason')->unique()->map(fn (string $r) => MessageReport::REASONS[$r] ?? $r)->values(),
+                    // Безпека дітей — завжди вгорі черги.
+                    'urgent' => $group->contains('reason', 'child_safety'),
                     'comments' => $group->pluck('comment')->filter()->values(),
                     'reporters' => $group->map(fn (MessageReport $r) => $r->reporter?->name)->filter()->values(),
                     'created_at' => $first->created_at->toIso8601String(),
@@ -65,7 +67,7 @@ class ModerationController extends Controller
                         'chat' => $message->conversation->title ?? ($message->conversation->family_id ? 'Чат сім’ї' : 'Особисте листування'),
                     ] : null,
                 ];
-            })->values();
+            })->sortByDesc('urgent')->values();
 
         $people = UserReport::query()->where('status', UserReport::PENDING)
             ->with(['user', 'reporter'])
@@ -80,11 +82,12 @@ class ModerationController extends Controller
                     'user' => $first->user?->toCard(),
                     'count' => $group->count(),
                     'reasons' => $group->pluck('reason')->unique()->map(fn (string $r) => UserReport::REASONS[$r] ?? $r)->values(),
+                    'urgent' => $group->contains('reason', 'child_safety'),
                     'comments' => $group->pluck('comment')->filter()->values(),
                     'reporters' => $group->map(fn (UserReport $r) => $r->reporter?->name)->filter()->values(),
                     'created_at' => $first->created_at->toIso8601String(),
                 ];
-            })->filter(fn (array $row) => $row['user'] !== null)->values();
+            })->filter(fn (array $row) => $row['user'] !== null)->sortByDesc('urgent')->values();
 
         $appeals = Appeal::query()->where('status', Appeal::PENDING)->with('user')->oldest('id')->limit(100)->get()
             ->map(fn (Appeal $a) => [

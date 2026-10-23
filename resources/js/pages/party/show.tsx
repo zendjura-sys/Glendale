@@ -14,10 +14,18 @@ import { UserAvatar } from '@/components/gc/user-avatar';
 import { VoiceRooms } from '@/components/gc/voice-rooms';
 import { PARTY_PLATFORMS, partyWhen } from '@/components/party/party-card';
 import type { PartyCardData } from '@/components/party/party-card';
+import { MatchRow } from '@/components/party/teammates';
+import type { TeammateMatch } from '@/components/party/teammates';
 import { tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
-export default function PartyShow({ party }: { party: PartyCardData }) {
+export default function PartyShow({
+    party,
+    suggestions = [],
+}: {
+    party: PartyCardData;
+    suggestions?: TeammateMatch[];
+}) {
     const plus = Boolean(usePage().props.auth.user?.plus);
     const free = party.roles.filter(
         (role) => !party.taken_roles.includes(role),
@@ -227,6 +235,32 @@ export default function PartyShow({ party }: { party: PartyCardData }) {
                         ))}
                     </ul>
                 </section>
+
+                {suggestions.length > 0 && (
+                    <section className="glass rounded-2xl p-5 sm:p-6">
+                        <div className="flex items-center justify-between gap-3">
+                            <h2 className="font-display text-lg font-semibold text-white">
+                                {tr('Підходять у паті')}
+                            </h2>
+                            <Link
+                                href="/party/match"
+                                className="text-sm text-white/55 hover:text-white"
+                            >
+                                {tr('Підбір тиммейтів')}
+                            </Link>
+                        </div>
+                        <div className="divide-y divide-white/[0.06]">
+                            {suggestions.map((match) => (
+                                <MatchRow
+                                    key={match.user.id}
+                                    match={match}
+                                    parties={[]}
+                                    party={party.id}
+                                />
+                            ))}
+                        </div>
+                    </section>
+                )}
 
                 {party.joined && party.open && (
                     <VoiceRooms

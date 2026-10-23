@@ -21,6 +21,7 @@ const PATHS = {
     privacy: '/privacy',
     refund: '/refund-policy',
     contacts: '/contacts',
+    'child-safety': '/child-safety',
 } as const;
 
 /**

@@ -55,6 +55,7 @@ const kindIcon: Record<string, { icon: typeof Bell; className: string }> = {
     family_event: { icon: CalendarDays, className: 'bg-gc-indigo' },
     event_reminder: { icon: AlarmClock, className: 'bg-amber-500' },
     party_join: { icon: UserRoundSearch, className: 'bg-gc-indigo' },
+    party_invite: { icon: UserRoundSearch, className: 'bg-primary' },
     stream_live: { icon: Radio, className: 'bg-rose-500' },
     listen_room: { icon: Headphones, className: 'bg-gc-indigo' },
     tournament: { icon: Trophy, className: 'bg-amber-500' },

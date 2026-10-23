@@ -16,6 +16,10 @@ const REASONS = () => [
     { value: 'fake', label: tr('Фейкова сторінка') },
     { value: 'scam', label: tr('Шахрайство') },
     { value: 'cheat', label: tr('Читерство') },
+    {
+        value: 'child_safety',
+        label: tr('Загроза дитині, сексуальна експлуатація'),
+    },
     { value: 'other', label: tr('Інше') },
 ];
 

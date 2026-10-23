@@ -34,6 +34,7 @@ export function SiteFooter({
         { href: `/refund-policy${q}`, label: t.refund },
         { href: `/pricing${q}`, label: t.pricing },
         { href: `/contacts${q}`, label: t.contacts },
+        { href: `/child-safety${q}`, label: t.child_safety },
     ];
 
     return (
