@@ -6,6 +6,7 @@
 <ul>
     <li>child sexual abuse material (CSAM) in any form — photos, videos, drawings, generated or altered images, text, or links to such material;</li>
     <li>grooming — building contact or trust with a child for the purpose of sexual abuse or exploitation, including in direct messages, chats, voice rooms and groups;</li>
+    <li>inappropriate interaction targeted at a child (for example, groping or caressing, or describing or proposing it);</li>
     <li>sexualisation of minors: sexual comments, propositions, role-play or sexual conversations with or about minors;</li>
     <li>sextortion — demanding intimate images from a minor or blackmailing them with such images;</li>
     <li>child trafficking, or offering or seeking minors for sexual exploitation;</li>
@@ -15,6 +16,8 @@
 
 <h2>2. User age</h2>
 <p>{{ $legal['name'] }} is intended for people aged 13 and over. Users under 14 need the consent of a parent or legal guardian. Accounts of people below the minimum age are removed.</p>
+
+<p>{{ $legal['name'] }} also prohibits showing adult content to children and posting content that encourages behaviour dangerous to children.</p>
 
 <h2>3. How we prevent abuse</h2>
 <ul>
