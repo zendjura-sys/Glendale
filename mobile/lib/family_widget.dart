@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api.dart';
+import 'pulse_widget.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -136,8 +137,14 @@ Future<void> familyWidgetBackground(Uri? uri) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.reload();
   final token = prefs.getString('token');
+  final api = token == null ? null : Api(() => token);
   try {
-    await FamilyWidget.refresh(token == null ? null : Api(() => token), prefs);
+    // Один фоновий обробник на обидва віджети: gamecon://widget/pulse-refresh — «Пульс», інше — «Моя сім’я».
+    if (uri?.path == '/pulse-refresh') {
+      await PulseWidget.refresh(api);
+    } else {
+      await FamilyWidget.refresh(api, prefs);
+    }
   } catch (_) {}
 }
 

@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\MediaApiController;
 use App\Http\Controllers\Api\PushApiController;
 use App\Http\Controllers\Api\SocialApiController;
 use App\Http\Controllers\Api\SubscriptionStatusController;
+use App\Http\Controllers\Api\WidgetApiController;
 use App\Http\Controllers\Bots;
 use App\Http\Controllers\CallController;
 use App\Http\Controllers\CharacterController;
@@ -288,6 +289,7 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('module:families')->group(function () {
             Route::get('me/family-widget', [GroupsApiController::class, 'familyWidget']);
+            Route::get('me/pulse-widget', [WidgetApiController::class, 'pulse'])->middleware('throttle:30,1');
             // Застосунок на Android: гра на екрані → «Граю в…».
             Route::post('me/playing/mobile', [PlayingController::class, 'mobile'])->middleware('throttle:30,1');
             Route::get('me/playing/packages', [PlayingController::class, 'packages']);

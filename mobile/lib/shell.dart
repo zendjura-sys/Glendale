@@ -10,6 +10,7 @@ import 'connect.dart';
 import 'api.dart';
 import 'app_login.dart' show appLoginIdFrom;
 import 'family_widget.dart';
+import 'pulse_widget.dart';
 import 'player_view.dart';
 import 'state.dart';
 import 'theme.dart';
@@ -142,7 +143,7 @@ class _AppShellState extends State<AppShell> {
       context.push('/app-login/$login');
       return;
     }
-    final fromWidget = FamilyWidget.routeFor(uri);
+    final fromWidget = FamilyWidget.routeFor(uri) ?? PulseWidget.routeFor(uri);
     if (fromWidget != null) {
       widget.session.consumeLink();
       context.push(fromWidget);
