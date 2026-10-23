@@ -111,6 +111,16 @@ Color hexColor(dynamic value, Color fallback) {
 
 List<String> coversOf(dynamic list) => [for (final c in (list is List ? list : const [])) ?absolute(c)];
 
+/// Обкладинка станції: «Станція {name}» (твоя, key `me`) — аватар профілю на всю картку,
+/// у справжніх кольорах; без аватара — звичайні обкладинки чи градієнт.
+List<String> stationCovers(BuildContext context, Map<String, dynamic> station) {
+  if (text(station['key']) == 'me') {
+    final avatar = absolute(context.dependOnInheritedWidgetOfExactType<AppScope>()?.session.me?['avatar_url']);
+    if (avatar != null) return [avatar];
+  }
+  return coversOf(station['covers']);
+}
+
 /// Ширина звичайної плитки на полиці: дві з чвертю на екран телефона.
 double tileWidth(BuildContext context) => math.min((MediaQuery.sizeOf(context).width - gutter * 2) / 2.25, 190);
 
@@ -275,8 +285,8 @@ class MusicPlaceholder extends StatelessWidget {
   }
 }
 
-/// Обкладинка міксу чи станції: обкладинки треків на весь розмір, зверху — тонування в кольорах
-/// картки й підпис, як в Apple Music.
+/// Обкладинка міксу чи станції: обкладинки треків на весь розмір у справжніх кольорах (без тонування),
+/// знизу — м'яке затемнення під підпис; без обкладинок — градієнт кольорів картки.
 class MixArt extends StatelessWidget {
   const MixArt({required this.colors, required this.covers, required this.label, this.icon, this.aspect = 1, this.radius = 12, this.footnote, super.key});
   final List<Color> colors;
@@ -300,17 +310,16 @@ class MixArt extends StatelessWidget {
             GridView.count(crossAxisCount: 2, physics: const NeverScrollableScrollPhysics(), padding: EdgeInsets.zero, children: [for (final c in covers.take(4)) NetImage(c)])
           else if (covers.isNotEmpty)
             NetImage(covers.first),
-          // Тонування: колір картки знизу, щоб підпис читався на будь-якій обкладинці.
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [a.withValues(alpha: covers.isEmpty ? 0 : 0.25), b.withValues(alpha: covers.isEmpty ? 0.2 : 0.92)],
-                stops: const [0.25, 1],
+          // Обкладинки — у справжніх кольорах; лише м'яке затемнення знизу під підпис (як на сайті).
+          if (covers.isNotEmpty)
+            const Align(
+              alignment: Alignment.bottomCenter,
+              child: FractionallySizedBox(
+                heightFactor: 0.5,
+                widthFactor: 1,
+                child: DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: [Color(0x8C000000), Color(0x00000000)]))),
               ),
             ),
-          ),
           Padding(
             padding: const EdgeInsets.all(12),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -387,7 +396,7 @@ class StationTile extends StatelessWidget {
     return Tile(
       width: width ?? tileWidth(context),
       onTap: () => startStation(context, text(station['key']) ?? 'me', label: title),
-      art: MixArt(colors: colors.isEmpty ? [primary] : colors, covers: coversOf(station['covers']), label: title, icon: LucideIcons.radio, aspect: aspect),
+      art: MixArt(colors: colors.isEmpty ? [primary] : colors, covers: stationCovers(context, station), label: title, icon: LucideIcons.radio, aspect: aspect),
       title: title,
       subtitle: subtitle,
     );

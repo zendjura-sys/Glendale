@@ -129,8 +129,8 @@ class TopBar extends StatelessWidget {
 }
 
 /// Шапка «Музики» на телефоні — як на сайті. Острова там немає (його місце займають вкладки розділу),
-/// тож ліворуч аватар — він відкриває те саме меню розділів, що й острів, — і дзвіночок сповіщень,
-/// а праворуч «‹ Назад»: вихід із «Музики» туди, звідки прийшли.
+/// тож ліворуч «‹ Назад» — вихід із «Музики» туди, звідки прийшли, — а праворуч дзвіночок сповіщень
+/// і аватар: він відкриває те саме меню розділів, що й острів.
 class MusicTopBar extends StatelessWidget {
   const MusicTopBar({required this.session, required this.player, required this.path, required this.topInset, super.key});
   final Session session;
@@ -147,11 +147,20 @@ class MusicTopBar extends StatelessWidget {
     return MatteGlass(
       borderRadius: 0,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(10, topInset, 6, 0),
+        padding: EdgeInsets.fromLTRB(4, topInset, 8, 0),
         child: SizedBox(
           height: siteBarHeight,
           child: Row(
             children: [
+              TextButton.icon(
+                onPressed: () => context.go(exit ?? '/feed'),
+                style: TextButton.styleFrom(foregroundColor: accent, padding: EdgeInsets.fromLTRB(2, 8, 8, 8)),
+                icon: Icon(LucideIcons.chevronLeft, size: 24, color: accent),
+                label: Text(tr('Назад'), style: body(15, color: accent, weight: FontWeight.w600)),
+              ),
+              Spacer(),
+              _headerButton(LucideIcons.bell, tr('Сповіщення'), () => showNotifications(context, session), badge: session.unreadNotifications),
+              SizedBox(width: 2),
               Semantics(
                 button: true,
                 label: tr('Меню'),
@@ -164,15 +173,6 @@ class MusicTopBar extends StatelessWidget {
                     child: Avatar(url: text(me['avatar_url']), name: text(me['name']) ?? tr('Я'), size: 34, frame: PlusMark.from(session.subscription.style)?.frame),
                   ),
                 ),
-              ),
-              SizedBox(width: 2),
-              _headerButton(LucideIcons.bell, tr('Сповіщення'), () => showNotifications(context, session), badge: session.unreadNotifications),
-              Spacer(),
-              TextButton.icon(
-                onPressed: () => context.go(exit ?? '/feed'),
-                style: TextButton.styleFrom(foregroundColor: accent, padding: EdgeInsets.fromLTRB(6, 8, 10, 8)),
-                icon: Icon(LucideIcons.chevronLeft, size: 22, color: accent),
-                label: Text(tr('Назад'), style: body(15, color: accent, weight: FontWeight.w600)),
               ),
             ],
           ),

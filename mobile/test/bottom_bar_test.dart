@@ -26,6 +26,15 @@ List<String> _visibleBars(WidgetTester tester) => [
     ];
 
 void main() {
+  test('привітання на Головній «Музики» — за часом доби, з ім\'ям, як на сайті', () {
+    final me = {'name': 'Тоні Старк', 'first_name': 'Тоні'};
+    expect(musicGreeting(me, DateTime(2026, 1, 1, 7)), 'Доброго ранку, Тоні');
+    expect(musicGreeting(me, DateTime(2026, 1, 1, 13)), 'Добрий день, Тоні');
+    expect(musicGreeting(me, DateTime(2026, 1, 1, 20)), 'Добрий вечір, Тоні');
+    expect(musicGreeting(me, DateTime(2026, 1, 1, 2)), 'Доброї ночі, Тоні');
+    expect(musicGreeting({'name': 'Тоні Старк'}, DateTime(2026, 1, 1, 23)), 'Доброї ночі, Тоні Старк');
+  });
+
   for (final light in [false, true]) {
     testWidgets('у «Музиці» одна нижня панель, міні-плеєр над нею (${light ? 'світла' : 'темна'})', (tester) async {
       await http.runWithClient(() async {
@@ -68,6 +77,11 @@ void main() {
         final tabs = tester.getRect(find.byKey(const ValueKey('bottom-bar-music')));
         expect(tabs.bottom, closeTo(island.bottom, 0.5));
         expect(tabs.height, closeTo(island.height, 0.5));
+        expect(tabs.left, closeTo(island.left, 0.5));
+        expect(tabs.width, closeTo(island.width, 0.5));
+        // Пошук — п'ята вкладка всередині тієї самої капсули, окремої круглої кнопки немає.
+        expect(find.descendant(of: find.byKey(const ValueKey('bottom-bar-music')), matching: find.text('Пошук')), findsOneWidget);
+        expect(find.descendant(of: find.byKey(const ValueKey('bottom-bar-music')), matching: find.byType(MatteGlass)), findsOneWidget);
         expect(tester.getRect(find.byType(MiniPlayer)).bottom, lessThanOrEqualTo(tabs.top + 0.5));
 
         // Обидві панелі й міні-плеєр — повні капсули однакової скругленості (радіус = половина висоти).
@@ -88,7 +102,7 @@ void main() {
     });
   }
 
-  testWidgets('шапка «Музики»: аватар із меню розділів, дзвіночок і «Назад» на попередній маршрут', (tester) async {
+  testWidgets('шапка «Музики»: «Назад» на попередній маршрут, дзвіночок і аватар із меню розділів', (tester) async {
     await http.runWithClient(() async {
       SharedPreferences.setMockInitialValues({'whats_new': whatsNewVersion});
       final prefs = await SharedPreferences.getInstance();
@@ -120,7 +134,7 @@ void main() {
       expect(find.byType(TopBar), findsOneWidget);
       expect(find.byType(MusicTopBar), findsNothing);
 
-      // У «Музиці» (і на її підсторінках) — своя шапка: аватар і дзвіночок ліворуч, «Назад» праворуч.
+      // У «Музиці» (і на її підсторінках) — своя шапка: «Назад» ліворуч, дзвіночок і аватар праворуч.
       router.go('/music');
       await settle();
       router.go('/music/radio');
@@ -135,8 +149,8 @@ void main() {
       expect(bell, findsOneWidget);
       expect(back, findsOneWidget);
       expect(find.descendant(of: header, matching: find.byIcon(LucideIcons.chevronLeft)), findsOneWidget);
-      expect(tester.getCenter(menu).dx, lessThan(tester.getCenter(bell).dx));
-      expect(tester.getCenter(bell).dx, lessThan(tester.getCenter(back).dx));
+      expect(tester.getCenter(back).dx, lessThan(tester.getCenter(bell).dx));
+      expect(tester.getCenter(bell).dx, lessThan(tester.getCenter(menu).dx));
 
       // Аватар відкриває меню розділів — те саме, що в острові.
       await tester.tap(menu);

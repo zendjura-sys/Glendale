@@ -11,7 +11,7 @@ import 'theme.dart';
 import 'widgets.dart';
 
 // Розділ «Музика» в стилі Apple Music, як на сайті (pages/music/home, new, radio, library):
-// власна панель вкладок унизу — Головна, Нове, Радіо, Медіатека — і кнопка пошуку поруч.
+// власна панель вкладок унизу — Головна, Нове, Радіо, Медіатека й Пошук — однією капсулою.
 // Панель стоїть на місці острова застосунку (той сховується), тож унизу завжди одна панель,
 // а міні-плеєр — над нею.
 
@@ -70,32 +70,24 @@ class _MusicHubState extends State<MusicHub> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560),
             child: _BarSwap(
-              child: Row(children: [
-                Expanded(
-                  child: MatteGlass(
-                    borderRadius: barRadius,
-                    height: _barHeight,
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Row(children: [
-                      for (final key in _tabs)
-                        Expanded(
-                          child: _TabButton(icon: labels[key]!.$2, label: labels[key]!.$1, selected: tab == key, onTap: () => _select(key)),
-                        ),
-                    ]),
-                  ),
+              // Одна капсула, як острів застосунку (і як на сайті): язичкова смуга зверху, вкладки,
+              // а п'ятою вкладкою — «Пошук».
+              child: MatteGlass(
+                borderRadius: barRadius,
+                height: _barHeight,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 16, 4, 4),
+                  child: Row(children: [
+                    for (final key in _tabs)
+                      Expanded(
+                        child: _TabButton(icon: labels[key]!.$2, label: labels[key]!.$1, selected: tab == key, onTap: () => _select(key)),
+                      ),
+                    Expanded(
+                      child: _TabButton(icon: LucideIcons.search, label: tr('Пошук'), selected: false, onTap: () => context.push('/music/search')),
+                    ),
+                  ]),
                 ),
-                const SizedBox(width: 8),
-                MatteGlass(
-                  borderRadius: _barHeight / 2,
-                  width: _barHeight,
-                  height: _barHeight,
-                  child: Semantics(
-                    button: true,
-                    label: tr('Пошук'),
-                    child: InkResponse(onTap: () => context.push('/music/search'), radius: 30, child: Center(child: Icon(LucideIcons.search, size: 22, color: ink))),
-                  ),
-                ),
-              ]),
+              ),
             ),
           ),
         ),
@@ -174,6 +166,16 @@ Widget _remote(BuildContext context, String path, Widget Function(Map<String, dy
 
 // ───────────────────────── Головна ─────────────────────────
 
+/// «Доброго ранку, Тоні» — за місцевим часом людини (ті самі ключі, що на сайті).
+String musicGreeting(Map<String, dynamic> me, [DateTime? now]) {
+  final name = text(me['first_name']) ?? text(me['name']) ?? text(me['username']) ?? '';
+  final hour = (now ?? DateTime.now()).hour;
+  if (hour >= 5 && hour < 12) return tr('Доброго ранку, {name}', {'name': name});
+  if (hour >= 12 && hour < 18) return tr('Добрий день, {name}', {'name': name});
+  if (hour >= 18 && hour < 23) return tr('Добрий вечір, {name}', {'name': name});
+  return tr('Доброї ночі, {name}', {'name': name});
+}
+
 class _HomeTab extends StatelessWidget {
   const _HomeTab({required this.onRadio});
   final VoidCallback onRadio;
@@ -191,7 +193,8 @@ class _HomeTab extends StatelessWidget {
       final stations = maps(home['stations']);
       final wide = MediaQuery.sizeOf(context).width;
       return MusicList(onRefresh: reload, children: [
-        LargeTitle(tr('Головна')),
+        // Як на сайті: замість «Головна» — привітання за місцевим часом з ім'ям людини.
+        LargeTitle(musicGreeting(AppScope.of(context).session.me ?? const {}), subtitle: tr('Твоя музика, мікси й станції — усе в одному місці')),
         if (picks.isNotEmpty) ...[
           SectionHeader(tr('Найкраще для тебе')),
           Shelf(children: [for (final item in picks) _TopPick(item: item, width: wide * 0.62 > 280 ? 280 : wide * 0.62)]),
@@ -266,7 +269,7 @@ class _TopPick extends StatelessWidget {
         const SizedBox(height: 6),
         GestureDetector(
           onTap: () => station ? startStation(context, text(item['key']) ?? 'me', label: title) : openMusic(context, text(item['href'])),
-          child: MixArt(colors: colors.isEmpty ? [primary] : colors, covers: coversOf(item['covers']), label: title, footnote: subtitle, aspect: 4 / 5, icon: station ? LucideIcons.radio : null),
+          child: MixArt(colors: colors.isEmpty ? [primary] : colors, covers: station ? stationCovers(context, item) : coversOf(item['covers']), label: title, footnote: subtitle, aspect: 4 / 5, icon: station ? LucideIcons.radio : null),
         ),
       ]),
     );
@@ -342,7 +345,7 @@ class _RadioTab extends StatelessWidget {
               child: Builder(builder: (context) {
                 final (title, subtitle) = stationTitle(mine);
                 final colors = [for (final c in (mine['colors'] as List? ?? const [])) hexColor(c, primary)];
-                return MixArt(colors: colors.isEmpty ? [primary] : colors, covers: coversOf(mine['covers']), label: title, footnote: subtitle, icon: LucideIcons.radio, aspect: width > 500 ? 3 : 16 / 9);
+                return MixArt(colors: colors.isEmpty ? [primary] : colors, covers: stationCovers(context, mine), label: title, footnote: subtitle, icon: LucideIcons.radio, aspect: width > 500 ? 3 : 16 / 9);
               }),
             ),
           ),
