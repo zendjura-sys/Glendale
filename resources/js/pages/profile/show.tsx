@@ -484,7 +484,7 @@ export default function ProfileShow({
                                 href={`/${profile.username}/card`}
                                 className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.07] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.11]"
                             >
-                                <QrCode className="size-4" /> {tr('Картка')}
+                                <QrCode className="size-4" /> Game Card
                             </Link>
                             {isSelf ? (
                                 <Link

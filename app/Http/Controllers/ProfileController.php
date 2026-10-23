@@ -14,6 +14,7 @@ use App\Models\UserReport;
 use App\Models\UserStream;
 use App\Services\Achievements;
 use App\Services\FriendshipService;
+use App\Services\GameCard;
 use App\Services\ImageStorage;
 use App\Services\Messenger;
 use App\Services\Moderation\PeopleModeration;
@@ -230,8 +231,14 @@ class ProfileController extends Controller
             'scale' => 6,
         ])))->render($url);
 
+        // Game Card: закритий профіль стороннім показує лише публічне (рівень, сім’ю, клан).
+        $viewer = request()->user();
+        $full = ! $user->is_private || ($viewer !== null && ($viewer->id === $user->id || $viewer->isStaff()
+            || $this->friendships->status($viewer, $user) === FriendshipService::FRIENDS));
+
         return Inertia::render('profile/card', [
             'profile' => $user->toCard(),
+            'game' => app(GameCard::class)->for($user, $full),
             'url' => $url,
             'qr' => preg_replace('/^<\?xml[^>]*>\s*/', '', $svg) ?: $svg,
         ]);
