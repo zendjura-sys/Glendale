@@ -8,42 +8,33 @@ import {
     LayoutGrid,
     Library,
     ListMusic,
-    MessageSquareQuote,
     Mic2,
     Music2,
     Pause,
     Play,
     Radio,
-    Repeat,
-    Repeat1,
-    Rewind,
     Search,
-    Shuffle,
     Star,
     Tags,
     Upload,
-    Volume1,
-    Volume2,
-    VolumeX,
 } from 'lucide-react';
 import { AnimatePresence, m, useReducedMotion } from 'motion/react';
 import type { PanInfo } from 'motion/react';
 import { lazy, Suspense, useEffect, useState } from 'react';
-import type { CSSProperties, PropsWithChildren, ReactNode } from 'react';
+import type { PropsWithChildren, ReactNode } from 'react';
 import { TrackActionsProvider } from '@/components/am/track-actions';
 import { IncomingCall } from '@/components/gc/incoming-call';
 import { InboxListener } from '@/components/gc/inbox-listener';
 import { NotificationsMenu } from '@/components/gc/notifications-menu';
 import { VoiceBar } from '@/components/gc/voice-bar';
 import { BillingHost } from '@/components/billing/billing-host';
+import { PlayerCapsule } from '@/components/music/player-capsule';
 import { SpotifyLogo, TrackCover } from '@/components/music/track-cover';
 import { UploadTracksDialog } from '@/components/music/upload-dialog';
 import { api } from '@/lib/api';
-import { formatDuration } from '@/lib/format';
 import { tr } from '@/lib/i18n';
 import { motionOr, SNAP } from '@/lib/motion';
 import {
-    cycleRepeat,
     getPlayerState,
     next,
     prev,
@@ -51,7 +42,6 @@ import {
     setVolume,
     toggle,
     toggleMute,
-    toggleShuffle,
     usePlayer,
 } from '@/lib/player';
 import { cn } from '@/lib/utils';
@@ -66,7 +56,7 @@ const NowPlaying = lazy(() =>
 /**
  * Розділ «Музика» в стилі Apple Music. Телефон: великі заголовки, внизу «скляна» панель
  * (Головна, Нове, Радіо, Медіатека) і кругла кнопка пошуку, над нею — міні-плеєр.
- * ПК: бічне меню з пошуком, медіатекою й плейлистами, угорі — панель відтворення.
+ * ПК: бічне меню з пошуком, медіатекою, плейлистами й обліковим записом, внизу — плеєр-капсула.
  * Повернутися в GameCon — «‹ GameCon» угорі меню (ПК) чи на кожній сторінці (телефон).
  */
 
@@ -142,7 +132,7 @@ function Sidebar({ onUpload }: { onUpload: () => void }) {
     }, []);
 
     return (
-        <aside className="sticky top-0 hidden h-dvh w-[260px] shrink-0 flex-col overflow-y-auto border-r border-[var(--am-sep)] bg-[var(--am-bg2)] px-3 pt-4 pb-6 lg:flex">
+        <aside className="sticky top-0 hidden h-dvh w-[260px] shrink-0 flex-col overflow-y-auto border-r border-[var(--am-sep)] bg-[var(--am-bg2)] px-3 pt-4 pb-4 lg:flex">
             <Link
                 href="/feed"
                 className="am-subhead mb-3 flex items-center gap-1 px-1 text-[var(--am-accent)] hover:opacity-80"
@@ -248,191 +238,14 @@ function Sidebar({ onUpload }: { onUpload: () => void }) {
             >
                 <Upload className="size-4" /> {tr('Завантажити музику')}
             </button>
-        </aside>
-    );
-}
-
-// ───────────────────────── ПК: панель відтворення ─────────────────────────
-
-function Transport() {
-    const player = usePlayer();
-    const track = player.current;
-    const live = track?.source === 'radio';
-    const RepeatIcon = player.repeat === 'one' ? Repeat1 : Repeat;
-    const VolumeIcon =
-        player.muted || player.volume === 0
-            ? VolumeX
-            : player.volume < 0.5
-              ? Volume1
-              : Volume2;
-    const iconBtn =
-        'flex size-9 items-center justify-center rounded-md text-[var(--am-label)] transition hover:bg-[var(--am-fill)] disabled:opacity-30';
-
-    return (
-        <div className="glass-matte glass-matte--bar sticky top-0 z-30 hidden h-14 items-center gap-4 px-5 lg:flex">
-            <div className="flex items-center gap-1">
-                <button
-                    type="button"
-                    onClick={toggleShuffle}
-                    aria-label={tr('Перемішати')}
-                    disabled={!track || live}
-                    className={cn(
-                        iconBtn,
-                        player.shuffle && 'text-[var(--am-accent)]',
-                    )}
-                >
-                    <Shuffle className="size-[18px]" />
-                </button>
-                <button
-                    type="button"
-                    onClick={prev}
-                    aria-label={tr('Попередній')}
-                    disabled={!track || live}
-                    className={iconBtn}
-                >
-                    <Rewind className="size-6 fill-current" />
-                </button>
-                <button
-                    type="button"
-                    onClick={toggle}
-                    aria-label={player.playing ? tr('Пауза') : tr('Відтворити')}
-                    disabled={!track}
-                    className={cn(iconBtn, 'size-10')}
-                >
-                    {player.playing ? (
-                        <Pause className="size-7 fill-current" />
-                    ) : (
-                        <Play className="size-7 fill-current" />
-                    )}
-                </button>
-                <button
-                    type="button"
-                    onClick={next}
-                    aria-label={tr('Наступний')}
-                    disabled={!track || live}
-                    className={iconBtn}
-                >
-                    <FastForward className="size-6 fill-current" />
-                </button>
-                <button
-                    type="button"
-                    onClick={cycleRepeat}
-                    aria-label={tr('Повтор')}
-                    disabled={!track || live}
-                    className={cn(
-                        iconBtn,
-                        player.repeat !== 'off' && 'text-[var(--am-accent)]',
-                    )}
-                >
-                    <RepeatIcon className="size-[18px]" />
-                </button>
-            </div>
-
-            {/* «Дисплей»: обкладинка, назва й тонкий прогрес — як у Apple Music на Mac. */}
-            <div className="flex h-11 min-w-0 flex-1 items-center gap-3 overflow-hidden rounded-lg bg-[var(--am-fill)] pr-3">
-                {track ? (
-                    <>
-                        <button
-                            type="button"
-                            onClick={() => showNowPlaying()}
-                            aria-label={tr('Зараз грає')}
-                            className="shrink-0"
-                        >
-                            <TrackCover
-                                url={track.cover_url}
-                                seed={track.key}
-                                className="size-11 rounded-l-lg object-cover"
-                            />
-                        </button>
-                        <div className="min-w-0 flex-1 text-center">
-                            <p className="am-footnote truncate font-semibold">
-                                {track.title}
-                            </p>
-                            <p className="am-footnote truncate text-[var(--am-label2)]">
-                                {live ? tr('Пряма трансляція') : track.artist}
-                            </p>
-                            {!live && player.duration > 0 && (
-                                <div
-                                    className="relative mt-0.5 h-[3px] cursor-pointer rounded-full bg-[var(--am-fill2)]"
-                                    onClick={(e) => {
-                                        const r =
-                                            e.currentTarget.getBoundingClientRect();
-                                        seek(
-                                            ((e.clientX - r.left) / r.width) *
-                                                player.duration,
-                                        );
-                                    }}
-                                >
-                                    <span
-                                        className="absolute inset-y-0 left-0 rounded-full bg-[var(--am-label2)]"
-                                        style={{
-                                            width: `${(player.position / player.duration) * 100}%`,
-                                        }}
-                                    />
-                                </div>
-                            )}
-                        </div>
-                        {!live && (
-                            <span className="am-footnote shrink-0 text-[var(--am-label2)] tabular-nums">
-                                {formatDuration(player.position)}
-                            </span>
-                        )}
-                    </>
-                ) : (
-                    <p className="am-footnote flex-1 text-center text-[var(--am-label3)]">
-                        <Music2 className="mx-auto size-5" />
-                    </p>
-                )}
-            </div>
-
-            <div className="flex items-center gap-1">
-                <button
-                    type="button"
-                    onClick={toggleMute}
-                    aria-label={tr('Гучність')}
-                    className={iconBtn}
-                >
-                    <VolumeIcon className="size-[18px]" />
-                </button>
-                <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={player.muted ? 0 : player.volume}
-                    onChange={(e) => setVolume(Number(e.target.value))}
-                    aria-label={tr('Гучність')}
-                    className="am-volume w-24"
-                    style={
-                        {
-                            '--value': `${(player.muted ? 0 : player.volume) * 100}%`,
-                        } as CSSProperties
-                    }
-                />
-                <button
-                    type="button"
-                    onClick={() => showNowPlaying('lyrics')}
-                    aria-label={tr('Текст пісні')}
-                    disabled={!track}
-                    className={iconBtn}
-                >
-                    <MessageSquareQuote className="size-[18px]" />
-                </button>
-                <button
-                    type="button"
-                    onClick={() => showNowPlaying('queue')}
-                    aria-label={tr('Далі в черзі')}
-                    disabled={!track}
-                    className={iconBtn}
-                >
-                    <ListMusic className="size-[18px]" />
-                </button>
-            </div>
-            <div className="am-site-controls flex items-center gap-0.5 border-l border-[var(--am-sep)] pl-3">
-                <NotificationsMenu />
+            {/* Обліковий запис і сповіщення — тут, а не в плеєрі: плеєр ПК тепер капсула внизу. */}
+            <div className="am-site-controls mt-auto flex items-center gap-0.5 border-t border-[var(--am-sep)] pt-3">
                 <UserMenu />
+                <span className="ml-auto">
+                    <NotificationsMenu />
+                </span>
             </div>
-        </div>
+        </aside>
     );
 }
 
@@ -694,7 +507,6 @@ export default function MusicLayout({ children }: PropsWithChildren) {
                 <div className="flex">
                     <Sidebar onUpload={() => setUploading(true)} />
                     <div className="min-w-0 flex-1">
-                        <Transport />
                         <PhoneHeader />
                         <main
                             id="main-content"
@@ -703,12 +515,17 @@ export default function MusicLayout({ children }: PropsWithChildren) {
                                 player.current
                                     ? 'pb-[calc(env(safe-area-inset-bottom)+150px)]'
                                     : 'pb-[calc(env(safe-area-inset-bottom)+90px)]',
-                                'lg:pb-16',
+                                player.current ? 'lg:pb-28' : 'lg:pb-16',
                             )}
                         >
                             {children}
                         </main>
                     </div>
+                </div>
+
+                {/* ПК: плеєр — плаваюча капсула внизу, над вмістом (поруч із бічним меню). */}
+                <div className="pointer-events-none fixed right-0 bottom-4 left-[260px] z-40 hidden px-6 lg:block">
+                    <PlayerCapsule onOpen={(v) => showNowPlaying(v)} />
                 </div>
 
                 {/* Телефон: міні-плеєр над «скляною» панеллю. */}

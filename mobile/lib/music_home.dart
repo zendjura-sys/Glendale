@@ -153,7 +153,6 @@ class _TabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? accent : muted;
     return Semantics(
       button: true,
       selected: selected,
@@ -161,17 +160,8 @@ class _TabButton extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: AnimatedContainer(
-          duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 200),
-          margin: const EdgeInsets.symmetric(vertical: 6),
-          // Підкладка вибраної вкладки нейтральна — скло панелі без відтінку, колір лише в іконці й підписі.
-          decoration: BoxDecoration(color: selected ? ink.withValues(alpha: 0.08) : Colors.transparent, borderRadius: BorderRadius.circular(24)),
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(icon, size: 22, color: color),
-            const SizedBox(height: 2),
-            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11, color: color, weight: FontWeight.w600)),
-          ]),
-        ),
+        // Без підкладки: вибрана вкладка світиться неоновим синім, як в острові.
+        child: NeonTabLabel(icon: icon, label: label, active: selected, weight: FontWeight.w600),
       ),
     );
   }

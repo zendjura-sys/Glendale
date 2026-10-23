@@ -93,7 +93,7 @@ export default function MusicHome({ home }: { home: Home }) {
                 <Link
                     href={`/u/${auth.user.username}`}
                     aria-label={tr('Профіль')}
-                    className="mb-1"
+                    className="mb-1 lg:hidden"
                 >
                     <UserAvatar user={auth.user} size="sm" showOnline={false} />
                 </Link>

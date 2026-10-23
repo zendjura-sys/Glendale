@@ -286,9 +286,12 @@ export function TrackMenu({
     onRemove,
     removeLabel,
     triggerClassName,
+    side,
     children,
 }: {
     track: TrackCard;
+    /** Куди відкривати меню; «top» — над нижньою панеллю плеєра. */
+    side?: 'top' | 'bottom';
     /** Додаткова дія «Прибрати» (з плейлиста тощо). */
     onRemove?: () => void;
     removeLabel?: string;
@@ -332,6 +335,8 @@ export function TrackMenu({
             </DropdownMenuTrigger>
             <DropdownMenuContent
                 align="end"
+                side={side}
+                sideOffset={side === 'top' ? 12 : undefined}
                 className="am z-[90] w-64 rounded-2xl border-[var(--am-sep)] bg-[var(--am-elevated)] p-1.5 text-[var(--am-label)] shadow-2xl"
             >
                 {local && (

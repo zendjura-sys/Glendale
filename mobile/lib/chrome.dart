@@ -650,7 +650,7 @@ class _IslandNavState extends State<IslandNav> {
   }
 }
 
-/// Вкладка острова: іконка й підпис; вибрана — кольором акценту, без підкладок.
+/// Вкладка острова: іконка й підпис; вибрана світиться неоновим синім, без підкладок.
 class _Tab extends StatelessWidget {
   const _Tab({required this.item, required this.active, required this.badge, required this.onTap});
   final NavItem item;
@@ -660,7 +660,6 @@ class _Tab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? primary : ink.withValues(alpha: 0.55);
     return Semantics(
       selected: active,
       button: true,
@@ -670,17 +669,7 @@ class _Tab extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: SizedBox(
           height: 48,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Stack(clipBehavior: Clip.none, children: [
-                Icon(active ? item.activeIcon : item.icon, size: 22, color: color),
-                if (badge > 0) Positioned(right: -10, top: -4, child: _Badge(badge)),
-              ]),
-              SizedBox(height: 2),
-              Text(item.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11, color: color, weight: FontWeight.w500)),
-            ],
-          ),
+          child: NeonTabLabel(icon: active ? item.activeIcon : item.icon, label: item.label, active: active, badge: badge > 0 ? _Badge(badge) : null),
         ),
       ),
     );

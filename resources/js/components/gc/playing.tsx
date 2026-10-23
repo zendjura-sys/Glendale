@@ -442,7 +442,7 @@ export function PlayingSettingsCard() {
     useEffect(load, []);
 
     return (
-        <div className="glass mt-5 rounded-2xl p-6 sm:p-7">
+        <div className="gc-group mt-7 p-4 sm:p-5">
             <div className="flex flex-wrap items-start gap-4">
                 <div className="min-w-[min(100%,16rem)] flex-1">
                     <h2 className="text-[17px] font-semibold text-white">

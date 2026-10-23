@@ -229,3 +229,127 @@ export function ServerCard({
         </Link>
     );
 }
+
+/**
+ * Рядок каталогу серверів — як рядки спільнот: логотип, назва, короткий опис і теги, онлайн
+ * праворуч і дія (скопіювати адресу підключення чи відкрити сервер). Розділювачі — тонкі лінії.
+ */
+export function ServerRow({ server }: { server: GtaServerCard }) {
+    const PlatformIcon = server.platform === 'pc' ? Monitor : Smartphone;
+    const href = `/servers/${server.slug}`;
+    const promoted =
+        server.promo?.includes('top') || server.promo?.includes('highlight');
+    const online = server.players_online;
+
+    return (
+        <article className="group flex animate-rise items-center gap-3.5 py-3.5 sm:gap-4">
+            <Link href={href} className="shrink-0">
+                <ServerIcon
+                    name={server.name}
+                    icon={server.icon}
+                    className="size-12 rounded-xl"
+                />
+            </Link>
+            <div className="min-w-0 flex-1">
+                <Link
+                    href={href}
+                    className="flex items-center gap-1.5 font-display text-[15px] font-semibold text-white hover:underline"
+                >
+                    <span className="truncate">{server.name}</span>
+                    {server.is_featured && (
+                        <Sparkles className="size-3.5 shrink-0 text-amber-300" />
+                    )}
+                    {promoted && (
+                        <span
+                            title={tr('Платне просування')}
+                            className="shrink-0 rounded-md bg-white/[0.06] px-1.5 py-px text-[10px] font-semibold text-white/55"
+                        >
+                            {tr('Реклама')}
+                        </span>
+                    )}
+                </Link>
+                {server.tagline && (
+                    <p className="mt-0.5 line-clamp-1 text-[13px] text-white/60">
+                        {server.tagline}
+                    </p>
+                )}
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/55">
+                    <span className="inline-flex items-center gap-1">
+                        <PlatformIcon className="size-3.5 text-primary" />
+                        {server.platform_label}
+                    </span>
+                    <span>{server.multiplayer_label}</span>
+                    <span>
+                        {server.language === 'uk'
+                            ? 'UA'
+                            : server.language.toUpperCase()}
+                    </span>
+                    {(server.votes_month ?? 0) > 0 && (
+                        <span
+                            title={tr('Голосів за місяць')}
+                            className="inline-flex items-center gap-1"
+                        >
+                            <Vote className="size-3.5" />
+                            {shortNumber(server.votes_month ?? 0)}
+                        </span>
+                    )}
+                    {server.families_count > 0 && (
+                        <span className="inline-flex items-center gap-1">
+                            <Crown className="size-3.5" />
+                            {server.families_count} {tr('сімей')}
+                        </span>
+                    )}
+                    {online !== null && (
+                        <span className="inline-flex items-center gap-1 font-semibold text-emerald-300 sm:hidden">
+                            <span className="size-1.5 rounded-full bg-emerald-400" />
+                            {shortNumber(online)} {tr('онлайн')}
+                        </span>
+                    )}
+                </div>
+            </div>
+            {(online !== null || server.discord_members !== null) && (
+                <div className="hidden w-16 shrink-0 text-right sm:block">
+                    {online !== null ? (
+                        <>
+                            <div className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-300 tabular-nums">
+                                <span className="size-1.5 rounded-full bg-emerald-400" />
+                                {shortNumber(online)}
+                            </div>
+                            <div className="text-[11px] text-white/45">
+                                {server.players_max
+                                    ? `${tr('з')} ${shortNumber(server.players_max)}`
+                                    : tr('онлайн')}
+                            </div>
+                        </>
+                    ) : server.discord_members !== null ? (
+                        <>
+                            <div className="text-sm font-semibold text-white/80 tabular-nums">
+                                {shortNumber(server.discord_members)}
+                            </div>
+                            <div className="text-[11px] text-white/45">
+                                {tr('у Discord')}
+                            </div>
+                        </>
+                    ) : null}
+                </div>
+            )}
+            <div className="hidden shrink-0 sm:block">
+                {server.connect ? (
+                    <span className="block max-w-32">
+                        <ConnectButton
+                            value={server.connect}
+                            slug={server.slug}
+                        />
+                    </span>
+                ) : (
+                    <Link
+                        href={href}
+                        className="inline-flex h-8 items-center rounded-lg bg-white/[0.06] px-3 text-xs font-semibold text-white transition hover:bg-white/10"
+                    >
+                        {tr('Відкрити')}
+                    </Link>
+                )}
+            </div>
+        </article>
+    );
+}

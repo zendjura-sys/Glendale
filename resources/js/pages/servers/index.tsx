@@ -15,7 +15,7 @@ import { useEffect, useState } from 'react';
 import { selectClass } from '@/components/gc/admin';
 import { EmptyState } from '@/components/gc/widget';
 import { ServerIcon } from '@/components/servers/server-icon';
-import { ServerCard } from '@/components/servers/server-card';
+import { ServerRow } from '@/components/servers/server-card';
 import { VoteTops } from '@/components/servers/server-votes';
 import type { VoteTopRow } from '@/components/servers/server-votes';
 import {
@@ -73,6 +73,10 @@ type Props = {
         languages: Record<string, string>;
     };
 };
+
+/** Рядки серверів із тонкими розділювачами; на широкому ПК — дві колонки, як каталог спільнот. */
+const ROWS =
+    'grid grid-cols-1 gap-x-8 divide-y divide-white/[0.07] xl:grid-cols-2 xl:divide-y-0 xl:[&>*]:border-b xl:[&>*]:border-white/[0.07]';
 
 const SORTS = (votes: boolean) =>
     [
@@ -394,13 +398,9 @@ export default function Servers({
                         <h2 className="font-display text-xl font-bold text-white">
                             {tr('Обрані')}
                         </h2>
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                            {favorites.map((server, index) => (
-                                <ServerCard
-                                    key={server.id}
-                                    server={server}
-                                    index={index}
-                                />
+                        <div className={ROWS}>
+                            {favorites.map((server) => (
+                                <ServerRow key={server.id} server={server} />
                             ))}
                         </div>
                     </section>
@@ -424,13 +424,9 @@ export default function Servers({
                         }
                     />
                 ) : (
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        {servers.map((server, index) => (
-                            <ServerCard
-                                key={server.id}
-                                server={server}
-                                index={index}
-                            />
+                    <div className={ROWS}>
+                        {servers.map((server) => (
+                            <ServerRow key={server.id} server={server} />
                         ))}
                     </div>
                 )}

@@ -8,7 +8,7 @@ import {
     Smartphone,
     Snowflake,
 } from 'lucide-react';
-import { SettingsCard } from '@/layouts/settings/layout';
+import { SettingsCard, SettingsSwitch } from '@/layouts/settings/layout';
 import { formatDate, timeAgo } from '@/lib/format';
 import { tr } from '@/lib/i18n';
 import { WebPushSettings } from '@/components/gc/web-push-toggle';
@@ -61,8 +61,7 @@ type Props = {
 const field =
     'input-glass w-full rounded-xl px-3.5 text-sm text-white placeholder:text-white/30 focus:outline-none';
 
-const row =
-    'flex items-center gap-3 rounded-2xl bg-white/[0.03] px-3.5 py-3 text-sm';
+const row = 'gc-row flex items-center gap-3 py-3 text-sm';
 
 function methodLabel(method: string): string {
     const labels: Record<string, string> = {
@@ -107,7 +106,7 @@ export default function Account({
     return (
         <>
             <Head title={tr('Акаунт')} />
-            <div className="space-y-5">
+            <div className="space-y-7">
                 <SettingsCard
                     title={tr('Сповіщення в браузері')}
                     description={tr('Push-сповіщення сайту на цьому пристрої.')}
@@ -115,13 +114,14 @@ export default function Account({
                     <WebPushSettings />
                 </SettingsCard>
                 <SettingsCard
+                    list
                     title={tr('Telegram і Discord')}
                     description={tr(
                         'Щоб кнопки «Піду» в групах ботів GameCon записували саме вас.',
                     )}
                 >
-                    <div className="space-y-2">
-                        <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3">
+                    <div>
+                        <div className="gc-row flex flex-wrap items-center gap-3 py-3">
                             <span className="min-w-0 flex-1 text-sm text-white">
                                 Telegram
                                 <span className="block text-xs text-white/45">
@@ -161,7 +161,7 @@ export default function Account({
                                 </span>
                             )}
                         </div>
-                        <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3">
+                        <div className="gc-row flex flex-wrap items-center gap-3 py-3">
                             <span className="min-w-0 flex-1 text-sm text-white">
                                 Discord
                                 <span className="block text-xs text-white/45">
@@ -177,16 +177,17 @@ export default function Account({
                 </SettingsCard>
                 {connections.length > 0 && (
                     <SettingsCard
+                        list
                         title={tr('Підключені сервери')}
                         description={tr(
                             'Сервери, куди ви входили через GameCon. Скасуйте доступ, якщо більше там не граєте.',
                         )}
                     >
-                        <ul className="space-y-2">
+                        <ul>
                             {connections.map((item) => (
                                 <li
                                     key={item.client_id}
-                                    className="flex items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3"
+                                    className="gc-row flex items-center gap-3 py-3"
                                 >
                                     <span className="min-w-0 flex-1">
                                         <Link
@@ -224,12 +225,13 @@ export default function Account({
                     </SettingsCard>
                 )}
                 <SettingsCard
+                    list
                     title={tr('Пристрої і сесії')}
                     description={tr(
                         'Де ви зараз увійшли. Завершіть сесію, якщо не впізнаєте пристрій.',
                     )}
                 >
-                    <ul className="space-y-2">
+                    <ul>
                         {sessions.map((session) => (
                             <li key={session.id} className={row}>
                                 <Monitor className="size-5 shrink-0 text-white/50" />
@@ -304,7 +306,7 @@ export default function Account({
                                     options,
                                 )
                             }
-                            className="mt-4 inline-flex h-10 items-center gap-2 rounded-xl bg-white/[0.06] px-4 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
+                            className="flex min-h-12 w-full items-center gap-2 border-t border-[var(--gc-hairline)] py-3 text-[15px] font-medium text-rose-300 transition hover:text-rose-200"
                         >
                             <LogOut className="size-4" />
                             {tr('Завершити всі інші сесії')}
@@ -313,15 +315,16 @@ export default function Account({
                 </SettingsCard>
 
                 <SettingsCard
+                    list
                     title={tr('Журнал входів')}
                     description={tr('Останні спроби увійти в акаунт')}
                 >
                     {logins.length === 0 ? (
-                        <p className="text-sm text-white/45">
+                        <p className="py-3.5 text-sm text-white/45">
                             {tr('Поки що порожньо.')}
                         </p>
                     ) : (
-                        <ul className="space-y-2">
+                        <ul>
                             {logins.map((login) => (
                                 <li key={login.id} className={row}>
                                     {login.success ? (
@@ -348,26 +351,23 @@ export default function Account({
                 </SettingsCard>
 
                 <SettingsCard
+                    list
                     title={tr('Образливі слова')}
                     description={tr(
                         'Ховати мат зірочками в записах, коментарях і чатах — лише для вас',
                     )}
                 >
-                    <label className="flex items-center gap-3 text-sm text-white/80">
-                        <input
-                            type="checkbox"
-                            checked={hideProfanity}
-                            onChange={(event) =>
-                                router.put(
-                                    '/settings/account/profanity',
-                                    { hide: event.target.checked },
-                                    options,
-                                )
-                            }
-                            className="size-4 accent-gc-indigo"
-                        />
-                        {tr('Приховувати образливі слова')}
-                    </label>
+                    <SettingsSwitch
+                        label={tr('Приховувати образливі слова')}
+                        checked={hideProfanity}
+                        onChange={(hide) =>
+                            router.put(
+                                '/settings/account/profanity',
+                                { hide },
+                                options,
+                            )
+                        }
+                    />
                 </SettingsCard>
 
                 <SettingsCard
@@ -377,7 +377,7 @@ export default function Account({
                     )}
                 >
                     {mute && (
-                        <p className="mb-4 rounded-2xl bg-gc-amber/10 px-3.5 py-3 text-sm text-gc-amber">
+                        <p className="mb-4 rounded-xl bg-gc-amber/10 px-3.5 py-3 text-sm text-gc-amber">
                             {tr('Вам заборонено писати до {date}.', {
                                 date: mute.until ? formatDate(mute.until) : '—',
                             })}
@@ -445,7 +445,7 @@ export default function Account({
                             {appeals.map((item) => (
                                 <li
                                     key={item.id}
-                                    className="rounded-2xl bg-white/[0.03] px-3.5 py-3 text-sm"
+                                    className="rounded-xl bg-white/[0.03] px-3.5 py-3 text-sm"
                                 >
                                     <p className="flex flex-wrap items-center gap-2 text-xs text-white/50">
                                         <span>

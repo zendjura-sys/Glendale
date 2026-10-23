@@ -1291,6 +1291,45 @@ const islandExtent = 76.0;
 /// й міні-плеєр однакові.
 const barRadius = (islandExtent - 8) / 2;
 
+/// Іконка й підпис вкладки нижньої панелі: вибрана світиться неоновим синім (без підкладок і рамок),
+/// у темній темі яскравіше, у світлій — стриманіше. Перехід між вкладками ~200 мс.
+class NeonTabLabel extends StatelessWidget {
+  const NeonTabLabel({required this.icon, required this.label, required this.active, this.badge, this.weight = FontWeight.w500, super.key});
+  final IconData icon;
+  final String label;
+  final bool active;
+  final Widget? badge;
+  final FontWeight weight;
+
+  @override
+  Widget build(BuildContext context) {
+    final idle = palette.isLight ? ink.withValues(alpha: 0.55) : muted;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(end: active ? 1 : 0),
+      duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+      builder: (context, t, _) {
+        final color = Color.lerp(idle, neonBlue, t)!;
+        final strength = palette.isLight ? 0.5 : 1.0;
+        List<Shadow> glow(double near, double far) => t == 0
+            ? const []
+            : [
+                Shadow(color: neonBlue.withValues(alpha: 0.8 * strength * t), blurRadius: near),
+                Shadow(color: neonBlue.withValues(alpha: 0.35 * strength * t), blurRadius: far),
+              ];
+        return Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Stack(clipBehavior: Clip.none, children: [
+            Icon(icon, size: 22, color: color, shadows: glow(10, 22)),
+            if (badge case final b?) Positioned(right: -10, top: -4, child: b),
+          ]),
+          const SizedBox(height: 2),
+          Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(11, color: color, weight: weight).copyWith(shadows: glow(6, 14))),
+        ]);
+      },
+    );
+  }
+}
+
 /// Плаваючий плеєр разом із відступом над меню.
 const miniPlayerExtent = 76.0;
 

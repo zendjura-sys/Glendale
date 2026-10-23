@@ -3055,13 +3055,161 @@ html[data-text='xl'] {
         background: #f3f5f9;
     }
 }
-/* Активна вкладка на матовому склі — акцентний текст і нейтральна підкладка. */
-.glass-matte-tab[aria-current='page'] {
-    background: rgb(255 255 255 / 0.08);
+/*
+ * Активна вкладка на матовому склі — без підкладки: акцентна іконка з неоновим світінням і акцентний
+ * підпис. Темна тема — яскравіше світіння, світла — ледь помітне, щоб іконка лишалась контрастною.
+ */
+.glass-matte-tab {
+    --gc-tab-glow: color-mix(in srgb, var(--primary) 75%, transparent);
+    --gc-tab-halo: color-mix(in srgb, var(--primary) 35%, transparent);
+    background: transparent;
+    transition: color 0.2s ease;
+}
+.glass-matte-tab svg {
+    filter: drop-shadow(0 0 0 transparent) drop-shadow(0 0 0 transparent);
+    transition:
+        filter 0.2s ease,
+        color 0.2s ease;
+}
+.glass-matte-tab:is([aria-current='page'], [aria-expanded='true'], .is-active) {
+    background: transparent;
     color: var(--primary);
 }
-:root[data-theme='light'] .glass-matte-tab[aria-current='page'] {
-    background: rgb(15 23 42 / 0.06);
+.glass-matte-tab:is([aria-current='page'], [aria-expanded='true'], .is-active)
+    svg {
+    color: var(--primary);
+    filter: drop-shadow(0 0 6px var(--gc-tab-glow))
+        drop-shadow(0 0 14px var(--gc-tab-halo));
+}
+:root:not([data-theme='light'])
+    .glass-matte-tab:is(
+        [aria-current='page'],
+        [aria-expanded='true'],
+        .is-active
+    )
+    svg {
+    --gc-tab-glow: color-mix(in srgb, var(--primary) 85%, transparent);
+    --gc-tab-halo: color-mix(in srgb, var(--primary) 45%, transparent);
+}
+:root[data-theme='light']
+    .glass-matte-tab:is(
+        [aria-current='page'],
+        [aria-expanded='true'],
+        .is-active
+    )
+    svg {
+    filter: drop-shadow(
+            0 0 4px color-mix(in srgb, var(--primary) 45%, transparent)
+        )
+        drop-shadow(
+            0 0 10px color-mix(in srgb, var(--primary) 18%, transparent)
+        );
+}
+@media (prefers-reduced-motion: reduce) {
+    .glass-matte-tab,
+    .glass-matte-tab svg {
+        transition: none;
+    }
+}
+
+/* Плеєр ПК — капсула внизу вікна (components/music/player-capsule.tsx): кнопки, повзунки, «грати». */
+.gc-capsule-btn {
+    color: color-mix(in oklab, var(--foreground) 78%, transparent);
+}
+.gc-capsule-btn:hover,
+.gc-capsule-btn[data-state='open'] {
+    background: var(--gc-hover);
+    color: var(--foreground);
+}
+.gc-capsule-btn.is-on,
+.gc-capsule-btn[aria-expanded='true'] {
+    color: var(--primary);
+}
+.gc-capsule-play {
+    background: var(--foreground);
+    color: var(--background);
+}
+.gc-capsule-play:hover {
+    background: color-mix(in oklab, var(--foreground) 88%, transparent);
+}
+.gc-capsule-range {
+    --value: 0%;
+    height: 16px;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+}
+.gc-capsule-range::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 999px;
+    background: linear-gradient(
+        to right,
+        var(--primary) var(--value),
+        color-mix(in oklab, var(--foreground) 16%, transparent) var(--value)
+    );
+}
+.gc-capsule-range::-moz-range-track {
+    height: 4px;
+    border-radius: 999px;
+    background: linear-gradient(
+        to right,
+        var(--primary) var(--value),
+        color-mix(in oklab, var(--foreground) 16%, transparent) var(--value)
+    );
+}
+.gc-capsule-range::-webkit-slider-thumb {
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    margin-top: -4px;
+    border-radius: 999px;
+    background: #fff;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+.gc-capsule-range::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border: 0;
+    border-radius: 999px;
+    background: #fff;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+.gc-capsule-range:is(:hover, :focus-visible)::-webkit-slider-thumb {
+    opacity: 1;
+}
+.gc-capsule-range:is(:hover, :focus-visible)::-moz-range-thumb {
+    opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+    .gc-capsule-btn,
+    .gc-capsule-play,
+    .gc-capsule-range::-webkit-slider-thumb {
+        transition: none;
+    }
+}
+
+/* Налаштування в стилі iOS (layouts/settings/layout.tsx): плоска тонована група, рядки з тонкими лініями. */
+.gc-group {
+    --gc-hairline: rgb(255 255 255 / 0.07);
+    border-radius: 12px;
+    background: rgb(255 255 255 / 0.04);
+}
+:root[data-theme='light'] .gc-group {
+    --gc-hairline: rgb(15 23 42 / 0.08);
+    background: rgb(255 255 255 / 0.72);
+}
+.gc-group--danger {
+    background: rgb(244 63 94 / 0.05);
+}
+.gc-rows {
+    border-color: var(--gc-hairline);
+}
+.gc-row + .gc-row {
+    border-top: 1px solid var(--gc-hairline);
 }
 
 /* ---------- Каркас: шапка, бічне меню, нижня панель (layouts/social-layout.tsx) ---------- */

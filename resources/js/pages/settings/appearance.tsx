@@ -17,7 +17,12 @@ import { PlusBadge } from '@/components/gc/plus';
 import { UserAvatar } from '@/components/gc/user-avatar';
 import { ModeCard } from '@/components/modes/mode-card';
 import { countChanges, PendingBar } from '@/components/settings/pending-bar';
-import { SettingsCard } from '@/layouts/settings/layout';
+import {
+    SettingsCard,
+    SettingsRow,
+    SettingsRows,
+    SettingsSwitch,
+} from '@/layouts/settings/layout';
 import {
     applyTextSize,
     readTextSize,
@@ -287,7 +292,7 @@ export default function Appearance({
             <Head title={tr('Вигляд')} />
             <form id="appearance-form" onSubmit={submit} className="space-y-4">
                 {/* Живий попередній перегляд: палітра й розмір тексту змінюються тут одразу. */}
-                <div className="liquid-glass overflow-hidden rounded-2xl p-5 sm:p-6">
+                <div className="liquid-glass overflow-hidden rounded-xl p-5 sm:p-6">
                     <span aria-hidden className="liquid-glass__glare" />
                     <p className="text-xs text-white/40">
                         {tr('Попередній перегляд — зміни видно одразу')}
@@ -349,7 +354,7 @@ export default function Appearance({
                                 >
                                     <span
                                         className={cn(
-                                            'theme-thumb relative block aspect-[4/3] overflow-hidden rounded-2xl ring-1 transition',
+                                            'theme-thumb relative block aspect-[4/3] overflow-hidden rounded-xl ring-1 transition',
                                             `theme-thumb--${item.id}`,
                                             active
                                                 ? 'ring-2 ring-primary'
@@ -402,7 +407,7 @@ export default function Appearance({
                                 >
                                     <span
                                         className={cn(
-                                            'skin-thumb relative block aspect-[4/3] overflow-hidden rounded-2xl ring-1 transition',
+                                            'skin-thumb relative block aspect-[4/3] overflow-hidden rounded-xl ring-1 transition',
                                             `skin-thumb--${item.id}`,
                                             active
                                                 ? 'ring-2 ring-primary'
@@ -509,7 +514,7 @@ export default function Appearance({
                                 >
                                     <span
                                         className={cn(
-                                            'bg-thumb relative block aspect-[16/10] overflow-hidden rounded-2xl ring-1 transition',
+                                            'bg-thumb relative block aspect-[16/10] overflow-hidden rounded-xl ring-1 transition',
                                             `bg-thumb--${item.id}`,
                                             active
                                                 ? 'ring-2 ring-primary'
@@ -558,40 +563,26 @@ export default function Appearance({
                         })}
                     </div>
 
-                    <label className="mt-5 flex min-h-11 items-center gap-3 text-sm text-white">
-                        <input
-                            type="checkbox"
+                    <SettingsRows>
+                        <SettingsSwitch
+                            label={tr('Рухомий фон')}
+                            hint={tr('вимкніть, щоб сцена стояла нерухомо')}
                             checked={form.data.background_motion}
-                            onChange={(e) =>
-                                form.setData(
-                                    'background_motion',
-                                    e.target.checked,
-                                )
+                            onChange={(on) =>
+                                form.setData('background_motion', on)
                             }
-                            className="gc-switch"
                         />
-                        {tr('Рухомий фон')}
-                        <span className="text-xs text-white/40">
-                            {tr('вимкніть, щоб сцена стояла нерухомо')}
-                        </span>
-                    </label>
-
-                    <label className="mt-2 flex min-h-11 items-center gap-3 text-sm text-white">
-                        <input
-                            type="checkbox"
+                        <SettingsSwitch
+                            label={tr('Святкові прикраси')}
+                            hint={tr(
+                                'сніг на Новий рік, писанки на Великдень…',
+                            )}
                             checked={form.data.seasonal}
-                            onChange={(e) =>
-                                form.setData('seasonal', e.target.checked)
-                            }
-                            className="gc-switch"
+                            onChange={(on) => form.setData('seasonal', on)}
                         />
-                        {tr('Святкові прикраси')}
-                        <span className="text-xs text-white/40">
-                            {tr('сніг на Новий рік, писанки на Великдень…')}
-                        </span>
-                    </label>
+                    </SettingsRows>
 
-                    <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                    <div className="-mx-4 border-t border-[var(--gc-hairline)] px-4 pt-4 sm:-mx-5 sm:px-5">
                         <div className="flex items-center gap-2 text-sm font-medium text-white">
                             <Youtube className="size-4 text-[#ff4e45]" />
                             {tr('Відео з YouTube як фон')}
@@ -654,7 +645,7 @@ export default function Appearance({
                                     aria-checked={active}
                                     onClick={() => previewText(size)}
                                     className={cn(
-                                        'relative flex h-14 items-center justify-center rounded-2xl transition-colors',
+                                        'relative flex h-14 items-center justify-center rounded-xl transition-colors',
                                         active
                                             ? 'text-white'
                                             : 'bg-white/[0.03] text-white/50 hover:bg-white/[0.06] hover:text-white',
@@ -664,7 +655,7 @@ export default function Appearance({
                                         <m.span
                                             layoutId="text-size-active"
                                             transition={motionOr(reduce, SNAP)}
-                                            className="absolute inset-0 rounded-2xl border border-primary/60 bg-primary/10"
+                                            className="absolute inset-0 rounded-xl border border-primary/60 bg-primary/10"
                                         />
                                     )}
                                     <span
@@ -697,7 +688,7 @@ export default function Appearance({
                                         onClick={() => pick(item.id)}
                                         aria-pressed={active}
                                         className={cn(
-                                            'flex min-h-11 items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition',
+                                            'flex min-h-11 items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition',
                                             active
                                                 ? 'border-white/30 bg-white/[0.08]'
                                                 : 'border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.06]',
@@ -754,109 +745,81 @@ export default function Appearance({
 
                 {quietOn && (
                     <SettingsCard
+                        list
                         title={tr('Тихі години')}
                         description={tr(
                             'Лайки, коментарі й заявки в друзі не приходять у цей час. Нагадування про події лишаються.',
                         )}
                     >
-                        <label className="flex min-h-11 items-center gap-3 text-sm text-white">
+                        <SettingsSwitch
+                            icon={<Moon />}
+                            label={tr('Не турбувати вночі')}
+                            checked={form.data.quiet_enabled}
+                            onChange={(on) => form.setData('quiet_enabled', on)}
+                        />
+                        <SettingsRow label={tr('Від')} htmlFor="quiet-from">
                             <input
-                                type="checkbox"
-                                checked={form.data.quiet_enabled}
+                                id="quiet-from"
+                                type="time"
+                                value={form.data.quiet_from}
                                 onChange={(e) =>
-                                    form.setData(
-                                        'quiet_enabled',
-                                        e.target.checked,
-                                    )
+                                    form.setData('quiet_from', e.target.value)
                                 }
-                                className="gc-switch"
+                                className="input-glass block h-10 rounded-lg px-3 text-sm text-white"
                             />
-                            <Moon className="size-4 text-white/50" />
-                            {tr('Не турбувати вночі')}
-                        </label>
-                        <div className="mt-3 flex flex-wrap gap-3">
-                            <label className="text-xs text-white/50">
-                                {tr('Від')}
-                                <input
-                                    type="time"
-                                    value={form.data.quiet_from}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'quiet_from',
-                                            e.target.value,
-                                        )
-                                    }
-                                    className="input-glass mt-1 block h-11 rounded-xl px-3 text-sm text-white"
-                                />
-                            </label>
-                            <label className="text-xs text-white/50">
-                                {tr('До')}
-                                <input
-                                    type="time"
-                                    value={form.data.quiet_to}
-                                    onChange={(e) =>
-                                        form.setData('quiet_to', e.target.value)
-                                    }
-                                    className="input-glass mt-1 block h-11 rounded-xl px-3 text-sm text-white"
-                                />
-                            </label>
-                        </div>
+                        </SettingsRow>
+                        <SettingsRow label={tr('До')} htmlFor="quiet-to">
+                            <input
+                                id="quiet-to"
+                                type="time"
+                                value={form.data.quiet_to}
+                                onChange={(e) =>
+                                    form.setData('quiet_to', e.target.value)
+                                }
+                                className="input-glass block h-10 rounded-lg px-3 text-sm text-white"
+                            />
+                        </SettingsRow>
                     </SettingsCard>
                 )}
 
                 {notifyOn && (
                     <SettingsCard
+                        list
                         title={tr('Сповіщення')}
                         description={tr(
                             'Лайки, коментарі, згадки, події й друзі в грі. Сайт, пошта і push вмикаються окремо.',
                         )}
                     >
-                        <div className="grid gap-2 sm:grid-cols-2">
-                            {NOTIFY_TYPES.map((item) => (
-                                <label
-                                    key={item.key}
-                                    className="flex min-h-11 items-center gap-3 text-sm text-white"
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={form.data.notify[item.key]}
-                                        onChange={(e) =>
-                                            form.setData('notify', {
-                                                ...form.data.notify,
-                                                [item.key]: e.target.checked,
-                                            })
-                                        }
-                                        className="gc-switch"
-                                    />
-                                    {tr(item.label)}
-                                </label>
-                            ))}
-                        </div>
-                        <p className="mt-4 mb-2 flex items-center gap-2 text-xs text-white/45">
+                        {NOTIFY_TYPES.map((item) => (
+                            <SettingsSwitch
+                                key={item.key}
+                                label={tr(item.label)}
+                                checked={form.data.notify[item.key]}
+                                onChange={(on) =>
+                                    form.setData('notify', {
+                                        ...form.data.notify,
+                                        [item.key]: on,
+                                    })
+                                }
+                            />
+                        ))}
+                        <p className="-mx-4 flex items-center gap-2 border-t border-[var(--gc-hairline)] px-4 pt-4 pb-1 text-[13px] text-white/50 sm:-mx-5 sm:px-5">
                             <Bell className="size-3.5" />
                             {tr('Куди надсилати')}
                         </p>
-                        <div className="flex flex-wrap gap-4">
-                            {NOTIFY_CHANNELS.map((item) => (
-                                <label
-                                    key={item.key}
-                                    className="flex min-h-11 items-center gap-3 text-sm text-white"
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={form.data.notify[item.key]}
-                                        onChange={(e) =>
-                                            form.setData('notify', {
-                                                ...form.data.notify,
-                                                [item.key]: e.target.checked,
-                                            })
-                                        }
-                                        className="gc-switch"
-                                    />
-                                    {tr(item.label)}
-                                </label>
-                            ))}
-                        </div>
+                        {NOTIFY_CHANNELS.map((item) => (
+                            <SettingsSwitch
+                                key={item.key}
+                                label={tr(item.label)}
+                                checked={form.data.notify[item.key]}
+                                onChange={(on) =>
+                                    form.setData('notify', {
+                                        ...form.data.notify,
+                                        [item.key]: on,
+                                    })
+                                }
+                            />
+                        ))}
                     </SettingsCard>
                 )}
 
@@ -868,20 +831,17 @@ export default function Appearance({
                         )}
                     >
                         {spoilersOn && (
-                            <label className="mb-3 flex min-h-11 items-center gap-3 text-sm text-white">
-                                <input
-                                    type="checkbox"
+                            <div className="-mx-4 -mt-4 mb-4 border-b border-[var(--gc-hairline)] px-4 sm:-mx-5 sm:-mt-5 sm:px-5">
+                                <SettingsSwitch
+                                    label={tr(
+                                        'Ховати спойлери на всьому сайті',
+                                    )}
                                     checked={form.data.hide_spoilers}
-                                    onChange={(event) =>
-                                        form.setData(
-                                            'hide_spoilers',
-                                            event.target.checked,
-                                        )
+                                    onChange={(on) =>
+                                        form.setData('hide_spoilers', on)
                                     }
-                                    className="gc-switch"
                                 />
-                                {tr('Ховати спойлери на всьому сайті')}
-                            </label>
+                            </div>
                         )}
                         {mutedOn && (
                             <>
@@ -968,48 +928,41 @@ export default function Appearance({
 
                 {(groupOn || visitorsOn || languagesOn) && (
                     <SettingsCard
+                        list
                         title={tr('Як тебе бачать')}
                         description={tr(
                             'Мови спілкування і прапорець для тих, хто шукає групу.',
                         )}
                     >
                         {groupOn && (
-                            <label className="flex min-h-11 items-center gap-3 text-sm text-white">
-                                <input
-                                    type="checkbox"
-                                    checked={form.data.looking_for_group}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'looking_for_group',
-                                            e.target.checked,
-                                        )
-                                    }
-                                    className="gc-switch"
-                                />
-                                <UsersRound className="size-4 text-white/50" />
-                                {tr('Шукаю групу')}
-                            </label>
+                            <SettingsSwitch
+                                icon={<UsersRound />}
+                                label={tr('Шукаю групу')}
+                                checked={form.data.looking_for_group}
+                                onChange={(on) =>
+                                    form.setData('looking_for_group', on)
+                                }
+                            />
                         )}
                         {visitorsOn && (
-                            <label className="mt-2 flex min-h-11 items-center gap-3 text-sm text-white">
-                                <input
-                                    type="checkbox"
-                                    checked={form.data.show_visitors}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'show_visitors',
-                                            e.target.checked,
-                                        )
-                                    }
-                                    className="gc-switch"
-                                />
-                                <Eye className="size-4 text-white/50" />
-                                {tr('Хто заходив')}
-                            </label>
+                            <SettingsSwitch
+                                icon={<Eye />}
+                                label={tr('Хто заходив')}
+                                checked={form.data.show_visitors}
+                                onChange={(on) =>
+                                    form.setData('show_visitors', on)
+                                }
+                            />
                         )}
                         {languagesOn && (
-                            <>
-                                <p className="mt-4 mb-2 flex items-center gap-2 text-xs text-white/45">
+                            <div
+                                className={cn(
+                                    'pb-4',
+                                    (groupOn || visitorsOn) &&
+                                        '-mx-4 border-t border-[var(--gc-hairline)] px-4 sm:-mx-5 sm:px-5',
+                                )}
+                            >
+                                <p className="mt-4 mb-2 flex items-center gap-2 text-[13px] text-white/50">
                                     <Languages className="size-3.5" />
                                     {tr('Мови, якими говорю')}
                                 </p>
@@ -1041,7 +994,7 @@ export default function Appearance({
                                         );
                                     })}
                                 </div>
-                            </>
+                            </div>
                         )}
                     </SettingsCard>
                 )}
@@ -1098,16 +1051,17 @@ export default function Appearance({
 
                 {orderOn && (
                     <SettingsCard
+                        list
                         title={tr('Порядок блоків')}
                         description={tr('Як блоки стоять на вашій сторінці.')}
                     >
-                        <div className="space-y-2">
+                        <div>
                             {form.data.profile_blocks.map((key, index) => (
                                 <div
                                     key={key}
-                                    className="flex min-h-11 items-center gap-2 rounded-2xl bg-white/[0.04] px-3"
+                                    className="gc-row flex min-h-12 items-center gap-2"
                                 >
-                                    <span className="min-w-0 flex-1 truncate text-sm text-white">
+                                    <span className="min-w-0 flex-1 truncate text-[15px] text-white">
                                         {tr(BLOCK_LABELS[key] ?? key)}
                                     </span>
                                     <button
